@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.spec
+
+# VS Code settings (if you don't want to share them)
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
