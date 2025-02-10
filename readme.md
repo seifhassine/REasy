@@ -17,7 +17,7 @@ I have currently rushed the release and the structure will be improved in the up
   This allows you to add new flags to RE4R for example (which was not possible with existing tools).
 
 - **Search Functionality:**  
-  Search within UVAR files and across directories for:
+  Search all files across directories for:
   - Specific text (UTF-16LE encoded)
   - 32-bit numbers (with hexadecimal display)
   - GUIDs (with conversion from standard format)
