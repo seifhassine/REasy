@@ -40,3 +40,9 @@ I have currently rushed the release and the structure will be improved in the up
   Install via pip:
   ```bash
   pip install Pillow
+
+### Credits:
+
+@alphazolam for the uvar template.
+@TrikzMe for RE's MurMurHash3 
+
