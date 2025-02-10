@@ -14,7 +14,7 @@ I have currently rushed the release and the structure will be improved in the up
   
 - **Flexible Variable Management:**  
   Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
-  This allows you to add new flags to the game.
+  This allows you to add new flags to RE4R for example (which was not possible with existing tools).
 
 - **Search Functionality:**  
   Search within UVAR files and across directories for:
