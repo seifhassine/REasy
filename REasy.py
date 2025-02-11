@@ -723,14 +723,19 @@ class REasyEditorApp:
         entry.place(x=x0, y=y0, width=width, height=height)
         entry.insert(0, str(old_val))
         entry.focus()
+
         def commit(event=None):
             new_val = entry.get()
             entry.destroy()
             if new_val == old_val:
                 return
+            # Save the current tree state (open nodes, scroll, selection)
+            state = self.save_tree_state()
             if self.handler:
                 self.handler.handle_edit(meta, new_val, old_val, row_id)
                 self.refresh_tree()
+                self.restore_tree_state(state)
+
         entry.bind("<FocusOut>", commit)
         entry.bind("<Return>", commit)
 

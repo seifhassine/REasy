@@ -500,43 +500,97 @@ class UvarFile:
 
 # ---------- Treeview Population Function ----------
 
-def populate_treeview(tree, parent_id, uvar: UvarFile, metadata_map, label="UVAR_File"):
+def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
+    
     this_id = tree.insert(parent_id, "end", text=label, values=("",))
     metadata_map[this_id] = {"type": "uvarFile", "object": uvar}
+    
+    # --- Header Section  ---
     hdr_id = tree.insert(this_id, "end", text="Header", values=("",))
-    tree.insert(hdr_id, "end", text="version", values=(uvar.version,))
-    tree.insert(hdr_id, "end", text="magic", values=(uvar.magic,))
-    tree.insert(hdr_id, "end", text="stringsOffset", values=(uvar.stringsOffset,))
-    tree.insert(hdr_id, "end", text="dataOffset", values=(uvar.dataOffset,))
-    tree.insert(hdr_id, "end", text="embedsInfoOffset", values=(uvar.embedsInfoOffset,))
-    tree.insert(hdr_id, "end", text="hashInfoOffset", values=(uvar.hashInfoOffset,))
+    
+    version_id = tree.insert(hdr_id, "end", text="version", values=(uvar.version,))
+    metadata_map[version_id] = {"type": "headerInt", "field": "version", "object": uvar}
+    
+    magic_id = tree.insert(hdr_id, "end", text="magic", values=(uvar.magic,))
+    metadata_map[magic_id] = {"type": "headerInt", "field": "magic", "object": uvar}
+    
+    strings_offset_id = tree.insert(hdr_id, "end", text="stringsOffset", values=(uvar.stringsOffset,))
+    metadata_map[strings_offset_id] = {"type": "headerInt", "field": "stringsOffset", "object": uvar}
+    
+    data_offset_id = tree.insert(hdr_id, "end", text="dataOffset", values=(uvar.dataOffset,))
+    metadata_map[data_offset_id] = {"type": "headerInt", "field": "dataOffset", "object": uvar}
+    
+    embeds_info_offset_id = tree.insert(hdr_id, "end", text="embedsInfoOffset", values=(uvar.embedsInfoOffset,))
+    metadata_map[embeds_info_offset_id] = {"type": "headerInt", "field": "embedsInfoOffset", "object": uvar}
+    
+    hash_info_offset_id = tree.insert(hdr_id, "end", text="hashInfoOffset", values=(uvar.hashInfoOffset,))
+    metadata_map[hash_info_offset_id] = {"type": "headerInt", "field": "hashInfoOffset", "object": uvar}
+    
     if uvar.version < 3:
-        tree.insert(hdr_id, "end", text="unkn64", values=(uvar.unkn64,))
-    tree.insert(hdr_id, "end", text="UVARhash", values=(uvar.UVARhash,))
-    tree.insert(hdr_id, "end", text="variableCount", values=(uvar.variableCount,))
-    tree.insert(hdr_id, "end", text="embedCount", values=(uvar.embedCount,))
+        unkn64_id = tree.insert(hdr_id, "end", text="unkn64", values=(uvar.unkn64,))
+        metadata_map[unkn64_id] = {"type": "headerInt", "field": "unkn64", "object": uvar}
+    
+    uvarhash_id = tree.insert(hdr_id, "end", text="UVARhash", values=(uvar.UVARhash,))
+    metadata_map[uvarhash_id] = {"type": "headerInt", "field": "UVARhash", "object": uvar}
+    
+    variable_count_id = tree.insert(hdr_id, "end", text="variableCount", values=(uvar.variableCount,))
+    metadata_map[variable_count_id] = {"type": "headerInt", "field": "variableCount", "object": uvar}
+    
+    embed_count_id = tree.insert(hdr_id, "end", text="embedCount", values=(uvar.embedCount,))
+    metadata_map[embed_count_id] = {"type": "headerInt", "field": "embedCount", "object": uvar}
+    
+    # --- Data Section ---
     data_id = tree.insert(this_id, "end", text="Data (Variables)", values=("",))
     for i, var in enumerate(uvar.variables):
         var_id = tree.insert(data_id, "end", text=f"Variable[{i}]", values=("",))
-        tree.insert(var_id, "end", text="GUID", values=(var.guid,))
+        
+        # GUID (editable)
+        guid_id = tree.insert(var_id, "end", text="GUID", values=(var.guid,))
+        metadata_map[guid_id] = {"type": "guid", "varIndex": i, "object": uvar}
+        
+        # nameOffset (non-editable; no metadata attached)
         tree.insert(var_id, "end", text="nameOffset", values=(var.nameOffset,))
-        tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
+        
+        # nameString (editable)
+        name_string_id = tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
+        metadata_map[name_string_id] = {"type": "nameString", "varIndex": i, "object": uvar}
+        
+        # floatOffset (non-editable)
         tree.insert(var_id, "end", text="floatOffset", values=(var.floatOffset,))
+        
+        # uknOffset (non-editable)
         tree.insert(var_id, "end", text="uknOffset", values=(var.uknOffset,))
-        tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
+        
+        # typeVal (editable)
+        type_val_id = tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
+        metadata_map[type_val_id] = {"type": "varTypeVal", "varIndex": i, "object": uvar}
+        
+        # numBits (non-editable)
         tree.insert(var_id, "end", text="numBits", values=(var.numBits,))
-        tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
+        
+        # nameHash (editable)
+        name_hash_id = tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
+        metadata_map[name_hash_id] = {"type": "varNameHash", "varIndex": i, "object": uvar}
+        
+        # Value (editable)
         value_text = ""
         if i < len(uvar.values):
             f_val = uvar.values[i]
             i_val = struct.unpack("<I", struct.pack("<f", f_val))[0]
             value_text = f"{f_val:.4f} ({i_val})"
-        tree.insert(var_id, "end", text="Value", values=(value_text,))
+        value_id = tree.insert(var_id, "end", text="Value", values=(value_text,))
+        metadata_map[value_id] = {"type": "value", "varIndex": i, "object": uvar}
+    
+    # --- Strings Section (not editable for now you can edit them from Data) ---
     str_id = tree.insert(this_id, "end", text="Strings", values=("",))
     for i, (off, s) in enumerate(uvar.stringOffsets):
         tree.insert(str_id, "end", text=f"str[{i}]", values=(s,))
+    
+    # --- HashData Section (non-editable) ---
     hd_id = tree.insert(this_id, "end", text="HashData", values=("",))
-    tree.insert(hd_id, "end", text="HashDataOffsets", values=(str(uvar.hashDataOffsets),))
+    hash_data_offsets_id = tree.insert(hd_id, "end", text="HashDataOffsets", values=(str(uvar.hashDataOffsets),))
+    metadata_map[hash_data_offsets_id] = {"type": "headerInt", "field": "hashDataOffsets", "object": uvar}
+    
     guids_id = tree.insert(hd_id, "end", text=f"Guids[{len(uvar.guids)}]", values=("",))
     for i, g in enumerate(uvar.guids):
         tree.insert(guids_id, "end", text=f"[{i}]", values=(g,))
@@ -552,6 +606,7 @@ def populate_treeview(tree, parent_id, uvar: UvarFile, metadata_map, label="UVAR
     eo_id = tree.insert(this_id, "end", text=f"embedOffsets[{len(uvar.embedOffsets)}]", values=("",))
     for i, eoff in enumerate(uvar.embedOffsets):
         tree.insert(eo_id, "end", text=f"[{i}]", values=(eoff,))
+    # --- Embedded UVARs (recursively here) ---
     emb_id = tree.insert(this_id, "end", text=f"Embedded_UVARs[{len(uvar.embeddedUvars)}]", values=("",))
     for i, child in enumerate(uvar.embeddedUvars):
         populate_treeview(tree, emb_id, child, metadata_map, label=f"UVAR_File[{i}]")
@@ -586,64 +641,73 @@ class UvarHandler(FileHandler):
 
     def handle_edit(self, meta: dict, new_val, old_val, row_id):
         try:
+            # Determine which UVAR object to update:
+            target = meta.get("object", self.uvar)
+            
             if meta.get("type") == "value":
                 var_index = meta.get("varIndex")
                 new_number = float(new_val) if ('.' in new_val or 'e' in new_val.lower()) else int(new_val)
-                self.uvar.values[var_index] = float(new_number)
+                target.values[var_index] = float(new_number)
+            
             elif meta.get("type") == "nameString":
                 var_index = meta.get("varIndex")
-                ok, msg = self.uvar.rename_variable_in_place(var_index, new_val)
+                ok, msg = target.rename_variable_in_place(var_index, new_val)
                 if ok:
                     messagebox.showinfo("Success", msg)
                 else:
                     messagebox.showerror("Error", msg)
                     return
+            
             elif meta.get("type") == "headerInt":
                 ival = int(new_val)
                 field_name = meta.get("field")
-                ok, msg = self.uvar.patch_header_field_in_place(field_name, ival)
+                ok, msg = target.patch_header_field_in_place(field_name, ival)
                 if ok:
                     messagebox.showinfo("Success", msg)
                 else:
                     messagebox.showerror("Error", msg)
                     return
+            
             elif meta.get("type") == "varTypeVal":
                 ival = int(new_val)
                 var_index = meta.get("varIndex")
-                ok, msg = self.uvar.patch_typeVal_in_place(var_index, ival)
+                ok, msg = target.patch_typeVal_in_place(var_index, ival)
                 if ok:
                     messagebox.showinfo("Success", msg)
                 else:
                     messagebox.showerror("Error", msg)
                     return
+            
             elif meta.get("type") == "varNameHash":
                 var_index = meta.get("varIndex")
                 new_key = int(new_val)
-                ok, msg = self.uvar.patch_nameHash_in_place(var_index, new_key)
+                ok, msg = target.patch_nameHash_in_place(var_index, new_key)
                 if not ok:
                     messagebox.showerror("Error", msg)
                     return
                 canonical_index = None
-                for i, mapping in enumerate(self.uvar.nameHashMap):
+                for i, mapping in enumerate(target.nameHashMap):
                     if mapping == var_index:
                         canonical_index = i
                         break
                 if canonical_index is None:
                     messagebox.showerror("Error", "No canonical mapping found for this variable.")
                     return
-                self.uvar.nameHashes[canonical_index] = new_key
+                target.nameHashes[canonical_index] = new_key
+            
             elif meta.get("type") == "nameHashes":
                 canonical_index = meta.get("varIndex")
                 new_key = int(new_val)
-                if any(i != canonical_index and nh == new_key for i, nh in enumerate(self.uvar.nameHashes)):
+                if any(i != canonical_index and nh == new_key for i, nh in enumerate(target.nameHashes)):
                     messagebox.showerror("Error", "This nameHash value is already assigned to another variable.")
                     return
-                self.uvar.nameHashes[canonical_index] = new_key
-                var_index = self.uvar.nameHashMap[canonical_index]
-                ok, msg = self.uvar.patch_nameHash_in_place(var_index, new_key)
+                target.nameHashes[canonical_index] = new_key
+                var_index = target.nameHashMap[canonical_index]
+                ok, msg = target.patch_nameHash_in_place(var_index, new_key)
                 if not ok:
                     messagebox.showerror("Error", msg)
                     return
+            
             elif meta.get("type") == "guid":
                 try:
                     new_guid = str(uuid.UUID(new_val.strip()))
@@ -651,13 +715,19 @@ class UvarHandler(FileHandler):
                     messagebox.showerror("Error", f"Invalid GUID: {new_val}\n{e}")
                     return
                 var_index = meta.get("varIndex")
-                self.uvar.variables[var_index].guid = new_guid
+                target.variables[var_index].guid = new_guid
+            
             else:
+                # Unhandled types can be skipped or logged.
                 pass
+            
+            # Rebuild the complete UVAR hierarchy.
             self.uvar.rebuild()
+    
         except Exception as e:
             messagebox.showerror("Error", f"An exception occurred: {e}")
             return
+
 
     def add_variables(self, target, prefix: str, count: int):
         """
