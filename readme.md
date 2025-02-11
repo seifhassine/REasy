@@ -31,7 +31,7 @@ I have currently rushed the release and the structure will be improved in the up
 ## Unique Use-Cases:
 
 - **Adding New Flags to RE4R:**  
-  I tested adding 3000 new flags, and tried some of those flags randomly. So far so good, but your testing and feedback are needed.
+  I tested adding 3000 new flags, and tried some of those flags randomly. So far so good, but your testing and feedback are needed. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
   
 - **Finding all files where some data is referenced:**
   Ever encountered a flag but don't know in which file it is set? This tool allows you to find all locations where that flag is checked/set.
