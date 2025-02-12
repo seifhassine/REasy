@@ -659,11 +659,16 @@ class UvarHandler(FileHandler):
             return
 
     def add_variables(self, target, prefix: str, count: int):
+        MAX_VARIABLES = 65535
+        # Check if adding the new variables would exceed the maximum allowed.
+        if target.variableCount + count > MAX_VARIABLES:
+            raise ValueError(f"Cannot add variables: adding {count} variables would exceed the maximum allowed count of {MAX_VARIABLES}.")
+
+        # Determine the base prefix and starting number.
         if prefix:
             base_prefix = prefix
-            start = 0  # start numbering at 0 
-            width = 0  # no zero-padding 
-        #  otherwise, if there are existing variables, try to parse the last variable's name.
+            start = 1  # When manually specified, start at 1 (or adjust as desired)
+            width = 0  # No zero-padding by default; adjust if needed.
         elif target.variables:
             last_name = target.variables[-1].nameString.strip()
             m = re.search(r'(.*?)(\d+)$', last_name)
@@ -673,7 +678,7 @@ class UvarHandler(FileHandler):
                 width = len(m.group(2))
             else:
                 base_prefix = "Variable"
-                start = 0
+                start = 1
                 width = 0
         else:
             base_prefix = "Variable"
@@ -692,19 +697,19 @@ class UvarHandler(FileHandler):
             var.numBits = 0
             new_vars.append(var)
 
+        # All checks passed; update the target's internal state.
         original_count = target.variableCount
         target.variables.extend(new_vars)
         target.variableCount += count
         title = target.strings[0] if target.strings else ""
         target.strings = [title] + [var.nameString for var in target.variables]
-        
         target.guids.extend([v.guid for v in new_vars])
         target.guidMap.extend(range(original_count, original_count + count))
         target.nameHashes.extend([v.nameHash for v in new_vars])
         target.nameHashMap.extend(range(original_count, original_count + count))
         target.values.extend([0.0] * count)
-
-        # Rebuild from top-level UVAR.
+        
+        # Rebuild from the top-level UVAR.
         current = target
         while current.parent:
             current = current.parent
