@@ -76,7 +76,7 @@ def save_settings(settings):
 class REasyEditorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("REasy Editor v0.0.2")
+        self.root.title("REasy Editor v0.0.3")
         self.filename = None
         self.handler = None
         self.search_results = []
@@ -680,7 +680,7 @@ class REasyEditorApp:
     def show_about(self):
         win, bg = self.create_dialog("About REasy Editor", "450x300")
         opts = self.get_style_options()
-        tk.Label(win, text="REasy Editor v0.0.2", font=("Segoe UI", 16, "bold"), **opts).pack(pady=(0, 10))
+        tk.Label(win, text="REasy Editor v0.0.3", font=("Segoe UI", 16, "bold"), **opts).pack(pady=(0, 10))
         info_text = (
             "REasy Editor is a quality of life toolkit for modders.\n\n"
             "It supports viewing and full editing of UVAR files.\n\n"
