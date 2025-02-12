@@ -551,16 +551,10 @@ class UvarHandler(FileHandler):
         if meta.get("type") == "uvarFile":
             uvar_obj = meta.get("object")
             if uvar_obj:
-                if uvar_obj.parent is None:
-                    menu.add_command(
-                        label="Add Variables...",
-                        command=lambda: messagebox.showerror("Error", "Cannot add variables to top-level UVAR.", parent=tree.winfo_toplevel())
-                    )
-                else:
-                    menu.add_command(
-                        label="Add Variables...",
-                        command=lambda: self._open_add_variables_dialog(uvar_obj, tree.winfo_toplevel())
-                    )
+                menu.add_command(
+                    label="Add Variables...",
+                    command=lambda: self._open_add_variables_dialog(uvar_obj, tree.winfo_toplevel())
+                )
 
         menu.add_command(
             label="Copy",
@@ -569,9 +563,6 @@ class UvarHandler(FileHandler):
         return menu
 
     def _open_add_variables_dialog(self, target_uvar, parent):
-        if target_uvar.parent is None:
-            messagebox.showerror("Error", "Cannot add variables to top-level UVAR.", parent=parent)
-            return
         if self.app is None:
             messagebox.showerror("Error", "Internal error: app reference is missing.", parent=parent)
             return
