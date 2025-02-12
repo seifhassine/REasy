@@ -433,7 +433,7 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
     this_id = tree.insert(parent_id, "end", text=label, values=("",))
     metadata_map[this_id] = {"type": "uvarFile", "object": uvar}
 
-    # Header Section
+    # --- Header Section (unchanged) ---
     hdr_id = tree.insert(this_id, "end", text="Header", values=("",))
     for field in ["version", "magic", "stringsOffset", "dataOffset", "embedsInfoOffset", "hashInfoOffset"]:
         val = getattr(uvar, field)
@@ -447,34 +447,46 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
         node_id = tree.insert(hdr_id, "end", text=field, values=(val,))
         metadata_map[node_id] = {"type": "headerInt", "field": field, "object": uvar}
 
-    # Data (Variables) Section
+    # --- Data (Variables) Section ---
     data_id = tree.insert(this_id, "end", text="Data (Variables)", values=("",))
     for i, var in enumerate(uvar.variables):
         var_id = tree.insert(data_id, "end", text=f"Variable[{i}]", values=("",))
+        # GUID (editable)
         guid_id = tree.insert(var_id, "end", text="GUID", values=(var.guid,))
         metadata_map[guid_id] = {"type": "guid", "varIndex": i, "object": uvar}
+        # nameOffset (non-editable)
         tree.insert(var_id, "end", text="nameOffset", values=(var.nameOffset,))
+        # nameString (editable)
         name_string_id = tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
         metadata_map[name_string_id] = {"type": "nameString", "varIndex": i, "object": uvar}
+        # floatOffset and uknOffset (non-editable)
         tree.insert(var_id, "end", text="floatOffset", values=(var.floatOffset,))
         tree.insert(var_id, "end", text="uknOffset", values=(var.uknOffset,))
+        # typeVal (editable)
         type_val_id = tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
         metadata_map[type_val_id] = {"type": "varTypeVal", "varIndex": i, "object": uvar}
+        # numBits (non-editable)
         tree.insert(var_id, "end", text="numBits", values=(var.numBits,))
+        # nameHash (editable)
         name_hash_id = tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
         metadata_map[name_hash_id] = {"type": "varNameHash", "varIndex": i, "object": uvar}
-        value_text = ""
+
+        # --- Split Value Fields ---
+        # Get the underlying float value and its int representation.
         if i < len(uvar.values):
             f_val = uvar.values[i]
             i_val = struct.unpack("<I", struct.pack("<f", f_val))[0]
-            value_text = f"{f_val:.4f} ({i_val})"
-        value_id = tree.insert(var_id, "end", text="Value", values=(value_text,))
-        metadata_map[value_id] = {"type": "value", "varIndex": i, "object": uvar}
-
-    # Strings Section
-    str_id = tree.insert(this_id, "end", text="Strings", values=("",))
-    for i, (off, s) in enumerate(uvar.stringOffsets):
-        tree.insert(str_id, "end", text=f"str[{i}]", values=(s,))
+        else:
+            f_val = 0.0
+            i_val = 0
+        # Insert Value (float)
+        value_float_text = f"{f_val:.4f}"
+        value_float_id = tree.insert(var_id, "end", text="Value (float)", values=(value_float_text,))
+        metadata_map[value_float_id] = {"type": "value_float", "varIndex": i, "object": uvar}
+        # Insert Value (int)
+        value_int_text = f"{i_val}"
+        value_int_id = tree.insert(var_id, "end", text="Value (int)", values=(value_int_text,))
+        metadata_map[value_int_id] = {"type": "value_int", "varIndex": i, "object": uvar}
 
     # HashData Section
     hd_id = tree.insert(this_id, "end", text="HashData", values=("",))
@@ -587,10 +599,18 @@ class UvarHandler(FileHandler):
         try:
             target = meta.get("object", self.uvar)
             typ = meta.get("type")
-            if typ == "value":
+            if typ == "value_float":
                 var_index = meta.get("varIndex")
-                new_number = float(new_val) if ('.' in new_val or 'e' in new_val.lower()) else int(new_val)
-                target.values[var_index] = float(new_number)
+                # Convert the new value to a float and update the underlying data.
+                f_val = float(new_val)
+                target.values[var_index] = f_val
+            elif typ == "value_int":
+                var_index = meta.get("varIndex")
+                # Convert the new value to an int.
+                int_val = int(new_val)
+                # Interpret the int value as the raw bits of a float.
+                f_val = struct.unpack("<f", struct.pack("<I", int_val))[0]
+                target.values[var_index] = f_val
             elif typ == "nameString":
                 var_index = meta.get("varIndex")
                 ok, msg = target.rename_variable_in_place(var_index, new_val)
@@ -633,18 +653,6 @@ class UvarHandler(FileHandler):
                     messagebox.showerror("Error", "No canonical mapping found for this variable.")
                     return
                 target.nameHashes[canonical_index] = new_key
-            elif typ == "nameHashes":
-                canonical_index = meta.get("varIndex")
-                new_key = int(new_val)
-                if any(i != canonical_index and nh == new_key for i, nh in enumerate(target.nameHashes)):
-                    messagebox.showerror("Error", "This nameHash value is already assigned to another variable.")
-                    return
-                target.nameHashes[canonical_index] = new_key
-                var_index = target.nameHashMap[canonical_index]
-                ok, msg = target.patch_nameHash_in_place(var_index, new_key)
-                if not ok:
-                    messagebox.showerror("Error", msg)
-                    return
             elif typ == "guid":
                 try:
                     new_guid = str(uuid.UUID(new_val.strip()))
@@ -653,6 +661,8 @@ class UvarHandler(FileHandler):
                     return
                 var_index = meta.get("varIndex")
                 target.variables[var_index].guid = new_guid
+
+            # Rebuild after making the change.
             self.uvar.rebuild()
         except Exception as e:
             messagebox.showerror("Error", f"An exception occurred: {e}")
