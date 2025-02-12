@@ -1,4 +1,4 @@
-# REasy Editor v0.0.2
+# REasy Editor v0.0.3
 
 <p align="center">
   <img src="reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
