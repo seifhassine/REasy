@@ -10,11 +10,12 @@ I have currently rushed the release and the structure will be improved in the up
 ## Features
 
 - **UVAR File Editing:**  
-  Open and modify (carefully) UVAR files including header fields and variables. 
+  View and fully modify UVAR files. Hashing and mapping are taken care of automatically. 
   
 - **Flexible Variable Management:**  
   Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
   This allows you to add new flags to RE4R for example (which was not possible with existing tools).
+  Deletion of variables is also supported.
 
 - **Search Functionality:**  
   Search all files across directories for:
@@ -49,7 +50,7 @@ I have currently rushed the release and the structure will be improved in the up
   ```bash
   pip install Pillow
 
-### Credits:
+## Credits:
 
 @alphazolam for the uvar template.
 @TrikzMe for RE's MurMurHash3 
