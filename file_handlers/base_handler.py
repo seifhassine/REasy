@@ -41,3 +41,8 @@ class FileHandler(ABC):
         The implementation should update the internal data and rebuild the file.
         """
         pass
+
+    @abstractmethod
+    def update_strings(self):
+        """Update the internal string data (if necessary) before repopulating the tree."""
+        pass

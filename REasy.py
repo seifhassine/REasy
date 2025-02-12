@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 
-from file_handlers.uvar_handler import UvarHandler
+from file_handlers.factory import get_handler_for_data
 
 # ----------------- User Settings -----------------
 SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".reasy_editor_settings.json")
@@ -78,6 +78,7 @@ class REasyEditorApp:
         self.root = root
         self.root.title("REasy Editor v0.0.2")
         self.filename = None
+        self.handler = None
         self.search_results = []
         self.current_result_index = 0
         self.undo_stack = []
@@ -87,9 +88,6 @@ class REasyEditorApp:
         self._update_global_dark_mode()
 
         # Create the handler and set the app reference and refresh callback
-        self.handler = UvarHandler()
-        self.handler.app = self
-        self.handler.refresh_tree_callback = self.refresh_tree
 
         self.style = ttk.Style()
         default_font = ("Segoe UI", 10)
@@ -595,14 +593,14 @@ class REasyEditorApp:
         with open(fn, "rb") as f:
             data = f.read()
         self.filename = fn
-        # Create a new handler for this file
-        self.handler = UvarHandler()
+        # using the the factory now
+        self.handler = get_handler_for_data(data)
         self.handler.app = self
         self.handler.refresh_tree_callback = self.refresh_tree
         self.handler.read(data)
-        # Completely rebuild the tree from scratch
         self.refresh_tree()
         self.status_var.set(f"Loaded: {fn}")
+
 
     def on_save(self):
         if not self.handler:
@@ -623,7 +621,7 @@ class REasyEditorApp:
 
     def refresh_tree(self):
         if self.handler:
-            self.handler.uvar.update_strings()
+            self.handler.update_strings() 
         for cid in self.tree.get_children():
             self.tree.delete(cid)
         self.metadata_map.clear()
@@ -693,7 +691,7 @@ def main():
         with open(sys.argv[1], "rb") as f:
             data = f.read()
         app.filename = sys.argv[1]
-        app.handler = UvarHandler()
+        app.handler = get_handler_for_data(data)
         app.handler.app = app
         app.handler.refresh_tree_callback = app.refresh_tree
         app.handler.read(data)

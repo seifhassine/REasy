@@ -659,7 +659,12 @@ class UvarHandler(FileHandler):
             return
 
     def add_variables(self, target, prefix: str, count: int):
-        if target.variables:
+        if prefix:
+            base_prefix = prefix
+            start = 0  # start numbering at 0 
+            width = 0  # no zero-padding 
+        #  otherwise, if there are existing variables, try to parse the last variable's name.
+        elif target.variables:
             last_name = target.variables[-1].nameString.strip()
             m = re.search(r'(.*?)(\d+)$', last_name)
             if m:
@@ -667,11 +672,11 @@ class UvarHandler(FileHandler):
                 start = int(m.group(2)) + 1
                 width = len(m.group(2))
             else:
-                base_prefix = prefix if prefix else "Variable"
-                start = 1
+                base_prefix = "Variable"
+                start = 0
                 width = 0
         else:
-            base_prefix = prefix if prefix else "Variable"
+            base_prefix = "Variable"
             start = 1
             width = 0
 
@@ -692,12 +697,18 @@ class UvarHandler(FileHandler):
         target.variableCount += count
         title = target.strings[0] if target.strings else ""
         target.strings = [title] + [var.nameString for var in target.variables]
+        
         target.guids.extend([v.guid for v in new_vars])
         target.guidMap.extend(range(original_count, original_count + count))
         target.nameHashes.extend([v.nameHash for v in new_vars])
         target.nameHashMap.extend(range(original_count, original_count + count))
         target.values.extend([0.0] * count)
+
+        # Rebuild from top-level UVAR.
         current = target
         while current.parent:
             current = current.parent
         current.rebuild()
+
+    def update_strings(self):
+        self.uvar.update_strings()
