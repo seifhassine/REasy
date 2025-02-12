@@ -450,7 +450,10 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
     # --- Data (Variables) Section ---
     data_id = tree.insert(this_id, "end", text="Data (Variables)", values=("",))
     for i, var in enumerate(uvar.variables):
+
         var_id = tree.insert(data_id, "end", text=f"Variable[{i}]", values=("",))
+        metadata_map[var_id] = {"type": "variable", "varIndex": i, "object": uvar}
+        
         # GUID (editable)
         guid_id = tree.insert(var_id, "end", text="GUID", values=(var.guid,))
         metadata_map[guid_id] = {"type": "guid", "varIndex": i, "object": uvar}
@@ -459,8 +462,9 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
         # nameString (editable)
         name_string_id = tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
         metadata_map[name_string_id] = {"type": "nameString", "varIndex": i, "object": uvar}
-        # floatOffset and uknOffset (non-editable)
+        # floatOffset (non-editable)
         tree.insert(var_id, "end", text="floatOffset", values=(var.floatOffset,))
+        # uknOffset (non-editable)
         tree.insert(var_id, "end", text="uknOffset", values=(var.uknOffset,))
         # typeVal (editable)
         type_val_id = tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
@@ -470,20 +474,16 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
         # nameHash (editable)
         name_hash_id = tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
         metadata_map[name_hash_id] = {"type": "varNameHash", "varIndex": i, "object": uvar}
-
-        # --- Split Value Fields ---
-        # Get the underlying float value and its int representation.
+        # Value fields (split into float and int)
         if i < len(uvar.values):
             f_val = uvar.values[i]
             i_val = struct.unpack("<I", struct.pack("<f", f_val))[0]
         else:
             f_val = 0.0
             i_val = 0
-        # Insert Value (float)
         value_float_text = f"{f_val:.4f}"
         value_float_id = tree.insert(var_id, "end", text="Value (float)", values=(value_float_text,))
         metadata_map[value_float_id] = {"type": "value_float", "varIndex": i, "object": uvar}
-        # Insert Value (int)
         value_int_text = f"{i_val}"
         value_int_id = tree.insert(var_id, "end", text="Value (int)", values=(value_int_text,))
         metadata_map[value_int_id] = {"type": "value_int", "varIndex": i, "object": uvar}
@@ -540,6 +540,14 @@ class UvarHandler(FileHandler):
         menu = tk.Menu(tree, tearoff=0)
         if meta is None:
             return menu
+
+        # If the node represents a variable container node, allow deletion.
+        if meta.get("type") == "variable" or "varIndex" in meta:
+            menu.add_command(
+                label="Delete Variable",
+                command=lambda: self._delete_variable(meta["object"], meta["varIndex"], tree.winfo_toplevel())
+            )
+
         if meta.get("type") == "uvarFile":
             uvar_obj = meta.get("object")
             if uvar_obj:
@@ -553,6 +561,7 @@ class UvarHandler(FileHandler):
                         label="Add Variables...",
                         command=lambda: self._open_add_variables_dialog(uvar_obj, tree.winfo_toplevel())
                     )
+
         menu.add_command(
             label="Copy",
             command=lambda: self._copy_field(tree, row_id)
@@ -667,6 +676,43 @@ class UvarHandler(FileHandler):
         except Exception as e:
             messagebox.showerror("Error", f"An exception occurred: {e}")
             return
+
+    def _delete_variable(self, target, var_index, parent):
+        
+        confirm = messagebox.askyesno("Confirm Deletion",
+                                      f"Are you sure you want to delete variable at index {var_index}?",
+                                      parent=parent)
+        if not confirm:
+            return
+        try:
+            
+            del target.variables[var_index]
+            target.variableCount = len(target.variables)
+
+            # Update the strings block.
+            title = target.strings[0] if target.strings else ""
+            target.strings = [title] + [v.nameString for v in target.variables]
+
+            # Recalculate auxiliary arrays.
+            target.guids = [v.guid for v in target.variables]
+            target.guidMap = list(range(target.variableCount))
+            target.nameHashes = [v.nameHash for v in target.variables]
+            target.nameHashMap = list(range(target.variableCount))
+            # Update the values array: trim if too long, or extend with 0.0 if needed.
+            if len(target.values) > target.variableCount:
+                target.values = target.values[:target.variableCount]
+            while len(target.values) < target.variableCount:
+                target.values.append(0.0)
+
+            #  find top-level UVAR and rebuild.
+            current = target
+            while current.parent:
+                current = current.parent
+            current.rebuild()
+            # Refresh the tree view using the app reference.
+            self.app.refresh_tree()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete variable: {e}", parent=parent)
 
     def add_variables(self, target, prefix: str, count: int):
         MAX_VARIABLES = 65535
