@@ -9,13 +9,11 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 
-from file_handlers.uvar_handler import UvarHandler, VariableEntry, murmur3_hash
+from file_handlers.uvar_handler import UvarHandler
 
 # ----------------- User Settings -----------------
 SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".reasy_editor_settings.json")
-DEFAULT_SETTINGS = {
-    "dark_mode": True
-}
+DEFAULT_SETTINGS = {"dark_mode": True}
 
 GLOBAL_DARK_MODE = False
 
@@ -79,7 +77,6 @@ class REasyEditorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("REasy Editor v0.0.1")
-        self.handler = None
         self.filename = None
         self.search_results = []
         self.current_result_index = 0
@@ -88,6 +85,11 @@ class REasyEditorApp:
         self.settings = load_settings()
         self.dark_mode = self.settings.get("dark_mode", False)
         self._update_global_dark_mode()
+
+        # Create the handler and set the app reference and refresh callback
+        self.handler = UvarHandler()
+        self.handler.app = self
+        self.handler.refresh_tree_callback = self.refresh_tree
 
         self.style = ttk.Style()
         default_font = ("Segoe UI", 10)
@@ -168,18 +170,20 @@ class REasyEditorApp:
         self.result_listbox = None
         self.result_scrollbar = None
         self.result_label = None
-        self.case_var = tk.IntVar(value=0)  # 0: case-insensitive, 1: case-sensitive
+        self.case_var = tk.IntVar(value=0)  # 0: case‑insensitive, 1: case‑sensitive
 
         self.set_dark_mode(self.dark_mode)
 
-    # ---------- Helper to Get Style Options ----------
+    def _update_global_dark_mode(self):
+        global GLOBAL_DARK_MODE
+        GLOBAL_DARK_MODE = self.dark_mode
+
     def get_style_options(self):
         if self.dark_mode:
             return {"bg": "#2b2b2b", "fg": "white"}
         else:
             return {"bg": "SystemButtonFace", "fg": "black"}
 
-    # ---------- Helper to Save/Restore Tree State Recursively ----------
     def save_tree_state(self):
         state = {}
         state['yview'] = self.tree.yview()
@@ -218,7 +222,6 @@ class REasyEditorApp:
                     self.tree.focus(node)
                     break
 
-    # ---------- Dialog Helper ----------
     def create_dialog(self, title, geometry=None):
         win = tk.Toplevel(self.root)
         win.title(title)
@@ -227,7 +230,6 @@ class REasyEditorApp:
         bg = win.cget("bg")
         return win, bg
 
-    # ---------- Dark Mode Methods ----------
     def set_dark_mode(self, state):
         self.dark_mode = state
         if state:
@@ -243,16 +245,11 @@ class REasyEditorApp:
             self.status_bar.configure(background="SystemButtonFace", foreground="black")
         self._update_global_dark_mode()
 
-    def _update_global_dark_mode(self):
-        global GLOBAL_DARK_MODE
-        GLOBAL_DARK_MODE = self.dark_mode
-
     def toggle_dark_mode(self):
         self.set_dark_mode(not self.dark_mode)
         self.settings["dark_mode"] = self.dark_mode
         save_settings(self.settings)
 
-    # ---------- GUID Converter ----------
     def open_guid_converter(self):
         win, bg = self.create_dialog("GUID Converter", "400x200")
         opts = self.get_style_options()
@@ -262,6 +259,7 @@ class REasyEditorApp:
         tk.Label(win, text="GUID Standard (hyphenated)", font=("Segoe UI", 10), **opts).pack(pady=5)
         std_entry = tk.Entry(win, width=40, font=("Segoe UI", 10))
         std_entry.pack(pady=2)
+
         def mem_to_std():
             mem_str = mem_entry.get().strip()
             mem_str_clean = mem_str.replace("-", "").replace("{", "").replace("}", "").replace(" ", "")
@@ -290,93 +288,16 @@ class REasyEditorApp:
         tk.Button(btn_frame, text="Memory -> Standard", command=mem_to_std, font=("Segoe UI", 10)).pack(side="left", padx=5)
         tk.Button(btn_frame, text="Standard -> Memory", command=std_to_mem, font=("Segoe UI", 10)).pack(side="left", padx=5)
 
-    # ---------- Context Menu & Add Variables ----------
-    def get_embedded_uvar_meta(self, row_id):
-        while row_id:
-            meta = self.metadata_map.get(row_id)
-            if meta and meta.get("type") == "uvarFile":
-                return meta, row_id
-            row_id = self.tree.parent(row_id)
-        return None, None
-
     def show_context_menu(self, event):
         clicked_row = self.tree.identify_row(event.y)
         if not clicked_row:
             return
-        meta, uvar_row = self.get_embedded_uvar_meta(clicked_row)
-        menu = tk.Menu(self.tree, tearoff=0)
-        if meta is not None:
-            uvar_obj = meta.get("object")
-            if uvar_obj and uvar_obj.parent is not None:
-                menu.add_command(label="Add Variables...", command=lambda: self.add_variables_to_embedded(uvar_row))
-        menu.add_command(label="Copy", command=lambda: self.copy_to_clipboard())
-        menu.post(event.x_root, event.y_root)
+        meta = self.metadata_map.get(clicked_row)
+        if self.handler:
+            menu = self.handler.get_context_menu(self.tree, clicked_row, meta)
+            if menu:
+                menu.post(event.x_root, event.y_root)
 
-    def add_variables_to_embedded(self, row_id):
-        # Save tree state (scroll, expansion, selection)
-        state = self.save_tree_state()
-        meta = self.metadata_map.get(row_id, {})
-        if meta.get("type") != "uvarFile":
-            return
-        target_uvar = meta["object"]
-        if target_uvar.parent is None:
-            messagebox.showerror("Error", "Cannot add variables to top-level UVAR.")
-            return
-        prefix = simpledialog.askstring("Naming Pattern", "Enter naming prefix for new variables (optional):", parent=self.root)
-        count = simpledialog.askinteger("Add Variables", "Enter number of variables to add:", parent=self.root, minvalue=1)
-        if not count:
-            return
-        try:
-            self.handler.add_variables(target_uvar, prefix, count)
-            # Immediately update the strings array
-            title = target_uvar.strings[0] if target_uvar.strings else ""
-            target_uvar.strings = [title] + [var.nameString for var in target_uvar.variables]
-            self.refresh_tree()
-            self.restore_tree_state(state)
-            messagebox.showinfo("Success", f"{count} new variables added!")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to add variables: {str(e)}")
-
-    # ---------- Save/Restore Tree State (Recursive) ----------
-    def save_tree_state(self):
-        state = {}
-        state['yview'] = self.tree.yview()
-        state['expansion'] = {}
-
-        def save_node(node, path):
-            state['expansion'][path] = self.tree.item(node, "open")
-            for child in self.tree.get_children(node):
-                child_text = self.tree.item(child, "text")
-                save_node(child, path + (child_text,))
-        for node in self.tree.get_children(""):
-            node_text = self.tree.item(node, "text")
-            save_node(node, (node_text,))
-        selected = self.tree.selection()
-        state['selected'] = self.tree.item(selected[0], "text") if selected else None
-        return state
-
-    def restore_tree_state(self, state):
-        if 'yview' in state:
-            self.tree.yview_moveto(state['yview'][0])
-        if 'expansion' in state:
-            exp = state['expansion']
-            def restore_node(node, path):
-                if path in exp and exp[path]:
-                    self.tree.item(node, open=True)
-                for child in self.tree.get_children(node):
-                    child_text = self.tree.item(child, "text")
-                    restore_node(child, path + (child_text,))
-            for node in self.tree.get_children(""):
-                node_text = self.tree.item(node, "text")
-                restore_node(node, (node_text,))
-        if state.get('selected'):
-            for node in self.tree.get_children(""):
-                if self.tree.item(node, "text") == state['selected']:
-                    self.tree.selection_set(node)
-                    self.tree.focus(node)
-                    break
-
-    # ---------- Copy to Clipboard ----------
     def copy_to_clipboard(self, event=None):
         selected = self.tree.selection()
         if not selected:
@@ -387,7 +308,6 @@ class REasyEditorApp:
             self.root.clipboard_append(value)
             messagebox.showinfo("Copied", f"Copied: {value}")
 
-    # ---------- Undo/Redo ----------
     def record_action(self, row_id, old_value, new_value):
         if old_value != new_value:
             self.undo_stack.append((row_id, old_value, new_value))
@@ -426,7 +346,6 @@ class REasyEditorApp:
         self.tree.see(row_id)
         self.update_undo_redo_state()
 
-    # ---------- Find Functionality ----------
     def open_find_dialog(self):
         self.find_window, bg = self.create_dialog("Find in Tree", "350x200")
         opts = self.get_style_options()
@@ -493,7 +412,6 @@ class REasyEditorApp:
             self._highlight_result(self.current_result_index)
 
     def _search_node(self, item, search_text, case_sensitive):
-        # Search only in the "value" column.
         value = str(self.tree.set(item, "value"))
         if not case_sensitive:
             value = value.lower()
@@ -516,7 +434,6 @@ class REasyEditorApp:
             idx = selected_index[0]
             self._highlight_result(idx)
 
-    # ---------- Directory Search Wrappers ----------
     def search_directory_for_number(self):
         import struct
         dirpath = filedialog.askdirectory(title="Select Directory for Number Search")
@@ -570,7 +487,6 @@ class REasyEditorApp:
         if not guid_str:
             return
         try:
-            # Convert standard GUID to a UUID object.
             guid_obj = uuid.UUID(guid_str.strip())
         except Exception as e:
             messagebox.showerror("Error", f"Invalid GUID: {guid_str}\n{e}")
@@ -579,9 +495,7 @@ class REasyEditorApp:
                                             "Enter maximum file size in MB (leave blank for no limit):",
                                             parent=self.root)
         max_size_bytes = max_size_mb * 1024 * 1024 if max_size_mb is not None else None
-
-        # Convert the standard GUID to its memory formats and its hex representation.
-        hex_guid = guid_obj.bytes_le.hex()  # hex string without hyphens
+        hex_guid = guid_obj.bytes_le.hex()
         search_patterns = [guid_obj.bytes_le, guid_obj.bytes, hex_guid.encode("utf-8")]
         result_label_text = f"Files containing GUID {guid_str}:"
         self._search_directory_common(dirpath, search_patterns,
@@ -617,6 +531,7 @@ class REasyEditorApp:
         listbox.config(yscrollcommand=scrollbar.set)
         update_queue = queue.Queue()
         done_flag = [False]
+
         def process_file(fpath):
             if max_size_bytes is not None:
                 try:
@@ -633,6 +548,7 @@ class REasyEditorApp:
             except Exception:
                 return None
             return None
+
         def worker():
             count = 0
             with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -648,6 +564,7 @@ class REasyEditorApp:
                         pass
             update_queue.put(("done",))
         threading.Thread(target=worker, daemon=True).start()
+
         def poll_queue():
             try:
                 while True:
@@ -668,7 +585,6 @@ class REasyEditorApp:
                 progress_label.config(text=f"Done: {total_files} files processed")
         poll_queue()
 
-    # ---------- File I/O ----------
     def on_open(self):
         fn = filedialog.askopenfilename(
             title="Open File",
@@ -679,8 +595,12 @@ class REasyEditorApp:
         with open(fn, "rb") as f:
             data = f.read()
         self.filename = fn
+        # Create a new handler for this file
         self.handler = UvarHandler()
+        self.handler.app = self
+        self.handler.refresh_tree_callback = self.refresh_tree
         self.handler.read(data)
+        # Completely rebuild the tree from scratch
         self.refresh_tree()
         self.status_var.set(f"Loaded: {fn}")
 
@@ -702,6 +622,8 @@ class REasyEditorApp:
         self.status_var.set(f"Saved: {fn}")
 
     def refresh_tree(self):
+        if self.handler:
+            self.handler.uvar.update_strings()
         for cid in self.tree.get_children():
             self.tree.delete(cid)
         self.metadata_map.clear()
@@ -709,8 +631,8 @@ class REasyEditorApp:
             self.handler.populate_treeview(self.tree, "", self.metadata_map)
         for cid in self.tree.get_children():
             self.tree.item(cid, open=True)
+        self.root.update_idletasks()
 
-    # ---------- Double-Click Editing ----------
     def on_double_click(self, event):
         row_id = self.tree.identify_row(event.y)
         col_id = self.tree.identify_column(event.x)
@@ -729,17 +651,14 @@ class REasyEditorApp:
             entry.destroy()
             if new_val == old_val:
                 return
-            # Save the current tree state (open nodes, scroll, selection)
             state = self.save_tree_state()
             if self.handler:
                 self.handler.handle_edit(meta, new_val, old_val, row_id)
                 self.refresh_tree()
                 self.restore_tree_state(state)
-
         entry.bind("<FocusOut>", commit)
         entry.bind("<Return>", commit)
 
-    # ---------- About Dialog ----------
     def show_about(self):
         win, bg = self.create_dialog("About REasy Editor", "450x300")
         opts = self.get_style_options()
@@ -749,12 +668,12 @@ class REasyEditorApp:
             "It supports editing, variable management, and more for UVAR files.\n\n"
             "For more information and updates, visit my GitHub page:"
         )
-        tk.Label(win, text=info_text, font=("Segoe UI", 12), **opts,
-                 justify="left", wraplength=380).pack(pady=(0, 10))
+        tk.Label(win, text=info_text, font=("Segoe UI", 12), **opts, justify="left", wraplength=380).pack(pady=(0, 10))
         link_label = tk.Label(win, text="http://github.com/seifhassine",
                               font=("Segoe UI", 12, "underline"),
                               bg=bg, fg="blue", cursor="hand2")
         link_label.pack()
+
         def open_link(event):
             url = "http://github.com/seifhassine"
             try:
@@ -775,6 +694,8 @@ def main():
             data = f.read()
         app.filename = sys.argv[1]
         app.handler = UvarHandler()
+        app.handler.app = app
+        app.handler.refresh_tree_callback = app.refresh_tree
         app.handler.read(data)
         app.refresh_tree()
         app.status_var.set(f"Loaded: {app.filename}")
