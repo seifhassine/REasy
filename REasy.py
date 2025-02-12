@@ -98,8 +98,9 @@ class REasyEditorApp:
         # Build Menu
         menubar = tk.Menu(root)
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Open...", command=self.on_open)
-        filemenu.add_command(label="Save...", command=self.on_save)
+        filemenu.add_command(label="Open...", command=self.on_open, accelerator="Ctrl+O")
+        filemenu.add_command(label="Save...", command=self.on_save, accelerator="Ctrl+S")
+        filemenu.add_command(label="Reload", command=self.reload_file, accelerator="Ctrl+R")
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=root.quit)
         menubar.add_cascade(label="File", menu=filemenu)
@@ -139,6 +140,9 @@ class REasyEditorApp:
         root.bind("<Control-z>", lambda _: self.undo())
         root.bind("<Control-y>", lambda _: self.redo())
         root.bind("<Control-d>", lambda e: self.toggle_dark_mode())
+        root.bind("<Control-o>", lambda e: self.on_open())
+        root.bind("<Control-s>", lambda e: self.on_save())
+        root.bind("<Control-r>", lambda e: self.reload_file())
 
         self.status_var = tk.StringVar()
         self.status_var.set("No file loaded")
@@ -602,6 +606,22 @@ class REasyEditorApp:
         self.status_var.set(f"Loaded: {fn}")
 
 
+    def reload_file(self):
+        if not self.filename:
+            messagebox.showerror("Error", "No file currently loaded.", parent=self.root)
+            return
+        try:
+            with open(self.filename, "rb") as f:
+                data = f.read()
+            self.handler = get_handler_for_data(data)
+            self.handler.app = self
+            self.handler.refresh_tree_callback = self.refresh_tree
+            self.handler.read(data)
+            self.refresh_tree()
+            self.status_var.set(f"Reloaded: {self.filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to reload file: {e}", parent=self.root)
+
     def on_save(self):
         if not self.handler:
             messagebox.showerror("Error", "No file loaded.")
@@ -663,7 +683,7 @@ class REasyEditorApp:
         tk.Label(win, text="REasy Editor v0.0.2", font=("Segoe UI", 16, "bold"), **opts).pack(pady=(0, 10))
         info_text = (
             "REasy Editor is a quality of life toolkit for modders.\n\n"
-            "It supports editing, variable management, and more for UVAR files.\n\n"
+            "It supports viewing and full editing of UVAR files.\n\n"
             "For more information and updates, visit my GitHub page:"
         )
         tk.Label(win, text=info_text, font=("Segoe UI", 12), **opts, justify="left", wraplength=380).pack(pady=(0, 10))
