@@ -1,10 +1,10 @@
-# REasy Editor v0.0.1
+# REasy Editor v0.0.2
 
 <p align="center">
   <img src="reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
 </p>
 
-**REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and limited editing of UVAR files. It also includes miscellaneous tools to speed up your work. 
+**REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of UVAR files. It also includes miscellaneous tools to speed up your work. 
 I have currently rushed the release and the structure will be improved in the upcoming updates. I have currently only tested and used this on RE4R files.
 
 ## Features
@@ -31,7 +31,7 @@ I have currently rushed the release and the structure will be improved in the up
 ## Unique Use-Cases:
 
 - **Adding New Flags to RE4R:**  
-  I tested adding 10000 new flags (file size went from 2mb to 3.5mb), and tried some of those flags randomly. So far so good, but your testing and feedback are needed. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
+  I tested adding 65000 new flags (file size went from 2mb to ~16mb), and tried some of those flags randomly. So far so good, but your testing and feedback are needed. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
   
 - **Finding all files where some data is referenced:**
   Ever encountered a flag but don't know in which file it is set? This tool allows you to find all locations where that flag is checked/set.
