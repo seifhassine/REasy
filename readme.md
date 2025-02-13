@@ -1,4 +1,4 @@
-# REasy Editor v0.0.3
+# REasy Editor v0.0.4
 
 <p align="center">
   <img src="reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -10,7 +10,10 @@ I have currently rushed the release and the structure will be improved in the up
 ## Features
 
 - **UVAR File Editing:**  
-  View and fully modify UVAR files. Hashing and mapping are taken care of automatically. 
+  View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
+  
+- **RCOL File Viewing (LimiteD Support):**  
+  Only rcol.25 files are supported for now.
   
 - **Flexible Variable Management:**  
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
