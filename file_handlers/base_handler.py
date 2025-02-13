@@ -46,3 +46,11 @@ class FileHandler(ABC):
     def update_strings(self):
         """Update the internal string data (if necessary) before repopulating the tree."""
         pass
+
+    def supports_editing(self) -> bool:
+        """
+        Return True if editing is supported for this file type.
+        Default implementation assumes editing is supported.
+        Handlers that do not support editing should override this method.
+        """
+        return True

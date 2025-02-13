@@ -2,28 +2,15 @@
 
 import struct
 
+
 def align(offset, alignment=16):
     r = offset % alignment
     return offset if r == 0 else offset + (alignment - r)
 
+
 def available(data: bytes, offset: int, size: int) -> bool:
     """Return True if there are at least 'size' bytes remaining in data from offset."""
     return offset + size <= len(data)
-
-def read_null_terminated_wstring(data, offset, max_chars=65535):
-    chars = []
-    pos = offset
-    count = 0
-    for _ in range(max_chars):
-        if pos + 2 > len(data):
-            break
-        val = struct.unpack_from("<H", data, pos)[0]
-        pos += 2
-        count += 1
-        if val == 0:
-            break
-        chars.append(val)
-    return "".join(chr(c) for c in chars), pos, count
 
 
 def read_null_terminated_wstring(data: bytes, offset: int, max_chars=65535):
