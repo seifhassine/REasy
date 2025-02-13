@@ -12,7 +12,7 @@ I have currently rushed the release and the structure will be improved in the up
 - **UVAR File Editing:**  
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   
-- **RCOL File Viewing (LimiteD Support):**  
+- **RCOL File Viewing (Limited Support):**  
   Only rcol.25 files are supported for now.
   
 - **Flexible Variable Management:**  
