@@ -14,7 +14,7 @@ I have currently rushed the release and the structure will be improved in the up
 <br>
 <br>
 <p align="center">
-   <img src="https://github.com/user-attachments/assets/562f805e-6323-4697-96eb-f2a9d1863baf" alt="REasy Editor Logo" width=50% height=50%">
+   <img src="https://github.com/user-attachments/assets/562f805e-6323-4697-96eb-f2a9d1863baf" alt="REasy Editor Logo" width=60% height=60%">
 </p>
 
 
