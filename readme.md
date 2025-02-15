@@ -1,5 +1,5 @@
 <p align="center">
-# REasy Editor v0.0.4
+REasy Editor v0.0.4
 
 <p align="center">
   <img src="reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
