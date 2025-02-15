@@ -1,3 +1,4 @@
+<p align="center">
 # REasy Editor v0.0.4
 
 <p align="center">
