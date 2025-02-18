@@ -72,5 +72,5 @@ I have currently rushed the release and the structure will be improved in the up
 ## License, Contributions:
 
 REasy is under MIT license.
-You are wlecome to contribute to the project I am currently active and will review PRs.
+You are wlecome to contribute to the project. I am currently active and will review PRs.
 
