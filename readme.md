@@ -17,8 +17,23 @@ I have currently rushed the release and the structure will be improved in the up
    <img src="https://github.com/user-attachments/assets/562f805e-6323-4697-96eb-f2a9d1863baf" alt="REasy Editor Logo" width=60% height=60%">
 </p>
 
+<br>
+
 
 ## Features
+
+<br>
+<div align="center">
+  
+| File Type | Viewing | Editing | Tested On |
+|-----------|---------|---------|-----------|
+| UVAR      | ✅       | ✅       | RE4, RE2  |
+| RCOL      | ✅       | ❌       | RE4       |
+| SCN       | ✅       | ❌       | RE4       |
+  
+</div>
+<br>
+<br>
 
 - **UVAR File Editing:**  
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
@@ -42,6 +57,8 @@ I have currently rushed the release and the structure will be improved in the up
 
 - **Dark Mode:**  
   Toggle a dark mode theme that applies to all dialogs and windows.
+
+
 
 ## Unique Use-Cases:
 
