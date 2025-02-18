@@ -69,7 +69,8 @@ I have currently rushed the release and the structure will be improved in the up
 @alphazolam for the uvar template.
 @TrikzMe for RE's MurMurHash3 
 
-## Contributions:
+## License, Contributions:
 
-You are wlecome to contribute to the project. I am currently active and will review PRs.
+REasy is under MIT license.
+You are wlecome to contribute to the project I am currently active and will review PRs.
 
