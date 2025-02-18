@@ -68,6 +68,7 @@ I have currently rushed the release and the structure will be improved in the up
 
 @alphazolam for the uvar template.
 @TrikzMe for RE's MurMurHash3 
+@praydog, for making the RSZ JSON dumps
 
 ## License, Contributions:
 
