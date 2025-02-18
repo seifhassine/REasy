@@ -38,8 +38,8 @@ I have currently rushed the release and the structure will be improved in the up
 - **UVAR File Editing:**  
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   
-- **RCOL File Viewing (Limited Support):**  
-  Only rcol.25 files are supported for now.
+- **RCOL/SCN File Viewing (Limited Support):**  
+  Rcol.25 and SCN files are supported for viewing only at the moment.
   
 - **Flexible Variable Management:**  
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
