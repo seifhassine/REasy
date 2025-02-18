@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 from file_handlers.factory import get_handler_for_data
 from settings import load_settings, save_settings
 import sys
-from console_logger import StdoutRedirector, setup_console_logging, ConsoleRedirector
+from ui.console_logger import StdoutRedirector, setup_console_logging, ConsoleRedirector
 
 # Cache resource paths
 _RESOURCE_CACHE = {}
@@ -36,20 +36,26 @@ def create_standard_dialog(root, title, geometry=None):
 
 
 def resource_path(relative_path):
-    if relative_path in _RESOURCE_CACHE:
-        return _RESOURCE_CACHE[relative_path]
+    """Get absolute path to resource, works for dev and for PyInstaller"""
     try:
+        # PyInstaller creates atemp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
-    path = os.path.join(base_path, relative_path)
-    _RESOURCE_CACHE[relative_path] = path
-    return path
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    full_path = os.path.join(base_path, relative_path)
+    if not os.path.exists(full_path):
+        # Fallback to checking relative to working directory
+        full_path = os.path.join(os.getcwd(), relative_path)
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"Could not find resource: {relative_path}")
+            
+    return full_path
 
 
 def set_app_icon(window):
     try:
-        icon_path = resource_path("reasy_editor_logo.ico")
+        icon_path = resource_path("resources/icons/reasy_editor_logo.ico")
         img = Image.open(icon_path)
         photo = ImageTk.PhotoImage(img)
         window.iconphoto(True, photo)
@@ -66,13 +72,33 @@ class CustomNotebook(ttk.Notebook):
         ttk.Style().theme_use("clam")
         super().__init__(*args, **kwargs)
         self._active = None
-        self._create_custom_style()
+        
+        self.dark_mode = False
+        style = ttk.Style()
+        style.configure('Custom.TNotebook', background='white')
+        self.configure(style='Custom.TNotebook')
+        
+        try:
+            close_path = resource_path("resources/icons/close.png")
+            self.close_img = tk.PhotoImage(file=close_path)
+            self._create_custom_style()
+        except Exception as e:
+            print(f"Warning: Failed to load close button image: {e}")
+            self.close_img = None
+            
         self.bind("<ButtonPress-1>", self._on_close_press, True)
         self.bind("<ButtonRelease-1>", self._on_close_release, True)
 
+    def set_dark_mode(self, is_dark):
+        """Update notebook background color based on dark mode setting"""
+        self.dark_mode = is_dark
+        style = ttk.Style()
+        bg_color = "#2b2b2b" if is_dark else "white"
+        style.configure('Custom.TNotebook', background=bg_color)
+
     def _create_custom_style(self):
         style = ttk.Style()
-        self.close_img = tk.PhotoImage(file=resource_path("close.png"))
+        self.close_img = tk.PhotoImage(file=resource_path("resources/icons/close.png"))
         try:
             style.element_create(
                 "Custom.Close", "image", self.close_img, border=4, sticky=""
@@ -177,7 +203,7 @@ class FileTab:
         self.dark_mode = self.app.dark_mode if self.app else False
         if data:
             self.load_file(filename, data)
-
+                
     def load_file(self, filename, data):
         self.filename = filename
         self.handler = get_handler_for_data(data)
@@ -188,7 +214,7 @@ class FileTab:
         self.status_var.set(
             f"Loaded{' (Read Only)' if not self.handler.supports_editing() else ''}: {filename}"
         )
-
+        
     def update_tab_title(self):
         tab_title = os.path.basename(self.filename) if self.filename else "Untitled"
         if self.modified:
@@ -236,10 +262,10 @@ class FileTab:
             new_val = entry.get()
             entry.destroy()
             if new_val != old_val and self.handler:
-                state = self.save_tree_state()
+                state = self.handler.save_tree_state(self.tree)
                 self.handler.handle_edit(meta, new_val, old_val, row)
                 self.refresh_tree()
-                self.restore_tree_state(state)
+                self.handler.restore_tree_state(self.tree, state)
                 self.modified = True
                 self.update_tab_title()
 
@@ -247,35 +273,15 @@ class FileTab:
         entry.bind("<Return>", commit)
 
     def save_tree_state(self):
-        state = {"yview": self.tree.yview(), "expansion": {}}
-        stack = [(self.tree.get_children(""), ())]
-        while stack:
-            nodes, path = stack.pop()
-            for node in nodes:
-                text = self.tree.item(node, "text")
-                new_path = path + (text,)
-                state["expansion"][new_path] = self.tree.item(node, "open")
-                stack.append((self.tree.get_children(node), new_path))
-        selected = self.tree.selection()
-        state["selected"] = self.tree.item(selected[0], "text") if selected else None
-        return state
+        active = self.get_active_tab()
+        if active:
+            return active.handler.save_tree_state(active.tree)
+        return {}
 
     def restore_tree_state(self, state):
-        if "expansion" in state:
-            stack = [(self.tree.get_children(""), ())]
-            while stack:
-                nodes, path = stack.pop()
-                for node in nodes:
-                    node_path = path + (self.tree.item(node, "text"),)
-                    if node_path in state["expansion"]:
-                        self.tree.item(node, open=state["expansion"][node_path])
-                    stack.append((self.tree.get_children(node), node_path))
-        if state.get("selected"):
-            for node in self.tree.get_children(""):
-                if self.tree.item(node, "text") == state["selected"]:
-                    self.tree.selection_set(node)
-                    self.tree.focus(node)
-                    break
+        active = self.get_active_tab()
+        if active:
+            active.handler.restore_tree_state(active.tree, state)
 
     def on_save(self):
         if not self.handler:
@@ -293,9 +299,7 @@ class FileTab:
             return
         fname = filedialog.asksaveasfilename(
             title="Save File As...",
-            defaultextension=(
-                os.path.splitext(self.filename)[1] if self.filename else ""
-            ),
+            defaultextension=(os.path.splitext(self.filename)[1] if self.filename else ""),
             filetypes=[("All Files", "*.*")],
         )
         if not fname:
@@ -354,9 +358,7 @@ class FileTab:
             self.find_window.lift()
             return
         parent = self.parent_notebook.winfo_toplevel()
-        self.find_window, bg = create_standard_dialog(
-            self.app.root, "Find in Tree", "350x200"
-        )
+        self.find_window, bg = create_standard_dialog(self.app.root, "Find in Tree", "350x200")
         opts = self.get_style_options()
         tk.Label(
             self.find_window, text="Find:", font=("Segoe UI", 10), bg=bg, fg=opts["fg"]
@@ -412,9 +414,7 @@ class FileTab:
 
     def find_all(self):
         if not self.search_entry:
-            messagebox.showerror(
-                "Error", "Find dialog not open.", parent=self.find_window
-            )
+            messagebox.showerror("Error", "Find dialog not open.", parent=self.find_window)
             return
         search_text = self.search_entry.get().strip()
         if not search_text:
@@ -435,9 +435,7 @@ class FileTab:
         bg = self.find_window.cget("bg")
         self.result_frame.config(bg=bg)
         if not self.search_results:
-            messagebox.showinfo(
-                "Search", f'No results for "{search_text}"', parent=self.find_window
-            )
+            messagebox.showinfo("Search", f'No results for "{search_text}"', parent=self.find_window)
             return
         opts = self.get_style_options()
         tk.Label(
@@ -455,15 +453,11 @@ class FileTab:
             fg=("white" if self.app.dark_mode else "black"),
         )
         self.result_listbox.pack(side="left", fill="both", expand=True)
-        scrollbar = ttk.Scrollbar(
-            self.result_frame, orient="vertical", command=self.result_listbox.yview
-        )
+        scrollbar = ttk.Scrollbar(self.result_frame, orient="vertical", command=self.result_listbox.yview)
         scrollbar.pack(side="right", fill="y")
         self.result_listbox.configure(yscrollcommand=scrollbar.set)
         for item in self.search_results:
-            self.result_listbox.insert(
-                "end", f"{self.tree.item(item, 'text')}: {self.tree.set(item, 'value')}"
-            )
+            self.result_listbox.insert("end", f"{self.tree.item(item, 'text')}: {self.tree.set(item, 'value')}")
         self.result_listbox.bind("<Double-1>", self._jump_to_selected)
         self.current_result_index = 0
         self._highlight_result(self.current_result_index)
@@ -472,18 +466,14 @@ class FileTab:
         if not self.search_results:
             self.find_all()
         if self.search_results:
-            self.current_result_index = (self.current_result_index + 1) % len(
-                self.search_results
-            )
+            self.current_result_index = (self.current_result_index + 1) % len(self.search_results)
             self._highlight_result(self.current_result_index)
 
     def find_previous(self):
         if not self.search_results:
             self.find_all()
         if self.search_results:
-            self.current_result_index = (self.current_result_index - 1) % len(
-                self.search_results
-            )
+            self.current_result_index = (self.current_result_index - 1) % len(self.search_results)
             self._highlight_result(self.current_result_index)
 
     def _highlight_result(self, index):
@@ -500,19 +490,16 @@ class FileTab:
 
     def get_style_options(self):
         dark = self.app.dark_mode if self.app else False
-        return (
-            {"fg": "white", "bg": "#2b2b2b"} if dark else {"fg": "black", "bg": "white"}
-        )
+        return {"fg": "white", "bg": "#2b2b2b"} if dark else {"fg": "black", "bg": "white"}
 
 
 class REasyEditorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("REasy Editor v0.0.4")
+        self.root.title("REasy Editor v0.0.5")
         self.root.protocol("WM_DELETE_WINDOW", self.on_quit)
         self.settings = load_settings()
         self.dark_mode = self.settings.get("dark_mode", False)
-        # Attach dark_mode flag to root for dialogs
         self.root.dark_mode = self.dark_mode
         self.style = ttk.Style()
         default_font = ("Segoe UI", 10)
@@ -522,6 +509,7 @@ class REasyEditorApp:
         self.notebook = CustomNotebook(root)
         self.notebook.pack(side="top", fill="both", expand=True)
         self.notebook.app_instance = self
+        self.notebook.set_dark_mode(self.dark_mode) 
         self.tabs = weakref.WeakValueDictionary()
 
         def new_on_close_release(event):
@@ -535,53 +523,25 @@ class REasyEditorApp:
         self.notebook._on_close_release = new_on_close_release
         menubar = tk.Menu(root)
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(
-            label="Open...", command=self.on_open, accelerator="Ctrl+O"
-        )
+        filemenu.add_command(label="Open...", command=self.on_open, accelerator="Ctrl+O")
         filemenu.add_command(label="Save", command=self.on_save, accelerator="Ctrl+S")
-        filemenu.add_command(
-            label="Reload", command=self.reload_file, accelerator="Ctrl+R"
-        )
+        filemenu.add_command(label="Reload", command=self.reload_file, accelerator="Ctrl+R")
         filemenu.add_separator()
         filemenu.add_command(label="Settings", command=self.open_settings_dialog)
         filemenu.add_command(label="Exit", command=root.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         self.editmenu = tk.Menu(menubar, tearoff=0)
-        self.editmenu.add_command(
-            label="Copy", accelerator="Ctrl+C", command=self.copy_to_clipboard
-        )
+        self.editmenu.add_command(label="Copy", accelerator="Ctrl+C", command=self.copy_to_clipboard)
         menubar.add_cascade(label="Edit", menu=self.editmenu)
         findmenu = tk.Menu(menubar, tearoff=0)
-        findmenu.add_command(
-            label="Find", command=self.open_find_dialog, accelerator="Ctrl+F"
-        )
-        findmenu.add_command(
-            label="Search Directory for GUID",
-            command=self.search_directory_for_guid,
-            accelerator="Ctrl+G",
-        )
-        findmenu.add_command(
-            label="Search Directory for Text",
-            command=self.search_directory_for_text,
-            accelerator="Ctrl+T",
-        )
-        findmenu.add_command(
-            label="Search Directory for Number",
-            command=self.search_directory_for_number,
-            accelerator="Ctrl+N",
-        )
+        findmenu.add_command(label="Find", command=self.open_find_dialog, accelerator="Ctrl+F")
+        findmenu.add_command(label="Search Directory for GUID", command=self.search_directory_for_guid, accelerator="Ctrl+G")
+        findmenu.add_command(label="Search Directory for Text", command=self.search_directory_for_text, accelerator="Ctrl+T")
+        findmenu.add_command(label="Search Directory for Number", command=self.search_directory_for_number, accelerator="Ctrl+N")
         menubar.add_cascade(label="Find", menu=findmenu)
         viewmenu = tk.Menu(menubar, tearoff=0)
-        viewmenu.add_command(
-            label="Toggle Dark Mode",
-            command=self.toggle_dark_mode,
-            accelerator="Ctrl+D",
-        )
-        viewmenu.add_command(
-            label="Toggle Debug Console",
-            command=self.toggle_debug_console,
-            accelerator="Ctrl+Shift+D",
-        )
+        viewmenu.add_command(label="Toggle Dark Mode", command=self.toggle_dark_mode, accelerator="Ctrl+D")
+        viewmenu.add_command(label="Toggle Debug Console", command=self.toggle_debug_console, accelerator="Ctrl+Shift+D")
         menubar.add_cascade(label="View", menu=viewmenu)
         tools_menu = tk.Menu(menubar, tearoff=0)
         tools_menu.add_command(label="GUID Converter", command=self.open_guid_converter)
@@ -606,13 +566,13 @@ class REasyEditorApp:
         self.case_var = tk.IntVar(value=0)
         self.apply_theme()
         self.bind_notebook()
-        self.console_frame = tk.Frame(self.root, bg="#333333")  # dark grey background
+        self.console_frame = tk.Frame(self.root, bg="#333333")
         self.console_frame.pack(side="bottom", fill="both")
         self.console = ScrolledText(
             self.console_frame,
             height=8,
-            bg="#000000",  # black background for console look
-            fg="#00FF00",  # green text
+            bg="#000000",
+            fg="#00FF00",
             font=("Courier New", 10),
             state="disabled",
             wrap="none",
@@ -631,7 +591,6 @@ class REasyEditorApp:
             self.console_text = None
 
     def handle_missing_json(self):
-        # Prompt the user for a JSON file path.
         messagebox.showwarning(
             "Missing JSON",
             "A valid JSON file is required for processing RCOL files.\nPlease select a JSON file.",
@@ -701,9 +660,7 @@ class REasyEditorApp:
         if active and hasattr(active, "open_find_dialog"):
             active.open_find_dialog()
         else:
-            messagebox.showerror(
-                "Error", "No active tab for searching.", parent=self.root
-            )
+            messagebox.showerror("Error", "No active tab for searching.", parent=self.root)
 
     def open_settings_dialog(self):
         win, bg = create_standard_dialog(self.root, "Settings", "400x250")
@@ -715,9 +672,7 @@ class REasyEditorApp:
             fg=("white" if self.dark_mode else "black"),
         ).pack(pady=5)
         json_var = tk.StringVar(value=self.settings.get("rcol_json_path", ""))
-        json_entry = tk.Entry(
-            win, textvariable=json_var, width=40, font=("Segoe UI", 10)
-        )
+        json_entry = tk.Entry(win, textvariable=json_var, width=40, font=("Segoe UI", 10))
         json_entry.pack(pady=5)
         tk.Button(
             win,
@@ -757,9 +712,7 @@ class REasyEditorApp:
         def on_ok():
             new_json_path = json_var.get().strip()
             if not new_json_path or not os.path.exists(new_json_path):
-                messagebox.showerror(
-                    "Error", "Please select a valid JSON file.", parent=win
-                )
+                messagebox.showerror("Error", "Please select a valid JSON file.", parent=win)
                 return
             self.settings["rcol_json_path"] = new_json_path
             self.dark_mode = dark_var.get()
@@ -767,7 +720,6 @@ class REasyEditorApp:
             self.settings["debug_console"] = debug_var.get()
             save_settings(self.settings)
             self.set_dark_mode(self.dark_mode)
-            # Optionally, call a method here to show/hide the debug console area
             if hasattr(self, "toggle_debug_console"):
                 self.toggle_debug_console(debug_var.get())
             win.destroy()
@@ -775,12 +727,8 @@ class REasyEditorApp:
         def on_cancel():
             win.destroy()
 
-        tk.Button(button_frame, text="OK", font=("Segoe UI", 10), command=on_ok).pack(
-            side="left", padx=5
-        )
-        tk.Button(
-            button_frame, text="Cancel", font=("Segoe UI", 10), command=on_cancel
-        ).pack(side="left", padx=5)
+        tk.Button(button_frame, text="OK", font=("Segoe UI", 10), command=on_ok).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Cancel", font=("Segoe UI", 10), command=on_cancel).pack(side="left", padx=5)
 
     def search_directory_for_number(self):
         dpath = filedialog.askdirectory(title="Select Directory for Number Search")
@@ -801,34 +749,26 @@ class REasyEditorApp:
             return
         shex = sbytes.hex().upper()
         rtext = f"Files containing number {snum} (Hex: {shex}):"
-        self._search_directory_common(
-            dpath, [sbytes], "Number Search Progress", rtext, max_bytes
-        )
+        self._search_directory_common(dpath, [sbytes], "Number Search Progress", rtext, max_bytes)
 
     def search_directory_for_text(self):
         dpath = filedialog.askdirectory(title="Select Directory for Text Search")
         if not dpath:
             return
-        stext = simpledialog.askstring(
-            "Text Search", "Enter text to search (UTF-16LE):", parent=self.root
-        )
+        stext = simpledialog.askstring("Text Search", "Enter text to search (UTF-16LE):", parent=self.root)
         if not stext:
             return
         max_bytes = self._ask_max_size_bytes()
         p1 = stext.encode("utf-16le")
         p2 = p1 + b"\x00\x00"
         rtext = f"Files containing text '{stext}':"
-        self._search_directory_common(
-            dpath, [p1, p2], "Text Search Progress", rtext, max_bytes
-        )
+        self._search_directory_common(dpath, [p1, p2], "Text Search Progress", rtext, max_bytes)
 
     def search_directory_for_guid(self):
         dpath = filedialog.askdirectory(title="Select Directory for GUID Search")
         if not dpath:
             return
-        gstr = simpledialog.askstring(
-            "GUID Search", "Enter GUID (standard format):", parent=self.root
-        )
+        gstr = simpledialog.askstring("GUID Search", "Enter GUID (standard format):", parent=self.root)
         if not gstr:
             return
         try:
@@ -840,17 +780,13 @@ class REasyEditorApp:
         hex_guid = gobj.bytes_le.hex()
         spats = [gobj.bytes_le, gobj.bytes, hex_guid.encode("utf-8")]
         rtext = f"Files containing GUID {gstr}:"
-        self._search_directory_common(
-            dpath, spats, "GUID Search Progress", rtext, max_bytes
-        )
+        self._search_directory_common(dpath, spats, "GUID Search Progress", rtext, max_bytes)
 
     def _search_directory_common(self, dpath, patterns, ptitle, rtext, max_bytes):
-        # If the size prompt was cancelled, cancel the search.
         if max_bytes is None:
             messagebox.showinfo("Search", "Search cancelled.", parent=self.root)
             return
 
-        # Gather file paths.
         flist = [os.path.join(r, f) for r, _, fs in os.walk(dpath) for f in fs]
         total = len(flist)
         if total == 0:
@@ -863,49 +799,23 @@ class REasyEditorApp:
         pwin.protocol("WM_DELETE_WINDOW", lambda: (cancel_event.set(), pwin.destroy()))
         pwin.update_idletasks()
 
-        # Build progress UI.
         pframe = tk.Frame(pwin, bg=bg)
         pframe.pack(pady=10, padx=10, fill="x")
-        status_label = tk.Label(
-            pframe,
-            text="Gathering files...",
-            bg=bg,
-            fg=("white" if self.dark_mode else "black"),
-        )
+        status_label = tk.Label(pframe, text="Gathering files...", bg=bg, fg=("white" if self.dark_mode else "black"))
         status_label.pack(anchor="w")
         pvar = tk.DoubleVar(value=0)
         pbar = ttk.Progressbar(pframe, variable=pvar, maximum=total, length=300)
         pbar.pack(pady=5)
-        plabel = tk.Label(
-            pframe,
-            text=f"0 / {total} files processed, 0 skipped",
-            bg=bg,
-            fg=("white" if self.dark_mode else "black"),
-        )
+        plabel = tk.Label(pframe, text=f"0 / {total} files processed, 0 skipped", bg=bg, fg=("white" if self.dark_mode else "black"))
         plabel.pack(anchor="w")
-        stop_button = tk.Button(
-            pframe,
-            text="Stop Search",
-            command=lambda: cancel_event.set(),
-            bg=bg,
-            fg=("white" if self.dark_mode else "black"),
-        )
+        stop_button = tk.Button(pframe, text="Stop Search", command=lambda: cancel_event.set(), bg=bg, fg=("white" if self.dark_mode else "black"))
         stop_button.pack(anchor="e", pady=5)
 
         rframe = tk.Frame(pwin, bg=bg)
         rframe.pack(fill="both", expand=True, padx=10, pady=5)
-        tk.Label(
-            rframe, text=rtext, bg=bg, fg=("white" if self.dark_mode else "black")
-        ).pack(anchor="w")
-        lbox = tk.Listbox(
-            rframe,
-            font=("Segoe UI", 10),
-            width=80,
-            height=10,
-            bg=("#2b2b2b" if self.dark_mode else "white"),
-            fg=("white" if self.dark_mode else "black"),
-            selectbackground=("#4a6984" if self.dark_mode else "SystemHighlight"),
-        )
+        tk.Label(rframe, text=rtext, bg=bg, fg=("white" if self.dark_mode else "black")).pack(anchor="w")
+        lbox = tk.Listbox(rframe, font=("Segoe UI", 10), width=80, height=10, bg=("#2b2b2b" if self.dark_mode else "white"),
+                           fg=("white" if self.dark_mode else "black"), selectbackground=("#4a6984" if self.dark_mode else "SystemHighlight"))
         lbox.pack(side="left", fill="both", expand=True)
         sb = ttk.Scrollbar(rframe, orient="vertical", command=lbox.yview)
         sb.pack(side="right", fill="y")
@@ -958,10 +868,7 @@ class REasyEditorApp:
         def start_search():
             threading.Thread(target=search_worker, daemon=True).start()
 
-        # Update UI to show gathering phase is done.
-        self.root.after(
-            0, lambda: status_label.config(text=f"{total} files gathered. Searching...")
-        )
+        self.root.after(0, lambda: status_label.config(text=f"{total} files gathered. Searching..."))
         start_search()
 
         def poll_queue():
@@ -971,9 +878,7 @@ class REasyEditorApp:
                     if msg[0] == "progress":
                         pvar.set(msg[1])
                         if plabel.winfo_exists():
-                            plabel.config(
-                                text=f"{msg[1]} / {msg[2]} files processed, {skipped_count[0]} skipped"
-                            )
+                            plabel.config(text=f"{msg[1]} / {msg[2]} files processed, {skipped_count[0]} skipped")
                     elif msg[0] == "result":
                         if lbox.winfo_exists():
                             lbox.insert("end", msg[1])
@@ -981,16 +886,12 @@ class REasyEditorApp:
                         done_flag[0] = True
                         final_count = msg[1]
                         if plabel.winfo_exists():
-                            plabel.config(
-                                text=f"Done: {final_count} / {msg[2]} files processed, {skipped_count[0]} skipped"
-                            )
+                            plabel.config(text=f"Done: {final_count} / {msg[2]} files processed, {skipped_count[0]} skipped")
                     elif msg[0] == "cancelled":
                         done_flag[0] = True
                         final_count = msg[1]
                         if plabel.winfo_exists():
-                            plabel.config(
-                                text=f"Cancelled: {final_count} / {msg[2]} files processed, {skipped_count[0]} skipped"
-                            )
+                            plabel.config(text=f"Cancelled: {final_count} / {msg[2]} files processed, {skipped_count[0]} skipped")
             except queue.Empty:
                 pass
             if not pwin.winfo_exists():
@@ -1022,6 +923,7 @@ class REasyEditorApp:
                 foreground="black",
                 fieldbackground="white",
             )
+        self.notebook.set_dark_mode(state) 
         self.apply_theme()
 
     def toggle_dark_mode(self):
@@ -1043,12 +945,7 @@ class REasyEditorApp:
                     wrap="none",
                 )
                 self.console.pack(fill="both", expand=True)
-                from console_logger import (
-                    StdoutRedirector,
-                    setup_console_logging,
-                    ConsoleRedirector,
-                )
-
+                from console_logger import StdoutRedirector, setup_console_logging, ConsoleRedirector
                 setup_console_logging(self.console)
                 sys.stdout = StdoutRedirector(self.console)
                 sys.stderr = ConsoleRedirector(self.console, sys.stderr)
@@ -1084,14 +981,7 @@ class REasyEditorApp:
         std_entry.pack(pady=2)
 
         def mem_to_std():
-            ms = (
-                mem_entry.get()
-                .strip()
-                .replace("-", "")
-                .replace("{", "")
-                .replace("}", "")
-                .replace(" ", "")
-            )
+            ms = mem_entry.get().strip().replace("-", "").replace("{", "").replace("}", "").replace(" ", "")
             try:
                 if len(ms) != 32:
                     raise ValueError("Must be 32 hex digits.")
@@ -1106,41 +996,30 @@ class REasyEditorApp:
                 g = uuid.UUID(std_entry.get().strip())
                 hex_mem = g.bytes_le.hex()
                 std_entry.delete(0, tk.END)
-                std_entry.insert(
-                    0,
-                    f"{hex_mem[0:8]}-{hex_mem[8:12]}-{hex_mem[12:16]}-{hex_mem[16:20]}-{hex_mem[20:32]}",
-                )
+                std_entry.insert(0, f"{hex_mem[0:8]}-{hex_mem[8:12]}-{hex_mem[12:16]}-{hex_mem[16:20]}-{hex_mem[20:32]}")
             except Exception as e:
                 messagebox.showerror("Error", f"Conversion error: {e}")
 
         btn_frame = tk.Frame(win, bg=bg)
         btn_frame.pack(pady=10)
-        tk.Button(
-            btn_frame,
-            text="Memory -> Standard",
-            command=mem_to_std,
-            font=("Segoe UI", 10),
-        ).pack(side="left", padx=5)
-        tk.Button(
-            btn_frame,
-            text="Standard -> Memory",
-            command=std_to_mem,
-            font=("Segoe UI", 10),
-        ).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Memory -> Standard", command=mem_to_std, font=("Segoe UI", 10)).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Standard -> Memory", command=std_to_mem, font=("Segoe UI", 10)).pack(side="left", padx=5)
 
     def show_about(self):
-        win, bg = create_standard_dialog(self.root, "About REasy Editor", "450x200")
+        win, bg = create_standard_dialog(self.root, "About REasy Editor", "450x250")
+        win.resizable(False, False)
         tk.Label(
             win,
-            text="REasy Editor v0.0.4",
+            text="REasy Editor v0.0.5",
             font=("Segoe UI", 16, "bold"),
             bg=bg,
+            justify='center',
             fg=("white" if self.dark_mode else "black"),
         ).pack(pady=(0, 10))
         info = (
             "REasy Editor is a quality of life toolkit for modders.\n\n"
             "It supports viewing and full editing of UVAR files.\n\n"
-            "Viewing of rcol.25 files is also supported.\n\n"
+            "Viewing of rcol.25 and scn fiels is also supported.\n\n"
             "For more information, visit my GitHub page:"
         )
         tk.Label(
@@ -1149,7 +1028,7 @@ class REasyEditorApp:
             font=("Segoe UI", 12),
             bg=bg,
             fg=("white" if self.dark_mode else "black"),
-            justify="left",
+            justify="center",
             wraplength=380,
         ).pack(pady=(0, 10))
         link = tk.Label(
@@ -1161,9 +1040,7 @@ class REasyEditorApp:
             cursor="hand2",
         )
         link.pack()
-        link.bind(
-            "<Button-1>", lambda _e: os.startfile("http://github.com/seifhassine")
-        )
+        link.bind("<Button-1>", lambda _e: os.startfile("http://github.com/seifhassine"))
         win.grab_set()
         self.root.wait_window(win)
 
@@ -1199,10 +1076,7 @@ class REasyEditorApp:
     def on_open(self):
         fn = filedialog.askopenfilename(
             title="Open File",
-            filetypes=[
-                ("UVAR, RCOL Files", ["*.uvar", "*.uvar.*", "*.rcol.25"]),
-                ("All Files", "*.*"),
-            ],
+            filetypes=[("UVAR, SCN, RCOL Files", ["*.uvar", "*.uvar.*", "*scn.20", "*.rcol.25"]), ("All Files", "*.*")],
         )
         if not fn:
             return

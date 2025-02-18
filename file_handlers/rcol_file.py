@@ -249,7 +249,7 @@ class RcolUserDataFull:
             )
 
     def group_data(self, debug=False):
-        # Build groups as before.
+        # Build groups
         child_set = set(self.object_table)
         main_indices = [
             i for i in range(1, len(self.instance_infos)) if i not in child_set
@@ -366,10 +366,24 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list, debug=True)
     for index, field in enumerate(fields_def):
         field_name = field.get("name", "<unnamed>")
         ftype = field.get("type", "Unknown").lower()
-        # For non-string types, use JSON "size" if provided (default to 4)
         fsize = field.get("size", 4)
+
+        # === Pre-read Alignment ===
+        if "align" in field:
+            align_val = int(field["align"])
+            new_pos = align_offset(pos, align_val)
+            if debug and new_pos != pos:
+                print(
+                    f"DEBUG: Pre-aligning field '{field_name}' from {pos:#x} to {new_pos:#x} (alignment {align_val})"
+                )
+            pos = new_pos
+
         if debug:
-            print(f"DEBUG: Field '{field_name}' (type: {ftype}) at pos {pos:#x}")
+            print(
+                f"DEBUG: Reading field '{field_name}' (type: {ftype}) at pos {pos:#x}"
+            )
+
+        # === Field Reading ===
         if ftype == "bool":
             if pos + 1 > len(raw):
                 value = "N/A"
@@ -410,9 +424,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list, debug=True)
             pos += 4
             subresults = []
         elif ftype == "string":
-            # The JSON "size" for string fields indicates how many bytes are used for the size field.
-            # The next 4 bytes contain a number that represents how many characters the string has.
-            # Since the string is stored as UTF-16-LE, the actual byte count is that value multiplied by 2.
+            
             size_field_bytes = field.get("size", 4)
             if debug:
                 print(
@@ -423,10 +435,9 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list, debug=True)
                 pos += size_field_bytes
             else:
                 size_field_data = raw[pos : pos + size_field_bytes]
-                # Read the size value (number of characters)
+                
                 size_val = struct.unpack_from("<I", raw, pos)[0]
-                # Actual string bytes = number_of_characters * 2
-                str_byte_count = size_val * 2
+                str_byte_count = size_val * 2  # UTF-16-LE encoding
                 if debug:
                     print(
                         f"DEBUG: Field '{field_name}': size field raw: {size_field_data.hex()} -> {size_val} characters -> {str_byte_count} bytes"
@@ -445,6 +456,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list, debug=True)
                     pos += str_byte_count
             subresults = []
         else:
+            # Fallback: read fsize bytes and show their hex representation.
             if pos + fsize > len(raw):
                 value = "N/A"
             else:
@@ -455,22 +467,15 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list, debug=True)
             pos += fsize
             subresults = []
 
+        # Recursively parse any nested fields.
         if "fields" in field and field["fields"]:
             subresults, pos = parse_instance_fields(
                 raw, pos, field["fields"], debug=debug
             )
 
         results.append({"name": field_name, "value": value, "subfields": subresults})
-        # If an "align" attribute is specified for this field, adjust pos accordingly.
-        if "align" in field:
-            align_val = int(field["align"])
-            new_pos = align_offset(pos, align_val)
-            if debug and new_pos != pos:
-                print(
-                    f"DEBUG: Aligning field '{field_name}' from {pos:#x} to {new_pos:#x} (alignment {align_val})"
-                )
-            pos = new_pos
-    # Finally, force the entire instance block to align to 4 bytes.
+
+    #  force the entire instance block to align to 4 bytes.
     new_pos = align_offset(pos, 4)
     if debug and new_pos != pos:
         print(f"DEBUG: Final instance alignment: moving from {pos:#x} to {new_pos:#x}")
@@ -693,7 +698,7 @@ class RcolRequestSet:
         offset += 8
         self.keyhash, self.keyhash2 = struct.unpack_from("<II", data, offset)
         offset += 8
-        # For now, simply store the raw offset values as hex strings.
+        
         self.name = f"0x{self.name_offset:X}"
         self.keyname = f"0x{self.keyname_offset:X}"
         return offset

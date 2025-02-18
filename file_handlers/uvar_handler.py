@@ -10,11 +10,10 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 from collections import defaultdict
 
 from file_handlers.base_handler import FileHandler
-from utils.hash_util import murmur3_hash
-from utils.hex_util import *
+from utils.hash_util import murmur3_hash 
+from utils.hex_util import * 
 
 # ---------- Data Structures ----------
-
 
 class VariableEntry:
     def __init__(self):
@@ -31,7 +30,6 @@ class VariableEntry:
         self.offset_nameHash = None
         self.sharedStringOffset = None
         self.sharedStringItemID = None
-
 
 class UvarFile:
     def __init__(self, raw_data=None):
@@ -82,27 +80,18 @@ class UvarFile:
             return
         if not available(data, offset, 32):
             return
-        (
-            self.stringsOffset,
-            self.dataOffset,
-            self.embedsInfoOffset,
-            self.hashInfoOffset,
-        ) = struct.unpack_from("<QQQQ", data, offset)
+        self.stringsOffset, self.dataOffset, self.embedsInfoOffset, self.hashInfoOffset = struct.unpack_from("<QQQQ", data, offset)
         offset += 32
         if self.version < 3 and available(data, offset, 8):
             self.unkn64 = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
         if available(data, offset, 8):
-            self.UVARhash, self.variableCount, self.embedCount = struct.unpack_from(
-                "<IHH", data, offset
-            )
+            self.UVARhash, self.variableCount, self.embedCount = struct.unpack_from("<IHH", data, offset)
             offset += 8
         if self.variableCount > 0 and self.dataOffset < len(data):
             self._read_variables(data, self.start_pos + self.dataOffset)
         if self.stringsOffset != 0:
-            self._read_strings(
-                data, self.start_pos + self.stringsOffset, self.variableCount + 1
-            )
+            self._read_strings(data, self.start_pos + self.stringsOffset, self.variableCount + 1)
         if self.variableCount > 0:
             self._read_values(data)
         if self.embedCount > 0 and self.embedsInfoOffset < len(data):
@@ -125,15 +114,13 @@ class UvarFile:
             if not available(data, offset, 48):
                 break
             v = VariableEntry()
-            guid_bytes = data[offset : offset + 16]
+            guid_bytes = data[offset:offset+16]
             v.guid = str(uuid.UUID(bytes=bytes(guid_bytes)))
             offset += 16
             v.nameOffset = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
             if 0 < v.nameOffset < len(data):
-                nm, new_off, cnt = read_null_terminated_wstring(
-                    data, self.start_pos + v.nameOffset
-                )
+                nm, new_off, cnt = read_null_terminated_wstring(data, self.start_pos + v.nameOffset)
                 v.nameString = nm
                 v.nameMaxWchars = cnt
             v.floatOffset, v.uknOffset = struct.unpack_from("<QQ", data, offset)
@@ -187,14 +174,14 @@ class UvarFile:
             return
         self.hashDataOffsets = list(struct.unpack_from("<QQQQ", data, base))
         guid_array_off = self.start_pos + self.hashDataOffsets[0]
-        guid_map_off = self.start_pos + self.hashDataOffsets[1]
+        guid_map_off   = self.start_pos + self.hashDataOffsets[1]
         name_hashes_off = self.start_pos + self.hashDataOffsets[2]
         name_hashmap_off = self.start_pos + self.hashDataOffsets[3]
         self.guids = []
         for i in range(self.variableCount):
             pos = guid_array_off + i * 16
             if available(data, pos, 16):
-                raw_g = data[pos : pos + 16]
+                raw_g = data[pos:pos+16]
                 self.guids.append(str(uuid.UUID(bytes=bytes(raw_g))))
         self.guidMap = []
         for i in range(self.variableCount):
@@ -224,17 +211,13 @@ class UvarFile:
 
     def patch_header_field_in_place(self, fieldname, new_val):
         if fieldname == "version":
-            if self.offset_version is None or not available(
-                self.raw_data, self.offset_version, 4
-            ):
+            if self.offset_version is None or not available(self.raw_data, self.offset_version, 4):
                 return (False, "No valid offset for version.")
             struct.pack_into("<I", self.raw_data, self.offset_version, new_val)
             self.version = new_val
             return (True, f"version updated to {new_val}")
         elif fieldname == "magic":
-            if self.offset_magic is None or not available(
-                self.raw_data, self.offset_magic, 4
-            ):
+            if self.offset_magic is None or not available(self.raw_data, self.offset_magic, 4):
                 return (False, "No valid offset for magic.")
             struct.pack_into("<I", self.raw_data, self.offset_magic, new_val)
             self.magic = new_val
@@ -293,11 +276,11 @@ class UvarFile:
         data_block = bytearray()
         for i, var in enumerate(self.variables):
             data_block.extend(uuid.UUID(var.guid).bytes)
-            data_block.extend(struct.pack("<Q", 0))  # placeholder for nameOffset
+            data_block.extend(struct.pack("<Q", 0)) 
             float_offset = header_size + count * 48 + i * 4
             var.floatOffset = float_offset
             data_block.extend(struct.pack("<Q", float_offset))
-            data_block.extend(struct.pack("<Q", 0))  # uknOffset placeholder
+            data_block.extend(struct.pack("<Q", 0))  
             combined = (var.typeVal & 0xFFFFFF) | ((var.numBits & 0xFF) << 24)
             data_block.extend(struct.pack("<I", combined))
             data_block.extend(struct.pack("<I", var.nameHash))
@@ -320,7 +303,7 @@ class UvarFile:
         strings_block.extend(file_title.encode("utf-16le") + b"\x00\x00")
         relative_string_offsets = []
         for i, var in enumerate(self.variables):
-            s = self.strings[i + 1] if len(self.strings) > i + 1 else var.nameString
+            s = self.strings[i+1] if len(self.strings) > i+1 else var.nameString
             relative_string_offsets.append(len(strings_block))
             s_bytes = s.encode("utf-16le") + b"\x00\x00"
             strings_block.extend(s_bytes)
@@ -353,18 +336,10 @@ class UvarFile:
             guid_map_offset = guids_offset + count * 16
             name_hashes_offset = guid_map_offset + count * 4
             name_hashmap_offset = name_hashes_offset + count * 4
-            hashdata_block.extend(
-                struct.pack(
-                    "<QQQQ",
-                    guids_offset,
-                    guid_map_offset,
-                    name_hashes_offset,
-                    name_hashmap_offset,
-                )
-            )
+            hashdata_block.extend(struct.pack("<QQQQ", guids_offset, guid_map_offset, name_hashes_offset, name_hashmap_offset))
             sorted_guid_pairs = sorted(
                 ((self.guids[i], self.guidMap[i]) for i in range(count)),
-                key=lambda pair: uuid.UUID(pair[0]).bytes_le,
+                key=lambda pair: uuid.UUID(pair[0]).bytes_le
             )
             sorted_guids = [pair[0] for pair in sorted_guid_pairs]
             sorted_guidMap = [pair[1] for pair in sorted_guid_pairs]
@@ -376,7 +351,7 @@ class UvarFile:
                 hashdata_block.extend(struct.pack("<I", idx))
             sorted_pairs = sorted(
                 ((self.nameHashes[i], self.nameHashMap[i]) for i in range(count)),
-                key=lambda pair: pair[0],
+                key=lambda pair: pair[0]
             )
             sorted_nameHashes = [pair[0] for pair in sorted_pairs]
             sorted_nameHashMap = [pair[1] for pair in sorted_pairs]
@@ -404,12 +379,10 @@ class UvarFile:
         strings_block, relative_string_offsets = self._build_strings_block()
 
         self.stringOffsets = []
-        self.stringOffsets.append(
-            (strings_offset, self.strings[0] if self.strings else "")
-        )
+        self.stringOffsets.append((strings_offset, self.strings[0] if self.strings else ""))
         for i, rel_off in enumerate(relative_string_offsets):
             abs_off = strings_offset + rel_off
-            s = self.strings[i + 1] if i + 1 < len(self.strings) else ""
+            s = self.strings[i+1] if i+1 < len(self.strings) else ""
             self.stringOffsets.append((abs_off, s))
         for i in range(count):
             abs_off = strings_offset + relative_string_offsets[i]
@@ -417,12 +390,8 @@ class UvarFile:
             self.variables[i].nameOffset = abs_off
 
         if embed_count > 0:
-            embed_info_offset, embed_info_block, embedded_block = (
-                self._build_embed_blocks(strings_offset, len(strings_block))
-            )
-            hash_info_offset = (
-                embed_info_offset + len(embed_info_block) + len(embedded_block)
-            )
+            embed_info_offset, embed_info_block, embedded_block = self._build_embed_blocks(strings_offset, len(strings_block))
+            hash_info_offset = embed_info_offset + len(embed_info_block) + len(embedded_block)
         else:
             embed_info_offset = 0
             embed_info_block = bytearray()
@@ -460,21 +429,13 @@ class UvarFile:
         self.raw_data = final_file
         return final_file
 
-
 def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
     this_id = tree.insert(parent_id, "end", text=label, values=("",))
     metadata_map[this_id] = {"type": "uvarFile", "object": uvar}
 
     # --- Header Section (unchanged) ---
     hdr_id = tree.insert(this_id, "end", text="Header", values=("",))
-    for field in [
-        "version",
-        "magic",
-        "stringsOffset",
-        "dataOffset",
-        "embedsInfoOffset",
-        "hashInfoOffset",
-    ]:
+    for field in ["version", "magic", "stringsOffset", "dataOffset", "embedsInfoOffset", "hashInfoOffset"]:
         val = getattr(uvar, field)
         node_id = tree.insert(hdr_id, "end", text=field, values=(val,))
         metadata_map[node_id] = {"type": "headerInt", "field": field, "object": uvar}
@@ -492,43 +453,27 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
 
         var_id = tree.insert(data_id, "end", text=f"Variable[{i}]", values=("",))
         metadata_map[var_id] = {"type": "variable", "varIndex": i, "object": uvar}
-
+        
         # GUID (editable)
         guid_id = tree.insert(var_id, "end", text="GUID", values=(var.guid,))
         metadata_map[guid_id] = {"type": "guid", "varIndex": i, "object": uvar}
         # nameOffset (non-editable)
         tree.insert(var_id, "end", text="nameOffset", values=(var.nameOffset,))
         # nameString (editable)
-        name_string_id = tree.insert(
-            var_id, "end", text="nameString", values=(var.nameString,)
-        )
-        metadata_map[name_string_id] = {
-            "type": "nameString",
-            "varIndex": i,
-            "object": uvar,
-        }
+        name_string_id = tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
+        metadata_map[name_string_id] = {"type": "nameString", "varIndex": i, "object": uvar}
         # floatOffset (non-editable)
         tree.insert(var_id, "end", text="floatOffset", values=(var.floatOffset,))
         # uknOffset (non-editable)
         tree.insert(var_id, "end", text="uknOffset", values=(var.uknOffset,))
         # typeVal (editable)
         type_val_id = tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
-        metadata_map[type_val_id] = {
-            "type": "varTypeVal",
-            "varIndex": i,
-            "object": uvar,
-        }
+        metadata_map[type_val_id] = {"type": "varTypeVal", "varIndex": i, "object": uvar}
         # numBits (non-editable)
         tree.insert(var_id, "end", text="numBits", values=(var.numBits,))
         # nameHash (editable)
-        name_hash_id = tree.insert(
-            var_id, "end", text="nameHash", values=(var.nameHash,)
-        )
-        metadata_map[name_hash_id] = {
-            "type": "varNameHash",
-            "varIndex": i,
-            "object": uvar,
-        }
+        name_hash_id = tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
+        metadata_map[name_hash_id] = {"type": "varNameHash", "varIndex": i, "object": uvar}
         # Value fields (split into float and int)
         if i < len(uvar.values):
             f_val = uvar.values[i]
@@ -537,63 +482,34 @@ def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
             f_val = 0.0
             i_val = 0
         value_float_text = f"{f_val:.4f}"
-        value_float_id = tree.insert(
-            var_id, "end", text="Value (float)", values=(value_float_text,)
-        )
-        metadata_map[value_float_id] = {
-            "type": "value_float",
-            "varIndex": i,
-            "object": uvar,
-        }
+        value_float_id = tree.insert(var_id, "end", text="Value (float)", values=(value_float_text,))
+        metadata_map[value_float_id] = {"type": "value_float", "varIndex": i, "object": uvar}
         value_int_text = f"{i_val}"
-        value_int_id = tree.insert(
-            var_id, "end", text="Value (int)", values=(value_int_text,)
-        )
-        metadata_map[value_int_id] = {
-            "type": "value_int",
-            "varIndex": i,
-            "object": uvar,
-        }
+        value_int_id = tree.insert(var_id, "end", text="Value (int)", values=(value_int_text,))
+        metadata_map[value_int_id] = {"type": "value_int", "varIndex": i, "object": uvar}
 
     # HashData Section
     hd_id = tree.insert(this_id, "end", text="HashData", values=("",))
-    hash_data_offsets_id = tree.insert(
-        hd_id, "end", text="HashDataOffsets", values=(str(uvar.hashDataOffsets),)
-    )
-    metadata_map[hash_data_offsets_id] = {
-        "type": "headerInt",
-        "field": "hashDataOffsets",
-        "object": uvar,
-    }
+    hash_data_offsets_id = tree.insert(hd_id, "end", text="HashDataOffsets", values=(str(uvar.hashDataOffsets),))
+    metadata_map[hash_data_offsets_id] = {"type": "headerInt", "field": "hashDataOffsets", "object": uvar}
     guids_id = tree.insert(hd_id, "end", text=f"Guids[{len(uvar.guids)}]", values=("",))
     for i, g in enumerate(uvar.guids):
         tree.insert(guids_id, "end", text=f"[{i}]", values=(g,))
-    gm_id = tree.insert(
-        hd_id, "end", text=f"GuidMap[{len(uvar.guidMap)}]", values=("",)
-    )
+    gm_id = tree.insert(hd_id, "end", text=f"GuidMap[{len(uvar.guidMap)}]", values=("",))
     for i, gm in enumerate(uvar.guidMap):
         tree.insert(gm_id, "end", text=f"[{i}]", values=(gm,))
-    nh_id = tree.insert(
-        hd_id, "end", text=f"nameHashes[{len(uvar.nameHashes)}]", values=("",)
-    )
+    nh_id = tree.insert(hd_id, "end", text=f"nameHashes[{len(uvar.nameHashes)}]", values=("",))
     for i, nh in enumerate(uvar.nameHashes):
         tree.insert(nh_id, "end", text=f"[{i}]", values=(nh,))
-    nhm_id = tree.insert(
-        hd_id, "end", text=f"nameHashMap[{len(uvar.nameHashMap)}]", values=("",)
-    )
+    nhm_id = tree.insert(hd_id, "end", text=f"nameHashMap[{len(uvar.nameHashMap)}]", values=("",))
     for i, nhm in enumerate(uvar.nameHashMap):
         tree.insert(nhm_id, "end", text=f"[{i}]", values=(nhm,))
-    eo_id = tree.insert(
-        this_id, "end", text=f"embedOffsets[{len(uvar.embedOffsets)}]", values=("",)
-    )
+    eo_id = tree.insert(this_id, "end", text=f"embedOffsets[{len(uvar.embedOffsets)}]", values=("",))
     for i, eoff in enumerate(uvar.embedOffsets):
         tree.insert(eo_id, "end", text=f"[{i}]", values=(eoff,))
-    emb_id = tree.insert(
-        this_id, "end", text=f"Embedded_UVARs[{len(uvar.embeddedUvars)}]", values=("",)
-    )
+    emb_id = tree.insert(this_id, "end", text=f"Embedded_UVARs[{len(uvar.embeddedUvars)}]", values=("",))
     for i, child in enumerate(uvar.embeddedUvars):
         populate_treeview(tree, emb_id, child, metadata_map, label=f"UVAR_File[{i}]")
-
 
 class UvarHandler(FileHandler):
     def __init__(self):
@@ -629,9 +545,7 @@ class UvarHandler(FileHandler):
         if meta.get("type") == "variable" or "varIndex" in meta:
             menu.add_command(
                 label="Delete Variable",
-                command=lambda: self._delete_variable(
-                    meta["object"], meta["varIndex"], tree.winfo_toplevel()
-                ),
+                command=lambda: self._delete_variable(meta["object"], meta["varIndex"], tree.winfo_toplevel())
             )
 
         if meta.get("type") == "uvarFile":
@@ -639,49 +553,51 @@ class UvarHandler(FileHandler):
             if uvar_obj:
                 menu.add_command(
                     label="Add Variables...",
-                    command=lambda: self._open_add_variables_dialog(
-                        uvar_obj, tree.winfo_toplevel()
-                    ),
+                    command=lambda: self._open_add_variables_dialog(uvar_obj, tree.winfo_toplevel(), tree)
                 )
 
-        menu.add_command(label="Copy", command=lambda: self._copy_field(tree, row_id))
+        menu.add_command(
+            label="Copy",
+            command=lambda: self._copy_field(tree, row_id)
+        )
         return menu
 
-    def _open_add_variables_dialog(self, target_uvar, parent):
+    def refresh_ui(self):
+        if self.refresh_tree_callback:
+            self.refresh_tree_callback()
+        
+    def _open_add_variables_dialog(self, target_uvar, parent, tree):
         if self.app is None:
-            messagebox.showerror(
-                "Error", "Internal error: app reference is missing.", parent=parent
-            )
+            messagebox.showerror("Error", "Internal error: app reference is missing.", parent=parent)
             return
-        prefix = simpledialog.askstring(
-            "Naming Pattern",
-            "Enter naming prefix for new variables (optional):",
-            parent=parent,
-        )
-        count = simpledialog.askinteger(
-            "Add Variables",
-            "Enter number of variables to add:",
-            parent=parent,
-            minvalue=1,
-        )
+        prefix = simpledialog.askstring("Naming Pattern",
+                                        "Enter naming prefix for new variables (optional):",
+                                        parent=parent)
+        count = simpledialog.askinteger("Add Variables",
+                                        "Enter number of variables to add:",
+                                        parent=parent,
+                                        minvalue=1)
         if not count:
             return
         try:
-            state = self.app.save_tree_state()
+            # Save current tree state (pass the tree widget)
+            state = self.save_tree_state(tree)
+            # Add variables
             self.add_variables(target_uvar, prefix, count)
+            # Rebuild the top-level UVAR
             current = target_uvar
             while current.parent:
                 current = current.parent
             rebuilt_data = current.rebuild()
             current.read(rebuilt_data, 0)
-            self.app.refresh_tree()
-            self.app.restore_tree_state(state)
+            # Refresh the UI by calling our handler's own refresh method
+            self.refresh_ui()
+            # Restore the previous tree state
+            self.restore_tree_state(tree, state)
             parent.update_idletasks()
         except Exception as e:
-            messagebox.showerror(
-                "Error", f"Failed to add variables: {str(e)}", parent=parent
-            )
-
+            messagebox.showerror("Error", f"Failed to add variables: {str(e)}", parent=parent)
+            
     def _copy_field(self, tree: tk.Widget, row_id):
         value = tree.set(row_id, "value")
         if value:
@@ -694,14 +610,11 @@ class UvarHandler(FileHandler):
             typ = meta.get("type")
             if typ == "value_float":
                 var_index = meta.get("varIndex")
-                # Convert the new value to a float and update the underlying data.
                 f_val = float(new_val)
                 target.values[var_index] = f_val
             elif typ == "value_int":
                 var_index = meta.get("varIndex")
-                # Convert the new value to an int.
                 int_val = int(new_val)
-                # Interpret the int value as the raw bits of a float.
                 f_val = struct.unpack("<f", struct.pack("<I", int_val))[0]
                 target.values[var_index] = f_val
             elif typ == "nameString":
@@ -743,9 +656,7 @@ class UvarHandler(FileHandler):
                         canonical_index = i
                         break
                 if canonical_index is None:
-                    messagebox.showerror(
-                        "Error", "No canonical mapping found for this variable."
-                    )
+                    messagebox.showerror("Error", "No canonical mapping found for this variable.")
                     return
                 target.nameHashes[canonical_index] = new_key
             elif typ == "guid":
@@ -757,69 +668,108 @@ class UvarHandler(FileHandler):
                 var_index = meta.get("varIndex")
                 target.variables[var_index].guid = new_guid
 
-            # Rebuild after making the change.
             self.uvar.rebuild()
         except Exception as e:
             messagebox.showerror("Error", f"An exception occurred: {e}")
             return
+        
+    def save_tree_state(self, tree: ttk.Treeview) -> dict:
+        """
+        Capture the current state of the tree (yview, expansion, selection).
+        Returns a dictionary representing the state.
+        """
+        state = {}
+        state['yview'] = tree.yview()
+        state['expansion'] = {}
+
+        def save_node(node, path):
+            state['expansion'][path] = tree.item(node, "open")
+            for child in tree.get_children(node):
+                child_text = tree.item(child, "text")
+                save_node(child, path + (child_text,))
+        
+        for node in tree.get_children(""):
+            node_text = tree.item(node, "text")
+            save_node(node, (node_text,))
+        selected = tree.selection()
+        state['selected'] = tree.item(selected[0], "text") if selected else None
+        return state
+
+    def restore_tree_state(self, tree: ttk.Treeview, state: dict) -> None:
+        """
+        Restore the tree state from a state dictionary.
+        """
+        if 'yview' in state:
+            tree.yview_moveto(state['yview'][0])
+        if 'expansion' in state:
+            exp = state['expansion']
+            def restore_node(node, path):
+                if path in exp and exp[path]:
+                    tree.item(node, open=True)
+                for child in tree.get_children(node):
+                    child_text = tree.item(child, "text")
+                    restore_node(child, path + (child_text,))
+            for node in tree.get_children(""):
+                node_text = tree.item(node, "text")
+                restore_node(node, (node_text,))
+        if state.get('selected'):
+            for node in tree.get_children(""):
+                if tree.item(node, "text") == state['selected']:
+                    tree.selection_set(node)
+                    tree.focus(node)
+                    break
 
     def _delete_variable(self, target, var_index, parent):
-
-        confirm = messagebox.askyesno(
-            "Confirm Deletion",
-            f"Are you sure you want to delete variable at index {var_index}?",
-            parent=parent,
-        )
+        
+        confirm = messagebox.askyesno("Confirm Deletion",
+                                      f"Are you sure you want to delete variable at index {var_index}?",
+                                      parent=parent)
         if not confirm:
             return
         try:
-
+            
             del target.variables[var_index]
             target.variableCount = len(target.variables)
 
-            # Update the strings block.
+
             title = target.strings[0] if target.strings else ""
             target.strings = [title] + [v.nameString for v in target.variables]
 
-            # Recalculate auxiliary arrays.
+
             target.guids = [v.guid for v in target.variables]
             target.guidMap = list(range(target.variableCount))
             target.nameHashes = [v.nameHash for v in target.variables]
             target.nameHashMap = list(range(target.variableCount))
-            # Update the values array: trim if too long, or extend with 0.0 if needed.
+            
             if len(target.values) > target.variableCount:
-                target.values = target.values[: target.variableCount]
+                target.values = target.values[:target.variableCount]
             while len(target.values) < target.variableCount:
                 target.values.append(0.0)
 
-            #  find top-level UVAR and rebuild.
+
             current = target
             while current.parent:
                 current = current.parent
             current.rebuild()
-            # Refresh the tree view using the app reference.
-            self.app.refresh_tree()
+            
+            self.refresh_ui()
         except Exception as e:
-            messagebox.showerror(
-                "Error", f"Failed to delete variable: {e}", parent=parent
-            )
+            messagebox.showerror("Error", f"Failed to delete variable: {e}", parent=parent)
 
     def add_variables(self, target, prefix: str, count: int):
         MAX_VARIABLES = 65535
-        # Check if adding the new variables would exceed the maximum allowed.
+        
         if target.variableCount + count > MAX_VARIABLES:
-            raise ValueError(
-                f"Cannot add variables: adding {count} variables would exceed the maximum allowed count of {MAX_VARIABLES}."
-            )
+            raise ValueError(f"Cannot add variables: adding {count} variables would exceed the maximum allowed count of {MAX_VARIABLES}.")
 
         # Determine the base prefix and starting number.
         if prefix:
             base_prefix = prefix
-            start = 1  # When manually specified, start at 1 (or adjust as desired)
-            width = 0  # No zero-padding by default; adjust if needed.
+            start = 1 
+            width = 0  
         elif target.variables:
             last_name = target.variables[-1].nameString.strip()
-            m = re.search(r"(.*?)(\d+)$", last_name)
+            m = re.search(r'(.*?)(\d+)$', last_name)
             if m:
                 base_prefix = m.group(1)
                 start = int(m.group(2)) + 1
@@ -856,7 +806,7 @@ class UvarHandler(FileHandler):
         target.nameHashes.extend([v.nameHash for v in new_vars])
         target.nameHashMap.extend(range(original_count, original_count + count))
         target.values.extend([0.0] * count)
-
+        
         # Rebuild from the top-level UVAR.
         current = target
         while current.parent:
@@ -865,3 +815,4 @@ class UvarHandler(FileHandler):
 
     def update_strings(self):
         self.uvar.update_strings()
+        
