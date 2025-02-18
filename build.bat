@@ -13,7 +13,9 @@ if exist REasy.spec del /Q REasy.spec
 REM Build using the current Python interpreter (assumed 64-bit)
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
 xcopy /E /I /Y resources dist\resources
-xcopy /E /I /Y rszre4_reasy.json dist\
+copy "rszre4_reasy.json" "dist\rszre4_reasy.json"
+
+
 
 if errorlevel 1 (
     echo 64-bit build FAILED.
