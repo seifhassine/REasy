@@ -788,11 +788,19 @@ def parse_instance_fields(
                         if not found:
                             value = str(instance_id)
 
-                results.append({
-                    "name": field_name,
-                    "value": value,
-                    "subfields": []
-                })
+                if nested_refs is not None and instance_id is not None and is_valid_reference(instance_id, current_instance_index): #TODO: handle userdata properly
+                    nested_refs.add(instance_id)
+                    results.append({
+                        "name": field_name,
+                        "value": f"Child index: {instance_id}",
+                        "subfields": []
+                    })
+                else:
+                    results.append({
+                        "name": field_name,
+                        "value": value,
+                        "subfields": []
+                    })
                 if debug:
                     print(f"DEBUG: Field '{field_name}' parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
                 '''data_obj = StringData(value)
