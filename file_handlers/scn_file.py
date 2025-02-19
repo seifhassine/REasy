@@ -701,6 +701,7 @@ def parse_instance_fields(
         ftype = field.get("type", "Unknown").lower()
         fsize = field.get("size", 4)
         subresults = []
+        data_obj = None
         is_array = field.get("array", False)
         field_align = int(field["align"]) if "align" in field else 1
 
@@ -1167,18 +1168,18 @@ def parse_instance_fields(
                     value = f"[{', '.join(vectors)}]"
                     if vectors:
                         pos = local_align(pos, field_align)
-                data_obj = ArrayData([Vec4Data(*struct.unpack_from("<4f", raw, pos + i*16)) for i in range(count)], "vec4")
+                data_obj = ArrayData([Vec4Data(*v) for v in vectors], "vec4")
             else:
                 if pos + fsize > raw_len:
                     value = "N/A"
                 else:
                     vals = struct.unpack_from("<4f", raw, pos)
                     value = f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}, {vals[3]:.6f})"
+                    
+                    data_obj = Vec4Data(*vals) if pos + fsize <= raw_len else Vec4Data(0,0,0,0)
+
                 pos += fsize
                 pos = local_align(pos, field_align)
-                '''data_obj = Vec4Data(*vals) if pos + fsize <= raw_len else Vec4Data(0,0,0,0)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
 
         elif ftype == "obb" or (ftype == "data" and fsize == 80):
             if is_array:
@@ -1214,15 +1215,13 @@ def parse_instance_fields(
         else:
             #this msg is for debug purposes: remaining types
             if(ftype != "data" and ftype not in ("rect","uint2","float4","float3", "sphere", "aabb", "capsule", "area", "quaternion","s8","u8", "u64","s16", "color", "vec2", "guid", "range", "mat4", "cylinder", "float2", "size")): print("unkown type", ftype)
-            if pos + fsize > raw_len:
-                value = "N/A"
-            else:
+            value = "N/A"
+            if pos + fsize <= raw_len:
                 value = get_bytes(raw[pos:pos+fsize]).hex()
             pos += fsize
-            '''data_obj = StringData(value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
+            data_obj = StringData(value)
 
+        scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
         if "fields" in field and field["fields"]:
             field_type_info = field.get("name", "Unknown")
             nested_results, pos = parse_instance_fields(
