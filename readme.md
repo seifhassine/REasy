@@ -68,6 +68,11 @@ I have currently rushed the release and the structure will be improved in the up
 - **Finding all files where some data is referenced:**
   Ever encountered a flag but don't know in which file it is set? This tool allows you to find all locations where that flag is checked/set.
 
+## Correctness
+
+- UVAR: No complex operations involved.
+- SCN: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game. All files with valid CRCs passed the tests.
+  
 ## Installation
 
 - Run build.bat
