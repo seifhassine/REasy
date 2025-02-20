@@ -9,7 +9,7 @@ import uuid
 from typing import Tuple
 from file_handlers.rcol_file import align_offset
 from file_handlers.scn_data_types import *
-from utils.hex_util import *
+from utils.hex_util import read_wstring, guid_le_to_str
 
 
 ########################################
@@ -764,6 +764,10 @@ def parse_instance_fields(
                     "value": f"Child indexes: {child_indexes}",
                     "subfields": []
                 })
+                # Prepare for parent/child mapping:
+                # parent_id = current_instance_index
+                # child_mappings[parent_id] = child_indexes
+                # Future logic will nest these properly as subfields
                 data_obj = ArrayData(list(map(ObjectData,child_indexes)), ObjectData)
                 scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
                 continue
@@ -859,7 +863,7 @@ def parse_instance_fields(
             scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
 
         else:
-            ensure_enough_data(raw_len, pos, 4)
+            ensure_enough_data(raw_len, pos, fsize)
 
             if rsz_type == MaybeObject:     
                 candidate = struct.unpack_from("<I", raw, pos)[0]        
@@ -944,6 +948,10 @@ def parse_instance_fields(
                     "value": f"Child index: {child_idx}",
                     "subfields": []
                 })
+                # Prepare for parent/child mapping:
+                # parent_id = current_instance_index
+                # child_mappings[parent_id] = [child_idx]
+                # Future logic will nest this properly as a subfield
                 data_obj = ObjectData(child_idx)
                 scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
                 continue
@@ -1003,7 +1011,7 @@ def parse_instance_fields(
                 pos += fsize
                 data_obj = StringData(value)
 
-            scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name]
+            scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
 
         if "fields" in field and field["fields"]:
             nested_results, pos = parse_instance_fields(
