@@ -8,6 +8,9 @@ from file_handlers.factory import get_handler_for_data
 from settings import load_settings, save_settings
 import sys
 from ui.console_logger import StdoutRedirector, setup_console_logging, ConsoleRedirector
+import tkinter.dnd as dnd 
+from tkinterdnd2 import TkinterDnD 
+
 
 # Cache resource paths
 _RESOURCE_CACHE = {}
@@ -541,7 +544,7 @@ class REasyEditorApp:
         menubar.add_cascade(label="Find", menu=findmenu)
         viewmenu = tk.Menu(menubar, tearoff=0)
         viewmenu.add_command(label="Toggle Dark Mode", command=self.toggle_dark_mode, accelerator="Ctrl+D")
-        viewmenu.add_command(label="Toggle Debug Console", command=self.toggle_debug_console, accelerator="Ctrl+Shift+D")
+        viewmenu.add_command(label="Toggle Debug Console", command=lambda: self.toggle_debug_console(not self.settings.get("show_debug_console", True)), accelerator="Ctrl+Shift+D")
         menubar.add_cascade(label="View", menu=viewmenu)
         tools_menu = tk.Menu(menubar, tearoff=0)
         tools_menu.add_command(label="GUID Converter", command=self.open_guid_converter)
@@ -589,6 +592,24 @@ class REasyEditorApp:
         else:
             self.console_frame = None
             self.console_text = None
+
+        self.setup_drag_and_drop()
+
+    def setup_drag_and_drop(self):
+        self.root.drop_target_register('DND_Files')
+        self.root.dnd_bind('<<Drop>>', self.on_drop)
+
+    def on_drop(self, event):
+        files = self.root.tk.splitlist(event.data)
+        for f in files:
+            f = f.strip('{}')
+            if os.path.isfile(f):
+                try:
+                    with open(f, "rb") as file_obj:
+                        data = file_obj.read()
+                    self.add_tab(f, data)
+                except Exception as e:
+                    messagebox.showerror("Drop Error", f"Could not open {f}\n{e}")
 
     def handle_missing_json(self):
         messagebox.showwarning(
@@ -932,11 +953,12 @@ class REasyEditorApp:
         save_settings(self.settings)
 
     def toggle_debug_console(self, show: bool):
+        """Toggle debug console visibility"""
         if show:
             if not hasattr(self, "console_frame") or self.console_frame is None:
                 self.console_frame = tk.Frame(self.root, bg=self.root.cget("bg"))
                 self.console_frame.pack(side="bottom", fill="both", expand=False)
-                self.console = tk.Text(
+                self.console = ScrolledText( 
                     self.console_frame,
                     bg="black",
                     fg="lime",
@@ -945,7 +967,6 @@ class REasyEditorApp:
                     wrap="none",
                 )
                 self.console.pack(fill="both", expand=True)
-                from console_logger import StdoutRedirector, setup_console_logging, ConsoleRedirector
                 setup_console_logging(self.console)
                 sys.stdout = StdoutRedirector(self.console)
                 sys.stderr = ConsoleRedirector(self.console, sys.stderr)
@@ -956,6 +977,7 @@ class REasyEditorApp:
                 self.console = None
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
+        
         self.settings["show_debug_console"] = show
         save_settings(self.settings)
 
@@ -1135,7 +1157,7 @@ class REasyEditorApp:
 
 
 def main():
-    root = tk.Tk()
+    root = TkinterDnD.Tk()  
     root.title("REasy Editor – RE Engine Scripting Toolkit")
     set_app_icon(root)
     root.geometry("800x600")

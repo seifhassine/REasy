@@ -1,34 +1,5 @@
 import struct
-import uuid
-
-
-########################################
-# Utility functions
-########################################
-
-
-def guid_le_to_str(guid_bytes: bytes) -> str:
-    if len(guid_bytes) != 16:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
-    try:
-        return str(uuid.UUID(bytes_le=guid_bytes))
-    except Exception:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
-
-
-def read_wstring(data: bytes, offset: int, max_wchars: int):
-    end = offset + (max_wchars * 2)
-    chars = []
-    pos = offset
-    while pos + 1 < len(data) and pos + 1 < end:
-        lo = data[pos]
-        hi = data[pos + 1]
-        if lo == 0 and hi == 0:
-            pos += 2
-            break
-        chars.append(lo + (hi << 8))
-        pos += 2
-    return "".join(chr(c) for c in chars), pos
+from utils.hex_util import *
 
 
 ########################################

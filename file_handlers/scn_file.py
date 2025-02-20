@@ -9,40 +9,7 @@ import uuid
 from typing import Tuple
 from file_handlers.rcol_file import align_offset
 from file_handlers.scn_data_types import *
-
-########################################
-# Utility functions
-########################################
-
-def guid_le_to_str(guid_bytes: bytes) -> str:
-    if len(guid_bytes) != 16:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
-    try:
-        return str(uuid.UUID(bytes_le=guid_bytes))
-    except Exception:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
-
-
-def read_wstring(data: bytes, offset: int, max_wchars: int) -> Tuple[str, int]:
-    """
-    Reads a UTF-16LE string from data starting at offset.
-    Stops when two consecutive null bytes are found.
-    """
-    pos = offset
-    # If a BOM is present, skip it.
-    if pos + 1 < len(data) and data[pos:pos+2] == b"\xff\xfe":
-        pos += 2
-    chars = []
-    while pos + 1 < len(data) and len(chars) < max_wchars:
-        lo = data[pos]
-        hi = data[pos+1]
-        if lo == 0 and hi == 0:
-            pos += 2
-            break
-        code = lo + (hi << 8)
-        chars.append(code)
-        pos += 2
-    return "".join(chr(c) for c in chars), pos
+from utils.hex_util import *
 
 
 ########################################
@@ -235,7 +202,7 @@ class ScnFile:
         self._prefab_str_map = {}    # {PrefabInfo: str}
         self._userdata_str_map = {}  # {UserDataInfo: str}
         self._rsz_userdata_str_map = {}  # {RSZUserDataInfo: str}
-        self.parsed_elements = {}  # dictionary to map instance_index -> {field_name: TypedDataObject}
+        self.parsed_elements = {}
 
     def read(self, data: bytes):
         self.full_data = memoryview(data)
@@ -315,17 +282,17 @@ class ScnFile:
         self._rsz_userdata_str_map.clear()
         
         for ri in self.resource_infos:
-            if ri.string_offset != 0:
+            if (ri.string_offset != 0):
                 s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
                 self.set_resource_string(ri, s)
                 
         for pi in self.prefab_infos:
-            if pi.string_offset != 0:
+            if (pi.string_offset != 0):
                 s, _ = read_wstring(self.full_data, pi.string_offset, 1000)
                 self.set_prefab_string(pi, s)
                 
         for ui in self.userdata_infos:
-            if ui.string_offset != 0:
+            if (ui.string_offset != 0):
                 s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
                 self.set_userdata_string(ui, s)
 
@@ -422,14 +389,10 @@ class ScnFile:
                 raw=self.data,
                 offset=current_offset,
                 fields_def=fields_def,
-                type_registry=self.type_registry,
-                instance_infos=self.instance_infos,
                 nested_refs=self.nested_instance_indexes,
                 current_instance_index=idx,
-                rsz_userdata_infos=self._rsz_userdata_dict,
                 scn_file=self,
-                debug=self.debug,
-                parent_results=type_info.get("name", "Unknown")  
+                debug=self.debug
             )
             if self.debug:
                 print(f"DEBUG: Instance {idx} parsed, offset moved from {current_offset:#x} to {new_offset:#x} (delta {new_offset - current_offset})")
@@ -653,18 +616,18 @@ def is_valid_reference(candidate, current_instance_index):
         candidate < current_instance_index 
     )
 
+def ensure_enough_data(dataLen, offset, size):
+    if offset + size > dataLen:
+        raise ValueError(f"Insufficient data at offset {offset:#x}")
+
 def parse_instance_fields(
     raw: bytes,
     offset: int, 
     fields_def: list,
-    type_registry=None,
-    instance_infos=None,
     nested_refs=None,
     current_instance_index=None,
-    rsz_userdata_infos=None,
     scn_file=None,
-    debug=False,
-    parent_results=None  # Now consistently included in signature
+    debug=False
 ):
     """Parse fields from raw data according to field definitions
     
@@ -672,175 +635,60 @@ def parse_instance_fields(
         raw: Raw bytes to parse
         offset: Starting offset in raw data
         fields_def: List of field definitions
-        type_registry: Type registry for resolving type names
-        instance_infos: List of instance infos for reference resolution
         nested_refs: Set to track nested references
         current_instance_index: Current instance being parsed
-        rsz_userdata_infos: Dictionary of RSZ userdata info lookups
-        scn_file: Parent ScnFile instance for string lookups
+        scn_file: Parent ScnFile instance
         debug: Enable debug logging
 """
     results = []
     pos = offset
-    raw_len = len(raw)
     local_align = align_offset
+    rsz_userdataInfos = scn_file.rsz_userdata_infos
 
-    # Keep track of fields parsed in current level, could be useful for relationship between subsequent fields
-    current_level_fields = {}
+    raw_len = len(raw)
 
     def get_bytes(segment):
         return segment.tobytes() if hasattr(segment, "tobytes") else segment
 
     for field in fields_def:
-        field_start = pos
-        if pos + 4 > raw_len:
-            if debug:
-                print(f"DEBUG: Insufficient bytes for field '{field.get('name', '<unnamed>')}' at {pos:#x}")
-            return results, pos
         field_name = field.get("name", "<unnamed>")
         ftype = field.get("type", "Unknown").lower()
         fsize = field.get("size", 4)
+        is_native = field.get("native", False)
+        is_array = field.get("array", False)
+        rsz_type = get_type_class(field.get("type", "Unknown").lower(), field.get("size", 4), is_native, is_array)
         subresults = []
         data_obj = None
-        is_array = field.get("array", False)
         field_align = int(field["align"]) if "align" in field else 1
+        value = None
 
         if is_array:
             pos = local_align(pos, 4)
-        elif "align" in field and field.get("original_type", "") not in ["System.Collections.Generic.List`1<via.vec3>", "System.Collections.Generic.List`1<via.vec4>"]:
+            ensure_enough_data(raw_len, pos, 4)
+        else:
             pos = local_align(pos, field_align)
-            if debug:
-                print(f"DEBUG: Aligning field '{field_name}' to {pos:#x}")
-        
-        if debug:
-            print(f"DEBUG: Reading field '{field_name}' (type: {ftype}) starting at {pos:#x}")
-
-        if ftype == "userdata":
-            if is_array:
-                pos = local_align(pos, 4)
-                if pos + 4 > raw_len:
-                    value = "[]"
-                    results.append({
-                        "name": field_name,
-                        "value": value,
-                        "subfields": []
-                    })
-                    continue
-
-                count = struct.unpack_from("<I", raw, pos)[0]
-                pos += 4
-
-                userdata_values = []
-                for _ in range(count):
-                    if pos + 4 > raw_len:
-                        break
-                    candidate = struct.unpack_from("<I", raw, pos)[0]
-                    pos += 4
-
-                    found = None
-                    if rsz_userdata_infos is not None:
-                        if isinstance(rsz_userdata_infos, dict):
-                            found = rsz_userdata_infos.get(candidate)
-                        else:
-                            for rui in rsz_userdata_infos:
-                                if rui.instance_id == candidate:
-                                    found = rui
-                                    break
-
-                    if found is not None and scn_file is not None:
-                        userdata_str = scn_file.get_rsz_userdata_string(found)
-                        userdata_values.append(userdata_str)
-                    else:
-                        userdata_values.append(str(candidate))
-
-                results.append({
-                    "name": field_name,
-                    "value": f"[{', '.join(userdata_values)}]",
-                    "subfields": []
-                })
-                if debug:
-                    print(f"DEBUG: Field '{field_name}' (userdata array) parsed from {field_start:#x} to {pos:#x}")
-                '''data_obj = UserDataArrayData(userdata_values)
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-                continue
-            else:
-                pos = local_align(pos, 4) #unsure
-                if pos + 4 <= raw_len:
-                    instance_id = struct.unpack_from("<I", raw, pos)[0]
-                else:
-                    instance_id = None
-                pos += 4
-                found = None
-                if rsz_userdata_infos is not None:
-                    if isinstance(rsz_userdata_infos, dict):
-                        found = rsz_userdata_infos.get(instance_id)
-                        if found and scn_file is not None:
-                            value = scn_file.get_rsz_userdata_string(found)
-                        else:
-                            value = str(instance_id)
-                    else:
-                        for rui in rsz_userdata_infos:
-                            if rui.instance_id == instance_id:
-                                found = rui
-                                if scn_file is not None:
-                                    value = scn_file.get_rsz_userdata_string(rui)
-                                break
-                        if not found:
-                            value = str(instance_id)
-
-                if nested_refs is not None and instance_id is not None and is_valid_reference(instance_id, current_instance_index): #TODO: handle userdata properly
-                    nested_refs.add(instance_id)
-                    results.append({
-                        "name": field_name,
-                        "value": f"Child index: {instance_id}",
-                        "subfields": []
-                    })
-                else:
-                    results.append({
-                        "name": field_name,
-                        "value": value,
-                        "subfields": []
-                    })
-                if debug:
-                    print(f"DEBUG: Field '{field_name}' parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
-                '''data_obj = StringData(value)
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-                continue
-        
-        elif is_array and ftype not in ("object", "obb", "vec3", "vec4", "gameobjectref") and fsize != 80:
-            pos = local_align(pos, 4)
-            if pos + 4 > raw_len:
-                continue
+    
+        if(is_array):
             count = struct.unpack_from("<I", raw, pos)[0]
             pos += 4
             
-            children = []
-            total = 0
-            element_size = int(field.get("size", 4))
-            is_data = ftype == "data"
-            is_native = field.get("native", False)
-            if ((ftype in ("s32", "u32") or is_data) and is_native and element_size == 4):
+            if rsz_type == MaybeObject:          
+                children = []
                 child_indexes = []
                 all_values = []
                 ref_names = []
                 alreadyRef = False
                 for i in range(count):
-                    total += 1
-                    if pos + element_size > raw_len:
-                        break
+                    ensure_enough_data(raw_len, pos, fsize)
                     value = struct.unpack_from("<I", raw, pos)[0]
                     if (is_valid_reference(value, current_instance_index) and i == 0):
                         alreadyRef = True 
                     if alreadyRef:
                         child_indexes.append(value)
-                        ref_names.append(get_type_name(type_registry, instance_infos, value))
-                        if nested_refs is not None:
-                            nested_refs.add(value)
+                        ref_names.append(get_type_name(scn_file.type_registry, scn_file.instance_infos, value))
+                        nested_refs.add(value)
                     all_values.append(value)
-                    pos += element_size
-                
+                    pos += fsize
                 if child_indexes:
                     subfields = []
                     for i, (idx, name) in enumerate(zip(all_values, ref_names)):
@@ -857,230 +705,56 @@ def parse_instance_fields(
                 else:
                     results.append({
                         "name": field_name,
-                        "value": f"Array values ({total}): {all_values}",
+                        "value": f"Array values ({all_values.count}): {all_values}",
                         "subfields": []
                     })
-                '''data_obj = ArrayData([ObjectRefData(idx) for idx in all_values], "object")
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
+                data_obj = ArrayData(list(map(ObjectData, child_indexes)), ObjectData)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
                 continue
-            elif ftype in ("string", "resource"):
-                for i in range(count):
-                    pos = local_align(pos, 4)
-                    if pos + 4 > raw_len:
-                        break
-                    str_length = struct.unpack_from("<I", raw, pos)[0] * 2
+
+            elif rsz_type == UserDataData:
+                userdata_values = []
+                userdatas = []
+                for _ in range(count):
+                    ensure_enough_data(raw_len, pos, 4)
+                    candidate = struct.unpack_from("<I", raw, pos)[0]
+                    userdatas.append(candidate)
                     pos += 4
-                    if pos + str_length > raw_len:
-                        break
-                    segment = raw[pos:pos+str_length]
-                    string_value = get_bytes(segment).decode("utf-16-le", errors="replace").rstrip('\x00')
-                    children.append(string_value)
-                    pos += str_length
-                    total += 1
-                    
-                results.append({
-                    "name": field_name,
-                    "value": f"Array values ({total}): {children}",
-                    "subfields": []
-                })
-                '''data_obj = ArrayData(children, ftype)
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-                    
-            else:
-                for i in range(count):
-                    total += 1
-                    if pos + element_size > raw_len:
-                        break
-                    if element_size == 1:
-                        value = struct.unpack_from("<B", raw, pos)[0]
-                        children.append(value)
-                    elif element_size == 2:
-                        value = struct.unpack_from("<H", raw, pos)[0]
-                        children.append(value)
-                    elif element_size == 4:
-                        value = struct.unpack_from("<I", raw, pos)[0]
-                        children.append(value)
-                    elif element_size == 16:
-                        if pos + 16 > raw_len:
-                            guid_str = "N/A"
-                        else:
-                            pos = local_align(pos, field_align)
-                            guid_bytes = get_bytes(raw[pos:pos+16])
-                            guid_str = guid_le_to_str(guid_bytes)
-                        children.append(guid_str)
-                    else:
-                        value = int.from_bytes(raw[pos:pos+element_size], byteorder="little")
-                        children.append(value)
-                    pos += element_size
-
-                results.append({
-                    "name": field_name,
-                    "value": f"Array values ({total}): {children}",
-                    "subfields": []
-                })
-                '''data_obj = ArrayData(children, ftype)
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-            if debug:
-                print(f"DEBUG: Field '{field_name}' (array) parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
-            continue
-
-        elif ftype == "data" and fsize == 4 and field.get("native", False):
-            if pos + 4 <= raw_len:
-                candidate = struct.unpack_from("<I", raw, pos)[0]                
-            else:
-                candidate = None
-            if not is_valid_reference(candidate, current_instance_index):
-                value = str(candidate)
-                pos += 4
-                results.append({
-                    "name": field.get("name", "<unnamed>"),
-                    "value": value,
-                    "subfields": []
-                })
-                if debug:
-                    print(f"DEBUG: Field '{field.get('name', '<unnamed>')}' (data value) parsed from {pos - 4:#x} to {pos:#x}")
-                '''data_obj = U32Data(value=int(value))
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-                continue
-            pos += 4
-            if nested_refs is not None and candidate is not None:
-                nested_refs.add(candidate)
-            default_ref_name = get_type_name(type_registry, instance_infos, candidate)
-            base_default = default_ref_name.split(" (ID:")[0].strip()
-            field_name = field.get("name", "<unnamed>").strip()
-            ref_name = field_name if field_name == base_default else default_ref_name
-
-            results.append({
-                "name": ref_name,
-                "value": f"Child index: {candidate}",
-                "subfields": []
-            })
-            if debug:
-                print(f"DEBUG: Field '{field_name}' (data-ref) parsed from {pos - 4:#x} to {pos:#x}")
-            '''data_obj = ObjectRefData(index=candidate if candidate is not None else -1)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-            continue        
-        elif ftype == "bool":
-            if pos + 1 > raw_len:
-                value = "N/A"
-            else:
-                value = "True" if raw[pos] != 0 else "False"
-            pos += 1
-            
-            '''data_obj = BoolData(value=(raw[pos] != 0))
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype in ("s32", "int"):
-            if pos + 4 > raw_len:
-                value = "N/A"
-            else:
-                value = struct.unpack_from("<i", raw, pos)[0]
-            pos += 4
-            '''data_obj = S32Data(value=value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype in ("u32", "uint"):
-            if pos + 4 > raw_len:
-                value = "N/A"
-            else:
-                value = struct.unpack_from("<I", raw, pos)[0]
-            pos += 4
-            '''data_obj = U32Data(value=value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype in ("f32", "float"):
-            if pos + 4 > raw_len:
-                value = "N/A"
-            else:
-                value = struct.unpack_from("<f", raw, pos)[0]
-            pos += 4
-            '''data_obj = F32Data(value=value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-            
-        elif ftype in ("string", "resource"):
-            size_field_bytes = field.get("size", 4)
-            if pos + size_field_bytes > raw_len:
-                value = "N/A"
-                pos += size_field_bytes
-            else:
-                #size_val = 0
-                #if(ftype == "string" and parent_results == "v2 length"):
-                #    print("entered")
-                #    size_val = struct.unpack_from("<B", raw, pos-4)[0]
-                #else:
-                size_val = struct.unpack_from("<I", raw, pos)[0]
-                pos += size_field_bytes
-                    
-                str_byte_count = size_val * 2
-                if pos + str_byte_count > raw_len:
-                    value = "Truncated String"
-                    pos = raw_len
-                else:
-                    segment = raw[pos:pos+str_byte_count]
-                    value = get_bytes(segment).decode("utf-16-le", errors="replace").rstrip('\x00')
-                    pos += str_byte_count
-            '''data_obj = StringData(value=value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype == "gameobjectref":
-            if is_array:
-                pos = local_align(pos, 4)
-                if pos + 4 > raw_len:
-                    value = "[]"
-                else:
-                    count = struct.unpack_from("<I", raw, pos)[0]
-                    pos += 4
-                    guids = []
-                    for d in range(count):
-                        if pos + 16 > raw_len:
+                    found = None
+                    for rui in rsz_userdataInfos:
+                        if rui.instance_id == candidate:
+                            found = rui
+                            userdata_str = scn_file.get_rsz_userdata_string(found)
+                            userdata_values.append(userdata_str)
                             break
-                        pos = local_align(pos, field_align)
-                        guid_bytes = get_bytes(raw[pos:pos+16])
-                        guid_str = guid_le_to_str(guid_bytes)
-                        guids.append(guid_str)
-                        pos += 16
-                    value = f"[{', '.join(guids)}]"
-                #data_obj = ArrayData([GameObjectRefData(guid) for guid in guids], "gameobjectref")
-            else:
-                if pos + 16 > raw_len:
-                    value = "N/A"
-                else:
+                results.append({
+                    "name": field_name,
+                    "value": f"[{', '.join(userdata_values)}]",
+                    "subfields": []
+                })
+                data_obj = ArrayData(list(map(UserDataData, userdatas)), GameObjectRefData)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+                continue
+                
+            elif rsz_type == GameObjectRefData:
+                guids = []
+                for d in range(count):
+                    ensure_enough_data(raw_len, pos, fsize)
                     pos = local_align(pos, field_align)
-                    guid_bytes = get_bytes(raw[pos:pos+16])
-                    value = guid_le_to_str(guid_bytes)
+                    guid_bytes = get_bytes(raw[pos:pos+fsize])
+                    guid_str = guid_le_to_str(guid_bytes)
+                    guids.append(guid_str)
                     pos += fsize
-                '''data_obj = GameObjectRefData(value)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype == "object":
-            if is_array:
-                pos = local_align(pos, field_align)
-                if pos + 4 > raw_len:
-                    child_count = 0
-                else:
-                    child_count = struct.unpack_from("<I", raw, pos)[0]
-                pos += 4
+                value = f"[{', '.join(guids)}]"
+                data_obj = ArrayData(list(map(GameObjectRefData, guids)), GameObjectRefData)
+            
+            elif rsz_type == ObjectData:
                 child_indexes = []
-                if debug:
-                    print(f"DEBUG: Field '{field_name}' (array) child count: {child_count}")
-                for i in range(child_count):
-                    if pos + 4 > raw_len:
-                        idx = None
-                    else:
-                        idx = struct.unpack_from("<I", raw, pos)[0]
-                        child_indexes.append(idx)
-                        pos += 4
+                for i in range(count):
+                    ensure_enough_data(raw_len, pos, fsize)
+                    idx = struct.unpack_from("<I", raw, pos)[0]
+                    child_indexes.append(idx)
+                    pos += fsize
                 if nested_refs is not None:
                     for idx in child_indexes:
                         if idx is not None:
@@ -1090,19 +764,179 @@ def parse_instance_fields(
                     "value": f"Child indexes: {child_indexes}",
                     "subfields": []
                 })
-                if debug:
-                    print(f"DEBUG: Field '{field_name}' (object array) parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
-                '''data_obj = ArrayData([ObjectRefData(idx) for idx in child_indexes], "object")
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
+                data_obj = ArrayData(list(map(ObjectData,child_indexes)), ObjectData)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
                 continue
+            
+            elif rsz_type == Vec3Data:
+                vectors = []
+                vec3_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    ensure_enough_data(raw_len, pos, 12)
+                    vals = struct.unpack_from("<3f", raw, pos)
+                    vectors.append(f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f})")
+                    vec3_objects.append(Vec3Data(vals[0], vals[1], vals[2]))
+                    pos += fsize
+                value = f"[{', '.join(vectors)}]"
+                if vectors:
+                    pos = local_align(pos, field_align)
+                data_obj = ArrayData(vec3_objects, Vec3Data)
+
+            elif rsz_type == Vec4Data:
+                vectors = []
+                vec4_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    ensure_enough_data(raw_len, pos, fsize)
+                    vals = struct.unpack_from("<4f", raw, pos)
+                    vectors.append(f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}, {vals[3]:.6f})")
+                    vec4_objects.append(Vec4Data(vals[0], vals[1], vals[2], vals[3]))
+                    pos += fsize
+                value = f"[{', '.join(vectors)}]"
+                if vectors:
+                    pos = local_align(pos, field_align)
+                data_obj = ArrayData(vec4_objects, Vec4Data)
+
+            elif rsz_type == OBBData:
+                obbs = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    ensure_enough_data (raw_len, pos, fsize)
+                    floats = struct.unpack_from("<20f", raw, pos)
+                    obbs.append(f"({', '.join(f'{val:.6f}' for val in floats)})")
+                    pos += fsize
+                value = f"[{', '.join(obbs)}]"
+                if obbs:
+                    pos = local_align(pos, field_align)
+                data_obj = ArrayData(list(map(OBBData,obbs)), OBBData)
+            
+            elif rsz_type == StringData or rsz_type == ResourceData:
+                children = []
+                for i in range(count):
+                    pos = local_align(pos, 4)
+                    ensure_enough_data(raw_len, pos, 4)
+                    str_length = struct.unpack_from("<I", raw, pos)[0] * 2
+                    pos += 4
+                    ensure_enough_data(raw_len, pos, str_length)
+                    segment = raw[pos:pos+str_length]
+                    string_value = get_bytes(segment).decode("utf-16-le", errors="replace").rstrip('\x00')
+                    children.append(string_value)
+                    pos += str_length
+                    
+                results.append({
+                    "name": field_name,
+                    "value": f"Array values ({children.count}): {children}",
+                    "subfields": []
+                })
+                data_obj = ArrayData(list(map(rsz_type, children)), rsz_type)
+
             else:
-                if pos + fsize > raw_len:
-                    child_idx = None
+                children = []
+                for i in range(count):
+                    ensure_enough_data(raw_len, pos, fsize)
+                    if fsize == 1:
+                        value = struct.unpack_from("<B", raw, pos)[0]
+                    elif fsize == 2:
+                        value = struct.unpack_from("<H", raw, pos)[0]
+                    elif fsize == 4:
+                        value = struct.unpack_from("<I", raw, pos)[0]
+                    elif fsize == 16:
+                        pos = local_align(pos, field_align)
+                        guid_bytes = get_bytes(raw[pos:pos+16])
+                        value = guid_le_to_str(guid_bytes)
+                    else:
+                        value = int.from_bytes(raw[pos:pos+fsize], byteorder="little")
+                    children.append(value)
                     pos += fsize
+                results.append({
+                    "name": field_name,
+                    "value": f"Array values ({len(children)}): {children}",
+                    "subfields": []
+                })
+                data_obj = ArrayData(list(map(U32Data, children)), U32Data)
+
+            scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+
+        else:
+            ensure_enough_data(raw_len, pos, 4)
+
+            if rsz_type == MaybeObject:     
+                candidate = struct.unpack_from("<I", raw, pos)[0]        
+                if not is_valid_reference(candidate, current_instance_index):
+                    value = str(candidate)
+                    pos += 4
+                    results.append({
+                        "name": field.get("name", "<unnamed>"),
+                        "value": value,
+                        "subfields": []
+                    })
+                    data_obj = U32Data(candidate)
+                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+                    continue
+                pos += 4
+                nested_refs.add(candidate)
+                default_ref_name = get_type_name(scn_file.type_registry, scn_file.instance_infos, candidate)
+                base_default = default_ref_name.split(" (ID:")[0].strip()
+                field_name = field.get("name", "<unnamed>").strip()
+                ref_name = field_name if field_name == base_default else default_ref_name
+
+                results.append({
+                    "name": ref_name,
+                    "value": f"Child index: {candidate}",
+                    "subfields": []
+                })
+                data_obj = GameObjectRefData(candidate)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+                continue   
+
+            elif rsz_type == UserDataData:
+                instance_id = struct.unpack_from("<I", raw, pos)[0]
+                pos += 4
+                found = None
+                value = str(instance_id)  
+                
+                if rsz_userdataInfos is not None:
+                    if isinstance(rsz_userdataInfos, dict):
+                        found = rsz_userdataInfos.get(instance_id)
+                        if found and scn_file is not None:
+                            value = scn_file.get_rsz_userdata_string(found)
+                    else:
+                        for rui in rsz_userdataInfos:
+                            if rui.instance_id == instance_id:
+                                found = rui
+                                if scn_file is not None:
+                                    value = scn_file.get_rsz_userdata_string(rui)
+                                break
+
+                if nested_refs is not None and is_valid_reference(instance_id, current_instance_index): #TODO: handle userdata properly
+                    nested_refs.add(instance_id)
+                    results.append({
+                        "name": field_name,
+                        "value": f"Child index: {instance_id}",
+                        "subfields": []
+                    })
                 else:
-                    child_idx = int.from_bytes(raw[pos:pos+fsize], byteorder="little") 
-                    pos += fsize
+                    results.append({
+                        "name": field_name,
+                        "value": value,
+                        "subfields": []
+                    })
+                data_obj = UserDataData(instance_id)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+                continue 
+            
+            elif rsz_type == GameObjectRefData:
+                guid_bytes = get_bytes(raw[pos:pos+fsize])
+                value = guid_le_to_str(guid_bytes)
+                data_obj = GameObjectRefData(value) 
+                pos += fsize
+
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+
+            elif rsz_type == ObjectData:
+                child_idx = int.from_bytes(raw[pos:pos+fsize], byteorder="little") 
+                pos += fsize
                 if nested_refs is not None and child_idx is not None:
                     nested_refs.add(child_idx)
                 results.append({
@@ -1110,132 +944,76 @@ def parse_instance_fields(
                     "value": f"Child index: {child_idx}",
                     "subfields": []
                 })
-                if debug:
-                    print(f"DEBUG: Field '{field_name}' (object) parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
-                '''data_obj = ObjectRefData(index=child_idx if child_idx is not None else -1)
-                if scn_file is not None:
-                    scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
+                data_obj = ObjectData(child_idx)
+                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
                 continue
 
-        elif ftype == "vec3":
-            if is_array:
-                pos = local_align(pos, 4)
-                if pos + 4 > raw_len:
-                    value = "[]"
-                else:
-                    count = struct.unpack_from("<I", raw, pos)[0]
-                    pos += 4
-                    vectors = []
-                    for _ in range(count):
-                        pos = local_align(pos, field_align)
-                        if pos + 12 > raw_len:
-                            break
-                        vals = struct.unpack_from("<3f", raw, pos)
-                        vectors.append(f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f})")
-                        pos += 12
-                    value = f"[{', '.join(vectors)}]"
-                    if vectors:
-                        pos = local_align(pos, field_align)
-                #data_obj = ArrayData([Vec3Data(*struct.unpack_from("<3f", raw, pos + i*12)) for i in range(count)], "vec3")
-            else:
-                if pos + fsize > raw_len:
-                    value = "N/A"
-                else:
-                    vals = struct.unpack_from("<3f", raw, pos)
-                    value = f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f})"
+            elif rsz_type == Vec3Data:
+                vals = struct.unpack_from("<3f", raw, pos)
+                value = f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f})"
                 pos += fsize
                 pos = local_align(pos, field_align)
-                '''data_obj = Vec3Data(*vals) if pos + fsize <= raw_len else Vec3Data(0,0,0)
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-
-        elif ftype == "vec4" or (ftype == "data" and fsize == 16):
-            if is_array:
-                pos = local_align(pos, 4)
-                if pos + 4 > raw_len:
-                    value = "[]"
-                else:
-                    count = struct.unpack_from("<I", raw, pos)[0]
-                    pos += 4
-                    vectors = []
-                    for _ in range(count):
-                        pos = local_align(pos, field_align)
-                        if pos + 16 > raw_len:
-                            break
-                        vals = struct.unpack_from("<4f", raw, pos)
-                        vectors.append(f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}, {vals[3]:.6f})")
-                        pos += 16
-                    value = f"[{', '.join(vectors)}]"
-                    if vectors:
-                        pos = local_align(pos, field_align)
-                data_obj = ArrayData([Vec4Data(*v) for v in vectors], "vec4")
-            else:
-                if pos + fsize > raw_len:
-                    value = "N/A"
-                else:
-                    vals = struct.unpack_from("<4f", raw, pos)
-                    value = f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}, {vals[3]:.6f})"
-                    
-                    data_obj = Vec4Data(*vals) if pos + fsize <= raw_len else Vec4Data(0,0,0,0)
-
+                data_obj = Vec3Data(*vals)
+        
+            elif rsz_type == Vec4Data:
+                vals = struct.unpack_from("<4f", raw, pos)
+                value = f"({vals[0]:.6f}, {vals[1]:.6f}, {vals[2]:.6f}, {vals[3]:.6f})"         
+                data_obj = Vec4Data(*vals)
                 pos += fsize
                 pos = local_align(pos, field_align)
-
-        elif ftype == "obb" or (ftype == "data" and fsize == 80):
-            if is_array:
-                pos = local_align(pos, 4)
-                if pos + 4 > raw_len:
-                    value = "[]"
-                else:
-                    count = struct.unpack_from("<I", raw, pos)[0]
-                    pos += 4
-                    obbs = []
-                    for _ in range(count):
-                        pos = local_align(pos, 16)
-                        if pos + 80 > raw_len:
-                            break
-                        floats = struct.unpack_from("<20f", raw, pos)
-                        obbs.append(f"({', '.join(f'{val:.6f}' for val in floats)})")
-                        pos += 80
-                    value = f"[{', '.join(obbs)}]"
-                    if obbs:
-                        pos = local_align(pos, field_align)
-                data_obj = ArrayData([OBBData(struct.unpack_from("<20f", raw, pos + i*80)) for i in range(count)], "obb")
-            else:
-                if pos + fsize > raw_len:
-                    value = "N/A"
-                else:
-                    vals = struct.unpack_from("<20f", raw, pos)
-                    value = f"({', '.join(f'{v:.6f}' for v in vals)})"
+        
+            elif rsz_type == OBBData:
+                vals = struct.unpack_from("<20f", raw, pos)
+                value = f"({', '.join(f'{v:.6f}' for v in vals)})"
+                data_obj = OBBData(vals)  
                 pos += fsize
                 pos = local_align(pos, field_align)
-                '''data_obj = OBBData(vals) if pos + fsize <= raw_len else OBBData([])
-            if scn_file is not None:
-                scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj'''
-        else:
-            #this msg is for debug purposes: remaining types
-            if(ftype != "data" and ftype not in ("rect","uint2","float4","float3", "sphere", "aabb", "capsule", "area", "quaternion","s8","u8", "u64","s16", "color", "vec2", "guid", "range", "mat4", "cylinder", "float2", "size")): print("unkown type", ftype)
-            value = "N/A"
-            if pos + fsize <= raw_len:
+            
+            elif rsz_type == StringData or rsz_type == ResourceData:
+                count = struct.unpack_from("<I", raw, pos)[0]
+                pos += 4
+                str_byte_count = count * 2
+                ensure_enough_data(raw_len, pos, str_byte_count)
+                segment = raw[pos:pos+str_byte_count]
+                value = get_bytes(segment).decode("utf-16-le", errors="replace").rstrip('\x00')
+                pos += str_byte_count
+                data_obj = StringData(value)
+
+            elif rsz_type == BoolData:
+                value = raw[pos] 
+                data_obj = BoolData(value)
+                pos += fsize
+
+            elif rsz_type == S32Data or rsz_type == U32Data:
+                fmt = "<i" if rsz_type == S32Data else "<I"
+                value = struct.unpack_from(fmt, raw, pos)[0]
+                pos += fsize
+                data_obj = rsz_type(value)
+
+            elif rsz_type == F32Data:
+                value = struct.unpack_from("<f", raw, pos)[0]
+                pos += fsize
+                data_obj = F32Data(value)
+                
+            else:
+                #for debug purposes: remaining types
+                if(ftype != "data" and ftype not in ("rect","uint2","float4","float3", "sphere", "aabb", "capsule", "area", "quaternion","s8","u8", "u64","s16", "color", "vec2", "guid", "range", "mat4", "cylinder", "float2", "size")): print("unkown type", ftype)
+                ensure_enough_data(raw_len, pos, fsize)
                 value = get_bytes(raw[pos:pos+fsize]).hex()
-            pos += fsize
-            data_obj = StringData(value)
+                pos += fsize
+                data_obj = StringData(value)
 
-        scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name] = data_obj
+            scn_file.parsed_elements.setdefault(current_instance_index, {})[field_name]
+
         if "fields" in field and field["fields"]:
-            field_type_info = field.get("name", "Unknown")
             nested_results, pos = parse_instance_fields(
                 raw=raw,
                 offset=pos,
                 fields_def=field["fields"],
-                type_registry=type_registry,
-                instance_infos=instance_infos,
                 nested_refs=nested_refs,
                 current_instance_index=current_instance_index,
-                rsz_userdata_infos=rsz_userdata_infos,
                 scn_file=scn_file,
-                debug=debug,
-                parent_results=field_type_info
+                debug=debug
             )
             if isinstance(nested_results, list):
                 subresults.extend(nested_results)
@@ -1243,11 +1021,5 @@ def parse_instance_fields(
                 subresults.append(nested_results)
 
         results.append({"name": field_name, "value": value, "subfields": subresults})
-        if debug:
-            print(f"DEBUG: Field '{field_name}' parsed from {field_start:#x} to {pos:#x} (delta {pos - field_start})")
-
-        # Store the field result for potential use by subsequent fields
-        if isinstance(value, (int, float, str, bool)):
-            current_level_fields[field_name] = value
 
     return results, pos
