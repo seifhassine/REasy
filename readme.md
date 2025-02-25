@@ -79,14 +79,7 @@ I have currently rushed the release and the structure will be improved in the up
 
 - Run build.bat
 
-### Prerequisites
-
-- Python 3.x (64-bit recommended)
-- [Tkinter](https://docs.python.org/3/library/tkinter.html) (usually included with Python)
-- [Pillow](https://python-pillow.org/)  
-  Install via pip:
-  ```bash
-  pip install Pillow
+- You will need to manually install dependencies.
 
 ## Credits:
 
