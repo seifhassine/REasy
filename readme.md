@@ -28,8 +28,8 @@ I have currently rushed the release and the structure will be improved in the up
 | File Type | Viewing | Editing | Tested On |
 |-----------|---------|---------|-----------|
 | UVAR      | ✅       | ✅       | RE4, RE2  |
-| RCOL      | ✅       | ❌       | RE4       |
-| SCN       | ✅       | ❌       | RE4       |
+| RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
+| SCN       | ✅       | ✅       | RE4       |
   
 </div>
 <br>
