@@ -1048,34 +1048,52 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.critical(self, "Error", "No active tab for searching.")
 
     def add_tab(self, filename=None, data=None):
-        if filename:
-            abs_fn = os.path.abspath(filename)
-            for tab in self.tabs.values():
-                if tab.filename and os.path.abspath(tab.filename) == abs_fn:
-                    if tab.modified:
-                        ans = QMessageBox.question(
-                            self,
-                            "Unsaved Changes",
-                            f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
-                            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-                        )
-                        if ans == QMessageBox.Cancel:
-                            return
-                        elif ans == QMessageBox.Yes:
-                            tab.on_save()
-                        else:
-                            tab.modified = False
-                            tab.update_tab_title()
-                    index = self.notebook.indexOf(tab.notebook_widget)
-                    if index != -1:
-                        self.notebook.setCurrentIndex(index)
+        try:
+            # Check if file already open
+            if filename:
+                abs_fn = os.path.abspath(filename)
+                for tab in self.tabs.values():
+                    if tab.filename and os.path.abspath(tab.filename) == abs_fn:
+                        if tab.modified:
+                            ans = QMessageBox.question(
+                                self,
+                                "Unsaved Changes",
+                                f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
+                                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                            )
+                            if ans == QMessageBox.Cancel:
+                                return
+                            elif ans == QMessageBox.Yes:
+                                tab.on_save()
+                            else:
+                                tab.modified = False
+                                tab.update_tab_title()
+                        index = self.notebook.indexOf(tab.notebook_widget)
+                        if index != -1:
+                            self.notebook.setCurrentIndex(index)
+                        return
+
+            # Check handler requirements before creating tab
+            handler = get_handler_for_data(data)
+            if handler and hasattr(handler, 'needs_json_path') and handler.needs_json_path():
+                if not self.settings.get("rcol_json_path"):
+                    msg = QMessageBox(QMessageBox.Warning, 
+                        "JSON Path Not Set",
+                        "RSZ type registry JSON path is not set.\nWould you like to set it now?",
+                        QMessageBox.Yes | QMessageBox.No)
+                    if msg.exec() == QMessageBox.Yes:
+                        self.open_settings_dialog()
                     return
 
-        new_tab = FileTab(self.notebook, filename, data, app=self)
-        tab_label = os.path.basename(filename) if filename else "Untitled"
-        self.notebook.addTab(new_tab.notebook_widget, tab_label)
-        self.tabs[new_tab.notebook_widget] = new_tab
-        self.notebook.setCurrentWidget(new_tab.notebook_widget)
+            # Create new tab
+            new_tab = FileTab(self.notebook, filename, data, app=self)
+            tab_label = os.path.basename(filename) if filename else "Untitled"
+            self.notebook.addTab(new_tab.notebook_widget, tab_label)
+            self.tabs[new_tab.notebook_widget] = new_tab
+            self.notebook.setCurrentWidget(new_tab.notebook_widget)
+            
+        except Exception as e:
+            QMessageBox.critical(None, "Error", str(e))
 
     def get_active_tab(self):
         current_widget = self.notebook.currentWidget()

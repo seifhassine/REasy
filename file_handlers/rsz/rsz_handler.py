@@ -8,7 +8,7 @@ This file contains:
 """
 
 from PySide6.QtCore import (Qt, Signal)
-from PySide6.QtWidgets import (QWidget, QVBoxLayout)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QMessageBox)
 
 from utils.hex_util import guid_le_to_str
 from file_handlers.pyside.value_widgets import *
@@ -28,6 +28,10 @@ from ui.styles import get_color_scheme, get_tree_stylesheet
 class RszHandler(BaseFileHandler):
     """Handler for SCN files"""
     
+    @staticmethod
+    def needs_json_path() -> bool:
+        return True
+        
     def __init__(self):
         super().__init__()
         self.scn_file = None
