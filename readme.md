@@ -1,4 +1,4 @@
-# REasy Editor v0.0.5
+# REasy Editor v0.0.6
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -30,6 +30,7 @@ I have currently rushed the release and the structure will be improved in the up
 | UVAR      | ✅       | ✅       | RE4, RE2  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | RE4       |
+| User       | ✅       | ✅       | RE4       |
   
 </div>
 <br>
@@ -38,8 +39,8 @@ I have currently rushed the release and the structure will be improved in the up
 - **UVAR File Editing:**  
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   
-- **RCOL/SCN File Viewing (Limited Support):**  
-  Rcol.25 and SCN files are supported for viewing only at the moment.
+- **RSZ File Viewing and Limited Editing:**  
+  User and SCN files are supported with limited editing at the moment.
   
 - **Flexible Variable Management:**  
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
