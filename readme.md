@@ -30,6 +30,7 @@ I have currently rushed the release and the structure will be improved in the up
 | UVAR      | ✅       | ✅       | RE4, RE2  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | RE4       |
+| User       | ✅       | ✅       | RE4       |
   
 </div>
 <br>
