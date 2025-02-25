@@ -5,11 +5,7 @@ import sys
 import uuid
 import json
 import struct
-import queue
-import threading
-import concurrent.futures
 import weakref
-import mmap
 
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.scn.scn_handler import ScnHandler  
@@ -46,9 +42,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QCheckBox,
     QPushButton,
-    QListWidget,
     QDialog,
-    QProgressDialog, 
     QStatusBar,
     QDialogButtonBox,
     QAbstractItemView,
@@ -172,12 +166,22 @@ class FileTab:
         self.status_label = QLabel("No file loaded")
 
         layout = QVBoxLayout(self.notebook_widget)
+        layout.setContentsMargins(0, 0, 0, 0) 
+        layout.setSpacing(0) 
 
         self.tree = QTreeView()
         self.tree.setHeaderHidden(False)
         self.tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.tree.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tree.setAlternatingRowColors(False)
+        self.tree.setContentsMargins(0, 0, 0, 0) 
+        self.tree.setStyleSheet("""
+            QTreeView {
+                border: none;
+                margin: 0px;
+                padding: 0px;
+            }
+        """)
         
         self.tree.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
         self.tree.setExpandsOnDoubleClick(False)
@@ -489,14 +493,6 @@ class FileTab:
             self.modified = False
             self.update_tab_title()
             
-            def update_status():
-                if hasattr(self, "status_label") and not getattr(self, "_status_updating", False):
-                    self._status_updating = True
-                    self.status_label.setText(f"Saved: {file_path}")
-                    self._status_updating = False
-            
-            QTimer.singleShot(50, update_status)
-            
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Saved: {file_path}", 3000)
                 
@@ -623,6 +619,8 @@ class REasyEditorApp(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0) 
+        main_layout.setSpacing(0) 
 
         self.notebook = CustomNotebook()
         self.notebook.app_instance = self
@@ -633,7 +631,20 @@ class REasyEditorApp(QMainWindow):
         self._create_menus()
 
         self.status_bar = QStatusBar()
+        self.status_bar.setContentsMargins(0, 0, 0, 0)
+        self.status_bar.setMaximumHeight(20) 
+        self.status_bar.setStyleSheet("""
+            QStatusBar {
+                margin: 0;
+                padding: 0;
+                border-top: 1px solid #cccccc;
+            }
+            QStatusBar::item {
+                border: none;
+            }
+        """)
         self.setStatusBar(self.status_bar)
+        self.status_bar.showMessage("Ready")
 
         self.set_dark_mode(self.dark_mode)
 
@@ -1149,6 +1160,10 @@ class REasyEditorApp(QMainWindow):
 
     def show_about(self):
         create_about_dialog(self)
+
+    def update_status(self, message, timeout=5000):
+        if hasattr(self, 'status_bar'):
+            self.status_bar.showMessage(message, timeout)
 
 
 def main():

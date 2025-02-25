@@ -77,12 +77,22 @@ class ConsoleWidget(QPlainTextEdit):
         super().__init__(parent)
         self.setReadOnly(True)
         self.setMaximumBlockCount(5000)
+        self.document().setDocumentMargin(0) 
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  
+        self.setContentsMargins(0, 0, 0, 0)  
         self.setStyleSheet("""
             QPlainTextEdit {
                 background-color: #000000;
                 color: #00FF00;
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 10pt;
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+            QPlainTextEdit QScrollBar:vertical {
+                width: 12px;
+                margin: 0;
             }
         """)
 
