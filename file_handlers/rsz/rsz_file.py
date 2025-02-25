@@ -1,7 +1,7 @@
 import struct
 import uuid
 from file_handlers.rcol_file import align_offset
-from file_handlers.scn.scn_data_types import *
+from file_handlers.rsz.rsz_data_types import *
 from utils.hex_util import read_wstring, guid_le_to_str
 
 
@@ -34,6 +34,27 @@ class ScnHeader:
          self.folder_tbl,
          self.resource_info_tbl,
          self.prefab_info_tbl,
+         self.userdata_info_tbl,
+         self.data_offset) = struct.unpack_from(fmt, data, 0)
+
+class UsrHeader:
+    SIZE = 40
+    def __init__(self):
+        self.signature = b""
+        self.resource_count = 0
+        self.userdata_count = 0
+        self.info_count = 0
+        self.resource_info_tbl = 0
+        self.userdata_info_tbl = 0
+        self.data_offset = 0
+
+    def parse(self, data: bytes):
+        fmt = "<4s3I3Q"
+        (self.signature,
+         self.resource_count,
+         self.userdata_count,
+         self.info_count,
+         self.resource_info_tbl,
          self.userdata_info_tbl,
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
@@ -166,6 +187,7 @@ class ScnFile:
     def __init__(self):
         self.full_data = b""
         self.header = None
+        self.is_usr = False
         self.gameobjects = []
         self.folder_infos = []
         self.resource_infos = []
@@ -204,16 +226,33 @@ class ScnFile:
         self.full_data = memoryview(data)
         self._current_offset = 0
         
-        # Parse sections in batches where possible
-        self._parse_header(data)
-        self._parse_gameobjects(data)
-        self._parse_folder_infos(data)
-        self._parse_resource_infos(data)
-        self._parse_prefab_infos(data)
-        self._parse_userdata_infos(data)
-        self._parse_blocks(data)
-        self._parse_rsz_section(data)
-        self._parse_instances(data)
+        if data[:4] == b'USR\x00':
+            self.is_usr = True
+            self.header = UsrHeader()
+        else:
+            self.is_usr = False
+            self.header = ScnHeader()
+            
+        self.header.parse(data)
+        self._current_offset = self.header.SIZE
+
+        # For USR files, we only need to parse some sections
+        if self.is_usr:
+            self._parse_resource_infos(data)
+            self._parse_userdata_infos(data)
+            self._parse_blocks(data)
+            self._parse_rsz_section(data)
+            self._parse_instances(data)
+        else:
+            # Regular SCN parsing
+            self._parse_gameobjects(data)
+            self._parse_folder_infos(data)
+            self._parse_resource_infos(data)
+            self._parse_prefab_infos(data)
+            self._parse_userdata_infos(data)
+            self._parse_blocks(data)
+            self._parse_rsz_section(data)
+            self._parse_instances(data)
 
     def _parse_header(self, data):
         self.header = ScnHeader()
@@ -279,17 +318,17 @@ class ScnFile:
         
         # Batch process all strings instead of one-by-one
         for ri in self.resource_infos:
-            if ri.string_offset != 0:
+            if (ri.string_offset != 0):
                 s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
                 self.set_resource_string(ri, s)
                 
         for pi in self.prefab_infos:
-            if pi.string_offset != 0:
+            if (pi.string_offset != 0):
                 s, _ = read_wstring(self.full_data, pi.string_offset, 1000)
                 self.set_prefab_string(pi, s)
                 
         for ui in self.userdata_infos:
-            if ui.string_offset != 0:
+            if (ui.string_offset != 0):
                 s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
                 self.set_userdata_string(ui, s)
 
@@ -647,6 +686,9 @@ class ScnFile:
         return bytes(out)
 
     def build(self, special_align_enabled = False) -> bytes:
+        if self.is_usr:
+            return self._build_usr(special_align_enabled)
+        
         out = bytearray()
         
         # 1) Write header
@@ -844,6 +886,133 @@ class ScnFile:
         out[0:ScnHeader.SIZE] = header_bytes
         
         
+        return bytes(out)
+
+    def _build_usr(self, special_align_enabled=False) -> bytes:
+        out = bytearray()
+        
+        # 1) Write USR header with zeroed offsets initially 
+        out += struct.pack(
+            "<4s3I3Q",
+            self.header.signature,
+            self.header.resource_count,
+            self.header.userdata_count,
+            self.header.info_count,
+            0,  # resource_info_tbl
+            0,  # userdata_info_tbl
+            0   # data_offset
+        )
+
+        # 2) Align and write resource infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        resource_info_tbl = len(out)
+        for ri in self.resource_infos:
+            out += struct.pack("<II", ri.string_offset, ri.reserved)
+
+        # 3) Align and write userdata infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        userdata_info_tbl = len(out)
+        for ui in self.userdata_infos:
+            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+
+        # 4) Write resource strings
+        for ri in self.resource_infos:
+            out += self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"
+
+        # 5) Write userdata strings
+        for ui in self.userdata_infos:
+            out += self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"
+
+        # 6) RSZ Section
+        if self.rsz_header:
+            if special_align_enabled:
+                while len(out) % 16 != 0:
+                    out += b"\x00"
+                    
+            rsz_start = len(out)
+            self.header.data_offset = rsz_start
+
+            # Write RSZ header with placeholder offsets
+            rsz_header_bytes = struct.pack(
+                "<5I I Q Q Q",
+                self.rsz_header.magic,
+                self.rsz_header.version,
+                self.rsz_header.object_count,
+                len(self.instance_infos),
+                len(self.rsz_userdata_infos),
+                self.rsz_header.reserved,
+                0,  # instance_offset - will update later
+                0,  # data_offset - will update later 
+                0   # userdata_offset - will update later
+            )
+            out += rsz_header_bytes
+
+            # Write object table
+            for obj_id in self.object_table:
+                out += struct.pack("<i", obj_id)
+
+            # Add 8 null bytes before instance infos (no 16-byte alignment)
+            new_instance_offset = len(out) - rsz_start
+            
+            for inst in self.instance_infos:
+                out += struct.pack("<II", inst.type_id, inst.crc)
+
+            # Write userdata at 16-byte alignment
+            while len(out) % 16 != 0:
+                out += b"\x00"
+            new_userdata_offset = len(out) - rsz_start
+
+            # Write userdata entries and strings
+            userdata_entries = []
+            for rui in self.rsz_userdata_infos:
+                entry_offset = len(out) - rsz_start
+                out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
+                userdata_entries.append((entry_offset, rui))
+
+            for entry_offset, rui in userdata_entries:
+                string_offset = len(out) - rsz_start
+                string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
+                out += string_data
+                struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
+
+            # Write instance data at 16-byte alignment
+            while len(out) % 16 != 0:
+                out += b"\x00"
+            new_data_offset = len(out) - rsz_start
+            
+            instance_data = self._write_instance_data()
+            out += instance_data
+
+            # Update RSZ header with actual offsets
+            new_rsz_header = struct.pack(
+                "<5I I Q Q Q",
+                self.rsz_header.magic,
+                self.rsz_header.version, 
+                self.rsz_header.object_count,
+                len(self.instance_infos),
+                len(self.rsz_userdata_infos),
+                self.rsz_header.reserved,
+                new_instance_offset,
+                new_data_offset,
+                new_userdata_offset
+            )
+            out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+
+        # 7) Update USR header
+        header_bytes = struct.pack(
+            "<4s3I3Q",
+            self.header.signature,
+            self.header.resource_count,
+            self.header.userdata_count,
+            self.header.info_count,
+            resource_info_tbl,
+            userdata_info_tbl,
+            self.header.data_offset
+        )
+        out[0:UsrHeader.SIZE] = header_bytes
+
         return bytes(out)
 
     def get_resource_string(self, ri):

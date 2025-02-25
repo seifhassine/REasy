@@ -92,7 +92,7 @@ class AdvancedTreeView(QTreeView):
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
-    # Centralized widget type mapping - used by ScnViewer currently
+    # Centralized widget type mapping - used by RszViewer currently
     WIDGET_TYPES = {
         "Vec4Data": Vec4Input,
         "Vec3Data": Vec3Input,

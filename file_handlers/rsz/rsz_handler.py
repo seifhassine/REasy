@@ -1,9 +1,9 @@
 """
-SCN file handler and viewer implementation.
+RSZ file handler and viewer implementation.
 
 This file contains:
-- ScnHandler: Main handler for SCN file loading and management
-- ScnViewer: Qt widget for displaying and editing SCN file contents
+- RszHandler: Main handler for RSZ file loading and management
+- RszViewer: Qt widget for displaying and editing RSZ file contents
 
 """
 
@@ -12,8 +12,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout)
 
 from utils.hex_util import guid_le_to_str
 from file_handlers.pyside.value_widgets import *
-from file_handlers.scn.scn_data_types import *
-from .scn_file import ScnFile
+from file_handlers.rsz.rsz_data_types import *
+from .rsz_file import ScnFile
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
@@ -22,10 +22,10 @@ from ..pyside.tree_widgets import AdvancedTreeView
 
 #########################################################
 from ..base_handler import BaseFileHandler
-from .scn_file import ScnFile
+from .rsz_file import ScnFile
 from ui.styles import get_color_scheme, get_tree_stylesheet
 
-class ScnHandler(BaseFileHandler):
+class RszHandler(BaseFileHandler):
     """Handler for SCN files"""
     
     def __init__(self):
@@ -35,11 +35,12 @@ class ScnHandler(BaseFileHandler):
         self._viewer = None 
 
     def can_handle(data: bytes) -> bool:
-        """Check if data appears to be an SCN file"""
+        """Check if data appears to be an SCN or USR file"""
         if len(data) < 4:
             return False
-        signature = data[:4].decode('ascii', errors='ignore')
-        return signature == 'SCN\x00'
+        scn_sig = b'SCN\x00'
+        usr_sig = b'USR\x00'
+        return data[:4] in [scn_sig, usr_sig]
         
     def read(self, data: bytes):
         """Parse the SCN data"""
@@ -50,7 +51,7 @@ class ScnHandler(BaseFileHandler):
         
     def create_viewer(self):
         """Create a new viewer instance"""
-        viewer = ScnViewer()
+        viewer = RszViewer()
         viewer.scn = self.scn_file
         viewer.handler = self
         viewer.type_registry = self.type_registry
@@ -76,7 +77,7 @@ class ScnHandler(BaseFileHandler):
         return self.scn_file.build()
 
 
-class ScnViewer(QWidget):
+class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
     ROW_HEIGHT = 24  
     modified_changed = Signal(bool) 
@@ -311,6 +312,28 @@ class ScnViewer(QWidget):
         return node
 
     def _add_data_block(self, parent_dict):
+        if self.handler.scn_file.is_usr:
+            # For USR files - add a single root object
+            if len(self.scn.object_table) > 0:
+                root_instance_id = self.scn.object_table[0]
+                if root_instance_id in self.scn.parsed_elements:
+                    inst_info = self.scn.instance_infos[root_instance_id]
+                    type_info = self.type_registry.get_type_info(inst_info.type_id)
+                    type_name = type_info["name"] if type_info and "name" in type_info else "UserData"
+                    
+                    root_dict = {
+                        "data": [f"{type_name} (ID: {root_instance_id})", ""],
+                        "children": []
+                    }
+                    fields = self.scn.parsed_elements[root_instance_id]
+                    for field_name, field_data in fields.items():
+                        root_dict["children"].append(
+                            self._create_field_dict(field_name, field_data)
+                        )
+                    parent_dict["children"].append(root_dict)
+            return
+
+        # Original SCN file handling
         processed = set()
         nodes = {}
         gameobjects_folder = {
@@ -595,3 +618,4 @@ class ScnViewer(QWidget):
         if is_hex:
             return f"0x{value:X}"
         return str(value)
+

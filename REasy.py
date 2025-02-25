@@ -8,7 +8,7 @@ import struct
 import weakref
 
 from file_handlers.factory import get_handler_for_data 
-from file_handlers.scn.scn_handler import ScnHandler  
+from file_handlers.rsz.rsz_handler import RszHandler  
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
@@ -669,7 +669,7 @@ class REasyEditorApp(QMainWindow):
                 url.isLocalFile()
                 and url.toLocalFile()
                 .lower()
-                .endswith((".uvar", ".uvar.3", ".scn.20", ".rcol.25"))
+                .endswith((".uvar", ".uvar.3", ".scn.20", "user.2", ".rcol.25"))
                 for url in urls
             ):
                 event.acceptProposedAction()
@@ -1095,7 +1095,7 @@ class REasyEditorApp(QMainWindow):
             self,
             "Open File",
             "",
-            "RE4 Files (*.uvar *.uvar.* *.scn.20 *.rcol.25);;SCN Files (*.scn.20);;UVAR Files (*.uvar *.uvar.*);;RCOL Files (*.rcol.25);;All Files (*.*)",
+            "RE4 Files (*.uvar *.uvar.* *.scn.20 *.user.2 *.rcol.25);;SCN Files (*.scn.20);;User Files (*.user.2);;UVAR Files (*.uvar *.uvar.*);;RCOL Files (*.rcol.25);;All Files (*.*)",
         )
         if not fn:
             return
@@ -1106,7 +1106,7 @@ class REasyEditorApp(QMainWindow):
             handler = get_handler_for_data(data)
             if handler:
                 self.add_tab(fn, data)
-                if(handler == ScnHandler):
+                if(handler == RszHandler):
                     handler.show_advanced = self.settings.get("show_advanced", True)
             else:
                 QMessageBox.critical(self, "Error", "Unsupported file type")

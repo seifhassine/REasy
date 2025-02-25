@@ -7,7 +7,7 @@ import statistics
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
-from scn.scn_file import ScnFile
+from rsz.rsz_file import ScnFile
 
 def format_size(size):
     """Convert bytes to human readable format"""
