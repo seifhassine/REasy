@@ -15,9 +15,9 @@ class RcolHandler(FileHandler):
         self.refresh_tree_callback = None
         self.app = None
         self.type_registry = None
-
-    @classmethod
-    def can_handle(cls, data: bytes) -> bool:
+    
+    @staticmethod
+    def can_handle(data: bytes) -> bool:
         if len(data) < 4:
             return False
         sig = struct.unpack_from("<I", data, 0)[0]

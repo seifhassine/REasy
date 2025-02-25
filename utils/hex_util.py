@@ -2,6 +2,7 @@
 
 import struct
 from typing import Tuple
+import uuid
 
 
 def align(offset, alignment=16):
@@ -53,10 +54,30 @@ def read_wstring(data: bytes, offset: int, max_wchars: int) -> Tuple[str, int]:
     return string, end + 2  
 
 
+
 def guid_le_to_str(guid_bytes: bytes) -> str:
+    """Convert little-endian GUID bytes to string format"""
     if len(guid_bytes) != 16:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
+        return "00000000-0000-0000-0000-000000000000"
+        
     try:
-        return str(uuid.UUID(bytes_le=guid_bytes))
-    except Exception:
-        return f"INVALID_GUID_{guid_bytes.hex()}"
+        guid = uuid.UUID(bytes_le=bytes(guid_bytes))  # Ensure bytes conversion
+        return str(guid)
+    except Exception as e:
+        print(f"Error converting GUID bytes {guid_bytes.hex()}: {e}")
+        return "00000000-0000-0000-0000-000000000000"
+
+def sanitize_guid_str(guid_str: str) -> str:
+    """Clean and validate GUID string"""
+    try:
+        # Try parsing as UUID first
+        guid = uuid.UUID(guid_str)
+        return str(guid)
+    except ValueError:
+        # If that fails, try cleaning the string
+        clean = ''.join(c for c in guid_str if c in '0123456789abcdefABCDEF-')
+        try:
+            return str(uuid.UUID(clean))
+        except ValueError:
+            print(f"Invalid GUID string: {guid_str}")
+            return "00000000-0000-0000-0000-000000000000"

@@ -1,19 +1,23 @@
-import os
-import sys
-import json
 import struct
 import uuid
 import re
-import math
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, simpledialog
+
 from collections import defaultdict
 
-from file_handlers.base_handler import FileHandler
-from utils.hash_util import murmur3_hash 
-from utils.hex_util import * 
+from PySide6.QtWidgets import (
+    QMenu, QInputDialog, QMessageBox, 
+    QTreeWidget, QTreeWidgetItem, QTreeView  
+)
+from PySide6.QtCore import Qt, QModelIndex
+from PySide6.QtGui import QClipboard
 
-# ---------- Data Structures ----------
+from file_handlers.base_handler import FileHandler
+from utils.hash_util import murmur3_hash
+from utils.hex_util import (
+    available, align, read_null_terminated_wstring
+)
+
+from .uvar.uvar_treeview import LazyTreeModel
 
 class VariableEntry:
     def __init__(self):
@@ -71,6 +75,7 @@ class UvarFile:
         self.raw_data = data
         self.start_pos = start_pos
         offset = start_pos
+
         if available(data, offset, 8):
             self.offset_version = offset
             self.offset_magic = offset + 4
@@ -78,24 +83,32 @@ class UvarFile:
             offset += 8
         else:
             return
+
         if not available(data, offset, 32):
             return
         self.stringsOffset, self.dataOffset, self.embedsInfoOffset, self.hashInfoOffset = struct.unpack_from("<QQQQ", data, offset)
         offset += 32
+
         if self.version < 3 and available(data, offset, 8):
             self.unkn64 = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
+
         if available(data, offset, 8):
             self.UVARhash, self.variableCount, self.embedCount = struct.unpack_from("<IHH", data, offset)
             offset += 8
+
         if self.variableCount > 0 and self.dataOffset < len(data):
             self._read_variables(data, self.start_pos + self.dataOffset)
+
         if self.stringsOffset != 0:
             self._read_strings(data, self.start_pos + self.stringsOffset, self.variableCount + 1)
+
         if self.variableCount > 0:
             self._read_values(data)
+
         if self.embedCount > 0 and self.embedsInfoOffset < len(data):
             self._read_embed_offsets(data)
+
         self.embeddedUvars = []
         for eoff in self.embedOffsets:
             if eoff < len(data):
@@ -103,8 +116,10 @@ class UvarFile:
                 child.parent = self
                 child.read(data, eoff)
                 self.embeddedUvars.append(child)
+
         if self.hashInfoOffset != 0 and self.variableCount > 0:
             self._read_hash_data(data)
+
         self._unify_variables_with_strings()
 
     def _read_variables(self, data: bytes, var_data_start: int):
@@ -117,22 +132,27 @@ class UvarFile:
             guid_bytes = data[offset:offset+16]
             v.guid = str(uuid.UUID(bytes=bytes(guid_bytes)))
             offset += 16
+
             v.nameOffset = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
             if 0 < v.nameOffset < len(data):
                 nm, new_off, cnt = read_null_terminated_wstring(data, self.start_pos + v.nameOffset)
                 v.nameString = nm
                 v.nameMaxWchars = cnt
+
             v.floatOffset, v.uknOffset = struct.unpack_from("<QQ", data, offset)
             offset += 16
+
             v.offset_typeVal = offset
             combined = struct.unpack_from("<I", data, offset)[0]
             offset += 4
             v.typeVal = combined & 0xFFFFFF
             v.numBits = (combined >> 24) & 0xFF
+
             v.offset_nameHash = offset
             v.nameHash = struct.unpack_from("<I", data, offset)[0]
             offset += 4
+
             self.variables.append(v)
 
     def _read_strings(self, data: bytes, strings_start: int, count: int):
@@ -177,24 +197,28 @@ class UvarFile:
         guid_map_off   = self.start_pos + self.hashDataOffsets[1]
         name_hashes_off = self.start_pos + self.hashDataOffsets[2]
         name_hashmap_off = self.start_pos + self.hashDataOffsets[3]
+
         self.guids = []
         for i in range(self.variableCount):
             pos = guid_array_off + i * 16
             if available(data, pos, 16):
                 raw_g = data[pos:pos+16]
                 self.guids.append(str(uuid.UUID(bytes=bytes(raw_g))))
+
         self.guidMap = []
         for i in range(self.variableCount):
             pos = guid_map_off + i * 4
             if available(data, pos, 4):
                 val = struct.unpack_from("<I", data, pos)[0]
                 self.guidMap.append(val)
+
         self.nameHashes = []
         for i in range(self.variableCount):
             pos = name_hashes_off + i * 4
             if available(data, pos, 4):
                 val = struct.unpack_from("<I", data, pos)[0]
                 self.nameHashes.append(val)
+
         self.nameHashMap = []
         for i in range(self.variableCount):
             pos = name_hashmap_off + i * 4
@@ -207,7 +231,10 @@ class UvarFile:
             return
         knownOffs = {off for off, s in self.stringOffsets}
         for v in self.variables:
-            v.sharedStringOffset = v.nameOffset if v.nameOffset in knownOffs else None
+            if v.nameOffset in knownOffs:
+                v.sharedStringOffset = v.nameOffset
+            else:
+                v.sharedStringOffset = None
 
     def patch_header_field_in_place(self, fieldname, new_val):
         if fieldname == "version":
@@ -216,12 +243,14 @@ class UvarFile:
             struct.pack_into("<I", self.raw_data, self.offset_version, new_val)
             self.version = new_val
             return (True, f"version updated to {new_val}")
+
         elif fieldname == "magic":
             if self.offset_magic is None or not available(self.raw_data, self.offset_magic, 4):
                 return (False, "No valid offset for magic.")
             struct.pack_into("<I", self.raw_data, self.offset_magic, new_val)
             self.magic = new_val
             return (True, f"magic updated to {new_val}")
+
         return (False, "Unsupported header field")
 
     def patch_typeVal_in_place(self, var_index, new_typeVal):
@@ -247,19 +276,17 @@ class UvarFile:
         v.nameHash = new_hash
         return (True, f"nameHash updated to {new_hash}")
 
+
     def rename_variable_in_place(self, var_index, new_name):
         if not (0 <= var_index < len(self.variables)):
             return (False, "Invalid variable index.")
         var = self.variables[var_index]
-        # Update the string and its storage requirements.
         var.nameString = new_name
         var.nameMaxWchars = (len(new_name.encode("utf-16le")) + 2) // 2
 
-        # Regenerate the nameHash using murmur3.
         new_hash = murmur3_hash(new_name.encode("utf-16le"))
         var.nameHash = new_hash
 
-        # Now update the global nameHashes array.
         canonical_index = None
         for i, mapping in enumerate(self.nameHashMap):
             if mapping == var_index:
@@ -276,11 +303,13 @@ class UvarFile:
         data_block = bytearray()
         for i, var in enumerate(self.variables):
             data_block.extend(uuid.UUID(var.guid).bytes)
-            data_block.extend(struct.pack("<Q", 0)) 
+            data_block.extend(struct.pack("<Q", 0))
+
             float_offset = header_size + count * 48 + i * 4
             var.floatOffset = float_offset
             data_block.extend(struct.pack("<Q", float_offset))
-            data_block.extend(struct.pack("<Q", 0))  
+            data_block.extend(struct.pack("<Q", 0))
+
             combined = (var.typeVal & 0xFFFFFF) | ((var.numBits & 0xFF) << 24)
             data_block.extend(struct.pack("<I", combined))
             data_block.extend(struct.pack("<I", var.nameHash))
@@ -290,10 +319,7 @@ class UvarFile:
         count = len(self.variables)
         values_block = bytearray()
         for i in range(count):
-            try:
-                f_val = float(self.values[i])
-            except IndexError:
-                f_val = 0.0
+            f_val = float(self.values[i])
             values_block.extend(struct.pack("<f", f_val))
         return values_block
 
@@ -301,6 +327,7 @@ class UvarFile:
         strings_block = bytearray()
         file_title = self.strings[0] if self.strings else ""
         strings_block.extend(file_title.encode("utf-16le") + b"\x00\x00")
+
         relative_string_offsets = []
         for i, var in enumerate(self.variables):
             s = self.strings[i+1] if len(self.strings) > i+1 else var.nameString
@@ -308,15 +335,18 @@ class UvarFile:
             s_bytes = s.encode("utf-16le") + b"\x00\x00"
             strings_block.extend(s_bytes)
             var.nameMaxWchars = len(s_bytes) // 2
+
         return strings_block, relative_string_offsets
 
     def _build_embed_blocks(self, strings_offset, strings_block_length):
         embed_count = len(self.embeddedUvars)
         if embed_count == 0:
             return 0, bytearray(), bytearray()
+
         embed_info_offset = align(strings_offset + strings_block_length, 16)
         embed_info_block = bytearray()
         embedded_block = bytearray()
+
         embed_start = embed_info_offset + embed_count * 8
         for child in self.embeddedUvars:
             child_offset = embed_start + len(embedded_block)
@@ -325,6 +355,7 @@ class UvarFile:
             embedded_block.extend(child_data)
             pad_len = (16 - (len(embedded_block) % 16)) % 16
             embedded_block.extend(bytearray(b"\x00" * pad_len))
+
         return embed_info_offset, embed_info_block, embedded_block
 
     def _build_hashdata_block(self, hash_info_offset):
@@ -336,7 +367,12 @@ class UvarFile:
             guid_map_offset = guids_offset + count * 16
             name_hashes_offset = guid_map_offset + count * 4
             name_hashmap_offset = name_hashes_offset + count * 4
-            hashdata_block.extend(struct.pack("<QQQQ", guids_offset, guid_map_offset, name_hashes_offset, name_hashmap_offset))
+
+            hashdata_block.extend(struct.pack("<QQQQ",
+                                            guids_offset,
+                                            guid_map_offset,
+                                            name_hashes_offset,
+                                            name_hashmap_offset))
             sorted_guid_pairs = sorted(
                 ((self.guids[i], self.guidMap[i]) for i in range(count)),
                 key=lambda pair: uuid.UUID(pair[0]).bytes_le
@@ -345,10 +381,12 @@ class UvarFile:
             sorted_guidMap = [pair[1] for pair in sorted_guid_pairs]
             self.guids = sorted_guids
             self.guidMap = sorted_guidMap
+
             for guid_str in self.guids:
                 hashdata_block.extend(uuid.UUID(guid_str).bytes)
             for idx in self.guidMap:
                 hashdata_block.extend(struct.pack("<I", idx))
+
             sorted_pairs = sorted(
                 ((self.nameHashes[i], self.nameHashMap[i]) for i in range(count)),
                 key=lambda pair: pair[0]
@@ -357,14 +395,16 @@ class UvarFile:
             sorted_nameHashMap = [pair[1] for pair in sorted_pairs]
             self.nameHashes = sorted_nameHashes
             self.nameHashMap = sorted_nameHashMap
-            for nh in sorted_nameHashes:
+
+            for nh in self.nameHashes:
                 hashdata_block.extend(struct.pack("<I", nh))
-            for nhm in sorted_nameHashMap:
+            for nhm in self.nameHashMap:
                 hashdata_block.extend(struct.pack("<I", nhm))
         return hashdata_block
 
     def rebuild(self) -> bytes:
         self.update_strings()
+
         header_size = 48
         count = len(self.variables)
         embed_count = len(self.embeddedUvars)
@@ -384,6 +424,7 @@ class UvarFile:
             abs_off = strings_offset + rel_off
             s = self.strings[i+1] if i+1 < len(self.strings) else ""
             self.stringOffsets.append((abs_off, s))
+
         for i in range(count):
             abs_off = strings_offset + relative_string_offsets[i]
             struct.pack_into("<Q", data_block, i * 48 + 16, abs_off)
@@ -397,6 +438,7 @@ class UvarFile:
             embed_info_block = bytearray()
             embedded_block = bytearray()
             hash_info_offset = align(strings_offset + len(strings_block), 16)
+
         hash_info_offset = align(hash_info_offset, 16)
         hashdata_block = self._build_hashdata_block(hash_info_offset)
 
@@ -417,115 +459,36 @@ class UvarFile:
         final_file.extend(values_block)
         final_file.extend(pad_after_values)
         final_file.extend(strings_block)
+
         if embed_count > 0:
             current_end = strings_offset + len(strings_block)
             pad = embed_info_offset - current_end
             final_file.extend(bytearray(b"\x00" * pad))
             final_file.extend(embed_info_block)
             final_file.extend(embedded_block)
+
         if len(final_file) < hash_info_offset:
             final_file.extend(bytearray(b"\x00" * (hash_info_offset - len(final_file))))
         final_file.extend(hashdata_block)
+
         self.raw_data = final_file
         return final_file
-
-def populate_treeview(tree, parent_id, uvar, metadata_map, label="UVAR_File"):
-    this_id = tree.insert(parent_id, "end", text=label, values=("",))
-    metadata_map[this_id] = {"type": "uvarFile", "object": uvar}
-
-    # --- Header Section (unchanged) ---
-    hdr_id = tree.insert(this_id, "end", text="Header", values=("",))
-    for field in ["version", "magic", "stringsOffset", "dataOffset", "embedsInfoOffset", "hashInfoOffset"]:
-        val = getattr(uvar, field)
-        node_id = tree.insert(hdr_id, "end", text=field, values=(val,))
-        metadata_map[node_id] = {"type": "headerInt", "field": field, "object": uvar}
-    if uvar.version < 3:
-        node_id = tree.insert(hdr_id, "end", text="unkn64", values=(uvar.unkn64,))
-        metadata_map[node_id] = {"type": "headerInt", "field": "unkn64", "object": uvar}
-    for field in ["UVARhash", "variableCount", "embedCount"]:
-        val = getattr(uvar, field)
-        node_id = tree.insert(hdr_id, "end", text=field, values=(val,))
-        metadata_map[node_id] = {"type": "headerInt", "field": field, "object": uvar}
-
-    # --- Data (Variables) Section ---
-    data_id = tree.insert(this_id, "end", text="Data (Variables)", values=("",))
-    for i, var in enumerate(uvar.variables):
-
-        var_id = tree.insert(data_id, "end", text=f"Variable[{i}]", values=("",))
-        metadata_map[var_id] = {"type": "variable", "varIndex": i, "object": uvar}
-        
-        # GUID (editable)
-        guid_id = tree.insert(var_id, "end", text="GUID", values=(var.guid,))
-        metadata_map[guid_id] = {"type": "guid", "varIndex": i, "object": uvar}
-        # nameOffset (non-editable)
-        tree.insert(var_id, "end", text="nameOffset", values=(var.nameOffset,))
-        # nameString (editable)
-        name_string_id = tree.insert(var_id, "end", text="nameString", values=(var.nameString,))
-        metadata_map[name_string_id] = {"type": "nameString", "varIndex": i, "object": uvar}
-        # floatOffset (non-editable)
-        tree.insert(var_id, "end", text="floatOffset", values=(var.floatOffset,))
-        # uknOffset (non-editable)
-        tree.insert(var_id, "end", text="uknOffset", values=(var.uknOffset,))
-        # typeVal (editable)
-        type_val_id = tree.insert(var_id, "end", text="typeVal", values=(var.typeVal,))
-        metadata_map[type_val_id] = {"type": "varTypeVal", "varIndex": i, "object": uvar}
-        # numBits (non-editable)
-        tree.insert(var_id, "end", text="numBits", values=(var.numBits,))
-        # nameHash (editable)
-        name_hash_id = tree.insert(var_id, "end", text="nameHash", values=(var.nameHash,))
-        metadata_map[name_hash_id] = {"type": "varNameHash", "varIndex": i, "object": uvar}
-        # Value fields (split into float and int)
-        if i < len(uvar.values):
-            f_val = uvar.values[i]
-            i_val = struct.unpack("<I", struct.pack("<f", f_val))[0]
-        else:
-            f_val = 0.0
-            i_val = 0
-        value_float_text = f"{f_val:.4f}"
-        value_float_id = tree.insert(var_id, "end", text="Value (float)", values=(value_float_text,))
-        metadata_map[value_float_id] = {"type": "value_float", "varIndex": i, "object": uvar}
-        value_int_text = f"{i_val}"
-        value_int_id = tree.insert(var_id, "end", text="Value (int)", values=(value_int_text,))
-        metadata_map[value_int_id] = {"type": "value_int", "varIndex": i, "object": uvar}
-
-    # HashData Section
-    hd_id = tree.insert(this_id, "end", text="HashData", values=("",))
-    hash_data_offsets_id = tree.insert(hd_id, "end", text="HashDataOffsets", values=(str(uvar.hashDataOffsets),))
-    metadata_map[hash_data_offsets_id] = {"type": "headerInt", "field": "hashDataOffsets", "object": uvar}
-    guids_id = tree.insert(hd_id, "end", text=f"Guids[{len(uvar.guids)}]", values=("",))
-    for i, g in enumerate(uvar.guids):
-        tree.insert(guids_id, "end", text=f"[{i}]", values=(g,))
-    gm_id = tree.insert(hd_id, "end", text=f"GuidMap[{len(uvar.guidMap)}]", values=("",))
-    for i, gm in enumerate(uvar.guidMap):
-        tree.insert(gm_id, "end", text=f"[{i}]", values=(gm,))
-    nh_id = tree.insert(hd_id, "end", text=f"nameHashes[{len(uvar.nameHashes)}]", values=("",))
-    for i, nh in enumerate(uvar.nameHashes):
-        tree.insert(nh_id, "end", text=f"[{i}]", values=(nh,))
-    nhm_id = tree.insert(hd_id, "end", text=f"nameHashMap[{len(uvar.nameHashMap)}]", values=("",))
-    for i, nhm in enumerate(uvar.nameHashMap):
-        tree.insert(nhm_id, "end", text=f"[{i}]", values=(nhm,))
-    eo_id = tree.insert(this_id, "end", text=f"embedOffsets[{len(uvar.embedOffsets)}]", values=("",))
-    for i, eoff in enumerate(uvar.embedOffsets):
-        tree.insert(eo_id, "end", text=f"[{i}]", values=(eoff,))
-    emb_id = tree.insert(this_id, "end", text=f"Embedded_UVARs[{len(uvar.embeddedUvars)}]", values=("",))
-    for i, child in enumerate(uvar.embeddedUvars):
-        populate_treeview(tree, emb_id, child, metadata_map, label=f"UVAR_File[{i}]")
 
 class UvarHandler(FileHandler):
     def __init__(self):
         self.uvar = UvarFile()
         self.refresh_tree_callback = None
         self.app = None
+        self.current_tree = None
+        self._last_model = None
+        self.metadata_map = {}
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
-        if len(data) < 48:
+        if len(data) < 12:
             return False
-        try:
-            struct.unpack_from("<II", data, 0)
-            return True
-        except Exception:
-            return False
+        signature = data[4:8].decode('ascii', errors='ignore')
+        return signature == 'uvar'
 
     def read(self, data: bytes):
         self.uvar.read(data, 0)
@@ -533,122 +496,243 @@ class UvarHandler(FileHandler):
     def rebuild(self) -> bytes:
         return self.uvar.rebuild()
 
-    def populate_treeview(self, tree: ttk.Treeview, parent_id, metadata_map: dict):
-        populate_treeview(tree, parent_id, self.uvar, metadata_map, label="UVAR_File")
+    def populate_treeview(self, tree: QTreeView, parent_item=None, metadata_map: dict = None):
+        root_data = {
+            "text": "UVAR_File",
+            "data": ["Name", "Value"],
+            "columns": ["Name", "Value"],
+            "children": [],
+            "meta": {"type": "uvarFile", "object": self.uvar}
+        }
+        uvar_node = self.build_lazy_tree(self.uvar, "UVAR_File")
+        root_data["children"].append(uvar_node)
+        
+        model = LazyTreeModel(root_data)
+        tree.setModel(model)
+        
+        header = tree.header()
+        header.setMinimumSectionSize(150)
+        header.setStretchLastSection(True)
+        header.resizeSection(0, 200)
+        
+        root_index = model.index(0, 0, QModelIndex())
+        tree.expand(root_index)
 
-    def get_context_menu(self, tree: tk.Widget, row_id, meta: dict) -> tk.Menu:
-        menu = tk.Menu(tree, tearoff=0)
+    def refresh_tree(self, tree_view: QTreeView, metadata_map: dict):
+        tree_view.setHeaderHidden(False)
+        self.current_tree = tree_view
+        self.populate_treeview(tree_view, None, metadata_map)
+
+    def build_lazy_tree(self, uvar, label: str) -> dict:
+        node = {
+            "text": label,
+            "data": [label, ""],
+            "children": [],
+            "meta": {"type": "uvarFile", "object": uvar}
+        }
+        header = {"text": "Header", "data": ["Header", ""], "children": []}
+        for field in ["version", "magic", "stringsOffset", "dataOffset", "embedsInfoOffset", "hashInfoOffset"]:
+            header["children"].append({
+                "text": field,
+                "data": [field, str(getattr(uvar, field, ""))]
+            })
+        if uvar.version < 3:
+            header["children"].append({
+                "text": "unkn64",
+                "data": ["unkn64", str(uvar.unkn64)]
+            })
+        for field in ["UVARhash", "variableCount", "embedCount"]:
+            header["children"].append({
+                "text": field,
+                "data": [field, str(getattr(uvar, field, ""))]
+            })
+        node["children"].append(header)
+        
+        data_node = {"text": "Data (Variables)", "data": ["Data (Variables)", ""], "children": []}
+        for i, var in enumerate(uvar.variables):
+            var_node = {
+                "text": f"Variable[{i}]",
+                "data": [f"Variable[{i}]", ""],
+                "children": [],
+                "meta": {"type": "variable", "varIndex": i, "object": uvar}
+            }
+            var_node["children"].append({"text": "GUID", "data": ["GUID", var.guid]})
+            var_node["children"].append({"text": "nameOffset", "data": ["nameOffset", str(var.nameOffset)]})
+            var_node["children"].append({"text": "nameString", "data": ["nameString", var.nameString]})
+            var_node["children"].append({"text": "floatOffset", "data": ["floatOffset", str(var.floatOffset)]})
+            var_node["children"].append({"text": "uknOffset", "data": ["uknOffset", str(var.uknOffset)]})
+            var_node["children"].append({"text": "typeVal", "data": ["typeVal", str(var.typeVal)]})
+            var_node["children"].append({"text": "numBits", "data": ["numBits", str(var.numBits)]})
+            var_node["children"].append({"text": "nameHash", "data": ["nameHash", str(var.nameHash)]})
+            if i < len(uvar.values):
+                f_val = uvar.values[i]
+            else:
+                f_val = 0.0
+            i_val = struct.unpack("<I", struct.pack("<f", f_val))[0]
+            var_node["children"].append({"text": "Value (float)", "data": ["Value (float)", f"{f_val:.4f}"]})
+            var_node["children"].append({"text": "Value (int)", "data": ["Value (int)", str(i_val)]})
+            data_node["children"].append(var_node)
+        node["children"].append(data_node)
+        
+        hash_node = {"text": "HashData", "data": ["HashData", ""], "children": []}
+        hash_node["children"].append({"text": "HashDataOffsets", "data": ["HashDataOffsets", str(uvar.hashDataOffsets)]})
+        guids_node = {"text": f"Guids[{len(uvar.guids)}]", "data": [f"Guids[{len(uvar.guids)}]", ""], "children": []}
+        for i, g in enumerate(uvar.guids):
+            guids_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", g]})
+        hash_node["children"].append(guids_node)
+        guidmap_node = {"text": f"GuidMap[{len(uvar.guidMap)}]", "data": [f"GuidMap[{len(uvar.guidMap)}]", ""], "children": []}
+        for i, gm in enumerate(uvar.guidMap):
+            guidmap_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(gm)]})
+        hash_node["children"].append(guidmap_node)
+        nh_node = {"text": f"nameHashes[{len(uvar.nameHashes)}]", "data": [f"nameHashes[{len(uvar.nameHashes)}]", ""], "children": []}
+        for i, nh in enumerate(uvar.nameHashes):
+            nh_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(nh)]})
+        hash_node["children"].append(nh_node)
+        nhm_node = {"text": f"nameHashMap[{len(uvar.nameHashMap)}]", "data": [f"nameHashMap[{len(uvar.nameHashMap)}]", ""], "children": []}
+        for i, nhm in enumerate(uvar.nameHashMap):
+            nhm_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(nhm)]})
+        hash_node["children"].append(nhm_node)
+        e_offsets_node = {"text": f"embedOffsets[{len(uvar.embedOffsets)}]", "data": [f"embedOffsets[{len(uvar.embedOffsets)}]", ""], "children": []}
+        for i, eoff in enumerate(uvar.embedOffsets):
+            e_offsets_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(eoff)]})
+        hash_node["children"].append(e_offsets_node)
+        node["children"].append(hash_node)
+        
+        if uvar.embeddedUvars:
+            embedded_node = {"text": f"Embedded UVARs [{len(uvar.embeddedUvars)}]", "data": ["Embedded UVARs", ""], "children": []}
+            for i, child in enumerate(uvar.embeddedUvars):
+                child_node = self.build_lazy_tree(child, f"UVAR_File[{i}]")
+                embedded_node["children"].append(child_node)
+            node["children"].append(embedded_node)
+        
+        return node
+
+    def get_context_menu(self, tree: QTreeWidget, item: QTreeWidgetItem, meta: dict) -> QMenu:
+        menu = QMenu(tree)
         if meta is None:
             return menu
 
-        # If the node represents a variable container node, allow deletion.
         if meta.get("type") == "variable" or "varIndex" in meta:
-            menu.add_command(
-                label="Delete Variable",
-                command=lambda: self._delete_variable(meta["object"], meta["varIndex"], tree.winfo_toplevel())
+            delete_action = menu.addAction("Delete Variable")
+            delete_action.triggered.connect(
+                lambda: self._delete_variable(meta["object"], meta["varIndex"], tree)
             )
 
         if meta.get("type") == "uvarFile":
             uvar_obj = meta.get("object")
             if uvar_obj:
-                menu.add_command(
-                    label="Add Variables...",
-                    command=lambda: self._open_add_variables_dialog(uvar_obj, tree.winfo_toplevel(), tree)
+                add_vars_action = menu.addAction("Add Variables...")
+                add_vars_action.triggered.connect(
+                    lambda: self._open_add_variables_dialog(uvar_obj, tree)
                 )
 
-        menu.add_command(
-            label="Copy",
-            command=lambda: self._copy_field(tree, row_id)
-        )
+        copy_action = menu.addAction("Copy")
+        copy_action.triggered.connect(lambda: self._copy_field(tree, item))
+
         return menu
 
     def refresh_ui(self):
         if self.refresh_tree_callback:
             self.refresh_tree_callback()
-        
-    def _open_add_variables_dialog(self, target_uvar, parent, tree):
+  
+  
+    def _open_add_variables_dialog(self, target_uvar, parent_widget):
         if self.app is None:
-            messagebox.showerror("Error", "Internal error: app reference is missing.", parent=parent)
+            QMessageBox.critical(parent_widget, "Error", "Internal error: app reference is missing.")
             return
-        prefix = simpledialog.askstring("Naming Pattern",
-                                        "Enter naming prefix for new variables (optional):",
-                                        parent=parent)
-        count = simpledialog.askinteger("Add Variables",
-                                        "Enter number of variables to add:",
-                                        parent=parent,
-                                        minvalue=1)
-        if not count:
+
+        prefix, ok = QInputDialog.getText(parent_widget, "Naming Pattern",
+                                          "Enter naming prefix for new variables (optional):")
+        if not ok:
             return
+
+        count, ok2 = QInputDialog.getInt(
+            parent_widget,
+            "Add Variables",
+            "Enter number of variables to add:",
+            1,
+            1,
+            65535,
+            1
+        )
+        if not ok2 or count < 1:
+            return
+
         try:
-            # Save current tree state (pass the tree widget)
-            state = self.save_tree_state(tree)
-            # Add variables
+            state = self.save_tree_state(parent_widget)
+
             self.add_variables(target_uvar, prefix, count)
-            # Rebuild the top-level UVAR
+
             current = target_uvar
             while current.parent:
                 current = current.parent
             rebuilt_data = current.rebuild()
             current.read(rebuilt_data, 0)
-            # Refresh the UI by calling our handler's own refresh method
-            self.refresh_ui()
-            # Restore the previous tree state
-            self.restore_tree_state(tree, state)
-            parent.update_idletasks()
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to add variables: {str(e)}", parent=parent)
-            
-    def _copy_field(self, tree: tk.Widget, row_id):
-        value = tree.set(row_id, "value")
-        if value:
-            tree.clipboard_clear()
-            tree.clipboard_append(value)
 
-    def handle_edit(self, meta: dict, new_val, old_val, row_id):
+            self.refresh_ui()
+
+            self.restore_tree_state(parent_widget, state)
+
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Failed to add variables: {str(e)}")
+
+    def _copy_field(self, tree: QTreeWidget, item: QTreeWidgetItem):
+        value = item.text(1)
+        if value:
+            QClipboard().setText(value)
+
+    def handle_edit(self, meta: dict, new_val, old_val, item=None, parent_widget=None):
+        if parent_widget is None:
+            parent_widget = item.treeWidget()
+
         try:
             target = meta.get("object", self.uvar)
             typ = meta.get("type")
+
             if typ == "value_float":
                 var_index = meta.get("varIndex")
-                f_val = float(new_val)
-                target.values[var_index] = f_val
+                target.values[var_index] = float(new_val)
+
             elif typ == "value_int":
                 var_index = meta.get("varIndex")
                 int_val = int(new_val)
-                f_val = struct.unpack("<f", struct.pack("<I", int_val))[0]
-                target.values[var_index] = f_val
+                target.values[var_index] = struct.unpack("<f", struct.pack("<I", int_val))[0]
+
             elif typ == "nameString":
                 var_index = meta.get("varIndex")
                 ok, msg = target.rename_variable_in_place(var_index, new_val)
-                if ok:
-                    messagebox.showinfo("Success", msg)
-                else:
-                    messagebox.showerror("Error", msg)
+                if not ok:
+                    QMessageBox.critical(parent_widget, "Error", msg)
                     return
+                else:
+                    QMessageBox.information(parent_widget, "Success", msg)
+
             elif typ == "headerInt":
                 ival = int(new_val)
                 field_name = meta.get("field")
                 ok, msg = target.patch_header_field_in_place(field_name, ival)
-                if ok:
-                    messagebox.showinfo("Success", msg)
-                else:
-                    messagebox.showerror("Error", msg)
+                if not ok:
+                    QMessageBox.critical(parent_widget, "Error", msg)
                     return
+                else:
+                    QMessageBox.information(parent_widget, "Success", msg)
+
             elif typ == "varTypeVal":
-                ival = int(new_val)
                 var_index = meta.get("varIndex")
+                ival = int(new_val)
                 ok, msg = target.patch_typeVal_in_place(var_index, ival)
-                if ok:
-                    messagebox.showinfo("Success", msg)
-                else:
-                    messagebox.showerror("Error", msg)
+                if not ok:
+                    QMessageBox.critical(parent_widget, "Error", msg)
                     return
+                else:
+                    QMessageBox.information(parent_widget, "Success", msg)
+
             elif typ == "varNameHash":
                 var_index = meta.get("varIndex")
                 new_key = int(new_val)
                 ok, msg = target.patch_nameHash_in_place(var_index, new_key)
                 if not ok:
-                    messagebox.showerror("Error", msg)
+                    QMessageBox.critical(parent_widget, "Error", msg)
                     return
                 canonical_index = None
                 for i, mapping in enumerate(target.nameHashMap):
@@ -656,126 +740,155 @@ class UvarHandler(FileHandler):
                         canonical_index = i
                         break
                 if canonical_index is None:
-                    messagebox.showerror("Error", "No canonical mapping found for this variable.")
+                    QMessageBox.critical(parent_widget, "Error", "No canonical mapping found for this variable.")
                     return
                 target.nameHashes[canonical_index] = new_key
+
             elif typ == "guid":
                 try:
                     new_guid = str(uuid.UUID(new_val.strip()))
                 except Exception as e:
-                    messagebox.showerror("Error", f"Invalid GUID: {new_val}\n{e}")
+                    QMessageBox.critical(parent_widget, "Error", f"Invalid GUID: {new_val}\n{e}")
                     return
                 var_index = meta.get("varIndex")
                 target.variables[var_index].guid = new_guid
 
-            self.uvar.rebuild()
-        except Exception as e:
-            messagebox.showerror("Error", f"An exception occurred: {e}")
-            return
-        
-    def save_tree_state(self, tree: ttk.Treeview) -> dict:
-        """
-        Capture the current state of the tree (yview, expansion, selection).
-        Returns a dictionary representing the state.
-        """
-        state = {}
-        state['yview'] = tree.yview()
-        state['expansion'] = {}
-
-        def save_node(node, path):
-            state['expansion'][path] = tree.item(node, "open")
-            for child in tree.get_children(node):
-                child_text = tree.item(child, "text")
-                save_node(child, path + (child_text,))
-        
-        for node in tree.get_children(""):
-            node_text = tree.item(node, "text")
-            save_node(node, (node_text,))
-        selected = tree.selection()
-        state['selected'] = tree.item(selected[0], "text") if selected else None
-        return state
-
-    def restore_tree_state(self, tree: ttk.Treeview, state: dict) -> None:
-        """
-        Restore the tree state from a state dictionary.
-        """
-        if 'yview' in state:
-            tree.yview_moveto(state['yview'][0])
-        if 'expansion' in state:
-            exp = state['expansion']
-            def restore_node(node, path):
-                if path in exp and exp[path]:
-                    tree.item(node, open=True)
-                for child in tree.get_children(node):
-                    child_text = tree.item(child, "text")
-                    restore_node(child, path + (child_text,))
-            for node in tree.get_children(""):
-                node_text = tree.item(node, "text")
-                restore_node(node, (node_text,))
-        if state.get('selected'):
-            for node in tree.get_children(""):
-                if tree.item(node, "text") == state['selected']:
-                    tree.selection_set(node)
-                    tree.focus(node)
-                    break
-
-    def _delete_variable(self, target, var_index, parent):
-        
-        confirm = messagebox.askyesno("Confirm Deletion",
-                                      f"Are you sure you want to delete variable at index {var_index}?",
-                                      parent=parent)
-        if not confirm:
-            return
-        try:
-            
-            del target.variables[var_index]
-            target.variableCount = len(target.variables)
-
-
-            title = target.strings[0] if target.strings else ""
-            target.strings = [title] + [v.nameString for v in target.variables]
-
-
             target.guids = [v.guid for v in target.variables]
-            target.guidMap = list(range(target.variableCount))
+            target.guidMap = list(range(len(target.variables)))
             target.nameHashes = [v.nameHash for v in target.variables]
-            target.nameHashMap = list(range(target.variableCount))
-            
-            if len(target.values) > target.variableCount:
-                target.values = target.values[:target.variableCount]
-            while len(target.values) < target.variableCount:
-                target.values.append(0.0)
+            target.nameHashMap = list(range(len(target.variables)))
 
+            target.update_strings()
 
             current = target
             while current.parent:
                 current = current.parent
-            current.rebuild()
-            
+            rebuilt_data = current.rebuild()
+            current.read(rebuilt_data, 0)
+
             self.refresh_ui()
+
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete variable: {e}", parent=parent)
-
-    def add_variables(self, target, prefix: str, count: int):
-        MAX_VARIABLES = 65535
+            QMessageBox.critical(parent_widget, "Error", f"An exception occurred: {e}")
+            return
         
-        if target.variableCount + count > MAX_VARIABLES:
-            raise ValueError(f"Cannot add variables: adding {count} variables would exceed the maximum allowed count of {MAX_VARIABLES}.")
+    def save_tree_state(self, tree_view: QTreeView) -> dict:
+        state = {}
+        state["scrollValue"] = tree_view.verticalScrollBar().value()
+        
+        model = tree_view.model()
+        if not model:
+            return state
+            
+        def store_expanded(index, expanded):
+            if tree_view.isExpanded(index):
+                expanded.append(self._get_path_from_index(index))
+            for row in range(model.rowCount(index)):
+                child_index = model.index(row, 0, index)
+                store_expanded(child_index, expanded)
+                
+        expanded_paths = []
+        root_index = QModelIndex()
+        for row in range(model.rowCount(root_index)):
+            index = model.index(row, 0, root_index)
+            store_expanded(index, expanded_paths)
+            
+        state["expanded"] = expanded_paths
+        return state
 
-        # Determine the base prefix and starting number.
+    def restore_tree_state(self, tree_view: QTreeView, state: dict):
+        if not state:
+            return
+            
+        model = tree_view.model()
+        if not model:
+            return
+            
+        expanded = state.get("expanded", [])
+        for path in expanded:
+            index = self._get_index_from_path(model, path)
+            if index.isValid():
+                tree_view.setExpanded(index, True)
+                
+        if "scrollValue" in state:
+            tree_view.verticalScrollBar().setValue(state["scrollValue"])
+
+    def _get_path_from_index(self, index):
+        path = []
+        while index.isValid():
+            path.append(index.data(Qt.DisplayRole))
+            index = index.parent()
+        return list(reversed(path))
+
+    def _get_index_from_path(self, model, path):
+        index = QModelIndex()
+        for text in path:
+            found = False
+            for row in range(model.rowCount(index)):
+                child = model.index(row, 0, index)
+                if child.data(Qt.DisplayRole) == text:
+                    index = child
+                    found = True
+                    break
+            if not found:
+                return QModelIndex()
+        return index
+
+    def _delete_variable(self, target_uvar, var_index, parent_widget):
+        ret = QMessageBox.question(
+            parent_widget, 
+            "Confirm Deletion", 
+            f"Are you sure you want to delete variable at index {var_index}?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if ret != QMessageBox.Yes:
+            return
+
+        try:
+            del target_uvar.variables[var_index]
+            target_uvar.variableCount = len(target_uvar.variables)
+
+            title = target_uvar.strings[0] if target_uvar.strings else ""
+            target_uvar.strings = [title] + [v.nameString for v in target_uvar.variables]
+
+            target_uvar.guids = [v.guid for v in target_uvar.variables]
+            target_uvar.guidMap = list(range(target_uvar.variableCount))
+            target_uvar.nameHashes = [v.nameHash for v in target_uvar.variables]
+            target_uvar.nameHashMap = list(range(target_uvar.variableCount))
+
+            if len(target_uvar.values) > target_uvar.variableCount:
+                target_uvar.values = target_uvar.values[:target_uvar.variableCount]
+            while len(target_uvar.values) < target_uvar.variableCount:
+                target_uvar.values.append(0.0)
+
+            current = target_uvar
+            while current.parent:
+                current = current.parent
+            current.rebuild()
+
+            self.refresh_ui()
+
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Failed to delete variable: {e}")
+
+    def add_variables(self, target_uvar, prefix: str, count: int):
+        MAX_VARIABLES = 65535
+        if target_uvar.variableCount + count > MAX_VARIABLES:
+            raise ValueError(f"Cannot add variables: adding {count} would exceed max {MAX_VARIABLES}.")
+
         if prefix:
             base_prefix = prefix
-            start = 1 
-            width = 0  
-        elif target.variables:
-            last_name = target.variables[-1].nameString.strip()
+            start = 1
+            width = 0
+        elif target_uvar.variables:
+            last_name = target_uvar.variables[-1].nameString.strip()
             m = re.search(r'(.*?)(\d+)$', last_name)
             if m:
                 base_prefix = m.group(1)
                 start = int(m.group(2)) + 1
                 width = len(m.group(2))
             else:
-                base_prefix = "Variable"
+                base_prefix = last_name + "_"
                 start = 1
                 width = 0
         else:
@@ -795,24 +908,60 @@ class UvarHandler(FileHandler):
             var.numBits = 0
             new_vars.append(var)
 
-        # All checks passed; update the target's internal state.
-        original_count = target.variableCount
-        target.variables.extend(new_vars)
-        target.variableCount += count
-        title = target.strings[0] if target.strings else ""
-        target.strings = [title] + [var.nameString for var in target.variables]
-        target.guids.extend([v.guid for v in new_vars])
-        target.guidMap.extend(range(original_count, original_count + count))
-        target.nameHashes.extend([v.nameHash for v in new_vars])
-        target.nameHashMap.extend(range(original_count, original_count + count))
-        target.values.extend([0.0] * count)
-        
-        # Rebuild from the top-level UVAR.
-        current = target
+        original_count = target_uvar.variableCount
+        target_uvar.variables.extend(new_vars)
+        target_uvar.variableCount += count
+
+        title = target_uvar.strings[0] if target_uvar.strings else ""
+        target_uvar.strings = [title] + [v.nameString for v in target_uvar.variables]
+
+        target_uvar.guids.extend([v.guid for v in new_vars])
+        target_uvar.guidMap.extend(range(original_count, original_count + count))
+        target_uvar.nameHashes.extend([v.nameHash for v in new_vars])
+        target_uvar.nameHashMap.extend(range(original_count, original_count + count))
+        target_uvar.values.extend([0.0] * count)
+
+        current = target_uvar
         while current.parent:
             current = current.parent
         current.rebuild()
 
     def update_strings(self):
         self.uvar.update_strings()
-        
+
+    def validate_edit(self, meta: dict, new_val: str, old_val: str = None) -> bool:
+        try:
+            typ = meta.get("type")
+
+            if typ == "value_float":
+                float(new_val)
+            elif typ == "value_int":
+                int(new_val)
+            elif typ == "nameString":
+                if not new_val or len(new_val) > 255:
+                    return False
+            elif typ == "headerInt":
+                int(new_val)
+            elif typ == "varTypeVal":
+                val = int(new_val)
+                if not (0 <= val <= 0xFFFFFF):
+                    return False
+            elif typ == "varNameHash":
+                val = int(new_val)
+                if not (0 <= val <= 0xFFFFFFFF):
+                    return False
+            elif typ == "guid":
+                uuid.UUID(new_val.strip())
+            else:
+                return False
+
+            return True
+
+        except (ValueError, TypeError, uuid.UUID.Error):
+            return False
+
+
+
+
+
+
