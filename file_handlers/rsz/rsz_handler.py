@@ -480,26 +480,35 @@ class RszViewer(QWidget):
         """Creates dictionary node with added type info"""
         if isinstance(data_obj, ArrayData):
             children = []
-            # Get original type from the ArrayData object
             original_type = f'{data_obj.orig_type}' if data_obj.orig_type else ""
 
             # Create child nodes
             for i, element in enumerate(data_obj.values):
                 if isinstance(element, ObjectData):
                     ref_id = element.value
-                    # Get type name from JSON
-                    type_name = "Unknown"
-                    if ref_id in self.scn.parsed_elements and ref_id < len(self.scn.instance_infos):
-                        inst_info = self.scn.instance_infos[ref_id]
-                        type_info = self.type_registry.get_type_info(inst_info.type_id)
-                        if type_info and "name" in type_info:
-                            type_name = type_info["name"]
-                    
-                    obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
-                    if ref_id in self.scn.parsed_elements:
-                        for fn, fd in self.scn.parsed_elements[ref_id].items():
-                            obj_node["children"].append(self._create_field_dict(fn, fd))
-                    children.append(obj_node)
+                    # Check if reference is to UserData first
+                    if ref_id in self.scn._rsz_userdata_set:
+                        for rui in self.scn.rsz_userdata_infos:
+                            if rui.instance_id == ref_id:
+                                # For UserData, just show the string value
+                                display_value = self.scn.get_rsz_userdata_string(rui)
+                                obj_node = DataTreeBuilder.create_data_node(str(i) + f": {display_value}", "")
+                                children.append(obj_node)
+                                break
+                    else:
+                        # Normal object reference handling
+                        type_name = "Unknown"
+                        if ref_id in self.scn.parsed_elements and ref_id < len(self.scn.instance_infos):
+                            inst_info = self.scn.instance_infos[ref_id]
+                            type_info = self.type_registry.get_type_info(inst_info.type_id)
+                            if type_info and "name" in type_info:
+                                type_name = type_info["name"]
+                        
+                        obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
+                        if ref_id in self.scn.parsed_elements:
+                            for fn, fd in self.scn.parsed_elements[ref_id].items():
+                                obj_node["children"].append(self._create_field_dict(fn, fd))
+                        children.append(obj_node)
                 else:
                     # Pass proper type info for array elements
                     element_type = element.__class__.__name__
@@ -522,7 +531,22 @@ class RszViewer(QWidget):
 
         elif isinstance(data_obj, ObjectData):
             ref_id = data_obj.value
-            # Get type name from JSON
+            
+            # Check if reference is to UserData first
+            if ref_id in self.scn._rsz_userdata_set:
+                for rui in self.scn.rsz_userdata_infos:
+                    if rui.instance_id == ref_id:
+                        # For UserData, just show the string value without type name
+                        display_value = self.scn.get_rsz_userdata_string(rui)
+                        return DataTreeBuilder.create_data_node(
+                            f"{field_name}: {display_value}",
+                            "",
+                            None,
+                            None,
+                            []
+                        )
+
+            # Normal object reference handling
             type_name = "Unknown"
             if ref_id < len(self.scn.instance_infos):
                 inst_info = self.scn.instance_infos[ref_id]
@@ -541,6 +565,15 @@ class RszViewer(QWidget):
                 None,
                 children
             )
+
+        elif isinstance(data_obj, UserDataData):
+            # Display UserData string directly for UserDataData type
+            return DataTreeBuilder.create_data_node(
+                f"{field_name}:",
+                data_obj.value,
+                data_obj.__class__.__name__,
+                data_obj
+            )
             
         else:
             return DataTreeBuilder.create_data_node(
@@ -549,30 +582,6 @@ class RszViewer(QWidget):
                 data_obj.__class__.__name__,
                 data_obj
             )
-
-    def _get_value_from_data_obj(self, data_obj):
-        """Convert SCN data types into a string for the second column."""
-        if isinstance(data_obj, Vec3Data):
-            return f"({data_obj.x:.2f}, {data_obj.y:.2f}, {data_obj.z:.2f})"
-        elif isinstance(data_obj, Vec4Data):
-            return f"({data_obj.x:.2f}, {data_obj.y:.2f}, {data_obj.z:.2f}, {data_obj.w:.2f})"
-        elif isinstance(data_obj, OBBData):
-            return f"OBB: {len(data_obj.values)} values"
-        elif isinstance(data_obj, BoolData):
-            return str(data_obj.value)
-        elif isinstance(data_obj, F32Data):
-            return f"{data_obj.value:.6f}"
-        elif isinstance(data_obj, (S32Data, U32Data, S8Data)):
-            return str(data_obj.value)
-        elif isinstance(data_obj, StringData):
-            return data_obj.value.rstrip('\x00')
-        elif isinstance(data_obj, GameObjectRefData):
-            return data_obj.guid_str
-        else:
-            # Fallback
-            if hasattr(data_obj, "value"):
-                return str(data_obj.value)
-            return str(data_obj)
 
     def _get_instance_v0_name(self, instance_id):
         """Get name from v0 field if available."""

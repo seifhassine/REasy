@@ -38,7 +38,7 @@ class ScnHeader:
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
 class UsrHeader:
-    SIZE = 40
+    SIZE = 48
     def __init__(self):
         self.signature = b""
         self.resource_count = 0
@@ -47,16 +47,18 @@ class UsrHeader:
         self.resource_info_tbl = 0
         self.userdata_info_tbl = 0
         self.data_offset = 0
+        self.reserved = 0  
 
     def parse(self, data: bytes):
-        fmt = "<4s3I3Q"
+        fmt = "<4s3I3QQ"
         (self.signature,
          self.resource_count,
          self.userdata_count,
          self.info_count,
          self.resource_info_tbl,
          self.userdata_info_tbl,
-         self.data_offset) = struct.unpack_from(fmt, data, 0)
+         self.data_offset,
+         self.reserved) = struct.unpack_from(fmt, data, 0)
 
 class ScnGameObject:
     SIZE = 32
@@ -385,7 +387,6 @@ class ScnFile:
             new_offset = self._current_offset
         self._current_offset = self._align(new_offset, 16)
             
-
         self.data = data[self._current_offset:]
         
         self._rsz_userdata_dict = {rui.instance_id: rui for rui in self.rsz_userdata_infos}
@@ -483,6 +484,10 @@ class ScnFile:
                         out.extend(struct.pack("<2f", element.x, element.y))
                     elif isinstance(element, Float2Data):
                         out.extend(struct.pack("<2f", element.x, element.y))
+                    elif isinstance(element, RangeData):
+                        out.extend(struct.pack("<2f", element.min, element.max))
+                    elif isinstance(element, RangeIData):
+                        out.extend(struct.pack("<2i", element.min, element.max))
                     elif isinstance(element, Float3Data):
                         out.extend(struct.pack("<3f", element.x, element.y, element.z))
                     elif isinstance(element, Float4Data):
@@ -577,6 +582,12 @@ class ScnFile:
             elif isinstance(data_obj, Float2Data):
                 #print("last is float2")
                 out.extend(struct.pack("<2f", data_obj.x, data_obj.y))
+            elif isinstance(data_obj, RangeData):
+                #print("last is range")
+                out.extend(struct.pack("<2f", data_obj.min, data_obj.max))
+            elif isinstance(data_obj, RangeIData):
+                #print("last is rangeI")
+                out.extend(struct.pack("<2i", data_obj.min, data_obj.max))
             elif isinstance(data_obj, Float3Data):
                 #print("last is float3")
                 out.extend(struct.pack("<3f", data_obj.x, data_obj.y, data_obj.z))
@@ -893,31 +904,37 @@ class ScnFile:
         
         # 1) Write USR header with zeroed offsets initially 
         out += struct.pack(
-            "<4s3I3Q",
+            "<4s3I3QQ", 
             self.header.signature,
             self.header.resource_count,
             self.header.userdata_count,
             self.header.info_count,
             0,  # resource_info_tbl
             0,  # userdata_info_tbl
-            0   # data_offset
+            0,  # data_offset
+            self.header.reserved  
         )
 
-        # 2) Align and write resource infos
+        # 2) Write resource info table
         while len(out) % 16 != 0:
             out += b"\x00"
         resource_info_tbl = len(out)
+        
         for ri in self.resource_infos:
             out += struct.pack("<II", ri.string_offset, ri.reserved)
 
-        # 3) Align and write userdata infos
+        # 3) Write userdata info table
         while len(out) % 16 != 0:
             out += b"\x00"
         userdata_info_tbl = len(out)
+        
         for ui in self.userdata_infos:
             out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
 
         # 4) Write resource strings
+        while len(out) % 16 != 0:
+            out += b"\x00"
+            
         for ri in self.resource_infos:
             out += self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"
 
@@ -1002,14 +1019,15 @@ class ScnFile:
 
         # 7) Update USR header
         header_bytes = struct.pack(
-            "<4s3I3Q",
+            "<4s3I3QQ", 
             self.header.signature,
             self.header.resource_count,
             self.header.userdata_count,
             self.header.info_count,
             resource_info_tbl,
             userdata_info_tbl,
-            self.header.data_offset
+            self.header.data_offset,
+            self.header.reserved 
         )
         out[0:UsrHeader.SIZE] = header_bytes
 
@@ -1053,6 +1071,10 @@ def is_valid_reference(candidate, current_instance_index, scn_file=None):
             candidate not in scn_file._gameobject_instance_ids and 
             candidate not in scn_file._folder_instance_ids)
 
+def ensure_enough_data(dataLen, offset, size):
+    if offset + size > dataLen:
+        raise ValueError(f"Insufficient data at offset {offset:#x}")
+    
 def parse_instance_fields(
     raw: bytes,
     offset: int, 
@@ -1068,6 +1090,8 @@ def parse_instance_fields(
     unpack_uint = struct.Struct("<I").unpack_from
     unpack_float = struct.Struct("<f").unpack_from
     unpack_4float = struct.Struct("<4f").unpack_from
+    unpack_2float = struct.Struct("<2f").unpack_from
+    unpack_2int = struct.Struct("<2i").unpack_from
     unpack_int = struct.Struct("<i").unpack_from
     unpack_sbyte = struct.Struct("<b").unpack_from
     unpack_ubyte = struct.Struct("<B").unpack_from
@@ -1097,6 +1121,13 @@ def parse_instance_fields(
     def get_bytes(segment):
         return segment.tobytes() if hasattr(segment, "tobytes") else segment
 
+    def set_parent_safely(idx, parent_idx):
+        """Helper to safely set parent relationship"""
+        if idx >= 0 and idx < len(instance_hierarchy):
+            instance_hierarchy[idx]["parent"] = parent_idx
+        else:
+            print(f"Warning: Invalid instance index {idx} encountered (parent: {parent_idx})")
+
     for field in fields_def:
         field_name = field.get("name", "<unnamed>")
         ftype = field.get("type", "unknown").lower()
@@ -1110,9 +1141,6 @@ def parse_instance_fields(
 
         if is_array:
             pos = local_align(pos, 4)
-            if pos + 4 > raw_len:
-                raise ValueError(f"Insufficient data at offset {pos:#x}")
-            
             count = unpack_uint(raw, pos)[0]
             pos += 4
             
@@ -1124,8 +1152,6 @@ def parse_instance_fields(
                 
                 for i in range(count):
                     pos = local_align(pos, field_align)
-                    if pos + fsize > raw_len:
-                        raise ValueError(f"Insufficient data at offset {pos:#x}")
                         
                     value = unpack_uint(raw, pos)[0]
                     if is_valid_ref(value) and i == 0:
@@ -1133,7 +1159,7 @@ def parse_instance_fields(
                     if alreadyRef:
                         child_indexes.append(value)
                         current_children.append(value)
-                        instance_hierarchy[value]["parent"] = current_instance_index
+                        set_parent_safely(value, current_instance_index)
                         
                     all_values.append(value)
                     pos += fsize
@@ -1190,10 +1216,11 @@ def parse_instance_fields(
                 child_indexes = []
                 for _ in range(count):
                     pos = local_align(pos, field_align)
+                    ensure_enough_data(raw_len, pos, fsize)
                     idx = unpack_uint(raw, pos)[0]
                     child_indexes.append(idx)
                     current_children.append(idx)
-                    instance_hierarchy[idx]["parent"] = current_instance_index
+                    set_parent_safely(idx, current_instance_index)
                     pos += fsize
                     
                 data_obj = ArrayData(
@@ -1223,6 +1250,26 @@ def parse_instance_fields(
                     
                 pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Vec4Data, original_type)
+
+            elif rsz_type == RangeData:
+                range_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_2float(raw, pos)
+                    range_objects.append(RangeData(vals[0], vals[1]))
+                    pos += fsize
+                    
+                data_obj = ArrayData(range_objects, RangeData, original_type)
+
+            elif rsz_type == RangeIData:
+                range_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_2int(raw, pos)
+                    range_objects.append(RangeIData(vals[0], vals[1]))
+                    pos += fsize
+                    
+                data_obj = ArrayData(range_objects, RangeIData, original_type)
 
             elif rsz_type == OBBData:
                 obb_objects = []
@@ -1367,7 +1414,7 @@ def parse_instance_fields(
                 else:
                     data_obj = ObjectData(candidate)
                     current_children.append(candidate)
-                    instance_hierarchy[candidate]["parent"] = current_instance_index
+                    set_parent_safely(candidate, current_instance_index)
 
             elif rsz_type == UserDataData:
                 instance_id = unpack_uint(raw, pos)[0]
@@ -1392,7 +1439,7 @@ def parse_instance_fields(
                 pos += fsize
                 data_obj = ObjectData(child_idx)
                 current_children.append(child_idx)
-                instance_hierarchy[child_idx]["parent"] = current_instance_index
+                set_parent_safely(child_idx, current_instance_index)
 
             elif rsz_type == Vec3Data:
                 vals = unpack_4float(raw, pos)
@@ -1411,6 +1458,16 @@ def parse_instance_fields(
                 pos += fsize
                 pos = local_align(pos, field_align)
                 data_obj = OBBData(vals)
+
+            elif rsz_type == RangeData:
+                vals = unpack_2float(raw, pos)
+                pos += fsize
+                data_obj = RangeData(vals[0], vals[1])
+
+            elif rsz_type == RangeIData:
+                vals = unpack_2int(raw, pos)
+                pos += fsize
+                data_obj = RangeIData(vals[0], vals[1])
             
             elif rsz_type == StringData or rsz_type == ResourceData:
                 count = unpack_uint(raw, pos)[0]
@@ -1470,4 +1527,3 @@ def parse_instance_fields(
         parsed_elements[field_name] = data_obj
 
     return pos
-

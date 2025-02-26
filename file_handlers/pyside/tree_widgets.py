@@ -109,6 +109,8 @@ class TreeWidgetFactory:
         "S8Data": S8Input,
         "UserDataData": UserDataInput,
         "U8Data": U8Input, 
+        "RangeData": RangeInput,
+        "RangeIData": RangeIInput,  
     }
 
     @staticmethod

@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLineEdit, 
-                              QDoubleSpinBox, QCheckBox, QGridLayout, QLabel)
+                              QDoubleSpinBox, QSpinBox, QCheckBox, QGridLayout, QLabel)
 from PySide6.QtCore import Signal, Qt
 
 class BaseValueWidget(QWidget):
@@ -222,7 +222,7 @@ class NumberInput(BaseValueWidget):
             if value is not None:
                 old_value = self._data.value
                 self._data.value = value
-                if old_value != value:  # Only emit if value actually changed
+                if old_value != value:
                     self.valueChanged.emit(value)
                     self.mark_modified()
                 self.line_edit.setStyleSheet("")
@@ -233,6 +233,7 @@ class F32Input(NumberInput):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.line_edit.setPlaceholderText("Float32")
+        self.line_edit.setFixedWidth(120)
         
     def validate_and_convert(self, text):
         value = float(text)
@@ -376,7 +377,7 @@ class OBBInput(BaseValueWidget):
             spin.setValue(val)
             
     def getValues(self):
-        return [spin.value() for spin in self.spins]
+        return [spin.value() for spin in self.spinboxes]
         
     def _on_value_changed(self):
         if not self._data:
@@ -532,3 +533,141 @@ class BoolInput(BaseValueWidget):
             self._data.value = bool(state)
             self.valueChanged.emit(bool(state))
             self.mark_modified()
+
+class RangeInput(BaseValueWidget):
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        self.spinboxes = []
+        for i, name in enumerate(['Min', 'Max']):
+
+            container = QWidget()
+            container_layout = QHBoxLayout(container)
+            container_layout.setContentsMargins(0, 0, 0, 0)
+            
+            label = QLabel(name)
+            label.setMinimumWidth(30) 
+            label.setStyleSheet("padding-right: 4px;")  
+            container_layout.addWidget(label)
+            
+            spin = QDoubleSpinBox()
+            spin.setRange(-999999, 999999)
+            spin.setDecimals(6)
+            spin.setFixedWidth(100)
+            spin.setProperty("name", name.lower())
+            spin.setAlignment(Qt.AlignLeft)
+            container_layout.addWidget(spin)
+            
+            if i == 0: 
+                container.setStyleSheet("margin-left: 8px;")
+            container.setContentsMargins(0, 0, 0, 0)
+                
+            self.layout.addWidget(container)
+            self.spinboxes.append(spin)
+        
+        self.layout.addStretch()
+            
+        if data:
+            self.set_data(data)
+            
+        for spin in self.spinboxes:
+            spin.valueChanged.connect(self._on_value_changed)
+
+    def update_display(self):
+        if not self._data:
+            return
+        values = [self._data.min, self._data.max]
+        for spin, val in zip(self.spinboxes, values):
+            spin.setValue(val)
+
+    def setValues(self, values):
+        for spin, val in zip(self.spinboxes, values):
+            spin.setValue(val)
+            
+    def getValues(self):
+        return tuple(spin.value() for spin in self.spinboxes)
+        
+    def _on_value_changed(self):
+        if not self._data:
+            return
+            
+        old_values = (self._data.min, self._data.max)
+        new_values = tuple(spin.value() for spin in self.spinboxes)
+        
+        self._data.min = new_values[0]
+        self._data.max = new_values[1]
+        
+        if old_values != new_values:
+            self.valueChanged.emit(new_values)
+            self.mark_modified()
+
+class RangeIInput(BaseValueWidget):
+    """Widget for editing integer range values"""
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        self.spinboxes = []
+        for i, name in enumerate(['Min', 'Max']):
+            container = QWidget()
+            container_layout = QHBoxLayout(container)
+            container_layout.setContentsMargins(0, 0, 0, 0)
+            
+            label = QLabel(name)
+            label.setMinimumWidth(30)
+            label.setStyleSheet("padding-right: 4px;")
+            container_layout.addWidget(label)
+            
+            spin = QSpinBox()
+            spin.setRange(-2147483648, 2147483647) 
+            spin.setFixedWidth(100)
+            spin.setProperty("name", name.lower())
+            spin.setAlignment(Qt.AlignLeft)
+            container_layout.addWidget(spin)
+            
+            if i == 0:
+                container.setStyleSheet("margin-left: 8px;")
+            container.setContentsMargins(0, 0, 0, 0)
+                
+            self.layout.addWidget(container)
+            self.spinboxes.append(spin)
+        
+        self.layout.addStretch()
+            
+        if data:
+            self.set_data(data)
+            
+        for spin in self.spinboxes:
+            spin.valueChanged.connect(self._on_value_changed)
+
+    def update_display(self):
+        if not self._data:
+            return
+        values = [self._data.min, self._data.max]
+        for spin, val in zip(self.spinboxes, values):
+            spin.setValue(val)
+
+    def setValues(self, values):
+        for spin, val in zip(self.spinboxes, values):
+            spin.setValue(val)
+            
+    def getValues(self):
+        return tuple(spin.value() for spin in self.spinboxes)
+        
+    def _on_value_changed(self):
+        if not self._data:
+            return
+            
+        old_values = (self._data.min, self._data.max)
+        new_values = tuple(spin.value() for spin in self.spinboxes)
+        
+        self._data.min = new_values[0]
+        self._data.max = new_values[1]
+        
+        if old_values != new_values:
+            self.valueChanged.emit(new_values)
+            self.mark_modified()
+
