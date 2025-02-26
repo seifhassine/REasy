@@ -1,9 +1,10 @@
 #From Enums_Internal
 
 class ArrayData:
-    def __init__(self, values: list, element_type: type):
+    def __init__(self, values: list, element_type: type, orig_type: str = ""):
         self.values = values
         self.element_type = element_type
+        self.orig_type = orig_type
 
 class ObjectData:
     def __init__(self, value: int):

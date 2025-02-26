@@ -480,10 +480,22 @@ class RszViewer(QWidget):
         """Creates dictionary node with added type info"""
         if isinstance(data_obj, ArrayData):
             children = []
+            # Get original type from the ArrayData object
+            original_type = f'{data_obj.orig_type}' if data_obj.orig_type else ""
+
+            # Create child nodes
             for i, element in enumerate(data_obj.values):
                 if isinstance(element, ObjectData):
                     ref_id = element.value
-                    obj_node = DataTreeBuilder.create_data_node(str(i) + f": (ObjectRef {ref_id})", "")
+                    # Get type name from JSON
+                    type_name = "Unknown"
+                    if ref_id in self.scn.parsed_elements and ref_id < len(self.scn.instance_infos):
+                        inst_info = self.scn.instance_infos[ref_id]
+                        type_info = self.type_registry.get_type_info(inst_info.type_id)
+                        if type_info and "name" in type_info:
+                            type_name = type_info["name"]
+                    
+                    obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
                     if ref_id in self.scn.parsed_elements:
                         for fn, fd in self.scn.parsed_elements[ref_id].items():
                             obj_node["children"].append(self._create_field_dict(fn, fd))
@@ -499,22 +511,31 @@ class RszViewer(QWidget):
                         element_type, 
                         element
                     ))
+
             return DataTreeBuilder.create_data_node(
-                f"{field_name}: Array[{len(data_obj.values)}]",
+                f"{field_name}: {original_type}",
                 "",
                 "array",
                 None,
                 children
             )
-            
+
         elif isinstance(data_obj, ObjectData):
             ref_id = data_obj.value
+            # Get type name from JSON
+            type_name = "Unknown"
+            if ref_id < len(self.scn.instance_infos):
+                inst_info = self.scn.instance_infos[ref_id]
+                type_info = self.type_registry.get_type_info(inst_info.type_id)
+                if type_info and "name" in type_info:
+                    type_name = type_info["name"]
+            
             children = []
             if ref_id in self.scn.parsed_elements:
                 for fn, fd in self.scn.parsed_elements[ref_id].items():
                     children.append(self._create_field_dict(fn, fd))
             return DataTreeBuilder.create_data_node(
-                f"{field_name}: (ObjectRef {ref_id})",
+                f"{field_name}: ({type_name})",
                 "",
                 None,
                 None,

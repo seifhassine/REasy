@@ -1103,6 +1103,7 @@ def parse_instance_fields(
         fsize = field.get("size", 4)
         is_native = field.get("native", False)
         is_array = field.get("array", False)
+        original_type = field.get("original_type", "")
         field_align = int(field["align"]) if "align" in field else 1
         rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align)
         data_obj = None
@@ -1140,7 +1141,8 @@ def parse_instance_fields(
                 data_obj = ArrayData(
                     list(map(ObjectData, child_indexes)) if alreadyRef else 
                     list(map(U32Data, all_values)),
-                    ObjectData if alreadyRef else U32Data
+                    ObjectData if alreadyRef else U32Data,
+                    original_type  # Store original type from field definition
                 )
 
             elif rsz_type == UserDataData:
@@ -1165,7 +1167,8 @@ def parse_instance_fields(
                         
                 data_obj = ArrayData(
                     list(map(UserDataData, userdata_values, userdatas)) if userdatas else [],
-                    UserDataData
+                    UserDataData,
+                    original_type
                 )
                 
             elif rsz_type == GameObjectRefData:
@@ -1177,7 +1180,11 @@ def parse_instance_fields(
                     guids.append(guid_str)
                     pos += fsize
                     
-                data_obj = ArrayData(list(map(GameObjectRefData, guids)), GameObjectRefData)
+                data_obj = ArrayData(
+                    list(map(GameObjectRefData, guids)), 
+                    GameObjectRefData,
+                    original_type
+                )
             
             elif rsz_type == ObjectData:
                 child_indexes = []
@@ -1189,7 +1196,11 @@ def parse_instance_fields(
                     instance_hierarchy[idx]["parent"] = current_instance_index
                     pos += fsize
                     
-                data_obj = ArrayData(list(map(ObjectData, child_indexes)), ObjectData)
+                data_obj = ArrayData(
+                    list(map(ObjectData, child_indexes)), 
+                    ObjectData,
+                    original_type
+                )
             
             elif rsz_type == Vec3Data:
                 vec3_objects = []
@@ -1200,7 +1211,7 @@ def parse_instance_fields(
                     pos += fsize
                     
                 pos = local_align(pos, field_align) if vec3_objects else pos
-                data_obj = ArrayData(vec3_objects, Vec3Data)
+                data_obj = ArrayData(vec3_objects, Vec3Data, original_type)
 
             elif rsz_type == Vec4Data:
                 vec4_objects = []
@@ -1211,7 +1222,7 @@ def parse_instance_fields(
                     pos += fsize
                     
                 pos = local_align(pos, field_align) if vec4_objects else pos
-                data_obj = ArrayData(vec4_objects, Vec4Data)
+                data_obj = ArrayData(vec4_objects, Vec4Data, original_type)
 
             elif rsz_type == OBBData:
                 obb_objects = []
@@ -1221,7 +1232,7 @@ def parse_instance_fields(
                     obb_objects.append(OBBData(list(floats)))
                     pos += fsize
                     
-                data_obj = ArrayData(obb_objects, OBBData)
+                data_obj = ArrayData(obb_objects, OBBData, original_type)
             
             elif rsz_type == StringData or rsz_type == ResourceData:
                 children = []
@@ -1244,7 +1255,7 @@ def parse_instance_fields(
                     children.append(string_value)
                     pos += str_length
                     
-                data_obj = ArrayData(list(map(rsz_type, children)), rsz_type)
+                data_obj = ArrayData(list(map(rsz_type, children)), rsz_type, original_type)
 
             elif rsz_type == S8Data:
                 values = []
@@ -1253,7 +1264,7 @@ def parse_instance_fields(
                     values.append(S8Data(value))
                     pos += 1
                     
-                data_obj = ArrayData(values, S8Data)
+                data_obj = ArrayData(values, S8Data, original_type)
 
             elif rsz_type == U8Data:
                 values = []
@@ -1262,7 +1273,7 @@ def parse_instance_fields(
                     values.append(U8Data(value))
                     pos += 1
                     
-                data_obj = ArrayData(values, U8Data)
+                data_obj = ArrayData(values, U8Data, original_type)
 
             elif rsz_type == S16Data:
                 values = []
@@ -1272,7 +1283,7 @@ def parse_instance_fields(
                     values.append(S16Data(value))
                     pos += 2
                     
-                data_obj = ArrayData(values, S16Data)
+                data_obj = ArrayData(values, S16Data, original_type)
 
             elif rsz_type == U16Data:
                 values = []
@@ -1282,7 +1293,7 @@ def parse_instance_fields(
                     values.append(U16Data(value))
                     pos += 2
                     
-                data_obj = ArrayData(values, U16Data)
+                data_obj = ArrayData(values, U16Data, original_type)
 
             elif rsz_type == S64Data:
                 values = []
@@ -1292,7 +1303,7 @@ def parse_instance_fields(
                     values.append(S64Data(value))
                     pos += 8
                     
-                data_obj = ArrayData(values, S64Data)
+                data_obj = ArrayData(values, S64Data, original_type)
 
             elif rsz_type == U64Data:
                 values = []
@@ -1302,7 +1313,7 @@ def parse_instance_fields(
                     values.append(U64Data(value))
                     pos += 8
                     
-                data_obj = ArrayData(values, U64Data)
+                data_obj = ArrayData(values, U64Data, original_type)
 
             elif rsz_type == F32Data:
                 values = []
@@ -1312,7 +1323,7 @@ def parse_instance_fields(
                     values.append(F32Data(value))
                     pos += 4
                     
-                data_obj = ArrayData(values, F32Data)
+                data_obj = ArrayData(values, F32Data, original_type)
 
             elif rsz_type == F64Data:
                 values = []
@@ -1322,7 +1333,7 @@ def parse_instance_fields(
                     values.append(F64Data(value))
                     pos += 8
                     
-                data_obj = ArrayData(values, F64Data)
+                data_obj = ArrayData(values, F64Data, original_type)
 
             elif rsz_type == GuidData:
                 guids = []
@@ -1333,7 +1344,7 @@ def parse_instance_fields(
                     guids.append((guid_str, guid_bytes))
                     pos += fsize
                     
-                data_obj = ArrayData([GuidData(g[0], g[1]) for g in guids], GuidData)
+                data_obj = ArrayData([GuidData(g[0], g[1]) for g in guids], GuidData, original_type)
 
             else:
                 children = []
@@ -1343,7 +1354,7 @@ def parse_instance_fields(
                     children.append(RawBytesData(raw_bytes, fsize))
                     pos += fsize
                     
-                data_obj = ArrayData(children, RawBytesData)
+                data_obj = ArrayData(children, RawBytesData, original_type)
 
         else:  # Not an array
             pos = local_align(pos, field_align)
