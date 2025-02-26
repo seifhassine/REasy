@@ -32,6 +32,7 @@ I have currently rushed the release and the structure will be improved in the up
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | RE4       |
 | User       | ✅       | ✅       | RE4       |
+| PFB       | ✅       | ✅       | RE4       |
   
 </div>
 <br>
@@ -41,7 +42,7 @@ I have currently rushed the release and the structure will be improved in the up
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   
 - **RSZ File Viewing and Limited Editing:**  
-  User and SCN files are supported with limited editing at the moment.
+  User, PFB and SCN files are supported with limited editing at the moment.
   
 - **Flexible Variable Management:**  
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
