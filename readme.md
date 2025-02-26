@@ -73,7 +73,7 @@ I have currently rushed the release and the structure will be improved in the up
 ## Correctness
 
 - UVAR: No complex operations involved.
-- SCN: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game. All files with valid CRCs passed the tests.
+- RSZ Files: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game as well as all .user.2 files. All files with valid data passed the tests.
   
 ## Installation
 
