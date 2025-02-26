@@ -1498,6 +1498,11 @@ def parse_instance_fields(
                 pos += fsize
                 data_obj = S8Data(value)
 
+            elif rsz_type == U8Data:
+                value = unpack_ubyte(raw, pos)[0]
+                pos += fsize
+                data_obj = U8Data(value)
+
             elif rsz_type == S32Data:
                 value = unpack_int(raw, pos)[0]
                 pos += fsize
