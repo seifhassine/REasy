@@ -37,6 +37,33 @@ class ScnHeader:
          self.userdata_info_tbl,
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
+class PfbHeader:
+    SIZE = 56
+    def __init__(self):
+        self.signature = b""
+        self.info_count = 0
+        self.resource_count = 0
+        self.gameobject_ref_info_count = 0
+        self.userdata_count = 0
+        self.reserved = 0
+        self.gameobject_ref_info_tbl = 0
+        self.resource_info_tbl = 0
+        self.userdata_info_tbl = 0
+        self.data_offset = 0
+        
+    def parse(self, data: bytes):
+        fmt = "<4s5I4Q"
+        (self.signature,
+         self.info_count,
+         self.resource_count,
+         self.gameobject_ref_info_count,
+         self.userdata_count,
+         self.reserved,
+         self.gameobject_ref_info_tbl,
+         self.resource_info_tbl,
+         self.userdata_info_tbl,
+         self.data_offset) = struct.unpack_from(fmt, data, 0)
+
 class UsrHeader:
     SIZE = 48
     def __init__(self):
@@ -59,6 +86,20 @@ class UsrHeader:
          self.userdata_info_tbl,
          self.data_offset,
          self.reserved) = struct.unpack_from(fmt, data, 0)
+
+class GameObjectRefInfo:
+    SIZE = 16
+    def __init__(self):
+        self.object_id = 0
+        self.property_id = 0
+        self.array_index = 0
+        self.target_id = 0
+        
+    def parse(self, data: bytes, offset: int) -> int:
+        if offset + self.SIZE > len(data):
+            raise ValueError(f"Truncated GameObjectRefInfo at 0x{offset:X}")
+        self.object_id, self.property_id, self.array_index, self.target_id = struct.unpack_from("<4i", data, offset)
+        return offset + self.SIZE
 
 class ScnGameObject:
     SIZE = 32
@@ -85,6 +126,18 @@ class ScnGameObject:
         self.prefab_id, = struct.unpack_from("<i", data, offset) 
         offset += 4
         return offset
+
+class PfbGameObject:
+    SIZE = 12
+    def __init__(self):
+        self.id = 0
+        self.parent_id = 0
+        self.component_count = 0
+    def parse(self, data: bytes, offset: int) -> int:
+        if offset + self.SIZE > len(data):
+            raise ValueError(f"Truncated PfbGameObject at 0x{offset:X}")
+        self.id, self.parent_id, self.component_count = struct.unpack_from("<iii", data, offset)
+        return offset + self.SIZE
 
 class ScnFolderInfo:
     SIZE = 8
@@ -190,11 +243,13 @@ class ScnFile:
         self.full_data = b""
         self.header = None
         self.is_usr = False
+        self.is_pfb = False
         self.gameobjects = []
         self.folder_infos = []
         self.resource_infos = []
         self.prefab_infos = []
         self.userdata_infos = []      # from main header
+        self.gameobject_ref_infos = []  # for PFB files
         self.rsz_userdata_infos = []  #from RSZ section
         self.resource_block = b""
         self.prefab_block = b""
@@ -230,9 +285,15 @@ class ScnFile:
         
         if data[:4] == b'USR\x00':
             self.is_usr = True
+            self.is_pfb = False
             self.header = UsrHeader()
+        elif data[:4] == b'PFB\x00':
+            self.is_usr = False
+            self.is_pfb = True
+            self.header = PfbHeader()
         else:
             self.is_usr = False
+            self.is_pfb = False
             self.header = ScnHeader()
             
         self.header.parse(data)
@@ -240,6 +301,15 @@ class ScnFile:
 
         # For USR files, we only need to parse some sections
         if self.is_usr:
+            self._parse_resource_infos(data)
+            self._parse_userdata_infos(data)
+            self._parse_blocks(data)
+            self._parse_rsz_section(data)
+            self._parse_instances(data)
+        elif self.is_pfb:
+            # PFB file parsing
+            self._parse_gameobjects(data)
+            self._parse_gameobject_ref_infos(data)
             self._parse_resource_infos(data)
             self._parse_userdata_infos(data)
             self._parse_blocks(data)
@@ -257,15 +327,39 @@ class ScnFile:
             self._parse_instances(data)
 
     def _parse_header(self, data):
-        self.header = ScnHeader()
-        self.header.parse(data)
-        self._current_offset = ScnHeader.SIZE
+        if self.is_pfb:
+            self.header = PfbHeader()
+            self.header.parse(data)
+            self._current_offset = PfbHeader.SIZE
+        elif self.is_usr:
+            self.header = UsrHeader()
+            self.header.parse(data)
+            self._current_offset = UsrHeader.SIZE
+        else:
+            self.header = ScnHeader()
+            self.header.parse(data)
+            self._current_offset = ScnHeader.SIZE
 
     def _parse_gameobjects(self, data):
-        for i in range(self.header.info_count):
-            go = ScnGameObject()
-            self._current_offset = go.parse(data, self._current_offset)
-            self.gameobjects.append(go)
+        if self.is_pfb:
+            # PFB files use a different GameObject structure (12 bytes)
+            for i in range(self.header.info_count):
+                go = PfbGameObject()
+                self._current_offset = go.parse(data, self._current_offset)
+                self.gameobjects.append(go)
+        else:
+            # Regular SCN files use the 32-byte GameObject structure
+            for i in range(self.header.info_count):
+                go = ScnGameObject()
+                self._current_offset = go.parse(data, self._current_offset)
+                self.gameobjects.append(go)
+
+    def _parse_gameobject_ref_infos(self, data):
+        for i in range(self.header.gameobject_ref_info_count):
+            gori = GameObjectRefInfo()
+            self._current_offset = gori.parse(data, self._current_offset)
+            self.gameobject_ref_infos.append(gori)
+        self._current_offset = self._align(self._current_offset, 16)
 
     def _parse_folder_infos(self, data):
         for i in range(self.header.folder_count):
@@ -476,6 +570,8 @@ class ScnFile:
                         out.extend(struct.pack("<H", element.value & 0xFFFF))
                     elif isinstance(element, S64Data):
                         out.extend(struct.pack("<q", element.value))
+                    elif isinstance(element, S32Data):
+                        out.extend(struct.pack("<i", element.value))
                     elif isinstance(element, U64Data):
                         out.extend(struct.pack("<Q", element.value))
                     elif isinstance(element, F64Data):
@@ -570,6 +666,9 @@ class ScnFile:
             elif isinstance(data_obj, S64Data):
                 #print("last is s64")
                 out.extend(struct.pack("<q", data_obj.value))
+            elif isinstance(data_obj, S32Data):
+                #print("last is s64")
+                out.extend(struct.pack("<i", data_obj.value))
             elif isinstance(data_obj, U64Data):
                 #print("last is u64")
                 out.extend(struct.pack("<Q", data_obj.value))
@@ -699,6 +798,8 @@ class ScnFile:
     def build(self, special_align_enabled = False) -> bytes:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
+        elif self.is_pfb:
+            return self._build_pfb(special_align_enabled)
         
         out = bytearray()
         
@@ -1033,6 +1134,148 @@ class ScnFile:
 
         return bytes(out)
 
+    def _build_pfb(self, special_align_enabled = False) -> bytes:
+        out = bytearray()
+        
+        # 1) Write PFB header with zeroed offsets initially
+        out += struct.pack(
+            "<4s5I4Q",
+            self.header.signature,
+            self.header.info_count,
+            self.header.resource_count,
+            self.header.gameobject_ref_info_count,
+            self.header.userdata_count,
+            self.header.reserved,
+            0,  # gameobject_ref_info_tbl - will update later
+            0,  # resource_info_tbl - will update later
+            0,  # userdata_info_tbl - will update later
+            0   # data_offset - will update later
+        )
+
+        # 2) Write gameobjects - PFB format is simpler (12 bytes each)
+        for go in self.gameobjects:
+            out += struct.pack("<iii", go.id, go.parent_id, go.component_count)
+        
+        # 3) Write GameObjectRefInfos (no alignment before, but 16-byte alignment after)
+        gameobject_ref_info_tbl = len(out)
+        for gori in self.gameobject_ref_infos:
+            out += struct.pack("<4i", gori.object_id, gori.property_id, gori.array_index, gori.target_id)
+        
+        # 4) Align and write resource infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        resource_info_tbl = len(out)
+        for ri in self.resource_infos:
+            out += struct.pack("<II", ri.string_offset, ri.reserved)
+
+        # 5) Align and write userdata infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        userdata_info_tbl = len(out)
+        for ui in self.userdata_infos:
+            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+
+        # 6) Write resource strings
+        for ri in self.resource_infos:
+            out += self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"
+        
+        # 7) Write userdata strings
+        for ui in self.userdata_infos:
+            out += self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"
+
+        # 8) RSZ Section
+        if self.rsz_header:
+            # Ensure RSZ header starts on 16-byte alignment
+            if special_align_enabled:
+                while len(out) % 16 != 0:
+                    out += b"\x00"
+                
+            rsz_start = len(out)
+            self.header.data_offset = rsz_start
+
+            # Write RSZ header with placeholder offsets
+            rsz_header_bytes = struct.pack(
+                "<5I I Q Q Q",
+                self.rsz_header.magic,
+                self.rsz_header.version,
+                self.rsz_header.object_count,
+                len(self.instance_infos),
+                len(self.rsz_userdata_infos),
+                self.rsz_header.reserved,
+                0,  # instance_offset - will update later
+                0,  # data_offset - will update later 
+                0   # userdata_offset - will update later
+            )
+            out += rsz_header_bytes
+
+            # Write object table
+            for obj_id in self.object_table:
+                out += struct.pack("<i", obj_id)
+
+            # Write instance infos
+            new_instance_offset = len(out) - rsz_start
+            for inst in self.instance_infos:
+                out += struct.pack("<II", inst.type_id, inst.crc)
+
+            # Write userdata at 16-byte alignment
+            while len(out) % 16 != 0:
+                out += b"\x00"
+            new_userdata_offset = len(out) - rsz_start
+
+            # Write userdata entries and strings
+            userdata_entries = []
+            for rui in self.rsz_userdata_infos:
+                entry_offset = len(out) - rsz_start
+                out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
+                userdata_entries.append((entry_offset, rui))
+
+            for entry_offset, rui in userdata_entries:
+                string_offset = len(out) - rsz_start
+                string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
+                out += string_data
+                struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
+
+            # Write instance data at 16-byte alignment
+            while len(out) % 16 != 0:
+                out += b"\x00"
+            new_data_offset = len(out) - rsz_start
+            
+            instance_data = self._write_instance_data()
+            out += instance_data
+
+            # Update RSZ header with actual offsets
+            new_rsz_header = struct.pack(
+                "<5I I Q Q Q",
+                self.rsz_header.magic,
+                self.rsz_header.version, 
+                self.rsz_header.object_count,
+                len(self.instance_infos),
+                len(self.rsz_userdata_infos),
+                self.rsz_header.reserved,
+                new_instance_offset,
+                new_data_offset,
+                new_userdata_offset
+            )
+            out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+
+        # 9) Update PFB header
+        header_bytes = struct.pack(
+            "<4s5I4Q", 
+            self.header.signature,
+            self.header.info_count,
+            self.header.resource_count,
+            self.header.gameobject_ref_info_count,
+            self.header.userdata_count,
+            self.header.reserved,
+            gameobject_ref_info_tbl,
+            resource_info_tbl,
+            userdata_info_tbl,
+            self.header.data_offset
+        )
+        out[0:PfbHeader.SIZE] = header_bytes
+
+        return bytes(out)
+
     def get_resource_string(self, ri):
         return self._resource_str_map.get(ri, "")
     
@@ -1321,6 +1564,15 @@ def parse_instance_fields(
                     pos += 1
                     
                 data_obj = ArrayData(values, U8Data, original_type)
+
+            elif rsz_type == S32Data:
+                values = []
+                for _ in range(count):
+                    value = unpack_int(raw, pos)[0]
+                    values.append(S32Data(value))
+                    pos += fsize
+                    
+                data_obj = ArrayData(values, S32Data, original_type)
 
             elif rsz_type == S16Data:
                 values = []

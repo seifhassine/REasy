@@ -11,6 +11,7 @@ from PySide6.QtCore import (Qt, Signal)
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QMessageBox)
 
 from utils.hex_util import guid_le_to_str
+from ..base_handler import BaseFileHandler
 from file_handlers.pyside.value_widgets import *
 from file_handlers.rsz.rsz_data_types import *
 from .rsz_file import ScnFile
@@ -21,12 +22,9 @@ from ..pyside.tree_widgets import AdvancedTreeView
 
 
 #########################################################
-from ..base_handler import BaseFileHandler
-from .rsz_file import ScnFile
-from ui.styles import get_color_scheme, get_tree_stylesheet
 
 class RszHandler(BaseFileHandler):
-    """Handler for SCN files"""
+    """Handler for SCN/PFB/USR files"""
     
     @staticmethod
     def needs_json_path() -> bool:
@@ -39,15 +37,16 @@ class RszHandler(BaseFileHandler):
         self._viewer = None 
 
     def can_handle(data: bytes) -> bool:
-        """Check if data appears to be an SCN or USR file"""
+        """Check if data appears to be an SCN, USR, or PFB file"""
         if len(data) < 4:
             return False
         scn_sig = b'SCN\x00'
         usr_sig = b'USR\x00'
-        return data[:4] in [scn_sig, usr_sig]
+        pfb_sig = b'PFB\x00'
+        return data[:4] in [scn_sig, usr_sig, pfb_sig]
         
     def read(self, data: bytes):
-        """Parse the SCN data"""
+        """Parse the file data"""
         self.init_type_registry()
         self.scn_file = ScnFile()
         self.scn_file.type_registry = self.type_registry
@@ -176,6 +175,8 @@ class RszViewer(QWidget):
 
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
+        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
+        root_dict["data"][0] = f"{file_type}_File"
 
         if self.show_advanced:
             advanced_node = ScnTreeBuilder.create_advanced_node()
@@ -184,14 +185,21 @@ class RszViewer(QWidget):
             advanced_node["children"].extend([
                 self._create_header_info(),
                 self._create_gameobjects_info(),
-                self._create_folders_info(),
+            ])
+            
+            if not self.scn.is_pfb and not self.scn.is_usr:
+                advanced_node["children"].append(self._create_folders_info())
+            
+            if self.scn.is_pfb:
+                advanced_node["children"].append(self._create_gameobject_ref_infos())
+                
+            advanced_node["children"].extend([
                 self._create_rsz_header_info(),
                 self._create_object_table_info(),
                 self._create_instance_infos(),
                 self._create_userdata_infos()
             ])
 
-        # Add data block
         data_node = DataTreeBuilder.create_data_node(
             ScnTreeBuilder.NODES['DATA_BLOCK'], 
         )
@@ -203,43 +211,70 @@ class RszViewer(QWidget):
     def _create_header_info(self):
         """Create Header info section for self.scn.header"""
         children = []
-        header_fields = [
-            ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
-            ("Info Count", lambda h: str(h.info_count)),
-            ("Resource Count", lambda h: str(h.resource_count)),
-            ("Folder Count", lambda h: str(h.folder_count)),
-            ("Prefab Count", lambda h: str(h.prefab_count)),
-            ("UserData Count", lambda h: str(h.userdata_count)),
-            ("Folder Tbl", lambda h: f"0x{h.folder_tbl:X}"),
-            ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-            ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
-            ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-            ("Data Offset", lambda h: f"0x{h.data_offset:X}")
-        ]
+        
+        if self.scn.is_pfb:
+            # PFB header fields
+            header_fields = [
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Info Count", lambda h: str(h.info_count)),
+                ("Resource Count", lambda h: str(h.resource_count)),
+                ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
+                ("UserData Count", lambda h: str(h.userdata_count)),
+                ("Reserved", lambda h: str(h.reserved)),
+                ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
+                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}")
+            ]
+        elif self.scn.is_usr:
+            # USR header fields
+            header_fields = [
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Resource Count", lambda h: str(h.resource_count)),
+                ("UserData Count", lambda h: str(h.userdata_count)),
+                ("Info Count", lambda h: str(h.info_count)),
+                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+                ("Reserved", lambda h: str(h.reserved))
+            ]
+        else:
+            # SCN header fields
+            header_fields = [
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Info Count", lambda h: str(h.info_count)),
+                ("Resource Count", lambda h: str(h.resource_count)),
+                ("Folder Count", lambda h: str(h.folder_count)),
+                ("Prefab Count", lambda h: str(h.prefab_count)),
+                ("UserData Count", lambda h: str(h.userdata_count)),
+                ("Folder Tbl", lambda h: f"0x{h.folder_tbl:X}"),
+                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
+                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}")
+            ]
+            
         for title, getter in header_fields:
             children.append(
                 DataTreeBuilder.create_data_node(title + ": " + getter(self.scn.header, ))
             )
         return DataTreeBuilder.create_data_node("Header", "", children=children)
 
-    def _create_rsz_header_info(self):
-        """Create RSZHeader info section for self.scn.rsz_header"""
-        children = []
-        rsz_fields = [
-            ("Magic", lambda rh: f"0x{rh.magic:X}"),
-            ("Version", lambda rh: str(rh.version)),
-            ("Object Count", lambda rh: str(rh.object_count)),
-            ("Instance Count", lambda rh: str(rh.instance_count)),
-            ("UserData Count", lambda rh: str(rh.userdata_count)),
-            ("Instance Offset", lambda rh: f"0x{rh.instance_offset:X}"),
-            ("Data Offset", lambda rh: f"0x{rh.data_offset:X}"),
-            ("UserData Offset", lambda rh: f"0x{rh.userdata_offset:X}")
-        ]
-        for title, getter in rsz_fields:
-            children.append(
-                DataTreeBuilder.create_data_node(title + ": " + getter(self.scn.rsz_header, ))
-            )
-        return DataTreeBuilder.create_data_node("RSZHeader", "", children=children)
+    def _create_gameobject_ref_infos(self):
+        """Create GameObjectRefInfo section for PFB files"""
+        node = DataTreeBuilder.create_data_node("GameObjectRefInfos", f"{len(self.scn.gameobject_ref_infos)} items")
+        
+        for i, gori in enumerate(self.scn.gameobject_ref_infos):
+            ref_node = DataTreeBuilder.create_data_node(f"GameObjectRefInfo[{i}]", "")
+            ref_node["children"] = [
+                DataTreeBuilder.create_data_node(f"Object ID: {gori.object_id}", ""),
+                DataTreeBuilder.create_data_node(f"Property ID: {gori.property_id}", ""),
+                DataTreeBuilder.create_data_node(f"Array Index: {gori.array_index}", ""),
+                DataTreeBuilder.create_data_node(f"Target ID: {gori.target_id}", "")
+            ]
+            node["children"].append(ref_node)
+            
+        return node
 
     def _create_gameobjects_info(self):
         """Create GameObjects info section"""

@@ -669,7 +669,7 @@ class REasyEditorApp(QMainWindow):
                 url.isLocalFile()
                 and url.toLocalFile()
                 .lower()
-                .endswith((".uvar", ".uvar.3", ".scn.20", "user.2", ".rcol.25"))
+                .endswith((".uvar", ".uvar.3", ".scn.20", "user.2", "pfb.17"))
                 for url in urls
             ):
                 event.acceptProposedAction()
@@ -1113,7 +1113,7 @@ class REasyEditorApp(QMainWindow):
             self,
             "Open File",
             "",
-            "RE4 Files (*.uvar *.uvar.* *.scn.20 *.user.2 *.rcol.25);;SCN Files (*.scn.20);;User Files (*.user.2);;UVAR Files (*.uvar *.uvar.*);;RCOL Files (*.rcol.25);;All Files (*.*)",
+            "RE4 Files (*.uvar *.uvar.* *.scn.20 *.user.2 *.pfb.17);;SCN Files (*.scn.*);;User Files (*.user.2);;UVAR Files (*.uvar *.uvar.*);;PFB Files (*.pfb.17);;All Files (*.*)",
         )
         if not fn:
             return
