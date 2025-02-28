@@ -600,7 +600,7 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.0.7")
+        self.setWindowTitle("REasy Editor v0.0.8")
         set_app_icon(self)
 
         try:
