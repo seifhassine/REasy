@@ -577,7 +577,7 @@ class ScnFile:
                     elif isinstance(element, F64Data):
                         out.extend(struct.pack("<d", element.value))
                     elif isinstance(element, Vec2Data):
-                        out.extend(struct.pack("<2f", element.x, element.y))
+                        out.extend(struct.pack("<4f", element.x, element.y, 0, 0))
                     elif isinstance(element, Float2Data):
                         out.extend(struct.pack("<2f", element.x, element.y))
                     elif isinstance(element, RangeData):
@@ -686,7 +686,7 @@ class ScnFile:
                 out.extend(struct.pack("<d", data_obj.value))
             elif isinstance(data_obj, Vec2Data):
                 #print("last is vec2")
-                out.extend(struct.pack("<2f", data_obj.x, data_obj.y))
+                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, 0, 0))
             elif isinstance(data_obj, Float2Data):
                 #print("last is float2")
                 out.extend(struct.pack("<2f", data_obj.x, data_obj.y))
