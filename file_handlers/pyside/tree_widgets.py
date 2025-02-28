@@ -104,25 +104,51 @@ class AdvancedTreeView(QTreeView):
         is_array = False
         array_type = ""
         data_obj = None
+        is_array_element = False
+        parent_array_item = None
+        element_index = -1
         
+        # Check if this is an array
         if hasattr(item, 'raw') and isinstance(item.raw, dict):
             is_array = item.raw.get("type") == "array"
             data_obj = item.raw.get("obj")
             if is_array and data_obj:
                 if hasattr(data_obj, 'orig_type') and data_obj.orig_type:
                     array_type = data_obj.orig_type
-      
+        
+        # Check if this is an array element
+        if not is_array and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict):
+            if item.parent.raw.get("type") == "array":
+                parent_array_item = item.parent
+                parent_data_obj = item.parent.raw.get("obj")
+                if parent_data_obj and hasattr(parent_data_obj, 'orig_type'):
+                    array_type = parent_data_obj.orig_type
+                    is_array_element = True
+                    # Get index of current element
+                    for i, child in enumerate(parent_array_item.children):
+                        if child == item:
+                            element_index = i
+                            break
 
-        if array_type:
+        menu = QMenu(self)
+
+        if array_type and is_array:
             print(f"Showing menu for array: {array_type}")
-            menu = QMenu(self)
             add_action = menu.addAction("Add New Element")
             action = menu.exec_(QCursor.pos())
             
             if action == add_action:
                 self.add_array_element(index, array_type, data_obj, item)
+                
+        elif is_array_element and element_index >= 0:
+            print(f"Showing menu for array element {element_index} in {array_type}")
+            delete_action = menu.addAction("Delete Element")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == delete_action:
+                self.delete_array_element(parent_array_item, element_index, index)
         else:
-            print(f"No array detected. is_array={is_array}, array_type={array_type}")
+            print(f"No array detected. is_array={is_array}, array_type={array_type}, is_array_element={is_array_element}")
 
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
@@ -165,6 +191,106 @@ class AdvancedTreeView(QTreeView):
                         
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to add element: {str(e)}")
+
+    def delete_array_element(self, array_item, element_index, index):
+        """Delete an element from an array with proper backend updates"""
+        if not array_item or not hasattr(array_item, 'raw'):
+            QMessageBox.warning(self, "Error", "Invalid array item")
+            return
+            
+        # Get the array data object
+        array_data = array_item.raw.get('obj')
+        if not array_data or not hasattr(array_data, 'values'):
+            QMessageBox.warning(self, "Error", "Invalid array data")
+            return
+            
+        # Confirm deletion
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText(f"Delete element {element_index}?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        if msg_box.exec_() != QMessageBox.Yes:
+            return
+            
+        # Get the parent widget/handler that can perform the complex delete
+        parent = self.parent()
+        if parent and hasattr(parent, "delete_array_element"):
+            try:
+                success = parent.delete_array_element(array_data, element_index)
+                
+                if success:
+                    # Update the UI - remove the item from the tree
+                    model = self.model()
+                    if model:
+                        array_index = model.getIndexFromItem(array_item)
+                        if array_index.isValid():
+                            # Force model to reload this branch
+                            model.removeRow(element_index, array_index)
+                            
+                            # Update indices in the UI for remaining elements
+                            self._update_remaining_elements_ui(model, array_index, array_data, element_index)
+                                    
+                    if parent and hasattr(parent, "mark_modified"):
+                        parent.mark_modified()
+                    elif self.parent_modified_callback:
+                        self.parent_modified_callback()
+                
+                    QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
+                else:
+                    QMessageBox.critical(self, "Error", "Failed to delete element. See logs for details.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
+        else:
+            # Fallback to simple deletion if parent doesn't support complex delete
+            self._simple_delete_element(array_data, element_index, array_item)
+
+    def _update_remaining_elements_ui(self, model, array_index, array_data, deleted_index):
+        """Update UI indices for remaining elements after deletion"""
+        for i in range(deleted_index, len(array_data.values)):
+            child_idx = model.index(i, 0, array_index)
+            if child_idx.isValid():
+                child_item = child_idx.internalPointer()
+                if child_item and hasattr(child_item, 'data'):
+                    old_text = child_item.data[0]
+                    after_colon = old_text.split(':', 1)[1].strip() if ':' in old_text else ''
+                    new_text = f"{i}: {after_colon}"
+                    child_item.data[0] = new_text
+                    
+                    widget = self.indexWidget(child_idx)
+                    if widget:
+                        for child_widget in widget.findChildren(QLabel):
+                            if ':' in child_widget.text():
+                                child_widget.setText(new_text)
+                                break
+
+    def _simple_delete_element(self, array_data, element_index, array_item):
+        """Simple array element deletion used as fallback"""
+        try:
+            if element_index < len(array_data.values):
+                element = array_data.values[element_index]
+                
+                del array_data.values[element_index]
+                
+                parent = self.parent()
+                if parent and hasattr(parent, "mark_modified"):
+                    parent.mark_modified()
+                elif self.parent_modified_callback:
+                    self.parent_modified_callback()
+                
+                model = self.model()
+                if model:
+                    array_index = model.getIndexFromItem(array_item)
+                    if array_index.isValid():
+                        model.removeRow(element_index, array_index)
+                        
+                        self._update_remaining_elements_ui(model, array_index, array_data, element_index)
+                
+                QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
 
     def get_value_at_index(self, index):
         """Get value from either embedded widget or model data"""

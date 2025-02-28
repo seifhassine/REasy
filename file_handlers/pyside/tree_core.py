@@ -174,6 +174,31 @@ class TreeModel(QAbstractItemModel):
         self.endInsertRows()
         return True
 
+    def removeRow(self, row, parent=QModelIndex()):
+        """Remove a row from the model"""
+        return self.removeRows(row, 1, parent)
+        
+    def removeRows(self, row, count, parent=QModelIndex()):
+        """Remove multiple rows from the model"""
+        if row < 0 or count <= 0:
+            return False
+            
+        if not parent.isValid():
+            parent_item = self.rootItem
+        else:
+            parent_item = parent.internalPointer()
+            
+        if row + count > len(parent_item.children):
+            return False
+            
+        self.beginRemoveRows(parent, row, row + count - 1)
+        
+        for i in range(count):
+            del parent_item.children[row]
+            
+        self.endRemoveRows()
+        return True
+
 
 class TreeStyleDelegate(QStyledItemDelegate):
     """Style delegate for tree items"""

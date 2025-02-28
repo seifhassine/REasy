@@ -1211,3 +1211,300 @@ class RszViewer(QWidget):
             
             if field_obj:
                 fields_dict[field_name] = field_obj
+
+    def delete_array_element(self, array_data, element_index):
+        """Handle complex deletion of an array element with reference updates"""
+        if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
+            return False
+            
+        # Get the element to delete
+        element = array_data.values[element_index]
+        
+        # If this is an object reference, we need to do more complex processing
+        if isinstance(element, ObjectData) and element.value > 0:
+            target_instance_id = element.value
+            
+            # 1. Find if this instance is referenced elsewhere - we can't delete it if it is
+            is_referenced_elsewhere = self._check_instance_referenced_elsewhere(target_instance_id, array_data)
+            
+            if is_referenced_elsewhere:
+                # Just remove the reference, not the actual instance
+                del array_data.values[element_index]
+                return True
+            
+            # 2. If no other references exist, we can delete the instance
+            if self._delete_instance(target_instance_id):
+                # Remove from array after deleting the instance
+                del array_data.values[element_index]
+                return True
+            
+            return False
+        else:
+            # For non-object elements, just remove from the array
+            del array_data.values[element_index]
+            return True
+
+    def _check_instance_referenced_elsewhere(self, instance_id, current_array):
+        """Check if an instance is referenced from other places besides current_array"""
+        reference_count = 0
+        
+        # Check all instances and their fields
+        for check_id, fields in self.scn.parsed_elements.items():
+            for field_name, field_data in fields.items():
+                # Check direct object references
+                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
+                    reference_count += 1
+                    if reference_count > 1:  # We know there's at least the reference we're checking
+                        return True
+                        
+                # Check objects in arrays
+                elif isinstance(field_data, ArrayData) and field_data is not current_array:
+                    for item in field_data.values:
+                        if isinstance(item, ObjectData) and item.value == instance_id:
+                            reference_count += 1
+                            if reference_count > 1:
+                                return True
+                
+                # Check if this array contains the reference we're looking for
+                elif field_data is current_array:
+                    for item in field_data.values:
+                        if isinstance(item, ObjectData) and item.value == instance_id:
+                            reference_count += 1
+        
+        # Only one reference found (the one we're trying to delete) means it's safe to delete
+        return reference_count > 1
+
+    def _delete_instance(self, instance_id):
+        """Delete an instance and update all references"""
+        if instance_id <= 0 or instance_id >= len(self.scn.instance_infos):
+            return False
+            
+        # Get instance info before deletion
+        instance_type_id = self.scn.instance_infos[instance_id].type_id
+        
+        # We need to check for nested objects within this instance
+        instance_fields = self.scn.parsed_elements.get(instance_id, {})
+        nested_objects = self._find_nested_objects(instance_fields)
+        
+        # Remove the instance from various data structures
+        try:
+            # 1. Remove all nested objects first (in reverse order to avoid index issues)
+            for nested_id in sorted(nested_objects, reverse=True):
+                if nested_id != instance_id:  # Don't delete the main instance yet
+                    self._remove_instance_references(nested_id)
+            
+            # 2. Now remove the main instance
+            self._remove_instance_references(instance_id)
+            
+            # 3. Update all higher instance IDs to reflect the deleted instances
+            self._update_instance_references_after_deletion(instance_id, nested_objects)
+            
+            return True
+        except Exception as e:
+            print(f"Error deleting instance {instance_id}: {str(e)}")
+            return False
+
+    def _find_nested_objects(self, fields):
+        """Find all objects nested within an instance"""
+        nested_objects = set()
+        
+        for field_name, field_data in fields.items():
+            if isinstance(field_data, ObjectData):
+                ref_id = field_data.value
+                if ref_id > 0:
+                    nested_objects.add(ref_id)
+                    # Check recursively for nested objects in this referenced object
+                    if ref_id in self.scn.parsed_elements:
+                        nested_objects.update(self._find_nested_objects(self.scn.parsed_elements[ref_id]))
+            elif isinstance(field_data, ArrayData):
+                for item in field_data.values:
+                    if isinstance(item, ObjectData):
+                        ref_id = item.value
+                        if ref_id > 0:
+                            nested_objects.add(ref_id)
+                            # Check recursively for nested objects in this referenced object
+                            if ref_id in self.scn.parsed_elements:
+                                nested_objects.update(self._find_nested_objects(self.scn.parsed_elements[ref_id]))
+                                
+        return nested_objects
+
+    def _remove_instance_references(self, instance_id):
+        """Remove an instance from all data structures"""
+        # Remove from instance infos
+        if instance_id < len(self.scn.instance_infos):
+            del self.scn.instance_infos[instance_id]
+            
+        # Remove from parsed elements
+        if instance_id in self.scn.parsed_elements:
+            del self.scn.parsed_elements[instance_id]
+            
+        # Remove from instance hierarchy
+        if instance_id in self.scn.instance_hierarchy:
+            # Remove from parent's children
+            parent_id = self.scn.instance_hierarchy[instance_id].get("parent")
+            if parent_id is not None and parent_id in self.scn.instance_hierarchy:
+                if instance_id in self.scn.instance_hierarchy[parent_id]["children"]:
+                    self.scn.instance_hierarchy[parent_id]["children"].remove(instance_id)
+            
+            # Remove the instance itself from hierarchy
+            del self.scn.instance_hierarchy[instance_id]
+            
+        # Remove from instance hashes
+        if instance_id in self.scn._instance_hashes:
+            del self.scn._instance_hashes[instance_id]
+            
+        # Remove from userdata mappings if applicable
+        if instance_id in self.scn._rsz_userdata_dict:
+            del self.scn._rsz_userdata_dict[instance_id]
+        
+        if instance_id in self.scn._rsz_userdata_set:
+            self.scn._rsz_userdata_set.remove(instance_id)
+            
+        # Update object table if needed
+        for i in range(len(self.scn.object_table)):
+            if self.scn.object_table[i] == instance_id:
+                self.scn.object_table[i] = 0  # Set to null reference
+
+    def _update_instance_references_after_deletion(self, deleted_id, deleted_nested_ids=None):
+        """Update all references after deletion to maintain consistency"""
+        if deleted_nested_ids is None:
+            deleted_nested_ids = set()
+        
+        deleted_nested_ids.add(deleted_id)
+        deleted_ids_sorted = sorted(deleted_nested_ids)
+        
+        # 1. Update parsed elements - shift instance IDs and update all references
+        new_parsed_elements = {}
+        for instance_id, fields in self.scn.parsed_elements.items():
+            # Calculate new ID for this instance
+            new_id = instance_id
+            for deleted_id in deleted_ids_sorted:
+                if instance_id > deleted_id:
+                    new_id -= 1
+            
+            # Skip deleted instances
+            if instance_id in deleted_nested_ids:
+                continue
+            
+            # Update all references within this instance's fields
+            updated_fields = {}
+            for field_name, field_data in fields.items():
+                # Update object references
+                if isinstance(field_data, ObjectData):
+                    ref_id = field_data.value
+                    if ref_id > 0:
+                        # If reference points to a deleted object, set to 0
+                        if ref_id in deleted_nested_ids:
+                            field_data.value = 0
+                        else:
+                            # Adjust reference ID based on deleted instances
+                            for deleted_id in deleted_ids_sorted:
+                                if ref_id > deleted_id:
+                                    field_data.value -= 1
+                
+                # Update array object references
+                elif isinstance(field_data, ArrayData):
+                    for item in field_data.values:
+                        if isinstance(item, ObjectData):
+                            ref_id = item.value
+                            if ref_id > 0:
+                                # If reference points to a deleted object, set to 0
+                                if ref_id in deleted_nested_ids:
+                                    item.value = 0
+                                else:
+                                    # Adjust reference ID based on deleted instances
+                                    for deleted_id in deleted_ids_sorted:
+                                        if ref_id > deleted_id:
+                                            item.value -= 1
+                
+                updated_fields[field_name] = field_data
+                
+            # Store with updated ID
+            new_parsed_elements[new_id] = updated_fields
+            
+        self.scn.parsed_elements = new_parsed_elements
+        
+        # 2. Update instance hierarchy
+        new_hierarchy = {}
+        for instance_id, data in self.scn.instance_hierarchy.items():
+            # Skip deleted instances
+            if instance_id in deleted_nested_ids:
+                continue
+                
+            # Calculate new ID for this instance
+            new_id = instance_id
+            for deleted_id in deleted_ids_sorted:
+                if instance_id > deleted_id:
+                    new_id -= 1
+            
+            # Update children
+            new_children = []
+            for child_id in data["children"]:
+                if child_id not in deleted_nested_ids:
+                    # Calculate new child ID
+                    new_child_id = child_id
+                    for deleted_id in deleted_ids_sorted:
+                        if child_id > deleted_id:
+                            new_child_id -= 1
+                    new_children.append(new_child_id)
+            
+            # Update parent
+            parent_id = data["parent"]
+            if parent_id in deleted_nested_ids:
+                parent_id = None
+            elif parent_id is not None:
+                for deleted_id in deleted_ids_sorted:
+                    if parent_id > deleted_id:
+                        parent_id -= 1
+            
+            new_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
+            
+        self.scn.instance_hierarchy = new_hierarchy
+        
+        # 3. Update userdata references
+        new_userdata_dict = {}
+        for instance_id, rui in self.scn._rsz_userdata_dict.items():
+            if instance_id not in deleted_nested_ids:
+                new_id = instance_id
+                for deleted_id in deleted_ids_sorted:
+                    if instance_id > deleted_id:
+                        new_id -= 1
+                new_userdata_dict[new_id] = rui
+                # Update the instance_id in the RSZUserDataInfo object
+                rui.instance_id = new_id
+        
+        self.scn._rsz_userdata_dict = new_userdata_dict
+        
+        # Update userdata set
+        new_userdata_set = set()
+        for instance_id in self.scn._rsz_userdata_set:
+            if instance_id not in deleted_nested_ids:
+                new_id = instance_id
+                for deleted_id in deleted_ids_sorted:
+                    if instance_id > deleted_id:
+                        new_id -= 1
+                new_userdata_set.add(new_id)
+        
+        self.scn._rsz_userdata_set = new_userdata_set
+        
+        # 4. Update instance hashes
+        new_hashes = {}
+        for instance_id, hash_value in self.scn._instance_hashes.items():
+            if instance_id not in deleted_nested_ids:
+                new_id = instance_id
+                for deleted_id in deleted_ids_sorted:
+                    if instance_id > deleted_id:
+                        new_id -= 1
+                new_hashes[new_id] = hash_value
+        
+        self.scn._instance_hashes = new_hashes
+        
+        # 5. Update object table references
+        for i in range(len(self.scn.object_table)):
+            obj_id = self.scn.object_table[i]
+            if obj_id in deleted_nested_ids:
+                self.scn.object_table[i] = 0  # Set to null reference
+            else:
+                for deleted_id in deleted_ids_sorted:
+                    if obj_id > deleted_id:
+                        self.scn.object_table[i] -= 1

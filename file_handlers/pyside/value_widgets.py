@@ -349,7 +349,6 @@ class U8Input(NumberInput):
         except ValueError:
             self.line_edit.setStyleSheet("border: 1px solid red;")
 
-
 class OBBInput(BaseValueWidget):
     valueChanged = Signal(list)
     
@@ -580,38 +579,42 @@ class RangeInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
+        self.layout.setSpacing(4)
+        
         self.inputs = []
         for i, name in enumerate(['Min', 'Max']):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout.setSpacing(2)
             
             label = QLabel(name)
-            label.setMinimumWidth(30) 
-            label.setStyleSheet("padding-right: 4px;")  
+            label.setFixedWidth(33)
+            label.setStyleSheet("padding-right: 2px;")
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
             line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
+            line_edit.setFixedWidth(80)
             line_edit.setProperty("name", name.lower())
             line_edit.setAlignment(Qt.AlignLeft)
+            line_edit.setStyleSheet("margin-left: 2px;")
             container_layout.addWidget(line_edit)
             
-            if i == 0: 
-                container.setStyleSheet("margin-left: 8px;")
-            container.setContentsMargins(0, 0, 0, 0)
-                
+            if i == 0:
+                container.setFixedWidth(120)
+                container.setStyleSheet("margin-right: 6px;")
+            
             self.layout.addWidget(container)
             self.inputs.append(line_edit)
         
-        self.layout.addStretch()
-            
+        self.layout.addStretch(1)
+        
         if data:
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
@@ -659,38 +662,42 @@ class RangeIInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
+        self.layout.setSpacing(4)
+        
         self.inputs = []
         for i, name in enumerate(['Min', 'Max']):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout.setSpacing(2)
             
             label = QLabel(name)
-            label.setMinimumWidth(30)
-            label.setStyleSheet("padding-right: 4px;")
+            label.setFixedWidth(33)
+            label.setStyleSheet("padding-right: 2px;")
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
             line_edit.setValidator(QIntValidator())
-            line_edit.setFixedWidth(100)
+            line_edit.setFixedWidth(80)
             line_edit.setProperty("name", name.lower())
             line_edit.setAlignment(Qt.AlignLeft)
+            line_edit.setStyleSheet("margin-left: 2px;")
             container_layout.addWidget(line_edit)
             
             if i == 0:
-                container.setStyleSheet("margin-left: 8px;")
-            container.setContentsMargins(0, 0, 0, 0)
-                
+                container.setFixedWidth(120)
+                container.setStyleSheet("margin-right: 6px;")
+            
             self.layout.addWidget(container)
             self.inputs.append(line_edit)
         
-        self.layout.addStretch()
-            
+        self.layout.addStretch(1)
+        
         if data:
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
