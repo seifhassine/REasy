@@ -599,6 +599,15 @@ class ScnFile:
                         out.extend(struct.pack("<4f", element.x, element.y, element.z, 0.00))
                     elif isinstance(element, Vec4Data):
                         out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                    elif isinstance(element, Mat4Data):
+                        if isinstance(element.values, (list, tuple)):
+                            float_values = [float(v) for v in element.values[:16]]
+                            while len(float_values) < 16:
+                                float_values.append(0.0)
+                            out.extend(struct.pack("<16f", *float_values))
+                        else:
+                            print("Mat4Data error while writing")
+                            out.extend(struct.pack("<16f", *([0.0] * 16)))
                     elif isinstance(element, (GameObjectRefData, GuidData)):
                         guid = uuid.UUID(element.guid_str)
                         out.extend(guid.bytes_le)
@@ -691,34 +700,22 @@ class ScnFile:
                 #print("last is float3")
                 out.extend(struct.pack("<3f", data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Float4Data):
-                #print("last is float4")
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, QuaternionData):
-                #print("last is quaternion")
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, ColorData):
-                #print("last is color")
                 out.extend(struct.pack("<4f", data_obj.r, data_obj.g, data_obj.b, data_obj.a))
-            # ...existing non-array cases...
             elif isinstance(data_obj, (ObjectData, U32Data)):
-                #print("last is u32")
                 value = int(data_obj.value) & 0xFFFFFFFF
                 out.extend(struct.pack("<I", value))
             elif isinstance(data_obj, Vec3Data):
-                #print("last is vec3")
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, 0.00))
             elif isinstance(data_obj, Vec4Data):
-                #print("last is vec4")
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, (GameObjectRefData, GuidData)):
-                try:
-                    # Use UUID directly to avoid string cleaning issues
-                    guid = uuid.UUID(data_obj.guid_str)
-                    out.extend(guid.bytes_le)
-                except ValueError as e:
-                    #print(f"Invalid GUID string {data_obj.guid_str}: {e}")
-                    # Write null GUID as fallback
-                    out.extend(b'\x00' * 16)
+                # Use UUID directly to avoid string cleaning issues
+                guid = uuid.UUID(data_obj.guid_str)
+                out.extend(guid.bytes_le)
             elif isinstance(data_obj, (StringData, ResourceData)):
                 while len(out) % 4:
                     out.extend(b'\x00')
@@ -748,6 +745,12 @@ class ScnFile:
                 else:
                     values = [float(x) for x in str(data_obj.values).strip('()').split(',')]
                     out.extend(struct.pack("<20f", *values))
+            elif isinstance(data_obj, Mat4Data):
+                if isinstance(data_obj.values, (list, tuple)):
+                    out.extend(struct.pack("<16f", *[float(v) for v in data_obj.values]))
+                else:
+                    values = [float(x) for x in str(data_obj.values).strip('()').split(',')]
+                    out.extend(struct.pack("<16f", *values))
             elif isinstance(data_obj, RawBytesData):
                 #print("last is rawbytes")
                 out.extend(data_obj.raw_bytes)
@@ -1344,6 +1347,7 @@ def parse_instance_fields(
     unpack_ulong = struct.Struct("<Q").unpack_from
     unpack_double = struct.Struct("<d").unpack_from
     unpack_20float = struct.Struct("<20f").unpack_from
+    unpack_16float = struct.Struct("<16f").unpack_from
 
     raw_len = len(raw)
     parsed_elements = scn_file.parsed_elements.setdefault(current_instance_index, {})
@@ -1377,7 +1381,7 @@ def parse_instance_fields(
         fsize = field.get("size", 4)
         is_native = field.get("native", False)
         is_array = field.get("array", False)
-        original_type = field.get("original_type", "")
+        original_type = field.get("original_type", "") 
         field_align = int(field["align"]) if "align" in field else 1
         rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align)
         data_obj = None
@@ -1408,10 +1412,10 @@ def parse_instance_fields(
                     pos += fsize
                     
                 data_obj = ArrayData(
-                    list(map(ObjectData, child_indexes)) if alreadyRef else 
-                    list(map(U32Data, all_values)),
+                    list(map(lambda x: ObjectData(x, original_type), child_indexes)) if alreadyRef else 
+                    list(map(lambda x: U32Data(x, original_type), all_values)),
                     ObjectData if alreadyRef else U32Data,
-                    original_type  # Store original type from field definition
+                    original_type
                 )
 
             elif rsz_type == UserDataData:
@@ -1435,7 +1439,7 @@ def parse_instance_fields(
                         userdata_values.append(f"Empty Userdata {candidate}")
                         
                 data_obj = ArrayData(
-                    list(map(UserDataData, userdata_values, userdatas)) if userdatas else [],
+                    list(map(lambda val, idx: UserDataData(val, idx, original_type), userdata_values, userdatas)) if userdatas else [],
                     UserDataData,
                     original_type
                 )
@@ -1477,7 +1481,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     vals = unpack_4float(raw, pos)
-                    vec3_objects.append(Vec3Data(vals[0], vals[1], vals[2]))
+                    vec3_objects.append(Vec3Data(vals[0], vals[1], vals[2], original_type))
                     pos += fsize
                     
                 pos = local_align(pos, field_align) if vec3_objects else pos
@@ -1488,18 +1492,39 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     vals = unpack_4float(raw, pos)
-                    vec4_objects.append(Vec4Data(*vals))
+                    vec4_objects.append(Vec4Data(*vals, original_type))
                     pos += fsize
                     
                 pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Vec4Data, original_type)
+
+            elif rsz_type == Mat4Data:
+                mat4_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    floats = unpack_16float(raw, pos)
+                    mat4_objects.append(Mat4Data(list(floats), original_type))
+                    pos += fsize
+                    
+                data_obj = ArrayData(mat4_objects, Mat4Data, original_type)
+
+            elif rsz_type == QuaternionData:
+                vec4_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_4float(raw, pos)
+                    vec4_objects.append(QuaternionData(*vals, original_type))
+                    pos += fsize
+                    
+                pos = local_align(pos, field_align) if vec4_objects else pos
+                data_obj = ArrayData(vec4_objects, QuaternionData, original_type)
 
             elif rsz_type == RangeData:
                 range_objects = []
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     vals = unpack_2float(raw, pos)
-                    range_objects.append(RangeData(vals[0], vals[1]))
+                    range_objects.append(RangeData(vals[0], vals[1], original_type))
                     pos += fsize
                     
                 data_obj = ArrayData(range_objects, RangeData, original_type)
@@ -1509,7 +1534,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     vals = unpack_2int(raw, pos)
-                    range_objects.append(RangeIData(vals[0], vals[1]))
+                    range_objects.append(RangeIData(vals[0], vals[1], original_type))
                     pos += fsize
                     
                 data_obj = ArrayData(range_objects, RangeIData, original_type)
@@ -1519,7 +1544,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     floats = unpack_20float(raw, pos)
-                    obb_objects.append(OBBData(list(floats)))
+                    obb_objects.append(OBBData(list(floats), original_type))
                     pos += fsize
                     
                 data_obj = ArrayData(obb_objects, OBBData, original_type)
@@ -1551,7 +1576,7 @@ def parse_instance_fields(
                 values = []
                 for _ in range(count):
                     value = unpack_sbyte(raw, pos)[0]
-                    values.append(S8Data(value))
+                    values.append(S8Data(value, original_type))
                     pos += 1
                     
                 data_obj = ArrayData(values, S8Data, original_type)
@@ -1560,7 +1585,7 @@ def parse_instance_fields(
                 values = []
                 for _ in range(count):
                     value = unpack_ubyte(raw, pos)[0]
-                    values.append(U8Data(value))
+                    values.append(U8Data(value, original_type))
                     pos += 1
                     
                 data_obj = ArrayData(values, U8Data, original_type)
@@ -1569,7 +1594,7 @@ def parse_instance_fields(
                 values = []
                 for _ in range(count):
                     value = unpack_int(raw, pos)[0]
-                    values.append(S32Data(value))
+                    values.append(S32Data(value, original_type))
                     pos += fsize
                     
                 data_obj = ArrayData(values, S32Data, original_type)
@@ -1579,7 +1604,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_short(raw, pos)[0]
-                    values.append(S16Data(value))
+                    values.append(S16Data(value, original_type))
                     pos += 2
                     
                 data_obj = ArrayData(values, S16Data, original_type)
@@ -1589,7 +1614,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_ushort(raw, pos)[0]
-                    values.append(U16Data(value))
+                    values.append(U16Data(value, original_type))
                     pos += 2
                     
                 data_obj = ArrayData(values, U16Data, original_type)
@@ -1599,7 +1624,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_long(raw, pos)[0]
-                    values.append(S64Data(value))
+                    values.append(S64Data(value, original_type))
                     pos += 8
                     
                 data_obj = ArrayData(values, S64Data, original_type)
@@ -1609,7 +1634,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_ulong(raw, pos)[0]
-                    values.append(U64Data(value))
+                    values.append(U64Data(value, original_type))
                     pos += 8
                     
                 data_obj = ArrayData(values, U64Data, original_type)
@@ -1619,7 +1644,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_float(raw, pos)[0]
-                    values.append(F32Data(value))
+                    values.append(F32Data(value, original_type))
                     pos += 4
                     
                 data_obj = ArrayData(values, F32Data, original_type)
@@ -1629,7 +1654,7 @@ def parse_instance_fields(
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     value = unpack_double(raw, pos)[0]
-                    values.append(F64Data(value))
+                    values.append(F64Data(value, original_type))
                     pos += 8
                     
                 data_obj = ArrayData(values, F64Data, original_type)
@@ -1643,14 +1668,14 @@ def parse_instance_fields(
                     guids.append((guid_str, guid_bytes))
                     pos += fsize
                     
-                data_obj = ArrayData([GuidData(g[0], g[1]) for g in guids], GuidData, original_type)
+                data_obj = ArrayData([GuidData(g[0], g[1], original_type) for g in guids], GuidData, original_type)
 
             else:
                 children = []
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     raw_bytes = get_bytes(raw[pos:pos+fsize])
-                    children.append(RawBytesData(raw_bytes, fsize))
+                    children.append(RawBytesData(raw_bytes, fsize, original_type))
                     pos += fsize
                     
                 data_obj = ArrayData(children, RawBytesData, original_type)
@@ -1662,9 +1687,9 @@ def parse_instance_fields(
                 pos += 4
                 
                 if not is_valid_ref(candidate):
-                    data_obj = U32Data(candidate)
+                    data_obj = U32Data(candidate, original_type)
                 else:
-                    data_obj = ObjectData(candidate)
+                    data_obj = ObjectData(candidate, original_type)
                     current_children.append(candidate)
                     set_parent_safely(candidate, current_instance_index)
 
@@ -1678,18 +1703,18 @@ def parse_instance_fields(
                         value = rsz_userdata_map.get(rui, "")
                         break
                 
-                data_obj = UserDataData(value if value else "", instance_id)
+                data_obj = UserDataData(value if value else "", instance_id, original_type)
             
             elif rsz_type == GameObjectRefData:
                 guid_bytes = get_bytes(raw[pos:pos+fsize])
                 guid_str = guid_le_to_str(guid_bytes)
                 pos += fsize
-                data_obj = GameObjectRefData(guid_str, guid_bytes)
+                data_obj = GameObjectRefData(guid_str, guid_bytes, original_type)
 
             elif rsz_type == ObjectData:
                 child_idx = unpack_uint(raw, pos)[0]
                 pos += fsize
-                data_obj = ObjectData(child_idx)
+                data_obj = ObjectData(child_idx, original_type)
                 current_children.append(child_idx)
                 set_parent_safely(child_idx, current_instance_index)
 
@@ -1697,29 +1722,41 @@ def parse_instance_fields(
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 pos = local_align(pos, field_align)
-                data_obj = Vec3Data(vals[0], vals[1], vals[2])
+                data_obj = Vec3Data(vals[0], vals[1], vals[2], original_type)
         
             elif rsz_type == Vec4Data:
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 pos = local_align(pos, field_align)
-                data_obj = Vec4Data(*vals)
+                data_obj = Vec4Data(*vals, original_type)
+        
+            elif rsz_type == Mat4Data:
+                vals = unpack_16float(raw, pos)
+                pos += fsize
+                pos = local_align(pos, field_align)
+                data_obj = Mat4Data(vals, original_type)
+
+            elif rsz_type == QuaternionData:
+                vals = unpack_4float(raw, pos)
+                pos += fsize
+                pos = local_align(pos, field_align)
+                data_obj = QuaternionData(*vals, original_type)
         
             elif rsz_type == OBBData:
                 vals = unpack_20float(raw, pos)
                 pos += fsize
                 pos = local_align(pos, field_align)
-                data_obj = OBBData(vals)
+                data_obj = OBBData(vals, original_type)
 
             elif rsz_type == RangeData:
                 vals = unpack_2float(raw, pos)
                 pos += fsize
-                data_obj = RangeData(vals[0], vals[1])
+                data_obj = RangeData(vals[0], vals[1], original_type)
 
             elif rsz_type == RangeIData:
                 vals = unpack_2int(raw, pos)
                 pos += fsize
-                data_obj = RangeIData(vals[0], vals[1])
+                data_obj = RangeIData(vals[0], vals[1], original_type)
             
             elif rsz_type == StringData or rsz_type == ResourceData:
                 count = unpack_uint(raw, pos)[0]
@@ -1738,48 +1775,48 @@ def parse_instance_fields(
                     value = ''.join(chars)
                     
                 pos += str_byte_count
-                data_obj = StringData(value)
+                data_obj = StringData(value, original_type)
 
             elif rsz_type == BoolData:
                 value = raw[pos] != 0
                 pos += fsize
-                data_obj = BoolData(value)
+                data_obj = BoolData(value, original_type)
 
             elif rsz_type == S8Data:
                 value = unpack_sbyte(raw, pos)[0]
                 pos += fsize
-                data_obj = S8Data(value)
+                data_obj = S8Data(value, original_type)
 
             elif rsz_type == U8Data:
                 value = unpack_ubyte(raw, pos)[0]
                 pos += fsize
-                data_obj = U8Data(value)
+                data_obj = U8Data(value, original_type)
 
             elif rsz_type == S32Data:
                 value = unpack_int(raw, pos)[0]
                 pos += fsize
-                data_obj = S32Data(value)
+                data_obj = S32Data(value, original_type)
 
             elif rsz_type == U32Data:
                 value = unpack_uint(raw, pos)[0]
                 pos += fsize
-                data_obj = U32Data(value)
+                data_obj = U32Data(value, original_type)
 
             elif rsz_type == F32Data:
                 value = unpack_float(raw, pos)[0]
                 pos += fsize
-                data_obj = F32Data(value)
+                data_obj = F32Data(value, original_type)
                 
             elif rsz_type == GameObjectRefData or rsz_type == GuidData:
                 guid_bytes = get_bytes(raw[pos:pos+fsize])
                 guid_str = guid_le_to_str(guid_bytes)
                 pos += fsize
-                data_obj = rsz_type(guid_str, guid_bytes)
+                data_obj = rsz_type(guid_str, guid_bytes, original_type)
 
             else:
                 raw_bytes = get_bytes(raw[pos:pos+fsize])
                 pos += fsize
-                data_obj = RawBytesData(raw_bytes, fsize)
+                data_obj = RawBytesData(raw_bytes, fsize, original_type)
 
         parsed_elements[field_name] = data_obj
 

@@ -1,10 +1,30 @@
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
-                               QHeaderView, QSpinBox)
-from PySide6.QtGui import QIcon
+                               QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate)
+from PySide6.QtGui import QIcon, QCursor
+from PySide6.QtCore import Qt
+
+from file_handlers.rsz.rsz_data_types import ArrayData
+from .tree_core import TreeModel
 
 from .value_widgets import *
-from file_handlers.pyside.tree_base import LazyTreeModel, AdvancedStyledDelegate
+from utils.enum_manager import EnumManager
 
+
+class AdvancedStyledDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.default_row_height = 24 
+        
+    def sizeHint(self, option, index):
+        """Ensure consistent row height for all items"""
+        size = super().sizeHint(option, index)
+        
+        tree_view = self.parent()
+        if tree_view and hasattr(tree_view, 'default_row_height'):
+            self.default_row_height = tree_view.default_row_height
+            
+        size.setHeight(self.default_row_height)
+        return size
 
 class AdvancedTreeView(QTreeView):
     """
@@ -18,48 +38,133 @@ class AdvancedTreeView(QTreeView):
         self.setUniformRowHeights(False)
         self.setExpandsOnDoubleClick(True)
         self.setHeaderHidden(True)  
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+        self.parent_modified_callback = None
 
     def setModelData(self, rootData):
         """
-        Helper to build a LazyTreeModel from the nested dict.
+        Helper to build a TreeModel from the nested dict.
         """
-        model = LazyTreeModel(rootData)
+        model = TreeModel(rootData)
         self.setModel(model)
         header = self.header()
         header.setSectionResizeMode(0, QHeaderView.Stretch) 
 
     def embed_forms(self, parent_modified_callback=None):
         """Use TreeWidgetFactory for embedding widgets consistently"""
+        self.parent_modified_callback = parent_modified_callback
         model = self.model()
         if not model:
             return
 
         def embed_children_on_expand(parent_index):
             self.expand(parent_index)
-            rows = model.rowCount(parent_index)
-            for row in range(rows):
-                index0 = model.index(row, 0, parent_index)
-                if not index0.isValid():
-                    continue
-                    
-                item = index0.internalPointer()
-                if not item or TreeWidgetFactory.should_skip_widget(item):
-                    continue
-
-                # Get node properties
-                name_text = item.data[0] if item.data else ""
-                node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
-                data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
-                
-                # Create and set appropriate widget
-                widget = TreeWidgetFactory.create_widget(
-                    node_type, data_obj, name_text, self, parent_modified_callback
-                )
-                if widget:
-                    self.setIndexWidget(index0, widget)
+            self.create_widgets_for_children(parent_index)
 
         # Only connect the signal
         self.expanded.connect(embed_children_on_expand)
+
+    def create_widgets_for_children(self, parent_index):
+        """Create widgets for all children of the given parent index"""
+        model = self.model()
+        if not model:
+            return
+
+        rows = model.rowCount(parent_index)
+        for row in range(rows):
+            index0 = model.index(row, 0, parent_index)
+            if not index0.isValid():
+                continue
+                
+            item = index0.internalPointer()
+            if not item or TreeWidgetFactory.should_skip_widget(item):
+                continue
+
+            name_text = item.data[0] if item.data else ""
+            node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+            data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
+            
+            widget = TreeWidgetFactory.create_widget(
+                node_type, data_obj, name_text, self, self.parent_modified_callback
+            )
+            if widget:
+                self.setIndexWidget(index0, widget)
+
+    def show_context_menu(self, position):
+        """Show context menu for tree items"""
+        index = self.indexAt(position)
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item:
+            return
+        
+        is_array = False
+        array_type = ""
+        data_obj = None
+        
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            is_array = item.raw.get("type") == "array"
+            data_obj = item.raw.get("obj")
+            if is_array and data_obj:
+                if hasattr(data_obj, 'orig_type') and data_obj.orig_type:
+                    array_type = data_obj.orig_type
+      
+
+        if array_type:
+            print(f"Showing menu for array: {array_type}")
+            menu = QMenu(self)
+            add_action = menu.addAction("Add New Element")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == add_action:
+                self.add_array_element(index, array_type, data_obj, item)
+        else:
+            print(f"No array detected. is_array={is_array}, array_type={array_type}")
+
+    def add_array_element(self, index, array_type, data_obj, array_item):
+        """Add a new element to an array"""
+        if not array_type.endswith("[]"):
+            QMessageBox.warning(self, "Error", f"Invalid array type format: {array_type}")
+            return
+            
+        element_type = array_type[:-2]  # Remove the [] suffix
+        
+        # Get the parent widget/handler that can create elements
+        parent = self.parent()
+        if not hasattr(parent, "create_array_element"):
+            QMessageBox.warning(self, "Error", "Cannot find element creator")
+            return
+            
+        try:
+            new_element = parent.create_array_element(element_type, data_obj, direct_update=True, array_item=array_item)
+            if new_element:
+                if not self.isExpanded(index):
+                    self.expand(index)
+
+                model = self.model()
+                array_item = index.internalPointer()
+                if hasattr(array_item, 'children') and array_item.children:
+                    last_child_idx = model.index(len(array_item.children) - 1, 0, index)
+                    if last_child_idx.isValid():
+                        item = last_child_idx.internalPointer()
+                        if item and not TreeWidgetFactory.should_skip_widget(item):
+                            name_text = item.data[0] if item.data else ""
+                            node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+                            data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
+                            
+                            widget = TreeWidgetFactory.create_widget(
+                                node_type, data_obj, name_text, self, self.parent_modified_callback
+                            )
+                            if widget:
+                                self.setIndexWidget(last_child_idx, widget)
+
+                        self.scrollTo(last_child_idx)
+                        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to add element: {str(e)}")
 
     def get_value_at_index(self, index):
         """Get value from either embedded widget or model data"""
@@ -95,11 +200,12 @@ class TreeWidgetFactory:
     # Centralized widget type mapping - used by RszViewer currently
     WIDGET_TYPES = {
         "Vec4Data": Vec4Input,
+        "QuaternionData": Vec4Input,
         "Vec3Data": Vec3Input,
         "GameObjectRefData": GuidInput,
         "GuidData": GuidInput,
-        "GameObjectRef": GuidInput,
         "OBBData": OBBInput,
+        "Mat4Data": Mat4Input,
         "RawBytesData": HexBytesInput,
         "StringData": StringInput,
         "BoolData": BoolInput,
@@ -110,7 +216,8 @@ class TreeWidgetFactory:
         "UserDataData": UserDataInput,
         "U8Data": U8Input, 
         "RangeData": RangeInput,
-        "RangeIData": RangeIInput,  
+        "RangeIData": RangeIInput,
+        "EnumInput": EnumInput, 
     }
 
     @staticmethod
@@ -121,8 +228,28 @@ class TreeWidgetFactory:
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(4)
         
-        # Data input widgets
-        if node_type in TreeWidgetFactory.WIDGET_TYPES and data_obj:
+        is_enum = False
+        enum_type = None
+        
+        if data_obj and hasattr(data_obj, 'orig_type') and data_obj.orig_type:
+            enum_type = data_obj.orig_type
+            enum_values = EnumManager.instance().get_enum_values(enum_type)
+            if enum_values:
+                is_enum = True
+        
+        if is_enum:
+            label = QLabel(name_text)
+            layout.addWidget(label)
+            
+            input_widget = EnumInput(parent=widget)
+            input_widget.set_data(data_obj)
+            input_widget.set_enum_values(EnumManager.instance().get_enum_values(enum_type))
+            layout.addWidget(input_widget)
+            
+            if on_modified:
+                input_widget.modified_changed.connect(on_modified)
+        
+        elif node_type in TreeWidgetFactory.WIDGET_TYPES and data_obj:
             label = QLabel(name_text)
             layout.addWidget(label)
             
@@ -134,7 +261,7 @@ class TreeWidgetFactory:
             if on_modified:
                 input_widget.modified_changed.connect(on_modified)
                 
-            if node_type == "OBBData":
+            if node_type == "OBBData" or node_type == "Mat4Data":
                 widget.setFixedHeight(150)
                 
         # Icon widgets

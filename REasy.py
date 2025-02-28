@@ -658,7 +658,7 @@ class REasyEditorApp(QMainWindow):
             sys.stderr = ConsoleRedirector(self.console_widget, sys.stderr)
             print("Debug console started.")
 
-        self.resize(800, 600)
+        self.resize(1160, 920)
 
         self.setAcceptDrops(True)
 

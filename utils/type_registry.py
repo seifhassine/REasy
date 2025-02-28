@@ -20,3 +20,14 @@ class TypeRegistry:
         elif hex_key_8 in self.registry:
             return self.registry[hex_key_8]
         return None
+
+    def find_type_by_name(self, type_name: str) -> tuple:
+        """
+        Look up type info and ID by name.
+        Returns a tuple of (type_info, type_id) or (None, None) if not found.
+        """
+        for type_key, info in self.registry.items():
+            if info.get("name") == type_name:
+                type_id = int(type_key, 16)
+                return info, type_id
+        return None, None

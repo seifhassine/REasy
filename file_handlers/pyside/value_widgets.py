@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLineEdit, 
-                              QDoubleSpinBox, QSpinBox, QCheckBox, QGridLayout, QLabel)
+                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox)
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QDoubleValidator, QIntValidator
+import uuid
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -47,16 +49,15 @@ class Vec3Input(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.spinboxes = []
+        self.inputs = []
         for i, coord in enumerate(['x', 'y', 'z']):
-            spin = QDoubleSpinBox()
-            spin.setRange(-999999, 999999)
-            spin.setDecimals(6)
-            spin.setFixedWidth(100)
-            spin.setProperty("coord", coord)
-            spin.setAlignment(Qt.AlignLeft)  # Add left alignment
-            self.layout.addWidget(spin)
-            self.spinboxes.append(spin)
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(100)
+            line_edit.setProperty("coord", coord)
+            line_edit.setAlignment(Qt.AlignLeft)
+            self.layout.addWidget(line_edit)
+            self.inputs.append(line_edit)
             
         # Add stretch at the end to push widgets left
         self.layout.addStretch()
@@ -64,40 +65,47 @@ class Vec3Input(BaseValueWidget):
         if data:
             self.set_data(data)
             
-        for spin in self.spinboxes:
-            spin.valueChanged.connect(self._on_value_changed)
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
 
     def update_display(self):
         if not self._data:
             return
         values = [self._data.x, self._data.y, self._data.z]
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(f"{val:.8g}") 
 
     def setValues(self, values):
-        self.x.setValue(values[0])
-        self.y.setValue(values[1])
-        self.z.setValue(values[2])
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
         
     def getValues(self):
-        return (self.x.value(), self.y.value(), self.z.value())
+        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
         
     def _on_value_changed(self):
         if not self._data:
             return
+        
+        try:
+            new_values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-': 
+                    new_values.append(0.0)
+                else:
+                    new_values.append(float(text))
             
-        old_values = (self._data.x, self._data.y, self._data.z)
-        new_values = tuple(spin.value() for spin in self.spinboxes)
-        
-        # Update data
-        self._data.x = new_values[0]
-        self._data.y = new_values[1]
-        self._data.z = new_values[2]
-        
-        # Only emit if values actually changed
-        if old_values != new_values:
+            new_values = tuple(new_values)
+            old_values = (self._data.x, self._data.y, self._data.z)
+            
+            self._data.x = new_values[0]
+            self._data.y = new_values[1]
+            self._data.z = new_values[2]
+            
             self.valueChanged.emit(new_values)
             self.mark_modified()
+        except ValueError:
+            pass  # Ignore invalid input during typing
 
 class Vec4Input(BaseValueWidget):
     valueChanged = Signal(tuple)
@@ -105,57 +113,64 @@ class Vec4Input(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.spinboxes = []
+        self.inputs = []
         for i, coord in enumerate(['x', 'y', 'z', 'w']):
-            spin = QDoubleSpinBox()
-            spin.setRange(-999999, 999999)
-            spin.setDecimals(6)
-            spin.setFixedWidth(100)
-            spin.setProperty("coord", coord)
-            spin.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(spin)
-            self.spinboxes.append(spin)
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(100)
+            line_edit.setProperty("coord", coord)
+            line_edit.setAlignment(Qt.AlignLeft)
+            self.layout.addWidget(line_edit)
+            self.inputs.append(line_edit)
             
-        # Add stretch at the end to push widgets left
+        # a stretch at the end to push widgets left
         self.layout.addStretch()
             
         if data:
             self.set_data(data)
             
-        for spin in self.spinboxes:
-            spin.valueChanged.connect(self._on_value_changed)
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
 
     def update_display(self):
         if not self._data:
             return
         values = [self._data.x, self._data.y, self._data.z, self._data.w]
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(f"{val:.8g}")
 
     def setValues(self, values):
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
             
     def getValues(self):
-        return tuple(spin.value() for spin in self.spinboxes)
+        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
         
     def _on_value_changed(self):
         if not self._data:
             return
         
-        old_values = (self._data.x, self._data.y, self._data.z, self._data.w)
-        new_values = tuple(spin.value() for spin in self.spinboxes)
-        
-        # Update data
-        self._data.x = new_values[0]
-        self._data.y = new_values[1]
-        self._data.z = new_values[2]
-        self._data.w = new_values[3]
-        
-        # Only emit if values actually changed
-        if old_values != new_values:
+        try:
+            new_values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    new_values.append(0.0)
+                else:
+                    new_values.append(float(text))
+            
+            new_values = tuple(new_values)
+            old_values = (self._data.x, self._data.y, self._data.z, self._data.w)
+            
+            self._data.x = new_values[0]
+            self._data.y = new_values[1]
+            self._data.z = new_values[2]
+            self._data.w = new_values[3]
+            
             self.valueChanged.emit(new_values)
             self.mark_modified()
+        except ValueError:
+            pass 
 
 class GuidInput(BaseValueWidget):
     valueChanged = Signal(str)
@@ -163,10 +178,16 @@ class GuidInput(BaseValueWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.line_edit = QLineEdit()
-        self.line_edit.setMinimumWidth(250) 
+        self.line_edit.setFixedWidth(230) 
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         self.line_edit.textChanged.connect(self._on_value_changed)
+
+        self.gen_button = QPushButton("Generate")
+        self.gen_button.setToolTip("Generate a random GUID")
+        self.gen_button.setMaximumWidth(70)
+        self.layout.addWidget(self.gen_button)
+        self.gen_button.clicked.connect(self._generate_random_guid)
 
     def update_display(self):
         if not self._data:
@@ -196,6 +217,12 @@ class GuidInput(BaseValueWidget):
             self._data.value = text
         self.valueChanged.emit(text)
         self.mark_modified()
+
+    def _generate_random_guid(self):
+        """Generate a random GUID and set it as the current value"""
+        random_guid = str(uuid.uuid4())
+        self.line_edit.setText(random_guid)
+        self.valueChanged.emit(random_guid)
 
 class NumberInput(BaseValueWidget):
     """Base class for numeric inputs"""
@@ -243,7 +270,7 @@ class F32Input(NumberInput):
         
     def update_display(self):
         if self._data and hasattr(self._data, 'value'):
-            self.line_edit.setText(str(self._data.value))
+            self.line_edit.setText(f"{self._data.value:.8g}") 
 
 class S32Input(NumberInput):
     def __init__(self, parent=None):
@@ -322,6 +349,7 @@ class U8Input(NumberInput):
         except ValueError:
             self.line_edit.setStyleSheet("border: 1px solid red;")
 
+
 class OBBInput(BaseValueWidget):
     valueChanged = Signal(list)
     
@@ -337,27 +365,26 @@ class OBBInput(BaseValueWidget):
         for i, label in enumerate(labels):
             grid.addWidget(QLabel(label), i, 0, alignment=Qt.AlignRight)
             
-        self.spinboxes = []
+        self.inputs = []
         for row in range(5):
-            row_spins = []
+            row_inputs = []
             for col in range(4):
-                spin = QDoubleSpinBox()
-                spin.setRange(-999999, 999999)
-                spin.setDecimals(6)
-                spin.setFixedWidth(100)
-                spin.setAlignment(Qt.AlignLeft)
-                grid.addWidget(spin, row, col + 1)  # +1 because column 0 has labels
-                row_spins.append(spin)
-            self.spinboxes.append(row_spins)
+                line_edit = QLineEdit()
+                line_edit.setValidator(QDoubleValidator())
+                line_edit.setFixedWidth(100)
+                line_edit.setAlignment(Qt.AlignLeft)
+                grid.addWidget(line_edit, row, col + 1)  # +1 because column 0 has labels
+                row_inputs.append(line_edit)
+            self.inputs.append(row_inputs)
             
         self.layout.addStretch()
         
         if data:
             self.set_data(data)
             
-        for row in self.spinboxes:
-            for spin in row:
-                spin.valueChanged.connect(self._on_value_changed)
+        for row in self.inputs:
+            for input_field in row:
+                input_field.textEdited.connect(self._on_value_changed) 
 
     def update_display(self):
         if not self._data or not hasattr(self._data, 'values'):
@@ -370,26 +397,40 @@ class OBBInput(BaseValueWidget):
         for row in range(5):
             for col in range(4):
                 idx = row * 4 + col
-                self.spinboxes[row][col].setValue(values[idx])
+                self.inputs[row][col].setText(f"{values[idx]:.8g}") 
 
     def setValues(self, values):
-        for spin, val in zip(self.spins, values):
-            spin.setValue(val)
+        flat_inputs = [input_field for row in self.inputs for input_field in row]
+        for input_field, val in zip(flat_inputs, values):
+            input_field.setText(str(val))
             
     def getValues(self):
-        return [spin.value() for spin in self.spinboxes]
+        try:
+            return [float(input_field.text() or "0") 
+                   for row in self.inputs 
+                   for input_field in row]
+        except ValueError:
+            return [0.0] * 20
         
     def _on_value_changed(self):
         if not self._data:
             return
-        values = []
-        for row in self.spinboxes:
-            values.extend([spin.value() for spin in row])
-        old_values = self._data.values
-        self._data.values = values
-        if old_values != values:
+        
+        try:
+            values = []
+            for row in self.inputs:
+                for input_field in row:
+                    text = input_field.text()
+                    if not text or text == '-':
+                        values.append(0.0)
+                    else:
+                        values.append(float(text))
+            
+            self._data.values = values
             self.valueChanged.emit(values)
             self.mark_modified()
+        except ValueError:
+            pass 
 
 class HexBytesInput(BaseValueWidget):
     valueChanged = Signal(bytes)
@@ -399,8 +440,7 @@ class HexBytesInput(BaseValueWidget):
         
         self.hex_edit = QLineEdit()
         self.hex_edit.setAlignment(Qt.AlignLeft)
-        # Only allow hex digits and spaces
-        self.hex_edit.setInputMask("HH "*32)  # Support up to 32 bytes
+        self.hex_edit.setInputMask("HH "*32)
         self.layout.addWidget(self.hex_edit)
         
         if data:
@@ -540,9 +580,8 @@ class RangeInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.spinboxes = []
+        self.inputs = []
         for i, name in enumerate(['Min', 'Max']):
-
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -552,56 +591,66 @@ class RangeInput(BaseValueWidget):
             label.setStyleSheet("padding-right: 4px;")  
             container_layout.addWidget(label)
             
-            spin = QDoubleSpinBox()
-            spin.setRange(-999999, 999999)
-            spin.setDecimals(6)
-            spin.setFixedWidth(100)
-            spin.setProperty("name", name.lower())
-            spin.setAlignment(Qt.AlignLeft)
-            container_layout.addWidget(spin)
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(100)
+            line_edit.setProperty("name", name.lower())
+            line_edit.setAlignment(Qt.AlignLeft)
+            container_layout.addWidget(line_edit)
             
             if i == 0: 
                 container.setStyleSheet("margin-left: 8px;")
             container.setContentsMargins(0, 0, 0, 0)
                 
             self.layout.addWidget(container)
-            self.spinboxes.append(spin)
+            self.inputs.append(line_edit)
         
         self.layout.addStretch()
             
         if data:
             self.set_data(data)
             
-        for spin in self.spinboxes:
-            spin.valueChanged.connect(self._on_value_changed)
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
 
     def update_display(self):
         if not self._data:
             return
         values = [self._data.min, self._data.max]
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(f"{val:.8g}") 
 
     def setValues(self, values):
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
             
     def getValues(self):
-        return tuple(spin.value() for spin in self.spinboxes)
+        try:
+            return tuple(float(input_field.text() or "0") for input_field in self.inputs)
+        except ValueError:
+            return (0.0, 0.0)
         
     def _on_value_changed(self):
         if not self._data:
             return
             
-        old_values = (self._data.min, self._data.max)
-        new_values = tuple(spin.value() for spin in self.spinboxes)
-        
-        self._data.min = new_values[0]
-        self._data.max = new_values[1]
-        
-        if old_values != new_values:
+        try:
+            new_values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    new_values.append(0.0)
+                else:
+                    new_values.append(float(text))
+                
+            new_values = tuple(new_values)
+            self._data.min = new_values[0]
+            self._data.max = new_values[1]
+            
             self.valueChanged.emit(new_values)
             self.mark_modified()
+        except ValueError:
+            pass 
 
 class RangeIInput(BaseValueWidget):
     """Widget for editing integer range values"""
@@ -610,7 +659,7 @@ class RangeIInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.spinboxes = []
+        self.inputs = []
         for i, name in enumerate(['Min', 'Max']):
             container = QWidget()
             container_layout = QHBoxLayout(container)
@@ -621,53 +670,270 @@ class RangeIInput(BaseValueWidget):
             label.setStyleSheet("padding-right: 4px;")
             container_layout.addWidget(label)
             
-            spin = QSpinBox()
-            spin.setRange(-2147483648, 2147483647) 
-            spin.setFixedWidth(100)
-            spin.setProperty("name", name.lower())
-            spin.setAlignment(Qt.AlignLeft)
-            container_layout.addWidget(spin)
+            line_edit = QLineEdit()
+            line_edit.setValidator(QIntValidator())
+            line_edit.setFixedWidth(100)
+            line_edit.setProperty("name", name.lower())
+            line_edit.setAlignment(Qt.AlignLeft)
+            container_layout.addWidget(line_edit)
             
             if i == 0:
                 container.setStyleSheet("margin-left: 8px;")
             container.setContentsMargins(0, 0, 0, 0)
                 
             self.layout.addWidget(container)
-            self.spinboxes.append(spin)
+            self.inputs.append(line_edit)
         
         self.layout.addStretch()
             
         if data:
             self.set_data(data)
             
-        for spin in self.spinboxes:
-            spin.valueChanged.connect(self._on_value_changed)
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
 
     def update_display(self):
         if not self._data:
             return
         values = [self._data.min, self._data.max]
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
 
     def setValues(self, values):
-        for spin, val in zip(self.spinboxes, values):
-            spin.setValue(val)
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
             
     def getValues(self):
-        return tuple(spin.value() for spin in self.spinboxes)
+        try:
+            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
+        except ValueError:
+            return (0, 0)
         
     def _on_value_changed(self):
         if not self._data:
             return
             
-        old_values = (self._data.min, self._data.max)
-        new_values = tuple(spin.value() for spin in self.spinboxes)
-        
-        self._data.min = new_values[0]
-        self._data.max = new_values[1]
-        
-        if old_values != new_values:
+        try:
+            new_values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    new_values.append(0)
+                else:
+                    new_values.append(int(text))
+            
+            new_values = tuple(new_values)
+            self._data.min = new_values[0]
+            self._data.max = new_values[1]
+            
             self.valueChanged.emit(new_values)
             self.mark_modified()
+        except ValueError:
+            pass 
+
+class EnumInput(BaseValueWidget):
+    """Widget for editing enum values with dropdown selection"""
+    valueChanged = Signal(int)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.enum_values = []  
+        
+        self.line_edit = QLineEdit()
+        self.line_edit.setFixedWidth(100)
+        self.line_edit.setAlignment(Qt.AlignLeft)
+        self.layout.addWidget(self.line_edit)
+        
+        self.combo_box = QComboBox()
+        self.combo_box.setFixedWidth(150)
+        self.combo_box.setMaxVisibleItems(15) 
+        self.combo_box.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded) 
+        self.layout.addWidget(self.combo_box)
+        
+        # Connect signals
+        self.line_edit.textChanged.connect(self._on_text_changed)
+        self.combo_box.currentIndexChanged.connect(self._on_combo_changed)
+        
+    def set_enum_values(self, enum_values):
+        """Set available enum values and populate dropdown"""
+        self.enum_values = enum_values
+        
+        # Block signals during population to prevent auto-selection
+        self.combo_box.blockSignals(True)
+        self.combo_box.clear()
+        
+        # Populate dropdown with enum values
+        for enum_value in enum_values:
+            self.combo_box.addItem(f"{enum_value['name']} ({enum_value['value']})")
+        
+        # Restore signals
+        self.combo_box.blockSignals(False)
+        
+        # Set combo selection to match current value if it exists
+        if self._data and hasattr(self._data, 'value'):
+            self.update_combo_selection()
+            
+    def update_combo_selection(self):
+        """Set the combo box selection to match current value"""
+        if not self._data or not self.enum_values:
+            return
+        
+        current_value = self._data.value
+        found_match = False
+        
+        # Block signals to prevent triggering _on_combo_changed
+        self.combo_box.blockSignals(True)
+        
+        # Try to find matching enum value
+        for i, enum_value in enumerate(self.enum_values):
+            if enum_value['value'] == current_value:
+                self.combo_box.setCurrentIndex(i)
+                found_match = True
+                break
+                
+        # If no match found, set combo to -1 (no selection)
+        if not found_match:
+            self.combo_box.setCurrentIndex(-1)
+            
+        self.combo_box.blockSignals(False)
+                
+    def update_display(self):
+        """Update both the text input and dropdown to match data"""
+        if not self._data:
+            return
+        
+        # First update text field with actual value
+        self.line_edit.blockSignals(True)
+        self.line_edit.setText(str(self._data.value))
+        self.line_edit.blockSignals(False)
+        
+        # Then update combo box selection to match value, if possible
+        self.update_combo_selection()
+        
+    def _on_text_changed(self, text):
+        """Update value when text is changed manually"""
+        if not self._data or not text:
+            return
+            
+        try:
+            value = int(text)
+            old_value = self._data.value
+            
+            if old_value != value:
+                self._data.value = value
+                self.valueChanged.emit(value)
+                self._modified = True 
+                self.modified_changed.emit(True)
+                
+                # Update dropdown to match new value, but don't trigger another change
+                self.update_combo_selection()
+                
+            self.line_edit.setStyleSheet("")
+        except ValueError:
+            self.line_edit.setStyleSheet("border: 1px solid red;")
+            
+    def _on_combo_changed(self, index):
+        """Update value when an enum option is selected"""
+        if not self._data or index < 0 or index >= len(self.enum_values):
+            return
+            
+        value = self.enum_values[index]['value']
+        old_value = self._data.value
+        
+        if old_value != value:
+            self._data.value = value
+            
+            self.line_edit.blockSignals(True)
+            self.line_edit.setText(str(value))
+            self.line_edit.blockSignals(False)
+            
+            self.valueChanged.emit(value)
+            self._modified = True 
+            self.modified_changed.emit(True)
+
+class Mat4Input(BaseValueWidget):
+    """Widget for editing 4x4 matrix values"""
+    valueChanged = Signal(list)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        grid = QGridLayout()
+        grid.setSpacing(2)
+        grid.setAlignment(Qt.AlignLeft)
+        self.layout.addLayout(grid)
+        
+        self.inputs = []
+        for row in range(4):
+            row_inputs = []
+            for col in range(4):
+                line_edit = QLineEdit()
+                line_edit.setValidator(QDoubleValidator())
+                line_edit.setFixedWidth(75) 
+                line_edit.setFixedHeight(24)
+                line_edit.setAlignment(Qt.AlignLeft)
+                grid.addWidget(line_edit, row, col)
+                row_inputs.append(line_edit)
+                line_edit.textEdited.connect(self._on_value_changed)
+            self.inputs.append(row_inputs)
+        
+        self.layout.addStretch()
+        
+        if data:
+            self.set_data(data)
+
+    def update_display(self):
+        """Update input fields from the data"""
+        if not self._data or not hasattr(self._data, 'values'):
+            return
+        
+        values = self._data.values
+        if len(values) != 16: 
+            return
+            
+        for row in range(4):
+            for col in range(4):
+                idx = row * 4 + col  
+                self.inputs[row][col].setText(f"{values[idx]:.8g}")
+
+    def _on_value_changed(self):
+        """Handle input changes and update the data model"""
+        if not self._data:
+            return
+        
+        try:
+            values = []
+            for row in self.inputs:
+                for input_field in row:
+                    text = input_field.text()
+                    if not text or text == '-':
+                        values.append(0.0)
+                    else:
+                        values.append(float(text))
+            
+            if hasattr(self._data, 'values') and len(values) == 16:
+                self._data.values = values
+                self.valueChanged.emit(values)
+                self.mark_modified()
+        except ValueError:
+            pass 
+
+    def setValues(self, values):
+        """Set all input values at once"""
+        if len(values) != 16:
+            return
+            
+        for row in range(4):
+            for col in range(4):
+                idx = row * 4 + col
+                self.inputs[row][col].setText(str(values[idx]))
+    
+    def getValues(self):
+        """Get all values as a flat list"""
+        try:
+            return [float(input_field.text() or "0") 
+                   for row in self.inputs 
+                   for input_field in row]
+        except ValueError:
+            return [0.0] * 16
 
