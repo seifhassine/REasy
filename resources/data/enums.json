@@ -141190,116 +141190,216 @@
 	],
 	"chainsaw.SoundDetectionKey": [
 		{
-			"name": "None",
-			"value": 139421919
+			"name": "Move",
+			"value": 876602883
 		},
 		{
-			"name": "CrouchWalk",
-			"value": 1609400627
+			"name": "Watch",
+			"value": 2972917565
 		},
 		{
-			"name": "Walk",
-			"value": 2111799194
+			"name": "RunSwitch",
+			"value": 4148263357
+		},
+		{
+			"name": "Crouch",
+			"value": 1699390205
+		},
+		{
+			"name": "Hold",
+			"value": 1385585625
+		},
+		{
+			"name": "MeleeHold",
+			"value": 3039765162
+		},
+		{
+			"name": "Empty00",
+			"value": 522612096
+		},
+		{
+			"name": "Shot",
+			"value": 1785394695
+		},
+		{
+			"name": "Reload",
+			"value": 2492591405
+		},
+		{
+			"name": "TerrainAction",
+			"value": 3868588426
+		},
+		{
+			"name": "BoxBreak",
+			"value": 4272476858
+		},
+		{
+			"name": "Action",
+			"value": 2763829319
+		},
+		{
+			"name": "NpcOrder",
+			"value": 2887962808
+		},
+		{
+			"name": "ShortcutLeft",
+			"value": 2514867239
+		},
+		{
+			"name": "ShortcutRight",
+			"value": 3345666134
+		},
+		{
+			"name": "ShortcutDown",
+			"value": 1963902556
+		},
+		{
+			"name": "ShortcutUp",
+			"value": 1426815799
+		},
+		{
+			"name": "Interact",
+			"value": 1890601913
+		},
+		{
+			"name": "Fatal",
+			"value": 3502501052
+		},
+		{
+			"name": "Escape_Knife",
+			"value": 942818309
+		},
+		{
+			"name": "Escape_ButtonRapid",
+			"value": 248675766
+		},
+		{
+			"name": "Avoid",
+			"value": 57363640
+		},
+		{
+			"name": "Parry",
+			"value": 3873251877
+		},
+		{
+			"name": "Quick",
+			"value": 190393046
 		},
 		{
 			"name": "Run",
 			"value": 847302998
 		},
 		{
-			"name": "Impact",
-			"value": 1799304839
+			"name": "EquipMineSocket",
+			"value": 2118873369
 		},
 		{
-			"name": "Impact_Roar",
-			"value": 664471879
+			"name": "QuickTurn_Keyboard",
+			"value": 2439547063
 		},
 		{
-			"name": "Bell",
-			"value": 635988683
+			"name": "EquipMine_Keyboard",
+			"value": 2119237251
 		},
 		{
-			"name": "GlassFloor",
-			"value": 1317226816
+			"name": "ScopeZoom",
+			"value": 3871443247
 		},
 		{
-			"name": "GrenadeRolling",
-			"value": 1765826780
+			"name": "__Combat",
+			"value": 2729521438
 		},
 		{
-			"name": "WeaponSwitch",
-			"value": 1940454237
+			"name": "ShortcutOuterLeft",
+			"value": 2252239639
 		},
 		{
-			"name": "DownKill",
-			"value": 397793675
+			"name": "ShortcutOuterRight",
+			"value": 2394491499
 		},
 		{
-			"name": "ShelfOpen",
-			"value": 945565638
+			"name": "ShortcutOuterDown",
+			"value": 2866134354
 		},
 		{
-			"name": "DoorOpen",
-			"value": 1114939729
+			"name": "ShortcutOuterUp",
+			"value": 747485717
 		},
 		{
-			"name": "DoorOpenLoud",
-			"value": 249998025
+			"name": "ShortcutGuideOpen",
+			"value": 3152573824
 		},
 		{
-			"name": "LargeDoorOpen",
-			"value": 517424754
+			"name": "ShortcutMouseWheel",
+			"value": 1098277059
 		},
 		{
-			"name": "WindowOver",
-			"value": 1174072739
+			"name": "GyroReset",
+			"value": 939802795
 		},
 		{
-			"name": "JumpOff",
-			"value": 307809413
+			"name": "MC_BulletRush",
+			"value": 3382632295
 		},
 		{
-			"name": "HandleTurn",
-			"value": 1633794345
+			"name": "MC_BulletRushAction",
+			"value": 2498588525
 		},
 		{
-			"name": "Instruct",
-			"value": 1431148373
+			"name": "AO_HookShot",
+			"value": 2430095292
 		},
 		{
-			"name": "LadderMove",
-			"value": 1121457870
+			"name": "ShortcutMouseWheelUp",
+			"value": 749275288
 		},
 		{
-			"name": "LadderLower",
-			"value": 1463570326
+			"name": "ShortcutMouseWheelDown",
+			"value": 1160287669
 		},
 		{
-			"name": "TimedShutter",
-			"value": 569977228
+			"name": "AO_HookShot_Run",
+			"value": 3375843225
 		},
 		{
-			"name": "DrumExplosion",
-			"value": 799489540
+			"name": "AO_HookShot_Npc",
+			"value": 475084341
 		},
 		{
-			"name": "BarrelExplosion",
-			"value": 894923275
+			"name": "AO_HookShotMelee_Keyboard",
+			"value": 546521287
 		},
 		{
-			"name": "BridgeBreak",
-			"value": 2141840894
+			"name": "AO_HookShotPeelOff_Keyboard",
+			"value": 1043167753
 		},
 		{
-			"name": "IronDoorOpen",
-			"value": 150229457
+			"name": "QuickTurn",
+			"value": 3209109388
 		},
 		{
-			"name": "ChandelierFall",
-			"value": 1647622050
+			"name": "CameraReset",
+			"value": 3261954728
 		},
 		{
-			"name": "Padlock",
-			"value": 330462441
+			"name": "Walk",
+			"value": 2111799194
+		},
+		{
+			"name": "SwitchZoom",
+			"value": 3221224415
+		},
+		{
+			"name": "QuickTurn_Run",
+			"value": 1666970818
+		},
+		{
+			"name": "QuickTurn_Crouch",
+			"value": 163624269
+		},
+		{
+			"name": "Combat",
+			"value": 2736506089
 		}
 	],
 	"chainsaw.GmChair.HelperParam": [
