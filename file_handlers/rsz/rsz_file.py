@@ -534,34 +534,27 @@ class ScnFile:
                 continue
 
             self.parsed_elements[idx] = {}
-            print("element is ", type_info, " ")
-            try:
-                new_offset = parse_instance_fields(
-                    raw=self.data,
-                    offset=current_offset,
-                    fields_def=fields_def,
-                    current_instance_index=idx,
-                    scn_file=self
-                )
-                current_offset = new_offset
-        
-                self._instance_hashes[idx] = inst.crc
-            except Exception as e:
-                print(f"Error parsing instance {idx}: {e}")
+            
+            new_offset = parse_instance_fields(
+                raw=self.data,
+                offset=current_offset,
+                fields_def=fields_def,
+                current_instance_index=idx,
+                scn_file=self
+            )
+            current_offset = new_offset
+    
+            self._instance_hashes[idx] = inst.crc
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
         field_type = field_def.get("type", "").lower()
         
-        # Handle Struct type specially
-        if field_type == "struct" and isinstance(data_obj, StructData):
-            # For struct types, we don't need to write size - just the struct data itself
+        if isinstance(data_obj, StructData):
             if data_obj.values:
                 for struct_value in data_obj.values:
-                    # For each struct instance, write its field values
                     for field_name, field_value in struct_value.items():
-                        # We need to find the field definition
                         original_type = data_obj.orig_type
                         if original_type and self.type_registry:
                             struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
@@ -569,11 +562,9 @@ class ScnFile:
                                 struct_fields = struct_type_info.get("fields", [])
                                 for struct_field in struct_fields:
                                     if struct_field.get("name") == field_name:
-                                        # Write the field value using the struct's field definition
                                         self._write_field_value(struct_field, field_value, out)
                                         break
         elif field_def.get("array", False):
-            #print("last is array")
 
             while len(out) % 4:
                 out.extend(b'\x00') 
@@ -824,7 +815,7 @@ class ScnFile:
                     
         return bytes(out)
 
-    def build(self, special_align_enabled = True) -> bytes:
+    def build(self, special_align_enabled = False) -> bytes:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
