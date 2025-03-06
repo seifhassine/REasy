@@ -500,6 +500,9 @@ class ScnFile:
         self.parsed_instances = []
         current_offset = 0
 
+        # Reset processed instances tracking
+        self._processed_instances = set()
+
         # Pre-initialize hierarchy and element dictionaries
         self.instance_hierarchy = {
             idx: {"children": [], "parent": None} 
@@ -515,7 +518,7 @@ class ScnFile:
                 self.parsed_elements[idx] = {}  # Initialize empty dict for NULL entry
                 continue
 
-            if idx in self._rsz_userdata_set:
+            if idx in self._rsz_userdata_set or idx in self._processed_instances:
                 self.parsed_elements[idx] = {}
                 continue
                 
@@ -531,22 +534,45 @@ class ScnFile:
                 continue
 
             self.parsed_elements[idx] = {}
-            new_offset = parse_instance_fields(
-                raw=self.data,
-                offset=current_offset,
-                fields_def=fields_def,
-                current_instance_index=idx,
-                scn_file=self
-            )
-            current_offset = new_offset
-    
-            self._instance_hashes[idx] = inst.crc
+            print("element is ", type_info, " ")
+            try:
+                new_offset = parse_instance_fields(
+                    raw=self.data,
+                    offset=current_offset,
+                    fields_def=fields_def,
+                    current_instance_index=idx,
+                    scn_file=self
+                )
+                current_offset = new_offset
+        
+                self._instance_hashes[idx] = inst.crc
+            except Exception as e:
+                print(f"Error parsing instance {idx}: {e}")
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
+        field_type = field_def.get("type", "").lower()
         
-        if field_def.get("array", False):
+        # Handle Struct type specially
+        if field_type == "struct" and isinstance(data_obj, StructData):
+            # For struct types, we don't need to write size - just the struct data itself
+            if data_obj.values:
+                for struct_value in data_obj.values:
+                    # For each struct instance, write its field values
+                    for field_name, field_value in struct_value.items():
+                        # We need to find the field definition
+                        original_type = data_obj.orig_type
+                        if original_type and self.type_registry:
+                            struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
+                            if struct_type_info:
+                                struct_fields = struct_type_info.get("fields", [])
+                                for struct_field in struct_fields:
+                                    if struct_field.get("name") == field_name:
+                                        # Write the field value using the struct's field definition
+                                        self._write_field_value(struct_field, field_value, out)
+                                        break
+        elif field_def.get("array", False):
             #print("last is array")
 
             while len(out) % 4:
@@ -798,7 +824,7 @@ class ScnFile:
                     
         return bytes(out)
 
-    def build(self, special_align_enabled = False) -> bytes:
+    def build(self, special_align_enabled = True) -> bytes:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
@@ -1520,7 +1546,7 @@ def is_valid_reference(candidate, current_instance_index, scn_file=None):
 def ensure_enough_data(dataLen, offset, size):
     if offset + size > dataLen:
         raise ValueError(f"Insufficient data at offset {offset:#x}")
-    
+
 def parse_instance_fields(
     raw: bytes,
     offset: int, 
@@ -1585,8 +1611,71 @@ def parse_instance_fields(
         field_align = int(field["align"]) if "align" in field else 1
         rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align)
         data_obj = None
+        
+        # Special handling for Struct types (both array and non-array)
+        if get_type_class == StructData:
+            struct_type_info = None
+            struct_type_id = None
+            if original_type and scn_file.type_registry:
+                struct_type_info, struct_type_id = scn_file.type_registry.find_type_by_name(original_type)
 
-        if is_array:
+            struct_values = []
+            
+            # If we have a valid type definition, try to parse it
+            if struct_type_info and struct_type_id and pos < len(raw):
+                struct_fields_def = struct_type_info.get("fields", [])
+                
+                # Create processed instances tracking set if it doesn't exist
+                if not hasattr(scn_file, '_processed_instances'):
+                    scn_file._processed_instances = set()
+                
+                # Start checking from the next instance
+                next_instance_idx = current_instance_index + 1
+                current_pos = pos
+                
+                # Look for consecutive instances of the right type
+                while (next_instance_idx < len(scn_file.instance_infos) and 
+                       next_instance_idx not in scn_file._processed_instances):
+                    
+                    # Check if this instance matches our struct type
+                    if scn_file.instance_infos[next_instance_idx].type_id != struct_type_id:
+                        break
+                    
+                    # Mark this instance as being processed
+                    scn_file._processed_instances.add(next_instance_idx)
+                    
+                    struct_parsed = {}
+                    try:
+                        # Parse the fields of the struct
+                        next_pos = parse_instance_fields(
+                            raw=raw,
+                            offset=current_pos,
+                            fields_def=struct_fields_def,
+                            current_instance_index=next_instance_idx,
+                            scn_file=scn_file
+                        )
+                        
+                        # If we successfully parsed something, add it
+                        if next_pos > current_pos:
+                            # Copy the parsed data for this struct field
+                            struct_parsed = scn_file.parsed_elements.get(next_instance_idx, {})
+                            
+                            # Add to our struct values if we got something
+                            if struct_parsed:
+                                struct_values.append(struct_parsed)
+                            
+                            current_pos = next_pos
+                    except Exception as e: # TODO: Temporary until I'm 100% sure we're parsing Structs structures correctly
+                        print(f"Error parsing struct type {original_type}: {e}")
+                        break
+                    
+                    next_instance_idx += 1
+                
+                pos = current_pos
+            
+            data_obj = StructData(struct_values, original_type)
+            
+        elif is_array:
             pos = local_align(pos, 4)
             count = unpack_uint(raw, pos)[0]
             pos += 4
