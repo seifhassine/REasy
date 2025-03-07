@@ -608,7 +608,7 @@ class ScnFile:
                     elif isinstance(element, QuaternionData):
                         out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
                     elif isinstance(element, ColorData):
-                        out.extend(struct.pack("<4f", element.r, element.g, element.b, element.a))
+                        out.extend(struct.pack("<4B", element.r, element.g, element.b, element.a))
                     elif isinstance(element, (ObjectData, U32Data)):
                         value = int(element.value) & 0xFFFFFFFF
                         out.extend(struct.pack("<I", value))
@@ -721,7 +721,7 @@ class ScnFile:
             elif isinstance(data_obj, QuaternionData):
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, ColorData):
-                out.extend(struct.pack("<4f", data_obj.r, data_obj.g, data_obj.b, data_obj.a))
+                out.extend(struct.pack("<4B", data_obj.r, data_obj.g, data_obj.b, data_obj.a))
             elif isinstance(data_obj, (ObjectData, U32Data)):
                 value = int(data_obj.value) & 0xFFFFFFFF
                 out.extend(struct.pack("<I", value))
@@ -1558,6 +1558,7 @@ def parse_instance_fields(
     unpack_int = struct.Struct("<i").unpack_from
     unpack_sbyte = struct.Struct("<b").unpack_from
     unpack_ubyte = struct.Struct("<B").unpack_from
+    unpack_4ubyte = struct.Struct("<4B").unpack_from
     unpack_short = struct.Struct("<h").unpack_from
     unpack_ushort = struct.Struct("<H").unpack_from
     unpack_long = struct.Struct("<q").unpack_from
@@ -1949,6 +1950,17 @@ def parse_instance_fields(
                     
                 data_obj = ArrayData([GuidData(g[0], g[1], original_type) for g in guids], GuidData, original_type)
 
+            elif rsz_type == ColorData:
+                color_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_4ubyte(raw, pos)
+                    color_objects.append(ColorData(vals[0], vals[1], vals[2], vals[3], original_type))
+                    pos += fsize
+                    
+                pos = local_align(pos, field_align) if color_objects else pos
+                data_obj = ArrayData(color_objects, ColorData, original_type)
+
             else:
                 children = []
                 for _ in range(count):
@@ -2091,6 +2103,12 @@ def parse_instance_fields(
                 guid_str = guid_le_to_str(guid_bytes)
                 pos += fsize
                 data_obj = rsz_type(guid_str, guid_bytes, original_type)
+
+            elif rsz_type == ColorData:
+                vals = unpack_4ubyte(raw, pos)
+                pos += fsize
+                pos = local_align(pos, field_align)
+                data_obj = ColorData(vals[0], vals[1], vals[2], vals[3], original_type)
 
             else:
                 raw_bytes = get_bytes(raw[pos:pos+fsize])

@@ -220,7 +220,7 @@ class GuidData:
         self.orig_type = orig_type
 
 class ColorData:
-    def __init__(self, r: float = 0, g: float = 0, b: float = 0, a: float = 0, orig_type: str = ""):
+    def __init__(self, r: int = 0, g: int = 0, b: int = 0, a: int = 0, orig_type: str = ""):
         self.r = r
         self.g = g
         self.b = b

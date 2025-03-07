@@ -1,7 +1,7 @@
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLineEdit, 
+from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox)
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDoubleValidator, QIntValidator
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor
 import uuid
 
 class BaseValueWidget(QWidget):
@@ -533,7 +533,7 @@ class UserDataInput(BaseValueWidget):
     def update_display(self):
         if not self._data:
             return
-        display_text = f"{self._data.value} (Index: {self._data.index})"
+        display_text = f"{self._data.value}"
         self.line_edit.setText(display_text)
 
     def _on_value_changed(self, text):
@@ -943,4 +943,208 @@ class Mat4Input(BaseValueWidget):
                    for input_field in row]
         except ValueError:
             return [0.0] * 16
+
+class ColorInput(BaseValueWidget):
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        self.color_button = QPushButton()
+        self.color_button.setFixedSize(24, 24)
+        self.color_button.clicked.connect(self._show_color_dialog)
+        
+        grid = QGridLayout()
+        grid.setSpacing(2) 
+        grid.setContentsMargins(0, 0, 0, 0)
+        
+        grid.addWidget(self.color_button, 0, 0)
+        grid.setColumnMinimumWidth(1, 6) 
+
+        self.inputs = []
+        for i, comp in enumerate(['R', 'G', 'B', 'A']):
+            label = QLabel(comp)
+            label.setFixedWidth(8)
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("""
+                QLabel {
+                    margin: 0;
+                    padding: 0;
+                    border: none;
+                }
+            """)
+            
+            line_edit = QLineEdit()
+            validator = QIntValidator(0, 255)
+            line_edit.setValidator(validator)
+            line_edit.setFixedWidth(28) 
+            line_edit.setFixedHeight(20)
+            line_edit.setProperty("component", comp.lower())
+            line_edit.setStyleSheet("""
+                QLineEdit {
+                    margin: 0;
+                    padding: 1px 2px;
+                    border: 1px solid #888888;
+                }
+                QLineEdit:focus {
+                    border: 1px solid #aaaaaa;
+                }
+                QLineEdit[invalid="true"] {
+                    border: 1px solid red;
+                }
+            """)
+            
+            col_offset = (i * 3) + 2
+            grid.addWidget(label, 0, col_offset)
+            grid.addWidget(line_edit, 0, col_offset + 1)
+            
+            if i < 3: 
+                grid.setColumnMinimumWidth(col_offset + 2, 3)
+                
+            self.inputs.append(line_edit)
+        
+        self.layout.addLayout(grid)
+        self.layout.addStretch()
+        
+        if data:
+            self.set_data(data)
+        
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._validate_and_update)
+
+    def _validate_and_update(self):
+        """Validate input and update values"""
+        if not self._data:
+            return
+            
+        try:
+            values = []
+            valid = True
+            
+            for input_field in self.inputs:
+                text = input_field.text().strip()
+                
+                try:
+                    if text == '' or text == '-':
+                        value = 0
+                    else:
+                        value = int(text)
+                        if value < 0 or value > 255:
+                            valid = False
+                            value = max(0, min(255, value))  # Clamp value
+                except ValueError:
+                    valid = False
+                    value = 0
+                
+                values.append(value)
+                
+                input_field.setProperty("invalid", not valid)
+                input_field.style().unpolish(input_field)
+                input_field.style().polish(input_field)
+                
+                if not valid:
+                    input_field.setText(str(value))
+            
+            self._data.r = values[0]
+            self._data.g = values[1]
+            self._data.b = values[2]
+            self._data.a = values[3]
+            
+            self._update_color_button()
+            
+            if valid:
+                self.valueChanged.emit(tuple(values))
+                self.mark_modified()
+                
+        except ValueError:
+            pass
+
+    def update_display(self):
+        if not self._data:
+            return
+            
+        values = [self._data.r, self._data.g, self._data.b, self._data.a]
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
+            
+        self._update_color_button()
+    
+    def _update_color_button(self):
+        """Update the color button appearance based on current RGBA values"""
+        if not self._data:
+            return
+            
+        r = int(self._data.r)
+        g = int(self._data.g)
+        b = int(self._data.b)
+        a = int(self._data.a)
+        
+        alpha_normalized = a / 255.0
+        
+        self.color_button.setStyleSheet(
+            f"background-color: rgba({r}, {g}, {b}, {alpha_normalized}); border: 1px solid #888888;"
+        )
+    
+    def _show_color_dialog(self):
+        """Open color picker dialog and update values if user selects a color"""
+        if not self._data:
+            return
+            
+        r = int(self._data.r)
+        g = int(self._data.g)
+        b = int(self._data.b)
+        a = int(self._data.a)
+        
+        
+        initial_color = QColor(r, g, b, a)
+        
+        color = QColorDialog.getColor(initial_color, self, "Select Color", QColorDialog.ShowAlphaChannel)
+        
+        if color.isValid():
+            self._data.r = color.red()
+            self._data.g = color.green()
+            self._data.b = color.blue()
+            self._data.a = color.alpha()
+            
+            self.update_display()
+            
+            self.valueChanged.emit((self._data.r, self._data.g, self._data.b, self._data.a))
+            self.mark_modified()
+    
+    def setValues(self, values):
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
+        self._update_color_button()
+    
+    def getValues(self):
+        try:
+            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
+        except ValueError:
+            return (0, 0, 0, 255) 
+    
+    def _on_value_changed(self):
+        """Handle changes from manual input of RGBA values"""
+        if not self._data:
+            return
+            
+        try:
+            values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    values.append(0)
+                else:
+                    values.append(max(0, min(255, int(text))))
+            
+            self._data.r = values[0]
+            self._data.g = values[1]
+            self._data.b = values[2]
+            self._data.a = values[3]
+            
+            self._update_color_button()
+            
+            self.valueChanged.emit(tuple(values))
+            self.mark_modified()
+        except ValueError:
+            pass
 
