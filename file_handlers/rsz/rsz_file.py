@@ -1604,7 +1604,7 @@ def parse_instance_fields(
         data_obj = None
         
         # Special handling for Struct types (both array and non-array)
-        if get_type_class == StructData:
+        if rsz_type == StructData:
             struct_type_info = None
             struct_type_id = None
             if original_type and scn_file.type_registry:
@@ -1627,7 +1627,6 @@ def parse_instance_fields(
                 # Look for consecutive instances of the right type
                 while (next_instance_idx < len(scn_file.instance_infos) and 
                        next_instance_idx not in scn_file._processed_instances):
-                    
                     # Check if this instance matches our struct type
                     if scn_file.instance_infos[next_instance_idx].type_id != struct_type_id:
                         break
