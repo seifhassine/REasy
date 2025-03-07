@@ -14,6 +14,19 @@ class ArrayData:
         self.values.append(element)
         return len(self.values) - 1
 
+class StructData:
+    """Container for struct type that can hold 0 or more embedded structures"""
+    def __init__(self, values=None, orig_type: str = ""):
+        self.values = values if values is not None else []
+        self.orig_type = orig_type
+    
+    def add_element(self, element):
+        """Add an element to the struct if it matches the expected type"""
+        if not isinstance(element, dict):
+            raise TypeError(f"Expected dict for struct element, got {type(element).__name__}")
+        self.values.append(element)
+        return len(self.values) - 1
+
 class ObjectData:
     def __init__(self, value: int = 0, orig_type: str = ""):
         self.value = value
@@ -26,7 +39,7 @@ class ResourceData:
 
 class UserDataData:
     def __init__(self, value: str = "", index: int = 0, orig_type: str = ""):
-        self.value = value
+        self.value = f"{value} (Index: {index})"
         self.index = index
         self.orig_type = orig_type
 
@@ -334,11 +347,7 @@ class RuntimeTypeData:
 class MaybeObject:
     def __init__(self, orig_type: str = ""):
         self.orig_type = orig_type
-
-class MaybeObject2:
-    def __init__(self, orig_type: str = ""):
-        self.orig_type = orig_type
-
+        
 class RawBytesData:
     """Stores raw bytes exactly as read from file"""
     def __init__(self, raw_bytes: bytes = bytes([0] * 4), field_size: int = 4, orig_type: str = ""):
@@ -401,7 +410,7 @@ TYPE_MAPPING = {
     "area": AreaData,
     "aabb": AABBData,
     "data": RawBytesData,
-
+    "struct": StructData,
 }
 
 def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False, is_array: bool = False, align = 4) -> type:
