@@ -7,7 +7,6 @@ This file contains operations for adding and removing elements from arrays in RS
 from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.pyside.tree_model import DataTreeBuilder
-from .rsz_file import ScnInstanceInfo
 from utils.id_manager import IdManager
 
 class RszArrayOperations:
@@ -187,10 +186,10 @@ class RszArrayOperations:
         # Update the hierarchy in the SCN file - root node is the last node in all_nodes
         root_node_id = root_node.instance_id
         if root_node_id > 0:
-            self.viewer._update_instance_hierarchy(root_node_id, parent_instance_id)
+            self.viewer.object_operations._update_instance_hierarchy(root_node_id, parent_instance_id)
             
             obj_data = ObjectData(root_node_id, element_type)
-            self.viewer._last_added_object = obj_data
+            self.viewer.object_operations._last_added_object = obj_data
             
             return obj_data
             
@@ -224,7 +223,7 @@ class RszArrayOperations:
 
     def _create_object_node_data(self, ref_id, index, element):
         """Helper to create a node for an object reference"""
-        type_name = self.viewer._get_type_name_for_instance(ref_id)
+        type_name = self.viewer.name_helper.get_type_name_for_instance(ref_id)
         
         node_data = DataTreeBuilder.create_data_node(
             f"{index}: ({type_name})",

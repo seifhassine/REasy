@@ -21,6 +21,8 @@ from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
 from utils.id_manager import IdManager
 from .rsz_array_operations import RszArrayOperations
+from .rsz_name_helper import RszViewerNameHelper
+from .rsz_object_operations import RszObjectOperations
 
 
 class RszHandler(BaseFileHandler):
@@ -32,7 +34,7 @@ class RszHandler(BaseFileHandler):
     def __init__(self):
         super().__init__()
         self.scn_file = None
-        self.show_advanced = False
+        self.show_advanced = True
         self._viewer = None
 
     def can_handle(data: bytes) -> bool:
@@ -62,6 +64,8 @@ class RszHandler(BaseFileHandler):
         viewer.show_advanced = self.show_advanced
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
+        viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
+        viewer.object_operations = RszObjectOperations(viewer)
         viewer.populate_tree()
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
@@ -97,6 +101,8 @@ class RszViewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.tree.installEventFilter(self)
         self.array_operations = None
+        self.name_helper = None
+        self.object_operations = None
 
     def mark_modified(self):
         """Mark the viewer as modified and emit signal"""
@@ -146,6 +152,8 @@ class RszViewer(QWidget):
         self.scn.debug = False
         self.scn.read(data)
         self.array_operations = RszArrayOperations(self)
+        self.name_helper = RszViewerNameHelper(self.scn, type_registry)
+        self.object_operations = RszObjectOperations(self)
         self.populate_tree()
 
     def supports_editing(self) -> bool:
@@ -272,7 +280,8 @@ class RszViewer(QWidget):
             instance_index = None
             if go.id < len(self.scn.object_table):
                 instance_index = self.scn.object_table[go.id]
-            instance_name = self._get_gameobject_name(instance_index, f"GameObject[{i}]")
+            instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
+            instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
             if self.scn.is_pfb:
                 children = [
                     DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
@@ -301,7 +310,8 @@ class RszViewer(QWidget):
         )
         for i, folder in enumerate(self.scn.folder_infos):
             if folder.id < len(self.scn.object_table):
-                folder_name = self._get_folder_name(folder.id, f"FolderInfo[{i}]")
+                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")
+                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")
                 folder_node = DataTreeBuilder.create_data_node(folder_name, "")
                 folder_node["children"] = [
                     DataTreeBuilder.create_data_node(f"ID: {folder.id}", ""),
@@ -387,8 +397,8 @@ class RszViewer(QWidget):
             if go_instance_id in processed:
                 continue
             reasy_id = IdManager.instance().register_instance(go_instance_id)
-            v0_name = self._get_instance_v0_name(go_instance_id)
-            go_name = v0_name if v0_name else self.get_instance_name(go_instance_id)
+            v0_name = self.name_helper.get_instance_v0_name(go_instance_id)
+            go_name = v0_name if v0_name else self.name_helper.get_instance_name(go_instance_id)
             go_dict = {
                 "data": [f"{go_name} (ID: {go_instance_id})", ""],
                 "type": "gameobject",
@@ -417,9 +427,9 @@ class RszViewer(QWidget):
                     if comp_instance_id in processed:
                         continue
                     reasy_id = IdManager.instance().register_instance(comp_instance_id)
-                    component_name = self._get_instance_v0_name(
+                    component_name = self.name_helper.get_instance_v0_name(
                         comp_instance_id
-                    ) or self.get_instance_name(comp_instance_id)
+                    ) or self.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
                         "instance_id": comp_instance_id,
@@ -440,7 +450,7 @@ class RszViewer(QWidget):
             if folder_instance_id in processed:
                 continue
             reasy_id = IdManager.instance().register_instance(folder_instance_id)
-            folder_name = self._get_instance_v0_name(folder_instance_id) or self.get_instance_name(
+            folder_name = self.name_helper.get_instance_v0_name(folder_instance_id) or self.name_helper.get_instance_name(
                 folder_instance_id
             )
             folder_dict = {
@@ -479,13 +489,6 @@ class RszViewer(QWidget):
                 remove_from_folder(folders_folder, node_dict)
                 children_node["children"].append(node_dict)
 
-    def _get_userdata_display_value(self, ref_id):
-        """Get display value for UserData reference"""
-        for rui in self.scn.rsz_userdata_infos:
-            if rui.instance_id == ref_id:
-                return self.scn.get_rsz_userdata_string(rui)
-        return ""
-
     def _create_field_dict(self, field_name, data_obj):
         """Creates dictionary node with added type info - refactored to reduce redundancy"""
         if isinstance(data_obj, ArrayData):
@@ -495,13 +498,13 @@ class RszViewer(QWidget):
                 if isinstance(element, ObjectData):
                     ref_id = element.value
                     if ref_id in self.scn._rsz_userdata_set:
-                        display_value = self._get_userdata_display_value(ref_id)
+                        display_value = self.name_helper.get_userdata_display_value(ref_id)
                         obj_node = DataTreeBuilder.create_data_node(
                             str(i) + f": {display_value}", ""
                         )
                         children.append(obj_node)
                     else:
-                        type_name = self._get_type_name_for_instance(ref_id)
+                        type_name = self.name_helper.get_type_name_for_instance(ref_id)
                         obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
                         if ref_id in self.scn.parsed_elements:
                             for fn, fd in self.scn.parsed_elements[ref_id].items():
@@ -518,11 +521,11 @@ class RszViewer(QWidget):
         elif isinstance(data_obj, ObjectData):
             ref_id = data_obj.value
             if ref_id in self.scn._rsz_userdata_set:
-                display_value = self._get_userdata_display_value(ref_id)
+                display_value = self.name_helper.get_userdata_display_value(ref_id)
                 return DataTreeBuilder.create_data_node(
                     f"{field_name}: {display_value}", "", None, None, []
                 )
-            type_name = self._get_type_name_for_instance(ref_id)
+            type_name = self.name_helper.get_type_name_for_instance(ref_id)
             children = []
             if ref_id in self.scn.parsed_elements:
                 for fn, fd in self.scn.parsed_elements[ref_id].items():
@@ -539,50 +542,8 @@ class RszViewer(QWidget):
                 f"{field_name}:", "", data_obj.__class__.__name__, data_obj
             )
 
-    def _get_type_name_for_instance(self, instance_id):
-        """Get type name for an instance ID with optimized lookup"""
-        if instance_id >= len(self.scn.instance_infos):
-            return "Invalid ID"
-        if (
-            getattr(self, "_last_added_object", None)
-            and self._last_added_object.value == instance_id
-            and self._last_added_object.orig_type
-        ):
-            return self._last_added_object.orig_type
-        inst_info = self.scn.instance_infos[instance_id]
-        type_info = self.type_registry.get_type_info(inst_info.type_id)
-        return (
-            type_info.get("name", f"Type 0x{inst_info.type_id:08X}")
-            if type_info
-            else f"Type 0x{inst_info.type_id:08X}"
-        )
-
-    def get_instance_name(self, instance_id):
-        """Fallback name from type info or instance id."""
-        if instance_id >= len(self.scn.instance_infos):
-            return f"Instance[{instance_id}]"
-        inst_info = self.scn.instance_infos[instance_id]
-        type_info = self.scn.type_registry.get_type_info(inst_info.type_id)
-        if type_info and "name" in type_info:
-            return type_info["name"]
-        return f"Instance[{instance_id}]"
-
-    def _get_gameobject_name(self, instance_index, default_name):
-        return default_name
-
-    def _get_folder_name(self, folder_id, default_name):
-        return default_name
-
     def _create_rsz_header_info(self):
         return DataTreeBuilder.create_data_node("RSZHeader", "")
-
-    def _get_instance_v0_name(self, instance_id):
-        """Get name from v0 field if available."""
-        if instance_id in self.scn.parsed_elements:
-            fields = self.scn.parsed_elements[instance_id]
-            if "v0" in fields and isinstance(fields["v0"], StringData):
-                return fields["v0"].value.rstrip("\x00")
-        return None
 
     def embed_forms(self):
         def on_modified():
@@ -796,33 +757,8 @@ class RszViewer(QWidget):
         return True
 
     def create_gameobject(self, name, parent_id):
-        if not self.scn:
-            return False
-        insertion_index = self._calculate_gameobject_insertion_index()
-        type_info, type_id = self.type_registry.find_type_by_name("via.GameObject")
-        if not type_info or type_id == 0:
-            QMessageBox.warning(self, "Error", "Cannot find GameObject type in registry")
-            return False
-        new_instance = self._initialize_new_instance(type_id, type_info)
-        if not new_instance:
-            QMessageBox.warning(self, "Error", "Failed to create GameObject instance")
-            return False
-        self._insert_instance_and_update_references(insertion_index, new_instance)
-        IdManager.instance().register_instance(insertion_index)
-        gameobject_fields = {}
-        self._initialize_fields_from_type_info(gameobject_fields, type_info)
-        if "v0" in gameobject_fields and hasattr(gameobject_fields["v0"], "set_value"):
-            gameobject_fields["v0"].set_value(name)
-        self.scn.parsed_elements[insertion_index] = gameobject_fields
-        object_table_index = len(self.scn.object_table)
-        self.scn.object_table.append(insertion_index)
-        new_gameobject = self._create_gameobject_entry(
-            object_table_index, parent_id, insertion_index
-        )
-        self._update_gameobject_hierarchy(new_gameobject)
-        self.scn.gameobjects.append(new_gameobject)
-        self.mark_modified()
-        return True
+        """Create a new GameObject with the given name and parent"""
+        return self.object_operations.create_gameobject(name, parent_id)
 
     def _initialize_fields_from_type_info(self, fields_dict, type_info):
         """Initialize fields based on type info"""
@@ -877,39 +813,8 @@ class RszViewer(QWidget):
                         )
 
     def delete_gameobject(self, gameobject_id):
-        if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
-            QMessageBox.warning(self, "Error", f"Invalid GameObject ID: {gameobject_id}")
-            return False
-            
-        target_go = None
-        
-        for go in self.scn.gameobjects:
-            if go.id == gameobject_id:
-                target_go = go
-                break
-        
-        if target_go is None:
-            print(f"Warning: GameObject with exact ID {gameobject_id} not found, attempting recovery...")
-            
-            instance_id = self.scn.object_table[gameobject_id] if gameobject_id < len(self.scn.object_table) else 0
-            if instance_id > 0:
-                for go in self.scn.gameobjects:
-                    if go.id < len(self.scn.object_table) and self.scn.object_table[go.id] == instance_id:
-                        target_go = go
-                        gameobject_id = go.id
-                        print(f"  Found GameObject at adjusted ID {gameobject_id}")
-                        break
-        
-        if target_go is None:
-            QMessageBox.warning(self, "Error", f"GameObject with ID {gameobject_id} not found")
-            return False
-            
-        success = self._delete_gameobject_directly(target_go)
-        
-        if success:
-            self.mark_modified()
-            
-        return success
+        """Delete a GameObject with the given ID"""
+        return self.object_operations.delete_gameobject(gameobject_id)
 
     def _collect_gameobject_hierarchy_by_reference(self, root_go):
         go_objects = {go.id: go for go in self.scn.gameobjects}
@@ -932,50 +837,6 @@ class RszViewer(QWidget):
         
         collect_recursive(root_go)
         return gameobjects
-
-    def _delete_all_components_of_gameobject(self, gameobject):
-        if gameobject.component_count <= 0:
-            return
-            
-        print(f"GameObject {gameobject.id} has {gameobject.component_count} components")
-        
-        if gameobject.id >= len(self.scn.object_table):
-            print(f"Warning: GameObject ID {gameobject.id} is out of bounds, cannot delete components")
-            gameobject.component_count = 0
-            return
-        
-        initial_component_count = gameobject.component_count
-        deleted_count = 0
-        
-        max_iterations = initial_component_count * 2
-        iteration = 0
-        
-        while gameobject.component_count > 0 and iteration < max_iterations:
-            iteration += 1
-            
-            component_object_id = gameobject.id + 1
-            
-            if component_object_id >= len(self.scn.object_table):
-                print(f"  Warning: Component object ID {component_object_id} is out of bounds")
-                gameobject.component_count = 0
-                break
-                
-            component_instance_id = self.scn.object_table[component_object_id]
-            
-            if component_instance_id <= 1:
-                print(f"  Skipping invalid component with instance_id={component_instance_id}")
-                gameobject.component_count -= 1
-                continue
-                
-            try:
-                self.delete_component_from_gameobject(component_instance_id, gameobject.id)
-                deleted_count += 1
-            except Exception as e:
-                print(f"  Error deleting component {component_instance_id}: {str(e)}")
-        
-        if deleted_count != initial_component_count:
-            print(f"  Warning: Expected to delete {initial_component_count} components, but deleted {deleted_count}")
-            gameobject.component_count = 0
 
     def delete_folder(self, folder_id):
         if folder_id < 0 or folder_id >= len(self.scn.object_table):
@@ -1042,7 +903,7 @@ class RszViewer(QWidget):
         
         for go in reversed(gameobjects_to_delete):
             try:
-                success = self._delete_gameobject_directly(go)
+                success = self.object_operations._delete_gameobject_directly(go)
                 if not success:
                     print(f"  Warning: Failed to delete GameObject with ID {go.id}")
                     deletion_errors += 1
@@ -1056,7 +917,7 @@ class RszViewer(QWidget):
                     continue
                     
                 if not self.scn.is_pfb and not self.scn.is_usr and hasattr(folder, 'prefab_id') and folder.prefab_id > 0:
-                    prefab_deleted = self._delete_prefab_for_object(folder.prefab_id)
+                    prefab_deleted = self.object_operations._delete_prefab_for_object(folder.prefab_id)
                     if prefab_deleted:
                         print(f"  Deleted prefab {folder.prefab_id} associated with folder {folder.id}")
                 
@@ -1399,27 +1260,26 @@ class RszViewer(QWidget):
         return updated_fields
 
     def _find_nested_objects(self, fields, base_instance_id):
+        """Find instance IDs of nested objects that aren't in the object table."""
         nested_objects = set()
         
-        base_object_id = -1
-        for i, instance_id in enumerate(self.scn.object_table):
-            if instance_id == base_instance_id:
-                base_object_id = i
-                break
-                
+        try:
+            base_object_id = next(i for i, id_ in enumerate(self.scn.object_table) if id_ == base_instance_id)
+        except StopIteration:
+            return nested_objects
+            
         if base_object_id <= 0:
             return nested_objects
             
-        prev_instance_id = 0
-        for i in range(base_object_id - 1, -1, -1):
-            if self.scn.object_table[i] > 0:
-                prev_instance_id = self.scn.object_table[i]
-                break
+        prev_instance_id = next((id_ for id_ in reversed(self.scn.object_table[:base_object_id]) if id_ > 0), 0)
         
+        object_table_ids = set(self.scn.object_table)
         for instance_id in range(prev_instance_id + 1, base_instance_id):
-            if instance_id > 0 and instance_id < len(self.scn.instance_infos) and self.scn.instance_infos[instance_id].type_id != 0:
-                if instance_id not in self.scn.object_table:
-                    nested_objects.add(instance_id)
+            if (instance_id > 0 and 
+                instance_id < len(self.scn.instance_infos) and 
+                self.scn.instance_infos[instance_id].type_id != 0 and
+                instance_id not in object_table_ids):
+                nested_objects.add(instance_id)
                 
         return nested_objects
 
@@ -1584,149 +1444,3 @@ class RszViewer(QWidget):
                         array_data.values.append(new_obj)
                     else:
                         array_data.values.append(element)
-
-    def _delete_prefab_for_object(self, prefab_id):
-        if prefab_id == -1:
-            print("  No prefab to delete (prefab_id is -1)")
-            return False
-            
-        if prefab_id < 0 or not hasattr(self.scn, 'prefab_infos') or self.scn.is_pfb or self.scn.is_usr:
-            print(f"  Cannot delete prefab: invalid conditions (prefab_id={prefab_id})")
-            return False
-        
-        if prefab_id >= len(self.scn.prefab_infos):
-            print(f"  Warning: Invalid prefab index {prefab_id}")
-            return False
-            
-        prefab_to_delete = self.scn.prefab_infos[prefab_id]
-        
-        path_str = ""
-        if hasattr(self.scn, 'get_prefab_string'):
-            path_str = self.scn.get_prefab_string(prefab_to_delete)
-        
-        print(f"  Removing prefab {prefab_id} with path: {path_str}")
-        
-        if hasattr(self.scn, '_prefab_str_map'):
-            if prefab_to_delete in self.scn._prefab_str_map:
-                del self.scn._prefab_str_map[prefab_to_delete]
-                print(f"  Removed string map entry for prefab {prefab_id}")
-            else:
-                print(f"  Warning: Prefab {prefab_id} not found in string map")
-            
-            for i, prefab in enumerate(self.scn.prefab_infos):
-                if (i != prefab_id and 
-                    prefab.string_offset == prefab_to_delete.string_offset and
-                    prefab.string_offset != 0 and 
-                    prefab in self.scn._prefab_str_map):
-                    print(f"  Cleaning up duplicate prefab string reference at index {i}")
-                    del self.scn._prefab_str_map[prefab]
-        
-        self.scn.prefab_infos.pop(prefab_id)
-        print(f"  Prefab {prefab_id} removed from prefab_infos array")
-        
-        updated_count = 0
-        for go in self.scn.gameobjects:
-            if hasattr(go, 'prefab_id'):
-                if go.prefab_id == prefab_id:
-                    go.prefab_id = -1
-                    updated_count += 1
-                elif go.prefab_id > prefab_id:
-                    go.prefab_id -= 1
-                    updated_count += 1
-        
-        for folder in self.scn.folder_infos:
-            if hasattr(folder, 'prefab_id'):
-                if folder.prefab_id == prefab_id:
-                    folder.prefab_id = -1
-                    updated_count += 1
-                elif folder.prefab_id > prefab_id:
-                    folder.prefab_id -= 1
-                    updated_count += 1
-        
-        print(f"  Updated {updated_count} objects referencing prefabs")
-        
-        if not self.scn.is_pfb and not self.scn.is_usr and hasattr(self.scn.header, 'prefab_count'):
-            self.scn.header.prefab_count = len(self.scn.prefab_infos)
-            print(f"  Updated header prefab count to {self.scn.header.prefab_count}")
-        
-        return True
-
-    def _delete_gameobject_directly(self, gameobject):
-        try:
-            if gameobject not in self.scn.gameobjects:
-                return False
-                
-            gameobject_id = gameobject.id
-            
-            if gameobject_id >= len(self.scn.object_table):
-                return False
-            
-            if not self.scn.is_pfb and not self.scn.is_usr and hasattr(gameobject, 'prefab_id'):
-                if gameobject.prefab_id >= 0:
-                    _ = self._delete_prefab_for_object(gameobject.prefab_id)
-            
-            gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
-            
-            if not gameobject_refs_to_delete:
-                return False
-                
-            for go in reversed(gameobject_refs_to_delete):
-                if go != gameobject and not self.scn.is_pfb and not self.scn.is_usr and hasattr(go, 'prefab_id'):
-                    if go.prefab_id >= 0:
-                        _ = self._delete_prefab_for_object(go.prefab_id)
-                
-                self._delete_all_components_of_gameobject(go)
-                
-                if go.id < len(self.scn.object_table):
-                    go_instance_id = self.scn.object_table[go.id]
-                    
-                    if go_instance_id > 0:
-                        print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
-                        
-                        instance_fields = self.scn.parsed_elements.get(go_instance_id, {})
-                        nested_objects = self._find_nested_objects(instance_fields, go_instance_id)
-                        nested_objects.add(go_instance_id)
-                        
-                        for instance_id in sorted(nested_objects, reverse=True):
-                            self._remove_instance_references(instance_id)
-                        
-                        id_mapping = self._update_instance_references_after_deletion(go_instance_id, nested_objects)
-                        
-                        if id_mapping:
-                            IdManager.instance().update_all_mappings(id_mapping, nested_objects)
-                
-                if go.id < len(self.scn.object_table):
-                    self._remove_from_object_table(go.id)
-                
-                if go in self.scn.gameobjects:
-                    self.scn.gameobjects.remove(go)
-            
-            return True
-            
-        except Exception as e:
-            print(f"Error deleting GameObject: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return False
-
-    def _delete_object_prefab(self, object_ref):
-        if self.scn.is_pfb or self.scn.is_usr or not hasattr(object_ref, 'prefab_id'):
-            return False
-            
-        prefab_id = object_ref.prefab_id
-        
-        if prefab_id == -1:
-            return False
-            
-        if prefab_id >= 0:
-            prefab_deleted = self._delete_prefab_for_object(prefab_id)
-            if prefab_deleted:
-                print(f"  Deleted prefab {prefab_id} associated with object {object_ref.id}")
-                return True
-            else:
-                print(f"  Failed to delete prefab {prefab_id} for object {object_ref.id}")
-        else:
-            print(f"  Object {object_ref.id} has unusual prefab_id: {prefab_id}")
-            
-        return False
-
