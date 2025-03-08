@@ -276,7 +276,6 @@ class ScnFile:
         self.instance_hierarchy = {}  # {instance_id: {children: [], parent: None}}
         self._gameobject_instance_ids = set()  # Set of gameobject instance IDs 
         self._folder_instance_ids = set()      # Set of folder instance IDs
-        self._instance_hashes = {}  # Map instance_id -> type hash
 
     def read(self, data: bytes):
         # Use memoryview for efficient slicing operations
@@ -543,8 +542,6 @@ class ScnFile:
                 scn_file=self
             )
             current_offset = new_offset
-    
-            self._instance_hashes[idx] = inst.crc
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
@@ -795,10 +792,6 @@ class ScnFile:
         
         for instance_id, fields in sorted(self.parsed_elements.items()):
             if instance_id == 0:  
-                continue
-                
-            instance_hash = self._instance_hashes.get(instance_id)
-            if not instance_hash:
                 continue
                 
             inst_info = self.instance_infos[instance_id]

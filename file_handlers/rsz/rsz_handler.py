@@ -6,8 +6,8 @@ This file contains:
 - RszViewer: Qt widget for displaying and editing RSZ file contents
 """
 
-from PySide6.QtCore import (Qt, Signal)
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QMessageBox)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 import re
 
 from utils.hex_util import guid_le_to_str
@@ -19,39 +19,39 @@ from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
+from utils.id_manager import IdManager
+from .rsz_array_operations import RszArrayOperations
 
-
-#########################################################
 
 class RszHandler(BaseFileHandler):
     """Handler for SCN/PFB/USR files"""
-    
     @staticmethod
     def needs_json_path() -> bool:
         return True
-        
+
     def __init__(self):
         super().__init__()
         self.scn_file = None
-        self.show_advanced = False
-        self._viewer = None 
+        self.show_advanced = True
+        self._viewer = None
 
     def can_handle(data: bytes) -> bool:
         """Check if data appears to be an SCN, USR, or PFB file"""
         if len(data) < 4:
             return False
-        scn_sig = b'SCN\x00'
-        usr_sig = b'USR\x00'
-        pfb_sig = b'PFB\x00'
+        scn_sig = b"SCN\x00"
+        usr_sig = b"USR\x00"
+        pfb_sig = b"PFB\x00"
         return data[:4] in [scn_sig, usr_sig, pfb_sig]
-        
+
     def read(self, data: bytes):
         """Parse the file data"""
         self.init_type_registry()
         self.scn_file = ScnFile()
         self.scn_file.type_registry = self.type_registry
         self.scn_file.read(data)
-        
+        IdManager.instance().reset()
+
     def create_viewer(self):
         """Create a new viewer instance"""
         viewer = RszViewer()
@@ -59,75 +59,44 @@ class RszHandler(BaseFileHandler):
         viewer.handler = self
         viewer.type_registry = self.type_registry
         viewer.dark_mode = self.dark_mode
-        viewer.show_advanced = self.show_advanced 
-        
+        viewer.show_advanced = self.show_advanced
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
-        
         viewer.populate_tree()
         viewer.destroyed.connect(viewer.cleanup)
-        
         viewer.modified_changed.connect(self.modified_changed.emit)
         self._viewer = viewer
-        
         return viewer
-        
+
     def rebuild(self) -> bytes:
         """Rebuild SCN file data with better error handling"""
         if not self.scn_file:
             raise ValueError("No SCN file loaded")
-            
         return self.scn_file.build()
 
 
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
-    ROW_HEIGHT = 24  
-    modified_changed = Signal(bool) 
-    
-    # Type mapping - defined once as class attribute rather than recreating it in methods
-    TYPE_MAP = {
-        "bool": BoolData,
-        "s8": S8Data,
-        "u8": U8Data,
-        "s16": S16Data,
-        "u16": U16Data,
-        "s32": S32Data,
-        "u32": U32Data,
-        "s64": S64Data,
-        "u64": U64Data,
-        "f32": F32Data,
-        "f64": F64Data,
-        "string": StringData,
-        "vec2": Vec2Data,
-        "vec3": Vec3Data,
-        "vec4": Vec4Data,
-        "color": ColorData,
-        "quaternion": QuaternionData,
-        "guid": GuidData,
-        "gameobjectref": GameObjectRefData,
-        "range": RangeData,
-        "rangei": RangeIData,
-    }
+    ROW_HEIGHT = 24
+    modified_changed = Signal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._modified = False
         self.scn = ScnFile()
-        self.handler = None 
+        self.handler = None
         self.type_registry = None
         self.dark_mode = False
         self.show_advanced = False
         self._cleanup_pending = False
         self._created_widgets = []
         self._created_labels = []
-        self.tree = AdvancedTreeView(self) 
-        
+        self.tree = AdvancedTreeView(self)
         layout = QVBoxLayout(self)
         layout.addWidget(self.tree)
         layout.setContentsMargins(0, 0, 0, 0)
-        
         self.tree.installEventFilter(self)
+        self.array_operations = None
 
     def mark_modified(self):
         """Mark the viewer as modified and emit signal"""
@@ -152,25 +121,17 @@ class RszViewer(QWidget):
         if self._cleanup_pending:
             return
         self._cleanup_pending = True
-        
         try:
-            # Disconnect all signals first
             try:
                 self.modified_changed.disconnect()
             except:
                 pass
-            
-            # Remove model and clear tree
             if self.tree:
                 self.tree.setModel(None)
-            
-            # Clear references but don't access widgets
             self._created_widgets.clear()
             self._created_labels.clear()
-            
         except Exception:
             pass
-            
         self._cleanup_pending = False
 
     def closeEvent(self, event):
@@ -184,6 +145,7 @@ class RszViewer(QWidget):
         self.scn.type_registry = type_registry
         self.scn.debug = False
         self.scn.read(data)
+        self.array_operations = RszArrayOperations(self)
         self.populate_tree()
 
     def supports_editing(self) -> bool:
@@ -200,52 +162,46 @@ class RszViewer(QWidget):
         root_data = self._build_tree_data()
         self.tree.setModelData(root_data)
         self.tree.setUpdatesEnabled(True)
-
         self.embed_forms()
 
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
         root_dict["data"][0] = f"{file_type}_File"
-
         if self.show_advanced:
             advanced_node = ScnTreeBuilder.create_advanced_node()
             root_dict["children"].append(advanced_node)
-
-            advanced_node["children"].extend([
-                self._create_header_info(),
-                self._create_gameobjects_info(),
-            ])
-            
+            advanced_node["children"].extend(
+                [
+                    self._create_header_info(),
+                    self._create_gameobjects_info(),
+                ]
+            )
             if not self.scn.is_pfb and not self.scn.is_usr:
                 advanced_node["children"].append(self._create_folders_info())
-            
             if self.scn.is_pfb:
                 advanced_node["children"].append(self._create_gameobject_ref_infos())
-                
-            advanced_node["children"].extend([
-                self._create_rsz_header_info(),
-                self._create_object_table_info(),
-                self._create_instance_infos(),
-                self._create_userdata_infos()
-            ])
-
+            advanced_node["children"].extend(
+                [
+                    self._create_rsz_header_info(),
+                    self._create_object_table_info(),
+                    self._create_instance_infos(),
+                    self._create_userdata_infos(),
+                ]
+            )
         data_node = DataTreeBuilder.create_data_node(
-            ScnTreeBuilder.NODES['DATA_BLOCK'], 
+            ScnTreeBuilder.NODES["DATA_BLOCK"],
         )
         root_dict["children"].append(data_node)
         self._add_data_block(data_node)
-
         return root_dict
 
     def _create_header_info(self):
         """Create Header info section for self.scn.header"""
         children = []
-        
         if self.scn.is_pfb:
-            # PFB header fields
             header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
                 ("Info Count", lambda h: str(h.info_count)),
                 ("Resource Count", lambda h: str(h.resource_count)),
                 ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
@@ -254,24 +210,22 @@ class RszViewer(QWidget):
                 ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
                 ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
                 ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}")
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
             ]
         elif self.scn.is_usr:
-            # USR header fields
             header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
                 ("Resource Count", lambda h: str(h.resource_count)),
                 ("UserData Count", lambda h: str(h.userdata_count)),
                 ("Info Count", lambda h: str(h.info_count)),
                 ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
                 ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
                 ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-                ("Reserved", lambda h: str(h.reserved))
+                ("Reserved", lambda h: str(h.reserved)),
             ]
         else:
-            # SCN header fields
             header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip('\x00')),
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
                 ("Info Count", lambda h: str(h.info_count)),
                 ("Resource Count", lambda h: str(h.resource_count)),
                 ("Folder Count", lambda h: str(h.folder_count)),
@@ -281,29 +235,34 @@ class RszViewer(QWidget):
                 ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
                 ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
                 ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}")
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
             ]
-            
         for title, getter in header_fields:
             children.append(
-                DataTreeBuilder.create_data_node(title + ": " + getter(self.scn.header, ))
+                DataTreeBuilder.create_data_node(
+                    title
+                    + ": "
+                    + getter(
+                        self.scn.header,
+                    )
+                )
             )
         return DataTreeBuilder.create_data_node("Header", "", children=children)
 
     def _create_gameobject_ref_infos(self):
         """Create GameObjectRefInfo section for PFB files"""
-        node = DataTreeBuilder.create_data_node("GameObjectRefInfos", f"{len(self.scn.gameobject_ref_infos)} items")
-        
+        node = DataTreeBuilder.create_data_node(
+            "GameObjectRefInfos", f"{len(self.scn.gameobject_ref_infos)} items"
+        )
         for i, gori in enumerate(self.scn.gameobject_ref_infos):
             ref_node = DataTreeBuilder.create_data_node(f"GameObjectRefInfo[{i}]", "")
             ref_node["children"] = [
                 DataTreeBuilder.create_data_node(f"Object ID: {gori.object_id}", ""),
                 DataTreeBuilder.create_data_node(f"Property ID: {gori.property_id}", ""),
                 DataTreeBuilder.create_data_node(f"Array Index: {gori.array_index}", ""),
-                DataTreeBuilder.create_data_node(f"Target ID: {gori.target_id}", "")
+                DataTreeBuilder.create_data_node(f"Target ID: {gori.target_id}", ""),
             ]
             node["children"].append(ref_node)
-            
         return node
 
     def _create_gameobjects_info(self):
@@ -314,49 +273,58 @@ class RszViewer(QWidget):
             if go.id < len(self.scn.object_table):
                 instance_index = self.scn.object_table[go.id]
             instance_name = self._get_gameobject_name(instance_index, f"GameObject[{i}]")
-            
-            # Different handling for PFB vs SCN gameobjects
             if self.scn.is_pfb:
                 children = [
                     DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
                     DataTreeBuilder.create_data_node("Parent ID: " + str(go.parent_id), ""),
-                    DataTreeBuilder.create_data_node("Component Count: " + str(go.component_count), "")
+                    DataTreeBuilder.create_data_node(
+                        "Component Count: " + str(go.component_count), ""
+                    ),
                 ]
             else:
                 children = [
                     DataTreeBuilder.create_data_node("GUID: " + guid_le_to_str(go.guid), ""),
                     DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
                     DataTreeBuilder.create_data_node("Parent ID: " + str(go.parent_id), ""),
-                    DataTreeBuilder.create_data_node("Component Count: " + str(go.component_count), ""),
-                    DataTreeBuilder.create_data_node("Prefab ID: " + str(go.prefab_id), "")
+                    DataTreeBuilder.create_data_node(
+                        "Component Count: " + str(go.component_count), ""
+                    ),
+                    DataTreeBuilder.create_data_node("Prefab ID: " + str(go.prefab_id), ""),
                 ]
-            
             go_item = DataTreeBuilder.create_data_node(instance_name, "", children=children)
             node["children"].append(go_item)
         return node
 
     def _create_folders_info(self):
-        node = DataTreeBuilder.create_data_node("Folder Infos", f"{len(self.scn.folder_infos)} items")
+        node = DataTreeBuilder.create_data_node(
+            "Folder Infos", f"{len(self.scn.folder_infos)} items"
+        )
         for i, folder in enumerate(self.scn.folder_infos):
             if folder.id < len(self.scn.object_table):
                 folder_name = self._get_folder_name(folder.id, f"FolderInfo[{i}]")
                 folder_node = DataTreeBuilder.create_data_node(folder_name, "")
                 folder_node["children"] = [
                     DataTreeBuilder.create_data_node(f"ID: {folder.id}", ""),
-                    DataTreeBuilder.create_data_node(f"Instance ID: {self.scn.object_table[folder.id]}", ""),
-                    DataTreeBuilder.create_data_node(f"Parent ID: {folder.parent_id}", "")
+                    DataTreeBuilder.create_data_node(
+                        f"Instance ID: {self.scn.object_table[folder.id]}", ""
+                    ),
+                    DataTreeBuilder.create_data_node(f"Parent ID: {folder.parent_id}", ""),
                 ]
                 node["children"].append(folder_node)
         return node
 
     def _create_object_table_info(self):
-        node = DataTreeBuilder.create_data_node("Object Table", f"{len(self.scn.object_table)} items")
+        node = DataTreeBuilder.create_data_node(
+            "Object Table", f"{len(self.scn.object_table)} items"
+        )
         for i, entry in enumerate(self.scn.object_table):
             node["children"].append(DataTreeBuilder.create_data_node(f"Entry {i}: {entry}", ""))
         return node
 
     def _create_instance_infos(self):
-        node = DataTreeBuilder.create_data_node("Instance Infos", f"{len(self.scn.instance_infos)} items")
+        node = DataTreeBuilder.create_data_node(
+            "Instance Infos", f"{len(self.scn.instance_infos)} items"
+        )
         for i, inst in enumerate(self.scn.instance_infos):
             if i == 0:
                 node["children"].append(DataTreeBuilder.create_data_node("NULL Entry", ""))
@@ -366,20 +334,17 @@ class RszViewer(QWidget):
                     info = self.type_registry.get_type_info(int(inst.type_id))
                     if info and "name" in info:
                         friendly = info["name"]
-                
                 children = [
                     DataTreeBuilder.create_data_node(f"Type: 0x{inst.type_id:08X}", ""),
-                    DataTreeBuilder.create_data_node(f"CRC: 0x{inst.crc:08X}", "")
+                    DataTreeBuilder.create_data_node(f"CRC: 0x{inst.crc:08X}", ""),
                 ]
-                
                 inst_node = DataTreeBuilder.create_data_node(friendly, "", children=children)
                 node["children"].append(inst_node)
         return node
 
     def _create_userdata_infos(self):
         node = DataTreeBuilder.create_data_node(
-            "RSZUserData Infos", 
-            f"{len(self.scn.rsz_userdata_infos)} items"
+            "RSZUserData Infos", f"{len(self.scn.rsz_userdata_infos)} items"
         )
         for i, rui in enumerate(self.scn.rsz_userdata_infos):
             str_val = self.scn.get_rsz_userdata_string(rui) if rui.string_offset != 0 else ""
@@ -390,17 +355,17 @@ class RszViewer(QWidget):
 
     def _add_data_block(self, parent_dict):
         if self.handler.scn_file.is_usr:
-            # For USR files - add a single root object
             if len(self.scn.object_table) > 0:
                 root_instance_id = self.scn.object_table[0]
                 if root_instance_id in self.scn.parsed_elements:
                     inst_info = self.scn.instance_infos[root_instance_id]
                     type_info = self.type_registry.get_type_info(inst_info.type_id)
-                    type_name = type_info["name"] if type_info and "name" in type_info else "UserData"
-                    
+                    type_name = (
+                        type_info["name"] if type_info and "name" in type_info else "UserData"
+                    )
                     root_dict = {
                         "data": [f"{type_name} (ID: {root_instance_id})", ""],
-                        "children": []
+                        "children": [],
                     }
                     fields = self.scn.parsed_elements[root_instance_id]
                     for field_name, field_data in fields.items():
@@ -409,42 +374,30 @@ class RszViewer(QWidget):
                         )
                     parent_dict["children"].append(root_dict)
             return
-
-        # Original SCN file handling
         processed = set()
         nodes = {}
-        gameobjects_folder = {
-            "data": ["GameObjects", ""],
-            "children": []
-        }
-        folders_folder = {
-            "data": ["Folders", ""],
-            "children": []
-        }
+        gameobjects_folder = {"data": ["GameObjects", ""], "children": []}
+        folders_folder = {"data": ["Folders", ""], "children": []}
         parent_dict["children"].append(gameobjects_folder)
         parent_dict["children"].append(folders_folder)
-
-        # 1) Create GameObject nodes
         for go in self.scn.gameobjects:
             if go.id >= len(self.scn.object_table):
                 continue
             go_instance_id = self.scn.object_table[go.id]
             if go_instance_id in processed:
                 continue
-
+            reasy_id = IdManager.instance().register_instance(go_instance_id)
             v0_name = self._get_instance_v0_name(go_instance_id)
             go_name = v0_name if v0_name else self.get_instance_name(go_instance_id)
             go_dict = {
                 "data": [f"{go_name} (ID: {go_instance_id})", ""],
-                "type": "gameobject", 
-                "children": []
+                "type": "gameobject",
+                "instance_id": go_instance_id,
+                "reasy_id": reasy_id,
+                "children": [],
             }
             nodes[go.id] = (go_dict, go.parent_id)
-
-            settings_node = {
-                "data": ["Settings", ""],
-                "children": []
-            }
+            settings_node = {"data": ["Settings", ""], "children": []}
             go_dict["children"].append(settings_node)
             if go_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[go_instance_id]
@@ -452,15 +405,9 @@ class RszViewer(QWidget):
                     settings_node["children"].append(
                         self._create_field_dict(field_name, field_data)
                     )
-
             processed.add(go_instance_id)
-
-            # 1b) Components
             if go.component_count > 0:
-                comp_node = {
-                    "data": ["Components", ""],
-                    "children": []
-                }
+                comp_node = {"data": ["Components", ""], "children": []}
                 go_dict["children"].append(comp_node)
                 for i in range(1, go.component_count + 1):
                     component_go_id = go.id + i
@@ -469,46 +416,43 @@ class RszViewer(QWidget):
                     comp_instance_id = self.scn.object_table[component_go_id]
                     if comp_instance_id in processed:
                         continue
-
-                    component_name = self._get_instance_v0_name(comp_instance_id) or self.get_instance_name(comp_instance_id)
+                    reasy_id = IdManager.instance().register_instance(comp_instance_id)
+                    component_name = self._get_instance_v0_name(
+                        comp_instance_id
+                    ) or self.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
-                        "children": []
+                        "instance_id": comp_instance_id,
+                        "reasy_id": reasy_id,
+                        "children": [],
                     }
                     comp_node["children"].append(comp_dict)
-
                     if comp_instance_id in self.scn.parsed_elements:
                         fields = self.scn.parsed_elements[comp_instance_id]
                         for f_name, f_data in fields.items():
-                            comp_dict["children"].append(
-                                self._create_field_dict(f_name, f_data)
-                            )
+                            comp_dict["children"].append(self._create_field_dict(f_name, f_data))
                     processed.add(comp_instance_id)
-
             gameobjects_folder["children"].append(go_dict)
-
-        # 2) Create Folder nodes
         for folder in self.scn.folder_infos:
             if folder.id >= len(self.scn.object_table):
                 continue
             folder_instance_id = self.scn.object_table[folder.id]
             if folder_instance_id in processed:
                 continue
-
-            folder_name = self._get_instance_v0_name(folder_instance_id) or self.get_instance_name(folder_instance_id)
+            reasy_id = IdManager.instance().register_instance(folder_instance_id)
+            folder_name = self._get_instance_v0_name(folder_instance_id) or self.get_instance_name(
+                folder_instance_id
+            )
             folder_dict = {
                 "data": [f"{folder_name} (ID: {folder_instance_id})", ""],
-                "type": "folder", 
-                "children": []
+                "type": "folder",
+                "instance_id": folder_instance_id,
+                "reasy_id": reasy_id,
+                "children": [],
             }
             nodes[folder.id] = (folder_dict, folder.parent_id)
-
-            settings_node = {
-                "data": ["Settings", ""],
-                "children": []
-            }
+            settings_node = {"data": ["Settings", ""], "children": []}
             folder_dict["children"].append(settings_node)
-
             if folder_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[folder_instance_id]
                 for field_name, field_data in fields.items():
@@ -516,10 +460,7 @@ class RszViewer(QWidget):
                         self._create_field_dict(field_name, field_data)
                     )
             processed.add(folder_instance_id)
-
             folders_folder["children"].append(folder_dict)
-
-        # 3) Now reorganize nodes based on parent IDs
         for id_, (node_dict, parent_id) in nodes.items():
             if parent_id in nodes:
                 parent_node_dict, _ = nodes[parent_id]
@@ -529,20 +470,13 @@ class RszViewer(QWidget):
                         children_node = ch
                         break
                 if not children_node:
-                    children_node = {
-                        "data": ["Children", ""],
-                        "children": []
-                    }
+                    children_node = {"data": ["Children", ""], "children": []}
                     parent_node_dict["children"].append(children_node)
-
                 def remove_from_folder(folder_data, target):
                     if target in folder_data["children"]:
                         folder_data["children"].remove(target)
-
                 remove_from_folder(gameobjects_folder, node_dict)
                 remove_from_folder(folders_folder, node_dict)
-
-                # Attach to parent's Children
                 children_node["children"].append(node_dict)
 
     def _get_userdata_display_value(self, ref_id):
@@ -556,108 +490,72 @@ class RszViewer(QWidget):
         """Creates dictionary node with added type info - refactored to reduce redundancy"""
         if isinstance(data_obj, ArrayData):
             children = []
-            original_type = f'{data_obj.orig_type}' if data_obj.orig_type else ""
-
-            # Create child nodes
+            original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
             for i, element in enumerate(data_obj.values):
                 if isinstance(element, ObjectData):
                     ref_id = element.value
-                    # Check if reference is to UserData
-                    if (ref_id in self.scn._rsz_userdata_set):
+                    if ref_id in self.scn._rsz_userdata_set:
                         display_value = self._get_userdata_display_value(ref_id)
-                        obj_node = DataTreeBuilder.create_data_node(str(i) + f": {display_value}", "")
+                        obj_node = DataTreeBuilder.create_data_node(
+                            str(i) + f": {display_value}", ""
+                        )
                         children.append(obj_node)
                     else:
-                        # Normal object reference handling
                         type_name = self._get_type_name_for_instance(ref_id)
-                        
                         obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
                         if ref_id in self.scn.parsed_elements:
                             for fn, fd in self.scn.parsed_elements[ref_id].items():
                                 obj_node["children"].append(self._create_field_dict(fn, fd))
                         children.append(obj_node)
                 else:
-                    # Pass proper type info for array elements
                     element_type = element.__class__.__name__
-                    children.append(DataTreeBuilder.create_data_node(
-                        str(i) + ": ",
-                        "",
-                        element_type, 
-                        element
-                    ))
-
+                    children.append(
+                        DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
+                    )
             return DataTreeBuilder.create_data_node(
-                f"{field_name}: {original_type}",
-                "",
-                "array",
-                data_obj,
-                children
+                f"{field_name}: {original_type}", "", "array", data_obj, children
             )
-
         elif isinstance(data_obj, ObjectData):
             ref_id = data_obj.value
-            
-            # Check if reference is to UserData first
             if ref_id in self.scn._rsz_userdata_set:
                 display_value = self._get_userdata_display_value(ref_id)
                 return DataTreeBuilder.create_data_node(
-                    f"{field_name}: {display_value}",
-                    "",
-                    None,
-                    None,
-                    []
+                    f"{field_name}: {display_value}", "", None, None, []
                 )
-
-            # Normal object reference handling
             type_name = self._get_type_name_for_instance(ref_id)
-            
             children = []
             if ref_id in self.scn.parsed_elements:
                 for fn, fd in self.scn.parsed_elements[ref_id].items():
                     children.append(self._create_field_dict(fn, fd))
             return DataTreeBuilder.create_data_node(
-                f"{field_name}: ({type_name})",
-                "",
-                None,
-                None,
-                children
+                f"{field_name}: ({type_name})", "", None, None, children
             )
-
         elif isinstance(data_obj, UserDataData):
-            # Display UserData string directly for UserDataData type
             return DataTreeBuilder.create_data_node(
-                f"{field_name}:",
-                data_obj.value,
-                data_obj.__class__.__name__,
-                data_obj
+                f"{field_name}:", data_obj.value, data_obj.__class__.__name__, data_obj
             )
-            
         else:
             return DataTreeBuilder.create_data_node(
-                f"{field_name}:",
-                "",
-                data_obj.__class__.__name__,
-                data_obj
+                f"{field_name}:", "", data_obj.__class__.__name__, data_obj
             )
 
     def _get_type_name_for_instance(self, instance_id):
         """Get type name for an instance ID with optimized lookup"""
-        # Invalid ID check
         if instance_id >= len(self.scn.instance_infos):
             return "Invalid ID"
-        
-        # Check cached type from recent addition
-        if getattr(self, '_last_added_object', None) and \
-           self._last_added_object.value == instance_id and \
-           self._last_added_object.orig_type:
+        if (
+            getattr(self, "_last_added_object", None)
+            and self._last_added_object.value == instance_id
+            and self._last_added_object.orig_type
+        ):
             return self._last_added_object.orig_type
-        
-        # Get from registry
         inst_info = self.scn.instance_infos[instance_id]
         type_info = self.type_registry.get_type_info(inst_info.type_id)
-        
-        # Return name from registry or fallback to hex ID
-        return type_info.get("name", f"Type 0x{inst_info.type_id:08X}") if type_info else f"Type 0x{inst_info.type_id:08X}"
+        return (
+            type_info.get("name", f"Type 0x{inst_info.type_id:08X}")
+            if type_info
+            else f"Type 0x{inst_info.type_id:08X}"
+        )
 
     def get_instance_name(self, instance_id):
         """Fallback name from type info or instance id."""
@@ -677,13 +575,13 @@ class RszViewer(QWidget):
 
     def _create_rsz_header_info(self):
         return DataTreeBuilder.create_data_node("RSZHeader", "")
-    
+
     def _get_instance_v0_name(self, instance_id):
         """Get name from v0 field if available."""
         if instance_id in self.scn.parsed_elements:
             fields = self.scn.parsed_elements[instance_id]
-            if 'v0' in fields and isinstance(fields['v0'], StringData):
-                return fields['v0'].value.rstrip('\x00')
+            if "v0" in fields and isinstance(fields["v0"], StringData):
+                return fields["v0"].value.rstrip("\x00")
         return None
 
     def embed_forms(self):
@@ -693,477 +591,607 @@ class RszViewer(QWidget):
 
     def rebuild(self) -> bytes:
         if not self.handler:
-            raise AttributeError("No handler assigned to viewer")       
+            raise AttributeError("No handler assigned to viewer")
         try:
             return self.handler.scn_file.build()
         except Exception as e:
             raise RuntimeError(f"Failed to rebuild SCN file: {str(e)}")
 
     def create_array_element(self, element_type, array_data, direct_update=False, array_item=None):
-        """Create a new element for an array based on type information"""
+        if not self.array_operations:
+            self.array_operations = RszArrayOperations(self)
+        return self.array_operations.create_array_element(
+            element_type, array_data, direct_update, array_item
+        )
 
-        element_class = getattr(array_data, 'element_class', None) if array_data else None
-        
-        if not self.type_registry or not array_data or not element_class:
-            QMessageBox.warning(self, "Error", "Missing required data for array element creation")
-            return None
-            
-        type_info, type_id = self.type_registry.find_type_by_name(element_type)
+    def delete_array_element(self, array_data, element_index):
+        if not self.array_operations:
+            self.array_operations = RszArrayOperations(self)
+        return self.array_operations.delete_array_element(array_data, element_index)
+
+    def create_component_for_gameobject(self, gameobject_instance_id, component_type):
+        if gameobject_instance_id <= 0 or gameobject_instance_id >= len(self.scn.instance_infos):
+            raise ValueError(f"Invalid GameObject instance ID: {gameobject_instance_id}")
+        target_go = None
+        for i, go in enumerate(self.scn.gameobjects):
+            if (
+                go.id < len(self.scn.object_table)
+                and self.scn.object_table[go.id] == gameobject_instance_id
+            ):
+                target_go = go
+                break
+        if not target_go:
+            raise ValueError(f"GameObject with instance ID {gameobject_instance_id} not found")
+        type_info, type_id = self.type_registry.find_type_by_name(component_type)
         if not type_info:
-            QMessageBox.warning(self, "Error", f"Type not found in registry: {element_type}")
-            return None
-        
-        new_element = (self._create_new_object_instance_for_array(type_id, type_info, element_type, array_data)  # If the elemnt we're creating is an object
-                      if element_class == ObjectData 
-                      else self._create_default_field(element_class, array_data.orig_type)) # If the element we're creating is a simple type
-        
-        if new_element:
-            array_data.values.append(new_element)
-            self.mark_modified()
-            
-            if direct_update and array_item:
-                self._add_element_to_ui_direct(array_item, new_element, element_type)
-            QMessageBox.information(self, "Element Added", f"New {element_type} element added successfully.")
-            
-        return new_element
-
-    def _create_default_field(self, data_class, original_type, is_array=False):
-        """Create default field value based on type"""
-        try:
-            if(is_array):
-                return ArrayData([], data_class, original_type)
-            
-            if data_class == ObjectData:
-                return ObjectData(0, original_type)
-            if data_class == RawBytesData:
-                raise ValueError("Unsupported field type: RawBytesData")
-            
-            return data_class()
-        
-        except Exception as e:
-            print(f"Error creating field: {str(e)}")
-            return None
-
-    def _create_new_object_instance_for_array(self, type_id, type_info, element_type, array_data):
-        """Create a new object instance for an array element"""
-        parent_data = self._find_array_parent_data(array_data) 
-        if not parent_data:
-            return None
-        parent_instance_id, parent_field_name = parent_data
-        
-        # Calculate insertion index for the new instance, considering parent location
-        insertion_index = self._calculate_insertion_index(parent_instance_id, parent_field_name)
-        
-        # Create and initialize the instance
+            raise ValueError(f"Component type '{component_type}' not found in registry")
+        object_table_insertion_index = target_go.id + target_go.component_count + 1
         new_instance = self._initialize_new_instance(type_id, type_info)
-        if not new_instance or new_instance.type_id == 0:
-            QMessageBox.warning(self, "Error", f"Failed to create valid instance with type {element_type}")
-            return None
-        
-        # Initialize fields first to analyze potential nested objects
+        if not new_instance:
+            raise ValueError(f"Failed to create instance of type {component_type}")
+        instance_insertion_index = self._calculate_component_insertion_index(target_go)
         temp_parsed_elements = {}
         nested_objects = []
-        
-        # Pre-analyze fields to identify nested objects
         self._analyze_instance_fields_for_nested_objects(
-            temp_parsed_elements,
-            type_info,
-            nested_objects,
-            insertion_index
+            temp_parsed_elements, type_info, nested_objects, instance_insertion_index
         )
-        
-        # Insert nested objects first (before the main instance)
         valid_nested_objects = []
         for nested_type_info, nested_type_id in nested_objects:
-            # Create the nested instance
             nested_instance = self._initialize_new_instance(nested_type_id, nested_type_info)
-            
-            # Skip invalid instances
             if not nested_instance or nested_instance.type_id == 0:
                 continue
-                
-            # Insert it before target index
-            self._insert_instance_and_update_references(insertion_index, nested_instance)
-            
-            # Initialize nested object fields
+            self._insert_instance_and_update_references(instance_insertion_index, nested_instance)
             nested_object_fields = {}
             self._initialize_fields_from_type_info(nested_object_fields, nested_type_info)
-            self.scn.parsed_elements[insertion_index] = nested_object_fields
-            
-            # Track valid nested object for later reference updating
+            self.scn.parsed_elements[instance_insertion_index] = nested_object_fields
             valid_nested_objects.append((nested_type_info, nested_type_id))
-            
-            # This shifts the target index up by one
-            insertion_index += 1
-        
-        # Now insert the main instance
-        self._insert_instance_and_update_references(insertion_index, new_instance)
-        
-        # Initialize fields for the main instance
-        main_instance_fields = {}
-        self._initialize_fields_from_type_info(main_instance_fields, type_info)
-        
-        # Make sure all ObjectData fields point to the correct nested objects
-        self._update_object_references(main_instance_fields, temp_parsed_elements, insertion_index, valid_nested_objects)
-        
-        # Store the parsed elements
-        self.scn.parsed_elements[insertion_index] = main_instance_fields
-        
-        # Update hierarchy
-        self._update_instance_hierarchy(insertion_index, parent_instance_id)
-        
-        # Create object reference and cache it
-        obj_data = ObjectData(insertion_index, element_type)
-        self._last_added_object = obj_data
-        
-        return obj_data
+            instance_insertion_index += 1
+            IdManager.instance().register_instance(instance_insertion_index)
+        self._insert_instance_and_update_references(instance_insertion_index, new_instance)
+        IdManager.instance().register_instance(instance_insertion_index)
+        component_fields = {}
+        self._initialize_fields_from_type_info(component_fields, type_info)
+        self._update_object_references(
+            component_fields,
+            temp_parsed_elements,
+            instance_insertion_index,
+            valid_nested_objects,
+        )
+        if "parent" in component_fields:
+            parent_obj = component_fields["parent"]
+            if hasattr(parent_obj, "value"):
+                parent_obj.value = gameobject_instance_id
+        self.scn.parsed_elements[instance_insertion_index] = component_fields
+        target_go.component_count += 1
+        self._insert_into_object_table(object_table_insertion_index, instance_insertion_index)
+        self.mark_modified()
+        return True
 
-    def _analyze_instance_fields_for_nested_objects(self, temp_elements, type_info, nested_objects, parent_id, visited_types=None):
-        if visited_types is None:
-            visited_types = set()
+    def _insert_into_object_table(self, object_table_index, instance_id):
+        if object_table_index >= len(self.scn.object_table):
+            self.scn.object_table.extend(
+                [0] * (object_table_index - len(self.scn.object_table) + 1)
+            )
+            self.scn.object_table[object_table_index] = instance_id
+        else:
+            self.scn.object_table.insert(object_table_index, instance_id)
+        for go in self.scn.gameobjects:
+            if go.id >= object_table_index:
+                go.id += 1
+            if go.parent_id >= object_table_index:
+                go.parent_id += 1
+        for folder in self.scn.folder_infos:
+            if folder.id >= object_table_index:
+                folder.id += 1
+            if folder.parent_id >= object_table_index:
+                folder.parent_id += 1
+        if self.scn.is_pfb:
+            for ref_info in self.scn.gameobject_ref_infos:
+                if hasattr(ref_info, "object_id") and ref_info.object_id >= object_table_index:
+                    ref_info.object_id += 1
+                if hasattr(ref_info, "target_id") and ref_info.target_id >= object_table_index:
+                    ref_info.target_id += 1
+
+    def _calculate_component_insertion_index(self, gameobject):
+        """Calculate the best insertion index for a new component"""
+        insertion_index = len(self.scn.instance_infos)
+        if gameobject.component_count > 0:
+            last_component_go_id = gameobject.id + gameobject.component_count
+            if last_component_go_id < len(self.scn.object_table):
+                last_component_instance_id = self.scn.object_table[last_component_go_id]
+                if last_component_instance_id > 0:
+                    insertion_index = last_component_instance_id + 1
+        if insertion_index == len(self.scn.instance_infos):
+            go_instance_id = self.scn.object_table[gameobject.id]
+            if go_instance_id > 0:
+                insertion_index = go_instance_id + 1
+        return insertion_index
+
+    def delete_component_from_gameobject(self, component_instance_id, owner_go_id=None):
+        if component_instance_id <= 0 or component_instance_id >= len(self.scn.instance_infos):
+            raise ValueError(f"Invalid component instance ID: {component_instance_id}")
         
-        if not type_info or "fields" not in type_info:
-            return {}
-            
-        # Preventing infinite recursion 
-        type_name = type_info.get("name", "")
-        if not type_name:  # Skip types without names
-            return {}
-            
-        visited_types.add(type_name)
+        object_table_index = -1
+        owner_go = None
         
-        # Initialize fields dictionary
-        fields_dict = {}
+        if owner_go_id is not None:
+            owner_go = next((go for go in self.scn.gameobjects if go.id == owner_go_id), None)
+            if owner_go:
+                for comp_index in range(1, owner_go.component_count + 1):
+                    comp_object_id = owner_go.id + comp_index
+                    if (comp_object_id < len(self.scn.object_table) and 
+                        self.scn.object_table[comp_object_id] == component_instance_id):
+                        object_table_index = comp_object_id
+                        break
+        
+        if object_table_index < 0:
+            for i, instance_id in enumerate(self.scn.object_table):
+                if instance_id == component_instance_id:
+                    object_table_index = i
+                    break
+                    
+            if object_table_index < 0:
+                raise ValueError(f"Component {component_instance_id} not found in object table")
+            
+            if not owner_go:
+                for go in self.scn.gameobjects:
+                    if go.id < object_table_index and object_table_index <= go.id + go.component_count:
+                        owner_go = go
+                        break
+        
+        if not owner_go:
+            raise ValueError(f"Could not find GameObject owning component {component_instance_id}")
+        
+        original_component_count = owner_go.component_count
+        
+        instance_fields = self.scn.parsed_elements.get(component_instance_id, {})
+        nested_objects = self._find_nested_objects(instance_fields, component_instance_id)
+        nested_objects.add(component_instance_id)
+        
+        to_delete_instances = sorted(nested_objects, reverse=True)
+        
+        owner_go.component_count -= 1
+        
+        self.scn.object_table.pop(object_table_index)
+        
+        for go in self.scn.gameobjects:
+            if go.id > object_table_index:
+                go.id -= 1
+            if go.parent_id > object_table_index:
+                go.parent_id -= 1
+                
+        for folder in self.scn.folder_infos:
+            if folder.id > object_table_index:
+                folder.id -= 1
+            if folder.parent_id > object_table_index:
+                folder.parent_id -= 1
+                
+        if self.scn.is_pfb:
+            for ref_info in self.scn.gameobject_ref_infos:
+                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
+                    ref_info.object_id -= 1
+                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
+                    ref_info.target_id -= 1
+        
+        for instance_id in to_delete_instances:
+            self._remove_instance_references(instance_id)
+        
+        all_deleted = set(to_delete_instances)
+        id_mapping = self._update_instance_references_after_deletion(component_instance_id, all_deleted)
+        deleted_instance_ids = set(to_delete_instances)
+        IdManager.instance().update_all_mappings(id_mapping, deleted_instance_ids)
+        
+        expected_component_indices = original_component_count - 1
+        actual_component_indices = 0
+        for i in range(1, expected_component_indices + 1):
+            comp_object_id = owner_go.id + i
+            if comp_object_id < len(self.scn.object_table) and self.scn.object_table[comp_object_id] > 0:
+                actual_component_indices += 1
+                
+        if actual_component_indices != expected_component_indices:
+            print(f"Warning: Component count mismatch after deletion - expected {expected_component_indices}, got {actual_component_indices}")
+        
+        self.mark_modified()
+        
+        return True
+
+    def create_gameobject(self, name, parent_id):
+        if not self.scn:
+            return False
+        insertion_index = self._calculate_gameobject_insertion_index()
+        type_info, type_id = self.type_registry.find_type_by_name("via.GameObject")
+        if not type_info or type_id == 0:
+            QMessageBox.warning(self, "Error", "Cannot find GameObject type in registry")
+            return False
+        new_instance = self._initialize_new_instance(type_id, type_info)
+        if not new_instance:
+            QMessageBox.warning(self, "Error", "Failed to create GameObject instance")
+            return False
+        self._insert_instance_and_update_references(insertion_index, new_instance)
+        IdManager.instance().register_instance(insertion_index)
+        gameobject_fields = {}
+        self._initialize_fields_from_type_info(gameobject_fields, type_info)
+        if "v0" in gameobject_fields and hasattr(gameobject_fields["v0"], "set_value"):
+            gameobject_fields["v0"].set_value(name)
+        self.scn.parsed_elements[insertion_index] = gameobject_fields
+        object_table_index = len(self.scn.object_table)
+        self.scn.object_table.append(insertion_index)
+        new_gameobject = self._create_gameobject_entry(
+            object_table_index, parent_id, insertion_index
+        )
+        self._update_gameobject_hierarchy(new_gameobject)
+        self.scn.gameobjects.append(new_gameobject)
+        self.mark_modified()
+        return True
+
+    def _initialize_fields_from_type_info(self, fields_dict, type_info):
+        """Initialize fields based on type info"""
         for field_def in type_info.get("fields", []):
             field_name = field_def.get("name", "")
             if not field_name:
                 continue
-                
             field_type = field_def.get("type", "unknown").lower()
             field_size = field_def.get("size", 4)
             field_native = field_def.get("native", False)
             field_array = field_def.get("array", False)
             field_align = field_def.get("align", 4)
             field_orig_type = field_def.get("original_type", "")
-            
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align)
+            field_class = get_type_class(
+                field_type, field_size, field_native, field_array, field_align
+            )
             field_obj = self._create_default_field(field_class, field_orig_type, field_array)
-            
             if field_obj:
-                temp_elements[field_name] = field_obj
                 fields_dict[field_name] = field_obj
-                
-                # Handle object reference fields that need their own object created
-                if not field_array and isinstance(field_obj, ObjectData) and field_orig_type:
-                    # Skip empty or already visited types
-                    if not field_orig_type or field_orig_type in visited_types:
-                        continue
-                        
-                    # Find type info for this field
-                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
-                    
-                    # Skip if type info or ID is invalid
-                    if not nested_type_info or not nested_type_id or nested_type_id == 0:
-                        continue
-                        
-                    # Add to list of objects to create
-                    nested_objects.append((nested_type_info, nested_type_id))
-                    
-                    # Recursively check if this nested object has its own nested objects
-                    nested_temp = {}
-                    self._analyze_instance_fields_for_nested_objects(
-                        nested_temp,
-                        nested_type_info,
-                        nested_objects,
-                        parent_id,
-                        visited_types.copy()
-                    )
-        
-        return fields_dict
 
-    def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
-        """Update object references to point to correct nested objects"""
-        # Calculate offset from temporary indexes to actual indexes
-        # First nested object is at (main_instance_index - len(nested_objects))
-        offset_start = main_instance_index - len(nested_objects)
+    def _calculate_gameobject_insertion_index(self):
+        """Calculate the best insertion index for a new GameObject instance"""
+        return len(self.scn.instance_infos)
+
+    def _create_gameobject_entry(self, object_id, parent_id, instance_id):
+        from .rsz_file import ScnGameObject
+        new_go = ScnGameObject()
+        new_go.id = object_id
+        new_go.parent_id = parent_id
+        new_go.component_count = 0
+        if not self.scn.is_pfb and not self.scn.is_usr:
+            import uuid
+            guid_bytes = uuid.uuid4().bytes_le
+            new_go.guid = guid_bytes
+            new_go.prefab_id = 0
+        return new_go
+
+    def _update_gameobject_hierarchy(self, gameobject):
+        """Update instance hierarchy with parent-child relationship for GameObjects"""
+        instance_id = self.scn.object_table[gameobject.id]
+        self.scn.instance_hierarchy[instance_id] = {"children": [], "parent": None}
+        if gameobject.parent_id >= 0:
+            if gameobject.parent_id < len(self.scn.object_table):
+                parent_instance_id = self.scn.object_table[gameobject.parent_id]
+                if parent_instance_id > 0:
+                    self.scn.instance_hierarchy[instance_id]["parent"] = parent_instance_id
+                    if parent_instance_id in self.scn.instance_hierarchy:
+                        if "children" not in self.scn.instance_hierarchy[parent_instance_id]:
+                            self.scn.instance_hierarchy[parent_instance_id]["children"] = []
+                        self.scn.instance_hierarchy[parent_instance_id]["children"].append(
+                            instance_id
+                        )
+
+    def delete_gameobject(self, gameobject_id):
+        if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
+            QMessageBox.warning(self, "Error", f"Invalid GameObject ID: {gameobject_id}")
+            return False
+            
+        target_go = None
         
-        # Safety check
-        if offset_start < 0:
+        for go in self.scn.gameobjects:
+            if go.id == gameobject_id:
+                target_go = go
+                break
+        
+        if target_go is None:
+            print(f"Warning: GameObject with exact ID {gameobject_id} not found, attempting recovery...")
+            
+            instance_id = self.scn.object_table[gameobject_id] if gameobject_id < len(self.scn.object_table) else 0
+            if instance_id > 0:
+                for go in self.scn.gameobjects:
+                    if go.id < len(self.scn.object_table) and self.scn.object_table[go.id] == instance_id:
+                        target_go = go
+                        gameobject_id = go.id
+                        print(f"  Found GameObject at adjusted ID {gameobject_id}")
+                        break
+        
+        if target_go is None:
+            QMessageBox.warning(self, "Error", f"GameObject with ID {gameobject_id} not found")
+            return False
+            
+        success = self._delete_gameobject_directly(target_go)
+        
+        if success:
+            self.mark_modified()
+            
+        return success
+
+    def _collect_gameobject_hierarchy_by_reference(self, root_go):
+        go_objects = {go.id: go for go in self.scn.gameobjects}
+        
+        child_map = {}
+        for go in self.scn.gameobjects:
+            if go.parent_id >= 0 and go.parent_id in go_objects:
+                parent = go_objects[go.parent_id]
+                if parent not in child_map:
+                    child_map[parent] = []
+                child_map[parent].append(go)
+        
+        gameobjects = []
+        
+        def collect_recursive(go):
+            gameobjects.append(go)
+            if go in child_map:
+                for child in child_map[go]:
+                    collect_recursive(child)
+        
+        collect_recursive(root_go)
+        return gameobjects
+
+    def _delete_all_components_of_gameobject(self, gameobject):
+        if gameobject.component_count <= 0:
+            return
+            
+        print(f"GameObject {gameobject.id} has {gameobject.component_count} components")
+        
+        if gameobject.id >= len(self.scn.object_table):
+            print(f"Warning: GameObject ID {gameobject.id} is out of bounds, cannot delete components")
+            gameobject.component_count = 0
             return
         
-        # Update all object references
-        for field_name, field_data in temp_fields.items():
-            # Skip if field doesn't exist in target fields
-            if field_name not in target_fields:
+        initial_component_count = gameobject.component_count
+        deleted_count = 0
+        
+        max_iterations = initial_component_count * 2
+        iteration = 0
+        
+        while gameobject.component_count > 0 and iteration < max_iterations:
+            iteration += 1
+            
+            component_object_id = gameobject.id + 1
+            
+            if component_object_id >= len(self.scn.object_table):
+                print(f"  Warning: Component object ID {component_object_id} is out of bounds")
+                gameobject.component_count = 0
+                break
+                
+            component_instance_id = self.scn.object_table[component_object_id]
+            
+            if component_instance_id <= 1:
+                print(f"  Skipping invalid component with instance_id={component_instance_id}")
+                gameobject.component_count -= 1
                 continue
                 
-            if isinstance(field_data, ObjectData) and field_data.value == 0:
-                # This is a reference to a nested object
-                # Find the correct index for this nested object
-                for i, (nested_type_info, _) in enumerate(nested_objects):
-                    if nested_type_info.get("name", "") == field_data.orig_type:
-                        # Update reference to actual instance index
-                        target_fields[field_name].value = offset_start + i
+            try:
+                self.delete_component_from_gameobject(component_instance_id, gameobject.id)
+                deleted_count += 1
+            except Exception as e:
+                print(f"  Error deleting component {component_instance_id}: {str(e)}")
+        
+        if deleted_count != initial_component_count:
+            print(f"  Warning: Expected to delete {initial_component_count} components, but deleted {deleted_count}")
+            gameobject.component_count = 0
+
+    def delete_folder(self, folder_id):
+        if folder_id < 0 or folder_id >= len(self.scn.object_table):
+            QMessageBox.warning(self, "Error", f"Invalid Folder ID: {folder_id}")
+            return False
+
+        target_folder = None
+        for folder in self.scn.folder_infos:
+            if folder.id == folder_id:
+                target_folder = folder
+                break
+
+        if target_folder is None:
+            print(f"Warning: Folder with exact ID {folder_id} not found, attempting recovery...")
+            
+            instance_id = self.scn.object_table[folder_id] if folder_id < len(self.scn.object_table) else 0
+            if instance_id > 0:
+                for folder in self.scn.folder_infos:
+                    if folder.id < len(self.scn.object_table) and self.scn.object_table[folder.id] == instance_id:
+                        target_folder = folder
+                        folder_id = folder.id
+                        print(f"  Found Folder at adjusted ID {folder_id}")
                         break
-            elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
-                # Handle array of objects
-                array_data = target_fields[field_name]
-                array_data.values = []
-                
-                # Process each element in the array
-                for element in field_data.values:
-                    if isinstance(element, ObjectData):
-                        # Create a new object reference with the adjusted index
-                        new_obj = ObjectData(element.value, element.orig_type)
-                        
-                        # If it's a reference to a nested object (value=0), find the correct index
-                        if element.value == 0 and element.orig_type:
-                            for i, (nested_type_info, _) in enumerate(nested_objects):
-                                if nested_type_info.get("name", "") == element.orig_type:
-                                    new_obj.value = offset_start + i
-                                    break
-                        array_data.values.append(new_obj)
-                    else:
-                        # Non-object array elements
-                        array_data.values.append(element)
 
-    def _update_ui_after_element_add(self, direct_update, array_item, new_element, element_type):
-        """Update UI after adding an array element"""
-        success = False
-        
-        if direct_update and array_item:
-            success = self._add_element_to_ui_direct(array_item, new_element, element_type)
-            if not success:
-                print("Direct UI update not possible - array node not found")
-        
-        QMessageBox.information(
-            self, "Element Added", 
-            f"New {element_type} element added successfully."
-        )
-
-    def _add_element_to_ui_direct(self, array_item, element, element_type_clean):
-        """Add a new element directly to the tree using the provided array item"""
-        model = getattr(self.tree, 'model', lambda: None)()
-        if not model or not hasattr(array_item, 'raw'):
+        if target_folder is None:
+            QMessageBox.warning(self, "Error", f"Folder with ID {folder_id} not found")
             return False
-            
-        # Get array data safely
-        array_data = array_item.raw.get('obj') if isinstance(array_item.raw, dict) else None
-        if not array_data or not hasattr(array_data, 'values'):
-            return False
-        
-        # Get element index
-        element_index = len(array_data.values) - 1
-        
-        # Create and add node
-        node_data = (
-            self._create_object_node_data(element.value, element_index, element) 
-            if isinstance(element, ObjectData)
-            else DataTreeBuilder.create_data_node(f"{element_index}: ", "", element.__class__.__name__, element)
-        )
-        
-        model.addChild(array_item, node_data)
-        
-        # Expand the node
-        array_index = model.getIndexFromItem(array_item)
-        self.tree.expand(array_index)
-        
-        return True
 
-    def _create_object_node_data(self, ref_id, index, element):
-        """Helper to create a node for an object reference"""
-        type_name = self._get_type_name_for_instance(ref_id)
-        
-        node_data = DataTreeBuilder.create_data_node(
-            f"{index}: ({type_name})",
-            "",
-            None,
-            element
-        )
-        
-        # Add child field nodes if available
-        if ref_id in self.scn.parsed_elements:
-            fields = self.scn.parsed_elements[ref_id]
-            for field_name, field_data in fields.items():
-                node_data["children"].append(
-                    self._create_field_dict(field_name, field_data)
-                )
-                
-        return node_data
+        folder_instance_id = self.scn.object_table[folder_id] if folder_id < len(self.scn.object_table) else 0
+        print(f"Deleting folder ID={folder_id} (instance_id={folder_instance_id})")
 
-    def _calculate_insertion_index(self, parent_instance_id, parent_field_name):
-        """Calculate the best insertion index for a new instance based on field positioning"""
-        # Default to placing after parent
-        insertion_index = parent_instance_id  # Default to right after the parent
+        folder_objects = {f.id: f for f in self.scn.folder_infos}
         
-        # Early exit for invalid parent
-        if parent_instance_id >= len(self.scn.instance_infos):
-            return insertion_index
-            
-        # Get parent type information
-        parent_type_id = self.scn.instance_infos[parent_instance_id].type_id
-        parent_type_info = self.type_registry.get_type_info(parent_type_id)
+        folder_child_map = {}
+        for folder in self.scn.folder_infos:
+            if folder.parent_id in folder_objects:
+                parent_folder = folder_objects[folder.parent_id]
+                if parent_folder not in folder_child_map:
+                    folder_child_map[parent_folder] = []
+                folder_child_map[parent_folder].append(folder)
+
+        folders_to_delete = []
         
-        # Early exit if type info missing
-        if not parent_type_info or "fields" not in parent_type_info:
-            return insertion_index
+        def collect_folders_recursive(folder):
+            folders_to_delete.append(folder)
+            if folder in folder_child_map:
+                for child in folder_child_map[folder]:
+                    collect_folders_recursive(child)
         
-        # Get field position information
-        field_indices = {field["name"]: idx for idx, field in enumerate(parent_type_info["fields"])}
-        target_pos = field_indices.get(parent_field_name, -1)
+        collect_folders_recursive(target_folder)
         
-        if target_pos < 0:
-            return insertion_index
+        print(f"Found {len(folders_to_delete)} folders to delete")
         
-        # Find minimum reference value in fields after target position and all their nested objects
-        min_later_ref = float('inf')
+        folder_ids = {f.id for f in folders_to_delete}
         
-        # Track processed object ids to avoid infinite recursion
-        processed_ids = set()
+        gameobjects_to_delete = []
+        for go in self.scn.gameobjects:
+            if go.parent_id in folder_ids:
+                gameobjects_to_delete.append(go)
         
-        # Recursively find all references in object fields
-        def collect_references(instance_id, target_pos = -1):
-            nonlocal min_later_ref, processed_ids
-            
-            # Avoid infinite recursion
-            if instance_id in processed_ids:
-                return
-            processed_ids.add(instance_id)
-            
-            if instance_id not in self.scn.parsed_elements:
-                return
-                
-            # Get instance type info
-            if instance_id >= len(self.scn.instance_infos):
-                return
-            inst_type_id = self.scn.instance_infos[instance_id].type_id
-            inst_type_info = self.type_registry.get_type_info(inst_type_id)
-            if not inst_type_info or "fields" not in inst_type_info:
-                return
-                
-            # Build field position mapping for this instance
-            inst_field_indices = {field["name"]: idx for idx, field in enumerate(inst_type_info["fields"])}
-            
-            # Process all fields in this instance
-            for field_name, field_data in self.scn.parsed_elements[instance_id].items():
-                field_pos = inst_field_indices.get(field_name, -1)
-                
-                # For parent instance, only check fields after target position
-                if instance_id == parent_instance_id and field_pos <= target_pos:
+        print(f"Found {len(gameobjects_to_delete)} GameObjects to delete")
+        
+        deletion_errors = 0
+        
+        for go in reversed(gameobjects_to_delete):
+            try:
+                success = self._delete_gameobject_directly(go)
+                if not success:
+                    print(f"  Warning: Failed to delete GameObject with ID {go.id}")
+                    deletion_errors += 1
+            except Exception as e:
+                print(f"  Error deleting GameObject with ID {go.id}: {str(e)}")
+                deletion_errors += 1
+
+        for folder in reversed(folders_to_delete):
+            try:
+                if folder is target_folder:
                     continue
                     
-                # Check direct object reference
-                if isinstance(field_data, ObjectData):
-                    ref_id = field_data.value
-                    if ref_id > 0:  # valid reference
-                        min_later_ref = min(min_later_ref, ref_id)
-                        # Recursively process this object's fields too
-                        collect_references(ref_id)
-                        
-                # Check array elements
-                elif isinstance(field_data, ArrayData):
-                    for elem in field_data.values:
-                        if isinstance(elem, ObjectData):
-                            ref_id = elem.value
-                            if ref_id > 0:  # valid reference
-                                min_later_ref = min(min_later_ref, ref_id)
-                                # Recursively process this object's fields too
-                                collect_references(ref_id)
-        
-        # Start collection from parent instance
-        collect_references(parent_instance_id, target_pos)
-        
-        # Update index if we found a valid reference
-        if min_later_ref != float('inf'):
-            insertion_index = min_later_ref
-        
-        return insertion_index
+                if not self.scn.is_pfb and not self.scn.is_usr and hasattr(folder, 'prefab_id') and folder.prefab_id > 0:
+                    prefab_deleted = self._delete_prefab_for_object(folder.prefab_id)
+                    if prefab_deleted:
+                        print(f"  Deleted prefab {folder.prefab_id} associated with folder {folder.id}")
+                
+                print(f"  Deleting subfolder with ID {folder.id}")
+                folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
+                
+                if folder_instance_id > 0:
+                    instance_fields = self.scn.parsed_elements.get(folder_instance_id, {})
+                    nested_objects = self._find_nested_objects(instance_fields, folder_instance_id)
+                    nested_objects.add(folder_instance_id)
+                    
+                    for inst_id in sorted(nested_objects, reverse=True):
+                        self._remove_instance_references(inst_id)
+                    
+                    id_mapping = self._update_instance_references_after_deletion(folder_instance_id, nested_objects)
+                    
+                    if id_mapping:
+                        IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+                
+                if folder.id < len(self.scn.object_table):
+                    self._remove_from_object_table(folder.id)
+                
+                if folder in self.scn.folder_infos:
+                    self.scn.folder_infos.remove(folder)
+            except Exception as e:
+                print(f"  Error deleting subfolder with ID {folder.id}: {str(e)}")
+                deletion_errors += 1
 
-    def _find_array_parent_data(self, array_data):
-        """Find parent instance and field for an array"""
-        for instance_id, fields in self.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                if field_data is array_data:
-                    return instance_id, field_name
-        
-        QMessageBox.warning(self, "Error", "Could not find array's parent instance")
-        return None
-
-    def _initialize_new_instance(self, type_id, type_info):
-        if type_id == 0 or not type_info:
-            return None
+        try:
+            print(f"  Deleting target folder with ID {target_folder.id}")
+            folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
             
-        new_instance = ScnInstanceInfo()
+            if folder_instance_id > 0:
+                instance_fields = self.scn.parsed_elements.get(folder_instance_id, {})
+                nested_objects = self._find_nested_objects(instance_fields, folder_instance_id)
+                nested_objects.add(folder_instance_id)
+                
+                for inst_id in sorted(nested_objects, reverse=True):
+                    self._remove_instance_references(inst_id)
+                
+                id_mapping = self._update_instance_references_after_deletion(folder_instance_id, nested_objects)
+                
+                if id_mapping:
+                    IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+            
+            if target_folder.id < len(self.scn.object_table):
+                self._remove_from_object_table(target_folder.id)
+            
+            if target_folder in self.scn.folder_infos:
+                self.scn.folder_infos.remove(target_folder)
+        except Exception as e:
+            print(f"  Error deleting target folder: {str(e)}")
+            deletion_errors += 1
         
-        new_instance.type_id = type_id
+        if deletion_errors > 0:
+            print(f"Warning: Encountered {deletion_errors} errors during folder deletion")
         
-        # Need to clean this up later TODO
-        if isinstance(type_info.get("crc", 0), str):
-            crc_str = type_info.get("crc", "0")
-            if crc_str.startswith('0x') or any(c in crc_str.lower() for c in 'abcdef'):
-                crc = int(crc_str, 16)
-            else:
-                crc = int(crc_str, 10)
-        else:
-            crc = int(type_info.get("crc", 0))
-        
-        new_instance.crc = crc
-        if(crc == 0):
-            raise("CRC is 0")
-        return new_instance
+        self.mark_modified()
+        return True
+
+    def _create_default_field(self, data_class, original_type, is_array=False):
+        try:
+            if is_array:
+                return ArrayData([], data_class, original_type)
+            if data_class == ObjectData:
+                return ObjectData(0, original_type)
+            if data_class == RawBytesData:
+                raise ValueError("Unsupported field type: RawBytesData")
+            return data_class()
+        except Exception as e:
+            print(f"Error creating field: {str(e)}")
+            return None
 
     def _insert_instance_and_update_references(self, index, instance):
-        """Insert instance at index and update all references to maintain consistency"""
-        # Insert the instance info
         self.scn.instance_infos.insert(index, instance)
         
-        # Update all references in object_table
         for i in range(len(self.scn.object_table)):
             if self.scn.object_table[i] >= index:
                 self.scn.object_table[i] += 1
-        
-        # Update all ObjectData references in parsed_elements
+                
         updated_elements = {}
         for instance_id, fields in self.scn.parsed_elements.items():
             updated_fields = {}
             new_id = instance_id + 1 if instance_id >= index else instance_id
-            
-            # Update references within fields
             for field_name, field_data in fields.items():
                 if isinstance(field_data, ObjectData):
                     if field_data.value >= index:
                         field_data.value += 1
+                elif isinstance(field_data, ResourceData) and hasattr(field_data, "value"):
+                    if field_data.value >= index:
+                        field_data.value += 1
+                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
+                    if field_data.index >= index:
+                        field_data.index += 1
                 elif isinstance(field_data, ArrayData):
                     for elem in field_data.values:
                         if isinstance(elem, ObjectData) and elem.value >= index:
                             elem.value += 1
+                        elif (
+                            isinstance(elem, ResourceData)
+                            and hasattr(elem, "value")
+                            and elem.value >= index
+                        ):
+                            elem.value += 1
+                        elif (
+                            isinstance(elem, UserDataData)
+                            and hasattr(elem, "index")
+                            and elem.index >= index
+                        ):
+                            elem.index += 1
                 updated_fields[field_name] = field_data
-            
             updated_elements[new_id] = updated_fields
-        
         self.scn.parsed_elements = updated_elements
         
-        # Update instance hierarchy
         updated_hierarchy = {}
         for instance_id, data in self.scn.instance_hierarchy.items():
             new_id = instance_id + 1 if instance_id >= index else instance_id
-            
-            # Update children references
             children = data["children"].copy()
             updated_children = []
             for child in children:
                 updated_children.append(child + 1 if child >= index else child)
-                
-            # Update parent reference
             parent = data["parent"]
             if parent is not None and parent >= index:
                 parent += 1
-                
             updated_hierarchy[new_id] = {"children": updated_children, "parent": parent}
-            
         self.scn.instance_hierarchy = updated_hierarchy
         
-        # Update userdata references
+        self._shift_userdata_references(index)
+        
+        id_mapping = {}
+        for i in range(index, len(self.scn.instance_infos)):
+            id_mapping[i] = i + 1
+        IdManager.instance().update_all_mappings(id_mapping)
+
+    def _shift_userdata_references(self, index):
         updated_userdata_set = set()
         for id_value in self.scn._rsz_userdata_set:
             updated_userdata_set.add(id_value + 1 if id_value >= index else id_value)
@@ -1175,22 +1203,275 @@ class RszViewer(QWidget):
             updated_userdata_dict[new_id] = rui
         self.scn._rsz_userdata_dict = updated_userdata_dict
         
-        # Update RSZUserDataInfos
         for rui in self.scn.rsz_userdata_infos:
             if rui.instance_id >= index:
                 rui.instance_id += 1
-                
-        # Update instance hashes
-        updated_hashes = {}
-        for id_value, hash_value in self.scn._instance_hashes.items():
-            new_id = id_value + 1 if id_value >= index else id_value
-            updated_hashes[new_id] = hash_value
-        updated_hashes[index] = instance.crc 
-        self.scn._instance_hashes = updated_hashes
 
-    def _update_instance_hierarchy(self, instance_id, parent_id):
-        """Update instance hierarchy with parent-child relationship"""
-        self.scn.instance_hierarchy[instance_id] = {"children": [], "parent": parent_id}
+    def _remove_instance_references(self, instance_id):
+        if instance_id < len(self.scn.instance_infos):
+            del self.scn.instance_infos[instance_id]
+        if instance_id in self.scn.parsed_elements:
+            del self.scn.parsed_elements[instance_id]
+        if instance_id in self.scn.instance_hierarchy:
+            parent_id = self.scn.instance_hierarchy[instance_id].get("parent")
+            if parent_id is not None and parent_id in self.scn.instance_hierarchy:
+                if instance_id in self.scn.instance_hierarchy[parent_id]["children"]:
+                    self.scn.instance_hierarchy[parent_id]["children"].remove(instance_id)
+            del self.scn.instance_hierarchy[instance_id]
+        
+        self._cleanup_userdata_for_instance(instance_id)
+
+        for i in range(len(self.scn.object_table)):
+            if self.scn.object_table[i] == instance_id:
+                self.scn.object_table[i] = 0
+                
+    def _cleanup_userdata_for_instance(self, instance_id):
+        rsz_indices_to_remove = []
+        rsz_userdata_to_remove = []
+        userdata_indices_to_remove = []
+        userdata_to_remove = []
+        
+        for i, rui in enumerate(self.scn.rsz_userdata_infos):
+            if rui.instance_id == instance_id:
+                rsz_indices_to_remove.append(i)
+                rsz_userdata_to_remove.append(rui)
+                
+                for j, ui in enumerate(self.scn.userdata_infos):
+                    if rui.hash == ui.hash:
+                        if j not in userdata_indices_to_remove:
+                            userdata_indices_to_remove.append(j)
+                            userdata_to_remove.append(ui)
+        
+        if instance_id in self.scn._rsz_userdata_dict:
+            del self.scn._rsz_userdata_dict[instance_id]
+        if instance_id in self.scn._rsz_userdata_set:
+            self.scn._rsz_userdata_set.remove(instance_id)
+        
+        for rui in rsz_userdata_to_remove:
+            if rui in self.scn._rsz_userdata_str_map:
+                del self.scn._rsz_userdata_str_map[rui]
+                
+        for ui in userdata_to_remove:
+            if ui in self.scn._userdata_str_map:
+                del self.scn._userdata_str_map[ui]
+        
+        for idx in sorted(rsz_indices_to_remove, reverse=True):
+            del self.scn.rsz_userdata_infos[idx]
+            
+        for idx in sorted(userdata_indices_to_remove, reverse=True):
+            del self.scn.userdata_infos[idx]
+
+    def _update_instance_references_after_deletion(self, deleted_id, deleted_nested_ids=None):
+        if deleted_nested_ids is None:
+            deleted_nested_ids = set()
+        deleted_nested_ids.add(deleted_id)
+        deleted_ids_sorted = sorted(deleted_nested_ids)
+        
+        id_mapping = {}
+        for old_id in range(len(self.scn.instance_infos) + len(deleted_ids_sorted)):
+            if old_id not in deleted_nested_ids:
+                new_id = old_id
+                for deleted_id in deleted_ids_sorted:
+                    if old_id > deleted_id:
+                        new_id -= 1
+                if old_id != new_id:
+                    id_mapping[old_id] = new_id
+
+        new_parsed_elements = {}
+        for instance_id, fields in self.scn.parsed_elements.items():
+            if instance_id in deleted_nested_ids:
+                continue
+                
+            new_id = id_mapping.get(instance_id, instance_id)
+            updated_fields = self._update_fields_after_deletion(fields, deleted_nested_ids, id_mapping)
+            new_parsed_elements[new_id] = updated_fields
+            
+        self.scn.parsed_elements = new_parsed_elements
+        
+        new_hierarchy = {}
+        for instance_id, data in self.scn.instance_hierarchy.items():
+            if instance_id in deleted_nested_ids:
+                continue
+            new_id = id_mapping.get(instance_id, instance_id)
+            new_children = [id_mapping.get(child_id, child_id) for child_id in data["children"] if child_id not in deleted_nested_ids]
+            parent_id = data["parent"]
+            if parent_id in deleted_nested_ids:
+                parent_id = None
+            else:
+                parent_id = id_mapping.get(parent_id, parent_id)
+            new_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
+        self.scn.instance_hierarchy = new_hierarchy
+        
+        self._update_userdata_references(deleted_nested_ids, id_mapping)
+        
+        for i in range(len(self.scn.object_table)):
+            obj_id = self.scn.object_table[i]
+            if obj_id in deleted_nested_ids:
+                self.scn.object_table[i] = 0
+            else:
+                self.scn.object_table[i] = id_mapping.get(obj_id, obj_id)
+        
+        for go in self.scn.gameobjects:
+            if go.id < len(self.scn.object_table):
+                instance_id = self.scn.object_table[go.id]
+                if instance_id > 0:
+                    IdManager.instance().register_instance(instance_id)
+        
+        return id_mapping
+    
+    def _update_userdata_references(self, deleted_ids, id_mapping):
+        new_userdata_dict = {}
+        for instance_id, rui in self.scn._rsz_userdata_dict.items():
+            if instance_id not in deleted_ids:
+                new_id = id_mapping.get(instance_id, instance_id)
+                new_userdata_dict[new_id] = rui
+        self.scn._rsz_userdata_dict = new_userdata_dict
+        
+        new_userdata_set = {id_mapping.get(instance_id, instance_id) 
+                           for instance_id in self.scn._rsz_userdata_set 
+                           if instance_id not in deleted_ids}
+        self.scn._rsz_userdata_set = new_userdata_set
+        
+        i = 0
+        while i < len(self.scn.rsz_userdata_infos):
+            rui = self.scn.rsz_userdata_infos[i]
+            if rui.instance_id in deleted_ids:
+                if rui in self.scn._rsz_userdata_str_map:
+                    del self.scn._rsz_userdata_str_map[rui]
+                self.scn.rsz_userdata_infos.pop(i)
+                continue
+            elif rui.instance_id in id_mapping:
+                rui.instance_id = id_mapping[rui.instance_id]
+            i += 1
+        
+        for ui in list(self.scn._userdata_str_map.keys()):
+            if ui not in self.scn.userdata_infos:
+                del self.scn._userdata_str_map[ui]
+
+    def _update_fields_after_deletion(self, fields, deleted_ids, id_mapping):
+        updated_fields = {}
+        for field_name, field_data in fields.items():
+            if isinstance(field_data, ObjectData):
+                ref_id = field_data.value
+                if ref_id > 0:
+                    if ref_id in deleted_ids:
+                        field_data.value = 0
+                    else:
+                        field_data.value = id_mapping.get(ref_id, ref_id)
+            elif isinstance(field_data, ResourceData) and hasattr(field_data, "value"):
+                ref_id = field_data.value
+                if ref_id > 0:
+                    if ref_id in deleted_ids:
+                        field_data.value = 0
+                    else:
+                        field_data.value = id_mapping.get(ref_id, ref_id)
+            elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
+                ref_id = field_data.index
+                if ref_id > 0:
+                    if ref_id in deleted_ids:
+                        field_data.index = 0
+                    else:
+                        field_data.index = id_mapping.get(ref_id, ref_id)
+            elif isinstance(field_data, ArrayData):
+                for elem in field_data.values:
+                    if isinstance(elem, ObjectData):
+                        ref_id = elem.value
+                        if ref_id > 0:
+                            if ref_id in deleted_ids:
+                                elem.value = 0
+                            else:
+                                elem.value = id_mapping.get(ref_id, ref_id)
+                    elif isinstance(elem, ResourceData) and hasattr(elem, "value"):
+                        ref_id = elem.value
+                        if ref_id > 0:
+                            if ref_id in deleted_ids:
+                                elem.value = 0
+                            else:
+                                elem.value = id_mapping.get(ref_id, ref_id)
+                    elif isinstance(elem, UserDataData) and hasattr(elem, "index"):
+                        ref_id = elem.index
+                        if ref_id > 0:
+                            if ref_id in deleted_ids:
+                                elem.index = 0
+                            else:
+                                elem.index = id_mapping.get(ref_id, ref_id)
+            updated_fields[field_name] = field_data
+        return updated_fields
+
+    def _find_nested_objects(self, fields, base_instance_id):
+        nested_objects = set()
+        
+        base_object_id = -1
+        for i, instance_id in enumerate(self.scn.object_table):
+            if instance_id == base_instance_id:
+                base_object_id = i
+                break
+                
+        if base_object_id <= 0:
+            return nested_objects
+            
+        prev_instance_id = 0
+        for i in range(base_object_id - 1, -1, -1):
+            if self.scn.object_table[i] > 0:
+                prev_instance_id = self.scn.object_table[i]
+                break
+        
+        for instance_id in range(prev_instance_id + 1, base_instance_id):
+            if instance_id > 0 and instance_id < len(self.scn.instance_infos) and self.scn.instance_infos[instance_id].type_id != 0:
+                if instance_id not in self.scn.object_table:
+                    nested_objects.add(instance_id)
+                
+        return nested_objects
+
+    def _remove_from_object_table(self, object_table_index):
+        if object_table_index < 0 or object_table_index >= len(self.scn.object_table):
+            print(f"Warning: Invalid object table index {object_table_index}")
+            return
+            
+        removed_instance_id = self.scn.object_table[object_table_index]
+            
+        self.scn.object_table.pop(object_table_index)
+        
+        for go in self.scn.gameobjects:
+            if go.id > object_table_index:
+                go.id -= 1
+            if go.parent_id > object_table_index:
+                go.parent_id -= 1
+                
+        for folder in self.scn.folder_infos:
+            if folder.id > object_table_index:
+                folder.id -= 1
+            if folder.parent_id > object_table_index:
+                folder.parent_id -= 1
+                
+        if self.scn.is_pfb:
+            for ref_info in self.scn.gameobject_ref_infos:
+                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
+                    ref_info.object_id -= 1
+                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
+                    ref_info.target_id -= 1
+
+    def _initialize_new_instance(self, type_id, type_info):
+        if type_id == 0 or not type_info:
+            return None
+            
+        new_instance = ScnInstanceInfo()
+        
+        new_instance.type_id = type_id
+        
+        if isinstance(type_info.get("crc", 0), str):
+            crc_str = type_info.get("crc", "0")
+            if crc_str.startswith('0x') or any(c in crc_str.lower() for c in 'abcdef'):
+                crc = int(crc_str, 16)
+            else:
+                crc = int(crc_str, 10)
+        else:
+            crc = int(type_info.get("crc", 0))
+        
+        new_instance.crc = crc
+        if(crc == 0):
+            raise ValueError("CRC is 0")
+        return new_instance
 
     def _initialize_fields_from_type_info(self, fields_dict, type_info):
         """Initialize fields based on type info"""
@@ -1211,300 +1492,241 @@ class RszViewer(QWidget):
             
             if field_obj:
                 fields_dict[field_name] = field_obj
-
-    def delete_array_element(self, array_data, element_index):
-        """Handle complex deletion of an array element with reference updates"""
-        if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
-            return False
-            
-        # Get the element to delete
-        element = array_data.values[element_index]
+                
+    def _analyze_instance_fields_for_nested_objects(self, temp_elements, type_info, nested_objects, parent_id, visited_types=None):
+        if visited_types is None:
+            visited_types = set()
         
-        # If this is an object reference, we need to do more complex processing
-        if isinstance(element, ObjectData) and element.value > 0:
-            target_instance_id = element.value
+        if not type_info or "fields" not in type_info:
+            return {}
             
-            # 1. Find if this instance is referenced elsewhere - we can't delete it if it is
-            is_referenced_elsewhere = self._check_instance_referenced_elsewhere(target_instance_id, array_data)
+        type_name = type_info.get("name", "")
+        if not type_name:
+            return {}
             
-            if is_referenced_elsewhere:
-                # Just remove the reference, not the actual instance
-                del array_data.values[element_index]
-                return True
-            
-            # 2. If no other references exist, we can delete the instance
-            if self._delete_instance(target_instance_id):
-                # Remove from array after deleting the instance
-                del array_data.values[element_index]
-                return True
-            
-            return False
-        else:
-            # For non-object elements, just remove from the array
-            del array_data.values[element_index]
-            return True
-
-    def _check_instance_referenced_elsewhere(self, instance_id, current_array):
-        """Check if an instance is referenced from other places besides current_array"""
-        reference_count = 0
+        visited_types.add(type_name)
         
-        # Check all instances and their fields
-        for check_id, fields in self.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                # Check direct object references
-                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                    reference_count += 1
-                    if reference_count > 1:  # We know there's at least the reference we're checking
-                        return True
+        fields_dict = {}
+        for field_def in type_info.get("fields", []):
+            field_name = field_def.get("name", "")
+            if not field_name:
+                continue
+                
+            field_type = field_def.get("type", "unknown").lower()
+            field_size = field_def.get("size", 4)
+            field_native = field_def.get("native", False)
+            field_array = field_def.get("array", False)
+            field_align = field_def.get("align", 4)
+            field_orig_type = field_def.get("original_type", "")
+            
+            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align)
+            field_obj = self._create_default_field(field_class, field_orig_type, field_array)
+            
+            if field_obj:
+                temp_elements[field_name] = field_obj
+                fields_dict[field_name] = field_obj
+                
+                if not field_array and isinstance(field_obj, ObjectData) and field_orig_type:
+                    if not field_orig_type or field_orig_type in visited_types:
+                        continue
                         
-                # Check objects in arrays
-                elif isinstance(field_data, ArrayData) and field_data is not current_array:
-                    for item in field_data.values:
-                        if isinstance(item, ObjectData) and item.value == instance_id:
-                            reference_count += 1
-                            if reference_count > 1:
-                                return True
-                
-                # Check if this array contains the reference we're looking for
-                elif field_data is current_array:
-                    for item in field_data.values:
-                        if isinstance(item, ObjectData) and item.value == instance_id:
-                            reference_count += 1
+                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
+                    
+                    if not nested_type_info or not nested_type_id or nested_type_id == 0:
+                        continue
+                        
+                    nested_objects.append((nested_type_info, nested_type_id))
+                    
+                    nested_temp = {}
+                    self._analyze_instance_fields_for_nested_objects(
+                        nested_temp,
+                        nested_type_info,
+                        nested_objects,
+                        parent_id,
+                        visited_types.copy()
+                    )
         
-        # Only one reference found (the one we're trying to delete) means it's safe to delete
-        return reference_count > 1
+        return fields_dict
+    
+    def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
+        offset_start = main_instance_index - len(nested_objects)
+        
+        if offset_start < 0:
+            return
+        
+        type_to_index = {
+            nested_type_info.get("name", ""): i
+            for i, (nested_type_info, _) in enumerate(nested_objects)
+            if nested_type_info.get("name", "")
+        }
+        
+        for field_name, field_data in temp_fields.items():
+            if field_name not in target_fields:
+                continue
+                
+            if isinstance(field_data, ObjectData) and field_data.value == 0:
+                type_name = field_data.orig_type
+                if type_name in type_to_index:
+                    target_fields[field_name].value = offset_start + type_to_index[type_name]
+                    
+            elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
+                array_data = target_fields[field_name]
+                array_data.values = []
+                
+                for element in field_data.values:
+                    if isinstance(element, ObjectData):
+                        new_obj = ObjectData(element.value, element.orig_type)
+                        
+                        if element.value == 0 and element.orig_type:
+                            type_name = element.orig_type
+                            if type_name in type_to_index:
+                                new_obj.value = offset_start + type_to_index[type_name]
+                        array_data.values.append(new_obj)
+                    else:
+                        array_data.values.append(element)
 
-    def _delete_instance(self, instance_id):
-        """Delete an instance and update all references"""
-        if instance_id <= 0 or instance_id >= len(self.scn.instance_infos):
+    def _delete_prefab_for_object(self, prefab_id):
+        if prefab_id == -1:
+            print("  No prefab to delete (prefab_id is -1)")
             return False
             
-        # Get instance info before deletion
-        instance_type_id = self.scn.instance_infos[instance_id].type_id
+        if prefab_id < 0 or not hasattr(self.scn, 'prefab_infos') or self.scn.is_pfb or self.scn.is_usr:
+            print(f"  Cannot delete prefab: invalid conditions (prefab_id={prefab_id})")
+            return False
         
-        # We need to check for nested objects within this instance
-        instance_fields = self.scn.parsed_elements.get(instance_id, {})
-        nested_objects = self._find_nested_objects(instance_fields)
+        if prefab_id >= len(self.scn.prefab_infos):
+            print(f"  Warning: Invalid prefab index {prefab_id}")
+            return False
+            
+        prefab_to_delete = self.scn.prefab_infos[prefab_id]
         
-        # Remove the instance from various data structures
+        path_str = ""
+        if hasattr(self.scn, 'get_prefab_string'):
+            path_str = self.scn.get_prefab_string(prefab_to_delete)
+        
+        print(f"  Removing prefab {prefab_id} with path: {path_str}")
+        
+        if hasattr(self.scn, '_prefab_str_map'):
+            if prefab_to_delete in self.scn._prefab_str_map:
+                del self.scn._prefab_str_map[prefab_to_delete]
+                print(f"  Removed string map entry for prefab {prefab_id}")
+            else:
+                print(f"  Warning: Prefab {prefab_id} not found in string map")
+            
+            for i, prefab in enumerate(self.scn.prefab_infos):
+                if (i != prefab_id and 
+                    prefab.string_offset == prefab_to_delete.string_offset and
+                    prefab.string_offset != 0 and 
+                    prefab in self.scn._prefab_str_map):
+                    print(f"  Cleaning up duplicate prefab string reference at index {i}")
+                    del self.scn._prefab_str_map[prefab]
+        
+        self.scn.prefab_infos.pop(prefab_id)
+        print(f"  Prefab {prefab_id} removed from prefab_infos array")
+        
+        updated_count = 0
+        for go in self.scn.gameobjects:
+            if hasattr(go, 'prefab_id'):
+                if go.prefab_id == prefab_id:
+                    go.prefab_id = -1
+                    updated_count += 1
+                elif go.prefab_id > prefab_id:
+                    go.prefab_id -= 1
+                    updated_count += 1
+        
+        for folder in self.scn.folder_infos:
+            if hasattr(folder, 'prefab_id'):
+                if folder.prefab_id == prefab_id:
+                    folder.prefab_id = -1
+                    updated_count += 1
+                elif folder.prefab_id > prefab_id:
+                    folder.prefab_id -= 1
+                    updated_count += 1
+        
+        print(f"  Updated {updated_count} objects referencing prefabs")
+        
+        if not self.scn.is_pfb and not self.scn.is_usr and hasattr(self.scn.header, 'prefab_count'):
+            self.scn.header.prefab_count = len(self.scn.prefab_infos)
+            print(f"  Updated header prefab count to {self.scn.header.prefab_count}")
+        
+        return True
+
+    def _delete_gameobject_directly(self, gameobject):
         try:
-            # 1. Remove all nested objects first (in reverse order to avoid index issues)
-            for nested_id in sorted(nested_objects, reverse=True):
-                if nested_id != instance_id:  # Don't delete the main instance yet
-                    self._remove_instance_references(nested_id)
+            if gameobject not in self.scn.gameobjects:
+                return False
+                
+            gameobject_id = gameobject.id
             
-            # 2. Now remove the main instance
-            self._remove_instance_references(instance_id)
+            if gameobject_id >= len(self.scn.object_table):
+                return False
             
-            # 3. Update all higher instance IDs to reflect the deleted instances
-            self._update_instance_references_after_deletion(instance_id, nested_objects)
+            if not self.scn.is_pfb and not self.scn.is_usr and hasattr(gameobject, 'prefab_id'):
+                if gameobject.prefab_id >= 0:
+                    _ = self._delete_prefab_for_object(gameobject.prefab_id)
+            
+            gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
+            
+            if not gameobject_refs_to_delete:
+                return False
+                
+            for go in reversed(gameobject_refs_to_delete):
+                if go != gameobject and not self.scn.is_pfb and not self.scn.is_usr and hasattr(go, 'prefab_id'):
+                    if go.prefab_id >= 0:
+                        _ = self._delete_prefab_for_object(go.prefab_id)
+                
+                self._delete_all_components_of_gameobject(go)
+                
+                if go.id < len(self.scn.object_table):
+                    go_instance_id = self.scn.object_table[go.id]
+                    
+                    if go_instance_id > 0:
+                        print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
+                        
+                        instance_fields = self.scn.parsed_elements.get(go_instance_id, {})
+                        nested_objects = self._find_nested_objects(instance_fields, go_instance_id)
+                        nested_objects.add(go_instance_id)
+                        
+                        for instance_id in sorted(nested_objects, reverse=True):
+                            self._remove_instance_references(instance_id)
+                        
+                        id_mapping = self._update_instance_references_after_deletion(go_instance_id, nested_objects)
+                        
+                        if id_mapping:
+                            IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+                
+                if go.id < len(self.scn.object_table):
+                    self._remove_from_object_table(go.id)
+                
+                if go in self.scn.gameobjects:
+                    self.scn.gameobjects.remove(go)
             
             return True
+            
         except Exception as e:
-            print(f"Error deleting instance {instance_id}: {str(e)}")
+            print(f"Error deleting GameObject: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
 
-    def _find_nested_objects(self, fields):
-        """Find all objects nested within an instance"""
-        nested_objects = set()
+    def _delete_object_prefab(self, object_ref):
+        if self.scn.is_pfb or self.scn.is_usr or not hasattr(object_ref, 'prefab_id'):
+            return False
+            
+        prefab_id = object_ref.prefab_id
         
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, ObjectData):
-                ref_id = field_data.value
-                if ref_id > 0:
-                    nested_objects.add(ref_id)
-                    # Check recursively for nested objects in this referenced object
-                    if ref_id in self.scn.parsed_elements:
-                        nested_objects.update(self._find_nested_objects(self.scn.parsed_elements[ref_id]))
-            elif isinstance(field_data, ArrayData):
-                for item in field_data.values:
-                    if isinstance(item, ObjectData):
-                        ref_id = item.value
-                        if ref_id > 0:
-                            nested_objects.add(ref_id)
-                            # Check recursively for nested objects in this referenced object
-                            if ref_id in self.scn.parsed_elements:
-                                nested_objects.update(self._find_nested_objects(self.scn.parsed_elements[ref_id]))
-                                
-        return nested_objects
-
-    def _remove_instance_references(self, instance_id):
-        """Remove an instance from all data structures"""
-        # Remove from instance infos
-        if instance_id < len(self.scn.instance_infos):
-            del self.scn.instance_infos[instance_id]
+        if prefab_id == -1:
+            return False
             
-        # Remove from parsed elements
-        if instance_id in self.scn.parsed_elements:
-            del self.scn.parsed_elements[instance_id]
-            
-        # Remove from instance hierarchy
-        if instance_id in self.scn.instance_hierarchy:
-            # Remove from parent's children
-            parent_id = self.scn.instance_hierarchy[instance_id].get("parent")
-            if parent_id is not None and parent_id in self.scn.instance_hierarchy:
-                if instance_id in self.scn.instance_hierarchy[parent_id]["children"]:
-                    self.scn.instance_hierarchy[parent_id]["children"].remove(instance_id)
-            
-            # Remove the instance itself from hierarchy
-            del self.scn.instance_hierarchy[instance_id]
-            
-        # Remove from instance hashes
-        if instance_id in self.scn._instance_hashes:
-            del self.scn._instance_hashes[instance_id]
-            
-        # Remove from userdata mappings if applicable
-        if instance_id in self.scn._rsz_userdata_dict:
-            del self.scn._rsz_userdata_dict[instance_id]
-        
-        if instance_id in self.scn._rsz_userdata_set:
-            self.scn._rsz_userdata_set.remove(instance_id)
-            
-        # Update object table if needed
-        for i in range(len(self.scn.object_table)):
-            if self.scn.object_table[i] == instance_id:
-                self.scn.object_table[i] = 0  # Set to null reference
-
-    def _update_instance_references_after_deletion(self, deleted_id, deleted_nested_ids=None):
-        """Update all references after deletion to maintain consistency"""
-        if deleted_nested_ids is None:
-            deleted_nested_ids = set()
-        
-        deleted_nested_ids.add(deleted_id)
-        deleted_ids_sorted = sorted(deleted_nested_ids)
-        
-        # 1. Update parsed elements - shift instance IDs and update all references
-        new_parsed_elements = {}
-        for instance_id, fields in self.scn.parsed_elements.items():
-            # Calculate new ID for this instance
-            new_id = instance_id
-            for deleted_id in deleted_ids_sorted:
-                if instance_id > deleted_id:
-                    new_id -= 1
-            
-            # Skip deleted instances
-            if instance_id in deleted_nested_ids:
-                continue
-            
-            # Update all references within this instance's fields
-            updated_fields = {}
-            for field_name, field_data in fields.items():
-                # Update object references
-                if isinstance(field_data, ObjectData):
-                    ref_id = field_data.value
-                    if ref_id > 0:
-                        # If reference points to a deleted object, set to 0
-                        if ref_id in deleted_nested_ids:
-                            field_data.value = 0
-                        else:
-                            # Adjust reference ID based on deleted instances
-                            for deleted_id in deleted_ids_sorted:
-                                if ref_id > deleted_id:
-                                    field_data.value -= 1
-                
-                # Update array object references
-                elif isinstance(field_data, ArrayData):
-                    for item in field_data.values:
-                        if isinstance(item, ObjectData):
-                            ref_id = item.value
-                            if ref_id > 0:
-                                # If reference points to a deleted object, set to 0
-                                if ref_id in deleted_nested_ids:
-                                    item.value = 0
-                                else:
-                                    # Adjust reference ID based on deleted instances
-                                    for deleted_id in deleted_ids_sorted:
-                                        if ref_id > deleted_id:
-                                            item.value -= 1
-                
-                updated_fields[field_name] = field_data
-                
-            # Store with updated ID
-            new_parsed_elements[new_id] = updated_fields
-            
-        self.scn.parsed_elements = new_parsed_elements
-        
-        # 2. Update instance hierarchy
-        new_hierarchy = {}
-        for instance_id, data in self.scn.instance_hierarchy.items():
-            # Skip deleted instances
-            if instance_id in deleted_nested_ids:
-                continue
-                
-            # Calculate new ID for this instance
-            new_id = instance_id
-            for deleted_id in deleted_ids_sorted:
-                if instance_id > deleted_id:
-                    new_id -= 1
-            
-            # Update children
-            new_children = []
-            for child_id in data["children"]:
-                if child_id not in deleted_nested_ids:
-                    # Calculate new child ID
-                    new_child_id = child_id
-                    for deleted_id in deleted_ids_sorted:
-                        if child_id > deleted_id:
-                            new_child_id -= 1
-                    new_children.append(new_child_id)
-            
-            # Update parent
-            parent_id = data["parent"]
-            if parent_id in deleted_nested_ids:
-                parent_id = None
-            elif parent_id is not None:
-                for deleted_id in deleted_ids_sorted:
-                    if parent_id > deleted_id:
-                        parent_id -= 1
-            
-            new_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
-            
-        self.scn.instance_hierarchy = new_hierarchy
-        
-        # 3. Update userdata references
-        new_userdata_dict = {}
-        for instance_id, rui in self.scn._rsz_userdata_dict.items():
-            if instance_id not in deleted_nested_ids:
-                new_id = instance_id
-                for deleted_id in deleted_ids_sorted:
-                    if instance_id > deleted_id:
-                        new_id -= 1
-                new_userdata_dict[new_id] = rui
-                # Update the instance_id in the RSZUserDataInfo object
-                rui.instance_id = new_id
-        
-        self.scn._rsz_userdata_dict = new_userdata_dict
-        
-        # Update userdata set
-        new_userdata_set = set()
-        for instance_id in self.scn._rsz_userdata_set:
-            if instance_id not in deleted_nested_ids:
-                new_id = instance_id
-                for deleted_id in deleted_ids_sorted:
-                    if instance_id > deleted_id:
-                        new_id -= 1
-                new_userdata_set.add(new_id)
-        
-        self.scn._rsz_userdata_set = new_userdata_set
-        
-        # 4. Update instance hashes
-        new_hashes = {}
-        for instance_id, hash_value in self.scn._instance_hashes.items():
-            if instance_id not in deleted_nested_ids:
-                new_id = instance_id
-                for deleted_id in deleted_ids_sorted:
-                    if instance_id > deleted_id:
-                        new_id -= 1
-                new_hashes[new_id] = hash_value
-        
-        self.scn._instance_hashes = new_hashes
-        
-        # 5. Update object table references
-        for i in range(len(self.scn.object_table)):
-            obj_id = self.scn.object_table[i]
-            if obj_id in deleted_nested_ids:
-                self.scn.object_table[i] = 0  # Set to null reference
+        if prefab_id >= 0:
+            prefab_deleted = self._delete_prefab_for_object(prefab_id)
+            if prefab_deleted:
+                print(f"  Deleted prefab {prefab_id} associated with object {object_ref.id}")
+                return True
             else:
-                for deleted_id in deleted_ids_sorted:
-                    if obj_id > deleted_id:
-                        self.scn.object_table[i] -= 1
+                print(f"  Failed to delete prefab {prefab_id} for object {object_ref.id}")
+        else:
+            print(f"  Object {object_ref.id} has unusual prefab_id: {prefab_id}")
+            
+        return False
+

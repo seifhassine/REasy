@@ -1,13 +1,16 @@
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
-                               QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate)
+                               QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
+                               QLineEdit, QInputDialog)
 from PySide6.QtGui import QIcon, QCursor
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QModelIndex
 
-from file_handlers.rsz.rsz_data_types import ArrayData
 from .tree_core import TreeModel
+from .component_selector import ComponentSelectorDialog 
 
 from .value_widgets import *
+
 from utils.enum_manager import EnumManager
+from utils.id_manager import IdManager
 
 
 class AdvancedStyledDelegate(QStyledItemDelegate):
@@ -41,6 +44,48 @@ class AdvancedTreeView(QTreeView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
+
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts like Delete key for GameObject deletion"""
+        if event.key() == Qt.Key_Delete:
+            indexes = self.selectedIndexes()
+            if not indexes:
+                return
+                
+            index = indexes[0] 
+            if not index.isValid():
+                return
+                
+            item = index.internalPointer()
+            if not item:
+                return
+                
+            # Check if this is a GameObject
+            if hasattr(item, 'raw') and isinstance(item.raw, dict):
+                is_gameobject = item.raw.get("type") == "gameobject"
+                
+                if is_gameobject:
+                    # Use reasy_id to get the current instance_id
+                    reasy_id = item.raw.get("reasy_id")
+                    if reasy_id:
+                        instance_id = IdManager.instance().get_instance_id(reasy_id)
+                        if instance_id:
+                            # Find GameObject's object table index
+                            parent = self.parent()
+                            if hasattr(parent, "scn") and hasattr(parent.scn, "object_table"):
+                                go_object_id = -1
+                                for i, obj_id in enumerate(parent.scn.object_table):
+                                    if obj_id == instance_id:
+                                        go_object_id = i
+                                        break
+                                        
+                                if go_object_id >= 0:
+                                    self.delete_gameobject(index)
+                                    return
+            
+        
+        # Call the parent's keyPressEvent for default behavior
+        super().keyPressEvent(event)
 
     def setModelData(self, rootData):
         """
@@ -107,7 +152,34 @@ class AdvancedTreeView(QTreeView):
         is_array_element = False
         parent_array_item = None
         element_index = -1
+        is_gameobject = False
+        is_component = False
+        component_instance_id = -1
+        is_folder = False
+        is_gameobjects_root = False
         
+        # Check if this is the GameObjects root node
+        if item.data and len(item.data) > 0:
+            if item.data[0] == "GameObjects":
+                is_gameobjects_root = True
+        
+        # Check if this is a gameobject or folder
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            is_gameobject = item.raw.get("type") == "gameobject"
+            is_folder = item.raw.get("type") == "folder"
+        
+        # Check if this is a component - use reasy_id instead of direct instance_id
+        if not is_gameobject and item.parent and hasattr(item.parent, 'data') and item.parent.data and item.parent.data[0] == "Components":
+            if hasattr(item, 'raw') and isinstance(item.raw, dict):
+                # First check for reasy_id
+                reasy_id = item.raw.get("reasy_id")
+                if reasy_id:
+                    component_instance_id = IdManager.instance().get_instance_id(reasy_id)
+                    if component_instance_id:
+                        is_component = True
+                else:
+                    raise("Could not fetch reasy_id for component")
+
         # Check if this is an array
         if hasattr(item, 'raw') and isinstance(item.raw, dict):
             is_array = item.raw.get("type") == "array"
@@ -132,8 +204,44 @@ class AdvancedTreeView(QTreeView):
 
         menu = QMenu(self)
 
-        if array_type and is_array:
-            print(f"Showing menu for array: {array_type}")
+        if is_gameobject:
+            add_component_action = menu.addAction("Add Component")
+            create_child_go_action = menu.addAction("Create Child GameObject")
+            delete_go_action = menu.addAction("Delete GameObject")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == add_component_action:
+                self.add_component_to_gameobject(index)
+            elif action == create_child_go_action:
+                self.create_child_gameobject(index)
+            elif action == delete_go_action:
+                self.delete_gameobject(index)
+        
+        elif is_folder:
+            create_go_action = menu.addAction("Create GameObject")
+            delete_folder_action = menu.addAction("Delete Folder")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == create_go_action:
+                self.create_gameobject_in_folder(index)
+            elif action == delete_folder_action:
+                self.delete_folder(index)
+        
+        elif is_gameobjects_root:
+            create_go_action = menu.addAction("Create GameObject")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == create_go_action:
+                self.create_root_gameobject(index)
+        
+        elif is_component:
+            delete_action = menu.addAction("Delete Component")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == delete_action:
+                self.delete_component(index, component_instance_id)
+        
+        elif array_type and is_array:
             add_action = menu.addAction("Add New Element")
             action = menu.exec_(QCursor.pos())
             
@@ -141,14 +249,13 @@ class AdvancedTreeView(QTreeView):
                 self.add_array_element(index, array_type, data_obj, item)
                 
         elif is_array_element and element_index >= 0:
-            print(f"Showing menu for array element {element_index} in {array_type}")
             delete_action = menu.addAction("Delete Element")
             action = menu.exec_(QCursor.pos())
             
             if action == delete_action:
                 self.delete_array_element(parent_array_item, element_index, index)
         else:
-            print(f"No array detected. is_array={is_array}, array_type={array_type}, is_array_element={is_array_element}")
+            print(f"No special actions for this node type")
 
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
@@ -292,6 +399,184 @@ class AdvancedTreeView(QTreeView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
 
+    def delete_component(self, index, component_instance_id):
+        """Delete a component from its GameObject"""
+        if component_instance_id <= 0:
+            QMessageBox.warning(self, "Error", "Invalid component")
+            return
+        
+        # Get the component node to access its reasy_id
+        item = index.internalPointer()
+        if item and hasattr(item, 'raw') and isinstance(item.raw, dict):
+            # If we have a reasy_id, get the latest instance_id
+            reasy_id = item.raw.get("reasy_id")
+            if reasy_id:
+                updated_instance_id = IdManager.instance().get_instance_id(reasy_id)
+                if updated_instance_id:
+                    component_instance_id = updated_instance_id
+        
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText("Delete this component?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        if msg_box.exec_() != QMessageBox.Yes:
+            return
+        
+        # Get the parent widget/handler that can perform the deletion
+        parent = self.parent()
+        if not hasattr(parent, "delete_component_from_gameobject"):
+            QMessageBox.warning(self, "Error", "Component deletion not supported")
+            return
+        
+        try:
+            success = parent.delete_component_from_gameobject(component_instance_id)
+            if success:
+                QMessageBox.information(self, "Success", "Component deleted successfully")
+                parent.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to delete component")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error deleting component: {str(e)}")
+
+    def create_gameobject_in_folder(self, folder_index):
+        """Create a new GameObject in a folder"""
+        if not folder_index.isValid():
+            return
+            
+        folder_item = folder_index.internalPointer()
+        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid folder selection")
+            return
+            
+        # Get folder ID using reasy_id for stable reference
+        reasy_id = folder_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder ID")
+            return
+            
+        folder_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not folder_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
+            return
+        
+        # Get the parent widget/handler for GameObject creation
+        parent = self.parent()
+        if not hasattr(parent, "create_gameobject"):
+            QMessageBox.warning(self, "Error", "GameObject creation not supported")
+            return
+            
+        # Get folder's object table index
+        folder_object_id = -1
+        for i, instance_id in enumerate(parent.scn.object_table):
+            if instance_id == folder_instance_id:
+                folder_object_id = i
+                break
+                
+        if folder_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            return
+            
+        # Create dialog to get GameObject name
+        name, ok = QInputDialog.getText(self, "New GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        if not ok or not name:
+            return
+            
+        try:
+            # Create GameObject with folder as parent
+            success = parent.create_gameobject(name, folder_object_id)
+            
+            if success:
+                QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
+                # Refresh the tree to show the new GameObject
+                parent.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to create GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error creating GameObject: {str(e)}")
+    
+    def create_child_gameobject(self, parent_go_index):
+        """Create a new GameObject as a child of another GameObject"""
+        if not parent_go_index.isValid():
+            return
+            
+        parent_item = parent_go_index.internalPointer()
+        if not parent_item or not hasattr(parent_item, 'raw') or not isinstance(parent_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        # Get parent GameObject ID using reasy_id for stable reference
+        reasy_id = parent_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        parent_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not parent_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+        
+        # Get the parent widget/handler for GameObject creation
+        parent_widget = self.parent()
+        if not hasattr(parent_widget, "create_gameobject"):
+            QMessageBox.warning(self, "Error", "GameObject creation not supported")
+            return
+            
+        # Get parent GameObject's object table index
+        parent_object_id = -1
+        for i, instance_id in enumerate(parent_widget.scn.object_table):
+            if instance_id == parent_instance_id:
+                parent_object_id = i
+                break
+                
+        if parent_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+        
+        # Create dialog to get GameObject name
+        name, ok = QInputDialog.getText(self, "New Child GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        if not ok or not name:
+            return
+            
+        try:
+            # Create GameObject with parent GameObject as parent
+            success = parent_widget.create_gameobject(name, parent_object_id)
+            
+            if success:
+                QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
+                parent_widget.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to create child GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error creating child GameObject: {str(e)}")
+
+    def create_root_gameobject(self, index):
+        """Create a new GameObject at the root level"""
+        # Get the parent widget/handler for GameObject creation
+        parent = self.parent()
+        if not hasattr(parent, "create_gameobject"):
+            QMessageBox.warning(self, "Error", "GameObject creation not supported")
+            return
+            
+        # Create dialog to get GameObject name
+        from PySide6.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self, "New Root GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        if not ok or not name:
+            return
+            
+        try:
+            success = parent.create_gameobject(name, -1)
+            
+            if success:
+                QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
+                parent.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to create GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error creating GameObject: {str(e)}")
+
     def get_value_at_index(self, index):
         """Get value from either embedded widget or model data"""
         if not index.isValid():
@@ -320,6 +605,249 @@ class AdvancedTreeView(QTreeView):
             
         return str(index.data(Qt.UserRole) or "")
 
+    def add_component_to_gameobject(self, index):
+        """Add a new component to a GameObject with autocomplete"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw'):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+        
+        parent = self.parent()
+        if not hasattr(parent, "create_component_for_gameobject") or not hasattr(parent, "type_registry"):
+            QMessageBox.warning(self, "Error", "Component creation not supported")
+            return
+        
+        dialog = ComponentSelectorDialog(self, parent.type_registry)
+        component_type = dialog.get_selected_component() if dialog.exec_() else None
+        
+        if not component_type:
+            return
+            
+        try:
+            success = parent.create_component_for_gameobject(instance_id, component_type)
+            if success:
+                QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
+                parent.populate_tree() 
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to add component: {str(e)}")
+
+    def delete_gameobject(self, index):
+        """Delete a GameObject and all its children and components"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return                  
+        
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+        
+        parent = self.parent()
+        if not hasattr(parent, "delete_gameobject"):
+            QMessageBox.warning(self, "Error", "GameObject deletion not supported")
+            return
+        
+        go_object_id = -1
+        for i, obj_id in enumerate(parent.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
+        
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+        
+        has_children = False
+        for go in parent.scn.gameobjects:
+            if go.parent_id == go_object_id:
+                has_children = True
+                break
+        
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Confirm GameObject Deletion")
+        
+        go_name = ""
+        if hasattr(item, 'data') and item.data:
+            go_name = item.data[0].split(' (ID:')[0]
+        
+        msg.setText(f"Delete GameObject \"{go_name}\"?")
+        
+        details = "This will delete the GameObject"
+        
+        go = next((g for g in parent.scn.gameobjects if g.id == go_object_id), None)
+        if go and go.component_count > 0:
+            details += f" and its {go.component_count} component(s)"
+            
+        if has_children:
+            details += " and ALL child GameObjects"
+            
+        details += ".\nThis action cannot be undone."
+        msg.setInformativeText(details)
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.setDefaultButton(QMessageBox.No)
+        
+        if msg.exec_() != QMessageBox.Yes:
+            return
+            
+        try:
+            success = parent.delete_gameobject(go_object_id)
+            
+            if success:
+                model = self.model()
+                if model:
+                    parent_index = index.parent()
+                    
+                    if not parent_index.isValid() or not self._is_valid_parent_for_go(parent_index):
+                        root_index = model.index(0, 0, QModelIndex())  # Root node
+                        row_count = model.rowCount(root_index)
+                        for row in range(row_count):
+                            child_idx = model.index(row, 0, root_index)
+                            child = child_idx.internalPointer()
+                            if child and hasattr(child, 'data') and child.data and child.data[0] == "GameObjects":
+                                parent_index = child_idx
+                                break
+                    
+                    if parent_index.isValid():
+                        row = -1
+                        parent_item = parent_index.internalPointer()
+                        if parent_item and hasattr(parent_item, 'children'):
+                            for i, child in enumerate(parent_item.children):
+                                if child is item:
+                                    row = i
+                                    break
+                        
+                        if row >= 0:
+                            model.removeRow(row, parent_index)
+                            QMessageBox.information(self, "Success", "GameObject deleted successfully")
+                            return
+                
+                # Fallback to full refresh if direct model update failed
+                QMessageBox.information(self, "Success", "GameObject deleted successfully")
+                parent.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to delete GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error deleting GameObject: {str(e)}")
+
+    def _is_valid_parent_for_go(self, index):
+        """Check if index is a valid parent for a GameObject node"""
+        if not index.isValid():
+            return False
+        
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'data') or not item.data:
+            return False
+        
+        # Valid parents are "GameObjects", "Children" nodes, or folders
+        if item.data[0] == "GameObjects" or item.data[0] == "Children":
+            return True
+        
+        if hasattr(item, 'raw') and isinstance(item.raw, dict) and item.raw.get("type") == "folder":
+            return True
+        
+        return False
+
+    def delete_folder(self, index):
+        """Delete a folder and all GameObjects and sub-folders within it"""
+        if not index.isValid():
+            return
+            
+        folder_item = index.internalPointer()
+        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid folder selection")
+            return
+            
+        reasy_id = folder_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder ID")
+            return
+            
+        folder_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not folder_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
+            return
+        
+        parent = self.parent()
+        if not hasattr(parent, "delete_folder"):
+            QMessageBox.warning(self, "Error", "Folder deletion not supported")
+            return
+            
+        folder_object_id = -1
+        for i, instance_id in enumerate(parent.scn.object_table):
+            if instance_id == folder_instance_id:
+                folder_object_id = i
+                break
+                
+        if folder_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            return
+            
+        gameobjects_in_folder = []
+        for go in parent.scn.gameobjects:
+            if go.parent_id == folder_object_id:
+                gameobjects_in_folder.append(go.id)
+        
+        child_folders = []
+        for folder in parent.scn.folder_infos:
+            if folder.id != folder_object_id and folder.parent_id == folder_object_id:
+                child_folders.append(folder.id)
+                
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Confirm Folder Deletion")
+        
+        folder_name = ""
+        if hasattr(folder_item, 'data') and folder_item.data:
+            folder_name = folder_item.data[0].split(' (ID:')[0]
+            
+        msg.setText(f"Delete folder \"{folder_name}\"?")
+        
+        details = f"This will delete the folder and all {len(gameobjects_in_folder)} GameObject(s)"
+        if child_folders:
+            details += f" and {len(child_folders)} sub-folder(s)"
+        details += " within it.\nThis action cannot be undone."
+        msg.setInformativeText(details)
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.setDefaultButton(QMessageBox.No)
+        
+        if msg.exec_() != QMessageBox.Yes:
+            return
+            
+        try:
+            success = parent.delete_folder(folder_object_id)
+            
+            if success:
+                QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
+                parent.populate_tree()  # Refresh the tree view
+            else:
+                QMessageBox.warning(self, "Error", "Failed to delete folder")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error deleting folder: {str(e)}")
+
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
@@ -343,7 +871,8 @@ class TreeWidgetFactory:
         "U8Data": U8Input, 
         "RangeData": RangeInput,
         "RangeIData": RangeIInput,
-        "EnumInput": EnumInput, 
+        "EnumInput": EnumInput,
+        "ColorData": ColorInput,
     }
 
     @staticmethod
