@@ -32,7 +32,7 @@ class RszHandler(BaseFileHandler):
     def __init__(self):
         super().__init__()
         self.scn_file = None
-        self.show_advanced = True
+        self.show_advanced = False
         self._viewer = None
 
     def can_handle(data: bytes) -> bool:
@@ -857,7 +857,7 @@ class RszViewer(QWidget):
             import uuid
             guid_bytes = uuid.uuid4().bytes_le
             new_go.guid = guid_bytes
-            new_go.prefab_id = 0
+            new_go.prefab_id = -1 
         return new_go
 
     def _update_gameobject_hierarchy(self, gameobject):
