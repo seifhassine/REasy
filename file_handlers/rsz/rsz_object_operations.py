@@ -12,6 +12,7 @@ import uuid
 from PySide6.QtWidgets import QMessageBox
 from utils.id_manager import IdManager
 from .rsz_data_types import *
+from file_handlers.rsz.rsz_file import ScnRSZUserDataInfo,  ScnUserDataInfo, ScnPrefabInfo
 
 
 class RszObjectOperations:
@@ -905,3 +906,575 @@ class RszObjectOperations:
         
         self.viewer.mark_modified()
         return True
+        
+    def duplicate_gameobject(self, gameobject_id, new_name=None, parent_id=None, guid_mapping=None, context_id_offset=None):
+        """Duplicate a GameObject with its components and children
+        
+        Args:
+            gameobject_id: The GameObject ID to duplicate
+            new_name: Optional name for the duplicate (defaults to "Copy of [original]")
+            parent_id: Optional parent ID (-1 for root, None to use same parent)
+            guid_mapping: Optional shared GUID mapping for recursive duplication
+            context_id_offset: Optional shared context ID offset for recursive duplication
+            
+        Returns:
+            bool: True if the duplication was successful
+        """
+        if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
+            print(f"Invalid GameObject ID: {gameobject_id}")
+            return False
+            
+        # If this is the root duplication (not a recursive child), create the GUID mapping and context ID offset
+        is_root_duplication = guid_mapping is None
+        
+        if is_root_duplication:
+            # Choose a fixed random number for this duplication operation
+            # This will be added to all chainsaw.ContextID._Group fields
+            import random
+            context_id_offset = random.randint(20000, 20000000)
+            print(f"Using context ID offset: {context_id_offset}")
+            
+            # Initialize an empty GUID mapping dictionary
+            guid_mapping = {}
+            
+        # Find the GameObject to duplicate
+        source_go = None
+        for go in self.scn.gameobjects:
+            if go.id == gameobject_id:
+                source_go = go
+                break
+                
+        if source_go is None:
+            print(f"GameObject with ID {gameobject_id} not found")
+            return False
+            
+        # If we have a source guid, create a new one and set up the mapping
+        if not self.scn.is_pfb and not self.scn.is_usr and hasattr(source_go, 'guid'):
+            # Only add to the mapping if this GUID isn't already in it
+            source_guid = source_go.guid
+            if source_guid not in guid_mapping:
+                new_guid = uuid.uuid4().bytes_le
+                guid_mapping[source_guid] = new_guid
+                print(f"GUID Mapping: {source_guid.hex()} -> {new_guid.hex()}")
+            
+        # Get the source GameObject instance ID
+        source_instance_id = self.scn.object_table[gameobject_id]
+        if source_instance_id <= 0:
+            print(f"Invalid instance ID for GameObject {gameobject_id}")
+            return False
+            
+        # Get name of the source GameObject
+        source_name = ""
+        if source_instance_id in self.scn.parsed_elements:
+            fields = self.scn.parsed_elements[source_instance_id]
+            if "v0" in fields and hasattr(fields["v0"], "value"):
+                source_name = fields["v0"].value
+                    
+        if parent_id is None:
+            parent_id = source_go.parent_id
+            
+        if new_name is None or new_name.strip() == "":
+            if source_name and source_name.strip() != "":
+                new_name = f"Copy of {source_name}"
+            else:
+                new_name = "GameObject_Copy"
+                
+        print(f"Duplicating GameObject '{source_name}' (ID: {gameobject_id}) -> '{new_name}'")
+        
+        # Find nested instances that need to be duplicated
+        component_instances = []
+        for i in range(1, source_go.component_count + 1):
+            comp_object_id = source_go.id + i
+            if comp_object_id < len(self.scn.object_table):
+                comp_instance_id = self.scn.object_table[comp_object_id]
+                if comp_instance_id > 0:
+                    component_instances.append(comp_instance_id)
+        
+        # Build a map of all nested objects for each instance that needs to be duplicated
+        nested_objects_map = {}
+        userdata_to_duplicate = set()
+        
+        # Add GameObject as the first instance to duplicate
+        nested_objects_map[source_instance_id] = self._find_nested_objects(
+            self.scn.parsed_elements.get(source_instance_id, {}), source_instance_id
+        )
+        
+        # Build a list of all UserData instances that need to be duplicated
+        self._find_userdata_references(self.scn.parsed_elements.get(source_instance_id, {}), userdata_to_duplicate)
+        
+        # Add components and their nested objects
+        for comp_instance_id in component_instances:
+            if comp_instance_id in self.scn.parsed_elements:
+                nested_objects_map[comp_instance_id] = self._find_nested_objects(
+                    self.scn.parsed_elements[comp_instance_id], comp_instance_id
+                )
+                self._find_userdata_references(self.scn.parsed_elements[comp_instance_id], userdata_to_duplicate)
+        
+        # Build a flat list of all unique instance IDs that need to be duplicated
+        all_instances_to_duplicate = set()
+        for instance_id, nested_set in nested_objects_map.items():
+            all_instances_to_duplicate.add(instance_id)
+            all_instances_to_duplicate.update(nested_set)
+            
+            # Find UserData in nested instances
+            for nested_id in nested_set:
+                if nested_id in self.scn.parsed_elements:
+                    self._find_userdata_references(self.scn.parsed_elements[nested_id], userdata_to_duplicate)
+        
+        # Track UserData instances that are already present in the main instance list
+        # to avoid duplicating them twice
+        already_duplicated_userdata = set(all_instances_to_duplicate.intersection(userdata_to_duplicate))
+        userdata_to_duplicate = userdata_to_duplicate - already_duplicated_userdata
+        
+        print(f"Total instances to duplicate: {len(all_instances_to_duplicate)}")
+        print(f"UserData instances to duplicate separately: {len(userdata_to_duplicate)}")
+        print(f"UserData instances included in main instance list: {len(already_duplicated_userdata)}")
+        
+        # Create instance ID mapping (old ID -> new ID)
+        instance_mapping = {}
+        userdata_mapping = {}
+        
+        # Step 1: Create all the new instances in the correct order, including UserData
+        insertion_index = len(self.scn.instance_infos)
+        for old_instance_id in sorted(all_instances_to_duplicate):
+            if old_instance_id >= len(self.scn.instance_infos):
+                print(f"Warning: Instance ID {old_instance_id} is out of bounds")
+                continue
+                
+            source_instance = self.scn.instance_infos[old_instance_id]
+            if source_instance.type_id <= 0:
+                print(f"Warning: Invalid type ID for instance {old_instance_id}")
+                continue
+                
+            new_instance = self._create_duplicate_instance(source_instance)
+            
+            if not new_instance:
+                print(f"Warning: Failed to create instance of type 0x{source_instance.type_id:08X}")
+                continue
+                
+            # Insert the new instance
+            self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
+            new_instance_id = insertion_index
+            instance_mapping[old_instance_id] = new_instance_id
+            IdManager.instance().register_instance(new_instance_id)
+            
+            # If this is a UserData instance, handle it properly now
+            if old_instance_id in self.scn._rsz_userdata_set:
+                # Create a proper RSZ UserData entry
+                self._setup_userdata_for_duplicated_instance(old_instance_id, new_instance_id)
+                userdata_mapping[old_instance_id] = new_instance_id
+                print(f"  Created UserData mapping during main duplication {old_instance_id} -> {new_instance_id}")
+            
+            # We need to increment insertion_index after updating references
+            insertion_index = len(self.scn.instance_infos)
+
+        # Step 1.5: Create duplicate UserData instances for those not already included
+        # in the main instance list (typically referenced via index)
+        for userdata_id in userdata_to_duplicate:
+            if userdata_id not in userdata_mapping:
+                new_userdata_id = self._duplicate_userdata_instance(userdata_id)
+                if new_userdata_id > 0:
+                    userdata_mapping[userdata_id] = new_userdata_id
+                    print(f"  Created UserData mapping in separate step {userdata_id} -> {new_userdata_id}")
+        
+        # Step 2: Duplicate all fields with proper reference remapping
+        for old_instance_id, new_instance_id in instance_mapping.items():
+            # Need to handle fields for all instances, even if they're UserData
+            if old_instance_id in self.scn.parsed_elements:
+                source_fields = self.scn.parsed_elements[old_instance_id]
+                
+                # Special handling for GameObject's name field
+                if old_instance_id == source_instance_id:
+                    new_fields = self._duplicate_fields_with_remapping(
+                        source_fields, instance_mapping, userdata_mapping, guid_mapping
+                    )
+                    if "v0" in new_fields and hasattr(new_fields["v0"], "set_value"):
+                        new_fields["v0"].set_value(new_name)
+                else:
+                    new_fields = self._duplicate_fields_with_remapping(
+                        source_fields, instance_mapping, userdata_mapping, guid_mapping
+                    )
+                    
+                    # Update parent references for components to point to the new GameObject
+                    if old_instance_id in component_instances and "parent" in new_fields:
+                        parent_obj = new_fields["parent"]
+                        if isinstance(parent_obj, ObjectData):
+                            # If this is a component, update its parent field to point to the new GameObject
+                            new_parent_id = instance_mapping.get(source_instance_id)
+                            if new_parent_id:
+                                parent_obj.value = new_parent_id
+                
+                # Check if this instance is a chainsaw.ContextID and modify its _Group field
+                self._update_chainsaw_context_id_group(old_instance_id, new_fields, context_id_offset)
+                
+                self.scn.parsed_elements[new_instance_id] = new_fields
+        
+        # Step 3: Create the new GameObject entry in the object table
+        new_object_id = len(self.scn.object_table)
+        new_gameobject_instance_id = instance_mapping[source_instance_id]
+        self.scn.object_table.append(new_gameobject_instance_id)
+        
+        # Step 4: Create the GameObject entry
+        new_gameobject = self._create_gameobject_entry(new_object_id, parent_id, new_gameobject_instance_id)
+        
+        # Set GUID - explicitly use the new mapped GUID if we have one
+        new_gameobject.guid = guid_mapping[source_go.guid]
+        
+        # Step 5: Create object table entries for all components
+        for i, comp_instance_id in enumerate(component_instances):
+            if comp_instance_id in instance_mapping:
+                new_comp_instance_id = instance_mapping[comp_instance_id]
+                new_component_object_id = new_object_id + i + 1
+                self._insert_into_object_table(new_component_object_id, new_comp_instance_id)
+        
+        # Set the component count
+        new_gameobject.component_count = len(component_instances)
+        
+        # Step 6: Update hierarchy and add to the scene
+        self._update_gameobject_hierarchy(new_gameobject)
+        self.scn.gameobjects.append(new_gameobject)
+        
+        # Step 7: Handle prefab reference if applicable
+        if not self.scn.is_pfb and not self.scn.is_usr and hasattr(source_go, 'prefab_id'):
+            if source_go.prefab_id >= 0 and source_go.prefab_id < len(self.scn.prefab_infos):
+                source_prefab = self.scn.prefab_infos[source_go.prefab_id]
+                prefab_path = ""
+                
+                if hasattr(self.scn, '_prefab_str_map') and source_prefab in self.scn._prefab_str_map:
+                    prefab_path = self.scn._prefab_str_map[source_prefab]
+                    
+                if prefab_path:
+                    new_prefab = ScnPrefabInfo()
+                    new_prefab.string_offset = 0
+                    
+                    prefab_id = len(self.scn.prefab_infos)
+                    self.scn.prefab_infos.append(new_prefab)
+                    new_gameobject.prefab_id = prefab_id
+                    
+                    if hasattr(self.scn, '_prefab_str_map'):
+                        self.scn._prefab_str_map[new_prefab] = prefab_path
+                else:
+                    # No prefab path found, don't create one
+                    new_gameobject.prefab_id = -1
+            else:
+                new_gameobject.prefab_id = -1
+        
+        # Step 8: Now recursively duplicate all child GameObjects
+        if is_root_duplication:  # Only do this for  root duplication to avoid infinite recursion
+            new_gameobject_id = new_gameobject.id
+            self._duplicate_children_recursive(gameobject_id, new_gameobject_id, guid_mapping, context_id_offset)
+            
+        self.viewer.mark_modified()
+        return True
+        
+    def _duplicate_children_recursive(self, source_parent_id, new_parent_id, guid_mapping, context_id_offset):
+        """Recursively duplicate child GameObjects, maintaining the hierarchy
+        
+        Args:
+            source_parent_id: The original parent GameObject ID
+            new_parent_id: The new parent GameObject ID (the duplicate)
+            guid_mapping: Dictionary mapping original GUIDs to new GUIDs
+            context_id_offset: Fixed random number to add to chainsaw.ContextID._Group fields
+        """
+        child_gameobjects = []
+        for go in self.scn.gameobjects:
+            if go.parent_id == source_parent_id:
+                child_gameobjects.append(go)
+                
+        if not child_gameobjects:
+            return
+            
+        print(f"Duplicating {len(child_gameobjects)} child GameObjects for parent {source_parent_id} -> {new_parent_id}")
+        
+        # Duplicate each child, passing along the same GUID mapping and context ID offset
+        for child_go in child_gameobjects:
+            child_source_instance_id = self.scn.object_table[child_go.id]
+            if child_source_instance_id <= 0:
+                continue
+                
+            child_name = None
+            if child_source_instance_id in self.scn.parsed_elements:
+                fields = self.scn.parsed_elements[child_source_instance_id]
+                if "v0" in fields and hasattr(fields["v0"], "value"):
+                    child_name = fields["v0"].value
+            
+            # Set the parent ID to the new parent GameObject
+            print(f"  Duplicating child GameObject '{child_name}' (ID: {child_go.id}) with parent {new_parent_id}")
+            
+            # Use the main duplication function, but pass the shared GUID mapping and context ID offset
+            self.duplicate_gameobject(
+                child_go.id,                # Source GameObject ID
+                child_name,                 # Keep the same name (or None to generate "Copy of X")
+                new_parent_id,              # New parent ID
+                guid_mapping,               # Shared GUID mapping
+                context_id_offset           # Shared context ID offset
+            )
+            # Note: the above call will recursively duplicate this child's children as well
+
+    def _find_userdata_references(self, fields, userdata_refs):
+        """Find all UserDataData references in fields
+        
+        Args:
+            fields: Dictionary of fields to search
+            userdata_refs: Set to collect UserDataData references
+        """
+        for field_name, field_data in fields.items():
+            if isinstance(field_data, UserDataData) and hasattr(field_data, 'index') and field_data.index > 0:
+                userdata_refs.add(field_data.index)
+            elif isinstance(field_data, ArrayData):
+                for element in field_data.values:
+                    if isinstance(element, UserDataData) and hasattr(element, 'index') and element.index > 0:
+                        userdata_refs.add(element.index)
+    
+    def _duplicate_userdata_instance(self, userdata_id):
+        """Create a duplicate of a UserData instance with all related data"""
+        if userdata_id <= 0 or userdata_id not in self.scn._rsz_userdata_set:
+            return -1
+            
+        source_rui = None
+        for rui in self.scn.rsz_userdata_infos:
+            if rui.instance_id == userdata_id:
+                source_rui = rui
+                break
+                
+        if not source_rui:
+            return -1
+            
+        if userdata_id >= len(self.scn.instance_infos):
+            print(f"Warning: UserData instance ID {userdata_id} is out of bounds")
+            return -1
+            
+        source_instance = self.scn.instance_infos[userdata_id]
+        if source_instance.type_id <= 0:
+            print(f"Warning: Invalid type ID for UserData instance {userdata_id}")
+            return -1
+            
+        new_instance = self.viewer._initialize_new_instance(
+            source_instance.type_id, 
+            self.type_registry.get_type_info(source_instance.type_id)
+        )
+        
+        if not new_instance:
+            print(f"Warning: Failed to create instance for UserData type 0x{source_instance.type_id:08X}")
+            return -1
+        
+        insertion_index = len(self.scn.instance_infos)
+        self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
+        new_instance_id = insertion_index
+        IdManager.instance().register_instance(new_instance_id)
+        
+        self._setup_userdata_for_duplicated_instance(userdata_id, new_instance_id)
+        
+        if userdata_id in self.scn.parsed_elements:
+            import copy
+            source_fields = self.scn.parsed_elements[userdata_id]
+            new_fields = copy.deepcopy(source_fields)
+            self.scn.parsed_elements[new_instance_id] = new_fields
+            
+        print(f"Duplicated UserData instance {userdata_id} -> {new_instance_id}")
+        return new_instance_id
+
+    def _setup_userdata_for_duplicated_instance(self, old_instance_id, new_instance_id):
+        """Setup RSZ UserData for a duplicated instance"""
+        source_rui = None
+        for rui in self.scn.rsz_userdata_infos:
+            if rui.instance_id == old_instance_id:
+                source_rui = rui
+                break
+                
+        if not source_rui:
+            print(f"Warning: Could not find RSZ UserData for instance {old_instance_id}")
+            return False
+            
+        new_rui = ScnRSZUserDataInfo()
+        
+        self.scn._rsz_userdata_set.add(new_instance_id)
+        
+        new_rui.instance_id = new_instance_id
+        new_rui.hash = source_rui.hash
+        new_rui.string_offset = 0
+        
+        self.scn._rsz_userdata_dict[new_instance_id] = new_rui
+        self.scn.rsz_userdata_infos.append(new_rui)
+        
+        if hasattr(self.scn, '_rsz_userdata_str_map') and source_rui in self.scn._rsz_userdata_str_map:
+            str_value = self.scn._rsz_userdata_str_map[source_rui]
+            self.scn._rsz_userdata_str_map[new_rui] = str_value
+
+        matching_userdata_infos = [ui for ui in self.scn.userdata_infos if ui.hash == source_rui.hash]
+        
+        if not matching_userdata_infos and hasattr(self.scn, 'userdata_infos'):
+            from file_handlers.rsz.rsz_file import ScnUserDataInfo
+            new_ui = ScnUserDataInfo()
+            new_ui.hash = source_rui.hash
+            new_ui.string_offset = 0
+            self.scn.userdata_infos.append(new_ui)
+            
+            if hasattr(self.scn, '_userdata_str_map'):
+                for ui in self.scn.userdata_infos:
+                    if ui.hash == source_rui.hash and ui in self.scn._userdata_str_map:
+                        str_value = self.scn._userdata_str_map[ui]
+                        self.scn._userdata_str_map[new_ui] = str_value
+                        break
+        
+        self._ensure_userdata_strings_preserved(source_rui)
+        return True
+    
+    def _ensure_userdata_strings_preserved(self, source_rui):
+        """Helper to ensure UserData strings are preserved when duplicating"""
+        if not hasattr(self.scn, '_userdata_str_map'):
+            return
+        
+        processed_strings = set()
+            
+        for ui in self.scn.userdata_infos:
+            if ui.hash == source_rui.hash and ui in self.scn._userdata_str_map:
+                str_value = self.scn._userdata_str_map[ui]
+                
+                key = (ui.hash, str_value)
+                
+                if key not in processed_strings:
+                    processed_strings.add(key)
+                    
+                    new_ui = ScnUserDataInfo()
+                    new_ui.hash = ui.hash
+                    new_ui.string_offset = 0
+                    self.scn.userdata_infos.append(new_ui)
+                    self.scn._userdata_str_map[new_ui] = str_value
+
+    def _duplicate_fields_with_remapping(self, source_fields, instance_mapping, userdata_mapping=None, guid_mapping=None):
+        """Create a deep copy of fields with remapped object references"""
+        import copy
+        if userdata_mapping is None:
+            userdata_mapping = {}
+        if guid_mapping is None:
+            guid_mapping = {}
+            
+        new_fields = {}
+        
+        for field_name, field_data in source_fields.items():
+            if isinstance(field_data, ObjectData):
+                ref_id = field_data.value
+                
+                if ref_id in userdata_mapping:
+                    new_ref_id = userdata_mapping.get(ref_id)
+                    print(f"  Remapped ObjectData from {ref_id} -> {new_ref_id} (UserData)")
+                    new_obj = ObjectData(new_ref_id, field_data.orig_type)
+                else:
+                    new_ref_id = instance_mapping.get(ref_id, ref_id)
+                    if new_ref_id != ref_id:
+                        print(f"  Remapped ObjectData from {ref_id} -> {new_ref_id} (Normal)")
+                    new_obj = ObjectData(new_ref_id, field_data.orig_type)
+                    
+                new_fields[field_name] = new_obj
+            elif isinstance(field_data, GuidData) and guid_mapping:
+                new_guid = copy.deepcopy(field_data)
+                if hasattr(field_data, 'value') and isinstance(field_data.value, bytes) and field_data.value in guid_mapping:
+                    new_guid.value = guid_mapping[field_data.value]
+                    print(f"  Remapped GUID in field {field_name}: {field_data.value.hex()} -> {new_guid.value.hex()}")
+                new_fields[field_name] = new_guid
+            elif isinstance(field_data, GameObjectRefData) and guid_mapping:
+                # Handle GameObjectRefs - which internally use GUIDs
+                new_ref = copy.deepcopy(field_data)
+                if hasattr(field_data, 'guid') and isinstance(field_data.guid, bytes) and field_data.guid in guid_mapping:
+                    new_ref.guid = guid_mapping[field_data.guid]
+                    print(f"  Remapped GameObjectRef in field {field_name}: {field_data.guid.hex()} -> {new_ref.guid.hex()}")
+                new_fields[field_name] = new_ref
+            elif isinstance(field_data, ArrayData):
+                new_array = ArrayData([], field_data.element_class, field_data.orig_type)
+                
+                for element in field_data.values:
+                    if isinstance(element, ObjectData):
+                        ref_id = element.value
+                        
+                        if ref_id in userdata_mapping:
+                            new_ref_id = userdata_mapping.get(ref_id)
+                            print(f"  Remapped array ObjectData {ref_id} -> {new_ref_id} (UserData)")
+                            new_element = ObjectData(new_ref_id, element.orig_type)
+                        else:
+                            new_ref_id = instance_mapping.get(ref_id, ref_id)
+                            if new_ref_id != ref_id:
+                                print(f"  Remapped array ObjectData {ref_id} -> {new_ref_id} (Normal)")
+                            new_element = ObjectData(new_ref_id, element.orig_type)
+                            
+                        new_array.values.append(new_element)
+                    elif isinstance(element, UserDataData) and hasattr(element, 'index') and element.index > 0:
+                        # UserData references in arrays need special handling
+                        source_ud_id = element.index
+                        
+                        if source_ud_id in userdata_mapping:
+                            new_ud_id = userdata_mapping.get(source_ud_id)
+                            print(f"  Remapped array UserDataData {source_ud_id} -> {new_ud_id}")
+                            
+                            new_element = copy.deepcopy(element)
+                            new_element.index = new_ud_id  # Update the reference to the new UserData
+                            new_array.values.append(new_element)
+                        else:
+                            print(f"  Warning: UserDataData reference {source_ud_id} has no mapping, keeping original")
+                            new_array.values.append(copy.deepcopy(element))
+                    elif isinstance(element, GuidData) and guid_mapping:
+                        new_element = copy.deepcopy(element)
+                        if hasattr(element, 'value') and isinstance(element.value, bytes) and element.value in guid_mapping:
+                            new_element.value = guid_mapping[element.value]
+                            print(f"  Remapped array GUID: {element.value.hex()} -> {new_element.value.hex()}")
+                        new_array.values.append(new_element)
+                    elif isinstance(element, GameObjectRefData) and guid_mapping:
+                        new_element = copy.deepcopy(element)
+                        if hasattr(element, 'guid') and isinstance(element.guid, bytes) and element.guid in guid_mapping:
+                            new_element.guid = guid_mapping[element.guid]
+                            print(f"  Remapped array GameObjectRef: {element.guid.hex()} -> {new_element.guid.hex()}")
+                        new_array.values.append(new_element)
+                    else:
+                        new_array.values.append(copy.deepcopy(element))
+                
+                new_fields[field_name] = new_array
+            elif isinstance(field_data, UserDataData) and hasattr(field_data, 'index') and field_data.index > 0:
+                source_ud_id = field_data.index
+                
+                if source_ud_id in userdata_mapping:
+                    new_ud_id = userdata_mapping.get(source_ud_id)
+                    print(f"  Remapped UserDataData {source_ud_id} -> {new_ud_id}")
+                    
+                    new_userdata = copy.deepcopy(field_data)
+                    new_userdata.index = new_ud_id 
+                    new_fields[field_name] = new_userdata
+                else:
+                    print(f"  Warning: UserDataData reference {source_ud_id} has no mapping, keeping original")
+                    new_fields[field_name] = copy.deepcopy(field_data)
+            else:
+                new_fields[field_name] = copy.deepcopy(field_data)
+                
+        return new_fields
+
+    def _update_chainsaw_context_id_group(self, instance_id, fields, context_id_offset):
+        """Update the _Group field for chainsaw.ContextID instances"""
+        if instance_id >= len(self.scn.instance_infos) or instance_id <= 0:
+            return
+        
+        type_id = self.scn.instance_infos[instance_id].type_id
+        type_info = self.type_registry.get_type_info(type_id)
+        
+        if not type_info or "name" not in type_info:
+            return
+        
+        if type_info["name"] == "chainsaw.ContextID":
+            print(f"Found chainsaw.ContextID instance, updating _Group field")
+            
+            if "_Group" in fields and isinstance(fields["_Group"], S32Data):
+                original_value = fields["_Group"].value
+                new_value = original_value + context_id_offset
+                fields["_Group"].value = new_value
+                print(f"  Updated _Group from {original_value} to {new_value}")
+
+    def _create_duplicate_instance(self, source_instance):
+        """Create a new instance that's an exact duplicate of the source instance"""
+        from file_handlers.rsz.rsz_file import ScnInstanceInfo
+        
+        if not source_instance or source_instance.type_id <= 0:
+            return None
+            
+        new_instance = ScnInstanceInfo()
+        new_instance.type_id = source_instance.type_id
+        new_instance.crc = source_instance.crc 
+        
+        return new_instance

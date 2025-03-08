@@ -1,4 +1,4 @@
-# REasy Editor v0.0.9
+# REasy Editor v0.1
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -41,8 +41,8 @@ I have currently rushed the release and the structure will be improved in the up
 - **UVAR File Editing:**  
   View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   
-- **RSZ File Viewing and Limited Editing:**  
-  User, PFB and SCN files are supported with limited editing at the moment.
+- **RSZ File Viewing and Editing:**  
+  User, PFB and SCN files are supported with advanced editing.
   
 - **Flexible Variable Management:**  
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").

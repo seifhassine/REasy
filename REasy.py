@@ -600,7 +600,7 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.0.9")
+        self.setWindowTitle("REasy Editor v0.1")
         set_app_icon(self)
 
         try:
@@ -665,13 +665,7 @@ class REasyEditorApp(QMainWindow):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            if any(
-                url.isLocalFile()
-                and url.toLocalFile()
-                .lower()
-                .endswith((".uvar", ".uvar.3", ".scn.20", "user.2", "pfb.17"))
-                for url in urls
-            ):
+            if any(url.toLocalFile().lower().endswith(ext) for url in urls for ext in (".uvar", ".scn.20", ".user", ".pfb")):
                 event.acceptProposedAction()
 
     def dropEvent(self, event):
@@ -1126,7 +1120,7 @@ class REasyEditorApp(QMainWindow):
             self,
             "Open File",
             "",
-            "RE4 Files (*.uvar *.uvar.* *.scn.20 *.user.2 *.pfb.17);;SCN Files (*.scn.*);;User Files (*.user.2);;UVAR Files (*.uvar *.uvar.*);;PFB Files (*.pfb.17);;All Files (*.*)",
+            "RE Files (*.uvar* *.scn* *.user* *.pfb*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;All Files (*.*)",
         )
         if not fn:
             return

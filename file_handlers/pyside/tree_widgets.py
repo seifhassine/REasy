@@ -239,6 +239,7 @@ class AdvancedTreeView(QTreeView):
         elif is_gameobject:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
+            duplicate_go_action = menu.addAction("Duplicate GameObject")
             
             parent_widget = self.parent()
             go_has_prefab = False
@@ -285,6 +286,8 @@ class AdvancedTreeView(QTreeView):
                 self.add_component_to_gameobject(index)
             elif action == create_child_go_action:
                 self.create_child_gameobject(index)
+            elif action == duplicate_go_action:
+                self.duplicate_gameobject(index)
             elif action == delete_go_action:
                 self.delete_gameobject(index)
             elif action == manage_prefab_action:
@@ -824,6 +827,79 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to delete GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error deleting GameObject: {str(e)}")
+
+    def duplicate_gameobject(self, index):
+        """Duplicate a GameObject and all its children and components"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return                  
+        
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+        
+        parent = self.parent()
+        if not hasattr(parent, "object_operations") or not hasattr(parent.object_operations, "duplicate_gameobject"):
+            QMessageBox.warning(self, "Error", "GameObject duplication not supported")
+            return
+        
+        go_object_id = -1
+        for i, obj_id in enumerate(parent.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
+        
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+        
+        name = ""
+        
+        if hasattr(item, 'data') and item.data:
+            name_parts = item.data[0].split(' (ID:')
+            name = name_parts[0]
+            
+        if not name or name == "":
+            name = "GameObject"
+        
+        new_name, ok = QInputDialog.getText(self, "Duplicate GameObject", 
+                                          "Enter name for the duplicate:", 
+                                          QLineEdit.Normal, f"{name}_Copy")
+        if not ok:
+            return
+        
+        if not new_name or new_name.strip() == "":
+            new_name = f"{name}_Copy"
+            
+        try:
+            # Find parent ID of the GameObject
+            parent_id = -1
+            for go in parent.scn.gameobjects:
+                if go.id == go_object_id:
+                    parent_id = go.parent_id
+                    break
+
+            success = parent.object_operations.duplicate_gameobject(go_object_id, new_name, parent_id)
+            
+            if success:
+                QMessageBox.information(self, "Success", f"GameObject '{name}' duplicated successfully")
+                parent.populate_tree()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to duplicate GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error duplicating GameObject: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def _is_valid_parent_for_go(self, index):
         """Check if index is a valid parent for a GameObject node"""

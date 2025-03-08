@@ -67,6 +67,7 @@ class RszHandler(BaseFileHandler):
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
+        viewer.array_operations = RszArrayOperations(viewer)
         viewer.object_operations = RszObjectOperations(viewer)
         viewer.populate_tree()
         viewer.destroyed.connect(viewer.cleanup)
@@ -728,40 +729,38 @@ class RszViewer(QWidget):
                 self.scn.object_table[i] = 0
                 
     def _cleanup_userdata_for_instance(self, instance_id):
+        """Clean up UserData related to an instance being removed"""
         rsz_indices_to_remove = []
         rsz_userdata_to_remove = []
-        userdata_indices_to_remove = []
-        userdata_to_remove = []
         
+        # First, identify which RSZ UserData entries need to be removed
         for i, rui in enumerate(self.scn.rsz_userdata_infos):
             if rui.instance_id == instance_id:
                 rsz_indices_to_remove.append(i)
                 rsz_userdata_to_remove.append(rui)
-                
-                for j, ui in enumerate(self.scn.userdata_infos):
-                    if rui.hash == ui.hash:
-                        if j not in userdata_indices_to_remove:
-                            userdata_indices_to_remove.append(j)
-                            userdata_to_remove.append(ui)
         
+        # Remove from mapping tables
         if instance_id in self.scn._rsz_userdata_dict:
             del self.scn._rsz_userdata_dict[instance_id]
         if instance_id in self.scn._rsz_userdata_set:
             self.scn._rsz_userdata_set.remove(instance_id)
         
+        # Remove string mappings for RSZ UserData being removed
         for rui in rsz_userdata_to_remove:
             if rui in self.scn._rsz_userdata_str_map:
                 del self.scn._rsz_userdata_str_map[rui]
-                
-        for ui in userdata_to_remove:
-            if ui in self.scn._userdata_str_map:
-                del self.scn._userdata_str_map[ui]
         
+        # Only remove the userdata_infos that correspond to the RSZ UserData being removed
+        # They should be in the same order, so we can use the same indices
         for idx in sorted(rsz_indices_to_remove, reverse=True):
+            # Remove the RSZ UserData
             del self.scn.rsz_userdata_infos[idx]
             
-        for idx in sorted(userdata_indices_to_remove, reverse=True):
-            del self.scn.userdata_infos[idx]
+            if idx < len(self.scn.userdata_infos):
+                ui = self.scn.userdata_infos[idx]
+                if ui in self.scn._userdata_str_map:
+                    del self.scn._userdata_str_map[ui]
+                del self.scn.userdata_infos[idx]
 
     def _update_instance_references_after_deletion(self, deleted_id, deleted_nested_ids=None):
         if deleted_nested_ids is None:
