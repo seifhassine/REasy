@@ -2,7 +2,12 @@ import os
 import json
 
 SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".reasy_editor_settings.json")
-DEFAULT_SETTINGS = {"dark_mode": True, "rcol_json_path": "", "show_debug_console": True}
+DEFAULT_SETTINGS = {
+    "dark_mode": True, 
+    "rcol_json_path": "", 
+    "show_debug_console": True,
+    "show_rsz_advanced": True
+}
 
 
 def load_settings():
@@ -29,12 +34,17 @@ def save_settings(settings):
 
 def ensure_json_path(self) -> bool:
     # Retrieve the JSON path from the settings (which may be the default if file not present)
-    json_path = self.app.settings.get("rcol_json_path")
+    settings = getattr(self, "settings", None) or (self.app.settings if hasattr(self, "app") else None)
+    if not settings:
+        return False
+        
+    json_path = settings.get("rcol_json_path")
     if not json_path or not os.path.exists(json_path):
         # Notify the main app to prompt the user
-        new_path = self.app.handle_missing_json()
+        app = self if not hasattr(self, "app") else self.app
+        new_path = app.handle_missing_json()
         if not new_path or not os.path.exists(new_path):
             return False
-        self.app.settings["rcol_json_path"] = new_path
-        save_settings(self.app.settings)
+        settings["rcol_json_path"] = new_path
+        save_settings(settings)
     return True

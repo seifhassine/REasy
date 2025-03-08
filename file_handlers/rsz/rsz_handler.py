@@ -61,6 +61,8 @@ class RszHandler(BaseFileHandler):
         viewer.handler = self
         viewer.type_registry = self.type_registry
         viewer.dark_mode = self.dark_mode
+        if hasattr(self, 'app') and hasattr(self.app, 'settings'):
+            self.show_advanced = self.app.settings.get("show_rsz_advanced", True)
         viewer.show_advanced = self.show_advanced
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))

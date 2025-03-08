@@ -959,7 +959,7 @@ class REasyEditorApp(QMainWindow):
         event.accept()
 
     def open_settings_dialog(self):
-        dialog, _ = create_standard_dialog(self, "Settings", "400x250")
+        dialog, _ = create_standard_dialog(self, "Settings", "400x300")
         layout = QVBoxLayout(dialog)
         layout.setSpacing(15)
 
@@ -982,6 +982,10 @@ class REasyEditorApp(QMainWindow):
         debug_box = QCheckBox("Show Debug Console")
         debug_box.setChecked(self.settings.get("show_debug_console", True))
         layout.addWidget(debug_box)
+        
+        rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files")
+        rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
+        layout.addWidget(rsz_advanced_box)
 
         layout.addStretch()
 
@@ -999,11 +1003,20 @@ class REasyEditorApp(QMainWindow):
             self.settings["rcol_json_path"] = new_json_path
             self.settings["dark_mode"] = dark_box.isChecked()
             self.settings["show_debug_console"] = debug_box.isChecked()
+            self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
 
             if self.dark_mode != dark_box.isChecked():
                 self.set_dark_mode(dark_box.isChecked())
 
             self.toggle_debug_console(debug_box.isChecked())
+            
+            # Update RSZ handlers in open tabs if show_rsz_advanced changed
+            for tab in self.tabs.values():
+                if hasattr(tab, 'handler') and hasattr(tab.handler, 'show_advanced'):
+                    tab.handler.show_advanced = rsz_advanced_box.isChecked()
+                    if hasattr(tab, 'viewer') and tab.viewer:
+                        tab.viewer.show_advanced = rsz_advanced_box.isChecked()
+                        tab.viewer.populate_tree()
 
             self.save_settings()
 
@@ -1124,8 +1137,8 @@ class REasyEditorApp(QMainWindow):
             handler = get_handler_for_data(data)
             if handler:
                 self.add_tab(fn, data)
-                if(handler == RszHandler):
-                    handler.show_advanced = self.settings.get("show_advanced", True)
+                if isinstance(handler, RszHandler):
+                    handler.show_advanced = self.settings.get("show_rsz_advanced", True)
             else:
                 QMessageBox.critical(self, "Error", "Unsupported file type")
 
