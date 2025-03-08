@@ -590,7 +590,7 @@ class RszViewer(QWidget):
         new_instance = self._initialize_new_instance(type_id, type_info)
         if not new_instance:
             raise ValueError(f"Failed to create instance of type {component_type}")
-        instance_insertion_index = self._calculate_component_insertion_index(target_go)
+        instance_insertion_index = self.object_operations._calculate_component_insertion_index(target_go)
         temp_parsed_elements = {}
         nested_objects = []
         self._analyze_instance_fields_for_nested_objects(
@@ -612,7 +612,7 @@ class RszViewer(QWidget):
         IdManager.instance().register_instance(instance_insertion_index)
         component_fields = {}
         self._initialize_fields_from_type_info(component_fields, type_info)
-        self._update_object_references(
+        self.object_operations._update_object_references(
             component_fields,
             temp_parsed_elements,
             instance_insertion_index,
@@ -624,49 +624,9 @@ class RszViewer(QWidget):
                 parent_obj.value = gameobject_instance_id
         self.scn.parsed_elements[instance_insertion_index] = component_fields
         target_go.component_count += 1
-        self._insert_into_object_table(object_table_insertion_index, instance_insertion_index)
+        self.object_operations._insert_into_object_table(object_table_insertion_index, instance_insertion_index)
         self.mark_modified()
         return True
-
-    def _insert_into_object_table(self, object_table_index, instance_id):
-        if object_table_index >= len(self.scn.object_table):
-            self.scn.object_table.extend(
-                [0] * (object_table_index - len(self.scn.object_table) + 1)
-            )
-            self.scn.object_table[object_table_index] = instance_id
-        else:
-            self.scn.object_table.insert(object_table_index, instance_id)
-        for go in self.scn.gameobjects:
-            if go.id >= object_table_index:
-                go.id += 1
-            if go.parent_id >= object_table_index:
-                go.parent_id += 1
-        for folder in self.scn.folder_infos:
-            if folder.id >= object_table_index:
-                folder.id += 1
-            if folder.parent_id >= object_table_index:
-                folder.parent_id += 1
-        if self.scn.is_pfb:
-            for ref_info in self.scn.gameobject_ref_infos:
-                if hasattr(ref_info, "object_id") and ref_info.object_id >= object_table_index:
-                    ref_info.object_id += 1
-                if hasattr(ref_info, "target_id") and ref_info.target_id >= object_table_index:
-                    ref_info.target_id += 1
-
-    def _calculate_component_insertion_index(self, gameobject):
-        """Calculate the best insertion index for a new component"""
-        insertion_index = len(self.scn.instance_infos)
-        if gameobject.component_count > 0:
-            last_component_go_id = gameobject.id + gameobject.component_count
-            if last_component_go_id < len(self.scn.object_table):
-                last_component_instance_id = self.scn.object_table[last_component_go_id]
-                if last_component_instance_id > 0:
-                    insertion_index = last_component_instance_id + 1
-        if insertion_index == len(self.scn.instance_infos):
-            go_instance_id = self.scn.object_table[gameobject.id]
-            if go_instance_id > 0:
-                insertion_index = go_instance_id + 1
-        return insertion_index
 
     def delete_component_from_gameobject(self, component_instance_id, owner_go_id=None):
         if component_instance_id <= 0 or component_instance_id >= len(self.scn.instance_infos):
@@ -760,83 +720,9 @@ class RszViewer(QWidget):
         """Create a new GameObject with the given name and parent"""
         return self.object_operations.create_gameobject(name, parent_id)
 
-    def _initialize_fields_from_type_info(self, fields_dict, type_info):
-        """Initialize fields based on type info"""
-        for field_def in type_info.get("fields", []):
-            field_name = field_def.get("name", "")
-            if not field_name:
-                continue
-            field_type = field_def.get("type", "unknown").lower()
-            field_size = field_def.get("size", 4)
-            field_native = field_def.get("native", False)
-            field_array = field_def.get("array", False)
-            field_align = field_def.get("align", 4)
-            field_orig_type = field_def.get("original_type", "")
-            field_class = get_type_class(
-                field_type, field_size, field_native, field_array, field_align
-            )
-            field_obj = self._create_default_field(field_class, field_orig_type, field_array)
-            if field_obj:
-                fields_dict[field_name] = field_obj
-
-    def _calculate_gameobject_insertion_index(self):
-        """Calculate the best insertion index for a new GameObject instance"""
-        return len(self.scn.instance_infos)
-
-    def _create_gameobject_entry(self, object_id, parent_id, instance_id):
-        from .rsz_file import ScnGameObject
-        new_go = ScnGameObject()
-        new_go.id = object_id
-        new_go.parent_id = parent_id
-        new_go.component_count = 0
-        if not self.scn.is_pfb and not self.scn.is_usr:
-            import uuid
-            guid_bytes = uuid.uuid4().bytes_le
-            new_go.guid = guid_bytes
-            new_go.prefab_id = -1 
-        return new_go
-
-    def _update_gameobject_hierarchy(self, gameobject):
-        """Update instance hierarchy with parent-child relationship for GameObjects"""
-        instance_id = self.scn.object_table[gameobject.id]
-        self.scn.instance_hierarchy[instance_id] = {"children": [], "parent": None}
-        if gameobject.parent_id >= 0:
-            if gameobject.parent_id < len(self.scn.object_table):
-                parent_instance_id = self.scn.object_table[gameobject.parent_id]
-                if parent_instance_id > 0:
-                    self.scn.instance_hierarchy[instance_id]["parent"] = parent_instance_id
-                    if parent_instance_id in self.scn.instance_hierarchy:
-                        if "children" not in self.scn.instance_hierarchy[parent_instance_id]:
-                            self.scn.instance_hierarchy[parent_instance_id]["children"] = []
-                        self.scn.instance_hierarchy[parent_instance_id]["children"].append(
-                            instance_id
-                        )
-
     def delete_gameobject(self, gameobject_id):
         """Delete a GameObject with the given ID"""
         return self.object_operations.delete_gameobject(gameobject_id)
-
-    def _collect_gameobject_hierarchy_by_reference(self, root_go):
-        go_objects = {go.id: go for go in self.scn.gameobjects}
-        
-        child_map = {}
-        for go in self.scn.gameobjects:
-            if go.parent_id >= 0 and go.parent_id in go_objects:
-                parent = go_objects[go.parent_id]
-                if parent not in child_map:
-                    child_map[parent] = []
-                child_map[parent].append(go)
-        
-        gameobjects = []
-        
-        def collect_recursive(go):
-            gameobjects.append(go)
-            if go in child_map:
-                for child in child_map[go]:
-                    collect_recursive(child)
-        
-        collect_recursive(root_go)
-        return gameobjects
 
     def delete_folder(self, folder_id):
         if folder_id < 0 or folder_id >= len(self.scn.object_table):
@@ -938,7 +824,7 @@ class RszViewer(QWidget):
                         IdManager.instance().update_all_mappings(id_mapping, nested_objects)
                 
                 if folder.id < len(self.scn.object_table):
-                    self._remove_from_object_table(folder.id)
+                    self.object_operations._remove_from_object_table(folder.id)
                 
                 if folder in self.scn.folder_infos:
                     self.scn.folder_infos.remove(folder)
@@ -964,7 +850,7 @@ class RszViewer(QWidget):
                     IdManager.instance().update_all_mappings(id_mapping, nested_objects)
             
             if target_folder.id < len(self.scn.object_table):
-                self._remove_from_object_table(target_folder.id)
+                self.object_operations._remove_from_object_table(target_folder.id)
             
             if target_folder in self.scn.folder_infos:
                 self.scn.folder_infos.remove(target_folder)
@@ -1283,34 +1169,6 @@ class RszViewer(QWidget):
                 
         return nested_objects
 
-    def _remove_from_object_table(self, object_table_index):
-        if object_table_index < 0 or object_table_index >= len(self.scn.object_table):
-            print(f"Warning: Invalid object table index {object_table_index}")
-            return
-            
-        removed_instance_id = self.scn.object_table[object_table_index]
-            
-        self.scn.object_table.pop(object_table_index)
-        
-        for go in self.scn.gameobjects:
-            if go.id > object_table_index:
-                go.id -= 1
-            if go.parent_id > object_table_index:
-                go.parent_id -= 1
-                
-        for folder in self.scn.folder_infos:
-            if folder.id > object_table_index:
-                folder.id -= 1
-            if folder.parent_id > object_table_index:
-                folder.parent_id -= 1
-                
-        if self.scn.is_pfb:
-            for ref_info in self.scn.gameobject_ref_infos:
-                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
-                    ref_info.object_id -= 1
-                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
-                    ref_info.target_id -= 1
-
     def _initialize_new_instance(self, type_id, type_info):
         if type_id == 0 or not type_info:
             return None
@@ -1408,39 +1266,3 @@ class RszViewer(QWidget):
         
         return fields_dict
     
-    def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
-        offset_start = main_instance_index - len(nested_objects)
-        
-        if offset_start < 0:
-            return
-        
-        type_to_index = {
-            nested_type_info.get("name", ""): i
-            for i, (nested_type_info, _) in enumerate(nested_objects)
-            if nested_type_info.get("name", "")
-        }
-        
-        for field_name, field_data in temp_fields.items():
-            if field_name not in target_fields:
-                continue
-                
-            if isinstance(field_data, ObjectData) and field_data.value == 0:
-                type_name = field_data.orig_type
-                if type_name in type_to_index:
-                    target_fields[field_name].value = offset_start + type_to_index[type_name]
-                    
-            elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
-                array_data = target_fields[field_name]
-                array_data.values = []
-                
-                for element in field_data.values:
-                    if isinstance(element, ObjectData):
-                        new_obj = ObjectData(element.value, element.orig_type)
-                        
-                        if element.value == 0 and element.orig_type:
-                            type_name = element.orig_type
-                            if type_name in type_to_index:
-                                new_obj.value = offset_start + type_to_index[type_name]
-                        array_data.values.append(new_obj)
-                    else:
-                        array_data.values.append(element)

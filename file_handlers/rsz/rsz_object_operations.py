@@ -11,6 +11,7 @@ This file contains utility methods for:
 import uuid
 from PySide6.QtWidgets import QMessageBox
 from utils.id_manager import IdManager
+from .rsz_data_types import ObjectData, ArrayData
 
 
 class RszObjectOperations:
@@ -201,7 +202,7 @@ class RszObjectOperations:
                             IdManager.instance().update_all_mappings(id_mapping, nested_objects)
                 
                 if go.id < len(self.scn.object_table):
-                    self.viewer._remove_from_object_table(go.id)
+                    self._remove_from_object_table(go.id)
                 
                 if go in self.scn.gameobjects:
                     self.scn.gameobjects.remove(go)
@@ -350,3 +351,108 @@ class RszObjectOperations:
                 
             if instance_id not in self.scn.instance_hierarchy[parent_instance_id]["children"]:
                 self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
+
+    def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
+        offset_start = main_instance_index - len(nested_objects)
+        
+        if offset_start < 0:
+            return
+        
+        type_to_index = {
+            nested_type_info.get("name", ""): i
+            for i, (nested_type_info, _) in enumerate(nested_objects)
+            if nested_type_info.get("name", "")
+        }
+        
+        for field_name, field_data in temp_fields.items():
+            if field_name not in target_fields:
+                continue
+                
+            if isinstance(field_data, ObjectData) and field_data.value == 0:
+                type_name = field_data.orig_type
+                if type_name in type_to_index:
+                    target_fields[field_name].value = offset_start + type_to_index[type_name]
+                    
+            elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
+                array_data = target_fields[field_name]
+                array_data.values = []
+                
+                for element in field_data.values:
+                    if isinstance(element, ObjectData):
+                        new_obj = ObjectData(element.value, element.orig_type)
+                        
+                        if element.value == 0 and element.orig_type:
+                            type_name = element.orig_type
+                            if type_name in type_to_index:
+                                new_obj.value = offset_start + type_to_index[type_name]
+                        array_data.values.append(new_obj)
+                    else:
+                        array_data.values.append(element)
+
+    def _insert_into_object_table(self, object_table_index, instance_id):
+        if object_table_index >= len(self.scn.object_table):
+            self.scn.object_table.extend(
+                [0] * (object_table_index - len(self.scn.object_table) + 1)
+            )
+            self.scn.object_table[object_table_index] = instance_id
+        else:
+            self.scn.object_table.insert(object_table_index, instance_id)
+        for go in self.scn.gameobjects:
+            if go.id >= object_table_index:
+                go.id += 1
+            if go.parent_id >= object_table_index:
+                go.parent_id += 1
+        for folder in self.scn.folder_infos:
+            if folder.id >= object_table_index:
+                folder.id += 1
+            if folder.parent_id >= object_table_index:
+                folder.parent_id += 1
+        if self.scn.is_pfb:
+            for ref_info in self.scn.gameobject_ref_infos:
+                if hasattr(ref_info, "object_id") and ref_info.object_id >= object_table_index:
+                    ref_info.object_id += 1
+                if hasattr(ref_info, "target_id") and ref_info.target_id >= object_table_index:
+                    ref_info.target_id += 1
+
+    def _calculate_component_insertion_index(self, gameobject):
+        """Calculate the best insertion index for a new component"""
+        insertion_index = len(self.scn.instance_infos)
+        if gameobject.component_count > 0:
+            last_component_go_id = gameobject.id + gameobject.component_count
+            if last_component_go_id < len(self.scn.object_table):
+                last_component_instance_id = self.scn.object_table[last_component_go_id]
+                if last_component_instance_id > 0:
+                    insertion_index = last_component_instance_id + 1
+        if insertion_index == len(self.scn.instance_infos):
+            go_instance_id = self.scn.object_table[gameobject.id]
+            if go_instance_id > 0:
+                insertion_index = go_instance_id + 1
+        return insertion_index
+    
+    def _remove_from_object_table(self, object_table_index):
+        if object_table_index < 0 or object_table_index >= len(self.scn.object_table):
+            print(f"Warning: Invalid object table index {object_table_index}")
+            return
+            
+        _ = self.scn.object_table[object_table_index]
+            
+        self.scn.object_table.pop(object_table_index)
+        
+        for go in self.scn.gameobjects:
+            if go.id > object_table_index:
+                go.id -= 1
+            if go.parent_id > object_table_index:
+                go.parent_id -= 1
+                
+        for folder in self.scn.folder_infos:
+            if folder.id > object_table_index:
+                folder.id -= 1
+            if folder.parent_id > object_table_index:
+                folder.parent_id -= 1
+                
+        if self.scn.is_pfb:
+            for ref_info in self.scn.gameobject_ref_infos:
+                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
+                    ref_info.object_id -= 1
+                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
+                    ref_info.target_id -= 1
