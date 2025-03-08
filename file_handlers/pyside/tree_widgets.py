@@ -82,7 +82,7 @@ class AdvancedTreeView(QTreeView):
                                 if go_object_id >= 0:
                                     self.delete_gameobject(index)
                                     return
-            
+                         
         
         # Call the parent's keyPressEvent for default behavior
         super().keyPressEvent(event)
@@ -157,6 +157,20 @@ class AdvancedTreeView(QTreeView):
         component_instance_id = -1
         is_folder = False
         is_gameobjects_root = False
+        is_resource = False
+        resource_index = -1
+        is_resources_section = False
+        
+        # Check if this is a resource node or the resources section itself
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            is_resource = item.raw.get("type") == "resource"
+            if is_resource:
+                resource_index = item.raw.get("resource_index", -1)
+        
+        # Check if this is the Resources header node
+        if item.data and len(item.data) > 0:
+            if item.data[0].startswith("Resources"):
+                is_resources_section = True
         
         # Check if this is the GameObjects root node
         if item.data and len(item.data) > 0:
@@ -204,9 +218,66 @@ class AdvancedTreeView(QTreeView):
 
         menu = QMenu(self)
 
-        if is_gameobject:
+        if is_resource:
+            # Context menu for a resource entry
+            edit_action = menu.addAction("Edit Resource Path")
+            delete_action = menu.addAction("Delete Resource")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == edit_action:
+                self.edit_resource(index, resource_index)
+            elif action == delete_action:
+                self.delete_resource(index, resource_index)
+                
+        elif is_resources_section:
+            add_action = menu.addAction("Add New Resource")
+            action = menu.exec_(QCursor.pos())
+            
+            if action == add_action:
+                self.add_resource(index)
+                
+        elif is_gameobject:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
+            
+            parent_widget = self.parent()
+            go_has_prefab = False
+            prefab_path = ""
+            
+            if hasattr(parent_widget, "scn") and not parent_widget.scn.is_pfb and not parent_widget.scn.is_usr:
+                reasy_id = item.raw.get("reasy_id")
+                go_instance_id = IdManager.instance().get_instance_id(reasy_id) if reasy_id else None
+                
+                go_object_id = -1
+                for i, instance_id in enumerate(parent_widget.scn.object_table):
+                    if instance_id == go_instance_id:
+                        go_object_id = i
+                        break
+                
+                if go_object_id >= 0:
+                    target_go = None
+                    for go in parent_widget.scn.gameobjects:
+                        if go.id == go_object_id:
+                            target_go = go
+                            break
+                            
+                    if target_go and hasattr(target_go, 'prefab_id'):
+                        if target_go.prefab_id >= 0:
+                            go_has_prefab = True
+                            
+                            if (hasattr(parent_widget.scn, 'prefab_infos') and 
+                                target_go.prefab_id < len(parent_widget.scn.prefab_infos)):
+                                prefab = parent_widget.scn.prefab_infos[target_go.prefab_id]
+                                
+                                if hasattr(parent_widget.scn, 'get_prefab_string'):
+                                    prefab_path = parent_widget.scn.get_prefab_string(prefab)
+            
+            manage_prefab_action = None
+            if go_has_prefab:
+                manage_prefab_action = menu.addAction(f"Modify Prefab Path")
+            else:
+                manage_prefab_action = menu.addAction("Associate with Prefab")
+            
             delete_go_action = menu.addAction("Delete GameObject")
             action = menu.exec_(QCursor.pos())
             
@@ -216,7 +287,9 @@ class AdvancedTreeView(QTreeView):
                 self.create_child_gameobject(index)
             elif action == delete_go_action:
                 self.delete_gameobject(index)
-        
+            elif action == manage_prefab_action:
+                self.manage_gameobject_prefab(index, go_has_prefab, prefab_path)
+                
         elif is_folder:
             create_go_action = menu.addAction("Create GameObject")
             delete_folder_action = menu.addAction("Delete Folder")
@@ -848,6 +921,315 @@ class AdvancedTreeView(QTreeView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error deleting folder: {str(e)}")
 
+    def manage_gameobject_prefab(self, index, has_prefab, current_path=""):
+        """Create or modify prefab association for a GameObject"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+        
+        parent = self.parent()
+        if not parent or not hasattr(parent, "scn") or not hasattr(parent, "object_operations"):
+            QMessageBox.warning(self, "Error", "Prefab management not supported")
+            return
+            
+        go_object_id = -1
+        for i, obj_id in enumerate(parent.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
+                
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+            
+        dialog_title = "Modify Prefab Path" if has_prefab else "Associate with Prefab"
+        prompt_text = "Enter new prefab path:" if has_prefab else "Enter prefab path:"
+        
+        while True:
+            dialog = QInputDialog(self)
+            dialog.setWindowTitle(dialog_title)
+            dialog.setLabelText(prompt_text)
+            dialog.setTextValue(current_path)
+            dialog.setInputMode(QInputDialog.TextInput)
+            
+            dialog.resize(500, dialog.height())
+            
+            ok = dialog.exec_()
+            path = dialog.textValue()
+            
+            if not ok:
+                return
+                
+            if not path or path.strip() == "":
+                QMessageBox.warning(self, "Invalid Input", "Prefab path cannot be empty. Please enter a valid path.")
+            else:
+                break
+        
+        try:
+            if not path.endswith(".pfb") and not path.lower().startswith("pfb/"):
+                if QMessageBox.question(
+                    self, "Add Extension?", 
+                    "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
+                    QMessageBox.Yes | QMessageBox.No
+                ) == QMessageBox.Yes:
+                    if not path.endswith(".pfb"):
+                        path += ".pfb"
+            
+            success = parent.object_operations.manage_gameobject_prefab(go_object_id, path)
+            
+            if success:
+                action_type = "modified" if has_prefab else "created"
+                QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
+            else:
+                QMessageBox.warning(self, "Error", "Failed to manage prefab")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error managing prefab: {str(e)}")
+
+    def add_resource(self, index):
+        """Add a new resource path directly in the tree view"""
+        parent = self.parent()
+        if not parent or not hasattr(parent, "scn"):
+            QMessageBox.warning(self, "Error", "Resource management not supported")
+            return
+            
+        path = self._get_resource_path_from_dialog("Add New Resource", "Enter resource path:", "")
+        if not path:
+            return
+            
+        try:
+            resource_index = parent.add_resource(path)
+            if resource_index < 0:
+                QMessageBox.warning(self, "Error", "Failed to add resource")
+                return
+                
+            self._update_resources_ui(f"Added resource '{path}'")
+        except Exception as e:
+            self._handle_resource_error("add", e)
+
+    def edit_resource(self, index, resource_index):
+        """Edit a resource path directly in the tree view"""
+        if resource_index < 0:
+            QMessageBox.warning(self, "Error", "Invalid resource index")
+            return
+        
+        parent = self.parent()
+        if not parent or not hasattr(parent, "scn") or resource_index >= len(parent.scn.resource_infos):
+            QMessageBox.warning(self, "Error", "Resource editing not supported or invalid index")
+            return
+        
+        current_path = self._get_current_resource_path(resource_index)       
+        path = self._get_resource_path_from_dialog("Edit Resource Path", "Update resource path:", current_path)
+        if not path:
+            return
+        
+        try:
+            success = parent.manage_resource(resource_index, path)
+            if not success:
+                QMessageBox.warning(self, "Error", "Failed to update resource")
+                return
+            
+            item = index.internalPointer()
+            if item and hasattr(item, 'data'):
+                item.data[0] = path
+                
+                model = self.model()
+                if model:
+                    model.dataChanged.emit(index, index)
+                    
+                    widget = self.indexWidget(index)
+                    if widget:
+                        for label in widget.findChildren(QLabel):
+                            label.setText(path)
+                    else:
+                        new_widget = TreeWidgetFactory.create_widget("resource", None, path, self, self.parent_modified_callback)
+                        if new_widget:
+                            self.setIndexWidget(index, new_widget)
+                    
+                QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
+        except Exception as e:
+            self._handle_resource_error("edit", e)
+
+    def delete_resource(self, index, resource_index):
+        """Delete a resource path directly from the tree view"""
+        if resource_index < 0:
+            QMessageBox.warning(self, "Error", "Invalid resource index")
+            return
+        
+        parent = self.parent()
+        if not parent or not hasattr(parent, "scn") or resource_index >= len(parent.scn.resource_infos):
+            QMessageBox.warning(self, "Error", "Resource deletion not supported or invalid index")
+            return
+        
+        resource_path = self._get_current_resource_path(resource_index)
+        
+        if not self._confirm_resource_deletion(resource_path):
+            return
+        
+        try:
+            success = parent.delete_resource(resource_index)
+            if not success:
+                QMessageBox.warning(self, "Error", "Failed to delete resource")
+                return
+            
+            model = self.model()
+            resources_node = self._find_resources_node()
+            
+            if resources_node and model:
+                resources_index = model.getIndexFromItem(resources_node)
+                if resources_index.isValid():
+                    resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
+                    
+                    row_to_remove = self._find_resource_row(resources_node.children, resource_index)
+                    if row_to_remove >= 0:
+                        model.removeRow(row_to_remove, resources_index)
+                        self._update_remaining_resource_indices(resources_node, resource_index)
+                        QMessageBox.information(self, "Success", f"Deleted resource '{resource_path}'")
+                        return
+                        
+            self._update_resources_ui(f"Deleted resource '{resource_path}'")
+        except Exception as e:
+            self._handle_resource_error("delete", e)
+
+    def _get_resource_path_from_dialog(self, title, label, default_text=""):
+        """Show dialog to get resource path from user"""
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.setLabelText(label)
+        dialog.setTextValue(default_text)
+        dialog.setInputMode(QInputDialog.TextInput)
+        dialog.resize(500, dialog.height())
+        
+        if not dialog.exec_():
+            return None
+        
+        path = dialog.textValue()
+        if not path or path.strip() == "":
+            QMessageBox.warning(self, "Invalid Input", "Resource path cannot be empty.")
+            return None
+            
+        return path
+
+    def _get_current_resource_path(self, resource_index):
+        """Get the current path for a resource"""
+        parent = self.parent()
+        try:
+            resource = parent.scn.resource_infos[resource_index]
+            if hasattr(parent.scn, 'get_resource_string'):
+                return parent.scn.get_resource_string(resource) or "[Unknown]"
+        except Exception:
+            pass
+        return "[Unknown]"
+
+    def _confirm_resource_deletion(self, resource_path):
+        """Show confirmation dialog for resource deletion"""
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText(f"Delete resource '{resource_path}'?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        return msg_box.exec_() == QMessageBox.Yes
+
+    def _update_resources_ui(self, success_message):
+        """Update resources UI with success message"""
+        parent = self.parent()
+        QMessageBox.information(self, "Success", success_message)
+        parent.populate_tree()
+
+    def _handle_resource_error(self, operation, error):
+        """Handle resource operation error"""
+        QMessageBox.critical(self, "Error", f"Failed to {operation} resource: {str(error)}")
+        import traceback
+        print(f"Exception details: {traceback.format_exc()}")
+        
+    def _find_resource_row(self, children, resource_index):
+        """Find the row index for a resource by its resource_index"""
+        for i, child in enumerate(children):
+            if (hasattr(child, 'raw') and isinstance(child.raw, dict) and 
+                child.raw.get("type") == "resource" and 
+                child.raw.get("resource_index") == resource_index):
+                return i
+        return -1
+        
+    def _update_remaining_resource_indices(self, resources_node, deleted_index):
+        """Update indices for remaining resources after deletion"""
+        for child in resources_node.children:
+            if (hasattr(child, 'raw') and isinstance(child.raw, dict) and 
+                child.raw.get("type") == "resource"):
+                current_index = child.raw.get("resource_index", -1)
+                if current_index > deleted_index:
+                    child.raw["resource_index"] = current_index - 1
+
+    def _find_resources_node(self):
+        """Helper to find the resources section node"""
+        model = self.model()
+        if not model:
+            return None
+            
+        root_index = model.index(0, 0, QModelIndex())
+        if not root_index.isValid():
+            return None
+            
+        def find_resources_recursive(parent_index):
+            if not parent_index.isValid():
+                return None
+                
+            parent_item = parent_index.internalPointer()
+            if (parent_item and hasattr(parent_item, 'data') and 
+                parent_item.data and parent_item.data[0].startswith("Resources")):
+                return parent_item
+            
+            rows = model.rowCount(parent_index)
+            for row in range(rows):
+                child_index = model.index(row, 0, parent_index)
+                child_item = child_index.internalPointer()
+                
+                if (child_item and hasattr(child_item, 'data') and 
+                    child_item.data and child_item.data[0].startswith("Resources")):
+                    return child_item
+                
+                result = find_resources_recursive(child_index)
+                if result:
+                    return result
+            
+            return None
+        
+        resources_node = find_resources_recursive(root_index)
+        if resources_node:
+            return resources_node
+            
+        advanced_index = None
+        
+        for i in range(model.rowCount(root_index)):
+            node_index = model.index(i, 0, root_index)
+            node_item = node_index.internalPointer()
+            if node_item and hasattr(node_item, 'data') and node_item.data and node_item.data[0] == "Advanced":
+                advanced_index = node_index
+                break
+        
+        if advanced_index:
+            for i in range(model.rowCount(advanced_index)):
+                node_index = model.index(i, 0, advanced_index)
+                node_item = node_index.internalPointer()
+                if node_item and hasattr(node_item, 'data') and node_item.data and node_item.data[0].startswith("Resources"):
+                    return node_item
+        
+        return None
+
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
@@ -971,5 +1353,4 @@ class TreeWidgetFactory:
         node_type = item.raw.get("type")
         if node_type in TreeWidgetFactory.WIDGET_TYPES:
             return False
-   
         return False

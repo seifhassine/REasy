@@ -11,7 +11,7 @@ This file contains utility methods for:
 import uuid
 from PySide6.QtWidgets import QMessageBox
 from utils.id_manager import IdManager
-from .rsz_data_types import ObjectData, ArrayData
+from .rsz_data_types import *
 
 
 class RszObjectOperations:
@@ -839,3 +839,69 @@ class RszObjectOperations:
                     )
         
         return fields_dict
+
+    def manage_gameobject_prefab(self, gameobject_id, new_prefab_path):
+        """Create or modify a prefab association for a GameObject
+        
+        Args:
+            gameobject_id: The GameObject's ID in the object table
+            new_prefab_path: Path string for the prefab
+            
+        Returns:
+            bool: True if the operation was successful
+        """
+        if self.scn.is_pfb or self.scn.is_usr:
+            print(f"Prefabs can't be modified in PFB/USR files")
+            return False
+            
+        if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
+            print(f"Invalid GameObject ID {gameobject_id}")
+            return False
+            
+        target_go = None
+        for go in self.scn.gameobjects:
+            if go.id == gameobject_id:
+                target_go = go
+                break
+                
+        if not target_go:
+            print(f"GameObject with ID {gameobject_id} not found")
+            return False
+        
+        if target_go.prefab_id < 0:
+            if not hasattr(self.scn, 'prefab_infos'):
+                print("No prefab_infos array in scene")
+                return False
+                
+            from file_handlers.rsz.rsz_file import ScnPrefabInfo
+            new_prefab = ScnPrefabInfo()
+            
+            prefab_id = len(self.scn.prefab_infos)
+            
+            new_prefab.string_offset = 0
+            self.scn.prefab_infos.append(new_prefab)
+            target_go.prefab_id = prefab_id
+            
+            if hasattr(self.scn, '_prefab_str_map'):
+                self.scn._prefab_str_map[new_prefab] = new_prefab_path
+                
+            print(f"Created new prefab (ID: {prefab_id}) for GameObject {gameobject_id} with path: {new_prefab_path}")
+            
+        else:
+            prefab_id = target_go.prefab_id
+            
+            if prefab_id >= len(self.scn.prefab_infos):
+                print(f"Invalid prefab ID {prefab_id}")
+                return False
+                
+            prefab = self.scn.prefab_infos[prefab_id]
+            
+            if hasattr(self.scn, '_prefab_str_map'):
+                self.scn._prefab_str_map[prefab] = new_prefab_path
+                print(f"Updated prefab {prefab_id} path to: {new_prefab_path}")
+            else:
+                print("No prefab string map available")
+                return False
+        
+        self.viewer.mark_modified()
+        return True

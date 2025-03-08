@@ -191,6 +191,7 @@ class RszViewer(QWidget):
                 advanced_node["children"].append(self._create_gameobject_ref_infos())
             advanced_node["children"].extend(
                 [
+                    self._create_resources_info(),
                     self._create_rsz_header_info(),
                     self._create_object_table_info(),
                     self._create_instance_infos(),
@@ -544,6 +545,28 @@ class RszViewer(QWidget):
 
     def _create_rsz_header_info(self):
         return DataTreeBuilder.create_data_node("RSZHeader", "")
+
+    def _create_resources_info(self):
+        """Create Resources info section for resource string references"""
+        node = DataTreeBuilder.create_data_node(
+            "Resources", f"{len(self.scn.resource_infos)} items"
+        )
+        
+        for i, res in enumerate(self.scn.resource_infos):
+            res_string = ""
+            if hasattr(self.scn, 'get_resource_string'):
+                try:
+                    res_string = self.scn.get_resource_string(res) or ""
+                except:
+                    res_string = "[Error reading string]"
+            
+            res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+            res_node["type"] = "resource"
+            res_node["resource_index"] = i
+            
+            node["children"].append(res_node)
+        
+        return node
 
     def embed_forms(self):
         def on_modified():
@@ -916,4 +939,47 @@ class RszViewer(QWidget):
             
             if field_obj:
                 fields_dict[field_name] = field_obj
-         
+
+    def manage_resource(self, resource_index, new_path):
+        """Update an existing resource path"""
+        if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
+            return False
+            
+        resource = self.scn.resource_infos[resource_index]
+        
+        if not hasattr(self.scn, '_resource_str_map'):
+            return False
+            
+        self.scn._resource_str_map[resource] = new_path
+        self.mark_modified()
+        
+        return True
+    
+    def add_resource(self, path):
+        """Add a new resource path"""
+        if not path or not hasattr(self.scn, '_resource_str_map'):
+            return -1
+        
+        from file_handlers.rsz.rsz_file import ScnResourceInfo
+        
+        new_res = ScnResourceInfo()
+        new_res.string_offset = 0
+        resource_index = len(self.scn.resource_infos)
+        self.scn.resource_infos.append(new_res)
+        self.scn._resource_str_map[new_res] = path
+        self.mark_modified()
+        
+        return resource_index
+    
+    def delete_resource(self, resource_index):
+        """Delete a resource path"""
+        if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
+            return False
+            
+        resource = self.scn.resource_infos[resource_index]
+        if hasattr(self.scn, '_resource_str_map') and resource in self.scn._resource_str_map:
+            del self.scn._resource_str_map[resource]
+        self.scn.resource_infos.pop(resource_index)
+        self.mark_modified()
+        
+        return True
