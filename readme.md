@@ -88,7 +88,7 @@ I have currently rushed the release and the structure will be improved in the up
 
 @TrikzMe for RE's MurMurHash3 
 
-@praydog, for making the RSZ JSON dumps
+@praydog, for making the RSZ JSON dumps and REF. 
 
 @don on Discord for helping out with .exe debugging related stuff.
 
