@@ -1055,34 +1055,36 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.critical(self, "Error", "No active tab for searching.")
 
     def add_tab(self, filename=None, data=None):
-        try:
-            # Check if file already open
-            if filename:
-                abs_fn = os.path.abspath(filename)
-                for tab in self.tabs.values():
-                    if tab.filename and os.path.abspath(tab.filename) == abs_fn:
-                        if tab.modified:
-                            ans = QMessageBox.question(
-                                self,
-                                "Unsaved Changes",
-                                f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
-                                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-                            )
-                            if ans == QMessageBox.Cancel:
-                                return
-                            elif ans == QMessageBox.Yes:
-                                tab.on_save()
-                            else:
-                                tab.modified = False
-                                tab.update_tab_title()
-                        index = self.notebook.indexOf(tab.notebook_widget)
-                        if index != -1:
-                            self.notebook.setCurrentIndex(index)
-                        return
+        if filename:
+            abs_fn = os.path.abspath(filename)
+            for tab in self.tabs.values():
+                if tab.filename and os.path.abspath(tab.filename) == abs_fn:
+                    if tab.modified:
+                        ans = QMessageBox.question(
+                            self,
+                            "Unsaved Changes",
+                            f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
+                            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                        )
+                        if ans == QMessageBox.Cancel:
+                            return
+                        elif ans == QMessageBox.Yes:
+                            tab.on_save()
+                        else:
+                            tab.modified = False
+                            tab.update_tab_title()
+                    index = self.notebook.indexOf(tab.notebook_widget)
+                    if index != -1:
+                        self.notebook.setCurrentIndex(index)
+                    return
 
-            # Check handler requirements before creating tab
+        try:
             handler = get_handler_for_data(data)
-            if handler and hasattr(handler, 'needs_json_path') and handler.needs_json_path():
+            if not handler:
+                QMessageBox.critical(self, "Error", "Unsupported file type")
+                return
+                
+            if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
                 if not self.settings.get("rcol_json_path"):
                     msg = QMessageBox(QMessageBox.Warning, 
                         "JSON Path Not Set",
@@ -1091,16 +1093,27 @@ class REasyEditorApp(QMainWindow):
                     if msg.exec() == QMessageBox.Yes:
                         self.open_settings_dialog()
                     return
-
-            # Create new tab
-            new_tab = FileTab(self.notebook, filename, data, app=self)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Handler error: {str(e)}")
+            return
+        
+        tab = None
+        try:
+            tab = FileTab(None, filename, data, app=self)
+            
+            tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else "Untitled"
-            self.notebook.addTab(new_tab.notebook_widget, tab_label)
-            self.tabs[new_tab.notebook_widget] = new_tab
-            self.notebook.setCurrentWidget(new_tab.notebook_widget)
+            tab_index = self.notebook.addTab(tab.notebook_widget, tab_label)
+            self.tabs[tab.notebook_widget] = tab
+            self.notebook.setCurrentWidget(tab.notebook_widget)
             
         except Exception as e:
-            QMessageBox.critical(None, "Error", str(e))
+            QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")
+            if tab and hasattr(tab, 'notebook_widget') and tab.notebook_widget:
+                try:
+                    tab.notebook_widget.deleteLater()
+                except:
+                    pass
 
     def get_active_tab(self):
         current_widget = self.notebook.currentWidget()
@@ -1156,6 +1169,7 @@ class REasyEditorApp(QMainWindow):
     def close_tab(self, index):
         widget = self.notebook.widget(index)
         tab = self.tabs.get(widget)
+        
         if tab and tab.modified:
             ans = QMessageBox.question(
                 self,
@@ -1173,7 +1187,10 @@ class REasyEditorApp(QMainWindow):
 
         if widget in self.tabs:
             del self.tabs[widget]
-        tab.tree = None
+            
+        if tab is not None:
+            tab.tree = None
+            
         self.notebook.removeTab(index)
 
     def copy_to_clipboard(self):
