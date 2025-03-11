@@ -15,25 +15,50 @@ class EnumManager:
     def __init__(self):
         self.enums = {}
         self._loaded = False
+        self._game_version = "RE4"  
+        self._enum_paths = {
+            "RE4": "resources/data/enums/re4_enums.json",
+            "RE2": "resources/data/enums/re2_enums.json",
+            "RE2RT": "resources/data/enums/re2rt_enums.json",
+        }
+        self.load_enums()
         
+    @property
+    def game_version(self):
+        return self._game_version
+    
+    @game_version.setter
+    def game_version(self, version):
+        if version != self._game_version and version in self._enum_paths:
+            self._game_version = version
+            self.load_enums()  # Reload enums when version changes
+    
     def load_enums(self):
-        """Load enum definitions from JSON file"""
-        if self._loaded:
+        """Load enum values from the appropriate game version file"""
+        self.enums = {}
+        
+        enum_path = self._enum_paths.get(self._game_version)
+        if not enum_path:
+            print(f"No enum file defined for game version: {self._game_version}")
             return
             
         try:
-            enum_path = os.path.join("resources", "data", "enums.json")
-            with open(enum_path, 'r') as f:
-                self.enums = json.load(f)
-            self._loaded = True
-            print(f"Loaded {len(self.enums)} enum types")
+            if os.path.exists(enum_path):
+                with open(enum_path, 'r') as f:
+                    self.enums = json.load(f)
+                print(f"Loaded enums for game version {self._game_version} from {enum_path}")
+            else:
+                print(f"Enum file not found: {enum_path}")
+                default_path = self._enum_paths.get("RE4")
+                if default_path and os.path.exists(default_path):
+                    with open(default_path, 'r') as f:
+                        self.enums = json.load(f)
+                    print(f"Loaded default enums from {default_path}")
         except Exception as e:
-            print(f"Error loading enums: {str(e)}")
-            self.enums = {}
-            
+            print(f"Error loading enum values: {str(e)}")
+    
     def get_enum_values(self, enum_type):
-        """Get enum values for a specific type"""
-        if not self._loaded:
-            self.load_enums()
-            
-        return self.enums.get(enum_type, [])
+        """Get enum values for a specific enum type"""
+        if not enum_type:
+            return {}
+        return self.enums.get(enum_type, {})

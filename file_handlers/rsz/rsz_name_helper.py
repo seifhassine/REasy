@@ -25,8 +25,8 @@ class RszViewerNameHelper:
         if instance_index is None:
             return default_name
             
-        v0_name = self.get_instance_v0_name(instance_index)
-        return v0_name if v0_name else default_name
+        name = self.get_instance_first_field_name(instance_index)
+        return name if name else default_name
             
     def get_folder_name(self, folder_id, default_name):
         """Get display name for a Folder"""
@@ -34,15 +34,17 @@ class RszViewerNameHelper:
             return default_name
             
         instance_id = self.scn.object_table[folder_id]
-        v0_name = self.get_instance_v0_name(instance_id)
-        return v0_name if v0_name else default_name
+        name = self.get_instance_first_field_name(instance_id)
+        return name if name else default_name
 
-    def get_instance_v0_name(self, instance_id):
-        """Get name from v0 field if available."""
+    def get_instance_first_field_name(self, instance_id):
+        """Get name from first string field if available."""
         if instance_id in self.scn.parsed_elements:
             fields = self.scn.parsed_elements[instance_id]
-            if "v0" in fields and isinstance(fields["v0"], StringData):
-                return fields["v0"].value.rstrip("\x00")
+            # Get the first field that is a string
+            for field_value in fields.values():
+                if isinstance(field_value, StringData):
+                    return field_value.value.rstrip("\x00")
         return None
         
     def get_instance_name(self, instance_id):

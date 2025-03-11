@@ -813,7 +813,7 @@ class RszObjectOperations:
             field_orig_type = field_def.get("original_type", "")
             
             field_class = get_type_class(field_type, field_size, field_native, field_array, field_align)
-            field_obj = self._create_default_field(field_class, field_orig_type, field_array)
+            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array)
             
             if field_obj:
                 temp_elements[field_name] = field_obj

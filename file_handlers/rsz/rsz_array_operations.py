@@ -960,3 +960,47 @@ class RszArrayOperations:
                                     element.value = 0
                                 elif ref_id in id_adjustments:
                                     element.value = id_adjustments[ref_id]
+
+    def _is_exclusively_referenced_from(self, instance_id, source_id):
+        """
+        Check if an instance is exclusively referenced from the given source instance.
+        
+        Args:
+            instance_id: The instance ID to check references for
+            source_id: The source instance ID that should be the only referencer
+            
+        Returns:
+            bool: True if instance_id is only referenced from source_id, False otherwise
+        """
+        if instance_id <= 0 or instance_id >= len(self.scn.instance_infos):
+            return False
+            
+        if instance_id in self.scn.object_table:
+            return False
+            
+        for check_id, fields in self.scn.parsed_elements.items():
+            if check_id == source_id:
+                continue
+                
+            for field_name, field_data in fields.items():
+                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
+                    return False 
+                    
+                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
+                    return False 
+                    
+                elif isinstance(field_data, ResourceData) and hasattr(field_data, "value") and field_data.value == instance_id:
+                    return False 
+                    
+                elif isinstance(field_data, ArrayData):
+                    for item in field_data.values:
+                        if isinstance(item, ObjectData) and item.value == instance_id:
+                            return False 
+                        
+                        elif isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
+                            return False 
+                            
+                        elif isinstance(item, ResourceData) and hasattr(item, "value") and item.value == instance_id:
+                            return False 
+            
+        return True

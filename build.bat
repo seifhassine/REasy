@@ -14,6 +14,8 @@ REM Build using the current Python interpreter (assumed 64-bit)
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
 xcopy /E /I /Y resources dist\resources
 copy "rszre4_reasy.json" "dist\rszre4_reasy.json"
+copy "rszre2.json" "dist\rszre2.json"
+copy "rszre2rt.json" "dist\rszre2rt.json"
 
 
 

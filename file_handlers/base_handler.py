@@ -14,7 +14,7 @@ class BaseFileHandler(QObject):
         self.dark_mode = False
         self.show_advanced = False
         self._modified = False
-
+        
     @property
     def modified(self):
         return self._modified

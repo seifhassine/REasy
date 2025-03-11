@@ -114,4 +114,44 @@ class IdManager:
         for instance_id in instance_ids:
             reasy_ids[instance_id] = self.register_instance(instance_id)
         return reasy_ids
+
+    def register_embedded_instance(self, embedded_id):
+        """
+        Register an embedded instance ID (using namespaced format)
+        
+        Args:
+            embedded_id: A namespaced ID string for embedded RSZ instances
+                         Format: "emb_{parent_id}_{instance_id}"
+        
+        Returns:
+            int: A stable reasy_id for this embedded instance
+        """
+        if embedded_id in self._instance_to_reasy:
+            return self._instance_to_reasy[embedded_id]
+            
+        reasy_id = self._next_id
+        self._next_id += 1
+        
+        self._reasy_to_instance[reasy_id] = embedded_id
+        self._instance_to_reasy[embedded_id] = reasy_id
+        
+        return reasy_id
     
+    def clear_embedded_instances(self, parent_id):
+        """
+        Remove all embedded instances associated with a specific parent ID
+        
+        This should be called when a UserData object is deleted
+        """
+        prefix = f"emb_{parent_id}_"
+        to_remove = []
+        
+        for instance_id in self._instance_to_reasy.keys():
+            if isinstance(instance_id, str) and instance_id.startswith(prefix):
+                to_remove.append(instance_id)
+        
+        for instance_id in to_remove:
+            reasy_id = self._instance_to_reasy[instance_id]
+            del self._instance_to_reasy[instance_id]
+            if reasy_id in self._reasy_to_instance:
+                del self._reasy_to_instance[reasy_id]

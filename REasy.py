@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
     QWidget,
+    QComboBox,
     QTabWidget,
     QTreeView, 
     QMenu,
@@ -52,6 +53,8 @@ from PySide6.QtWidgets import (
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 
+# Remove the direct EnumManager import
+# from utils.enum_manager import EnumManager
 
 def resource_path(relative_path):
     try:
@@ -277,6 +280,11 @@ class FileTab:
             handler = get_handler_for_data(data)
             if not handler:
                 raise ValueError("No handler found for this file type")
+            
+            if isinstance(handler, RszHandler):
+                handler.set_game_version(self.app.settings.get("game_version", "RE4"))
+                handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
+                handler.filepath = self.filename or ""
             
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
@@ -665,7 +673,7 @@ class REasyEditorApp(QMainWindow):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            if any(url.toLocalFile().lower().endswith(ext) for url in urls for ext in (".uvar", ".scn.20", ".user", ".pfb")):
+            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb")):
                 event.acceptProposedAction()
 
     def dropEvent(self, event):
@@ -952,6 +960,14 @@ class REasyEditorApp(QMainWindow):
 
         event.accept()
 
+    def update_from_app_settings(self):
+        """Update handler settings from the application settings"""
+        for tab in self.tabs.values():
+            if hasattr(tab, 'handler'):
+                if isinstance(tab.handler, RszHandler):
+                    tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
+                    tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
+        
     def open_settings_dialog(self):
         dialog, _ = create_standard_dialog(self, "Settings", "400x300")
         layout = QVBoxLayout(dialog)
@@ -968,6 +984,21 @@ class REasyEditorApp(QMainWindow):
         browse_btn = QPushButton("Browse...")
         json_path_layout.addWidget(browse_btn)
         layout.addLayout(json_path_layout)
+
+        # Game Version selection
+        game_version_layout = QHBoxLayout()
+        game_version_layout.setContentsMargins(0, 0, 0, 0)
+        game_version_label = QLabel("Game Version (For Dropdown Suggestions):")
+        game_version_layout.addWidget(game_version_label)
+        
+        game_version_combo = QComboBox()
+        game_version_combo.addItem("RE4") 
+        game_version_combo.addItem("RE2") 
+        game_version_combo.addItem("RE2RT") 
+        current_version = self.settings.get("game_version", "RE4")
+        game_version_combo.setCurrentText(current_version)
+        game_version_layout.addWidget(game_version_combo)
+        layout.addLayout(game_version_layout)
 
         dark_box = QCheckBox("Dark Mode")
         dark_box.setChecked(self.dark_mode)
@@ -998,22 +1029,19 @@ class REasyEditorApp(QMainWindow):
             self.settings["dark_mode"] = dark_box.isChecked()
             self.settings["show_debug_console"] = debug_box.isChecked()
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
-
+            
+            old_version = self.settings.get("game_version", "RE4")
+            new_version = game_version_combo.currentText()
+            self.settings["game_version"] = new_version
+            
             if self.dark_mode != dark_box.isChecked():
                 self.set_dark_mode(dark_box.isChecked())
 
             self.toggle_debug_console(debug_box.isChecked())
             
-            # Update RSZ handlers in open tabs if show_rsz_advanced changed
-            for tab in self.tabs.values():
-                if hasattr(tab, 'handler') and hasattr(tab.handler, 'show_advanced'):
-                    tab.handler.show_advanced = rsz_advanced_box.isChecked()
-                    if hasattr(tab, 'viewer') and tab.viewer:
-                        tab.viewer.show_advanced = rsz_advanced_box.isChecked()
-                        tab.viewer.populate_tree()
+            self.update_from_app_settings()
 
             self.save_settings()
-
             dialog.accept()
 
         def on_cancel():
@@ -1083,7 +1111,7 @@ class REasyEditorApp(QMainWindow):
             if not handler:
                 QMessageBox.critical(self, "Error", "Unsupported file type")
                 return
-                
+            
             if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
                 if not self.settings.get("rcol_json_path"):
                     msg = QMessageBox(QMessageBox.Warning, 
@@ -1093,14 +1121,8 @@ class REasyEditorApp(QMainWindow):
                     if msg.exec() == QMessageBox.Yes:
                         self.open_settings_dialog()
                     return
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Handler error: {str(e)}")
-            return
-        
-        tab = None
-        try:
+
             tab = FileTab(None, filename, data, app=self)
-            
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else "Untitled"
             tab_index = self.notebook.addTab(tab.notebook_widget, tab_label)
@@ -1143,9 +1165,7 @@ class REasyEditorApp(QMainWindow):
 
             handler = get_handler_for_data(data)
             if handler:
-                self.add_tab(fn, data)
-                if isinstance(handler, RszHandler):
-                    handler.show_advanced = self.settings.get("show_rsz_advanced", True)
+                self.add_tab(fn, data) 
             else:
                 QMessageBox.critical(self, "Error", "Unsupported file type")
 

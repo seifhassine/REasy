@@ -6,7 +6,8 @@ DEFAULT_SETTINGS = {
     "dark_mode": True, 
     "rcol_json_path": "", 
     "show_debug_console": True,
-    "show_rsz_advanced": True
+    "show_rsz_advanced": True,
+    "game_version": "RE4"  # Default game version
 }
 
 

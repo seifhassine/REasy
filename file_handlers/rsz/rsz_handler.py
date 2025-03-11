@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 import re
 
+from utils.enum_manager import EnumManager
 from utils.hex_util import guid_le_to_str
 from ..base_handler import BaseFileHandler
 from file_handlers.pyside.value_widgets import *
@@ -36,6 +37,21 @@ class RszHandler(BaseFileHandler):
         self.scn_file = None
         self.show_advanced = True
         self._viewer = None
+        self._game_version = "RE4"
+        self.filepath = ""
+
+    @property
+    def game_version(self):
+        return self._game_version
+
+    @game_version.setter 
+    def game_version(self, value):
+        """Set game version on handler and all child objects"""
+        self._game_version = value
+        if self.scn_file:
+            self.scn_file.game_version = value
+            
+        EnumManager.instance().game_version = value
 
     def can_handle(data: bytes) -> bool:
         """Check if data appears to be an SCN, USR, or PFB file"""
@@ -51,6 +67,9 @@ class RszHandler(BaseFileHandler):
         self.init_type_registry()
         self.scn_file = ScnFile()
         self.scn_file.type_registry = self.type_registry
+        self.scn_file.game_version = self._game_version 
+        self.scn_file.filepath = self.filepath
+        print(f"Reading file with game version: {self._game_version}")
         self.scn_file.read(data)
         IdManager.instance().reset()
 
@@ -61,9 +80,9 @@ class RszHandler(BaseFileHandler):
         viewer.handler = self
         viewer.type_registry = self.type_registry
         viewer.dark_mode = self.dark_mode
-        if hasattr(self, 'app') and hasattr(self.app, 'settings'):
-            self.show_advanced = self.app.settings.get("show_rsz_advanced", True)
+        viewer.game_version = self.game_version
         viewer.show_advanced = self.show_advanced
+        
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
@@ -74,6 +93,20 @@ class RszHandler(BaseFileHandler):
         viewer.modified_changed.connect(self.modified_changed.emit)
         self._viewer = viewer
         return viewer
+    
+    def set_advanced_mode(self, show_advanced):
+        """Set whether to show advanced options"""
+        self.show_advanced = show_advanced
+        if self._viewer:
+            self._viewer.show_advanced = show_advanced
+            self._viewer.populate_tree()
+    
+    def set_game_version(self, version):
+        """Set game version and update all related objects"""
+        self.game_version = version  
+        if self._viewer:
+            self._viewer.game_version = version
+            self._viewer.populate_tree()
 
     def rebuild(self) -> bytes:
         """Rebuild SCN file data with better error handling"""
@@ -261,6 +294,31 @@ class RszViewer(QWidget):
             )
         return DataTreeBuilder.create_data_node("Header", "", children=children)
 
+    def _create_rsz_header_info(self):
+        return DataTreeBuilder.create_data_node("RSZHeader", "")
+
+    def _create_resources_info(self):
+        """Create Resources info section for resource string references"""
+        node = DataTreeBuilder.create_data_node(
+            "Resources", f"{len(self.scn.resource_infos)} items"
+        )
+        
+        for i, res in enumerate(self.scn.resource_infos):
+            res_string = ""
+            if hasattr(self.scn, 'get_resource_string'):
+                try:
+                    res_string = self.scn.get_resource_string(res) or ""
+                except:
+                    res_string = "[Error reading string]"
+            
+            res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+            res_node["type"] = "resource"
+            res_node["resource_index"] = i
+            
+            node["children"].append(res_node)
+        
+        return node
+
     def _create_gameobject_ref_infos(self):
         """Create GameObjectRefInfo section for PFB files"""
         node = DataTreeBuilder.create_data_node(
@@ -284,7 +342,6 @@ class RszViewer(QWidget):
             instance_index = None
             if go.id < len(self.scn.object_table):
                 instance_index = self.scn.object_table[go.id]
-            instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
             instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
             if self.scn.is_pfb:
                 children = [
@@ -314,8 +371,7 @@ class RszViewer(QWidget):
         )
         for i, folder in enumerate(self.scn.folder_infos):
             if folder.id < len(self.scn.object_table):
-                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")
-                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")
+                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")               
                 folder_node = DataTreeBuilder.create_data_node(folder_name, "")
                 folder_node["children"] = [
                     DataTreeBuilder.create_data_node(f"ID: {folder.id}", ""),
@@ -401,8 +457,8 @@ class RszViewer(QWidget):
             if go_instance_id in processed:
                 continue
             reasy_id = IdManager.instance().register_instance(go_instance_id)
-            v0_name = self.name_helper.get_instance_v0_name(go_instance_id)
-            go_name = v0_name if v0_name else self.name_helper.get_instance_name(go_instance_id)
+            name = self.name_helper.get_instance_first_field_name(go_instance_id)
+            go_name = name if name else self.name_helper.get_instance_name(go_instance_id)
             go_dict = {
                 "data": [f"{go_name} (ID: {go_instance_id})", ""],
                 "type": "gameobject",
@@ -431,9 +487,8 @@ class RszViewer(QWidget):
                     if comp_instance_id in processed:
                         continue
                     reasy_id = IdManager.instance().register_instance(comp_instance_id)
-                    component_name = self.name_helper.get_instance_v0_name(
-                        comp_instance_id
-                    ) or self.name_helper.get_instance_name(comp_instance_id)
+                    name = self.name_helper.get_instance_first_field_name(comp_instance_id)
+                    component_name = name if name else self.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
                         "instance_id": comp_instance_id,
@@ -454,7 +509,7 @@ class RszViewer(QWidget):
             if folder_instance_id in processed:
                 continue
             reasy_id = IdManager.instance().register_instance(folder_instance_id)
-            folder_name = self.name_helper.get_instance_v0_name(folder_instance_id) or self.name_helper.get_instance_name(
+            folder_name = self.name_helper.get_instance_first_field_name(folder_instance_id) or self.name_helper.get_instance_name(
                 folder_instance_id
             )
             folder_dict = {
@@ -493,83 +548,344 @@ class RszViewer(QWidget):
                 remove_from_folder(folders_folder, node_dict)
                 children_node["children"].append(node_dict)
 
-    def _create_field_dict(self, field_name, data_obj):
-        """Creates dictionary node with added type info - refactored to reduce redundancy"""
+    def _create_field_dict(self, field_name, data_obj, embedded_context=None):
+        """Creates dictionary node with added type info
+        
+        Args:
+            field_name: Name of the field
+            data_obj: Field data object
+            embedded_context: Optional embedded RSZ context (rui) if this is an embedded field
+        """
+        domain_id = None
+        is_embedded = embedded_context is not None
+        if is_embedded:
+            domain_id = getattr(embedded_context, 'instance_id', None)
+        
         if isinstance(data_obj, ArrayData):
             children = []
             original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
+            
             for i, element in enumerate(data_obj.values):
-                if isinstance(element, ObjectData):
-                    ref_id = element.value
-                    if ref_id in self.scn._rsz_userdata_set:
-                        display_value = self.name_helper.get_userdata_display_value(ref_id)
-                        obj_node = DataTreeBuilder.create_data_node(
-                            str(i) + f": {display_value}", ""
-                        )
-                        children.append(obj_node)
-                    else:
-                        type_name = self.name_helper.get_type_name_for_instance(ref_id)
-                        obj_node = DataTreeBuilder.create_data_node(str(i) + f": ({type_name})", "")
-                        if ref_id in self.scn.parsed_elements:
-                            for fn, fd in self.scn.parsed_elements[ref_id].items():
-                                obj_node["children"].append(self._create_field_dict(fn, fd))
-                        children.append(obj_node)
+                if isinstance(element, ObjectData) or isinstance(element, UserDataData):
+                    child_node = self._handle_reference_in_array(i, element, embedded_context, domain_id)
+                    if child_node:
+                        children.append(child_node)
                 else:
+                    # Non-object elements are handled the same for both contexts
                     element_type = element.__class__.__name__
                     children.append(
                         DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
                     )
+                    
             return DataTreeBuilder.create_data_node(
                 f"{field_name}: {original_type}", "", "array", data_obj, children
             )
-        elif isinstance(data_obj, ObjectData):
-            ref_id = data_obj.value
-            if ref_id in self.scn._rsz_userdata_set:
-                display_value = self.name_helper.get_userdata_display_value(ref_id)
-                return DataTreeBuilder.create_data_node(
-                    f"{field_name}: {display_value}", "", None, None, []
-                )
-            type_name = self.name_helper.get_type_name_for_instance(ref_id)
-            children = []
-            if ref_id in self.scn.parsed_elements:
-                for fn, fd in self.scn.parsed_elements[ref_id].items():
-                    children.append(self._create_field_dict(fn, fd))
-            return DataTreeBuilder.create_data_node(
-                f"{field_name}: ({type_name})", "", None, None, children
-            )
-        elif isinstance(data_obj, UserDataData):
-            return DataTreeBuilder.create_data_node(
-                f"{field_name}:", data_obj.value, data_obj.__class__.__name__, data_obj
-            )
+            
+        elif isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData):
+            return self._handle_object_reference(field_name, data_obj, embedded_context, domain_id)
         else:
+            # All other data types are handled the same way regardless of context
             return DataTreeBuilder.create_data_node(
                 f"{field_name}:", "", data_obj.__class__.__name__, data_obj
             )
 
-    def _create_rsz_header_info(self):
-        return DataTreeBuilder.create_data_node("RSZHeader", "")
+    def _handle_reference_in_array(self, index, element, embedded_context, domain_id):
+        """Handle object or userdata reference in an array"""
+        ref_id = element.value if isinstance(element, ObjectData) else element.index
+        return self._handle_reference(str(index), ref_id, embedded_context, element)
+    
+    def _handle_object_reference(self, field_name, data_obj, embedded_context, domain_id):
+        """Handle object or userdata reference"""
+        ref_id = data_obj.value if isinstance(data_obj, ObjectData) else data_obj.index
+        return self._handle_reference(field_name, ref_id, embedded_context, data_obj)
+    
+    def _handle_reference(self, label, ref_id, embedded_context, data_obj):
+        """Unified reference handling for both array elements and direct object references"""
+        if embedded_context:
+            return self._handle_embedded_reference(label, ref_id, embedded_context, data_obj)
+        else:
+            return self._handle_standard_reference(label, ref_id)
 
-    def _create_resources_info(self):
-        """Create Resources info section for resource string references"""
-        node = DataTreeBuilder.create_data_node(
-            "Resources", f"{len(self.scn.resource_infos)} items"
+    def _handle_embedded_reference(self, field_name, ref_id, embedded_context, data_obj):
+        """Handle reference in embedded context"""
+        # For embedded fields, look in embedded_instances
+        if hasattr(embedded_context, 'embedded_instances') and ref_id in embedded_context.embedded_instances:
+            return self._create_embedded_instance_node(field_name, ref_id, embedded_context)
+            
+        # Handle reference to embedded UserData
+        elif hasattr(embedded_context, 'embedded_userdata_infos'):
+            for embedded_rui in embedded_context.embedded_userdata_infos:
+                if embedded_rui.instance_id == ref_id:
+                    if hasattr(embedded_rui, 'embedded_instances') and embedded_rui.embedded_instances:
+                        return self._create_direct_embedded_usr_node(field_name, embedded_rui)
+                    return DataTreeBuilder.create_data_node(
+                        f"{field_name}: Embedded UserData (ID: {ref_id})", "", None, None
+                    )
+        
+        # Generic reference representation
+        type_label = "UserData" if isinstance(data_obj, UserDataData) else "Object"
+        return DataTreeBuilder.create_data_node(
+            f"{field_name}: ({type_label} ID: {ref_id})", "", None, None
         )
+
+    def _create_embedded_instance_node(self, field_name, ref_id, embedded_context):
+        """Create node for embedded instance reference"""
+        instance_data = embedded_context.embedded_instances[ref_id]
+        type_name = self._get_embedded_type_name(ref_id, embedded_context)
         
-        for i, res in enumerate(self.scn.resource_infos):
-            res_string = ""
-            if hasattr(self.scn, 'get_resource_string'):
-                try:
-                    res_string = self.scn.get_resource_string(res) or ""
-                except:
-                    res_string = "[Error reading string]"
-            
-            res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
-            res_node["type"] = "resource"
-            res_node["resource_index"] = i
-            
-            node["children"].append(res_node)
+        # Special handling for nested embedded userdata
+        if isinstance(instance_data, dict) and "embedded_rsz" in instance_data:
+            # This is a reference to another embedded RSZ structure
+            nested_rui = instance_data["embedded_rsz"]
+            if nested_rui and hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
+                # Make sure we preserve the outer domain ID for reference
+                if not hasattr(nested_rui, 'parent_domain_id'):
+                    nested_rui.parent_domain_id = getattr(embedded_context, 'instance_id', None)
+                return self._create_direct_embedded_usr_node(field_name, nested_rui)
         
-        return node
+        obj_node = DataTreeBuilder.create_data_node(f"{field_name}: ({type_name})", "")
+        
+        # Add all fields from the referenced instance
+        if isinstance(instance_data, dict) and "embedded_rsz" not in instance_data:
+            for sub_field_name, sub_field_data in instance_data.items():
+                field_node = self._create_field_dict(sub_field_name, sub_field_data, embedded_context)
+                obj_node["children"].append(field_node)
+        
+        return obj_node
+    
+    def _handle_standard_reference(self, field_name, ref_id):
+        """Handle reference in standard (non-embedded) context"""
+        scn = self.scn
+        
+        # UserData reference
+        if ref_id in scn._rsz_userdata_set:
+            rui = scn._rsz_userdata_dict.get(ref_id)
+            # Check if this is embedded RSZ data with parsed instances
+            if rui and hasattr(rui, 'embedded_instances') and rui.embedded_instances:
+                # Direct representation: display as root .user object
+                return self._create_direct_embedded_usr_node(field_name, rui)
+            else:
+                display_value = self.name_helper.get_userdata_display_value(ref_id)
+                return DataTreeBuilder.create_data_node(
+                    f"{field_name}: {display_value}", "", None, None, []
+                )
+        
+        # Object reference
+        type_name = self.name_helper.get_type_name_for_instance(ref_id)
+        children = []
+        if ref_id in scn.parsed_elements:
+            for fn, fd in scn.parsed_elements[ref_id].items():
+                children.append(self._create_field_dict(fn, fd))
+        return DataTreeBuilder.create_data_node(
+            f"{field_name}: ({type_name})", "", None, None, children
+        )
+            
+    def _create_direct_embedded_usr_node(self, field_name, rui):
+        """Display embedded RSZ structure as a direct .user object with proper relationships."""
+        # Get domain ID and prepare structure
+        domain_id = getattr(rui, 'instance_id', 0)
+        IdManager.instance().clear_embedded_instances(domain_id)
+        
+        # Get root instance and create the root node
+        root_instance_id = self._get_root_embedded_instance_id(rui)
+        type_name = self._get_embedded_type_name(root_instance_id, rui) if root_instance_id else "UserData"
+        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name}", "")
+        
+        # Build hierarchy if needed
+        hierarchy = getattr(rui, 'embedded_instance_hierarchy', None)
+        if not hierarchy and hasattr(rui, 'embedded_instances'):
+            hierarchy = self._build_embedded_hierarchy(rui.embedded_instances)
+        
+        # Skip further processing if embedded_instances doesn't exist or is empty
+        if not hasattr(rui, 'embedded_instances') or not rui.embedded_instances:
+            return root_node
+        
+        # Create all instance nodes with their fields
+        nodes = self._create_embedded_instance_nodes(rui, domain_id)
+        
+        # Add root instance fields if it exists
+        if root_instance_id and root_instance_id != 0 and root_instance_id in rui.embedded_instances:
+            self._add_root_instance_fields(root_node, root_instance_id, rui, domain_id)
+        
+        # Build the hierarchy relationships between nodes
+        self._build_embedded_node_hierarchy(nodes, hierarchy, root_node, root_instance_id)
+        
+        return root_node
+
+    def _get_root_embedded_instance_id(self, rui):
+        """Get the root instance ID from an embedded RSZ structure"""
+        if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table:
+            return rui.embedded_object_table[0] if len(rui.embedded_object_table) > 0 else None
+        return None
+    
+    def _create_embedded_instance_nodes(self, rui, domain_id):
+        """Create nodes for all instances in an embedded RSZ structure"""
+        nodes = {}
+        if not hasattr(rui, 'embedded_instances'):
+            return nodes
+            
+        for instance_id, instance_data in rui.embedded_instances.items():
+            # Skip null instance and non-dict instances
+            if instance_id == 0 or not isinstance(instance_data, dict) or "embedded_rsz" in instance_data:
+                continue
+                
+            # Create namespaced ID and register it
+            namespaced_id = f"emb_{domain_id}_{instance_id}"
+            reasy_id = IdManager.instance().register_embedded_instance(namespaced_id)
+            
+            # Get type name for this instance
+            inst_type_name = self._get_embedded_type_name(instance_id, rui)
+            
+            # Create the node
+            node_dict = {
+                "data": [f"{inst_type_name} (ID: {instance_id})", ""],
+                "instance_id": instance_id,
+                "domain_id": domain_id,
+                "embedded_id": namespaced_id,
+                "reasy_id": reasy_id,
+                "children": [],
+            }
+            
+            # Add fields to the node
+            for field_name, field_data in instance_data.items():
+                field_node = self._create_field_dict(field_name, field_data, rui)
+                node_dict["children"].append(field_node)
+            
+            nodes[instance_id] = node_dict
+            
+        return nodes
+    
+    def _add_root_instance_fields(self, root_node, root_instance_id, rui, domain_id):
+        """Add fields from the root instance to the root node"""
+        root_data = rui.embedded_instances[root_instance_id]
+        if isinstance(root_data, dict):
+            # Register the root instance
+            namespaced_root_id = f"emb_{domain_id}_{root_instance_id}"
+            reasy_root_id = IdManager.instance().register_embedded_instance(namespaced_root_id)
+            
+            # Update root node with IDs
+            root_node["embedded_id"] = namespaced_root_id
+            root_node["domain_id"] = domain_id
+            root_node["instance_id"] = root_instance_id
+            root_node["reasy_id"] = reasy_root_id
+            
+            # Add fields
+            for field_name, field_data in root_data.items():
+                field_node = self._create_field_dict(field_name, field_data, rui)
+                root_node["children"].append(field_node)
+    
+    def _build_embedded_node_hierarchy(self, nodes, hierarchy, root_node, root_instance_id):
+        """Build parent-child relationships between nodes"""
+        # Track which nodes have been attached to the tree
+        attached = set()
+        if root_instance_id:
+            attached.add(root_instance_id)
+            
+        # Phase 1: Use explicit hierarchy information
+        if hierarchy:
+            for instance_id, node_dict in nodes.items():
+                if instance_id == root_instance_id:
+                    continue
+                    
+                parent_id = hierarchy.get(instance_id, {}).get("parent")
+                if parent_id is not None and parent_id in nodes:
+                    nodes[parent_id]["children"].append(node_dict)
+                    attached.add(instance_id)
+        
+        # Phase 2: Attach any remaining nodes to root
+        for instance_id, node_dict in nodes.items():
+            if instance_id != root_instance_id and instance_id not in attached:
+                root_node["children"].append(node_dict)
+
+    def _get_embedded_type_name(self, instance_id, rui):
+        """Get the type name for an instance in embedded RSZ"""
+        type_name = f"Instance[{instance_id}]"
+        
+        if hasattr(rui, 'embedded_instance_infos') and instance_id < len(rui.embedded_instance_infos):
+            inst_info = rui.embedded_instance_infos[instance_id]
+            if self.type_registry:
+                type_info = self.type_registry.get_type_info(inst_info.type_id)
+                if type_info and "name" in type_info:
+                    type_name = type_info["name"]
+        
+        return type_name
+
+    def _build_embedded_hierarchy(self, embedded_instances):
+        """Build hierarchy structure from object references in embedded instances"""
+        # Create hierarchy structure with default values
+        hierarchy = {
+            instance_id: {"children": [], "parent": None} 
+            for instance_id in embedded_instances 
+            if isinstance(embedded_instances[instance_id], dict)
+        }
+        
+        # Process all fields to find parent-child relationships
+        for instance_id, fields in embedded_instances.items():
+            if not isinstance(fields, dict):
+                continue
+            
+            # Process all fields for potential references    
+            for field_data in fields.values():
+                self._process_reference_for_hierarchy(instance_id, field_data, hierarchy)
+        
+        # Consolidate multiple root nodes if needed
+        self._consolidate_root_nodes(hierarchy)
+        
+        return hierarchy
+    
+    def _consolidate_root_nodes(self, hierarchy):
+        """Find main root node and make other roots its children"""
+        # Identify root candidates (nodes with no parent but with children)
+        root_candidates = [
+            id for id, data in hierarchy.items() 
+            if data["parent"] is None and data["children"]
+        ]
+        
+        if len(root_candidates) <= 1:
+            return  # No consolidation needed
+            
+        # Find root with most total children
+        main_root = max(root_candidates, key=lambda x: self._count_all_children(x, hierarchy))
+        
+        # Make other roots children of the main root
+        for candidate in root_candidates:
+            if candidate != main_root and hierarchy[candidate]["parent"] is None:
+                hierarchy[main_root]["children"].append(candidate)
+                hierarchy[candidate]["parent"] = main_root
+
+    def _process_reference_for_hierarchy(self, instance_id, field_data, hierarchy):
+        """Process a field for parent-child relationships in hierarchy"""
+        # Handle direct object references
+        if isinstance(field_data, ObjectData) and field_data.value in hierarchy:
+            child_id = field_data.value
+            if child_id != instance_id:  # Avoid self-references
+                hierarchy[instance_id]["children"].append(child_id)
+                hierarchy[child_id]["parent"] = instance_id
+                
+        # Handle array of object references
+        elif isinstance(field_data, ArrayData):
+            for element in field_data.values:
+                if isinstance(element, ObjectData) and element.value in hierarchy:
+                    child_id = element.value
+                    if child_id != instance_id:  # Avoid self-references
+                        hierarchy[instance_id]["children"].append(child_id)
+                        hierarchy[child_id]["parent"] = instance_id
+    
+    def _count_all_children(self, node_id, hierarchy, visited=None):
+        """Count all children (direct and indirect) of a node"""
+        if visited is None:
+            visited = set()
+        if node_id in visited:
+            return 0
+            
+        visited.add(node_id)
+        direct_children = hierarchy[node_id]["children"]
+        count = len(direct_children)
+        
+        for child in direct_children:
+            count += self._count_all_children(child, hierarchy, visited)
+            
+        return count
 
     def embed_forms(self):
         def on_modified():
@@ -850,76 +1166,57 @@ class RszViewer(QWidget):
                 del self.scn._userdata_str_map[ui]
 
     def _update_fields_after_deletion(self, fields, deleted_ids, id_mapping):
+        """Update references in fields after deleting instances"""
         updated_fields = {}
         for field_name, field_data in fields.items():
-            if isinstance(field_data, ObjectData):
-                ref_id = field_data.value
-                if ref_id > 0:
-                    if ref_id in deleted_ids:
-                        field_data.value = 0
-                    else:
-                        field_data.value = id_mapping.get(ref_id, ref_id)
-            elif isinstance(field_data, ResourceData) and hasattr(field_data, "value"):
-                ref_id = field_data.value
-                if ref_id > 0:
-                    if ref_id in deleted_ids:
-                        field_data.value = 0
-                    else:
-                        field_data.value = id_mapping.get(ref_id, ref_id)
+            if isinstance(field_data, ObjectData) or (isinstance(field_data, ResourceData) and hasattr(field_data, "value")):
+                self._update_reference_value(field_data, "value", deleted_ids, id_mapping)
             elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
-                ref_id = field_data.index
-                if ref_id > 0:
-                    if ref_id in deleted_ids:
-                        field_data.index = 0
-                    else:
-                        field_data.index = id_mapping.get(ref_id, ref_id)
+                self._update_reference_value(field_data, "index", deleted_ids, id_mapping)
             elif isinstance(field_data, ArrayData):
                 for elem in field_data.values:
-                    if isinstance(elem, ObjectData):
-                        ref_id = elem.value
-                        if ref_id > 0:
-                            if ref_id in deleted_ids:
-                                elem.value = 0
-                            else:
-                                elem.value = id_mapping.get(ref_id, ref_id)
-                    elif isinstance(elem, ResourceData) and hasattr(elem, "value"):
-                        ref_id = elem.value
-                        if ref_id > 0:
-                            if ref_id in deleted_ids:
-                                elem.value = 0
-                            else:
-                                elem.value = id_mapping.get(ref_id, ref_id)
+                    if isinstance(elem, ObjectData) or (isinstance(elem, ResourceData) and hasattr(elem, "value")):
+                        self._update_reference_value(elem, "value", deleted_ids, id_mapping)
                     elif isinstance(elem, UserDataData) and hasattr(elem, "index"):
-                        ref_id = elem.index
-                        if ref_id > 0:
-                            if ref_id in deleted_ids:
-                                elem.index = 0
-                            else:
-                                elem.index = id_mapping.get(ref_id, ref_id)
+                        self._update_reference_value(elem, "index", deleted_ids, id_mapping)
             updated_fields[field_name] = field_data
         return updated_fields
+        
+    def _update_reference_value(self, obj, attr_name, deleted_ids, id_mapping):
+        """Update a reference attribute value after deletion"""
+        ref_id = getattr(obj, attr_name)
+        if ref_id > 0:
+            if ref_id in deleted_ids:
+                setattr(obj, attr_name, 0)
+            else:
+                setattr(obj, attr_name, id_mapping.get(ref_id, ref_id))
 
     def _initialize_new_instance(self, type_id, type_info):
+        """Create a new instance from type info with proper CRC"""
         if type_id == 0 or not type_info:
             return None
             
         new_instance = ScnInstanceInfo()
-        
         new_instance.type_id = type_id
         
-        if isinstance(type_info.get("crc", 0), str):
-            crc_str = type_info.get("crc", "0")
-            if crc_str.startswith('0x') or any(c in crc_str.lower() for c in 'abcdef'):
-                crc = int(crc_str, 16)
-            else:
-                crc = int(crc_str, 10)
-        else:
-            crc = int(type_info.get("crc", 0))
-        
-        new_instance.crc = crc
-        if(crc == 0):
+        crc = self._parse_crc_value(type_info.get("crc", 0))
+        if crc == 0:
             raise ValueError("CRC is 0")
+            
+        new_instance.crc = crc
         return new_instance
+        
+    def _parse_crc_value(self, crc_value):
+        """Parse a CRC value from various formats"""
+        if isinstance(crc_value, int):
+            return crc_value
+            
+        if isinstance(crc_value, str):
+            if crc_value.startswith('0x') or any(c in crc_value.lower() for c in 'abcdef'):
+                return int(crc_value, 16)
+            return int(crc_value, 10)
+            
+        return 0
 
     def _initialize_fields_from_type_info(self, fields_dict, type_info):
         """Initialize fields based on type info"""

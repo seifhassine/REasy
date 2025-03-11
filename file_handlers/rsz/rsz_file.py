@@ -2,6 +2,8 @@ import struct
 import uuid
 from file_handlers.rcol_file import align_offset
 from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
+from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
 from utils.hex_util import read_wstring, guid_le_to_str
 
 
@@ -261,6 +263,8 @@ class ScnFile:
         self.type_registry = None
         self.parsed_instances = []
         self._current_offset = 0 
+        self.game_version = "RE4"
+        self.filepath = ""
   
         self._string_cache = {}  # Cache for frequently accessed strings, will probably be removed.
         self._type_info_cache = {}
@@ -289,41 +293,66 @@ class ScnFile:
         elif data[:4] == b'PFB\x00':
             self.is_usr = False
             self.is_pfb = True
-            self.header = PfbHeader()
+            
+            if self.filepath.lower().endswith('.16'):
+                self.header = Pfb16Header()
+            else:
+                self.header = PfbHeader()
         else:
             self.is_usr = False
             self.is_pfb = False
-            self.header = ScnHeader()
+            
+            if self.filepath.lower().endswith('.19'):
+                self.header = Scn19Header()
+            else:
+                self.header = ScnHeader()
             
         self.header.parse(data)
         self._current_offset = self.header.SIZE
 
-        # For USR files, we only need to parse some sections
+        # Call appropriate parsing function based on file type
         if self.is_usr:
-            self._parse_resource_infos(data)
-            self._parse_userdata_infos(data)
-            self._parse_blocks(data)
-            self._parse_rsz_section(data)
-            self._parse_instances(data)
+            self._parse_usr_file(data)
         elif self.is_pfb:
-            # PFB file parsing
-            self._parse_gameobjects(data)
-            self._parse_gameobject_ref_infos(data)
-            self._parse_resource_infos(data)
-            self._parse_userdata_infos(data)
-            self._parse_blocks(data)
-            self._parse_rsz_section(data)
-            self._parse_instances(data)
+            self._parse_pfb_file(data)
         else:
-            # Regular SCN parsing
-            self._parse_gameobjects(data)
-            self._parse_folder_infos(data)
-            self._parse_resource_infos(data)
-            self._parse_prefab_infos(data)
+            self._parse_scn_file(data)
+
+    def _parse_usr_file(self, data: bytes):
+        """Parse USR file structure"""
+        self._parse_resource_infos(data)
+        self._parse_userdata_infos(data)
+        self._parse_blocks(data)
+        self._parse_rsz_section(data)
+        self._parse_instances(data)
+        
+    def _parse_pfb_file(self, data: bytes):
+        """Parse PFB file structure with game version considerations"""
+        self._parse_gameobjects(data)
+        self._parse_gameobject_ref_infos(data)
+        self._parse_resource_infos(data)
+        
+        if not self.filepath.lower().endswith('.16'):
             self._parse_userdata_infos(data)
-            self._parse_blocks(data)
-            self._parse_rsz_section(data)
-            self._parse_instances(data)
+            
+        self._parse_blocks(data)
+        self._parse_rsz_section(data)
+        self._parse_instances(data)
+        
+    def _parse_scn_file(self, data: bytes):
+        """Parse standard SCN file structure"""
+        self._parse_gameobjects(data)
+        self._parse_folder_infos(data)
+        self._parse_resource_infos(data)
+        self._parse_prefab_infos(data)
+        
+        # SCN.19 format doesn't have userdata_infos
+        if not self.filepath.lower().endswith('.19'):
+            self._parse_userdata_infos(data)
+            
+        self._parse_blocks(data)
+        self._parse_rsz_section(data)
+        self._parse_instances(data)        
 
     def _parse_header(self, data):
         if self.is_pfb:
@@ -461,7 +490,23 @@ class ScnFile:
             
         self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
 
-        # Parse RSZUserDataInfos – each entry is 16 bytes.
+        # Special handling for SCN.19 format which has different RSZ userdata structure
+        if self.filepath.lower().endswith('.19'):
+            self._parse_scn19_rsz_userdata(data)
+        # Special handling for PFB.16 format which might have embedded RSZ
+        elif self.filepath.lower().endswith('.16'):
+            self._current_offset = parse_pfb16_rsz_userdata(self, data)
+        else:
+            # Standard RSZ userdata parsing
+            self._parse_standard_rsz_userdata(data)
+        
+        self.data = data[self._current_offset:]
+        
+        self._rsz_userdata_dict = {rui.instance_id: rui for rui in self.rsz_userdata_infos}
+        self._rsz_userdata_set = set(self._rsz_userdata_dict.keys())
+
+    def _parse_standard_rsz_userdata(self, data):
+        """Parse standard RSZ userdata entries (16 bytes each)"""
         self.rsz_userdata_infos = []
         for i in range(self.rsz_header.userdata_count):
             rui = ScnRSZUserDataInfo()
@@ -479,11 +524,10 @@ class ScnFile:
         else:
             new_offset = self._current_offset
         self._current_offset = self._align(new_offset, 16)
-            
-        self.data = data[self._current_offset:]
-        
-        self._rsz_userdata_dict = {rui.instance_id: rui for rui in self.rsz_userdata_infos}
-        self._rsz_userdata_set = set(self._rsz_userdata_dict.keys())
+
+    def _parse_scn19_rsz_userdata(self, data):
+        """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
+        self._current_offset = parse_scn19_rsz_userdata(self, data)
 
     def _align(self, offset: int, alignment: int) -> int:
         remainder = offset % alignment
@@ -498,7 +542,6 @@ class ScnFile:
         """Parse instance data with optimizations"""
         self.parsed_instances = []
         current_offset = 0
-
         # Reset processed instances tracking
         self._processed_instances = set()
 
@@ -533,7 +576,6 @@ class ScnFile:
                 continue
 
             self.parsed_elements[idx] = {}
-            
             new_offset = parse_instance_fields(
                 raw=self.data,
                 offset=current_offset,
@@ -812,7 +854,13 @@ class ScnFile:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
-            return self._build_pfb(special_align_enabled)
+            if self.filepath.lower().endswith('.16'):
+                return build_pfb_16(self, special_align_enabled)
+            else:
+                return self._build_pfb(special_align_enabled)
+        else:
+            if self.filepath.lower().endswith('.19'):
+                return build_scn_19(self, special_align_enabled)
         
         self.header.info_count = len(self.gameobjects)
         self.header.folder_count = len(self.folder_infos)
@@ -1396,80 +1444,8 @@ class ScnFile:
                 out += b"\x00"
             out += string_data
 
-        # 8) RSZ Section
-        if self.rsz_header:
-            # Ensure RSZ header starts on 16-byte alignment
-            if special_align_enabled:
-                while len(out) % 16 != 0:
-                    out += b"\x00"
-                
-            rsz_start = len(out)
-            self.header.data_offset = rsz_start
-
-            # Write RSZ header with placeholder offsets
-            rsz_header_bytes = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version,
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                0,  # instance_offset - will update later
-                0,  # data_offset - will update later 
-                0   # userdata_offset - will update later
-            )
-            out += rsz_header_bytes
-
-            # Write object table
-            for obj_id in self.object_table:
-                out += struct.pack("<i", obj_id)
-
-            # Write instance infos
-            new_instance_offset = len(out) - rsz_start
-            for inst in self.instance_infos:
-                out += struct.pack("<II", inst.type_id, inst.crc)
-
-            # Write userdata at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_userdata_offset = len(out) - rsz_start
-
-            # Write userdata entries and strings
-            userdata_entries = []
-            for rui in self.rsz_userdata_infos:
-                entry_offset = len(out) - rsz_start
-                out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
-                userdata_entries.append((entry_offset, rui))
-
-            for entry_offset, rui in userdata_entries:
-                string_offset = len(out) - rsz_start
-                string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
-                out += string_data
-                struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
-
-            # Write instance data at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_data_offset = len(out) - rsz_start
-            
-            instance_data = self._write_instance_data()
-            out += instance_data
-
-            # Update RSZ header with actual offsets
-            new_rsz_header = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version, 
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                new_instance_offset,
-                new_data_offset,
-                new_userdata_offset
-            )
-            out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+        # 8) Build the common RSZ section
+        rsz_start = self._build_rsz_section(out, special_align_enabled)
 
         # 9) Update PFB header
         header_bytes = struct.pack(
@@ -1488,6 +1464,84 @@ class ScnFile:
         out[0:PfbHeader.SIZE] = header_bytes
 
         return bytes(out)
+
+    def _build_rsz_section(self, out: bytearray, special_align_enabled = False) -> int:
+        """Build the RSZ section that's common to all file formats.
+        Returns the rsz_start position."""
+        # Ensure RSZ header starts on 16-byte alignment
+        if special_align_enabled:
+            while len(out) % 16 != 0:
+                out += b"\x00"
+                
+        rsz_start = len(out)
+        self.header.data_offset = rsz_start
+
+        # Write RSZ header with placeholder offsets
+        rsz_header_bytes = struct.pack(
+            "<5I I Q Q Q",
+            self.rsz_header.magic,
+            self.rsz_header.version,
+            self.rsz_header.object_count,
+            len(self.instance_infos),
+            len(self.rsz_userdata_infos),
+            self.rsz_header.reserved,
+            0,  # instance_offset - will update later
+            0,  # data_offset - will update later 
+            0   # userdata_offset - will update later
+        )
+        out += rsz_header_bytes
+
+        # Write object table
+        for obj_id in self.object_table:
+            out += struct.pack("<i", obj_id)
+
+        # Write instance infos
+        new_instance_offset = len(out) - rsz_start
+        for inst in self.instance_infos:
+            out += struct.pack("<II", inst.type_id, inst.crc)
+
+        # Write userdata at 16-byte alignment
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        new_userdata_offset = len(out) - rsz_start
+
+        # Write userdata entries and strings
+        userdata_entries = []
+        for rui in self.rsz_userdata_infos:
+            entry_offset = len(out) - rsz_start
+            out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
+            userdata_entries.append((entry_offset, rui))
+
+        for entry_offset, rui in userdata_entries:
+            string_offset = len(out) - rsz_start
+            string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
+            out += string_data
+            struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
+
+        # Write instance data at 16-byte alignment
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        new_data_offset = len(out) - rsz_start
+        
+        instance_data = self._write_instance_data()
+        out += instance_data
+
+        # Update RSZ header with actual offsets
+        new_rsz_header = struct.pack(
+            "<5I I Q Q Q",
+            self.rsz_header.magic,
+            self.rsz_header.version, 
+            self.rsz_header.object_count,
+            len(self.instance_infos),
+            len(self.rsz_userdata_infos),
+            self.rsz_header.reserved,
+            new_instance_offset,
+            new_data_offset,
+            new_userdata_offset
+        )
+        out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+        
+        return rsz_start
 
     def get_resource_string(self, ri):
         return self._resource_str_map.get(ri, "")
@@ -1518,7 +1572,7 @@ def get_type_name(type_registry, instance_infos, idx):
         return f"Instance[{idx}]"
     inst_info = instance_infos[idx]
     type_info = type_registry.get_type_info(inst_info.type_id)
-    if type_info and "name" in type_info:
+    if (type_info and "name" in type_info):
         return f"{type_info['name']} (ID: {idx})"
     return f"Instance[{idx}]"
 
@@ -1831,16 +1885,16 @@ def parse_instance_fields(
                     segment = raw[pos:pos+str_length]
                     
                     try:
-                        string_value = segment.decode('utf-16-le')
+                        value = segment.decode('utf-16-le')
                     except UnicodeDecodeError:
                         # Fallback to manual conversion
                         chars = []
                         for j in range(0, len(segment), 2):
                             code_point = segment[j] | (segment[j+1] << 8)
                             chars.append(chr(code_point))
-                        string_value = ''.join(chars)
+                        value = ''.join(chars)
                         
-                    children.append(string_value)
+                    children.append(value)
                     pos += str_length
                     
                 data_obj = ArrayData(list(map(rsz_type, children)), rsz_type, original_type)
