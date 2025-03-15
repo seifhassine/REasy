@@ -817,6 +817,13 @@ class ScnFile:
             elif isinstance(data_obj, UserDataData):
                 #print(f"Writing userdata with index {data_obj.index}")  # Debug print
                 out.extend(struct.pack("<I", data_obj.index))
+            elif isinstance(data_obj, CapsuleData):
+                out.extend(struct.pack("<3f", data_obj.start.x, data_obj.start.y, data_obj.start.z))
+                out.extend(struct.pack("<f", 0.0)) 
+                out.extend(struct.pack("<3f", data_obj.end.x, data_obj.end.y, data_obj.end.z))
+                out.extend(struct.pack("<f", 0.0))
+                out.extend(struct.pack("<f", data_obj.radius))
+                out.extend(b'\x00' * 12)
             else:
                 #print("last is else")
                 val = getattr(data_obj, 'value', 0)
@@ -2204,6 +2211,17 @@ def parse_instance_fields(
                 pos += fsize
                 pos = local_align(pos, field_align)
                 data_obj = ColorData(vals[0], vals[1], vals[2], vals[3], original_type)
+
+            elif rsz_type == CapsuleData:
+                start_vals = unpack_4float(raw, pos)
+                pos += 16
+                end_vals = unpack_4float(raw, pos)
+                pos += 16
+                radius, *_ = struct.unpack_from("<f", raw, pos) 
+                pos += 16
+                start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
+                end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
+                data_obj = CapsuleData(start_vec, end_vec, radius, original_type)
 
             else:
                 raw_bytes = get_bytes(raw[pos:pos+fsize])

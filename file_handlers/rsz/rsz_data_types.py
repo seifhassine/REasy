@@ -426,6 +426,8 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
             return OBBData
         elif field_size == 64 and align == 16:
             return Mat4Data
+        elif field_size == 48 and align == 16:
+            return CapsuleData
         elif field_size == 4 and is_native:
             return MaybeObject
         elif field_size == 8:

@@ -1161,5 +1161,147 @@ class ColorInput(BaseValueWidget):
             self.valueChanged.emit(tuple(values))
             self.mark_modified()
         except ValueError:
-            pass
+            pass 
+
+class CapsuleInput(BaseValueWidget):
+    """Widget for editing capsule collision shapes (start point, end point, and radius)"""
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        grid = QGridLayout()
+        grid.setSpacing(4) 
+        grid.setAlignment(Qt.AlignLeft)
+        self.layout.addLayout(grid)
+        
+        grid.addWidget(QLabel("Start:"), 0, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel("End:"), 1, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel("Radius:"), 2, 0, alignment=Qt.AlignRight)
+        
+        self.start_inputs = []
+        for i, coord in enumerate(['X', 'Y', 'Z']):
+            grid.addWidget(QLabel(coord), 0, (i*2)+1, alignment=Qt.AlignRight | Qt.AlignVCenter)
+            
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(80)
+            line_edit.setAlignment(Qt.AlignLeft)
+            line_edit.setStyleSheet("margin-left: 6px;") 
+            grid.addWidget(line_edit, 0, (i*2)+2)
+            self.start_inputs.append(line_edit)
+            
+        self.end_inputs = []
+        for i, coord in enumerate(['X', 'Y', 'Z']):
+            grid.addWidget(QLabel(coord), 1, (i*2)+1, alignment=Qt.AlignRight | Qt.AlignVCenter)
+            
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(80)
+            line_edit.setAlignment(Qt.AlignLeft)
+            line_edit.setStyleSheet("margin-left: 6px;") 
+            grid.addWidget(line_edit, 1, (i*2)+2)
+            self.end_inputs.append(line_edit)
+            
+        self.radius_input = QLineEdit()
+        self.radius_input.setValidator(QDoubleValidator())
+        self.radius_input.setFixedWidth(80)
+        self.radius_input.setAlignment(Qt.AlignLeft)
+        self.radius_input.setStyleSheet("margin-left: 6px;")
+        grid.addWidget(self.radius_input, 2, 2)
+        
+        self.layout.addStretch()
+        
+        if data:
+            self.set_data(data)
+            
+        for input_field in self.start_inputs + self.end_inputs:
+            input_field.textEdited.connect(self._on_value_changed)
+        self.radius_input.textEdited.connect(self._on_value_changed)
+
+    def update_display(self):
+        """Update input fields from data object"""
+        if not self._data:
+            return
+            
+        if hasattr(self._data, 'start') and hasattr(self._data.start, 'x'):
+            start_values = [self._data.start.x, self._data.start.y, self._data.start.z]
+            for input_field, val in zip(self.start_inputs, start_values):
+                input_field.setText(f"{val:.8g}")
+                
+        if hasattr(self._data, 'end') and hasattr(self._data.end, 'x'):
+            end_values = [self._data.end.x, self._data.end.y, self._data.end.z]
+            for input_field, val in zip(self.end_inputs, end_values):
+                input_field.setText(f"{val:.8g}")
+                
+        if hasattr(self._data, 'radius'):
+            self.radius_input.setText(f"{self._data.radius:.8g}")
+
+    def _on_value_changed(self):
+        """Handle input changes and update the data model"""
+        if not self._data:
+            return
+            
+        try:
+            start_values = []
+            for input_field in self.start_inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    start_values.append(0.0)
+                else:
+                    start_values.append(float(text))
+                    
+            end_values = []
+            for input_field in self.end_inputs:
+                text = input_field.text()
+                if not text or text == '-':
+                    end_values.append(0.0)
+                else:
+                    end_values.append(float(text))
+                    
+            radius_text = self.radius_input.text()
+            radius_value = 0.0
+            if radius_text and radius_text != '-':
+                radius_value = float(radius_text)
+                
+            self._data.start.x = start_values[0]
+            self._data.start.y = start_values[1]
+            self._data.start.z = start_values[2]
+            
+            self._data.end.x = end_values[0]
+            self._data.end.y = end_values[1]
+            self._data.end.z = end_values[2]
+            
+            self._data.radius = radius_value
+            
+            combined_values = (*start_values, *end_values, radius_value)
+            self.valueChanged.emit(combined_values)
+            self.mark_modified()
+            
+        except ValueError:
+            pass  # Ignore invalid input during typing
+            
+    def setValues(self, values):
+        """Set all input values at once (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
+        if len(values) != 7:
+            return
+            
+        for i, val in enumerate(values[:3]):
+            self.start_inputs[i].setText(str(val))
+            
+        for i, val in enumerate(values[3:6]):
+            self.end_inputs[i].setText(str(val))
+            
+        self.radius_input.setText(str(values[6]))
+    
+    def getValues(self):
+        """Get all values as a tuple (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
+        try:
+            start_values = [float(input_field.text() or "0") for input_field in self.start_inputs]
+            end_values = [float(input_field.text() or "0") for input_field in self.end_inputs]
+            radius = float(self.radius_input.text() or "0")
+            
+            return (*start_values, *end_values, radius)
+        except ValueError:
+            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 

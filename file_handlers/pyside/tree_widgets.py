@@ -1435,6 +1435,7 @@ class TreeWidgetFactory:
         "RangeIData": RangeIInput,
         "EnumInput": EnumInput,
         "ColorData": ColorInput,
+        "CapsuleData": CapsuleInput,
     }
 
     @staticmethod
