@@ -1266,7 +1266,7 @@ class RszViewer(QWidget):
             field_align = field_def.get("align", 4)
             field_orig_type = field_def.get("original_type", "")
             
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align)
+            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type)
             field_obj = self._create_default_field(field_class, field_orig_type, field_array)
             
             if field_obj:

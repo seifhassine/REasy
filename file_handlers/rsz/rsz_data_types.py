@@ -366,7 +366,7 @@ TYPE_MAPPING = {
     "f64": F64Data,
     "float": F32Data,
     "string": StringData,
-    "resource": ResourceData,
+    "resource": StringData, # Resources are strings so far (?)
     "gameobjectref": GameObjectRefData,
     "object": ObjectData,
     "vec3": Vec3Data,
@@ -413,7 +413,7 @@ TYPE_MAPPING = {
     "struct": StructData,
 }
 
-def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False, is_array: bool = False, align = 4) -> type:
+def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False, is_array: bool = False, align = 4, original_type = "") -> type:
     """Get the appropriate data type class based on field type and size"""
 
     if field_type == "data":
@@ -433,6 +433,12 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
         elif field_size == 1:
             return U8Data
 
+    if field_type == "uri" and ("GameObjectRef" in original_type):
+        return GameObjectRefData
+    
+    if field_type == "point" and ("Range" in original_type):
+        return RangeData
+        
     if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
         return MaybeObject
 

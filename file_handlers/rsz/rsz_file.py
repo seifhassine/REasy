@@ -1654,7 +1654,7 @@ def parse_instance_fields(
         is_array = field.get("array", False)
         original_type = field.get("original_type", "") 
         field_align = int(field["align"]) if "align" in field else 1
-        rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align)
+        rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align, original_type)
         data_obj = None
         
         # Special handling for Struct types (both array and non-array)
