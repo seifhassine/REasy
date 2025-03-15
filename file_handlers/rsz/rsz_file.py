@@ -622,6 +622,8 @@ class ScnFile:
                         out.extend(struct.pack("<b", max(-128, min(127, element.value))))
                     elif isinstance(element, U8Data):
                         out.extend(struct.pack("<B", element.value & 0xFF))
+                    elif isinstance(element, BoolData):
+                        out.extend(struct.pack("<?", element.value))
                     elif isinstance(element, S16Data):
                         out.extend(struct.pack("<h", element.value & 0xFFFF))
                     elif isinstance(element, U16Data):
@@ -1934,6 +1936,15 @@ def parse_instance_fields(
                     
                 data_obj = ArrayData(values, U8Data, original_type)
 
+            elif rsz_type == BoolData:
+                values = []
+                for _ in range(count):
+                    value = raw[pos] != 0
+                    values.append(BoolData(value, original_type))
+                    pos += 1
+                    
+                data_obj = ArrayData(values, BoolData, original_type)
+                
             elif rsz_type == S32Data:
                 values = []
                 for _ in range(count):
