@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 settings.json
+.cache/
 
 # Distribution / packaging
 build/

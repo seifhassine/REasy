@@ -315,41 +315,51 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
         out += b"\x00"
     resource_info_tbl_offset = len(out)
     
-    resource_strings_offset = 0
+    for ri in scn_file.resource_infos:
+        out += struct.pack("<II", 0, ri.reserved)
+        
+    current_len = len(out)
+    aligned_len = ((current_len + 15) & ~15)
+    padding_added = aligned_len - current_len
+    
+    while len(out) % 16 != 0:
+        out += b"\x00"
+        
+    prefab_info_tbl_offset = len(out)
+    
+    for pi in scn_file.prefab_infos:
+        out += struct.pack("<II", 0, pi.parent_id)
+    
+    strings_start_offset = len(out)
+    current_offset = strings_start_offset
+    
     new_resource_offsets = {}
-    current_offset = resource_info_tbl_offset + len(scn_file.resource_infos) * 8  # Each resource info is 8 bytes
-    
-    # Skip prefab infos table (No userdata in SCN.19)
-    current_offset += len(scn_file.prefab_infos) * 8
-    
-    resource_strings_offset = current_offset
-    
     for ri in scn_file.resource_infos:
         resource_string = scn_file._resource_str_map.get(ri, "")
         if resource_string:
-            new_resource_offsets[ri] = resource_strings_offset
-            resource_strings_offset += len(resource_string.encode('utf-16-le')) + 2
+            new_resource_offsets[ri] = current_offset
+            current_offset += len(resource_string.encode('utf-16-le')) + 2
         else:
             new_resource_offsets[ri] = 0
     
-    prefab_strings_offset = resource_strings_offset
     new_prefab_offsets = {}
-    
     for pi in scn_file.prefab_infos:
         prefab_string = scn_file._prefab_str_map.get(pi, "")
         if prefab_string:
-            new_prefab_offsets[pi] = prefab_strings_offset
-            prefab_strings_offset += len(prefab_string.encode('utf-16-le')) + 2
+            new_prefab_offsets[pi] = current_offset
+            current_offset += len(prefab_string.encode('utf-16-le')) + 2
         else:
             new_prefab_offsets[pi] = 0
     
-    for ri in scn_file.resource_infos:
+    for i, ri in enumerate(scn_file.resource_infos):
         ri.string_offset = new_resource_offsets[ri]
-        out += struct.pack("<II", ri.string_offset, ri.reserved)
-    prefab_info_tbl_offset = len(out)
-    for pi in scn_file.prefab_infos:
+        offset = resource_info_tbl_offset + (i * 8)
+        struct.pack_into("<I", out, offset, ri.string_offset)
+    
+    for i, pi in enumerate(scn_file.prefab_infos):
         pi.string_offset = new_prefab_offsets[pi]
-        out += struct.pack("<II", pi.string_offset, pi.parent_id)
+        offset = prefab_info_tbl_offset + (i * 8)
+        struct.pack_into("<I", out, offset, pi.string_offset)
 
     string_entries = []
     

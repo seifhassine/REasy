@@ -51,7 +51,6 @@ def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
     all UTF-16LE encoded resource strings in the file.
     """
     current_offset = scn_file.header.resource_info_tbl
-    print(f"Parsing PFB.16 resources starting at offset 0x{current_offset:X}")
     
     scn_file.resource_infos = []
     
@@ -81,7 +80,6 @@ def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
         
         try:
             string_value = string_bytes.decode('utf-16-le')
-            print(f"Resource {i}: Found string '{string_value}' at 0x{string_start:X}")
             all_strings.append(string_value)  
         except UnicodeDecodeError:
             print(f"Failed to decode string {i} at 0x{string_start:X}, bytes: {string_bytes.hex()[:32]}...")
@@ -109,7 +107,6 @@ def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
             current_offset += 2  
     
     final_offset = ((current_offset + 15) & ~15)
-    print(f"Finished parsing {len(scn_file.resource_infos)} PFB.16 resources, final offset: 0x{final_offset:X}")
     
     setattr(scn_file, '_pfb16_direct_strings', all_strings)
     
