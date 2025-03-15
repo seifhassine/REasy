@@ -867,7 +867,7 @@ class ScnFile:
                     
         return bytes(out)
 
-    def build(self, special_align_enabled = False) -> bytes:
+    def build(self, special_align_enabled = True) -> bytes:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
@@ -1789,7 +1789,7 @@ def parse_instance_fields(
                     
                 data_obj = ArrayData(
                     list(map(lambda x: ObjectData(x, original_type), child_indexes)) if alreadyRef else 
-                    list(map(lambda x: RawBytesData(raw_value, fsize, original_type), all_values)),
+                    list(map(lambda x: RawBytesData(x, fsize, original_type), all_values)),
                     ObjectData if alreadyRef else RawBytesData,
                     original_type
                 )
