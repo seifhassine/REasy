@@ -363,9 +363,11 @@ class AdvancedTreeView(QTreeView):
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
         if array_type.endswith("[]"):
-            element_type = array_type[:-2] 
-        else: element_type = array_type
-        
+            element_type = array_type[:-2]
+        elif array_type.startswith("System.Collections.Generic.List`1<") and array_type.endswith(">"):
+            element_type = array_type[array_type.index("<") + 1:array_type.rindex(">")]
+        else:
+            element_type = array_type
         
         # Get the parent widget/handler that can create elements
         parent = self.parent()
