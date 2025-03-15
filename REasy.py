@@ -772,6 +772,11 @@ class REasyEditorApp(QMainWindow):
         about_act = QAction("About", self)
         about_act.triggered.connect(self.show_about)
         help_menu.addAction(about_act)
+        
+        donate_menu = menubar.addMenu("Donate")
+        donate_act = QAction("Support REasy", self)
+        donate_act.triggered.connect(self.show_donate_dialog)
+        donate_menu.addAction(donate_act)
 
     def set_dark_mode(self, state):
         self.dark_mode = state
@@ -1223,6 +1228,27 @@ class REasyEditorApp(QMainWindow):
 
     def show_about(self):
         create_about_dialog(self)
+
+    def show_donate_dialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Support REasy Editor")
+        layout = QVBoxLayout(dialog)
+        
+        thank_you_label = QLabel("Thank you for your feedback and support!\nYour contributions help keep this project going.")
+        thank_you_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(thank_you_label)
+        
+        link_label = QLabel('<a href="https://linktr.ee/seifhassine">https://linktr.ee/seifhassine</a>')
+        link_label.setAlignment(Qt.AlignCenter)
+        link_label.setOpenExternalLinks(True)
+        layout.addWidget(link_label)
+        
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttons.accepted.connect(dialog.accept)
+        layout.addWidget(buttons)
+        
+        dialog.setMinimumWidth(300)
+        dialog.exec()
 
     def update_status(self, message, timeout=5000):
         if hasattr(self, 'status_bar'):
