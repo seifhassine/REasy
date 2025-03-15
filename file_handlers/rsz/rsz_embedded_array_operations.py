@@ -417,7 +417,22 @@ class RszEmbeddedArrayOperations:
         if not hasattr(rui, 'embedded_instances') or not rui.embedded_instances:
             return False
             
+        is_userdata_context = hasattr(rui, 'instance_id') and rui.instance_id > 0
+        print(f"Checking references in {'UserData' if is_userdata_context else 'standard'} context")
+        
         reference_count = 0
+        
+        if hasattr(current_array, 'values'):
+            for i, item in enumerate(current_array.values):
+                if i == current_index:
+                    continue
+                    
+                if ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id:
+                    reference_count += 1
+                    print(f"Found reference to instance {instance_id} in same array at index {i}")
+                elif ref_type == "userdata" and isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
+                    reference_count += 1
+                    print(f"Found reference to userdata {instance_id} in same array at index {i}")
         
         for check_id, fields in rui.embedded_instances.items():
             if not isinstance(fields, dict):
@@ -425,32 +440,23 @@ class RszEmbeddedArrayOperations:
                 
             for field_name, field_data in fields.items():
                 if field_data is current_array:
+                    continue
+                    
+                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
+                    reference_count += 1
+                    print(f"Found reference to instance {instance_id} in field {field_name} of instance {check_id}")
+                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
+                    reference_count += 1
+                    print(f"Found reference to userdata {instance_id} in field {field_name} of instance {check_id}")
+                    
+                elif isinstance(field_data, ArrayData):
                     for i, item in enumerate(field_data.values):
-                        if i == current_index:
-                            continue
-                            
                         if ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id:
                             reference_count += 1
-                            print(f"Found reference to instance {instance_id} in same array at index {i}")
+                            print(f"Found reference to instance {instance_id} in array {field_name}[{i}] of instance {check_id}")
                         elif ref_type == "userdata" and isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
                             reference_count += 1
-                            print(f"Found reference to userdata {instance_id} in same array at index {i}")
-                else:
-                    if ref_type == "object" and isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                        reference_count += 1
-                        print(f"Found reference to instance {instance_id} in field {field_name} of instance {check_id}")
-                    elif ref_type == "userdata" and isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
-                        reference_count += 1
-                        print(f"Found reference to userdata {instance_id} in field {field_name} of instance {check_id}")
-                        
-                    elif isinstance(field_data, ArrayData):
-                        for i, item in enumerate(field_data.values):
-                            if ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id:
-                                reference_count += 1
-                                print(f"Found reference to instance {instance_id} in array {field_name}[{i}] of instance {check_id}")
-                            elif ref_type == "userdata" and isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
-                                reference_count += 1
-                                print(f"Found reference to userdata {instance_id} in array {field_name}[{i}] of instance {check_id}")
+                            print(f"Found reference to userdata {instance_id} in array {field_name}[{i}] of instance {check_id}")
         
         return reference_count > 0
     
