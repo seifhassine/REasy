@@ -1,4 +1,4 @@
-# REasy Editor v0.1
+# REasy Editor v0.1.1
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -30,9 +30,9 @@ I have currently rushed the release and the structure will be improved in the up
 |-----------|---------|---------|-----------|
 | UVAR      | ✅       | ✅       | RE4, RE2  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
-| SCN       | ✅       | ✅       | RE4       |
+| SCN       | ✅       | ✅       | RE4, RE2, DMC5       |
 | User       | ✅       | ✅       | RE4       |
-| PFB       | ✅       | ✅       | RE4       |
+| PFB       | ✅       | ✅       | RE4, RE2, DMC5       |
   
 </div>
 <br>

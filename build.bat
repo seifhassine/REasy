@@ -16,6 +16,7 @@ xcopy /E /I /Y resources dist\resources
 copy "rszre4_reasy.json" "dist\rszre4_reasy.json"
 copy "rszre2.json" "dist\rszre2.json"
 copy "rszre2rt.json" "dist\rszre2rt.json"
+copy "rszdmc5.json" "dist\rszdmc5.json"
 
 
 

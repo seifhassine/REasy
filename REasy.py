@@ -608,7 +608,7 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.1")
+        self.setWindowTitle("REasy Editor v0.1.1")
         set_app_icon(self)
 
         try:
@@ -995,6 +995,7 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.addItem("RE4") 
         game_version_combo.addItem("RE2") 
         game_version_combo.addItem("RE2RT") 
+        game_version_combo.addItem("DMC5") 
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)

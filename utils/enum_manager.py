@@ -20,6 +20,7 @@ class EnumManager:
             "RE4": "resources/data/enums/re4_enums.json",
             "RE2": "resources/data/enums/re2_enums.json",
             "RE2RT": "resources/data/enums/re2rt_enums.json",
+            "DMC5": "resources/data/enums/dmc5_enums.json",
         }
         self.load_enums()
         
