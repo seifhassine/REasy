@@ -2172,6 +2172,11 @@ def parse_instance_fields(
                 pos += fsize
                 data_obj = U32Data(value, original_type)
 
+            elif rsz_type == U64Data:
+                value = unpack_ulong(raw, pos)[0]
+                pos += fsize
+                data_obj = U64Data(value, original_type)
+
             elif rsz_type == F32Data:
                 value = unpack_float(raw, pos)[0]
                 pos += fsize
