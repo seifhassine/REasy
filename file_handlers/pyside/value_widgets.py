@@ -43,6 +43,68 @@ class BaseValueWidget(QWidget):
     def update_display(self):
         pass
 
+class Vec2Input(BaseValueWidget):
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        self.inputs = []
+        for i, coord in enumerate(['x', 'y']):
+            line_edit = QLineEdit()
+            line_edit.setValidator(QDoubleValidator())
+            line_edit.setFixedWidth(100)
+            line_edit.setProperty("coord", coord)
+            line_edit.setAlignment(Qt.AlignLeft)
+            self.layout.addWidget(line_edit)
+            self.inputs.append(line_edit)
+            
+        self.layout.addStretch()
+            
+        if data:
+            self.set_data(data)
+            
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
+
+    def update_display(self):
+        if not self._data:
+            return
+        values = [self._data.x, self._data.y]
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(f"{val:.8g}") 
+
+    def setValues(self, values):
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(val))
+        
+    def getValues(self):
+        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
+        
+    def _on_value_changed(self):
+        if not self._data:
+            return
+        
+        try:
+            new_values = []
+            for input_field in self.inputs:
+                text = input_field.text()
+                if not text or text == '-': 
+                    new_values.append(0.0)
+                else:
+                    new_values.append(float(text))
+            
+            new_values = tuple(new_values)
+            old_values = (self._data.x, self._data.y)
+            
+            self._data.x = new_values[0]
+            self._data.y = new_values[1]
+            
+            self.valueChanged.emit(new_values)
+            self.mark_modified()
+        except ValueError:
+            pass
+
 class Vec3Input(BaseValueWidget):
     valueChanged = Signal(tuple)
     

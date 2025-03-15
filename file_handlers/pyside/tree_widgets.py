@@ -1413,6 +1413,7 @@ class TreeWidgetFactory:
     
     # Centralized widget type mapping - used by RszViewer currently
     WIDGET_TYPES = {
+        "Vec2Data": Vec2Input,
         "Vec4Data": Vec4Input,
         "Float4Data": Vec4Input,
         "QuaternionData": Vec4Input,
