@@ -112,7 +112,7 @@ class ScnGameObject:
         self.component_count = 0
         self.ukn = 0
         self.prefab_id = 0
-    def parse(self, data: bytes, offset: int) -> int:
+    def parse(self, data: bytes, offset: int, is_scn19: bool = False) -> int:
         if offset + self.SIZE > len(data):
             raise ValueError(f"Truncated gameobject at 0x{offset:X}")
         self.guid = data[offset:offset+16]
@@ -123,10 +123,11 @@ class ScnGameObject:
         offset += 4
         self.component_count, = struct.unpack_from("<H", data, offset)
         offset += 2
-        self.ukn, = struct.unpack_from("<H", data, offset)
-        offset += 2
-        self.prefab_id, = struct.unpack_from("<i", data, offset) 
-        offset += 4
+        if is_scn19:
+            self.prefab_id, self.ukn = struct.unpack_from("<hi", data, offset)
+        else:
+            self.ukn, self.prefab_id = struct.unpack_from("<hi", data, offset)
+        offset += 6
         return offset
 
 class PfbGameObject:
@@ -377,9 +378,10 @@ class ScnFile:
                 self.gameobjects.append(go)
         else:
             # Regular SCN files use the 32-byte GameObject structure
+            is_scn19 = self.filepath.lower().endswith('.19')
             for i in range(self.header.info_count):
                 go = ScnGameObject()
-                self._current_offset = go.parse(data, self._current_offset)
+                self._current_offset = go.parse(data, self._current_offset, is_scn19)
                 self.gameobjects.append(go)
 
     def _parse_gameobject_ref_infos(self, data):
@@ -897,8 +899,12 @@ class ScnFile:
             out += struct.pack("<i", go.id)
             out += struct.pack("<i", go.parent_id)
             out += struct.pack("<H", go.component_count)
-            out += struct.pack("<H", go.ukn)
-            out += struct.pack("<i", go.prefab_id) 
+            if self.filepath.lower().endswith('.19'):
+                out += struct.pack("<h", go.prefab_id)
+                out += struct.pack("<i", go.ukn) 
+            else:
+                out += struct.pack("<h", go.ukn)
+                out += struct.pack("<i", go.prefab_id) 
 
         # 3) Align and write folder infos, recording folder_tbl offset
         while len(out) % 16 != 0:

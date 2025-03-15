@@ -20,10 +20,11 @@ from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
-from utils.id_manager import IdManager
+from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
 from .rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
+from file_handlers.rsz.rsz_file import ScnResourceInfo
 
 
 class RszHandler(BaseFileHandler):
@@ -416,11 +417,31 @@ class RszViewer(QWidget):
         node = DataTreeBuilder.create_data_node(
             "RSZUserData Infos", f"{len(self.scn.rsz_userdata_infos)} items"
         )
+        
+        is_scn19 = self.scn.filepath.lower().endswith('.19')
+        
         for i, rui in enumerate(self.scn.rsz_userdata_infos):
-            str_val = self.scn.get_rsz_userdata_string(rui) if rui.string_offset != 0 else ""
-            node["children"].append(
-                DataTreeBuilder.create_data_node(f"RSZUserDataInfo[{i}] : {str_val}", "")
-            )
+            if is_scn19:
+                # SCN.19 format - use existing user data string or build a descriptive one
+                str_val = self.scn.get_rsz_userdata_string(rui)
+                if not str_val:
+                    data_size = getattr(rui, 'data_size', 0)
+                    type_id = getattr(rui, 'type_id', 0)
+                    str_val = f"Binary UserData (Type: 0x{type_id:08X}, Size: {data_size} bytes)"
+                
+                node["children"].append(
+                    DataTreeBuilder.create_data_node(f"RSZUserDataInfo[{i}] : {str_val}", "")
+                )
+            else:
+                # Standard format - check for string offset attribute
+                str_val = ""
+                if hasattr(rui, 'string_offset') and rui.string_offset != 0:
+                    str_val = self.scn.get_rsz_userdata_string(rui)
+                
+                node["children"].append(
+                    DataTreeBuilder.create_data_node(f"RSZUserDataInfo[{i}] : {str_val}", "")
+                )
+        
         return node
 
     def _add_data_block(self, parent_dict):
@@ -558,8 +579,16 @@ class RszViewer(QWidget):
         """
         domain_id = None
         is_embedded = embedded_context is not None
-        if is_embedded:
-            domain_id = getattr(embedded_context, 'instance_id', None)
+        if is_embedded and hasattr(data_obj, 'set_callback'):
+            def track_embedded_modifications(*args, **kwargs):
+                if hasattr(embedded_context, 'mark_modified'):
+                    embedded_context.mark_modified()
+                if hasattr(embedded_context, 'parent_userdata_rui') and hasattr(embedded_context.parent_userdata_rui, 'mark_modified'):
+                    embedded_context.parent_userdata_rui.mark_modified()
+                
+                self.mark_modified()
+            
+            data_obj.set_callback(track_embedded_modifications)
         
         if isinstance(data_obj, ArrayData):
             children = []
@@ -617,6 +646,8 @@ class RszViewer(QWidget):
             for embedded_rui in embedded_context.embedded_userdata_infos:
                 if embedded_rui.instance_id == ref_id:
                     if hasattr(embedded_rui, 'embedded_instances') and embedded_rui.embedded_instances:
+                        # Set parent reference to track modification chain
+                        embedded_rui.parent_userdata_rui = embedded_context
                         return self._create_direct_embedded_usr_node(field_name, embedded_rui)
                     return DataTreeBuilder.create_data_node(
                         f"{field_name}: Embedded UserData (ID: {ref_id})", "", None, None
@@ -684,7 +715,13 @@ class RszViewer(QWidget):
         """Display embedded RSZ structure as a direct .user object with proper relationships."""
         # Get domain ID and prepare structure
         domain_id = getattr(rui, 'instance_id', 0)
-        IdManager.instance().clear_embedded_instances(domain_id)
+        
+        # Create an embedded ID manager for this structure
+        if not hasattr(rui, 'id_manager'):
+            rui.id_manager = EmbeddedIdManager(domain_id)
+        
+        # Clear modified flag so we can track new changes
+        rui.modified = False
         
         # Get root instance and create the root node
         root_instance_id = self._get_root_embedded_instance_id(rui)
@@ -712,12 +749,6 @@ class RszViewer(QWidget):
         
         return root_node
 
-    def _get_root_embedded_instance_id(self, rui):
-        """Get the root instance ID from an embedded RSZ structure"""
-        if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table:
-            return rui.embedded_object_table[0] if len(rui.embedded_object_table) > 0 else None
-        return None
-    
     def _create_embedded_instance_nodes(self, rui, domain_id):
         """Create nodes for all instances in an embedded RSZ structure"""
         nodes = {}
@@ -729,9 +760,8 @@ class RszViewer(QWidget):
             if instance_id == 0 or not isinstance(instance_data, dict) or "embedded_rsz" in instance_data:
                 continue
                 
-            # Create namespaced ID and register it
-            namespaced_id = f"emb_{domain_id}_{instance_id}"
-            reasy_id = IdManager.instance().register_embedded_instance(namespaced_id)
+            # Use the embedded ID manager to register this instance
+            reasy_id = rui.id_manager.register_instance(instance_id)
             
             # Get type name for this instance
             inst_type_name = self._get_embedded_type_name(instance_id, rui)
@@ -741,7 +771,7 @@ class RszViewer(QWidget):
                 "data": [f"{inst_type_name} (ID: {instance_id})", ""],
                 "instance_id": instance_id,
                 "domain_id": domain_id,
-                "embedded_id": namespaced_id,
+                "embedded": True,
                 "reasy_id": reasy_id,
                 "children": [],
             }
@@ -754,17 +784,21 @@ class RszViewer(QWidget):
             nodes[instance_id] = node_dict
             
         return nodes
+    def _get_root_embedded_instance_id(self, rui):
+        """Get the root instance ID from an embedded RSZ structure"""
+        if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table:
+            return rui.embedded_object_table[0] if len(rui.embedded_object_table) > 0 else None
+        return None
     
     def _add_root_instance_fields(self, root_node, root_instance_id, rui, domain_id):
         """Add fields from the root instance to the root node"""
         root_data = rui.embedded_instances[root_instance_id]
         if isinstance(root_data, dict):
-            # Register the root instance
-            namespaced_root_id = f"emb_{domain_id}_{root_instance_id}"
-            reasy_root_id = IdManager.instance().register_embedded_instance(namespaced_root_id)
+            # Register the root instance with the embedded ID manager
+            reasy_root_id = rui.id_manager.register_instance(root_instance_id)
             
             # Update root node with IDs
-            root_node["embedded_id"] = namespaced_root_id
+            root_node["embedded"] = True
             root_node["domain_id"] = domain_id
             root_node["instance_id"] = root_instance_id
             root_node["reasy_id"] = reasy_root_id
@@ -773,7 +807,7 @@ class RszViewer(QWidget):
             for field_name, field_data in root_data.items():
                 field_node = self._create_field_dict(field_name, field_data, rui)
                 root_node["children"].append(field_node)
-    
+
     def _build_embedded_node_hierarchy(self, nodes, hierarchy, root_node, root_instance_id):
         """Build parent-child relationships between nodes"""
         # Track which nodes have been attached to the tree
@@ -796,7 +830,7 @@ class RszViewer(QWidget):
         for instance_id, node_dict in nodes.items():
             if instance_id != root_instance_id and instance_id not in attached:
                 root_node["children"].append(node_dict)
-
+    
     def _get_embedded_type_name(self, instance_id, rui):
         """Get the type name for an instance in embedded RSZ"""
         type_name = f"Instance[{instance_id}]"
@@ -1258,7 +1292,6 @@ class RszViewer(QWidget):
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
         
-        from file_handlers.rsz.rsz_file import ScnResourceInfo
         
         new_res = ScnResourceInfo()
         new_res.string_offset = 0

@@ -155,3 +155,56 @@ class IdManager:
             del self._instance_to_reasy[instance_id]
             if reasy_id in self._reasy_to_instance:
                 del self._reasy_to_instance[reasy_id]
+
+
+class EmbeddedIdManager:
+    """
+    Manages stable IDs for embedded RSZ structures
+    
+    Each embedded RSZ structure has its own ID manager to prevent
+    collisions between different embedded structures and the main RSZ.
+    """
+    
+    def __init__(self, domain_id):
+        """
+        Initialize a new embedded ID manager
+        
+        Args:
+            domain_id: Unique identifier for this embedded RSZ structure (typically the parent UserData ID)
+        """
+        self._domain_id = domain_id
+        self._next_id = 1  # Start at 1 (0 is reserved)
+        self._reasy_to_instance = {}  # Map reasy_id -> instance_id
+        self._instance_to_reasy = {}  # Map instance_id -> reasy_id
+    
+    def register_instance(self, instance_id):
+        """
+        Register an instance_id and get a stable reasy_id
+        
+        If the instance_id is already registered, returns its existing reasy_id
+        Otherwise, creates a new mapping
+        """
+        if instance_id in self._instance_to_reasy:
+            return self._instance_to_reasy[instance_id]
+            
+        reasy_id = self._next_id
+        self._next_id += 1
+        
+        self._reasy_to_instance[reasy_id] = instance_id
+        self._instance_to_reasy[instance_id] = reasy_id
+        
+        return reasy_id
+    
+    def get_instance_id(self, reasy_id):
+        """Get current instance_id for a reasy_id"""
+        return self._reasy_to_instance.get(reasy_id)
+    
+    def get_reasy_id(self, instance_id):
+        """Get reasy_id for an instance_id"""
+        return self._instance_to_reasy.get(instance_id)
+    
+    def reset(self):
+        """Reset all mappings"""
+        self._next_id = 1
+        self._reasy_to_instance = {}
+        self._instance_to_reasy = {}

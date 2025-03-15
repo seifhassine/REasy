@@ -10,9 +10,11 @@ from .component_selector import ComponentSelectorDialog
 from .value_widgets import *
 
 from utils.enum_manager import EnumManager
-from utils.id_manager import IdManager
-
-
+from utils.id_manager import IdManager, EmbeddedIdManager
+from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+                
+import traceback
+                    
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -68,6 +70,9 @@ class AdvancedTreeView(QTreeView):
                     # Use reasy_id to get the current instance_id
                     reasy_id = item.raw.get("reasy_id")
                     if reasy_id:
+                        if item.raw.get("embedded", False):
+                            return
+                        
                         instance_id = IdManager.instance().get_instance_id(reasy_id)
                         if instance_id:
                             # Find GameObject's object table index
@@ -82,8 +87,6 @@ class AdvancedTreeView(QTreeView):
                                 if go_object_id >= 0:
                                     self.delete_gameobject(index)
                                     return
-                         
-        
         # Call the parent's keyPressEvent for default behavior
         super().keyPressEvent(event)
 
@@ -145,6 +148,10 @@ class AdvancedTreeView(QTreeView):
         item = index.internalPointer()
         if not item:
             return
+        
+        is_embedded = False
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            is_embedded = item.raw.get("embedded", False)
         
         is_array = False
         array_type = ""
@@ -239,9 +246,24 @@ class AdvancedTreeView(QTreeView):
         elif is_gameobject:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
-            duplicate_go_action = menu.addAction("Duplicate GameObject")
             
+            # Only show duplicate action if not a file with embedded RSZ
+            duplicate_go_action = None
             parent_widget = self.parent()
+            has_embedded_rsz = False
+            
+            if hasattr(parent_widget, "scn") and hasattr(parent_widget.scn, "rsz_userdata_infos"):
+                # Check if any userdata has embedded RSZ
+                for rui in parent_widget.scn.rsz_userdata_infos:
+                    if (hasattr(rui, 'embedded_rsz_header') and 
+                        hasattr(rui, 'embedded_instances') and 
+                        rui.embedded_instances):
+                        has_embedded_rsz = True
+                        break
+            
+            if not has_embedded_rsz:
+                duplicate_go_action = menu.addAction("Duplicate GameObject")
+            
             go_has_prefab = False
             prefab_path = ""
             
@@ -286,7 +308,7 @@ class AdvancedTreeView(QTreeView):
                 self.add_component_to_gameobject(index)
             elif action == create_child_go_action:
                 self.create_child_gameobject(index)
-            elif action == duplicate_go_action:
+            elif duplicate_go_action and action == duplicate_go_action:
                 self.duplicate_gameobject(index)
             elif action == delete_go_action:
                 self.delete_gameobject(index)
@@ -333,6 +355,11 @@ class AdvancedTreeView(QTreeView):
         else:
             print(f"No special actions for this node type")
 
+        # For embedded instances, we need to handle differently
+        if is_embedded:
+            # Currently no special menu options for embedded instances
+            return
+
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
         if not array_type.endswith("[]"):
@@ -346,9 +373,18 @@ class AdvancedTreeView(QTreeView):
         if not hasattr(parent, "create_array_element"):
             QMessageBox.warning(self, "Error", "Cannot find element creator")
             return
-            
+        
+        # Check if this is in an embedded context
+        embedded_context = self._find_embedded_context(array_item)
+        
         try:
-            new_element = parent.create_array_element(element_type, data_obj, direct_update=True, array_item=array_item)
+            if embedded_context:
+                embedded_ops = RszEmbeddedArrayOperations(parent)
+                new_element = embedded_ops.create_array_element(element_type, data_obj, embedded_context, 
+                                                               direct_update=True, array_item=array_item)
+            else:
+                new_element = parent.create_array_element(element_type, data_obj, direct_update=True, array_item=array_item)
+                
             if new_element:
                 if not self.isExpanded(index):
                     self.expand(index)
@@ -375,14 +411,14 @@ class AdvancedTreeView(QTreeView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to add element: {str(e)}")
 
-    def delete_array_element(self, array_item, element_index, index):
+    def delete_array_element(self, parent_array_item, element_index, index):
         """Delete an element from an array with proper backend updates"""
-        if not array_item or not hasattr(array_item, 'raw'):
+        if not parent_array_item or not hasattr(parent_array_item, 'raw'):
             QMessageBox.warning(self, "Error", "Invalid array item")
             return
             
         # Get the array data object
-        array_data = array_item.raw.get('obj')
+        array_data = parent_array_item.raw.get('obj')
         if not array_data or not hasattr(array_data, 'values'):
             QMessageBox.warning(self, "Error", "Invalid array data")
             return
@@ -397,9 +433,41 @@ class AdvancedTreeView(QTreeView):
         
         if msg_box.exec_() != QMessageBox.Yes:
             return
-            
-        # Get the parent widget/handler that can perform the complex delete
+        
+        # Check if this is in an embedded context by finding embedded_context in the tree hierarchy
+        embedded_context = self._find_embedded_context(parent_array_item)
+        
         parent = self.parent()
+        
+        if embedded_context:
+            # Use specialized embedded operations
+            if parent and hasattr(parent, "scn") and hasattr(parent, "type_registry"):
+                try:
+                    embedded_ops = RszEmbeddedArrayOperations(parent)
+                    success = embedded_ops.delete_array_element(array_data, element_index, embedded_context)
+                    
+                    if success:
+                        # Update the UI - remove the item from the tree
+                        model = self.model()
+                        if model:
+                            array_index = model.getIndexFromItem(parent_array_item)
+                            if array_index.isValid():
+                                # Force model to reload this branch
+                                model.removeRow(element_index, array_index)
+                                
+                                # Update indices in the UI for remaining elements
+                                self._update_remaining_elements_ui(model, array_index, array_data, element_index)
+                                
+                        QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
+                    else:
+                        QMessageBox.critical(self, "Error", "Failed to delete element. See logs for details.")
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to delete embedded element: {str(e)}")
+                    traceback.print_exc()
+            else:
+                QMessageBox.warning(self, "Error", "Cannot access required components for embedded deletion")
+            return
+           
         if parent and hasattr(parent, "delete_array_element"):
             try:
                 success = parent.delete_array_element(array_data, element_index)
@@ -408,7 +476,7 @@ class AdvancedTreeView(QTreeView):
                     # Update the UI - remove the item from the tree
                     model = self.model()
                     if model:
-                        array_index = model.getIndexFromItem(array_item)
+                        array_index = model.getIndexFromItem(parent_array_item)
                         if array_index.isValid():
                             # Force model to reload this branch
                             model.removeRow(element_index, array_index)
@@ -428,7 +496,7 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
         else:
             # Fallback to simple deletion if parent doesn't support complex delete
-            self._simple_delete_element(array_data, element_index, array_item)
+            self._simple_delete_element(array_data, element_index, parent_array_item)
 
     def _update_remaining_elements_ui(self, model, array_index, array_data, deleted_index):
         """Update UI indices for remaining elements after deletion"""
@@ -474,6 +542,43 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
+
+    def _find_embedded_context(self, item):
+        """
+        Find the embedded RSZ context (RSZUserDataInfo) for a tree item
+        
+        This traverses up the tree hierarchy to find an embedded context
+        
+        Args:
+            item: The tree item to check
+            
+        Returns:
+            object: The embedded context (RSZUserDataInfo) or None
+        """
+        current = item
+        while current:
+            if hasattr(current, 'raw') and isinstance(current.raw, dict):
+                if current.raw.get("embedded", False):
+                    domain_id = current.raw.get("domain_id")
+                    if domain_id:
+                        parent = self.parent()
+                        if hasattr(parent, "scn") and hasattr(parent.scn, "_rsz_userdata_dict"):
+                            if domain_id in parent.scn._rsz_userdata_dict:
+                                rui = parent.scn._rsz_userdata_dict[domain_id]
+                                if hasattr(rui, 'embedded_instances'):
+                                    return rui
+                                    
+                    ancestor = current
+                    while ancestor:
+                        if (hasattr(ancestor, 'raw') and 
+                            isinstance(ancestor.raw, dict) and
+                            "embedded_context" in ancestor.raw):
+                            return ancestor.raw["embedded_context"]
+                        ancestor = ancestor.parent
+            
+            current = current.parent
+            
+        return None
 
     def delete_component(self, index, component_instance_id):
         """Delete a component from its GameObject"""
@@ -637,7 +742,6 @@ class AdvancedTreeView(QTreeView):
             return
             
         # Create dialog to get GameObject name
-        from PySide6.QtWidgets import QInputDialog
         name, ok = QInputDialog.getText(self, "New Root GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
         if not ok or not name:
             return
@@ -898,7 +1002,6 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to duplicate GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error duplicating GameObject: {str(e)}")
-            import traceback
             traceback.print_exc()
 
     def _is_valid_parent_for_go(self, index):
@@ -1229,7 +1332,6 @@ class AdvancedTreeView(QTreeView):
     def _handle_resource_error(self, operation, error):
         """Handle resource operation error"""
         QMessageBox.critical(self, "Error", f"Failed to {operation} resource: {str(error)}")
-        import traceback
         print(f"Exception details: {traceback.format_exc()}")
         
     def _find_resource_row(self, children, resource_index):
