@@ -104,7 +104,7 @@ class ComponentSelectorDialog(QDialog):
         if self.component_list.count() > 0:
             self.component_list.setCurrentRow(0)
             
-        self.status_label.setText(f"Found {len(matching_types)} matches out of {len(self.all_component_types)} components")
+        self.status_label.setText(f"Showing first {len(matching_types)} matches out of {len(self.all_component_types)} components")
         
     def get_selected_component(self):
         """Return the selected component type name"""
