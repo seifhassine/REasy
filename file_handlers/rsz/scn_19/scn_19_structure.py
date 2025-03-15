@@ -2,7 +2,6 @@ import struct
 import traceback
 from file_handlers.rsz.rsz_data_types import *
 from utils.id_manager import EmbeddedIdManager
-from file_handlers.rsz.rsz_file import ScnFile
 
 class Scn19Header:
     SIZE = 64
@@ -173,6 +172,7 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         # Parse instance data if data_offset is valid
         if embedded_header.data_offset < embedded_data_len:
             #A complete mini ScnFile-like object with the needed fields for _parse_instances
+            from file_handlers.rsz.rsz_file import ScnFile
             mini_scn = ScnFile()
             
             mini_scn.type_registry = type_registry
@@ -439,6 +439,7 @@ def build_embedded_rsz(rui, type_registry=None):
                 should_rebuild = True
         
         if should_rebuild:
+            from file_handlers.rsz.rsz_file import ScnFile
             mini_scn = ScnFile()
             
             mini_scn.type_registry = type_registry
