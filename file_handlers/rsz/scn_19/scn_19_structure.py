@@ -608,10 +608,8 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
                             first_field_name = next(iter(instance_data.keys()), "")
                             if first_field_name:
                                 first_field_value = instance_data[first_field_name]
-                                print(f"First field value: {first_field_value.value}")
                                 value_str = first_field_value.value.strip("\x00")
                                 rui.json_path_hash = murmur3_hash(value_str.encode("utf-16le"))
-                                print("hash is ", rui.json_path_hash)
                 
                 rui.data = build_embedded_rsz(rui, scn_file.type_registry)
             except Exception as e:
