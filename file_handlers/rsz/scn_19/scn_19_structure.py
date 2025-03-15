@@ -2,6 +2,7 @@ import struct
 import traceback
 from file_handlers.rsz.rsz_data_types import *
 from utils.id_manager import EmbeddedIdManager
+from utils.hash_util import murmur3_hash  # Added import for murmur3_hash
 
 class Scn19Header:
     SIZE = 64
@@ -599,10 +600,22 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
         # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
+                if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table and len(rui.embedded_object_table) > 0:
+                    first_object_id = rui.embedded_object_table[0]
+                    if first_object_id in rui.embedded_instances:
+                        instance_data = rui.embedded_instances[first_object_id]
+                        if instance_data:
+                            first_field_name = next(iter(instance_data.keys()), "")
+                            if first_field_name:
+                                first_field_value = instance_data[first_field_name]
+                                print(f"First field value: {first_field_value.value}")
+                                value_str = first_field_value.value.strip("\x00")
+                                rui.json_path_hash = murmur3_hash(value_str.encode("utf-16le"))
+                                print("hash is ", rui.json_path_hash)
+                
                 rui.data = build_embedded_rsz(rui, scn_file.type_registry)
             except Exception as e:
                 print(f"Error rebuilding embedded RSZ: {str(e)}")
-
                 traceback.print_exc()
                             
         data_content = getattr(rui, "data", b"")
