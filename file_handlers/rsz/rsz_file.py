@@ -1943,6 +1943,15 @@ def parse_instance_fields(
                     
                 data_obj = ArrayData(values, S32Data, original_type)
 
+            elif rsz_type == U32Data:
+                values = []
+                for _ in range(count):
+                    value = unpack_uint(raw, pos)[0]
+                    values.append(U32Data(value, original_type))
+                    pos += fsize
+                    
+                data_obj = ArrayData(values, U32Data, original_type)
+
             elif rsz_type == S16Data:
                 values = []
                 for _ in range(count):
