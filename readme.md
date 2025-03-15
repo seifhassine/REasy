@@ -92,6 +92,11 @@ I have currently rushed the release and the structure will be improved in the up
 
 @don on Discord for helping out with .exe debugging related stuff.
 
+
+## Support REasy:
+
+If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
+
 ## License, Contributions:
 
 REasy is under MIT license.
