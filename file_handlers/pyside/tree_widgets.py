@@ -362,11 +362,10 @@ class AdvancedTreeView(QTreeView):
 
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
-        if not array_type.endswith("[]"):
-            QMessageBox.warning(self, "Error", f"Invalid array type format: {array_type}")
-            return
-            
-        element_type = array_type[:-2]  # Remove the [] suffix
+        if array_type.endswith("[]"):
+            element_type = array_type[:-2] 
+        else: element_type = array_type
+        
         
         # Get the parent widget/handler that can create elements
         parent = self.parent()

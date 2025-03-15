@@ -867,7 +867,7 @@ class ScnFile:
                     
         return bytes(out)
 
-    def build(self, special_align_enabled = True) -> bytes:
+    def build(self, special_align_enabled = False) -> bytes:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
