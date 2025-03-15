@@ -1831,6 +1831,17 @@ def parse_instance_fields(
                 pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Vec4Data, original_type)
 
+            elif rsz_type == Float4Data:
+                vec4_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_4float(raw, pos)
+                    vec4_objects.append(Float4Data(*vals, original_type))
+                    pos += fsize
+                    
+                pos = local_align(pos, field_align) if vec4_objects else pos
+                data_obj = ArrayData(vec4_objects, Float4Data, original_type)
+
             elif rsz_type == Mat4Data:
                 mat4_objects = []
                 for _ in range(count):
@@ -2073,6 +2084,12 @@ def parse_instance_fields(
                 pos += fsize
                 pos = local_align(pos, field_align)
                 data_obj = Vec4Data(*vals, original_type)
+
+            elif rsz_type == Float4Data:
+                vals = unpack_4float(raw, pos)
+                pos += fsize
+                pos = local_align(pos, field_align)
+                data_obj = Float4Data(*vals, original_type)
         
             elif rsz_type == Mat4Data:
                 vals = unpack_16float(raw, pos)
