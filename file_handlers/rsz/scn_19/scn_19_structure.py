@@ -317,14 +317,10 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     
     resource_strings_offset = 0
     new_resource_offsets = {}
-    current_offset = resource_info_tbl_offset + len(scn_file.resource_infos) * 8
-    
-    current_offset = scn_file._align(current_offset, 16)
+    current_offset = resource_info_tbl_offset + len(scn_file.resource_infos) * 8  # Each resource info is 8 bytes
     
     # Skip prefab infos table (No userdata in SCN.19)
     current_offset += len(scn_file.prefab_infos) * 8
-    
-    current_offset = scn_file._align(current_offset, 16)
     
     resource_strings_offset = current_offset
     
@@ -350,10 +346,6 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     for ri in scn_file.resource_infos:
         ri.string_offset = new_resource_offsets[ri]
         out += struct.pack("<II", ri.string_offset, ri.reserved)
-
-    # 5) Align and write prefab infos with updated offsets (skip userdata for SCN.19)
-    while len(out) % 16 != 0:
-        out += b"\x00"
     prefab_info_tbl_offset = len(out)
     for pi in scn_file.prefab_infos:
         pi.string_offset = new_prefab_offsets[pi]
@@ -362,7 +354,7 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     string_entries = []
     
     for ri, offset in new_resource_offsets.items():
-        if offset:
+        if offset: 
             string_entries.append((offset, scn_file._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
             
     for pi, offset in new_prefab_offsets.items():

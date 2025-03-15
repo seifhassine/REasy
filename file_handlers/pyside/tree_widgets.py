@@ -1306,6 +1306,12 @@ class AdvancedTreeView(QTreeView):
         """Get the current path for a resource"""
         parent = self.parent()
         try:
+            if (hasattr(parent.scn, 'is_pfb16') and parent.scn.is_pfb16 and 
+                hasattr(parent.scn, '_pfb16_direct_strings')):
+                
+                if resource_index < len(parent.scn._pfb16_direct_strings):
+                    return parent.scn._pfb16_direct_strings[resource_index]
+            
             resource = parent.scn.resource_infos[resource_index]
             if hasattr(parent.scn, 'get_resource_string'):
                 return parent.scn.get_resource_string(resource) or "[Unknown]"

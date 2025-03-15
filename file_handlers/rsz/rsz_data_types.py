@@ -350,7 +350,7 @@ class MaybeObject:
         
 class RawBytesData:
     """Stores raw bytes exactly as read from file"""
-    def __init__(self, raw_bytes: bytes = bytes([0] * 4), field_size: int = 4, orig_type: str = ""):
+    def __init__(self, raw_bytes: bytes, field_size: int = 4, orig_type: str = ""):
         self.raw_bytes = raw_bytes
         self.field_size = field_size
         self.orig_type = orig_type

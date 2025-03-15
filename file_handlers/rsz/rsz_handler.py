@@ -115,7 +115,6 @@ class RszHandler(BaseFileHandler):
             raise ValueError("No SCN file loaded")
         return self.scn_file.build()
 
-
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
     ROW_HEIGHT = 24
@@ -246,18 +245,31 @@ class RszViewer(QWidget):
         """Create Header info section for self.scn.header"""
         children = []
         if self.scn.is_pfb:
-            header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                ("Info Count", lambda h: str(h.info_count)),
-                ("Resource Count", lambda h: str(h.resource_count)),
-                ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
-                ("UserData Count", lambda h: str(h.userdata_count)),
-                ("Reserved", lambda h: str(h.reserved)),
-                ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
-                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-            ]
+            if self.scn.filepath.lower().endswith('.pfb.16'):
+                # PFB.16 has a different header structure without userdata fields
+                header_fields = [
+                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
+                    ("Info Count", lambda h: str(h.info_count)),
+                    ("Resource Count", lambda h: str(h.resource_count)),
+                    ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
+                    ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
+                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+                ]
+            else:
+                # Regular PFB format
+                header_fields = [
+                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
+                    ("Info Count", lambda h: str(h.info_count)),
+                    ("Resource Count", lambda h: str(h.resource_count)),
+                    ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
+                    ("UserData Count", lambda h: str(h.userdata_count)),
+                    ("Reserved", lambda h: str(h.reserved)),
+                    ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
+                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                    ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
+                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+                ]
         elif self.scn.is_usr:
             header_fields = [
                 ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
@@ -304,19 +316,38 @@ class RszViewer(QWidget):
             "Resources", f"{len(self.scn.resource_infos)} items"
         )
         
-        for i, res in enumerate(self.scn.resource_infos):
-            res_string = ""
-            if hasattr(self.scn, 'get_resource_string'):
+        if hasattr(self.scn, 'is_pfb16') and self.scn.is_pfb16 and hasattr(self.scn, '_pfb16_direct_strings'):
+            direct_strings = self.scn._pfb16_direct_strings
+            
+            for i, res in enumerate(self.scn.resource_infos):
+                res_string = ""
+                
+                if i < len(direct_strings):
+                    res_string = direct_strings[i]
+                    print(f"PFB.16 resource {i}: Using direct string: '{res_string}'")
+                else:
+                    res_string = self.scn.get_resource_string(res) or ""
+                    print(f"PFB.16 resource {i}: Using get_resource_string: '{res_string}'")
+                    
+                res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+                res_node["type"] = "resource"
+                res_node["resource_index"] = i
+                
+                node["children"].append(res_node)
+                
+        else:
+            for i, res in enumerate(self.scn.resource_infos):
                 try:
                     res_string = self.scn.get_resource_string(res) or ""
-                except:
-                    res_string = "[Error reading string]"
-            
-            res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
-            res_node["type"] = "resource"
-            res_node["resource_index"] = i
-            
-            node["children"].append(res_node)
+                except Exception as e:
+                    print(f"Error reading resource {i}: {e}")
+                    res_string = "[Error reading]"
+                    
+                res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+                res_node["type"] = "resource"
+                res_node["resource_index"] = i
+                
+                node["children"].append(res_node)
         
         return node
 
@@ -1281,27 +1312,47 @@ class RszViewer(QWidget):
         
         if not hasattr(self.scn, '_resource_str_map'):
             return False
-            
+        
+        if hasattr(self.scn, 'is_pfb16') and self.scn.is_pfb16:
+            if hasattr(resource, 'string_value'):
+                print(f"Setting PFB.16 resource string directly: '{new_path}'")
+                resource.string_value = new_path
+                
+            if hasattr(self.scn, '_pfb16_direct_strings'):
+                direct_strings = self.scn._pfb16_direct_strings
+                if resource_index < len(direct_strings):
+                    direct_strings[resource_index] = new_path
+                    print(f"Updated _pfb16_direct_strings[{resource_index}] to '{new_path}'")
+        
         self.scn._resource_str_map[resource] = new_path
         self.mark_modified()
         
         return True
-    
+
     def add_resource(self, path):
         """Add a new resource path"""
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
         
+        if self.scn.filepath.lower().endswith('.pfb.16'):
+            from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
+            new_res = create_pfb16_resource(path)
+            
+            if hasattr(self.scn, '_pfb16_direct_strings'):
+                self.scn._pfb16_direct_strings.append(path)
+                print(f"Added '{path}' to _pfb16_direct_strings")
+        else:
+            from file_handlers.rsz.rsz_file import ScnResourceInfo
+            new_res = ScnResourceInfo()
+            new_res.string_offset = 0
         
-        new_res = ScnResourceInfo()
-        new_res.string_offset = 0
         resource_index = len(self.scn.resource_infos)
         self.scn.resource_infos.append(new_res)
         self.scn._resource_str_map[new_res] = path
         self.mark_modified()
         
         return resource_index
-    
+
     def delete_resource(self, resource_index):
         """Delete a resource path"""
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
@@ -1310,6 +1361,13 @@ class RszViewer(QWidget):
         resource = self.scn.resource_infos[resource_index]
         if hasattr(self.scn, '_resource_str_map') and resource in self.scn._resource_str_map:
             del self.scn._resource_str_map[resource]
+            
+        if hasattr(self.scn, '_pfb16_direct_strings'):
+            direct_strings = self.scn._pfb16_direct_strings
+            if resource_index < len(direct_strings):
+                direct_strings.pop(resource_index)
+                print(f"Removed resource {resource_index} from _pfb16_direct_strings")
+        
         self.scn.resource_infos.pop(resource_index)
         self.mark_modified()
         

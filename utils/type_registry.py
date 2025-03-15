@@ -1,10 +1,16 @@
 import json
+from .type_registry_patcher import TypeRegistryPatcher
 
 
 class TypeRegistry:
     def __init__(self, json_path: str):
+        self.json_path = json_path
+        patcher = TypeRegistryPatcher(json_path)
+        
         with open(json_path, "r") as f:
-            self.registry = json.load(f)
+            raw_registry = json.load(f)
+        
+        self.registry = patcher.patch_registry(raw_registry)
 
     def get_type_info(self, type_id: int) -> dict:
         """

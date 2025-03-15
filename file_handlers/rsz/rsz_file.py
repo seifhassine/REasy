@@ -247,6 +247,7 @@ class ScnFile:
         self.header = None
         self.is_usr = False
         self.is_pfb = False
+        self.is_pfb16 = False
         self.gameobjects = []
         self.folder_infos = []
         self.resource_infos = []
@@ -287,16 +288,19 @@ class ScnFile:
         self.full_data = memoryview(data)
         self._current_offset = 0
         
+        self.is_usr = False
+        self.is_pfb = False
+        self.is_pfb16 = False
+        
         if data[:4] == b'USR\x00':
             self.is_usr = True
-            self.is_pfb = False
             self.header = UsrHeader()
         elif data[:4] == b'PFB\x00':
-            self.is_usr = False
             self.is_pfb = True
             
-            if self.filepath.lower().endswith('.16'):
+            if self.filepath.lower().endswith('.pfb.16'):
                 self.header = Pfb16Header()
+                self.is_pfb16 = True 
             else:
                 self.header = PfbHeader()
         else:
@@ -331,9 +335,12 @@ class ScnFile:
         """Parse PFB file structure with game version considerations"""
         self._parse_gameobjects(data)
         self._parse_gameobject_ref_infos(data)
-        self._parse_resource_infos(data)
         
-        if not self.filepath.lower().endswith('.16'):
+        if self.filepath.lower().endswith('.pfb.16'):
+            from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
+            self._current_offset = parse_pfb16_resources(self, data, self._current_offset)
+        else:
+            self._parse_resource_infos(data)
             self._parse_userdata_infos(data)
             
         self._parse_blocks(data)
@@ -590,7 +597,6 @@ class ScnFile:
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
-        field_type = field_def.get("type", "").lower()
         
         if isinstance(data_obj, StructData):
             if data_obj.values:
@@ -1559,7 +1565,29 @@ class ScnFile:
         return rsz_start
 
     def get_resource_string(self, ri):
-        return self._resource_str_map.get(ri, "")
+        """Get resource string with special handling for PFB.16 format"""
+        try:
+            if self.is_pfb16:
+                if hasattr(ri, 'string_value') and ri.string_value:
+                    return ri.string_value
+                    
+                if ri in self._resource_str_map:
+                    return self._resource_str_map[ri]
+                    
+                if hasattr(self, '_pfb16_direct_strings'):
+                    try:
+                        idx = self.resource_infos.index(ri)
+                        if 0 <= idx < len(self._pfb16_direct_strings):
+                            return self._pfb16_direct_strings[idx]
+                    except (ValueError, IndexError):
+                        pass
+                        
+                return f"[Resource {self.resource_infos.index(ri) if ri in self.resource_infos else '?'}]"
+            
+            return self._resource_str_map.get(ri, "")
+        except Exception as e:
+            print(f"Error getting resource string: {e}")
+            return f"[Error: {str(e)[:30]}...]"
     
     def get_prefab_string(self, pi):
         return self._prefab_str_map.get(pi, "")
@@ -1571,7 +1599,13 @@ class ScnFile:
         return self._rsz_userdata_str_map.get(rui, "")
 
     def set_resource_string(self, ri, new_string: str):
-        self._resource_str_map[ri] = new_string  
+        """Set resource string with special handling for PFB.16 format"""
+        try:
+            if self.is_pfb16 and hasattr(ri, 'string_value'):
+                ri.string_value = new_string
+            self._resource_str_map[ri] = new_string
+        except Exception as e:
+            print(f"Error setting resource string: {e}")
     
     def set_prefab_string(self, pi, new_string: str):
         self._prefab_str_map[pi] = new_string
@@ -1611,7 +1645,6 @@ def parse_instance_fields(
     pos = offset
     local_align = align_offset
     rsz_userdataInfos = scn_file.rsz_userdata_infos
-    
     unpack_uint = struct.Struct("<I").unpack_from
     unpack_float = struct.Struct("<f").unpack_from
     unpack_4float = struct.Struct("<4f").unpack_from
@@ -1665,7 +1698,6 @@ def parse_instance_fields(
         field_align = int(field["align"]) if "align" in field else 1
         rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align, original_type)
         data_obj = None
-        
         # Special handling for Struct types (both array and non-array)
         if rsz_type == StructData:
             struct_type_info = None
@@ -1743,20 +1775,22 @@ def parse_instance_fields(
                     pos = local_align(pos, field_align)
                         
                     value = unpack_uint(raw, pos)[0]
+                    raw_value = get_bytes(raw[pos:pos+fsize])
                     if is_valid_ref(value) and i == 0:
                         alreadyRef = True 
                     if alreadyRef:
                         child_indexes.append(value)
                         current_children.append(value)
                         set_parent_safely(value, current_instance_index)
-                        
-                    all_values.append(value)
+                        all_values.append(value)
+                    else:
+                        all_values.append(raw_value)
                     pos += fsize
                     
                 data_obj = ArrayData(
                     list(map(lambda x: ObjectData(x, original_type), child_indexes)) if alreadyRef else 
-                    list(map(lambda x: U32Data(x, original_type), all_values)),
-                    ObjectData if alreadyRef else U32Data,
+                    list(map(lambda x: RawBytesData(raw_value, fsize, original_type), all_values)),
+                    ObjectData if alreadyRef else RawBytesData,
                     original_type
                 )
 
@@ -2077,10 +2111,11 @@ def parse_instance_fields(
             pos = local_align(pos, field_align)
             if rsz_type == MaybeObject:
                 candidate = unpack_uint(raw, pos)[0]
+                raw_candidate = get_bytes(raw[pos:pos+4])
                 pos += 4
                 
                 if not is_valid_ref(candidate):
-                    data_obj = U32Data(candidate, original_type)
+                    data_obj = RawBytesData(raw_candidate, fsize, original_type)
                 else:
                     data_obj = ObjectData(candidate, original_type)
                     current_children.append(candidate)
