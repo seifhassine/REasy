@@ -368,16 +368,16 @@ class RszArrayOperations:
                 return True
                 
             # Check if this instance is referenced elsewhere
-            is_referenced_elsewhere = self._check_instance_referenced_elsewhere(
-                instance_id, array_data, element_index, ref_type
-            )
+            #is_referenced_elsewhere = self._check_instance_referenced_elsewhere(
+            #    instance_id, array_data, element_index, ref_type
+            #)
             
-            if is_referenced_elsewhere:
-                print(f"{ref_type.capitalize()} {instance_id} is referenced elsewhere - only removing reference")
-                # Just remove the reference, not the actual instance
-                del array_data.values[element_index]
-                self.viewer.mark_modified()
-                return True
+            #if is_referenced_elsewhere:
+            #    print(f"{ref_type.capitalize()} {instance_id} is referenced elsewhere - only removing reference")
+            #    # Just remove the reference, not the actual instance
+            #    del array_data.values[element_index]
+            #    self.viewer.mark_modified()
+            #    return True
             
             print(f"Deleting {ref_type} instance {instance_id}")
             
@@ -654,10 +654,10 @@ class RszArrayOperations:
                         id_adjustments[i] = i - offset
             
             #  Diagnostic purposes
-            print("ID Adjustments:")
-            for old_id, new_id in sorted(id_adjustments.items()):
-                if new_id >= 0: 
-                    print(f"  {old_id} -> {new_id}")
+            #print("ID Adjustments:")
+            #for old_id, new_id in sorted(id_adjustments.items()):
+            #    if new_id >= 0: 
+            #        print(f"  {old_id} -> {new_id}")
             
             # 2. Delete instances and update data structures
             
