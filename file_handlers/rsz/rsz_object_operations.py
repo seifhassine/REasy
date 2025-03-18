@@ -470,21 +470,27 @@ class RszObjectOperations:
                     ref_info.target_id -= 1
 
     def _find_nested_objects(self, fields, base_instance_id):
-        """Find instance IDs of nested objects that aren't in the object table.
-        
-        This method walks backwards from the given base_instance_id until it hits
-        an instance that is referenced in the object table. All consecutive instances
-        not in the table are assumed to be nested objects.
-        """
+        """Find instance IDs of nested objects that aren't in the object table."""
         nested_objects = set()
-        object_table_ids = set(self.scn.object_table)
         
-        i = base_instance_id - 1
-        while i > 0 and i < len(self.scn.instance_infos) and i not in object_table_ids:
-            if self.scn.instance_infos[i].type_id != 0:
-                nested_objects.add(i)
-            i -= 1
-
+        try:
+            base_object_id = next(i for i, id_ in enumerate(self.scn.object_table) if id_ == base_instance_id)
+        except StopIteration:
+            return nested_objects
+            
+        if base_object_id <= 0:
+            return nested_objects
+            
+        prev_instance_id = next((id_ for id_ in reversed(self.scn.object_table[:base_object_id]) if id_ > 0), 0)
+        
+        object_table_ids = set(self.scn.object_table)
+        for instance_id in range(prev_instance_id + 1, base_instance_id):
+            if (instance_id > 0 and 
+                instance_id < len(self.scn.instance_infos) and 
+                self.scn.instance_infos[instance_id].type_id != 0 and
+                instance_id not in object_table_ids):
+                nested_objects.add(instance_id)
+                
         return nested_objects
 
     def delete_folder(self, folder_id):
