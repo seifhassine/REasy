@@ -156,6 +156,16 @@ class IdManager:
             if reasy_id in self._reasy_to_instance:
                 del self._reasy_to_instance[reasy_id]
 
+    def get_reasy_id_for_instance(self, instance_id):
+        """Get reasy_id for an instance_id, creating one if needed"""
+        if instance_id <= 0:
+            return 0
+        
+        if instance_id in self._instance_to_reasy:
+            return self._instance_to_reasy[instance_id]
+                
+        return self.register_instance(instance_id)
+
 
 class EmbeddedIdManager:
     """
@@ -176,6 +186,17 @@ class EmbeddedIdManager:
         self._next_id = 1  # Start at 1 (0 is reserved)
         self._reasy_to_instance = {}  # Map reasy_id -> instance_id
         self._instance_to_reasy = {}  # Map instance_id -> reasy_id
+    
+    def get_next_id(self):
+        """
+        Get the next available instance ID without registering it
+        
+        Returns:
+            int: The next available instance ID
+        """
+        next_id = self._next_id
+        self._next_id += 1
+        return next_id
     
     def register_instance(self, instance_id):
         """
