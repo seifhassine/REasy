@@ -18,6 +18,8 @@ copy "rszre2.json" "dist\rszre2.json"
 copy "rszre2rt.json" "dist\rszre2rt.json"
 copy "rszdmc5.json" "dist\rszdmc5.json"
 copy "rszre8.json" "dist\rszre8.json"
+copy "rszre7.json" "dist\rszre7.json"
+copy "rszre3.json" "dist\rszre3.json"
 copy "rszmhws.json" "dist\rszmhws.json"
 
 

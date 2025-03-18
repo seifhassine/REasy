@@ -21,6 +21,8 @@ class EnumManager:
             "RE2": "resources/data/enums/re2_enums.json",
             "RE2RT": "resources/data/enums/re2rt_enums.json",
             "RE8": "resources/data/enums/re8_enums.json",
+            "RE3": "resources/data/enums/re3_enums.json",
+            "RE7": "resources/data/enums/re7_enums.json",
             "MHWS": "resources/data/enums/mhws_enums.json",
             "DMC5": "resources/data/enums/dmc5_enums.json",
         }
