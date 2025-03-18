@@ -8,7 +8,7 @@
 <br>
 
 **REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of some RE Engine files. It also includes miscellaneous tools to speed up your work. 
-I have currently rushed the release and the structure will be improved in the upcoming updates. I have currently tested this on RE2 and RE4R files. It should work fine with uvars from other RE engine titles.
+I have currently rushed the release and the structure will be improved in the upcoming updates. 
 
 
 <br>
