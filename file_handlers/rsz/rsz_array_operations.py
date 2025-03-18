@@ -368,16 +368,16 @@ class RszArrayOperations:
                 return True
                 
             # Check if this instance is referenced elsewhere
-            #is_referenced_elsewhere = self._check_instance_referenced_elsewhere(
-            #    instance_id, array_data, element_index, ref_type
-            #)
+            is_referenced_elsewhere = self._check_instance_referenced_elsewhere(
+                instance_id, array_data, element_index, ref_type
+            )
             
-            #if is_referenced_elsewhere:
-            #    print(f"{ref_type.capitalize()} {instance_id} is referenced elsewhere - only removing reference")
-            #    # Just remove the reference, not the actual instance
-            #    del array_data.values[element_index]
-            #    self.viewer.mark_modified()
-            #    return True
+            if is_referenced_elsewhere:
+                print(f"{ref_type.capitalize()} {instance_id} is referenced elsewhere - only removing reference")
+                # Just remove the reference, not the actual instance
+                del array_data.values[element_index]
+                self.viewer.mark_modified()
+                return True
             
             print(f"Deleting {ref_type} instance {instance_id}")
             
