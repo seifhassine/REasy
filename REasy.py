@@ -993,7 +993,7 @@ class REasyEditorApp(QMainWindow):
         # Game Version selection
         game_version_layout = QHBoxLayout()
         game_version_layout.setContentsMargins(0, 0, 0, 0)
-        game_version_label = QLabel("Game Version (For Dropdown Suggestions):")
+        game_version_label = QLabel("Game Version (Reload Required):")
         game_version_layout.addWidget(game_version_label)
         
         game_version_combo = QComboBox()
@@ -1014,7 +1014,7 @@ class REasyEditorApp(QMainWindow):
         debug_box.setChecked(self.settings.get("show_debug_console", True))
         layout.addWidget(debug_box)
         
-        rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files")
+        rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files (Reload Required)")
         rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
         layout.addWidget(rsz_advanced_box)
 
