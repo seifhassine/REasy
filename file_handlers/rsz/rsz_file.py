@@ -703,6 +703,9 @@ class ScnFile:
                             out.extend(struct.pack("<20f", *([0.0] * 20)))
                     elif isinstance(element, RawBytesData):
                         out.extend(element.raw_bytes)
+                        remaining_bytes = field_size - len(element.raw_bytes)
+                        if remaining_bytes > 0:
+                            out.extend(b'\x00' * remaining_bytes)
                     elif isinstance(element, UserDataData):
                         out.extend(struct.pack("<I", element.index))
                         #print("userdata index is ", element.index)
@@ -818,8 +821,10 @@ class ScnFile:
                     values = [float(x) for x in str(data_obj.values).strip('()').split(',')]
                     out.extend(struct.pack("<16f", *values))
             elif isinstance(data_obj, RawBytesData):
-                #print("last is rawbytes")
                 out.extend(data_obj.raw_bytes)
+                remaining_bytes = field_size - len(data_obj.raw_bytes)
+                if remaining_bytes > 0:
+                    out.extend(b'\x00' * remaining_bytes)
             elif isinstance(data_obj, UserDataData):
                 #print(f"Writing userdata with index {data_obj.index}")  # Debug print
                 out.extend(struct.pack("<I", data_obj.index))
