@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
-                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox)
+                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy)
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette
 import uuid
+
+from file_handlers.rsz.rsz_data_types import RawBytesData
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -511,64 +513,180 @@ class OBBInput(BaseValueWidget):
 class HexBytesInput(BaseValueWidget):
     valueChanged = Signal(bytes)
     
-    def __init__(self, data=None, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
+        self.raw_data = None
+        self.max_size = 0
+        self.overwrite_mode = True 
+        self.edit_second_digit = False
         
-        self.hex_edit = QLineEdit()
-        self.hex_edit.setAlignment(Qt.AlignLeft)
-        self.hex_edit.setInputMask("HH "*32)
-        self.layout.addWidget(self.hex_edit)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
         
-        if data:
-            self.set_data(data)
-            
-        self.hex_edit.textEdited.connect(self._on_text_changed) 
-
+        self.text_field = OverwriteHexLineEdit(self, hex_widget=self)
+        font = self.text_field.font()
+        font.setFamily("Courier New")
+        font.setPointSize(9) 
+        self.text_field.setFont(font)
+        self.text_field.textEdited.connect(self._on_text_edited) 
+        self.text_field.setMinimumWidth(15)
+        
+        
+        layout.addWidget(self.text_field, 1) 
+        
+        self.normal_palette = self.text_field.palette()
+        self.warning_palette = QPalette(self.normal_palette)
+        self.warning_palette.setColor(QPalette.Base, QColor(255, 240, 240)) 
+        
+        self.setLayout(layout)
+        
+        size_policy = self.sizePolicy()
+        size_policy.setHorizontalPolicy(QSizePolicy.Expanding)
+        self.setSizePolicy(size_policy)
+        
     def update_display(self):
-        if not self._data:
+        if not self.raw_data:
+            self.text_field.setText("")
             return
-        
-        if hasattr(self._data, "raw_bytes"): 
-            bytes_data = self._data.raw_bytes
-        elif hasattr(self._data, 'bytes_raw'):
-            bytes_data = self._data.bytes_raw
-        elif hasattr(self._data, 'bytes_array'):
-            bytes_data = self._data.bytes_array
-        elif hasattr(self._data, 'value'):
-            bytes_data = self._data.value
-        else:
-            bytes_data = self._data
-        
-        if isinstance(bytes_data, (bytes, bytearray)):
-            hex_str = ' '.join([f'{b:02X}' for b in bytes_data])
-            self.hex_edit.setText(hex_str)
-        else:
-            print(f"Warning: Unexpected data format in HexBytesInput: {type(bytes_data)}")
-
-    def _on_text_changed(self):
-        hex_str = self.hex_edit.text().strip()
-        if not hex_str:
-            return
-        try:
-            bytes_data = bytes([int(x, 16) for x in hex_str.split()])
-            old_value = None
             
-            if hasattr(self._data, 'raw_bytes'):
-                old_value = self._data.raw_bytes
-                self._data.raw_bytes = bytes_data
-            elif hasattr(self._data, 'bytes_array'):
-                old_value = self._data.bytes_array
-                self._data.bytes_array = bytes_data
-            elif hasattr(self._data, 'value'):
-                old_value = self._data.value
-                self._data.value = bytes_data
+        cursor_pos = self.text_field.cursorPosition()
+            
+        try:
+            raw_bytes = self.raw_data.raw_bytes
+
+            if raw_bytes is None or not isinstance(raw_bytes, bytes):
+                raw_bytes = bytes(self.max_size) 
+            
+            hex_string = raw_bytes.hex().upper()
+            formatted_hex = ' '.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
+            
+            self.text_field.blockSignals(True)
+            self.text_field.setText(formatted_hex)
+            if cursor_pos <= len(formatted_hex):
+                self.text_field.setCursorPosition(cursor_pos) 
+            self.text_field.blockSignals(False)
+        
+            current_size = len(raw_bytes)
+            
+            if self.max_size > 0:
+                char_width = self.text_field.fontMetrics().averageCharWidth()
+                width = ((self.max_size * 3.05)) * char_width 
+                self.text_field.setMinimumWidth(min(800, max(100, width))) 
                 
-            if old_value != bytes_data:
-                self.valueChanged.emit(bytes_data)
-                self.mark_modified()
+            if self.max_size > 0 and current_size >= self.max_size:
+                self.text_field.setPalette(self.warning_palette)
+            else:
+                self.text_field.setPalette(self.normal_palette)
+        except Exception as e:
+            print(f"Error displaying raw bytes data: {e}")
+            self.text_field.setText("[Error displaying data]")
+    
+    def set_data(self, data):
+        if not data or not isinstance(data, RawBytesData):
+            self.raw_data = None
+            self.max_size = 0
+            self.update_display()
+            return
+            
+        self.raw_data = data   
+        
+        self.max_size = data.field_size
                 
-        except ValueError:
-            pass
+        self.update_display()
+    
+    def get_data(self):
+        return self.raw_data
+    
+    def _on_text_edited(self, text):
+        """Handle text editing in overwrite mode"""
+        if not self.raw_data:
+            return
+            
+        try:
+            cursor_pos = self.text_field.cursorPosition()
+            
+            original_text = self.text_field.text()
+            
+            text_no_spaces = ''.join(c for c in text if c in '0123456789ABCDEF')
+            
+            if text_no_spaces:
+                if len(text_no_spaces) % 2 != 0:
+                    text_no_spaces += '0'
+                    
+                new_bytes = bytes.fromhex(text_no_spaces)
+                
+                if self.max_size > 0 and len(new_bytes) > self.max_size:
+                    new_bytes = new_bytes[:self.max_size]
+            else:
+                new_bytes = bytes(self.max_size)
+            
+            self._update_raw_bytes(new_bytes)
+            
+            self.update_display()
+            
+            new_cursor_pos = cursor_pos
+            if original_text != text:
+                new_cursor_pos += 1
+                if new_cursor_pos < len(self.text_field.text()) and self.text_field.text()[new_cursor_pos] == ' ':
+                    new_cursor_pos += 1
+            
+            if new_cursor_pos <= len(self.text_field.text()):
+                self.text_field.setCursorPosition(new_cursor_pos)
+            
+            self.valueChanged.emit(new_bytes)
+            self.mark_modified()
+            
+        except Exception as e:
+            print(f"Error processing hex input: {e}")
+    
+    def _update_raw_bytes(self, new_bytes):
+        """Update the raw bytes data using the appropriate attribute"""
+        self.raw_data.raw_bytes = new_bytes
+
+class OverwriteHexLineEdit(QLineEdit):
+    def __init__(self, parent=None, hex_widget=None):
+        super().__init__(parent)
+        self.hex_widget = hex_widget
+
+    def keyPressEvent(self, event):
+        text = event.text()
+        if text and text.upper() in "0123456789ABCDEF":
+            pos = self.cursorPosition()
+            full_text = self.text()
+            
+            effective_index = len(full_text[:pos].replace(" ", ""))
+            byte_index = effective_index // 2
+            nibble_index = effective_index % 2
+
+            raw_bytes = self.hex_widget.raw_data.raw_bytes
+            raw_bytes_list = list(raw_bytes)
+            if byte_index >= len(raw_bytes_list):
+                return
+
+            current_byte = raw_bytes_list[byte_index]
+            new_digit = int(text, 16)
+            if nibble_index == 0:
+                new_byte = (new_digit << 4) | (current_byte & 0x0F)
+            else:
+                new_byte = (current_byte & 0xF0) | new_digit
+
+            raw_bytes_list[byte_index] = new_byte
+            new_bytes = bytes(raw_bytes_list)
+
+            self.hex_widget._update_raw_bytes(new_bytes)
+            self.hex_widget.update_display()
+
+            new_cursor = pos + 1
+            formatted = self.text()
+            if new_cursor < len(formatted) and formatted[new_cursor] == ' ':
+                new_cursor += 1
+            self.setCursorPosition(new_cursor)
+
+            self.hex_widget.valueChanged.emit(new_bytes)
+            self.hex_widget.mark_modified()
+        else:
+            super().keyPressEvent(event)
 
 class StringInput(BaseValueWidget):
     """Widget for editing string values"""
@@ -1366,4 +1484,3 @@ class CapsuleInput(BaseValueWidget):
             return (*start_values, *end_values, radius)
         except ValueError:
             return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-
