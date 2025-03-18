@@ -33,7 +33,7 @@ class Scn19Header:
          self.folder_tbl,
          self.resource_info_tbl,
          self.prefab_info_tbl,
-         self.userdata_info_tbl,  # This value might be 0 or invalid
+         self.userdata_info_tbl,
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
 # Special RSZUserDataInfo class for SCN.19 format
@@ -48,6 +48,9 @@ class Scn19RSZUserDataInfo:
         self.data = None        # The actual binary userdata content
         self.original_data = None  # Store the original binary data for preservation
         self.modified = False   # Track if this embedded structure was modified
+        self.value = ""         
+        
+        self.parent_userdata_rui = None
         
         # Fields for embedded RSZ data
         self.embedded_rsz_header = None      # Parsed RSZ header
@@ -108,7 +111,7 @@ class EmbeddedInstanceInfo:
         self.type_id, self.crc = struct.unpack_from("<II", data, offset)
         return offset + self.SIZE
 
-def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_depth=0, visited_blocks=None) -> bool:
+def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_depth=0) -> bool:
     """Parse an embedded RSZ block within SCN.19 userdata, with support for recursive embedded structures
     
     Args:
@@ -121,18 +124,12 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         bool: True if parsing was successful
     """
     
-    if visited_blocks is None:
-        visited_blocks = set()
     
     # Skip if no data or already visited this exact data block (avoid cycles)
     if not rui.data or len(rui.data) < EmbeddedRSZHeader.SIZE:
         return False
         
-    data_hash = hash(rui.data)
-    if data_hash in visited_blocks:
-        return False
-    visited_blocks.add(data_hash)
-    
+  
     try:
         # Store the original data for preservation
         rui.original_data = rui.data
@@ -246,8 +243,7 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
                 nested_success = parse_embedded_rsz(
                     embedded_rui, 
                     type_registry, 
-                    recursion_depth + 1,
-                    visited_blocks
+                    recursion_depth + 1
                 )
                 
                 # If successfully parsed, add it to the embedded_instances
@@ -429,141 +425,212 @@ def build_embedded_rsz(rui, type_registry=None):
         bytes: The built binary data
     """
     if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
-        should_rebuild = False
+        recalculate_json_path_hash(rui)
+        from file_handlers.rsz.rsz_file import ScnFile
+        mini_scn = ScnFile()
         
-        if hasattr(rui, 'modified') and rui.modified:
-            should_rebuild = True
+        mini_scn.type_registry = type_registry
+        mini_scn.rsz_header = rui.embedded_rsz_header
         
-        if not should_rebuild and hasattr(rui, 'embedded_rsz_header') and hasattr(rui, 'embedded_instance_infos'):
-            if rui.embedded_rsz_header.instance_count != len(rui.embedded_instance_infos):
-                should_rebuild = True
-            # Force rebuild if we have object table but its length doesn't match header
-            elif hasattr(rui, 'embedded_object_table') and len(rui.embedded_object_table) != rui.embedded_rsz_header.object_count:
-                should_rebuild = True
+        filtered_instance_infos = []
+        old_to_new_idx = {}  # Map old indices to new indices
         
-        if should_rebuild:
-            from file_handlers.rsz.rsz_file import ScnFile
-            mini_scn = ScnFile()
+        valid_instance_ids = set(rui.embedded_instances.keys())
+        
+        if hasattr(rui, 'embedded_instance_infos'):
+            for old_idx, info in enumerate(rui.embedded_instance_infos):
+                # Only keep instance infos that are not None AND have a corresponding entry in embedded_instances
+                # This ensures that deleted elements are completely removed
+                if info is not None and old_idx in valid_instance_ids:
+                    old_to_new_idx[old_idx] = len(filtered_instance_infos)
+                    filtered_instance_infos.append(info)
+                elif old_idx == 0:  # Always keep the null instance (index 0)
+                    old_to_new_idx[0] = 0
+                    filtered_instance_infos.append(info)
+        
+        mini_scn.instance_infos = filtered_instance_infos
+        
+        updated_object_table = []
+        if hasattr(rui, 'embedded_object_table'):
+            for ref in rui.embedded_object_table:
+                if ref in old_to_new_idx:
+                    updated_object_table.append(old_to_new_idx[ref])
+                else:
+                    updated_object_table.append(0) 
+        
+        mini_scn.object_table = updated_object_table
+        
+        updated_elements = {}
+        if hasattr(rui, 'embedded_instances'):
+            for old_id, fields in rui.embedded_instances.items():
+                if old_id in old_to_new_idx:
+                    new_id = old_to_new_idx[old_id]
+                    updated_elements[new_id] = fields
+                elif old_id < len(filtered_instance_infos):
+                    updated_elements[old_id] = fields
+        
+        mini_scn.parsed_elements = updated_elements
+        
+        mini_scn._array_counters = {}
+        
+        for instance_id, fields in mini_scn.parsed_elements.items():
+            if isinstance(fields, dict):
+                for field_name, field_data in fields.items():
+                    _update_field_references(field_data, old_to_new_idx)
+                    if isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
+                        array_id = id(field_data)
+                        mini_scn._array_counters[array_id] = len(field_data.values)
+        
+        mini_scn._rsz_userdata_dict = {}
+        mini_scn._rsz_userdata_set = set()
+        mini_scn.instance_hierarchy = getattr(rui, 'embedded_instance_hierarchy', {})
+        
+        mini_scn.rsz_userdata_infos = rui.embedded_userdata_infos if hasattr(rui, 'embedded_userdata_infos') else []
+        mini_scn._rsz_userdata_str_map = {}
+        
+        for nested_rui in mini_scn.rsz_userdata_infos:
+            if nested_rui.instance_id in old_to_new_idx:
+                nested_rui.instance_id = old_to_new_idx[nested_rui.instance_id]
             
-            mini_scn.type_registry = type_registry
-            mini_scn.rsz_header = rui.embedded_rsz_header
-            mini_scn.object_table = rui.embedded_object_table if hasattr(rui, 'embedded_object_table') else []
-            mini_scn.instance_infos = rui.embedded_instance_infos if hasattr(rui, 'embedded_instance_infos') else []
-            mini_scn.parsed_elements = rui.embedded_instances.copy() if hasattr(rui, 'embedded_instances') else {}
-            mini_scn._rsz_userdata_dict = {}
-            mini_scn._rsz_userdata_set = set()
-            mini_scn.instance_hierarchy = getattr(rui, 'embedded_instance_hierarchy', {})
+            if hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
+                nested_rui.data = build_embedded_rsz(nested_rui, type_registry)
+        
+        out = bytearray()
+        
+        mini_scn.rsz_header.object_count = len(mini_scn.object_table)
+        mini_scn.rsz_header.instance_count = len(mini_scn.instance_infos)
+        mini_scn.rsz_header.userdata_count = len(mini_scn.rsz_userdata_infos)
+        
+        rsz_header_bytes = struct.pack(
+            "<5I I Q Q Q",
+            mini_scn.rsz_header.magic,
+            mini_scn.rsz_header.version,
+            mini_scn.rsz_header.object_count,
+            mini_scn.rsz_header.instance_count,
+            mini_scn.rsz_header.userdata_count,
+            mini_scn.rsz_header.reserved,
+            0,  # instance_offset - will update later
+            0,  # data_offset - will update later 
+            0   # userdata_offset - will update later
+        )
+        out += rsz_header_bytes
+        
+        # Write object table
+        for obj_id in mini_scn.object_table:
+            out += struct.pack("<i", obj_id)
+        
+        # Write instance infos
+        instance_offset = len(out)
+        for inst in mini_scn.instance_infos:
+            out += struct.pack("<II", inst.type_id, inst.crc)
+        
+        # Align to 16 bytes
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        userdata_offset = len(out)
+        
+        # Calculate userdata offsets
+        userdata_entries_start = len(out)
+        userdata_data_start = userdata_entries_start + len(mini_scn.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
+        
+        userdata_data_start = ((userdata_data_start + 15) & ~15)
+        current_data_offset = userdata_data_start
+        
+        # Write userdata table entries
+        for nested_rui in mini_scn.rsz_userdata_infos:
+            data_content = getattr(nested_rui, "data", b"")
+            if data_content is None:
+                data_content = b""
             
-            mini_scn.rsz_userdata_infos = rui.embedded_userdata_infos if hasattr(rui, 'embedded_userdata_infos') else []
-            mini_scn._rsz_userdata_str_map = {}
+            rel_data_offset = current_data_offset - 0  
             
-            for nested_rui in mini_scn.rsz_userdata_infos:
-                if hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
-                    nested_rui.data = build_embedded_rsz(nested_rui, type_registry)
-            
-            out = bytearray()
-            
-            mini_scn.rsz_header.object_count = len(mini_scn.object_table)
-            mini_scn.rsz_header.instance_count = len(mini_scn.instance_infos)
-            mini_scn.rsz_header.userdata_count = len(mini_scn.rsz_userdata_infos)
-            
-            rsz_header_bytes = struct.pack(
-                "<5I I Q Q Q",
-                mini_scn.rsz_header.magic,
-                mini_scn.rsz_header.version,
-                mini_scn.rsz_header.object_count,
-                mini_scn.rsz_header.instance_count,
-                mini_scn.rsz_header.userdata_count,
-                mini_scn.rsz_header.reserved,
-                0,  # instance_offset - will update later
-                0,  # data_offset - will update later 
-                0   # userdata_offset - will update later
+            out += struct.pack("<4IQ", 
+                nested_rui.instance_id,
+                getattr(nested_rui, "type_id", 0),
+                getattr(nested_rui, "json_path_hash", 0),
+                len(data_content),
+                rel_data_offset
             )
-            out += rsz_header_bytes
             
-            # Write object table
-            for obj_id in mini_scn.object_table:
-                out += struct.pack("<i", obj_id)
-            
-            # Write instance infos
-            instance_offset = len(out)
-            for inst in mini_scn.instance_infos:
-                out += struct.pack("<II", inst.type_id, inst.crc)
+            # Align each userdata block to 16 bytes
+            current_data_offset += ((len(data_content) + 15) & ~15)
+        
+        # Pad to start of userdata data
+        while len(out) < userdata_data_start:
+            out += b"\x00"
+        
+        # Write userdata content
+        for nested_rui in mini_scn.rsz_userdata_infos:
+            data_content = getattr(nested_rui, "data", b"")
+            if data_content is None:
+                data_content = b""
+                
+            out += data_content
             
             # Align to 16 bytes
             while len(out) % 16 != 0:
                 out += b"\x00"
-            userdata_offset = len(out)
+        
+        # Write instance data
+        data_offset = len(out)
+        try:
+            for instance_id, fields in mini_scn.parsed_elements.items():
+                if isinstance(fields, dict):
+                    for field_name, field_data in fields.items():
+                        if isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
+                            array_id = id(field_data)
+                            if array_id in mini_scn._array_counters:
+                                expected_count = mini_scn._array_counters[array_id]
+                                if expected_count != len(field_data.values):
+                                    print(f"Warning: Array count mismatch in {field_name} - expected {expected_count}, got {len(field_data.values)}")
+                                    # Force array length to match counter to prevent data corruption
+                                    while len(field_data.values) < expected_count:
+                                        # Add padding elements if needed
+                                        field_data.values.append(field_data.element_class())
             
-            # Calculate userdata offsets
-            userdata_entries_start = len(out)
-            userdata_data_start = userdata_entries_start + len(mini_scn.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
-            
-            userdata_data_start = ((userdata_data_start + 15) & ~15)
-            current_data_offset = userdata_data_start
-            
-            # Write userdata table entries
-            for nested_rui in mini_scn.rsz_userdata_infos:
-                data_content = getattr(nested_rui, "data", b"")
-                if data_content is None:
-                    data_content = b""
-                
-                rel_data_offset = current_data_offset - 0  
-                
-                out += struct.pack("<4IQ", 
-                    nested_rui.instance_id,
-                    getattr(nested_rui, "type_id", 0),
-                    getattr(nested_rui, "json_path_hash", 0),
-                    len(data_content),
-                    rel_data_offset
-                )
-                
-                # Align each userdata block to 16 bytes
-                current_data_offset += ((len(data_content) + 15) & ~15)
-            
-            # Pad to start of userdata data
-            while len(out) < userdata_data_start:
-                out += b"\x00"
-            
-            # Write userdata content
-            for nested_rui in mini_scn.rsz_userdata_infos:
-                data_content = getattr(nested_rui, "data", b"")
-                if data_content is None:
-                    data_content = b""
-                    
-                out += data_content
-                
-                # Align to 16 bytes
-                while len(out) % 16 != 0:
-                    out += b"\x00"
-            
-            # Write instance data
-            data_offset = len(out)
             instance_data = mini_scn._write_instance_data()
             out += instance_data
-            
-            # Update RSZ header with correct offsets
-            new_rsz_header = struct.pack(
-                "<5I I Q Q Q",
-                mini_scn.rsz_header.magic,
-                mini_scn.rsz_header.version,
-                mini_scn.rsz_header.object_count,
-                mini_scn.rsz_header.instance_count,
-                mini_scn.rsz_header.userdata_count,
-                mini_scn.rsz_header.reserved,
-                instance_offset,
-                data_offset,
-                userdata_offset
-            )
-            out[0:mini_scn.rsz_header.SIZE] = new_rsz_header
-            
-            # Reset modified flag now that we've rebuilt
-            rui.modified = False
-            
-            return bytes(out)
+        except Exception as e:
+            print(f"Error in _write_instance_data: {e}")
+            import traceback
+            traceback.print_exc()
+            return b''
+        
+        # Update RSZ header with correct offsets
+        new_rsz_header = struct.pack(
+            "<5I I Q Q Q",
+            mini_scn.rsz_header.magic,
+            mini_scn.rsz_header.version,
+            mini_scn.rsz_header.object_count,
+            mini_scn.rsz_header.instance_count,
+            mini_scn.rsz_header.userdata_count,
+            mini_scn.rsz_header.reserved,
+            instance_offset,
+            data_offset,
+            userdata_offset
+        )
+        out[0:mini_scn.rsz_header.SIZE] = new_rsz_header
+        
+        rui.modified = False
+        
+        return bytes(out)
     
     # Fallback to original data if no instances or structure to rebuild
     return rui.data if hasattr(rui, 'data') and rui.data else b""
+
+def _update_field_references(field_data, old_to_new_idx):
+    """Update references in fields to match new indices"""
+    if isinstance(field_data, ObjectData) and hasattr(field_data, 'value'):
+        if field_data.value in old_to_new_idx:
+            field_data.value = old_to_new_idx[field_data.value]
+    elif isinstance(field_data, UserDataData) and hasattr(field_data, 'index'):
+        if field_data.index in old_to_new_idx:
+            field_data.index = old_to_new_idx[field_data.index]
+    elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
+        field_data.modified = True 
+        
+        for element in field_data.values:
+            _update_field_references(element, old_to_new_idx)
 
 def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: bool, rsz_start: int):
     """Build the RSZ section specifically for SCN.19 format"""
@@ -602,17 +669,6 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
         # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
-                if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table and len(rui.embedded_object_table) > 0:
-                    first_object_id = rui.embedded_object_table[0]
-                    if first_object_id in rui.embedded_instances:
-                        instance_data = rui.embedded_instances[first_object_id]
-                        if instance_data:
-                            first_field_name = next(iter(instance_data.keys()), "")
-                            if first_field_name:
-                                first_field_value = instance_data[first_field_name]
-                                value_str = first_field_value.value.strip("\x00")
-                                rui.json_path_hash = murmur3_hash(value_str.encode("utf-16le"))
-                
                 rui.data = build_embedded_rsz(rui, scn_file.type_registry)
             except Exception as e:
                 print(f"Error rebuilding embedded RSZ: {str(e)}")
@@ -748,3 +804,24 @@ def parse_scn19_rsz_userdata(scn_file, data):
         current_offset = scn_file._align(current_offset, 16)
         
     return current_offset
+
+def recalculate_json_path_hash(rui):
+    if not hasattr(rui, 'embedded_instances') or not rui.embedded_instances:
+        return
+    root_id = None
+    if hasattr(rui, 'embedded_object_table') and rui.embedded_object_table:
+        root_id = rui.embedded_object_table[0]
+    if root_id is not None and root_id in rui.embedded_instances:
+        root_instance = rui.embedded_instances[root_id]
+        
+        for field_name, field_value in root_instance.items():
+            if hasattr(field_value, 'value') and isinstance(field_value.value, str):
+                try:
+                    value_str = field_value.value.strip("\x00")
+                    if value_str:
+                        rui.json_path_hash = murmur3_hash(value_str.encode("utf-16le"))
+                        return
+                except Exception:
+                    print(f"Error calculating JSON path hash for field '{field_name}'")
+                    
+    

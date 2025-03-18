@@ -48,7 +48,7 @@ class AdvancedTreeView(QTreeView):
         self.parent_modified_callback = None
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts like Delete key for GameObject deletion"""
+        """Handle keyboard shortcuts like Delete key for deletion of various items"""
         if event.key() == Qt.Key_Delete:
             indexes = self.selectedIndexes()
             if not indexes:
@@ -62,31 +62,22 @@ class AdvancedTreeView(QTreeView):
             if not item:
                 return
                 
-            # Check if this is a GameObject
-            if hasattr(item, 'raw') and isinstance(item.raw, dict):
-                is_gameobject = item.raw.get("type") == "gameobject"
+            item_info = self._identify_item_type(item)
+            
+            if item_info.get('is_embedded', False) and not item_info['is_array_element']:
+                return
+            
+            if item_info['is_gameobject']:
+                self.delete_gameobject(index)
+            elif item_info['is_folder']:
+                self.delete_folder(index)
+            elif item_info['is_component'] and item_info['component_instance_id'] > 0:
+                self.delete_component(index, item_info['component_instance_id'])
+            elif item_info['is_resource'] and item_info['resource_index'] >= 0:
+                self.delete_resource(index, item_info['resource_index'])
+            elif item_info['is_array_element'] and item_info['element_index'] >= 0:
+                self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
                 
-                if is_gameobject:
-                    # Use reasy_id to get the current instance_id
-                    reasy_id = item.raw.get("reasy_id")
-                    if reasy_id:
-                        if item.raw.get("embedded", False):
-                            return
-                        
-                        instance_id = IdManager.instance().get_instance_id(reasy_id)
-                        if instance_id:
-                            # Find GameObject's object table index
-                            parent = self.parent()
-                            if hasattr(parent, "scn") and hasattr(parent.scn, "object_table"):
-                                go_object_id = -1
-                                for i, obj_id in enumerate(parent.scn.object_table):
-                                    if obj_id == instance_id:
-                                        go_object_id = i
-                                        break
-                                        
-                                if go_object_id >= 0:
-                                    self.delete_gameobject(index)
-                                    return
         # Call the parent's keyPressEvent for default behavior
         super().keyPressEvent(event)
 
@@ -149,101 +140,29 @@ class AdvancedTreeView(QTreeView):
         if not item:
             return
         
-        is_embedded = False
-        if hasattr(item, 'raw') and isinstance(item.raw, dict):
-            is_embedded = item.raw.get("embedded", False)
+        item_info = self._identify_item_type(item)
         
-        is_array = False
-        array_type = ""
-        data_obj = None
-        is_array_element = False
-        parent_array_item = None
-        element_index = -1
-        is_gameobject = False
-        is_component = False
-        component_instance_id = -1
-        is_folder = False
-        is_gameobjects_root = False
-        is_resource = False
-        resource_index = -1
-        is_resources_section = False
-        
-        # Check if this is a resource node or the resources section itself
-        if hasattr(item, 'raw') and isinstance(item.raw, dict):
-            is_resource = item.raw.get("type") == "resource"
-            if is_resource:
-                resource_index = item.raw.get("resource_index", -1)
-        
-        # Check if this is the Resources header node
-        if item.data and len(item.data) > 0:
-            if item.data[0].startswith("Resources"):
-                is_resources_section = True
-        
-        # Check if this is the GameObjects root node
-        if item.data and len(item.data) > 0:
-            if item.data[0] == "GameObjects":
-                is_gameobjects_root = True
-        
-        # Check if this is a gameobject or folder
-        if hasattr(item, 'raw') and isinstance(item.raw, dict):
-            is_gameobject = item.raw.get("type") == "gameobject"
-            is_folder = item.raw.get("type") == "folder"
-        
-        # Check if this is a component - use reasy_id instead of direct instance_id
-        if not is_gameobject and item.parent and hasattr(item.parent, 'data') and item.parent.data and item.parent.data[0] == "Components":
-            if hasattr(item, 'raw') and isinstance(item.raw, dict):
-                # First check for reasy_id
-                reasy_id = item.raw.get("reasy_id")
-                if reasy_id:
-                    component_instance_id = IdManager.instance().get_instance_id(reasy_id)
-                    if component_instance_id:
-                        is_component = True
-                else:
-                    raise("Could not fetch reasy_id for component")
-
-        # Check if this is an array
-        if hasattr(item, 'raw') and isinstance(item.raw, dict):
-            is_array = item.raw.get("type") == "array"
-            data_obj = item.raw.get("obj")
-            if is_array and data_obj:
-                if hasattr(data_obj, 'orig_type') and data_obj.orig_type:
-                    array_type = data_obj.orig_type
-        
-        # Check if this is an array element
-        if not is_array and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict):
-            if item.parent.raw.get("type") == "array":
-                parent_array_item = item.parent
-                parent_data_obj = item.parent.raw.get("obj")
-                if parent_data_obj and hasattr(parent_data_obj, 'orig_type'):
-                    array_type = parent_data_obj.orig_type
-                    is_array_element = True
-                    # Get index of current element
-                    for i, child in enumerate(parent_array_item.children):
-                        if child == item:
-                            element_index = i
-                            break
-
         menu = QMenu(self)
 
-        if is_resource:
+        if item_info['is_resource']:
             # Context menu for a resource entry
             edit_action = menu.addAction("Edit Resource Path")
             delete_action = menu.addAction("Delete Resource")
             action = menu.exec_(QCursor.pos())
             
             if action == edit_action:
-                self.edit_resource(index, resource_index)
+                self.edit_resource(index, item_info['resource_index'])
             elif action == delete_action:
-                self.delete_resource(index, resource_index)
+                self.delete_resource(index, item_info['resource_index'])
                 
-        elif is_resources_section:
+        elif item_info['is_resources_section']:
             add_action = menu.addAction("Add New Resource")
             action = menu.exec_(QCursor.pos())
             
             if action == add_action:
                 self.add_resource(index)
                 
-        elif is_gameobject:
+        elif item_info['is_gameobject']:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
             
@@ -315,7 +234,7 @@ class AdvancedTreeView(QTreeView):
             elif action == manage_prefab_action:
                 self.manage_gameobject_prefab(index, go_has_prefab, prefab_path)
                 
-        elif is_folder:
+        elif item_info['is_folder']:
             create_go_action = menu.addAction("Create GameObject")
             delete_folder_action = menu.addAction("Delete Folder")
             action = menu.exec_(QCursor.pos())
@@ -325,44 +244,166 @@ class AdvancedTreeView(QTreeView):
             elif action == delete_folder_action:
                 self.delete_folder(index)
         
-        elif is_gameobjects_root:
+        elif item_info['is_gameobjects_root']:
             create_go_action = menu.addAction("Create GameObject")
             action = menu.exec_(QCursor.pos())
             
             if action == create_go_action:
                 self.create_root_gameobject(index)
         
-        elif is_component:
+        elif item_info['is_component']:
             delete_action = menu.addAction("Delete Component")
             action = menu.exec_(QCursor.pos())
             
             if action == delete_action:
-                self.delete_component(index, component_instance_id)
+                self.delete_component(index, item_info['component_instance_id'])
         
-        elif array_type and is_array:
+        elif item_info['array_type'] and item_info['is_array']:
             add_action = menu.addAction("Add New Element")
             action = menu.exec_(QCursor.pos())
             
             if action == add_action:
-                self.add_array_element(index, array_type, data_obj, item)
+                self.add_array_element(index, item_info['array_type'], item_info['data_obj'], item)
                 
-        elif is_array_element and element_index >= 0:
+        elif item_info['is_array_element'] and item_info['element_index'] >= 0:
             delete_action = menu.addAction("Delete Element")
             action = menu.exec_(QCursor.pos())
             
             if action == delete_action:
-                self.delete_array_element(parent_array_item, element_index, index)
+                self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
         else:
             print(f"No special actions for this node type")
 
         # For embedded instances, we need to handle differently
-        if is_embedded:
+        if item_info['is_embedded']:
             # Currently no special menu options for embedded instances
             return
 
+    def _identify_item_type(self, item):
+        """
+        Identify the type of a tree item and extract relevant information
+        
+        Returns a dictionary with item type flags and associated data
+        """
+        result = {
+            'is_embedded': False,
+            'is_array': False,
+            'array_type': "",
+            'data_obj': None,
+            'is_array_element': False,
+            'parent_array_item': None,
+            'element_index': -1,
+            'is_gameobject': False,
+            'is_component': False,
+            'component_instance_id': -1,
+            'is_folder': False,
+            'is_gameobjects_root': False,
+            'is_resource': False,
+            'resource_index': -1,
+            'is_resources_section': False,
+        }
+        
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            result['is_embedded'] = item.raw.get("embedded", False)
+        
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            result['is_resource'] = item.raw.get("type") == "resource"
+            if result['is_resource']:
+                result['resource_index'] = item.raw.get("resource_index", -1)
+        
+        if item.data and len(item.data) > 0:
+            if item.data[0].startswith("Resources"):
+                result['is_resources_section'] = True
+        
+        if item.data and len(item.data) > 0:
+            if item.data[0] == "Game Objects":
+                result['is_gameobjects_root'] = True
+        
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            result['is_gameobject'] = item.raw.get("type") == "gameobject"
+            result['is_folder'] = item.raw.get("type") == "folder"
+        
+        if not result['is_gameobject'] and item.parent and hasattr(item.parent, 'data') and item.parent.data and item.parent.data[0] == "Components":
+            if hasattr(item, 'raw') and isinstance(item.raw, dict):
+                reasy_id = item.raw.get("reasy_id")
+                if reasy_id:
+                    component_instance_id = IdManager.instance().get_instance_id(reasy_id)
+                    if component_instance_id:
+                        result['is_component'] = True
+                        result['component_instance_id'] = component_instance_id
+
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            result['is_array'] = item.raw.get("type") == "array"
+            result['data_obj'] = item.raw.get("obj")
+            if result['is_array'] and result['data_obj']:
+                if hasattr(result['data_obj'], 'orig_type') and result['data_obj'].orig_type:
+                    result['array_type'] = result['data_obj'].orig_type
+        
+        if not result['is_array'] and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict):
+            if item.parent.raw.get("type") == "array":
+                result['parent_array_item'] = item.parent
+                parent_data_obj = item.parent.raw.get("obj")
+                if parent_data_obj and hasattr(parent_data_obj, 'orig_type'):
+                    result['array_type'] = parent_data_obj.orig_type
+                    result['is_array_element'] = True
+                    for i, child in enumerate(result['parent_array_item'].children):
+                        if child == item:
+                            result['element_index'] = i
+                            break
+        
+        return result
+
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
-        if array_type.endswith("[]"):
+        def parse_complex_array_type(type_string):
+            if not type_string.endswith("[]"):
+                return None
+                
+            if "[[" not in type_string or "]][]" not in type_string:
+                return None
+                
+            base_type = type_string[:type_string.find("[[")]
+            
+            params_section = type_string[type_string.find("[["):type_string.find("]][]") + 2]
+            
+            params = []
+            current_param = ""
+            bracket_level = 0
+            inside_param = False
+            
+            for char in params_section:
+                if char == '[':
+                    bracket_level += 1
+                    if bracket_level == 2 and not inside_param:
+                        inside_param = True
+                        continue
+                elif char == ']':
+                    bracket_level -= 1
+                    if bracket_level == 1 and inside_param:
+                        inside_param = False
+                        if ',' in current_param:
+                            param_type = current_param.split(',', 1)[0].strip()
+                        else:
+                            param_type = current_param.strip()
+                        params.append(param_type)
+                        current_param = ""
+                        continue
+                elif char == ',' and bracket_level == 1 and not inside_param:
+                    continue 
+                    
+                if inside_param:
+                    current_param += char
+            
+            # Format as base_type<param1,param2,...>
+            if params:
+                return f"{base_type}<{','.join(params)}>"
+            return None
+
+        parsed_type = parse_complex_array_type(array_type)
+        
+        if parsed_type:
+            element_type = parsed_type
+        elif array_type.endswith("[]"):
             element_type = array_type[:-2]
         elif array_type.startswith("System.Collections.Generic.List`1<") and array_type.endswith(">"):
             element_type = array_type[array_type.index("<") + 1:array_type.rindex(">")]
@@ -380,11 +421,18 @@ class AdvancedTreeView(QTreeView):
         
         try:
             if embedded_context:
-                embedded_ops = RszEmbeddedArrayOperations(parent)
-                new_element = embedded_ops.create_array_element(element_type, data_obj, embedded_context, 
-                                                               direct_update=True, array_item=array_item)
+                # For embedded RSZ, use the specialized operations
+                print(f"Creating array element in embedded context (ID: {getattr(embedded_context, 'instance_id', 'unknown')})")
+                rsz_operations = RszEmbeddedArrayOperations(parent)  # Use parent as viewer
+                new_element = rsz_operations.create_array_element(
+                    element_type, data_obj, embedded_context, direct_update=True, array_item=array_item
+                )
             else:
-                new_element = parent.create_array_element(element_type, data_obj, direct_update=True, array_item=array_item)
+                # Normal array in the main RSZ structure
+                print("Creating array element in regular context")
+                new_element = parent.create_array_element(
+                    element_type, data_obj, direct_update=True, array_item=array_item
+                )
                 
             if new_element:
                 if not self.isExpanded(index):
@@ -443,58 +491,53 @@ class AdvancedTreeView(QTreeView):
         if embedded_context:
             # Use specialized embedded operations
             if parent and hasattr(parent, "scn") and hasattr(parent, "type_registry"):
+                print(f"Deleting array element in embedded context (ID: {getattr(embedded_context, 'instance_id', 'unknown')})")
                 try:
-                    embedded_ops = RszEmbeddedArrayOperations(parent)
-                    success = embedded_ops.delete_array_element(array_data, element_index, embedded_context)
+                    rsz_operations = RszEmbeddedArrayOperations(parent)
+                    success = rsz_operations.delete_array_element(array_data, element_index, embedded_context)
                     
                     if success:
-                        # Update the UI - remove the item from the tree
                         model = self.model()
                         if model:
-                            array_index = model.getIndexFromItem(parent_array_item)
-                            if array_index.isValid():
-                                # Force model to reload this branch
-                                model.removeRow(element_index, array_index)
+                            parent_index = model.getIndexFromItem(parent_array_item)
+                            if parent_index.isValid():
+                                child_index = model.index(element_index, 0, parent_index)
+                                if child_index.isValid():
+                                    model.removeRow(child_index.row(), parent_index)
                                 
-                                # Update indices in the UI for remaining elements
-                                self._update_remaining_elements_ui(model, array_index, array_data, element_index)
-                                
-                        QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
+                                self._update_remaining_elements_ui(model, parent_index, array_data, element_index)
                     else:
-                        QMessageBox.critical(self, "Error", "Failed to delete element. See logs for details.")
+                        QMessageBox.warning(self, "Error", "Failed to delete element in embedded context")
                 except Exception as e:
-                    QMessageBox.critical(self, "Error", f"Failed to delete embedded element: {str(e)}")
+                    QMessageBox.critical(self, "Error", f"Error deleting element: {str(e)}")
                     traceback.print_exc()
             else:
-                QMessageBox.warning(self, "Error", "Cannot access required components for embedded deletion")
+                QMessageBox.warning(self, "Error", "Missing required references in parent")
             return
            
         if parent and hasattr(parent, "delete_array_element"):
             try:
+                print("Deleting array element in regular context")
                 success = parent.delete_array_element(array_data, element_index)
                 
                 if success:
-                    # Update the UI - remove the item from the tree
+                    # Remove UI element 
                     model = self.model()
                     if model:
-                        array_index = model.getIndexFromItem(parent_array_item)
-                        if array_index.isValid():
-                            # Force model to reload this branch
-                            model.removeRow(element_index, array_index)
+                        parent_index = model.getIndexFromItem(parent_array_item)
+                        if parent_index.isValid():
+                            child_index = model.index(element_index, 0, parent_index)
+                            if child_index.isValid():
+                                model.removeRow(child_index.row(), parent_index)
                             
-                            # Update indices in the UI for remaining elements
-                            self._update_remaining_elements_ui(model, array_index, array_data, element_index)
-                                    
-                    if parent and hasattr(parent, "mark_modified"):
-                        parent.mark_modified()
-                    elif self.parent_modified_callback:
-                        self.parent_modified_callback()
-                
-                    QMessageBox.information(self, "Element Deleted", f"Element {element_index} deleted successfully.")
+                            # Update indices of remaining elements
+                            self._update_remaining_elements_ui(model, parent_index, array_data, element_index)
                 else:
-                    QMessageBox.critical(self, "Error", "Failed to delete element. See logs for details.")
+                    QMessageBox.warning(self, "Error", "Failed to delete element")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete element: {str(e)}")
+                QMessageBox.critical(self, "Error", f"Error deleting element: {str(e)}")
+                import traceback
+                traceback.print_exc()
         else:
             # Fallback to simple deletion if parent doesn't support complex delete
             self._simple_delete_element(array_data, element_index, parent_array_item)
@@ -549,33 +592,34 @@ class AdvancedTreeView(QTreeView):
         Find the embedded RSZ context (RSZUserDataInfo) for a tree item
         
         This traverses up the tree hierarchy to find an embedded context
-        
-        Args:
-            item: The tree item to check
-            
-        Returns:
-            object: The embedded context (RSZUserDataInfo) or None
         """
         current = item
         while current:
             if hasattr(current, 'raw') and isinstance(current.raw, dict):
-                if current.raw.get("embedded", False):
-                    domain_id = current.raw.get("domain_id")
-                    if domain_id:
-                        parent = self.parent()
-                        if hasattr(parent, "scn") and hasattr(parent.scn, "_rsz_userdata_dict"):
-                            if domain_id in parent.scn._rsz_userdata_dict:
-                                rui = parent.scn._rsz_userdata_dict[domain_id]
-                                if hasattr(rui, 'embedded_instances'):
-                                    return rui
-                                    
-                    ancestor = current
-                    while ancestor:
-                        if (hasattr(ancestor, 'raw') and 
-                            isinstance(ancestor.raw, dict) and
-                            "embedded_context" in ancestor.raw):
-                            return ancestor.raw["embedded_context"]
-                        ancestor = ancestor.parent
+                if 'embedded_context' in current.raw:
+                    context = current.raw['embedded_context']
+                    return context
+                
+                obj = current.raw.get('obj')
+                if obj:
+                    if hasattr(obj, '_owning_context') and obj._owning_context:
+                        return obj._owning_context
+                    
+                    if hasattr(obj, '_container_context') and obj._container_context:
+                        return obj._container_context
+                
+                # Check for domain_id which indicates embedded data
+                if 'domain_id' in current.raw and 'embedded' in current.raw and current.raw['embedded']:
+                    # Look for context_chain which contains the full chain of contexts
+                    if 'context_chain' in current.raw and current.raw['context_chain']:
+                        context_chain = current.raw['context_chain']
+                        if context_chain and len(context_chain) > 0:
+                            context = context_chain[0]  # Use the first (deepest) context
+                            return context
+                    
+                    if 'embedded_context' in current.raw:
+                        context = current.raw['embedded_context']
+                        return context
             
             current = current.parent
             
@@ -614,10 +658,20 @@ class AdvancedTreeView(QTreeView):
             return
         
         try:
-            success = parent.delete_component_from_gameobject(component_instance_id)
-            if success:
-                QMessageBox.information(self, "Success", "Component deleted successfully")
-                parent.populate_tree()
+            go_node = None
+            components_node = index.parent()
+            if components_node.isValid():
+                go_index = components_node.parent()
+                if go_index.isValid():
+                    go_node = go_index
+                    
+            result = parent.delete_component_from_gameobject(component_instance_id)
+            if result:
+                if go_node and go_node.isValid():
+                    self.remove_component_from_ui_direct(go_node, index)
+                    QMessageBox.information(self, "Success", "Component deleted successfully")
+                else:
+                    QMessageBox.information(self, "Success", "Component deleted successfully, but failed to refresh UI. Please save and reload")
             else:
                 QMessageBox.warning(self, "Error", "Failed to delete component")
         except Exception as e:
@@ -668,12 +722,11 @@ class AdvancedTreeView(QTreeView):
             
         try:
             # Create GameObject with folder as parent
-            success = parent.create_gameobject(name, folder_object_id)
+            go_data = parent.object_operations.create_gameobject(name, folder_object_id)
             
-            if success:
+            if go_data and go_data.get('success', False):
+                self.add_gameobject_to_ui_direct(go_data, folder_index)
                 QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
-                # Refresh the tree to show the new GameObject
-                parent.populate_tree()
             else:
                 QMessageBox.warning(self, "Error", "Failed to create GameObject")
         except Exception as e:
@@ -724,11 +777,12 @@ class AdvancedTreeView(QTreeView):
             
         try:
             # Create GameObject with parent GameObject as parent
-            success = parent_widget.create_gameobject(name, parent_object_id)
+            go_data = parent_widget.object_operations.create_gameobject(name, parent_object_id)
             
-            if success:
+            if go_data and go_data.get('success', False):
+                # Use the new direct UI update method
+                self.add_gameobject_to_ui_direct(go_data, parent_go_index)
                 QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
-                parent_widget.populate_tree()
             else:
                 QMessageBox.warning(self, "Error", "Failed to create child GameObject")
         except Exception as e:
@@ -748,11 +802,11 @@ class AdvancedTreeView(QTreeView):
             return
             
         try:
-            success = parent.create_gameobject(name, -1)
+            go_data = parent.object_operations.create_gameobject(name, -1)
             
-            if success:
+            if go_data and go_data.get('success', False):
+                self.add_gameobject_to_ui_direct(go_data)
                 QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
-                parent.populate_tree()
             else:
                 QMessageBox.warning(self, "Error", "Failed to create GameObject")
         except Exception as e:
@@ -818,10 +872,14 @@ class AdvancedTreeView(QTreeView):
             return
             
         try:
-            success = parent.create_component_for_gameobject(instance_id, component_type)
-            if success:
+            result = parent.create_component_for_gameobject(instance_id, component_type)
+            if isinstance(result, dict) and result.get('success', False):
+                self.add_component_to_ui_direct(index, result)
                 QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
-                parent.populate_tree() 
+            elif result:
+                QMessageBox.information(self, "Success", f"Added {component_type} to GameObject, but failed to refresh UI. Please save and reload")
+            else:
+                QMessageBox.warning(self, "Error", f"Failed to add {component_type}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to add component: {str(e)}")
 
@@ -907,7 +965,7 @@ class AdvancedTreeView(QTreeView):
                         for row in range(row_count):
                             child_idx = model.index(row, 0, root_index)
                             child = child_idx.internalPointer()
-                            if child and hasattr(child, 'data') and child.data and child.data[0] == "GameObjects":
+                            if child and hasattr(child, 'data') and child.data and child.data[0] == "Game Objects":
                                 parent_index = child_idx
                                 break
                     
@@ -926,8 +984,7 @@ class AdvancedTreeView(QTreeView):
                             return
                 
                 # Fallback to full refresh if direct model update failed
-                QMessageBox.information(self, "Success", "GameObject deleted successfully")
-                parent.populate_tree()
+                QMessageBox.information(self, "Success", "GameObject deleted successfully, but failed to refresh UI. Please save and reload")
             else:
                 QMessageBox.warning(self, "Error", "Failed to delete GameObject")
         except Exception as e:
@@ -994,11 +1051,21 @@ class AdvancedTreeView(QTreeView):
                     parent_id = go.parent_id
                     break
 
-            success = parent.object_operations.duplicate_gameobject(go_object_id, new_name, parent_id)
+            go_data = parent.object_operations.duplicate_gameobject(go_object_id, new_name, parent_id)
             
-            if success:
+            if go_data and go_data.get('success', False):
+                parent_index = None
+                
+                model = self.model()
+                if parent_id >= 0:
+                    for i in range(model.rowCount(QModelIndex())):
+                        root_child_idx = model.index(i, 0, QModelIndex())
+                        parent_index = self._find_node_by_object_id(model, root_child_idx, parent_id)
+                        if parent_index and parent_index.isValid():
+                            break
+                
+                self.add_gameobject_to_ui_direct(go_data, parent_index)
                 QMessageBox.information(self, "Success", f"GameObject '{name}' duplicated successfully")
-                parent.populate_tree()
             else:
                 QMessageBox.warning(self, "Error", "Failed to duplicate GameObject")
         except Exception as e:
@@ -1014,8 +1081,8 @@ class AdvancedTreeView(QTreeView):
         if not item or not hasattr(item, 'data') or not item.data:
             return False
         
-        # Valid parents are "GameObjects", "Children" nodes, or folders
-        if item.data[0] == "GameObjects" or item.data[0] == "Children":
+        # Valid parents are "Game Objects", "Children" nodes, or folders
+        if item.data[0] == "Game Objects" or item.data[0] == "Children":
             return True
         
         if hasattr(item, 'raw') and isinstance(item.raw, dict) and item.raw.get("type") == "folder":
@@ -1093,8 +1160,35 @@ class AdvancedTreeView(QTreeView):
             success = parent.delete_folder(folder_object_id)
             
             if success:
-                QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
-                parent.populate_tree()  # Refresh the tree view
+                model = self.model()
+                if model:
+                    parent_index = index.parent()
+                    
+                    if not parent_index.isValid():
+                        root_index = model.index(0, 0, QModelIndex())
+                        row_count = model.rowCount(root_index)
+                        for row in range(row_count):
+                            child_idx = model.index(row, 0, root_index)
+                            child = child_idx.internalPointer()
+                            if child and hasattr(child, 'data') and child.data and child.data[0] == "Folders":
+                                parent_index = child_idx
+                                break
+                    
+                    if parent_index.isValid():
+                        row = -1
+                        parent_item = parent_index.internalPointer()
+                        if parent_item and hasattr(parent_item, 'children'):
+                            for i, child in enumerate(parent_item.children):
+                                if child is folder_item:
+                                    row = i
+                                    break
+                        
+                        if row >= 0:
+                            model.removeRow(row, parent_index)
+                            QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
+                            return
+                
+                QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully, but failed to refresh UI directly.")
             else:
                 QMessageBox.warning(self, "Error", "Failed to delete folder")
                 
@@ -1160,7 +1254,7 @@ class AdvancedTreeView(QTreeView):
                 break
         
         try:
-            if not path.endswith(".pfb") and not path.lower().startswith("pfb/"):
+            if not path.endswith(".pfb"):
                 if QMessageBox.question(
                     self, "Add Extension?", 
                     "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
@@ -1196,9 +1290,57 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to add resource")
                 return
                 
-            self._update_resources_ui(f"Added resource '{path}'")
+            if self.add_resource_to_ui_direct(path, resource_index):
+                QMessageBox.information(self, "Success", f"Added resource '{path}'")
+            else:
+                QMessageBox.information(self, "Success", f"Added resource '{path}', but failed to refresh UI. Please save and reload")
         except Exception as e:
             self._handle_resource_error("add", e)
+    
+    def add_resource_to_ui_direct(self, path, resource_index):
+        """
+        Add a resource directly to the UI tree without refreshing
+        
+        Args:
+            path: Resource path string
+            resource_index: Index of the resource in the resource_infos array
+        
+        Returns:
+            bool: True if the UI was updated successfully
+        """
+        model = self.model()
+        resources_node = self._find_resources_node()
+        
+        if not model or not resources_node:
+            return False
+        
+        res_node = {
+            "data": [path, ""],
+            "type": "resource",
+            "resource_index": resource_index
+        }
+        
+        resources_index = model.getIndexFromItem(resources_node)
+        if not resources_index.isValid():
+            return False
+        
+        parent = self.parent()
+        if parent and hasattr(parent, "scn"):
+            resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
+        
+        model.addChild(resources_node, res_node)
+        
+        child_index = model.index(len(resources_node.children) - 1, 0, resources_index)
+        if child_index.isValid():
+            widget = TreeWidgetFactory.create_widget("resource", None, path, self, self.parent_modified_callback)
+            if widget:
+                self.setIndexWidget(child_index, widget)
+            
+            self.expand(resources_index)
+            self.scrollTo(child_index)
+            return True
+        
+        return False
 
     def edit_resource(self, index, resource_index):
         """Edit a resource path directly in the tree view"""
@@ -1334,7 +1476,6 @@ class AdvancedTreeView(QTreeView):
         """Update resources UI with success message"""
         parent = self.parent()
         QMessageBox.information(self, "Success", success_message)
-        parent.populate_tree()
 
     def _handle_resource_error(self, operation, error):
         """Handle resource operation error"""
@@ -1415,6 +1556,316 @@ class AdvancedTreeView(QTreeView):
         
         return None
 
+    def add_gameobject_to_ui_direct(self, go_data, parent_index=None):
+        """
+        Add a GameObject directly to the UI tree without refreshing
+        
+        Args:
+            go_data: Dictionary with GameObject data from the operation
+            parent_index: Optional parent index for child GameObjects
+        """
+        parent = self.parent()
+        if not parent or not hasattr(parent, "name_helper"):
+            return False
+        
+        model = self.model()
+        if not model:
+            return False
+            
+        parent_node = None
+        parent_item = None
+        
+        if parent_index and parent_index.isValid():
+            parent_item = parent_index.internalPointer()
+            
+            if parent_item.data and parent_item.data[0] == "Children":
+                parent_node = parent_item
+            elif hasattr(parent_item, 'raw') and isinstance(parent_item.raw, dict) and parent_item.raw.get('type') == 'gameobject':
+                for child in parent_item.children:
+                    if child.data and child.data[0] == "Children":
+                        parent_node = child
+                        break
+                        
+                if not parent_node:
+                    children_node = {"data": ["Children", ""], "children": []}
+                    model.addChild(parent_item, children_node)
+                    
+                    for child in parent_item.children:
+                        if child.data and child.data[0] == "Children":
+                            parent_node = child
+                            break
+            elif hasattr(parent_item, 'raw') and isinstance(parent_item.raw, dict) and parent_item.raw.get('type') == 'folder':
+                parent_node = parent_item
+        
+        if not parent_node:
+            parent_node = self._find_gameobjects_node()
+            
+            if not parent_node:
+                print("Failed to find GameObjects node for root GameObject placement")
+                return False
+        
+        instance_id = go_data.get('instance_id', 0)
+        name = go_data.get('name', 'GameObject')
+        reasy_id = go_data.get('reasy_id', 0)
+        
+        display_name = f"{name} (ID: {instance_id})"
+        
+        go_dict = {
+            "data": [display_name, ""],
+            "type": "gameobject",
+            "instance_id": instance_id,
+            "reasy_id": reasy_id,
+            "children": [],
+        }
+        
+        settings_node = {"data": ["Settings", ""], "children": []}
+        go_dict["children"].append(settings_node)
+        
+        if instance_id in parent.scn.parsed_elements:
+            fields = parent.scn.parsed_elements[instance_id]
+            for field_name, field_data in fields.items():
+                settings_node["children"].append(
+                    parent._create_field_dict(field_name, field_data)
+                )
+        
+        component_count = go_data.get('component_count', 0)
+        if component_count > 0:
+            comp_node = {"data": ["Components", ""], "children": []}
+            go_dict["children"].append(comp_node)
+            
+            go_id = go_data.get('go_id', -1)
+            if go_id >= 0:
+                for i in range(1, component_count + 1):
+                    component_go_id = go_id + i
+                    if component_go_id >= len(parent.scn.object_table):
+                        break
+                    comp_instance_id = parent.scn.object_table[component_go_id]
+                    if comp_instance_id <= 0:
+                        continue
+                        
+                    reasy_id = IdManager.instance().get_reasy_id_for_instance(comp_instance_id)
+                    name = parent.name_helper.get_instance_first_field_name(comp_instance_id)
+                    component_name = name if name else parent.name_helper.get_instance_name(comp_instance_id)
+                    comp_dict = {
+                        "data": [f"{component_name} (ID: {comp_instance_id})", ""],
+                        "instance_id": comp_instance_id,
+                        "reasy_id": reasy_id,
+                        "children": [],
+                    }
+                    
+                    if comp_instance_id in parent.scn.parsed_elements:
+                        fields = parent.scn.parsed_elements[comp_instance_id]
+                        for f_name, f_data in fields.items():
+                            comp_dict["children"].append(parent._create_field_dict(f_name, f_data))
+                            
+                    comp_node["children"].append(comp_dict)
+        
+        model.addChild(parent_node, go_dict)
+        
+        parent_index = model.getIndexFromItem(parent_node)
+        if parent_index.isValid():
+            child_index = model.index(len(parent_node.children) - 1, 0, parent_index)
+            if child_index.isValid():
+                self.expand(parent_index)
+                self.scrollTo(child_index)
+                
+                item = child_index.internalPointer()
+                if item and hasattr(item, 'data'):
+                    name_text = item.data[0] if item.data else ""
+                    node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+                    
+                    widget = TreeWidgetFactory.create_widget(
+                        node_type, None, name_text, self, self.parent_modified_callback
+                    )
+                    if widget:
+                        self.setIndexWidget(child_index, widget)
+        
+        return True
+
+    def _find_gameobjects_node(self):
+        """Find the GameObjects node in the tree for root GameObject placement"""
+
+        model = self.model()
+        data_index = None
+
+        for i in range(model.rowCount()):
+            child_index = model.index(i, 0, QModelIndex())
+            if not child_index.isValid():
+                continue         
+            child_text = model.data(child_index)
+            if child_text == "Data Block":
+                data_index = child_index
+                break
+        
+        if not data_index or not data_index.isValid():
+            print("Could not find Data node")
+            return None
+        
+        data_count = model.rowCount(data_index)
+        for i in range(data_count):
+            child_index = model.index(i, 0, data_index)
+            if not child_index.isValid():
+                continue
+                
+            child_text = model.data(child_index)
+            if child_text == "Game Objects":
+                return child_index.internalPointer()
+        
+        print("Could not find Game Objects node under Data node")
+        return None
+
+    def _find_node_by_object_id(self, model, start_index, object_id):
+        """
+        Helper method to find a tree node by GameObject/Folder object_id
+        """
+        if not start_index.isValid():
+            return None
+            
+        item = start_index.internalPointer()
+        if not item:
+            return None
+            
+        if hasattr(item, 'raw') and isinstance(item.raw, dict):
+            instance_id = item.raw.get('instance_id')
+            if instance_id:
+                for i, obj_id in enumerate(self.parent().scn.object_table):
+                    if obj_id == instance_id and i == object_id:
+                        return start_index
+        
+        for row in range(model.rowCount(start_index)):
+            child_index = model.index(row, 0, start_index)
+            result = self._find_node_by_object_id(model, child_index, object_id)
+            if result:
+                return result
+                
+        return None
+
+    def add_component_to_ui_direct(self, go_index, component_data):
+        """
+        Add a component directly to the UI tree without refreshing
+        
+        Args:
+            go_index: QModelIndex of the GameObject
+            component_data: Dictionary with component data from creation operation
+        """
+        if not go_index.isValid():
+            return False
+            
+        go_item = go_index.internalPointer()
+        if not go_item or not hasattr(go_item, 'raw'):
+            return False
+            
+        parent = self.parent()
+        if not parent or not hasattr(parent, "scn"):
+            return False
+            
+        model = self.model()
+        if not model:
+            return False
+            
+        components_node = None
+        for child in go_item.children:
+            if child.data and child.data[0] == "Components":
+                components_node = child
+                break
+                
+        if not components_node:
+            components_dict = {"data": ["Components", ""], "children": []}
+            model.addChild(go_item, components_dict)
+            
+            for child in go_item.children:
+                if child.data and child.data[0] == "Components":
+                    components_node = child
+                    break
+                    
+        if not components_node:
+            return False
+        
+        component_instance_id = component_data.get('instance_id', 0)
+        component_type = component_data.get('type_name', 'Unknown')
+        reasy_id = component_data.get('reasy_id', 0)
+        
+        component_name = component_type
+        if hasattr(parent.name_helper, 'get_instance_first_field_name'):
+            name = parent.name_helper.get_instance_first_field_name(component_instance_id)
+            if name:
+                component_name = name
+                
+        display_name = component_name
+        
+        component_dict = {
+            "data": [display_name, ""], 
+            "type": "component",
+            "instance_id": component_instance_id,
+            "reasy_id": reasy_id,
+            "children": [],
+        }
+        
+        if component_instance_id in parent.scn.parsed_elements:
+            fields = parent.scn.parsed_elements[component_instance_id]
+            for field_name, field_data in fields.items():
+                component_dict["children"].append(
+                    parent._create_field_dict(field_name, field_data)
+                )
+        
+        model.addChild(components_node, component_dict)
+        
+        components_index = model.getIndexFromItem(components_node)
+        if components_index.isValid():
+            self.expand(components_index)
+            
+            component_index = model.index(len(components_node.children) - 1, 0, components_index)
+            if component_index.isValid():
+                self.scrollTo(component_index)
+                
+                item = component_index.internalPointer()
+                if item and hasattr(item, 'data'):
+                    name_text = item.data[0] if item.data else ""
+                    
+                    widget = TreeWidgetFactory.create_widget(
+                        "component", None, name_text, self, self.parent_modified_callback
+                    )
+                    if widget:
+                        self.setIndexWidget(component_index, widget)
+                        
+        return True
+
+    def remove_component_from_ui_direct(self, go_index, component_index):
+        """
+        Remove a component directly from the UI tree without refreshing
+        
+        Args:
+            go_index: QModelIndex of the GameObject
+            component_index: QModelIndex of the component to remove
+        """
+        if not go_index.isValid() or not component_index.isValid():
+            return False
+            
+        go_item = go_index.internalPointer()
+        if not go_item or not hasattr(go_item, 'raw'):
+            return False
+            
+        model = self.model()
+        if not model:
+            return False
+        
+        components_index = component_index.parent()
+        if not components_index.isValid():
+            return False
+        
+        components_item = components_index.internalPointer()
+        if not components_item or not hasattr(components_item, 'data') or components_item.data[0] != "Components":
+            return False
+        
+        component_row = component_index.row()
+        
+        if model.removeRow(component_row, components_index):
+            if len(components_item.children) == 0:
+                pass
+            return True
+        
+        return False
+
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
@@ -1492,7 +1943,9 @@ class TreeWidgetFactory:
                 
         # Icon widgets
         elif node_type in ("gameobject", "folder"):
-            icon = QIcon(f"resources/icons/{node_type}.png")
+            icon_name = node_type
+            
+            icon = QIcon(f"resources/icons/{icon_name}.png")
             icon_label = QLabel()
             icon_label.setFixedWidth(16)
             icon_label.setPixmap(icon.pixmap(16, 16))

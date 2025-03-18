@@ -61,7 +61,15 @@ class RszObjectOperations:
         self._update_gameobject_hierarchy(new_gameobject)
         self.scn.gameobjects.append(new_gameobject)
         self.viewer.mark_modified()
-        return True
+        
+        return {
+            "success": True,
+            "go_id": object_table_index,
+            "instance_id": insertion_index,
+            "name": name,
+            "parent_id": parent_id,
+            "reasy_id": IdManager.instance().get_reasy_id_for_instance(insertion_index)
+        }
 
     def _calculate_gameobject_insertion_index(self):
         """Calculate the best insertion index for a new GameObject instance"""
@@ -459,27 +467,21 @@ class RszObjectOperations:
                     ref_info.target_id -= 1
 
     def _find_nested_objects(self, fields, base_instance_id):
-        """Find instance IDs of nested objects that aren't in the object table."""
+        """Find instance IDs of nested objects that aren't in the object table.
+        
+        This method walks backwards from the given base_instance_id until it hits
+        an instance that is referenced in the object table. All consecutive instances
+        not in the table are assumed to be nested objects.
+        """
         nested_objects = set()
-        
-        try:
-            base_object_id = next(i for i, id_ in enumerate(self.scn.object_table) if id_ == base_instance_id)
-        except StopIteration:
-            return nested_objects
-            
-        if base_object_id <= 0:
-            return nested_objects
-            
-        prev_instance_id = next((id_ for id_ in reversed(self.scn.object_table[:base_object_id]) if id_ > 0), 0)
-        
         object_table_ids = set(self.scn.object_table)
-        for instance_id in range(prev_instance_id + 1, base_instance_id):
-            if (instance_id > 0 and 
-                instance_id < len(self.scn.instance_infos) and 
-                self.scn.instance_infos[instance_id].type_id != 0 and
-                instance_id not in object_table_ids):
-                nested_objects.add(instance_id)
-                
+        
+        i = base_instance_id - 1
+        while i > 0 and i < len(self.scn.instance_infos) and i not in object_table_ids:
+            if self.scn.instance_infos[i].type_id != 0:
+                nested_objects.add(i)
+            i -= 1
+
         return nested_objects
 
     def delete_folder(self, folder_id):
@@ -672,7 +674,7 @@ class RszObjectOperations:
             IdManager.instance().register_instance(instance_insertion_index)
             
         self.viewer._insert_instance_and_update_references(instance_insertion_index, new_instance)
-        IdManager.instance().register_instance(instance_insertion_index)
+        component_reasy_id = IdManager.instance().register_instance(instance_insertion_index)
         
         component_fields = {}
         self.viewer._initialize_fields_from_type_info(component_fields, type_info)
@@ -695,7 +697,13 @@ class RszObjectOperations:
         self._insert_into_object_table(object_table_insertion_index, instance_insertion_index)
         self.viewer.mark_modified()
         
-        return True
+        return {
+            "success": True,
+            "instance_id": instance_insertion_index,
+            "reasy_id": component_reasy_id,
+            "type_name": component_type,
+            "go_id": target_go.id
+        }
 
     def delete_component_from_gameobject(self, component_instance_id, owner_go_id=None):
         """Delete a component from its GameObject"""
@@ -813,7 +821,7 @@ class RszObjectOperations:
             field_orig_type = field_def.get("original_type", "")
             
             field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type)
-            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array)
+            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
             
             if field_obj:
                 temp_elements[field_name] = field_obj
@@ -1165,7 +1173,16 @@ class RszObjectOperations:
             self._duplicate_children_recursive(gameobject_id, new_gameobject_id, guid_mapping, context_id_offset)
             
         self.viewer.mark_modified()
-        return True
+        
+        return {
+            "success": True,
+            "go_id": new_gameobject.id,
+            "instance_id": new_gameobject_instance_id,
+            "name": new_name,
+            "parent_id": parent_id,
+            "reasy_id": IdManager.instance().get_reasy_id_for_instance(new_gameobject_instance_id),
+            "component_count": new_gameobject.component_count
+        }
         
     def _duplicate_children_recursive(self, source_parent_id, new_parent_id, guid_mapping, context_id_offset):
         """Recursively duplicate child GameObjects, maintaining the hierarchy

@@ -100,14 +100,12 @@ class RszHandler(BaseFileHandler):
         self.show_advanced = show_advanced
         if self._viewer:
             self._viewer.show_advanced = show_advanced
-            self._viewer.populate_tree()
     
     def set_game_version(self, version):
         """Set game version and update all related objects"""
         self.game_version = version  
         if self._viewer:
             self._viewer.game_version = version
-            self._viewer.populate_tree()
 
     def rebuild(self) -> bytes:
         """Rebuild SCN file data with better error handling"""
@@ -498,7 +496,7 @@ class RszViewer(QWidget):
             return
         processed = set()
         nodes = {}
-        gameobjects_folder = {"data": ["GameObjects", ""], "children": []}
+        gameobjects_folder = {"data": ["Game Objects", ""], "children": []}
         folders_folder = {"data": ["Folders", ""], "children": []}
         parent_dict["children"].append(gameobjects_folder)
         parent_dict["children"].append(folders_folder)
@@ -625,7 +623,24 @@ class RszViewer(QWidget):
             children = []
             original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
             
+            if is_embedded:
+                if not hasattr(data_obj, '_owning_context') or data_obj._owning_context is None:
+                    data_obj._owning_context = embedded_context
+                
+                if not hasattr(data_obj, '_owning_instance_id') or data_obj._owning_instance_id is None:
+                    if hasattr(embedded_context, 'embedded_object_table') and embedded_context.embedded_object_table:
+                        data_obj._owning_instance_id = embedded_context.embedded_object_table[0]
+            
             for i, element in enumerate(data_obj.values):
+                if isinstance(element, (ArrayData, ObjectData, UserDataData)):
+                    if not hasattr(element, '_container_array') or element._container_array is None:
+                        element._container_array = data_obj
+                    if not hasattr(element, '_container_index'):
+                        element._container_index = i
+                    if is_embedded:
+                        if not hasattr(element, '_container_context') or element._container_context is None:
+                            element._container_context = embedded_context
+                
                 if isinstance(element, ObjectData) or isinstance(element, UserDataData):
                     child_node = self._handle_reference_in_array(i, element, embedded_context, domain_id)
                     if child_node:
@@ -1001,14 +1016,14 @@ class RszViewer(QWidget):
         """Delete a folder with the given ID"""
         return self.object_operations.delete_folder(folder_id)
 
-    def _create_default_field(self, data_class, original_type, is_array=False):
+    def _create_default_field(self, data_class, original_type, is_array=False, field_size=1):
         try:
             if is_array:
                 return ArrayData([], data_class, original_type)
             if data_class == ObjectData:
                 return ObjectData(0, original_type)
-            if data_class == RawBytesData:
-                raise ValueError("Unsupported field type: RawBytesData")
+            if data_class == RawBytesData or data_class == MaybeObject:
+                return RawBytesData(bytes(field_size), field_size, original_type)
             return data_class()
         except Exception as e:
             print(f"Error creating field: {str(e)}")
@@ -1283,25 +1298,49 @@ class RszViewer(QWidget):
             
         return 0
 
-    def _initialize_fields_from_type_info(self, fields_dict, type_info):
-        """Initialize fields based on type info"""
+    def _initialize_fields_from_type_info(self, fields_dict, type_info, rui=None, instance_id=None):
         for field_def in type_info.get("fields", []):
             field_name = field_def.get("name", "")
             if not field_name:
                 continue
-                
             field_type = field_def.get("type", "unknown").lower()
             field_size = field_def.get("size", 4)
             field_native = field_def.get("native", False)
             field_array = field_def.get("array", False)
             field_align = field_def.get("align", 4)
             field_orig_type = field_def.get("original_type", "")
-            
             field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type)
-            field_obj = self._create_default_field(field_class, field_orig_type, field_array)
+            field_obj = self._create_default_field(field_class, field_orig_type, field_array, field_size)
             
             if field_obj:
                 fields_dict[field_name] = field_obj
+                if hasattr(field_obj, 'orig_type') and field_orig_type:
+                    field_obj.orig_type = field_orig_type
+                if isinstance(field_obj, ArrayData):
+                    field_obj._owning_context = rui
+                    field_obj._owning_instance_id = instance_id
+                    field_obj._owning_field = field_name
+                    
+                    field_obj._container_context = rui
+                    field_obj._container_parent_id = instance_id
+                    field_obj._container_field = field_name
+                    
+                    if hasattr(field_obj, 'values') and isinstance(field_obj.values, list):
+                        for i, elem in enumerate(field_obj.values):
+                            if isinstance(elem, ArrayData):
+                                elem._owning_context = rui
+                                elem._owning_instance_id = instance_id
+                                elem._owning_field = f"{field_name}[{i}]"
+                                
+                                elem._container_array = field_obj
+                                elem._container_context = rui
+                                elem._container_parent_id = instance_id
+                                elem._container_index = i
+                            
+                            elif isinstance(elem, (ObjectData, UserDataData)):
+                                elem._container_array = field_obj
+                                elem._container_context = rui
+                                elem._container_index = i
 
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""
