@@ -15,6 +15,7 @@ from utils.hex_util import guid_le_to_str
 from ..base_handler import BaseFileHandler
 from file_handlers.pyside.value_widgets import *
 from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 from .rsz_file import ScnFile, ScnInstanceInfo
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
@@ -24,7 +25,6 @@ from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
 from .rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
-from file_handlers.rsz.rsz_file import ScnResourceInfo
 
 
 class RszHandler(BaseFileHandler):
@@ -537,8 +537,7 @@ class RszViewer(QWidget):
                     if comp_instance_id in processed:
                         continue
                     reasy_id = IdManager.instance().register_instance(comp_instance_id)
-                    name = self.name_helper.get_instance_first_field_name(comp_instance_id)
-                    component_name = name if name else self.name_helper.get_instance_name(comp_instance_id)
+                    component_name = self.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
                         "instance_id": comp_instance_id,
@@ -1374,7 +1373,6 @@ class RszViewer(QWidget):
             return -1
         
         if self.scn.filepath.lower().endswith('.pfb.16'):
-            from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
             new_res = create_pfb16_resource(path)
             
             if hasattr(self.scn, '_pfb16_direct_strings'):
