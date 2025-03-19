@@ -25,6 +25,7 @@ class EnumManager:
             "RE7": "resources/data/enums/re7_enums.json",
             "MHWS": "resources/data/enums/mhws_enums.json",
             "DMC5": "resources/data/enums/dmc5_enums.json",
+            "SF6": "resources/data/enums/sf6_enums.json",
         }
         self.load_enums()
         
