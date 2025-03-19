@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
-                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy)
-from PySide6.QtCore import Signal, Qt
+                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
+                              QDialog, QVBoxLayout)
+from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette
 import uuid
 
@@ -1290,12 +1291,38 @@ class ColorInput(BaseValueWidget):
         b = int(self._data.b)
         a = int(self._data.a)
         
-        
         initial_color = QColor(r, g, b, a)
         
-        color = QColorDialog.getColor(initial_color, self, "Select Color", QColorDialog.ShowAlphaChannel)
+        dialog = QColorDialog(initial_color, self)
+        dialog.setWindowTitle("Select Color")
+        dialog.setOption(QColorDialog.ShowAlphaChannel)
         
-        if color.isValid():
+        timer = QTimer(dialog)
+        
+        def update_html_with_alpha():
+            current_color = dialog.currentColor()
+            if not current_color.isValid():
+                return
+                
+            html_inputs = [w for w in dialog.findChildren(QLineEdit) 
+                          if w.isVisible() and len(w.text()) >= 7 and w.text()[0] == '#']
+            
+            if html_inputs:
+                current_text = html_inputs[0].text()
+                html_code = f"#{current_color.red():02X}{current_color.green():02X}{current_color.blue():02X}{current_color.alpha():02X}"
+                
+                if len(current_text) < 9 or current_text != html_code:
+                    html_inputs[0].setText(html_code)
+        
+        timer.timeout.connect(update_html_with_alpha)
+        timer.start(10)
+        
+        dialog.currentColorChanged.connect(update_html_with_alpha)
+        
+        update_html_with_alpha()
+        
+        if dialog.exec_():
+            color = dialog.currentColor()
             self._data.r = color.red()
             self._data.g = color.green()
             self._data.b = color.blue()
