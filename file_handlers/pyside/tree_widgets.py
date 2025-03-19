@@ -12,9 +12,9 @@ from .value_widgets import *
 from utils.enum_manager import EnumManager
 from utils.id_manager import IdManager, EmbeddedIdManager
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-                
+                        
 import traceback
-                    
+                        
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -46,9 +46,13 @@ class AdvancedTreeView(QTreeView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
+        self.shift_pressed = False
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts like Delete key for deletion of various items"""
+        """Handle keyboard shortcuts and track shift key"""
+        if event.key() == Qt.Key_Shift:
+            self.shift_pressed = True
+            
         if event.key() == Qt.Key_Delete:
             indexes = self.selectedIndexes()
             if not indexes:
@@ -81,6 +85,12 @@ class AdvancedTreeView(QTreeView):
         # Call the parent's keyPressEvent for default behavior
         super().keyPressEvent(event)
 
+    def keyReleaseEvent(self, event):
+        """Track shift key release"""
+        if event.key() == Qt.Key_Shift:
+            self.shift_pressed = False
+        super().keyReleaseEvent(event)
+
     def setModelData(self, rootData):
         """
         Helper to build a TreeModel from the nested dict.
@@ -98,11 +108,29 @@ class AdvancedTreeView(QTreeView):
             return
 
         def embed_children_on_expand(parent_index):
-            self.expand(parent_index)
+            # Create widgets for immediate children
             self.create_widgets_for_children(parent_index)
+            
+            if self.shift_pressed:
+                self.expand_all_children(parent_index)
 
         # Only connect the signal
         self.expanded.connect(embed_children_on_expand)
+
+    def expand_all_children(self, parent_index):
+        """Recursively expand all children of the given parent"""
+        model = self.model()
+        if not model:
+            return
+
+        rows = model.rowCount(parent_index)
+        for row in range(rows):
+            child_index = model.index(row, 0, parent_index)
+            if child_index.isValid():
+                if model.hasChildren(child_index):
+                    self.expand(child_index)
+                    self.create_widgets_for_children(child_index)
+                    self.expand_all_children(child_index)
 
     def create_widgets_for_children(self, parent_index):
         """Create widgets for all children of the given parent index"""
