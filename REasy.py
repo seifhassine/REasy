@@ -8,6 +8,7 @@ import struct
 import weakref
 import datetime
 import shutil
+import re
 
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.rsz.rsz_handler import RszHandler  
@@ -50,6 +51,8 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QAbstractItemView,
     QStyleFactory,
+    QListWidget,
+    QListWidgetItem,
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
@@ -306,6 +309,7 @@ class FileTab:
             old_handler = self.handler
             old_viewer = self.viewer
             old_data = self.original_data
+            old_status_text = self.status_label.text() if hasattr(self, "status_label") else "No file loaded"
             
             self.filename = filename
             self.original_data = data
@@ -321,34 +325,49 @@ class FileTab:
             except Exception as e:
                 raise ValueError(f"Failed to read file data: {e}")
 
+            self._cleanup_layout(layout)
+            
             try:
                 self.viewer = self.handler.create_viewer()
                 if self.viewer:
-                    self._cleanup_layout(layout)
+                    self.status_label = QLabel(f"Loaded: {filename}")
                     layout.addWidget(self.viewer)
                     layout.addWidget(self.status_label)
                     self.viewer.modified_changed.connect(self._on_viewer_modified)
                 else:
+                    self.status_label = QLabel(f"Loaded: {filename}")
+                    layout.addWidget(self.tree)
+                    layout.addWidget(self.status_label)
                     self.refresh_tree()
             except Exception as e:
                 print(f"Viewer creation failed: {e}")
                 self.viewer = None
+                self.status_label = QLabel(f"Loaded: {filename}")
+                layout.addWidget(self.tree)
+                layout.addWidget(self.status_label)
                 self.refresh_tree()
-
-            self.status_label.setText(f"Loaded: {filename}")
+                
+            return True
 
         except Exception as e:
             self.handler = old_handler
             self.viewer = old_viewer
             self.original_data = old_data
             
-            if old_viewer:
-                self._cleanup_layout(layout)
-                layout.addWidget(old_viewer)
-                layout.addWidget(self.status_label)
+            # Clean up layout and recreate it
+            self._cleanup_layout(layout)
             
-            self.status_label.setText("Error loading file")
+            if old_viewer:
+                layout.addWidget(old_viewer)
+            else:
+                layout.addWidget(self.tree)
+                
+            # Create a new status label
+            self.status_label = QLabel(old_status_text)
+            layout.addWidget(self.status_label)
+            
             QMessageBox.critical(None, "Error", f"Failed to load file: {e}")
+            return False
 
     def refresh_tree(self):
         if not self.handler:
@@ -637,6 +656,50 @@ class FileTab:
         self._find_dialog = BetterFindDialog(self, parent=self.notebook_widget)
         self._find_dialog.show()
 
+    def find_matching_backups(self):
+        """Find all backup files that match the current filename"""
+        if not self.filename:
+            return []
+            
+        backups_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+        if not os.path.exists(backups_dir):
+            return []
+            
+        base_filename = os.path.basename(self.filename)
+        backup_pattern = r"(\d{8}_\d{6})_" + re.escape(base_filename) + "$"
+        
+        result = []
+        for filename in os.listdir(backups_dir):
+            match = re.match(backup_pattern, filename)
+            if match:
+                timestamp = match.group(1)
+                try:
+                    dt = datetime.datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+                    friendly_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    full_path = os.path.join(backups_dir, filename)
+                    result.append((friendly_time, full_path, filename))
+                except:
+                    continue
+                    
+        return sorted(result, reverse=True)
+
+    def restore_backup(self, backup_path):
+        """Restore the selected backup file"""
+        try:
+            with open(backup_path, "rb") as f:
+                data = f.read()
+            success = self.load_file(self.filename, data)
+            
+            if success and self.app and hasattr(self.app, "status_bar"):
+                self.app.status_bar.showMessage("Backup restored successfully")
+                
+            return success
+            
+        except Exception as e:
+            print(f"Failed to restore backup: {e}")
+            QMessageBox.critical(None, "Error", f"Failed to restore backup: {e}")
+            return False
+
 
 class REasyEditorApp(QMainWindow):
     def __init__(self):
@@ -741,6 +804,10 @@ class REasyEditorApp(QMainWindow):
         save_as_act.setShortcut(QKeySequence("Ctrl+Shift+S"))
         save_as_act.triggered.connect(self.on_save)
         file_menu.addAction(save_as_act)
+        
+        restore_backup_act = QAction("Restore Backup...", self)
+        restore_backup_act.triggered.connect(self.on_restore_backup)
+        file_menu.addAction(restore_backup_act)
 
         reload_act = QAction("Reload", self)
         reload_act.setShortcut(QKeySequence("Ctrl+R"))
@@ -1308,6 +1375,66 @@ class REasyEditorApp(QMainWindow):
     def update_status(self, message, timeout=5000):
         if hasattr(self, 'status_bar'):
             self.status_bar.showMessage(message, timeout)
+
+    def on_restore_backup(self):
+        """Show dialog with available backups for the current file"""
+        active = self.get_active_tab()
+        if not active:
+            QMessageBox.critical(self, "Error", "No active tab to restore backup.")
+            return
+            
+        if not active.filename:
+            QMessageBox.critical(self, "Error", "File has not been saved yet.")
+            return
+            
+        backups = active.find_matching_backups()
+        if not backups:
+            QMessageBox.information(self, "No Backups", "No backup files found for this file.")
+            return
+            
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Available Backups for {os.path.basename(active.filename)}")
+        dialog.setMinimumWidth(400)
+        
+        layout = QVBoxLayout(dialog)
+        
+        backup_list = QListWidget()
+        for friendly_time, path, filename in backups:
+            item = QListWidgetItem(f"{friendly_time}")
+            item.setData(Qt.UserRole, path) 
+            item.setToolTip(filename)
+            backup_list.addItem(item)
+            
+        layout.addWidget(QLabel("Select a backup to restore:"))
+        layout.addWidget(backup_list)
+        
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(button_box)
+        
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        
+        if dialog.exec() == QDialog.Accepted:
+            selected = backup_list.currentItem()
+            if not selected:
+                QMessageBox.critical(self, "Error", "No backup selected.")
+                return
+                
+            backup_path = selected.data(Qt.UserRole)
+            friendly_time = selected.text()
+            
+            confirm_msg = f"Are you sure you want to restore the backup from:\n{friendly_time}?\n\nCurrent changes will be lost."
+            confirm = QMessageBox.question(
+                self, 
+                "Confirm Restore", 
+                confirm_msg,
+                QMessageBox.Yes | QMessageBox.No
+            )
+            
+            if confirm == QMessageBox.Yes:
+                success = active.restore_backup(backup_path)
+                if success:
+                    QMessageBox.information(self, "Success", "Backup restored successfully")
 
 
 def main():
