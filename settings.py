@@ -7,7 +7,8 @@ DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
     "show_debug_console": True,
     "show_rsz_advanced": True,
-    "game_version": "RE4"  # Default game version
+    "game_version": "RE4",  # Default game version
+    "backup_on_save": True
 }
 
 

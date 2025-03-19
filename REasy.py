@@ -6,6 +6,8 @@ import uuid
 import json
 import struct
 import weakref
+import datetime
+import shutil
 
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.rsz.rsz_handler import RszHandler  
@@ -493,6 +495,9 @@ class FileTab:
             if not data:
                 raise ValueError("No rebuild method available")
 
+            if self.app and self.app.settings.get("backup_on_save", True):
+                self.create_backup(file_path, data)
+
             with open(file_path, "wb") as f:
                 f.write(data)
                 
@@ -510,10 +515,37 @@ class FileTab:
             QMessageBox.critical(None, "Save Error", str(e))
             return False
 
+    def create_backup(self, file_path, data):
+        try:
+            backups_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+            os.makedirs(backups_dir, exist_ok=True)
+            
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.basename(file_path)
+            backup_path = os.path.join(backups_dir, f"{timestamp}_{filename}")
+            
+            with open(backup_path, "wb") as f:
+                f.write(data)
+                
+            if hasattr(self.app, "status_bar"):
+                self.app.status_bar.showMessage(f"Backup created: {backup_path}", 2000)
+                
+        except Exception as e:
+            print(f"Backup creation failed: {e}")
+
+    def direct_save(self):
+        """Save directly to the current file without prompting"""
+        if not self.handler:
+            QMessageBox.critical(None, "Error", "No file loaded")
+            return False
+        if not self.filename:
+            return self.on_save()
+        return self.handle_file_save(self.filename)
+        
     def on_save(self):
         if not self.handler:
             QMessageBox.critical(None, "Error", "No file loaded")
-            return
+            return False
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.notebook_widget,
@@ -523,7 +555,8 @@ class FileTab:
         )
         
         if file_path:
-            self.handle_file_save(file_path)
+            return self.handle_file_save(file_path)
+        return False
 
     def reload_file(self):
         if not self.filename:
@@ -701,8 +734,13 @@ class REasyEditorApp(QMainWindow):
 
         save_act = QAction("Save", self)
         save_act.setShortcut(QKeySequence("Ctrl+S"))
-        save_act.triggered.connect(self.on_save)
+        save_act.triggered.connect(self.on_direct_save)
         file_menu.addAction(save_act)
+
+        save_as_act = QAction("Save As...", self)
+        save_as_act.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        save_as_act.triggered.connect(self.on_save)
+        file_menu.addAction(save_as_act)
 
         reload_act = QAction("Reload", self)
         reload_act.setShortcut(QKeySequence("Ctrl+R"))
@@ -1005,6 +1043,7 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.addItem("RE7") 
         game_version_combo.addItem("MHWS") 
         game_version_combo.addItem("DMC5") 
+        game_version_combo.addItem("SF6") 
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)
@@ -1021,6 +1060,10 @@ class REasyEditorApp(QMainWindow):
         rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files (Reload Required)")
         rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
         layout.addWidget(rsz_advanced_box)
+        
+        backup_box = QCheckBox("Create backup on save")
+        backup_box.setChecked(self.settings.get("backup_on_save", True))
+        layout.addWidget(backup_box)
 
         layout.addStretch()
 
@@ -1039,6 +1082,7 @@ class REasyEditorApp(QMainWindow):
             self.settings["dark_mode"] = dark_box.isChecked()
             self.settings["show_debug_console"] = debug_box.isChecked()
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
+            self.settings["backup_on_save"] = backup_box.isChecked()
             
             old_version = self.settings.get("game_version", "RE4")
             new_version = game_version_combo.currentText()
@@ -1181,6 +1225,13 @@ class REasyEditorApp(QMainWindow):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def on_direct_save(self):
+        active = self.get_active_tab()
+        if active:
+            active.direct_save()
+        else:
+            QMessageBox.critical(self, "Error", "No active tab to save.")
 
     def on_save(self):
         active = self.get_active_tab()
