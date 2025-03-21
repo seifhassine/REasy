@@ -273,12 +273,25 @@ class FileTab:
         return True
 
     def _cleanup_layout(self, layout):
+        """Clean up layout but preserve the tree widget"""
         if not layout:
             return
+            
+        tree_widget = None
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            if item.widget() == self.tree:
+                tree_widget = self.tree
+                break
+                
         while layout.count():
             item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget and widget != tree_widget:
+                widget.setParent(None)
+                widget.deleteLater()
+                
+        return tree_widget
 
     def _prepare_handler(self, data):
         try:
@@ -324,9 +337,11 @@ class FileTab:
                 self.handler.read(data)
             except Exception as e:
                 raise ValueError(f"Failed to read file data: {e}")
-
-            self._cleanup_layout(layout)
-            
+                
+            preserved_tree = self._cleanup_layout(layout)
+            if preserved_tree:
+                self.tree = preserved_tree
+                
             try:
                 self.viewer = self.handler.create_viewer()
                 if self.viewer:
@@ -688,6 +703,28 @@ class FileTab:
         try:
             with open(backup_path, "rb") as f:
                 data = f.read()
+                
+            if self.viewer:
+                try:
+                    if hasattr(self.viewer, "modified_changed"):
+                        try:
+                            self.viewer.modified_changed.disconnect()
+                        except:
+                            pass
+                
+                    layout = self.notebook_widget.layout()
+                    if layout:
+                        for i in range(layout.count()):
+                            item = layout.itemAt(i)
+                            if item.widget() == self.viewer:
+                                self.viewer.setParent(None)
+                                break
+                    
+                    self.viewer.deleteLater()
+                    self.viewer = None
+                except Exception as e:
+                    print(f"Warning: Error cleaning up viewer: {e}")
+            
             success = self.load_file(self.filename, data)
             
             if success and self.app and hasattr(self.app, "status_bar"):
