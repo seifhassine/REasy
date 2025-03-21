@@ -767,7 +767,6 @@
 		"name": "chainsaw.collision.AttackUserData"
 	},
 	"be980941": {
-		"crc": "34e8e772",
 		"fields": [
 			{
 				"align": 4,
@@ -1132,7 +1131,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v40",
+				"name": "Materials",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1159,29 +1158,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "DecalReciveMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.DecalReciveMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "DrawPostDecal(?)",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "MeshDecalPriority(?)",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "U32"
 			},
 			{
 				"align": 1,
@@ -1195,11 +1194,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "ShadowCastMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.ShadowCastMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
@@ -1222,20 +1221,20 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "LodMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.LodMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "LodLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 8,
@@ -2803,5 +2802,425 @@
 			}
 		],
 		"name": "via.physics.Colliders"
+	},
+	"9d66dbb1": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SecondaryAnimationGroup",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExpressionUpdate",
+				"native": true,
+				"original_type": "via.motion.ExpressionUpdate",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ChainAsset",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlendRate(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EnvWind",
+				"native": true,
+				"original_type": "via.motion.ChainWind",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CalculateMode",
+				"native": true,
+				"original_type": "via.motion.Chain.CalculateMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StabilaizeNum(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "VirtualGroundGroup(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledVirtualFloor(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "VirtualGroundTargetHeight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GravityCoord",
+				"native": true,
+				"original_type": "via.motion.Chain.GravityCoord(?)",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledAngleLimit(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledCollision(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledNoise(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledDynamicScaling(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledLocalCalculation(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "ReduceParentObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GlobalColliderAreaLimitScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.motion.Chain"
+	},
+	"16212ad0": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "MapNames",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Attributes",
+				"native": true,
+				"original_type": "via.navigation.AttributeInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttributeResource",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Attribute0",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Attribute1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EffectType",
+				"native": true,
+				"original_type": "via.navigation.AIMapEffector.EffectType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShapeType",
+				"native": true,
+				"original_type": "via.navigation.AIMapEffector.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Shape",
+				"native": true,
+				"original_type": "via.navigation.map.InteractionShape",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Fixed(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AddEdge(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EdgeCreate(?)",
+				"native": true,
+				"original_type": "via.navigation.AIMapEffector.EdgeCreateType",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FixPassableEdgeLengthIssue(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.navigation.AIMapEffector"
+	},
+	"fa2a8121": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BoolValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.effect.ExternParameter"
 	}
 }
