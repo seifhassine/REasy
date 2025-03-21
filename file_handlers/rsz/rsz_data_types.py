@@ -39,7 +39,7 @@ class ResourceData:
 
 class UserDataData:
     def __init__(self, value: str = "", index: int = 0, orig_type: str = ""):
-        self.value = f"{value} (Index: {index})"
+        self.value = value
         self.index = index
         self.orig_type = orig_type
 
