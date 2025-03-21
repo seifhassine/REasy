@@ -25,6 +25,7 @@ from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
 from .rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
+from .rsz_array_clipboard import RszArrayClipboard
 
 
 class RszHandler(BaseFileHandler):
@@ -40,6 +41,7 @@ class RszHandler(BaseFileHandler):
         self._viewer = None
         self._game_version = "RE4"
         self.filepath = ""
+        self.array_clipboard = None
 
     @property
     def game_version(self):
@@ -73,6 +75,7 @@ class RszHandler(BaseFileHandler):
         print(f"Reading file with game version: {self._game_version}")
         self.scn_file.read(data)
         IdManager.instance().reset()
+        self.array_clipboard = RszArrayClipboard()
 
     def create_viewer(self):
         """Create a new viewer instance"""
@@ -112,6 +115,28 @@ class RszHandler(BaseFileHandler):
         if not self.scn_file:
             raise ValueError("No SCN file loaded")
         return self.scn_file.build()
+        
+    def get_array_clipboard(self):
+        """Get the array clipboard instance"""
+        if not self.array_clipboard:
+            self.array_clipboard = RszArrayClipboard()
+        return self.array_clipboard
+        
+    def copy_array_element_to_clipboard(self, widget, element, array_type):
+        """Copy an array element to clipboard through the handler"""
+        return self.get_array_clipboard().copy_to_clipboard(widget, element, array_type)
+        
+    def paste_array_element_from_clipboard(self, widget, array_operations, array_data, array_item, embedded_context=None):
+        """Paste an array element from clipboard through the handler"""
+        return self.get_array_clipboard().paste_from_clipboard(widget, array_operations, array_data, array_item, embedded_context)
+        
+    def get_clipboard_data(self, widget):
+        """Get clipboard data through the handler"""
+        return self.get_array_clipboard().get_clipboard_data(widget)
+        
+    def is_clipboard_compatible(self, target_type, source_type):
+        """Check if clipboard data is compatible with target type through the handler"""
+        return self.get_array_clipboard().is_compatible(target_type, source_type)
 
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
@@ -598,27 +623,58 @@ class RszViewer(QWidget):
                 children_node["children"].append(node_dict)
 
     def _create_field_dict(self, field_name, data_obj, embedded_context=None):
-        """Creates dictionary node with added type info
-        
-        Args:
-            field_name: Name of the field
-            data_obj: Field data object
-            embedded_context: Optional embedded RSZ context (rui) if this is an embedded field
-        """
+        """Create a dictionary representation of a field for the tree view"""
         domain_id = None
         is_embedded = embedded_context is not None
-        if is_embedded and hasattr(data_obj, 'set_callback'):
-            def track_embedded_modifications(*args, **kwargs):
-                if hasattr(embedded_context, 'mark_modified'):
-                    embedded_context.mark_modified()
-                if hasattr(embedded_context, 'parent_userdata_rui') and hasattr(embedded_context.parent_userdata_rui, 'mark_modified'):
-                    embedded_context.parent_userdata_rui.mark_modified()
-                
-                self.mark_modified()
+        if isinstance(data_obj, StructData):
+            original_type = f"{data_obj.orig_type}" if hasattr(data_obj, 'orig_type') and data_obj.orig_type else ""
             
-            data_obj.set_callback(track_embedded_modifications)
-        
-        if isinstance(data_obj, ArrayData):
+            struct_node = DataTreeBuilder.create_data_node(
+                f"{field_name}: {original_type}", "", "struct", data_obj
+            )
+            
+            struct_type_info = None
+            field_definitions = {}
+            if self.type_registry and original_type:
+                struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
+                if struct_type_info and "fields" in struct_type_info:
+                    field_definitions = {
+                        field_def["name"]: field_def 
+                        for field_def in struct_type_info["fields"] 
+                        if "name" in field_def
+                    }
+            
+            for i, struct_value in enumerate(data_obj.values):
+                if not isinstance(struct_value, dict):
+                    continue
+                    
+                instance_label = f"{i}: {original_type}"
+                
+                if "name" in struct_value and hasattr(struct_value["name"], 'value') and struct_value["name"].value:
+                    instance_label = f"{i}: {struct_value['name'].value}"
+                
+                struct_instance_node = DataTreeBuilder.create_data_node(
+                    instance_label, "", "struct_instance", None
+                )
+                
+                for field_key, field_value in struct_value.items():
+                    if field_key in field_definitions:
+                        field_def = field_definitions[field_key]
+                        display_name = field_def["name"]
+                        display_type = field_def["type"]
+                        
+                        field_node = self._create_field_dict(display_name, field_value, embedded_context)
+                        field_node["data"][0] = f"{display_name} ({display_type})"
+                    else:
+                        field_node = self._create_field_dict(field_key, field_value, embedded_context)
+                        
+                    struct_instance_node["children"].append(field_node)
+                
+                struct_node["children"].append(struct_instance_node)
+            
+            return struct_node
+            
+        elif isinstance(data_obj, ArrayData):
             children = []
             original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
             
@@ -771,7 +827,8 @@ class RszViewer(QWidget):
         # Get root instance and create the root node
         root_instance_id = self._get_root_embedded_instance_id(rui)
         type_name = self._get_embedded_type_name(root_instance_id, rui) if root_instance_id else "UserData"
-        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name}", "")
+
+        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name} <span style='color: #FFFF00;'>(embedded RSZ)</span>", "")
         
         # Build hierarchy if needed
         hierarchy = getattr(rui, 'embedded_instance_hierarchy', None)

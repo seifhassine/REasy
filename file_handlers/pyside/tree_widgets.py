@@ -1,3 +1,4 @@
+import traceback
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog)
@@ -10,10 +11,9 @@ from .component_selector import ComponentSelectorDialog
 from .value_widgets import *
 
 from utils.enum_manager import EnumManager
-from utils.id_manager import IdManager, EmbeddedIdManager
+from utils.id_manager import IdManager
+from file_handlers.rsz.rsz_data_types import StructData
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-                        
-import traceback
                         
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -287,18 +287,36 @@ class AdvancedTreeView(QTreeView):
                 self.delete_component(index, item_info['component_instance_id'])
         
         elif item_info['array_type'] and item_info['is_array']:
-            add_action = menu.addAction("Add New Element")
-            action = menu.exec_(QCursor.pos())
-            
-            if action == add_action:
-                self.add_array_element(index, item_info['array_type'], item_info['data_obj'], item)
+            if item_info['data_obj']:
+                add_action = menu.addAction("Add Element...")
+                add_action.triggered.connect(lambda: self.add_array_element(index, item_info['array_type'], item_info['data_obj'], item))
+                
+                # Enable paste only if compatible clipboard content exists
+                parent = self.parent()
+                clipboard_data = None
+                if parent and hasattr(parent, "handler"):
+                    clipboard_data = parent.handler.get_clipboard_data(self)
+                
+                paste_action = None
+                if  clipboard_data and parent and hasattr(parent, "handler") and parent.handler.is_clipboard_compatible(item_info['array_type'], clipboard_data.get('type', '')):
+                    paste_action = menu.addAction("Paste Element")
+                    paste_action.triggered.connect(lambda: self.paste_array_element(index, item_info['array_type'], item_info['data_obj'], item))
+                
+                menu.exec_(QCursor.pos())
                 
         elif item_info['is_array_element'] and item_info['element_index'] >= 0:
-            delete_action = menu.addAction("Delete Element")
-            action = menu.exec_(QCursor.pos())
-            
-            if action == delete_action:
-                self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+            if item_info['parent_array_item'] and hasattr(item_info['parent_array_item'], 'raw'):
+                array_data = item_info['parent_array_item'].raw.get('obj')
+                if array_data and item_info['element_index'] < len(array_data.values):
+                    copy_action = menu.addAction("Copy Element")
+                    copy_action.triggered.connect(
+                        lambda: self.copy_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+                    )
+                    delete_action = menu.addAction("Delete Element")
+                    delete_action.triggered.connect(
+                        lambda: self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+                    )
+                menu.exec_(QCursor.pos())
         else:
             print(f"No special actions for this node type")
 
@@ -306,6 +324,7 @@ class AdvancedTreeView(QTreeView):
         if item_info['is_embedded']:
             # Currently no special menu options for embedded instances
             return
+
 
     def _identify_item_type(self, item):
         """
@@ -341,8 +360,10 @@ class AdvancedTreeView(QTreeView):
         
         if item.data and len(item.data) > 0:
             if item.data[0].startswith("Resources"):
-                result['is_resources_section'] = True
-        
+                if (item.parent and hasattr(item.parent, 'data') and 
+                    item.parent.data and item.parent.data[0] == "Advanced Information"):
+                    result['is_resources_section'] = True
+
         if item.data and len(item.data) > 0:
             if item.data[0] == "Game Objects":
                 result['is_gameobjects_root'] = True
@@ -1894,6 +1915,88 @@ class AdvancedTreeView(QTreeView):
         
         return False
 
+    def copy_array_element(self, parent_array_item, element_index, index):
+        """Copy an array element to clipboard"""
+        if not parent_array_item or not hasattr(parent_array_item, 'raw'):
+            QMessageBox.warning(self, "Error", "Invalid array item")
+            return
+            
+        array_data = parent_array_item.raw.get('obj')
+        if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
+            QMessageBox.warning(self, "Error", "Invalid array element")
+            return
+
+        # Check if this array is inside an embedded context
+        embedded_context = self._find_embedded_context(parent_array_item)
+        if embedded_context:
+            QMessageBox.warning(self, "Error", "Copying elements in embedded userdata is currently not supported.")
+            return
+            
+        element = array_data.values[element_index]
+        array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
+        
+        parent = self.parent()
+        if parent and hasattr(parent, "handler"):
+            try:
+                success = parent.handler.copy_array_element_to_clipboard(self, element, array_type)
+                if success:
+                    QMessageBox.information(self, "Success", "Element copied to clipboard")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to copy element")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error copying element: {str(e)}")
+                traceback.print_exc()
+        else:
+            QMessageBox.warning(self, "Error", "Cannot access handler")
+
+    def paste_array_element(self, index, array_type, data_obj, array_item):
+        """Paste an element from clipboard to an array"""
+        parent = self.parent()
+        if not parent:
+            QMessageBox.warning(self, "Error", "Cannot access parent viewer")
+            return
+        
+        embedded_context = self._find_embedded_context(array_item)
+            
+        try:
+            if parent and hasattr(parent, "handler"):
+                new_element = parent.handler.paste_array_element_from_clipboard(
+                    self, parent.array_operations, data_obj, array_item, embedded_context
+                )
+                
+                if new_element:
+                    if not self.isExpanded(index):
+                        self.expand(index)
+                    
+                    model = self.model()
+                    array_item = index.internalPointer()
+                    if hasattr(array_item, 'children') and array_item.children:
+                        last_child_idx = model.index(len(array_item.children) - 1, 0, index)
+                        if last_child_idx.isValid():
+                            item = last_child_idx.internalPointer()
+                            if item and not TreeWidgetFactory.should_skip_widget(item):
+                                name_text = item.data[0] if item.data else ""
+                                node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+                                data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
+                                
+                                widget = TreeWidgetFactory.create_widget(
+                                    node_type, data_obj, name_text, self, self.parent_modified_callback
+                                )
+                                if widget:
+                                    self.setIndexWidget(last_child_idx, widget)
+                            
+                            self.scrollTo(last_child_idx)
+                            
+                    QMessageBox.information(self, "Success", "Element pasted successfully.")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to paste element. Make sure the clipboard contains a compatible element.")
+            else:
+                QMessageBox.warning(self, "Error", "Cannot access handler")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
+            traceback.print_exc()
+
+
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
@@ -1932,6 +2035,25 @@ class TreeWidgetFactory:
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(4)
+        
+        if data_obj and hasattr(data_obj, '__class__') and data_obj.__class__.__name__ == 'ArrayData':
+            label = QLabel()
+            label.setText(f"{name_text} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
+            label.setTextFormat(Qt.RichText)
+            layout.addWidget(label)
+            
+            layout.addStretch(1)
+            
+            return widget
+            
+        if data_obj and isinstance(data_obj, StructData):
+
+            label = QLabel()
+            label.setText(f"{name_text} <span style='color: #666;'>(Struct: {len(data_obj.values)} items)</span>")
+            label.setTextFormat(Qt.RichText)
+            layout.addWidget(label)
+            
+            return widget
         
         is_enum = False
         enum_type = None
@@ -1999,11 +2121,11 @@ class TreeWidgetFactory:
             return True
             
         # Skip array nodes and array elements
-        if item.raw.get("type") == "array":
+        if item.raw.get("type") == "array" or item.raw.get("type") == "struct":
             return False
             
         parent = item.parent
-        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") == "array":
+        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") == "array" or parent.raw.get("type") == "struct":
             return False
             
         return True
