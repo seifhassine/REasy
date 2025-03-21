@@ -80,7 +80,7 @@ I have currently rushed the release and the structure will be improved in the up
 
 - Run build.bat
 
-- You will need to manually install dependencies.
+- Dependencies in requirements.txt
 
 ## Credits:
 
