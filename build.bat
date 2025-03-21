@@ -13,15 +13,15 @@ if exist REasy.spec del /Q REasy.spec
 REM Build using the current Python interpreter (assumed 64-bit)
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
 xcopy /E /I /Y resources dist\resources
-copy "rszre4_reasy.json" "dist\rszre4_reasy.json"
-copy "rszre2.json" "dist\rszre2.json"
-copy "rszre2rt.json" "dist\rszre2rt.json"
-copy "rszdmc5.json" "dist\rszdmc5.json"
-copy "rszsf6.json" "dist\rszsf6.json"
-copy "rszre8.json" "dist\rszre8.json"
-copy "rszre7.json" "dist\rszre7.json"
-copy "rszre3.json" "dist\rszre3.json"
-copy "rszmhws.json" "dist\rszmhws.json"
+copy "resources\data\dumps\rszre4_reasy.json" "dist\rszre4_reasy.json"
+copy "resources\data\dumps\rszre2.json" "dist\rszre2.json"
+copy "resources\data\dumps\rszre2rt.json" "dist\rszre2rt.json"
+copy "resources\data\dumps\rszdmc5.json" "dist\rszdmc5.json"
+copy "resources\data\dumps\rszsf6.json" "dist\rszsf6.json"
+copy "resources\data\dumps\rszre8.json" "dist\rszre8.json"
+copy "resources\data\dumps\rszre7.json" "dist\rszre7.json"
+copy "resources\data\dumps\rszre3.json" "dist\rszre3.json"
+copy "resources\data\dumps\rszmhws.json" "dist\rszmhws.json"
 
 
 
