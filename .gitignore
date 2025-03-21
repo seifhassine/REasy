@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 settings.json
 .cache/
+myevn/
 
 # Distribution / packaging
 build/
@@ -14,6 +15,7 @@ dist/
 /tests/personal
 backups/
 .clipboard
+src
 
 # VS Code settings (if you don't want to share them)
 .vscode/
