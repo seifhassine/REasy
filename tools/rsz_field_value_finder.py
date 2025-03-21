@@ -41,26 +41,37 @@ def scan_file(filepath, type_id, field_identifier, type_registry):
     except Exception:
         return []
     
-    field_name = field_identifier
-    if isinstance(field_identifier, int):
-        type_info = type_registry.get_type_info(type_id)
-        if type_info and "fields" in type_info:
-            if 0 <= field_identifier < len(type_info["fields"]):
-                field_name = type_info["fields"][field_identifier]["name"]
-            else:
-                return []
-                
-    if not field_name:
-        return []
-    
     found_values = []
+    
+    type_info = type_registry.get_type_info(type_id)
+    
     for idx, instance in enumerate(scn_file.instance_infos):
         if instance.type_id == type_id:
             if idx in scn_file.parsed_elements:
                 fields = scn_file.parsed_elements[idx]
-                if field_name in fields:
-                    value = fields[field_name]
-                    found_values.append((filepath, idx, value))
+                
+                if field_identifier is None:
+                    if type_info and "fields" in type_info:
+                        for field in type_info["fields"]:
+                            field_name = field["name"]
+                            if field_name in fields:
+                                value = fields[field_name]
+                                found_values.append((filepath, idx, field_name, value))
+                else:
+                    field_name = field_identifier
+                    if isinstance(field_identifier, int):
+                        if type_info and "fields" in type_info:
+                            if 0 <= field_identifier < len(type_info["fields"]):
+                                field_name = type_info["fields"][field_identifier]["name"]
+                            else:
+                                return []
+                                
+                    if not field_name:
+                        return []
+                        
+                    if field_name in fields:
+                        value = fields[field_name]
+                        found_values.append((filepath, idx, field_name, value))
     
     return found_values
 
@@ -80,7 +91,7 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
             if filepath.is_file():
                 filename = filepath.name.lower()
                 is_match = any(filename.endswith(ext) or ('.' + filename.split('.')[-2]) == ext 
-                              for ext in ['.scn', '.pfb', '.usr'])
+                              for ext in ['.scn', '.pfb', '.user'])
                 if is_match:
                     candidate_files.append(filepath)
     except Exception:
@@ -130,16 +141,49 @@ def format_value(value):
             return f"({value.x}, {value.y}, {value.z})"
         return f"({value.x}, {value.y})"
     elif hasattr(value, 'r') and hasattr(value, 'g') and hasattr(value, 'b'):
+        if hasattr(value, 'a'):
+            return f"RGBA({value.r}, {value.g}, {value.b}, {value.a})"
         return f"RGB({value.r}, {value.g}, {value.b})"
     elif hasattr(value, 'guid_str'):
         return value.guid_str
+    elif hasattr(value, 'min') and hasattr(value, 'max'):
+        if isinstance(value.min, (float, int)) and isinstance(value.max, (float, int)):
+            return f"Range({value.min}, {value.max})"
+        else:
+            min_value = format_value(value.min)
+            max_value = format_value(value.max)
+            return f"Range({min_value}, {max_value})"
+    elif hasattr(value, 'width') and hasattr(value, 'height'):
+        return f"Size({value.width}, {value.height})"
+    elif hasattr(value, 'min_x') and hasattr(value, 'max_x'):
+        return f"Rect({value.min_x}, {value.min_y}, {value.max_x}, {value.max_y})"
+    elif hasattr(value, 'center') and hasattr(value, 'radius'):
+        center_str = format_value(value.center)
+        return f"Sphere({center_str}, {value.radius})"
+    elif hasattr(value, 'start') and hasattr(value, 'end'):
+        start_str = format_value(value.start)
+        end_str = format_value(value.end)
+        if hasattr(value, 'radius'): 
+            return f"Capsule(start:{start_str}, end:{end_str}, radius:{value.radius})"
+        return f"LineSegment(start:{start_str}, end:{end_str})"
+    elif hasattr(value, 'position') and hasattr(value, 'direction'):
+        pos_str = format_value(value.position)
+        dir_str = format_value(value.direction)
+        if hasattr(value, 'angle') and hasattr(value, 'distance'):  
+            return f"Cone(pos:{pos_str}, dir:{dir_str}, angle:{value.angle}, distance:{value.distance})"
+        return f"Direction(pos:{pos_str}, dir:{dir_str})"
+    elif hasattr(value, 'center') and hasattr(value, 'radius') and hasattr(value, 'height'): 
+        center_str = format_value(value.center)
+        return f"Cylinder(center:{center_str}, radius:{value.radius}, height:{value.height})"
+    elif hasattr(value, 'type_name'): 
+        return f"Type({value.type_name})"
     return str(value)
 
 def main():
     parser = argparse.ArgumentParser(description='Find all possible values of a specific field in RSZ files')
     parser.add_argument('--dir', '-d', required=True, help='Directory to scan')
     parser.add_argument('--type-id', '-t', required=True, help='Type ID to search for (hex or decimal)')
-    parser.add_argument('--field', '-f', required=True, help='Field name or index to extract')
+    parser.add_argument('--field', '-f', help='Field name or index to extract (if not specified, will scan all fields)')
     parser.add_argument('--json-dir', '-j', help='Path to JSON type data (file or directory)', default='res/type_data')
     parser.add_argument('--recursive', '-r', action='store_true', help='Scan directories recursively')
     parser.add_argument('--limit', '-l', type=int, default=10, help='Maximum examples to show for each value')
@@ -157,12 +201,16 @@ def main():
             print(f"Error: Invalid type ID format: {args.type_id}")
             return 1
     
-    try:
-        field_identifier = int(args.field)
-        print(f"Using field index: {field_identifier}")
-    except ValueError:
-        field_identifier = args.field
-        print(f"Using field name: {field_identifier}")
+    field_identifier = None
+    if args.field:
+        try:
+            field_identifier = int(args.field)
+            print(f"Using field index: {field_identifier}")
+        except ValueError:
+            field_identifier = args.field
+            print(f"Using field name: {field_identifier}")
+    else:
+        print("No field specified. Will scan all fields.")
     
     try:
         type_registry = TypeRegistry(args.json_dir)
@@ -172,7 +220,8 @@ def main():
     
     type_info = type_registry.get_type_info(type_id)
     if type_info:
-        print(f"Searching for field '{field_identifier}' in type: {type_info.get('name', 'Unknown')} (ID: 0x{type_id:08X})")
+        field_msg = f"field '{field_identifier}'" if field_identifier is not None else "all fields"
+        print(f"Searching for {field_msg} in type: {type_info.get('name', 'Unknown')} (ID: 0x{type_id:08X})")
     else:
         print(f"Warning: Type ID 0x{type_id:08X} not found in registry")
     
@@ -183,50 +232,79 @@ def main():
         print("No matching instances found.")
         return 0
     
-    print(f"\nFound {len(results)} instances with field '{field_identifier}'")
+    field_results = {}
+    for filepath, instance_id, field_name, value in results:
+        if field_name not in field_results:
+            field_results[field_name] = []
+        field_results[field_name].append((filepath, instance_id, value))
     
-    value_dict = {}
-    for filepath, instance_id, value in results:
-        formatted_value = format_value(value)
-        if formatted_value not in value_dict:
-            value_dict[formatted_value] = []
-        value_dict[formatted_value].append((filepath, instance_id))
-    
-    print(f"\nUnique values found: {len(value_dict)}")
-    for value, occurrences in sorted(value_dict.items(), key=lambda x: len(x[1]), reverse=True):
-        count = len(occurrences)
-        percentage = (count / len(results)) * 100
-        print(f"\n  Value: {value}")
-        print(f"  Occurrences: {count} ({percentage:.1f}%)")
-        
-        if args.verbose:
-            shown = 0
-            for filepath, instance_id in occurrences:
-                if shown < args.limit:
-                    print(f"    - File: {os.path.basename(filepath)}, Instance ID: {instance_id}")
-                    shown += 1
-            if shown < count:
-                print(f"    ... and {count - shown} more instances")
+    print(f"\nFound data for {len(field_results)} fields")
     
     if args.output:
         try:
             with open(args.output, 'w') as f:
-                f.write(f"Results for Type ID 0x{type_id:08X}, Field '{field_identifier}'\n")
+                f.write(f"Results for Type ID 0x{type_id:08X}\n")
+                if type_info:
+                    f.write(f"Type Name: {type_info.get('name', 'Unknown')}\n")
                 f.write(f"Total instances found: {len(results)}\n\n")
                 
-                for value, occurrences in sorted(value_dict.items(), key=lambda x: len(x[1]), reverse=True):
-                    count = len(occurrences)
-                    percentage = (count / len(results)) * 100
-                    f.write(f"Value: {value}\n")
-                    f.write(f"Occurrences: {count} ({percentage:.1f}%)\n")
+                for field_name, field_instances in field_results.items():
+                    f.write(f"Field: {field_name}\n")
+                    f.write(f"Instances: {len(field_instances)}\n\n")
                     
-                    for filepath, instance_id in occurrences:
-                        f.write(f"  - File: {filepath}, Instance ID: {instance_id}\n")
-                    f.write("\n")
+                    value_dict = {}
+                    for filepath, instance_id, value in field_instances:
+                        formatted_value = format_value(value)
+                        if formatted_value not in value_dict:
+                            value_dict[formatted_value] = []
+                        value_dict[formatted_value].append((filepath, instance_id))
+                    
+                    f.write(f"Unique values: {len(value_dict)}\n")
+                    for value, occurrences in sorted(value_dict.items(), key=lambda x: len(x[1]), reverse=True):
+                        count = len(occurrences)
+                        percentage = (count / len(field_instances)) * 100
+                        f.write(f"- {value}: {count} ({percentage:.1f}%)\n")
+                    
+                    if args.verbose:
+                        f.write("\nDetailed occurrences:\n")
+                        for value, occurrences in sorted(value_dict.items(), key=lambda x: len(x[1]), reverse=True):
+                            f.write(f"\nValue: {value}\n")
+                            for filepath, instance_id in occurrences[:args.limit]:
+                                f.write(f"  - File: {filepath}, Instance ID: {instance_id}\n")
+                            if len(occurrences) > args.limit:
+                                f.write(f"  - ... and {len(occurrences) - args.limit} more instances\n")
+                    
+                    f.write("\n" + "-"*50 + "\n\n")
                     
             print(f"\nResults written to {args.output}")
         except Exception as e:
             print(f"Error writing to output file: {str(e)}")
+    
+    for field_name, field_instances in field_results.items():
+        print(f"\nField: {field_name}")
+        print(f"Instances: {len(field_instances)}")
+        
+        value_dict = {}
+        for filepath, instance_id, value in field_instances:
+            formatted_value = format_value(value)
+            if formatted_value not in value_dict:
+                value_dict[formatted_value] = []
+            value_dict[formatted_value].append((filepath, instance_id))
+        
+        print(f"Unique values: {len(value_dict)}")
+        for value, occurrences in sorted(value_dict.items(), key=lambda x: len(x[1]), reverse=True):
+            count = len(occurrences)
+            percentage = (count / len(field_instances)) * 100
+            print(f"- {value}: {count} ({percentage:.1f}%)")
+            
+            if args.verbose:
+                shown = 0
+                for filepath, instance_id in occurrences:
+                    if shown < args.limit:
+                        print(f"  - File: {os.path.basename(filepath)}, Instance ID: {instance_id}")
+                        shown += 1
+                if shown < count:
+                    print(f"  - ... and {count - shown} more instances")
     
     return 0
 
