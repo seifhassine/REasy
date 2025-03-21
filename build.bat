@@ -13,6 +13,7 @@ if exist REasy.spec del /Q REasy.spec
 REM Build using the current Python interpreter (assumed 64-bit)
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
 xcopy /E /I /Y resources dist\resources
+rmdir /S /Q dist\resources\data\dumps
 copy "resources\data\dumps\rszre4_reasy.json" "dist\rszre4_reasy.json"
 copy "resources\data\dumps\rszre2.json" "dist\rszre2.json"
 copy "resources\data\dumps\rszre2rt.json" "dist\rszre2rt.json"
