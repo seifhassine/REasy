@@ -11,6 +11,7 @@ if exist dist rmdir /S /Q dist
 if exist REasy.spec del /Q REasy.spec
 
 REM Build using the current Python interpreter (assumed 64-bit)
+pip install -r requirements.txt
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
 xcopy /E /I /Y resources dist\resources
 rmdir /S /Q dist\resources\data\dumps
