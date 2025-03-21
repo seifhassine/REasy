@@ -599,132 +599,142 @@ class ScnFile:
         field_align = field_def.get("align", 1)
         
         if isinstance(data_obj, StructData):
+            while len(out) % 4:
+                out.extend(b'\x00') 
+            count = len(data_obj.values)
             if data_obj.values:
+                out.extend(struct.pack("<I", count))
                 for struct_value in data_obj.values:
-                    for field_name, field_value in struct_value.items():
-                        original_type = data_obj.orig_type
-                        if original_type and self.type_registry:
-                            struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
-                            if struct_type_info:
-                                struct_fields = struct_type_info.get("fields", [])
-                                for struct_field in struct_fields:
-                                    if struct_field.get("name") == field_name:
-                                        self._write_field_value(struct_field, field_value, out)
-                                        break
+                    original_type = data_obj.orig_type if hasattr(data_obj, 'orig_type') else None
+                    
+                    if original_type and self.type_registry:
+                        struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
+                        if struct_type_info:
+                            struct_fields = struct_type_info.get("fields", [])
+                            
+                            for struct_field in struct_fields:
+                                field_name = struct_field.get("name")
+                                if field_name and field_name in struct_value:
+                                    field_data = struct_value[field_name]
+                                    self._write_field_value(struct_field, field_data, out)
+                        else:
+                            print(f"ERROR: Could not find type info for struct type: {original_type}")
+                    else:
+                        print(f"ERROR: Missing original_type for StructData or type_registry not available")
+
         elif field_def.get("array", False):
 
             while len(out) % 4:
                 out.extend(b'\x00') 
 
-            if isinstance(data_obj, ArrayData):
-                count = len(data_obj.values)
-                out.extend(struct.pack("<I", count))
+            count = len(data_obj.values)
+            out.extend(struct.pack("<I", count))
+            
+            for element in data_obj.values:
+                while len(out) % field_align:
+                    out.extend(b'\x00')
                 
-                for element in data_obj.values:
-                    while len(out) % field_align:
-                        out.extend(b'\x00')
-                    
-                    if isinstance(element, S8Data):
-                        out.extend(struct.pack("<b", max(-128, min(127, element.value))))
-                    elif isinstance(element, U8Data):
-                        out.extend(struct.pack("<B", element.value & 0xFF))
-                    elif isinstance(element, BoolData):
-                        out.extend(struct.pack("<?", element.value))
-                    elif isinstance(element, S16Data):
-                        out.extend(struct.pack("<h", element.value & 0xFFFF))
-                    elif isinstance(element, U16Data):
-                        out.extend(struct.pack("<H", element.value & 0xFFFF))
-                    elif isinstance(element, S64Data):
-                        out.extend(struct.pack("<q", element.value))
-                    elif isinstance(element, S32Data):
-                        out.extend(struct.pack("<i", element.value))
-                    elif isinstance(element, U64Data):
-                        out.extend(struct.pack("<Q", element.value))
-                    elif isinstance(element, F64Data):
-                        out.extend(struct.pack("<d", element.value))
-                    elif isinstance(element, Vec2Data):
-                        out.extend(struct.pack("<4f", element.x, element.y, 0, 0))
-                    elif isinstance(element, Float2Data):
-                        out.extend(struct.pack("<2f", element.x, element.y))
-                    elif isinstance(element, RangeData):
-                        out.extend(struct.pack("<2f", element.min, element.max))
-                    elif isinstance(element, RangeIData):
-                        out.extend(struct.pack("<2i", element.min, element.max))
-                    elif isinstance(element, Float3Data):
-                        out.extend(struct.pack("<3f", element.x, element.y, element.z))
-                    elif isinstance(element, Float4Data):
-                        out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
-                    elif isinstance(element, QuaternionData):
-                        out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
-                    elif isinstance(element, ColorData):
-                        out.extend(struct.pack("<4B", element.r, element.g, element.b, element.a))
-                    elif isinstance(element, (ObjectData, U32Data)):
-                        value = int(element.value) & 0xFFFFFFFF
-                        out.extend(struct.pack("<I", value))
-                    elif isinstance(element, Vec3Data):
-                        out.extend(struct.pack("<4f", element.x, element.y, element.z, 0.00))
-                    elif isinstance(element, Vec4Data):
-                        out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
-                    elif isinstance(element, Mat4Data):
-                        if isinstance(element.values, (list, tuple)):
-                            float_values = [float(v) for v in element.values[:16]]
-                            while len(float_values) < 16:
-                                float_values.append(0.0)
-                            out.extend(struct.pack("<16f", *float_values))
-                        else:
-                            print("Mat4Data error while writing")
-                            out.extend(struct.pack("<16f", *([0.0] * 16)))
-                    elif isinstance(element, (GameObjectRefData, GuidData)):
-                        guid = uuid.UUID(element.guid_str)
-                        out.extend(guid.bytes_le)
-                    elif isinstance(element, (StringData, ResourceData)):
-                        while len(out) % 4:
-                            out.extend(b'\x00')
-                        if element.value:
-                            str_bytes = element.value.encode('utf-16-le')
-                            char_count = len(element.value)
-                            if element.value[-1] == '\x00':
-                                char_count = len(element.value) 
-                            else:
-                                char_count = len(element.value) + 1  
-                                str_bytes += b'\x00\x00' 
-                            out.extend(struct.pack("<I", char_count))
-                            out.extend(str_bytes)
-                        else:
-                            out.extend(struct.pack("<I", 0))
-                    elif isinstance(element, OBBData):
-                        if isinstance(element.values, (list, tuple)):
-                            float_values = [float(v) for v in element.values[:20]]
-                            while len(float_values) < 20:
-                                float_values.append(0.0)
-                            out.extend(struct.pack("<20f", *float_values))
-                        else:
-                            # Fallback - write zeros
-                            out.extend(struct.pack("<20f", *([0.0] * 20)))
-                    elif isinstance(element, RawBytesData):
-                        out.extend(element.raw_bytes)
-                        remaining_bytes = field_size - len(element.raw_bytes)
-                        if remaining_bytes > 0:
-                            out.extend(b'\x00' * remaining_bytes)
-                    elif isinstance(element, UserDataData):
-                        out.extend(struct.pack("<I", element.index))
-                        #print("userdata index is ", element.index)
-                    elif isinstance(element, F32Data):
-                        val_bits = struct.pack("<f", element.value)
-                        out.extend(val_bits)
-                    elif isinstance(element, GuidData):
-                        if element.raw_bytes:
-                            out.extend(element.raw_bytes)
-                        else:
-                            try:
-                                guid = uuid.UUID(element.guid_str)
-                                out.extend(guid.bytes_le)
-                            except ValueError:
-                                out.extend(b'\x00' * 16) 
+                if isinstance(element, S8Data):
+                    out.extend(struct.pack("<b", max(-128, min(127, element.value))))
+                elif isinstance(element, U8Data):
+                    out.extend(struct.pack("<B", element.value & 0xFF))
+                elif isinstance(element, BoolData):
+                    out.extend(struct.pack("<?", element.value))
+                elif isinstance(element, S16Data):
+                    out.extend(struct.pack("<h", element.value & 0xFFFF))
+                elif isinstance(element, U16Data):
+                    out.extend(struct.pack("<H", element.value & 0xFFFF))
+                elif isinstance(element, S64Data):
+                    out.extend(struct.pack("<q", element.value))
+                elif isinstance(element, S32Data):
+                    out.extend(struct.pack("<i", element.value))
+                elif isinstance(element, U64Data):
+                    out.extend(struct.pack("<Q", element.value))
+                elif isinstance(element, F64Data):
+                    out.extend(struct.pack("<d", element.value))
+                elif isinstance(element, Vec2Data):
+                    out.extend(struct.pack("<4f", element.x, element.y, 0, 0))
+                elif isinstance(element, Float2Data):
+                    out.extend(struct.pack("<2f", element.x, element.y))
+                elif isinstance(element, RangeData):
+                    out.extend(struct.pack("<2f", element.min, element.max))
+                elif isinstance(element, RangeIData):
+                    out.extend(struct.pack("<2i", element.min, element.max))
+                elif isinstance(element, Float3Data):
+                    out.extend(struct.pack("<3f", element.x, element.y, element.z))
+                elif isinstance(element, Float4Data):
+                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                elif isinstance(element, QuaternionData):
+                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                elif isinstance(element, ColorData):
+                    out.extend(struct.pack("<4B", element.r, element.g, element.b, element.a))
+                elif isinstance(element, (ObjectData, U32Data)):
+                    value = int(element.value) & 0xFFFFFFFF
+                    out.extend(struct.pack("<I", value))
+                elif isinstance(element, Vec3Data):
+                    out.extend(struct.pack("<4f", element.x, element.y, element.z, 0.00))
+                elif isinstance(element, Vec4Data):
+                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                elif isinstance(element, Mat4Data):
+                    if isinstance(element.values, (list, tuple)):
+                        float_values = [float(v) for v in element.values[:16]]
+                        while len(float_values) < 16:
+                            float_values.append(0.0)
+                        out.extend(struct.pack("<16f", *float_values))
                     else:
-                        val = getattr(element, 'value', 0)
-                        raw_bytes = val.to_bytes(field_size, byteorder='little')
-                        out.extend(raw_bytes)
+                        print("Mat4Data error while writing")
+                        out.extend(struct.pack("<16f", *([0.0] * 16)))
+                elif isinstance(element, (GameObjectRefData, GuidData)):
+                    guid = uuid.UUID(element.guid_str)
+                    out.extend(guid.bytes_le)
+                elif isinstance(element, (StringData, ResourceData)):
+                    while len(out) % 4:
+                        out.extend(b'\x00')
+                    if element.value:
+                        str_bytes = element.value.encode('utf-16-le')
+                        char_count = len(element.value)
+                        if element.value[-1] == '\x00':
+                            char_count = len(element.value) 
+                        else:
+                            char_count = len(element.value) + 1  
+                            str_bytes += b'\x00\x00' 
+                        out.extend(struct.pack("<I", char_count))
+                        out.extend(str_bytes)
+                    else:
+                        out.extend(struct.pack("<I", 0))
+                elif isinstance(element, OBBData):
+                    if isinstance(element.values, (list, tuple)):
+                        float_values = [float(v) for v in element.values[:20]]
+                        while len(float_values) < 20:
+                            float_values.append(0.0)
+                        out.extend(struct.pack("<20f", *float_values))
+                    else:
+                        # Fallback - write zeros
+                        out.extend(struct.pack("<20f", *([0.0] * 20)))
+                elif isinstance(element, RawBytesData):
+                    out.extend(element.raw_bytes)
+                    remaining_bytes = field_size - len(element.raw_bytes)
+                    if remaining_bytes > 0:
+                        out.extend(b'\x00' * remaining_bytes)
+                elif isinstance(element, UserDataData):
+                    out.extend(struct.pack("<I", element.index))
+                    #print("userdata index is ", element.index)
+                elif isinstance(element, F32Data):
+                    val_bits = struct.pack("<f", element.value)
+                    out.extend(val_bits)
+                elif isinstance(element, GuidData):
+                    if element.raw_bytes:
+                        out.extend(element.raw_bytes)
+                    else:
+                        try:
+                            guid = uuid.UUID(element.guid_str)
+                            out.extend(guid.bytes_le)
+                        except ValueError:
+                            out.extend(b'\x00' * 16) 
+                else:
+                    val = getattr(element, 'value', 0)
+                    raw_bytes = val.to_bytes(field_size, byteorder='little')
+                    out.extend(raw_bytes)
         else:
             while len(out) % field_align:
                 out.extend(b'\x00') 
@@ -1703,68 +1713,52 @@ def parse_instance_fields(
         field_align = int(field["align"]) if "align" in field else 1
         rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align, original_type)
         data_obj = None
-        # Special handling for Struct types (both array and non-array)
-        if rsz_type == StructData:
-            struct_type_info = None
-            struct_type_id = None
-            if original_type and scn_file.type_registry:
-                struct_type_info, struct_type_id = scn_file.type_registry.find_type_by_name(original_type)
 
+        if rsz_type == StructData:
+            pos = local_align(pos, 4) 
+            struct_count = unpack_uint(raw, pos)[0]
+            pos += 4
             struct_values = []
             
-            # If we have a valid type definition, try to parse it
-            if struct_type_info and struct_type_id and pos < len(raw):
+            struct_type_info = None
+            if original_type and scn_file.type_registry:
+                struct_type_info, _ = scn_file.type_registry.find_type_by_name(original_type)
+            
+            if struct_type_info and struct_count > 0 and pos < len(raw):
                 struct_fields_def = struct_type_info.get("fields", [])
-                
-                # Create processed instances tracking set if it doesn't exist
-                if not hasattr(scn_file, '_processed_instances'):
-                    scn_file._processed_instances = set()
-                
-                # Start checking from the next instance
-                next_instance_idx = current_instance_index + 1
                 current_pos = pos
                 
-                # Look for consecutive instances of the right type
-                while (next_instance_idx < len(scn_file.instance_infos) and 
-                       next_instance_idx not in scn_file._processed_instances):
-                    # Check if this instance matches our struct type
-                    if scn_file.instance_infos[next_instance_idx].type_id != struct_type_id:
+                for i in range(struct_count):
+                    struct_element = {}
+                    
+                    temp_parser = type('StructParser', (), {
+                        'parsed_elements': {current_instance_index: struct_element},
+                        'instance_hierarchy': scn_file.instance_hierarchy,
+                        '_gameobject_instance_ids': scn_file._gameobject_instance_ids,
+                        '_folder_instance_ids': scn_file._folder_instance_ids,
+                        'rsz_userdata_infos': scn_file.rsz_userdata_infos,
+                        '_rsz_userdata_str_map': scn_file._rsz_userdata_str_map,
+                        'type_registry': scn_file.type_registry
+                    })()
+                    
+                    next_pos = parse_instance_fields(
+                        raw=raw,
+                        offset=current_pos,
+                        fields_def=struct_fields_def,
+                        current_instance_index=current_instance_index,
+                        scn_file=temp_parser
+                    )
+                    
+                    if next_pos > current_pos and struct_element:
+                        struct_values.append(struct_element)
+                        current_pos = next_pos
+                    else:
                         break
-                    
-                    # Mark this instance as being processed
-                    scn_file._processed_instances.add(next_instance_idx)
-                    
-                    struct_parsed = {}
-                    try:
-                        # Parse the fields of the struct
-                        next_pos = parse_instance_fields(
-                            raw=raw,
-                            offset=current_pos,
-                            fields_def=struct_fields_def,
-                            current_instance_index=next_instance_idx,
-                            scn_file=scn_file
-                        )
-                        
-                        # If we successfully parsed something, add it
-                        if next_pos > current_pos:
-                            # Copy the parsed data for this struct field
-                            struct_parsed = scn_file.parsed_elements.get(next_instance_idx, {})
-                            
-                            # Add to our struct values if we got something
-                            if struct_parsed:
-                                struct_values.append(struct_parsed)
-                            
-                            current_pos = next_pos
-                    except Exception as e: # TODO: Temporary until I'm 100% sure we're parsing Structs structures correctly
-                        print(f"Error parsing struct type {original_type}: {e}")
-                        break
-                    
-                    next_instance_idx += 1
-                
+
                 pos = current_pos
             
             data_obj = StructData(struct_values, original_type)
-            
+        
         elif is_array:
             pos = local_align(pos, 4)
             count = unpack_uint(raw, pos)[0]
