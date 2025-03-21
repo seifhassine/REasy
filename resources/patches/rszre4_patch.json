@@ -3222,5 +3222,123 @@
 			}
 		],
 		"name": "via.effect.ExternParameter"
+	},
+	"645fdb44": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "SkeletonResourceHandle",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.motion.DummySkeleton"
+	},
+	"25f55eb4": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Asset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Segment",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SoftParticleDistType",
+				"native": true,
+				"original_type": "via.gui.SoftParticleDistType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SoftParticleDist",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "CoordCorrectionTargetPos",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RenderOutputID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RenderTarget",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUICameraTargetID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUISound",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.gui.GUI"
 	}
 }
