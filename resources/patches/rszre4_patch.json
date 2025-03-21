@@ -3467,7 +3467,7 @@
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
-				"type": "Object"
+				"type": "Color"
 			},
 			{
 				"align": 4,
