@@ -14,16 +14,17 @@ def create_about_dialog(parent):
     layout = QVBoxLayout(dialog)
 
     title_label = QLabel("REasy Editor v0.1.2")
-    title_label.setStyleSheet("font-size: 16pt; font-weight: bold;")
+    title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 
     info_label = QLabel(
         "REasy Editor is a quality of life toolkit for modders.\n\n"
-        "It supports viewing and full editing of UVAR files.\n"
-        "Limited editing of scn files is also supported.\n\n"
+        "It supports viewing and full editing of UVAR and RSZ files.\n"
+        "\n\n"
         "For more information, visit my GitHub page:"
     )
     info_label.setWordWrap(True)
+    info_label.setAlignment(Qt.AlignCenter)
     layout.addWidget(info_label, alignment=Qt.AlignCenter)
 
     link = QLabel(

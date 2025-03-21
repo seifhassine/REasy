@@ -1380,7 +1380,7 @@ class REasyEditorApp(QMainWindow):
         """Show dialog with available backups for the current file"""
         active = self.get_active_tab()
         if not active:
-            QMessageBox.critical(self, "Error", "No active tab to restore backup.")
+            QMessageBox.critical(self, "Error", "No active tab to restore the backup of.")
             return
             
         if not active.filename:

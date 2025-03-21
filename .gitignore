@@ -12,7 +12,8 @@ dist/
 *.egg-info/
 *.spec
 /tests/personal
-
+backups/
+.clipboard
 
 # VS Code settings (if you don't want to share them)
 .vscode/
