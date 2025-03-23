@@ -57,16 +57,19 @@ class RszHandler(BaseFileHandler):
         EnumManager.instance().game_version = value
 
     def can_handle(data: bytes) -> bool:
-        """Check if data appears to be an SCN, USR, or PFB file"""
+        """Check if data appears to be an SCN, USR, PFB or AIWAYP file"""
         if len(data) < 4:
             return False
         scn_sig = b"SCN\x00"
         usr_sig = b"USR\x00"
         pfb_sig = b"PFB\x00"
         return data[:4] in [scn_sig, usr_sig, pfb_sig]
+        #aiwayp_sig = b"AIMP"
+        #return data[:4] in [scn_sig, usr_sig, pfb_sig, aiwayp_sig]
 
     def read(self, data: bytes):
         """Parse the file data"""
+        self.id_manager = IdManager.instance()
         self.init_type_registry()
         self.scn_file = ScnFile()
         self.scn_file.type_registry = self.type_registry
@@ -74,7 +77,6 @@ class RszHandler(BaseFileHandler):
         self.scn_file.filepath = self.filepath
         print(f"Reading file with game version: {self._game_version}")
         self.scn_file.read(data)
-        IdManager.instance().reset()
         self.array_clipboard = RszArrayClipboard()
 
     def create_viewer(self):
@@ -233,7 +235,8 @@ class RszViewer(QWidget):
 
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
-        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
+        root_dict["type"] = "root"                                          '''else "AIWAYP" if self.scn.is_aiwayp'''
+        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb                                              else "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
             advanced_node = ScnTreeBuilder.create_advanced_node()
@@ -304,6 +307,18 @@ class RszViewer(QWidget):
                 ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
                 ("Reserved", lambda h: str(h.reserved)),
             ]
+            '''elif self.scn.is_aiwayp:
+                header_fields = [
+                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
+                    ("Version", lambda h: str(h.version)),
+                    ("Info Count", lambda h: str(h.info_count)),
+                    ("Resource Count", lambda h: str(h.resource_count)),
+                    ("UserData Count", lambda h: str(h.userdata_count)),
+                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                    ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
+                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+                ]
+            '''
         else:
             header_fields = [
                 ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
@@ -393,12 +408,41 @@ class RszViewer(QWidget):
     def _create_gameobjects_info(self):
         """Create GameObjects info section"""
         node = ScnTreeBuilder.create_gameobjects_node(len(self.scn.gameobjects))
+        
         for i, go in enumerate(self.scn.gameobjects):
-            instance_index = None
-            if go.id < len(self.scn.object_table):
-                instance_index = self.scn.object_table[go.id]
-            instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
+            '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject'):
+                # For AIWAYP files, use the name and hash strings parsed from the header
+                go_name = getattr(self.scn.header, 'gameobject_name', "AIWAYP_Object") 
+                go_hash = getattr(self.scn.header, 'gameobject_type', "Unknown_Hash")
+                
+                # Make sure values are non-empty strings
+                if not go_name or go_name.strip() == "":
+                    go_name = "AIWAYP_Object"
+                if not go_hash or go_hash.strip() == "":
+                    go_hash = "Unknown_Hash"
+                    
+                print(f"AIWAYP GameObject - name: '{go_name}', hash: '{go_hash}'")
+                instance_name = f"{go_name}"
+                
+                # Display the unknown values 
+                unknown_value1 = getattr(self.scn.header, 'unknown_value1', 0)
+                unknown_value2 = getattr(self.scn.header, 'unknown_value2', 0)
+                
+                children = [
+                    DataTreeBuilder.create_data_node("GUID: " + guid_le_to_str(go.guid), ""),
+                    DataTreeBuilder.create_data_node("Unknown Value 1: " + str(unknown_value1), ""),
+                    DataTreeBuilder.create_data_node("Unknown Value 2: " + str(unknown_value2), ""),
+                    DataTreeBuilder.create_data_node("External GameObject (not in object table)", ""),
+                    DataTreeBuilder.create_data_node("Name: " + go_name, ""),
+                    DataTreeBuilder.create_data_node("Unknown Value 3 (MD5 Hash?): " + go_hash, ""),  # Changed from go_type to go_hash
+                ]
+            el'''
             if self.scn.is_pfb:
+                # Normal PFB GameObject
+                instance_index = None
+                if go.id < len(self.scn.object_table):
+                    instance_index = self.scn.object_table[go.id]
+                instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
                 children = [
                     DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
                     DataTreeBuilder.create_data_node("Parent ID: " + str(go.parent_id), ""),
@@ -407,6 +451,11 @@ class RszViewer(QWidget):
                     ),
                 ]
             else:
+                # Normal SCN GameObject
+                instance_index = None
+                if go.id < len(self.scn.object_table):
+                    instance_index = self.scn.object_table[go.id]
+                instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
                 children = [
                     DataTreeBuilder.create_data_node("GUID: " + guid_le_to_str(go.guid), ""),
                     DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
@@ -416,8 +465,10 @@ class RszViewer(QWidget):
                     ),
                     DataTreeBuilder.create_data_node("Prefab ID: " + str(go.prefab_id), ""),
                 ]
+                
             go_item = DataTreeBuilder.create_data_node(instance_name, "", children=children)
             node["children"].append(go_item)
+            
         return node
 
     def _create_folders_info(self):
@@ -525,13 +576,66 @@ class RszViewer(QWidget):
         folders_folder = {"data": ["Folders", ""], "children": []}
         parent_dict["children"].append(gameobjects_folder)
         parent_dict["children"].append(folders_folder)
+        
+        # Special handling for AIWAYP GameObject which is not in the object table
+        '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject'):
+            go = self.scn.aiwayp_root_gameobject
+            if go.id == -1:  # Special ID we set to indicate external GameObject
+                go_name = getattr(self.scn.header, 'gameobject_name', "AIWAYP_Object")
+                go_hash = getattr(self.scn.header, 'gameobject_type', "Unknown_Hash") # Changed from gameobject_type
+                
+                # Make sure values are non-empty strings
+                if not go_name or go_name.strip() == "":
+                    go_name = "AIWAYP_Object"
+                if not go_hash or go_hash.strip() == "":
+                    go_hash = "Unknown_Hash"
+                    
+                go_dict = {
+                    "data": [f"{go_name} ({go_hash})", ""], # Changed from go_type to go_hash
+                    "type": "gameobject",
+                    "instance_id": -1,  # Special ID
+                    "reasy_id": -1,     # Special ID  
+                    "children": [],
+                }
+                settings_node = {"data": ["Settings", ""], "children": []}
+                go_dict["children"].append(settings_node)
+                
+                # Add the Components node
+                comp_node = {"data": ["Components", ""], "children": []}
+                go_dict["children"].append(comp_node)
+                
+                # All instances in the object table are considered components of this GameObject
+                for i, instance_id in enumerate(self.scn.object_table):
+                    if instance_id <= 0 or instance_id in processed:
+                        continue
+                    reasy_id = self.handler.id_manager.register_instance(instance_id)
+                    component_name = self.name_helper.get_instance_name(instance_id)
+                    comp_dict = {
+                        "data": [f"{component_name} (ID: {instance_id})", ""],
+                        "instance_id": instance_id,
+                        "reasy_id": reasy_id,
+                        "children": [],
+                    }
+                    comp_node["children"].append(comp_dict)
+                    if instance_id in self.scn.parsed_elements:
+                        fields = self.scn.parsed_elements[instance_id]
+                        for f_name, f_data in fields.items():
+                            comp_dict["children"].append(self._create_field_dict(f_name, f_data))
+                    processed.add(instance_id)
+                    
+                gameobjects_folder["children"].append(go_dict)
+        '''
         for go in self.scn.gameobjects:
+            # Skip AIWAYP root GameObject which we already processed
+            '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject') and go is self.scn.aiwayp_root_gameobject:
+                continue
+             '''   
             if go.id >= len(self.scn.object_table):
                 continue
             go_instance_id = self.scn.object_table[go.id]
             if go_instance_id in processed:
                 continue
-            reasy_id = IdManager.instance().register_instance(go_instance_id)
+            reasy_id = self.handler.id_manager.register_instance(go_instance_id)
             name = self.name_helper.get_instance_first_field_name(go_instance_id)
             go_name = name if name else self.name_helper.get_instance_name(go_instance_id)
             go_dict = {
@@ -561,7 +665,7 @@ class RszViewer(QWidget):
                     comp_instance_id = self.scn.object_table[component_go_id]
                     if comp_instance_id in processed:
                         continue
-                    reasy_id = IdManager.instance().register_instance(comp_instance_id)
+                    reasy_id = self.handler.id_manager.register_instance(comp_instance_id)
                     component_name = self.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
@@ -582,7 +686,7 @@ class RszViewer(QWidget):
             folder_instance_id = self.scn.object_table[folder.id]
             if folder_instance_id in processed:
                 continue
-            reasy_id = IdManager.instance().register_instance(folder_instance_id)
+            reasy_id = self.handler.id_manager.register_instance(folder_instance_id)
             folder_name = self.name_helper.get_instance_first_field_name(folder_instance_id) or self.name_helper.get_instance_name(
                 folder_instance_id
             )
@@ -1144,7 +1248,7 @@ class RszViewer(QWidget):
         id_mapping = {}
         for i in range(index, len(self.scn.instance_infos)):
             id_mapping[i] = i + 1
-        IdManager.instance().update_all_mappings(id_mapping)
+        self.handler.id_manager.update_all_mappings(id_mapping)
 
     def _shift_userdata_references(self, index):
         updated_userdata_set = set()
@@ -1268,7 +1372,7 @@ class RszViewer(QWidget):
             if go.id < len(self.scn.object_table):
                 instance_id = self.scn.object_table[go.id]
                 if instance_id > 0:
-                    IdManager.instance().register_instance(instance_id)
+                    self.handler.id_manager.register_instance(instance_id)
         
         return id_mapping
     
@@ -1365,7 +1469,7 @@ class RszViewer(QWidget):
             field_array = field_def.get("array", False)
             field_align = field_def.get("align", 4)
             field_orig_type = field_def.get("original_type", "")
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type)
+            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
             field_obj = self._create_default_field(field_class, field_orig_type, field_array, field_size)
             
             if field_obj:

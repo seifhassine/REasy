@@ -10,7 +10,6 @@ This file contains utility methods for:
 
 import uuid
 from PySide6.QtWidgets import QMessageBox
-from utils.id_manager import IdManager
 from .rsz_data_types import *
 from file_handlers.rsz.rsz_file import ScnRSZUserDataInfo,  ScnUserDataInfo, ScnPrefabInfo
 
@@ -42,7 +41,7 @@ class RszObjectOperations:
             return False
             
         self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
-        IdManager.instance().register_instance(insertion_index)
+        self.viewer.handler.id_manager.register_instance(insertion_index)
         
         gameobject_fields = {}
         self.viewer._initialize_fields_from_type_info(gameobject_fields, type_info)
@@ -71,7 +70,7 @@ class RszObjectOperations:
             "instance_id": insertion_index,
             "name": name,
             "parent_id": parent_id,
-            "reasy_id": IdManager.instance().get_reasy_id_for_instance(insertion_index)
+            "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(insertion_index)
         }
 
     def _calculate_gameobject_insertion_index(self):
@@ -211,7 +210,7 @@ class RszObjectOperations:
                         id_mapping = self.viewer._update_instance_references_after_deletion(go_instance_id, nested_objects)
                         
                         if id_mapping:
-                            IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+                            self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
                 
                 if go.id < len(self.scn.object_table):
                     self._remove_from_object_table(go.id)
@@ -591,7 +590,7 @@ class RszObjectOperations:
                     id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
                     
                     if id_mapping:
-                        IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+                        self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
                 
                 if folder.id < len(self.scn.object_table):
                     self._remove_from_object_table(folder.id)
@@ -617,7 +616,7 @@ class RszObjectOperations:
                 id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
                 
                 if id_mapping:
-                    IdManager.instance().update_all_mappings(id_mapping, nested_objects)
+                    self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
             
             if target_folder.id < len(self.scn.object_table):
                 self._remove_from_object_table(target_folder.id)
@@ -680,10 +679,10 @@ class RszObjectOperations:
             self.scn.parsed_elements[instance_insertion_index] = nested_object_fields
             valid_nested_objects.append((nested_type_info, nested_type_id))
             instance_insertion_index += 1
-            IdManager.instance().register_instance(instance_insertion_index)
+            self.viewer.handler.id_manager.register_instance(instance_insertion_index)
             
         self.viewer._insert_instance_and_update_references(instance_insertion_index, new_instance)
-        component_reasy_id = IdManager.instance().register_instance(instance_insertion_index)
+        component_reasy_id = self.viewer.handler.id_manager.register_instance(instance_insertion_index)
         
         component_fields = {}
         self.viewer._initialize_fields_from_type_info(component_fields, type_info)
@@ -787,7 +786,7 @@ class RszObjectOperations:
         all_deleted = set(to_delete_instances)
         id_mapping = self.viewer._update_instance_references_after_deletion(component_instance_id, all_deleted)
         deleted_instance_ids = set(to_delete_instances)
-        IdManager.instance().update_all_mappings(id_mapping, deleted_instance_ids)
+        self.viewer.handler.id_manager.update_all_mappings(id_mapping, deleted_instance_ids)
         
         expected_component_indices = original_component_count - 1
         actual_component_indices = 0
@@ -829,7 +828,7 @@ class RszObjectOperations:
             field_align = field_def.get("align", 4)
             field_orig_type = field_def.get("original_type", "")
             
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type)
+            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
             field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
             
             if field_obj:
@@ -1073,7 +1072,7 @@ class RszObjectOperations:
             self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
             new_instance_id = insertion_index
             instance_mapping[old_instance_id] = new_instance_id
-            IdManager.instance().register_instance(new_instance_id)
+            self.viewer.handler.id_manager.register_instance(new_instance_id)
             
             # If this is a UserData instance, handle it properly now
             if old_instance_id in self.scn._rsz_userdata_set:
@@ -1189,7 +1188,7 @@ class RszObjectOperations:
             "instance_id": new_gameobject_instance_id,
             "name": new_name,
             "parent_id": parent_id,
-            "reasy_id": IdManager.instance().get_reasy_id_for_instance(new_gameobject_instance_id),
+            "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(new_gameobject_instance_id),
             "component_count": new_gameobject.component_count
         }
         
@@ -1287,7 +1286,7 @@ class RszObjectOperations:
         insertion_index = len(self.scn.instance_infos)
         self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
         new_instance_id = insertion_index
-        IdManager.instance().register_instance(new_instance_id)
+        self.viewer.handler.id_manager.register_instance(new_instance_id)
         
         self._setup_userdata_for_duplicated_instance(userdata_id, new_instance_id)
         

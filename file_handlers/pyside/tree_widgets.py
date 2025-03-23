@@ -11,7 +11,6 @@ from .component_selector import ComponentSelectorDialog
 from .value_widgets import *
 
 from utils.enum_manager import EnumManager
-from utils.id_manager import IdManager
 from file_handlers.rsz.rsz_data_types import StructData
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
                         
@@ -216,7 +215,7 @@ class AdvancedTreeView(QTreeView):
             
             if hasattr(parent_widget, "scn") and not parent_widget.scn.is_pfb and not parent_widget.scn.is_usr:
                 reasy_id = item.raw.get("reasy_id")
-                go_instance_id = IdManager.instance().get_instance_id(reasy_id) if reasy_id else None
+                go_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id) if reasy_id else None
                 
                 go_object_id = -1
                 for i, instance_id in enumerate(parent_widget.scn.object_table):
@@ -294,7 +293,7 @@ class AdvancedTreeView(QTreeView):
                 # Enable paste only if compatible clipboard content exists
                 parent = self.parent()
                 clipboard_data = None
-                if parent and hasattr(parent, "handler"):
+                if parent and hasattr(parent, "handler"): 
                     clipboard_data = parent.handler.get_clipboard_data(self)
                 
                 paste_action = None
@@ -376,7 +375,7 @@ class AdvancedTreeView(QTreeView):
             if hasattr(item, 'raw') and isinstance(item.raw, dict):
                 reasy_id = item.raw.get("reasy_id")
                 if reasy_id:
-                    component_instance_id = IdManager.instance().get_instance_id(reasy_id)
+                    component_instance_id = self.parent().handler.id_manager.get_instance_id(reasy_id)
                     if component_instance_id:
                         result['is_component'] = True
                         result['component_instance_id'] = component_instance_id
@@ -680,13 +679,15 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Invalid component")
             return
         
+        parent = self.parent()
+
         # Get the component node to access its reasy_id
         item = index.internalPointer()
         if item and hasattr(item, 'raw') and isinstance(item.raw, dict):
             # If we have a reasy_id, get the latest instance_id
             reasy_id = item.raw.get("reasy_id")
             if reasy_id:
-                updated_instance_id = IdManager.instance().get_instance_id(reasy_id)
+                updated_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
                 if updated_instance_id:
                     component_instance_id = updated_instance_id
         
@@ -700,8 +701,6 @@ class AdvancedTreeView(QTreeView):
         if msg_box.exec_() != QMessageBox.Yes:
             return
         
-        # Get the parent widget/handler that can perform the deletion
-        parent = self.parent()
         if not hasattr(parent, "delete_component_from_gameobject"):
             QMessageBox.warning(self, "Error", "Component deletion not supported")
             return
@@ -742,13 +741,13 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not determine folder ID")
             return
             
-        folder_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        parent = self.parent()
+
+        folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not folder_instance_id:
             QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
             return
         
-        # Get the parent widget/handler for GameObject creation
-        parent = self.parent()
         if not hasattr(parent, "create_gameobject"):
             QMessageBox.warning(self, "Error", "GameObject creation not supported")
             return
@@ -796,14 +795,14 @@ class AdvancedTreeView(QTreeView):
         if not reasy_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
             return
+        
+        parent_widget = self.parent()
             
-        parent_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
         if not parent_instance_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        # Get the parent widget/handler for GameObject creation
-        parent_widget = self.parent()
         if not hasattr(parent_widget, "create_gameobject"):
             QMessageBox.warning(self, "Error", "GameObject creation not supported")
             return
@@ -904,12 +903,13 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
             return
             
-        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        parent = self.parent()
+
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        parent = self.parent()
         if not hasattr(parent, "create_component_for_gameobject") or not hasattr(parent, "type_registry"):
             QMessageBox.warning(self, "Error", "Component creation not supported")
             return
@@ -946,13 +946,14 @@ class AdvancedTreeView(QTreeView):
         if not reasy_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
             return
+        
+        parent = self.parent()
             
-        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        parent = self.parent()
         if not hasattr(parent, "delete_gameobject"):
             QMessageBox.warning(self, "Error", "GameObject deletion not supported")
             return
@@ -1054,12 +1055,13 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
             return
             
-        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        parent = self.parent()
+
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        parent = self.parent()
         if not hasattr(parent, "object_operations") or not hasattr(parent.object_operations, "duplicate_gameobject"):
             QMessageBox.warning(self, "Error", "GameObject duplication not supported")
             return
@@ -1153,13 +1155,14 @@ class AdvancedTreeView(QTreeView):
         if not reasy_id:
             QMessageBox.warning(self, "Error", "Could not determine folder ID")
             return
+        
+        parent = self.parent()
             
-        folder_instance_id = IdManager.instance().get_instance_id(reasy_id)
+        folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not folder_instance_id:
             QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
             return
         
-        parent = self.parent()
         if not hasattr(parent, "delete_folder"):
             QMessageBox.warning(self, "Error", "Folder deletion not supported")
             return
@@ -1258,13 +1261,14 @@ class AdvancedTreeView(QTreeView):
         if not reasy_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
             return
+        
+        parent = self.parent()
             
-        instance_id = IdManager.instance().get_instance_id(reasy_id)
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        parent = self.parent()
         if not parent or not hasattr(parent, "scn") or not hasattr(parent, "object_operations"):
             QMessageBox.warning(self, "Error", "Prefab management not supported")
             return
@@ -1692,7 +1696,7 @@ class AdvancedTreeView(QTreeView):
                     if comp_instance_id <= 0:
                         continue
                         
-                    reasy_id = IdManager.instance().get_reasy_id_for_instance(comp_instance_id)
+                    reasy_id = parent.handler.id_manager.get_reasy_id_for_instance(comp_instance_id)
                     name = parent.name_helper.get_instance_first_field_name(comp_instance_id)
                     component_name = name if name else parent.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {

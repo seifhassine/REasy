@@ -7,7 +7,6 @@ This file contains operations for adding and removing elements from arrays in RS
 from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.pyside.tree_model import DataTreeBuilder
-from utils.id_manager import IdManager
 
 class RszArrayOperations:
     """
@@ -158,7 +157,7 @@ class RszArrayOperations:
             self.viewer._insert_instance_and_update_references(node_index, instance)
             
             # Register with ID manager
-            IdManager.instance().register_instance(node_index)
+            self.viewer.handler.id_manager.register_instance(node_index)
             
             # Store the instance ID
             node.instance_id = node_index
@@ -497,11 +496,11 @@ class RszArrayOperations:
             
             # 10. Update ID manager
             for deleted_id in all_nested_objects:
-                IdManager.instance().remove_instance(deleted_id)
+                self.viewer.handler.id_manager.remove_instance(deleted_id)
                 
             for old_id, new_id in id_adjustments.items():
                 if new_id >= 0 and old_id != new_id:
-                    IdManager.instance().update_instance_id(old_id, new_id)
+                    self.viewer.handler.id_manager.update_instance_id(old_id, new_id)
             
             return True
         except Exception as e:
@@ -746,11 +745,11 @@ class RszArrayOperations:
             
             # Final step - update ID manager
             for deleted_id in all_nested_objects:
-                IdManager.instance().remove_instance(deleted_id)
+                self.viewer.handler.id_manager.remove_instance(deleted_id)
                 
             for old_id, new_id in id_adjustments.items():
                 if new_id >= 0 and old_id != new_id:
-                    IdManager.instance().update_instance_id(old_id, new_id)
+                    self.viewer.handler.id_manager.update_instance_id(old_id, new_id)
             
             return True
         except Exception as e:

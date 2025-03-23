@@ -3,8 +3,6 @@ import json
 import traceback
 import copy
 from file_handlers.rsz.rsz_data_types import *
-from utils.hex_util import guid_le_to_str
-from utils.id_manager import IdManager
 
 class RszArrayClipboard:
     
@@ -809,7 +807,7 @@ class RszArrayClipboard:
                 else:
                     viewer.scn.instance_infos.insert(current_index, new_instance)
                     
-                IdManager.instance().register_instance(current_index)
+                viewer.handler.id_manager.register_instance(current_index)
                 
                 relative_to_new_id[relative_id] = current_index
                 
