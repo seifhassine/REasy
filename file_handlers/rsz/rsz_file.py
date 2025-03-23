@@ -88,7 +88,91 @@ class UsrHeader:
          self.userdata_info_tbl,
          self.data_offset,
          self.reserved) = struct.unpack_from(fmt, data, 0)
+'''
+class AiwaypHeader:
+    SIZE = 48
+    def __init__(self):
+        self.signature = b""
+        self.version = 0
+        self.info_count = 0
+        self.resource_count = 0
+        self.userdata_count = 0
+        self.resource_info_tbl = 0
+        self.userdata_info_tbl = 0
+        self.data_offset = 0
+        self.rsz_offset = 0  # RSZ section offset at position 0x94
+        self.gameobject_name = ""
+        self.gameobject_hash = ""  # Changed from gameobject_type to gameobject_hash
+        self.unknown_value1 = 0   
+        self.unknown_value2 = 0   
+        self.gameobject_guid = b""
 
+    def parse(self, data: bytes):
+        fmt = "<4sI3I3Q"
+        (self.signature,
+         self.version,
+         self.info_count,
+         self.resource_count,
+         self.userdata_count,
+         self.resource_info_tbl,
+         self.userdata_info_tbl,
+         self.data_offset) = struct.unpack_from(fmt, data, 0)
+        
+        # Read RSZ offset from position 0x94 (148)
+        if len(data) >= 152:
+            self.rsz_offset, = struct.unpack_from("<I", data, 148)
+        
+        # Read additional AIWAYP-specific GameObject data after the header
+        current_pos = 4
+        
+        # Read first string (name)
+        if current_pos + 4 <= len(data):
+            print("here")
+            name_len, = struct.unpack_from("<I", data, current_pos)
+            current_pos += 4
+            if name_len > 0 and current_pos + (name_len * 2) <= len(data):
+                name_bytes = data[current_pos:current_pos+(name_len*2)]
+                try:
+                    # Remove null terminators that might be part of the string
+                    self.gameobject_name = name_bytes.decode('utf-16-le').rstrip('\x00')
+                    print(f"Parsed AIWAYP name: '{self.gameobject_name}'")
+                except UnicodeDecodeError as e:
+                    print(f"Error decoding AIWAYP name: {e}")
+                    self.gameobject_name = f"AIWAYP_Object_{name_len}"
+                current_pos += name_len * 2
+        
+        current_pos = align_offset(current_pos, 4)
+        # Read second string (type)
+        if current_pos + 4 <= len(data):
+            type_len, = struct.unpack_from("<I", data, current_pos)
+            current_pos += 4
+            if type_len > 0 and current_pos + (type_len * 2) <= len(data):
+                type_bytes = data[current_pos:current_pos+(type_len*2)]
+                try:
+                    # Remove null terminators that might be part of the string
+                    self.gameobject_type = type_bytes.decode('utf-16-le').rstrip('\0')
+                    print(f"Parsed AIWAYP type: '{self.gameobject_type}'")
+                except UnicodeDecodeError as e:
+                    print(f"Error decoding AIWAYP type: {e}")
+                    self.gameobject_type = f"AIWAYP_Type_{type_len}"
+                current_pos += type_len * 2
+        
+        # Set default values if strings are empty
+        if not self.gameobject_name:
+            self.gameobject_name = "AIWAYP_Object"
+        if not self.gameobject_type:
+            self.gameobject_type = "AIWAYP_Type"
+            
+        current_pos = align_offset(current_pos, 4)
+        # Read two unknown values (previously interpreted as ID and component count)
+        if current_pos + 4 <= len(data):
+            self.unknown_value1 = struct.unpack_from("<I", data, current_pos)
+            current_pos += 4
+            
+        # Read GameObject GUID
+        if current_pos + 16 <= len(data):
+            self.gameobject_guid = data[current_pos:current_pos+16]
+'''
 class GameObjectRefInfo:
     SIZE = 16
     def __init__(self):
@@ -248,6 +332,7 @@ class ScnFile:
         self.is_usr = False
         self.is_pfb = False
         self.is_pfb16 = False
+        self.is_aiwayp = False
         self.gameobjects = []
         self.folder_infos = []
         self.resource_infos = []
@@ -291,6 +376,7 @@ class ScnFile:
         self.is_usr = False
         self.is_pfb = False
         self.is_pfb16 = False
+        #self.is_aiwayp = False
         
         if data[:4] == b'USR\x00':
             self.is_usr = True
@@ -303,6 +389,9 @@ class ScnFile:
                 self.is_pfb16 = True 
             else:
                 self.header = PfbHeader()
+        #elif data[:4] == b'AIMP':
+        #    self.is_aiwayp = True
+        #    self.header = AiwaypHeader()
         else:
             self.is_usr = False
             self.is_pfb = False
@@ -320,6 +409,8 @@ class ScnFile:
             self._parse_usr_file(data)
         elif self.is_pfb:
             self._parse_pfb_file(data)
+        #elif self.is_aiwayp:
+        #    self._parse_aiwayp_file(data)
         else:
             self._parse_scn_file(data)
 
@@ -347,6 +438,33 @@ class ScnFile:
         self._parse_rsz_section(data)
         self._parse_instances(data)
         
+    '''def _parse_aiwayp_file(self, data: bytes):
+        """Parse AIWAYP file structure"""
+        # Skip directly to RSZ section using offset at 0x94
+        if self.header.rsz_offset > 0:
+            # Create a root GameObject that's NOT in the object table
+            # This GameObject exists outside the object table but owns all the components
+            go = ScnGameObject()
+            go.id = -1  # Special ID to indicate it's not in the object table
+            go.parent_id = -1  # No parent
+            go.component_count = 0  # We don't know the component count yet
+            go.guid = self.header.gameobject_guid if hasattr(self.header, 'gameobject_guid') else b'\x00' * 16
+            self.gameobjects.append(go)
+                
+            # Store this as a special property to clearly indicate AIWAYP GameObject isn't in object table
+            self.aiwayp_root_gameobject = go
+            
+            # Jump to RSZ section
+            self._current_offset = self.header.rsz_offset
+            self._parse_rsz_section(data)
+            self._parse_instances(data)
+        else:
+            # Fallback if RSZ offset is not found
+            print("Warning: No RSZ offset found in AIWAYP file, using default data_offset")
+            self._current_offset = self.header.data_offset
+            self._parse_rsz_section(data)
+            self._parse_instances(data)'''
+
     def _parse_scn_file(self, data: bytes):
         """Parse standard SCN file structure"""
         self._parse_gameobjects(data)
@@ -466,6 +584,11 @@ class ScnFile:
                 self.set_userdata_string(ui, s)
 
     def _parse_rsz_section(self, data):
+        # For AIWAYP, use the RSZ offset from position 0x94
+        #if self.is_aiwayp and hasattr(self.header, 'rsz_offset') and self.header.rsz_offset > 0:
+        #    self._current_offset = self.header.rsz_offset
+        #    self.header.data_offset = self.header.rsz_offset
+        #else:
         self._current_offset = self.header.data_offset
 
         self.rsz_header = ScnRSZHeader()
@@ -505,6 +628,9 @@ class ScnFile:
         # Special handling for PFB.16 format which might have embedded RSZ
         elif self.filepath.lower().endswith('.16'):
             self._current_offset = parse_pfb16_rsz_userdata(self, data)
+        # AIWAYP format has no embedded RSZ userdata
+        #elif self.is_aiwayp:
+        #    self._parse_aiwayp_rsz_userdata(data)
         else:
             # Standard RSZ userdata parsing
             self._parse_standard_rsz_userdata(data)
@@ -537,6 +663,20 @@ class ScnFile:
     def _parse_scn19_rsz_userdata(self, data):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
         self._current_offset = parse_scn19_rsz_userdata(self, data)
+
+    '''def _parse_aiwayp_rsz_userdata(self, data):
+        """Parse AIWAYP RSZ userdata entries - AIWAYP has no embedded RSZ"""
+        self.rsz_userdata_infos = []
+        for i in range(self.rsz_header.userdata_count):
+            rui = ScnRSZUserDataInfo()
+            self._current_offset = rui.parse(data, self._current_offset)
+            if rui.string_offset != 0:
+                abs_offset = self.header.data_offset + rui.string_offset
+                s, _ = read_wstring(self.full_data, abs_offset, 1000)
+                self.set_rsz_userdata_string(rui, s)
+            self.rsz_userdata_infos.append(rui)
+            
+        self._current_offset = self._align(self._current_offset, 16)'''
 
     def _align(self, offset: int, alignment: int) -> int:
         remainder = offset % alignment
@@ -890,6 +1030,9 @@ class ScnFile:
                 return build_pfb_16(self, special_align_enabled)
             else:
                 return self._build_pfb(special_align_enabled)
+        #elif self.is_aiwayp:
+        #    return self._build_aiwayp(special_align_enabled)
+        
         else:
             if self.filepath.lower().endswith('.19'):
                 return build_scn_19(self, special_align_enabled)
@@ -1500,7 +1643,168 @@ class ScnFile:
         out[0:PfbHeader.SIZE] = header_bytes
 
         return bytes(out)
+    '''
+    def _build_aiwayp(self, special_align_enabled=False) -> bytes:
+        """Build AIWAYP file"""
+        self.header.resource_count = len(self.resource_infos)
+        self.header.userdata_count = len(self.userdata_infos)
+        
+        if self.rsz_header:
+            self.rsz_header.object_count = len(self.object_table)
+            self.rsz_header.instance_count = len(self.instance_infos)
+            self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
+        
+        out = bytearray()
+        
+        # 1) Write AIWAYP header with zeroed offsets initially 
+        out += struct.pack(
+            "<4sI3I3Q", 
+            self.header.signature,
+            self.header.version,
+            self.header.info_count,
+            self.header.resource_count,
+            self.header.userdata_count,
+            0,  # resource_info_tbl
+            0,  # userdata_info_tbl
+            0   # data_offset
+        )
+        
+        # 2) Write GameObject info
+        gameobject_name = getattr(self.header, 'gameobject_name', "AIWAYP_Object")
+        gameobject_type = getattr(self.header, 'gameobject_type', "AIWAYP_Type")
+        
+        # Write name string
+        name_utf16 = gameobject_name.encode('utf-16-le')
+        if not name_utf16.endswith(b'\x00\x00'):
+            name_utf16 += b'\x00\x00'
+        out += struct.pack("<I", (len(name_utf16) // 2))
+        out += name_utf16
+        
+        # Write type string
+        type_utf16 = gameobject_type.encode('utf-16-le')
+        if not type_utf16.endswith(b'\x00\x00'):
+            type_utf16 += b'\x00\x00'
+        out += struct.pack("<I", (len(type_utf16) // 2))
+        out += type_utf16
+        
+        # Write unknown values (preserve from original file)
+        unknown_value1 = getattr(self.header, 'unknown_value1', 0)
+        unknown_value2 = getattr(self.header, 'unknown_value2', 0)
+        out += struct.pack("<II", unknown_value1, unknown_value2)
+        
+        # Write GameObject GUID
+        gameobject_guid = getattr(self.header, 'gameobject_guid', b'\x00' * 16)
+        if self.gameobjects and len(self.gameobjects) > 0:
+            gameobject_guid = self.gameobjects[0].guid
+        out += gameobject_guid
 
+        # Calculate and write resource and userdata tables - similar to USR format
+        resource_info_tbl = self._align(len(out), 16)
+        resource_info_size = len(self.resource_infos) * 8
+        
+        userdata_info_tbl = self._align(resource_info_tbl + resource_info_size, 16)
+        userdata_info_size = len(self.userdata_infos) * 16
+        
+        # Calculate string positions
+        string_start = self._align(userdata_info_tbl + userdata_info_size, 16)
+        current_offset = string_start
+        
+        # Calculate resource string offsets
+        new_resource_offsets = {}
+        for ri in self.resource_infos:
+            resource_string = self._resource_str_map.get(ri, "")
+            if resource_string:
+                new_resource_offsets[ri] = current_offset
+                current_offset += len(resource_string.encode('utf-16-le')) + 2
+            else:
+                new_resource_offsets[ri] = 0
+        
+        # Calculate userdata string offsets
+        new_userdata_offsets = {}
+        for ui in self.userdata_infos:
+            userdata_string = self._userdata_str_map.get(ui, "")
+            if userdata_string:
+                new_userdata_offsets[ui] = current_offset
+                current_offset += len(userdata_string.encode('utf-16-le')) + 2
+            else:
+                new_userdata_offsets[ui] = 0
+        
+        # Write resource infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        resource_info_tbl = len(out)
+        
+        for ri in self.resource_infos:
+            ri.string_offset = new_resource_offsets[ri]
+            out += struct.pack("<II", ri.string_offset, ri.reserved)
+
+        # Write userdata infos
+        while len(out) % 16 != 0:
+            out += b"\x00"
+        userdata_info_tbl = len(out)
+        
+        for ui in self.userdata_infos:
+            ui.string_offset = new_userdata_offsets[ui]
+            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+
+        # Write strings
+        string_entries = []
+        for ri, offset in new_resource_offsets.items():
+            if offset:
+                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
+                
+        for ui, offset in new_userdata_offsets.items():
+            if offset:
+                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
+        
+        string_entries.sort(key=lambda x: x[0])
+        
+        current_offset = string_entries[0][0] if string_entries else len(out)
+        while len(out) < current_offset:
+            out += b"\x00"
+            
+        for offset, string_data in string_entries:
+            while len(out) < offset:
+                out += b"\x00"
+            out += string_data
+
+        # RSZ Section (standard format without embedded userdata)
+        rsz_offset = 0
+        if self.rsz_header:
+            if special_align_enabled:
+                while len(out) % 16 != 0:
+                    out += b"\x00"
+                    
+            rsz_start = len(out)
+            rsz_offset = rsz_start  # Save for later
+            self.header.data_offset = rsz_start
+
+            # Use common RSZ section building function
+            self._build_rsz_section(out, special_align_enabled)
+
+        # Update header
+        header_bytes = struct.pack(
+            "<4sI3I3Q", 
+            self.header.signature,
+            self.header.version,
+            self.header.info_count,
+            self.header.resource_count,
+            self.header.userdata_count,
+            resource_info_tbl,
+            userdata_info_tbl,
+            self.header.data_offset
+        )
+        out[0:AiwaypHeader.SIZE] = header_bytes
+        
+        # Write RSZ offset at position 0x94 (148)
+        if rsz_offset > 0:
+            # Ensure we have enough space
+            while len(out) <= 152:
+                out += b"\x00"
+            struct.pack_into("<I", out, 148, rsz_offset)
+
+        return bytes(out)
+    '''
     def _build_rsz_section(self, out: bytearray, special_align_enabled = False) -> int:
         """Build the RSZ section that's common to all file formats.
         Returns the rsz_start position."""
@@ -1663,6 +1967,7 @@ def parse_instance_fields(
     unpack_uint = struct.Struct("<I").unpack_from
     unpack_float = struct.Struct("<f").unpack_from
     unpack_4float = struct.Struct("<4f").unpack_from
+    unpack_3float = struct.Struct("<3f").unpack_from
     unpack_2float = struct.Struct("<2f").unpack_from
     unpack_2int = struct.Struct("<2i").unpack_from
     unpack_int = struct.Struct("<i").unpack_from
@@ -1859,7 +2164,6 @@ def parse_instance_fields(
                     vec3_objects.append(Vec3Data(vals[0], vals[1], vals[2], original_type))
                     pos += fsize
                     
-                pos = local_align(pos, field_align) if vec3_objects else pos
                 data_obj = ArrayData(vec3_objects, Vec3Data, original_type)
 
             elif rsz_type == Vec4Data:
@@ -1870,7 +2174,6 @@ def parse_instance_fields(
                     vec4_objects.append(Vec4Data(*vals, original_type))
                     pos += fsize
                     
-                pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Vec4Data, original_type)
 
             elif rsz_type == Vec2Data:
@@ -1881,8 +2184,28 @@ def parse_instance_fields(
                     vec4_objects.append(Vec2Data(*vals, original_type))
                     pos += fsize
                     
-                pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Vec2Data, original_type)
+
+            elif rsz_type == Float2Data:
+                f2_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_2float(raw, pos)
+                    f2_objects.append(Float2Data(*vals, original_type))
+                    pos += fsize
+                    
+                data_obj = ArrayData(f2_objects, Float3Data, original_type)
+
+
+            elif rsz_type == Float3Data:
+                f3_objects = []
+                for _ in range(count):
+                    pos = local_align(pos, field_align)
+                    vals = unpack_3float(raw, pos)
+                    f3_objects.append(Float3Data(*vals, original_type))
+                    pos += fsize
+                    
+                data_obj = ArrayData(f3_objects, Float3Data, original_type)
 
             elif rsz_type == Float4Data:
                 vec4_objects = []
@@ -1892,7 +2215,6 @@ def parse_instance_fields(
                     vec4_objects.append(Float4Data(*vals, original_type))
                     pos += fsize
                     
-                pos = local_align(pos, field_align) if vec4_objects else pos
                 data_obj = ArrayData(vec4_objects, Float4Data, original_type)
 
             elif rsz_type == Mat4Data:
@@ -2163,10 +2485,19 @@ def parse_instance_fields(
                 pos = local_align(pos, field_align)
                 data_obj = Vec2Data(*vals, original_type)
 
+            elif rsz_type == Float2Data:
+                vals = unpack_2float(raw, pos)
+                pos += fsize
+                data_obj = Float2Data(*vals, original_type)
+
+            elif rsz_type == Float3Data:
+                vals = unpack_3float(raw, pos)
+                pos += fsize
+                data_obj = Float3Data(*vals, original_type)
+
             elif rsz_type == Float4Data:
                 vals = unpack_4float(raw, pos)
                 pos += fsize
-                pos = local_align(pos, field_align)
                 data_obj = Float4Data(*vals, original_type)
         
             elif rsz_type == Mat4Data:
