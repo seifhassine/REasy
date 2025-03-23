@@ -741,7 +741,7 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.1.3")
+        self.setWindowTitle("REasy Editor v0.1.4")
         set_app_icon(self)
 
         try:
@@ -850,6 +850,11 @@ class REasyEditorApp(QMainWindow):
         reload_act.setShortcut(QKeySequence("Ctrl+R"))
         reload_act.triggered.connect(self.reload_file)
         file_menu.addAction(reload_act)
+
+        close_tab_act = QAction("Close Tab", self)
+        close_tab_act.setShortcut(QKeySequence("Ctrl+W"))
+        close_tab_act.triggered.connect(self.close_current_tab)
+        file_menu.addAction(close_tab_act)
 
         file_menu.addSeparator()
 
@@ -1350,6 +1355,11 @@ class REasyEditorApp(QMainWindow):
             active.reload_file()
         else:
             QMessageBox.critical(self, "Error", "No active tab to reload.")
+
+    def close_current_tab(self):
+        current_index = self.notebook.currentIndex()
+        if current_index >= 0:
+            self.close_tab(current_index)
 
     def close_tab(self, index):
         widget = self.notebook.widget(index)
