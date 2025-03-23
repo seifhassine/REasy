@@ -192,6 +192,13 @@ class Vec3Data:
         self.z = z
         self.orig_type = orig_type
 
+class Vec3ColorData:
+    def __init__(self, x: float = 0, y: float = 0, z: float = 0, orig_type: str = ""):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.orig_type = orig_type
+
 class Vec4Data:
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, w: float = 0, orig_type: str = ""):
         self.x = x
@@ -413,7 +420,7 @@ TYPE_MAPPING = {
     "struct": StructData,
 }
 
-def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False, is_array: bool = False, align = 4, original_type = "") -> type:
+def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False, is_array: bool = False, align = 4, original_type = "", field_name = "") -> type:
     """Get the appropriate data type class based on field type and size"""
 
     if field_type == "data":
@@ -440,6 +447,9 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
     
     if field_type == "point" and ("Range" in original_type):
         return RangeData
+    
+    if field_type == "vec3" and "color" in field_name.lower():
+        return Vec3ColorData
         
     if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
         return MaybeObject

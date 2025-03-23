@@ -2025,8 +2025,8 @@ class TreeWidgetFactory:
         "U8Data": U8Input, 
         "RangeData": RangeInput,
         "RangeIData": RangeIInput,
-        "EnumInput": EnumInput,
         "ColorData": ColorInput,
+        "Vec3ColorData": Vec3ColorInput,
         "CapsuleData": CapsuleInput,
     }
 

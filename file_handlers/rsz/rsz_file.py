@@ -811,7 +811,7 @@ class ScnFile:
                 elif isinstance(element, (ObjectData, U32Data)):
                     value = int(element.value) & 0xFFFFFFFF
                     out.extend(struct.pack("<I", value))
-                elif isinstance(element, Vec3Data):
+                elif isinstance(element, Vec3Data) or isinstance(element, Vec3ColorData):
                     out.extend(struct.pack("<4f", element.x, element.y, element.z, 0.00))
                 elif isinstance(element, Vec4Data):
                     out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
@@ -927,7 +927,7 @@ class ScnFile:
             elif isinstance(data_obj, (ObjectData, U32Data)):
                 value = int(data_obj.value) & 0xFFFFFFFF
                 out.extend(struct.pack("<I", value))
-            elif isinstance(data_obj, Vec3Data):
+            elif isinstance(data_obj, Vec3Data) or isinstance(data_obj, Vec3ColorData):
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, 0.00))
             elif isinstance(data_obj, Vec4Data):
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
@@ -2016,7 +2016,7 @@ def parse_instance_fields(
         is_array = field.get("array", False)
         original_type = field.get("original_type", "") 
         field_align = int(field["align"]) if "align" in field else 1
-        rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align, original_type)
+        rsz_type = get_type_class(ftype, fsize, is_native, is_array, field_align, original_type, field_name)
         data_obj = None
 
         if rsz_type == StructData:
@@ -2156,15 +2156,15 @@ def parse_instance_fields(
                     original_type
                 )
             
-            elif rsz_type == Vec3Data:
+            elif rsz_type == Vec3Data or rsz_type == Vec3ColorData:
                 vec3_objects = []
                 for _ in range(count):
                     pos = local_align(pos, field_align)
                     vals = unpack_4float(raw, pos)
-                    vec3_objects.append(Vec3Data(vals[0], vals[1], vals[2], original_type))
+                    vec3_objects.append(rsz_type(vals[0], vals[1], vals[2], original_type))
                     pos += fsize
                     
-                data_obj = ArrayData(vec3_objects, Vec3Data, original_type)
+                data_obj = ArrayData(vec3_objects, rsz_type, original_type)
 
             elif rsz_type == Vec4Data:
                 vec4_objects = []
@@ -2467,11 +2467,11 @@ def parse_instance_fields(
                 current_children.append(child_idx)
                 set_parent_safely(child_idx, current_instance_index)
 
-            elif rsz_type == Vec3Data:
+            elif rsz_type == Vec3Data or rsz_type == Vec3ColorData:
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 pos = local_align(pos, field_align)
-                data_obj = Vec3Data(vals[0], vals[1], vals[2], original_type)
+                data_obj = rsz_type(vals[0], vals[1], vals[2], original_type)
         
             elif rsz_type == Vec4Data:
                 vals = unpack_4float(raw, pos)
