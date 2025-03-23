@@ -442,6 +442,9 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
         elif field_size == 1:
             return U8Data
 
+    if field_type == "obb" and field_size == 16:
+        return Vec4Data
+    
     if field_type == "uri" and ("GameObjectRef" in original_type):
         return GameObjectRefData
     
