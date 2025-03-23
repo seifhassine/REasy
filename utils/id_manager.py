@@ -17,12 +17,6 @@ class IdManager:
         self._reasy_to_instance = {}  # Map reasy_id -> instance_id
         self._instance_to_reasy = {}  # Map instance_id -> reasy_id
         
-    def reset(self):
-        """Reset all mappings (called when loading a new file)"""
-        self._next_id = 1
-        self._reasy_to_instance = {}
-        self._instance_to_reasy = {}
-    
     def register_instance(self, instance_id):
         """
         Register an instance_id and get a stable reasy_id
@@ -44,10 +38,6 @@ class IdManager:
     def get_instance_id(self, reasy_id):
         """Get current instance_id for a reasy_id"""
         return self._reasy_to_instance.get(reasy_id)
-    
-    def get_reasy_id(self, instance_id):
-        """Get reasy_id for an instance_id"""
-        return self._instance_to_reasy.get(instance_id)
     
     def update_instance_id(self, old_instance_id, new_instance_id):
         """Update a mapping when an instance_id changes"""
@@ -104,54 +94,6 @@ class IdManager:
                 new_instance_to_reasy[old_id] = reasy_id
         
         self._instance_to_reasy = new_instance_to_reasy
-    
-    def register_batch(self, instance_ids):
-        """Register multiple instance IDs at once"""
-        reasy_ids = {}
-        for instance_id in instance_ids:
-            reasy_ids[instance_id] = self.register_instance(instance_id)
-        return reasy_ids
-
-    def register_embedded_instance(self, embedded_id):
-        """
-        Register an embedded instance ID (using namespaced format)
-        
-        Args:
-            embedded_id: A namespaced ID string for embedded RSZ instances
-                         Format: "emb_{parent_id}_{instance_id}"
-        
-        Returns:
-            int: A stable reasy_id for this embedded instance
-        """
-        if embedded_id in self._instance_to_reasy:
-            return self._instance_to_reasy[embedded_id]
-            
-        reasy_id = self._next_id
-        self._next_id += 1
-        
-        self._reasy_to_instance[reasy_id] = embedded_id
-        self._instance_to_reasy[embedded_id] = reasy_id
-        
-        return reasy_id
-    
-    def clear_embedded_instances(self, parent_id):
-        """
-        Remove all embedded instances associated with a specific parent ID
-        
-        This should be called when a UserData object is deleted
-        """
-        prefix = f"emb_{parent_id}_"
-        to_remove = []
-        
-        for instance_id in self._instance_to_reasy.keys():
-            if isinstance(instance_id, str) and instance_id.startswith(prefix):
-                to_remove.append(instance_id)
-        
-        for instance_id in to_remove:
-            reasy_id = self._instance_to_reasy[instance_id]
-            del self._instance_to_reasy[instance_id]
-            if reasy_id in self._reasy_to_instance:
-                del self._reasy_to_instance[reasy_id]
 
     def get_reasy_id_for_instance(self, instance_id):
         """Get reasy_id for an instance_id, creating one if needed"""
@@ -184,17 +126,6 @@ class EmbeddedIdManager:
         self._reasy_to_instance = {}  # Map reasy_id -> instance_id
         self._instance_to_reasy = {}  # Map instance_id -> reasy_id
     
-    def get_next_id(self):
-        """
-        Get the next available instance ID without registering it
-        
-        Returns:
-            int: The next available instance ID
-        """
-        next_id = self._next_id
-        self._next_id += 1
-        return next_id
-    
     def register_instance(self, instance_id):
         """
         Register an instance_id and get a stable reasy_id
@@ -212,14 +143,6 @@ class EmbeddedIdManager:
         self._instance_to_reasy[instance_id] = reasy_id
         
         return reasy_id
-    
-    def get_instance_id(self, reasy_id):
-        """Get current instance_id for a reasy_id"""
-        return self._reasy_to_instance.get(reasy_id)
-    
-    def get_reasy_id(self, instance_id):
-        """Get reasy_id for an instance_id"""
-        return self._instance_to_reasy.get(instance_id)
     
     def reset(self):
         """Reset all mappings"""
