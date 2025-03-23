@@ -3742,7 +3742,6 @@
 		"name": "via.physics.AabbShape"
 	},
 	"d0c321df": {
-		"crc": "8ddb84fa",
 		"fields": [
 			{
 				"align": 4,
@@ -4217,7 +4216,6 @@
 		"name": "via.render.VolumeOccludee"
 	},
 	"b4370344": {
-		"crc": "e6cfec13",
 		"fields": [
 			{
 				"align": 1,

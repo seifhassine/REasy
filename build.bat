@@ -23,7 +23,7 @@ copy "resources\data\dumps\rszsf6.json" "dist\rszsf6.json"
 copy "resources\data\dumps\rszre8.json" "dist\rszre8.json"
 copy "resources\data\dumps\rszre7.json" "dist\rszre7.json"
 copy "resources\data\dumps\rszre3.json" "dist\rszre3.json"
-copy "resources\data\dumps\rszmhws.json" "dist\rszmhws.json"
+copy "resources\data\dumps\rszmhwilds.json" "dist\rszmhwilds.json"
 
 
 
