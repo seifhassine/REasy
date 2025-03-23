@@ -2007,6 +2007,8 @@ class TreeWidgetFactory:
         "Float4Data": Vec4Input,
         "QuaternionData": Vec4Input,
         "Vec3Data": Vec3Input,
+        "Float2Data": Vec2Input,
+        "Float3Data": Vec3Input,
         "GameObjectRefData": GuidInput,
         "GuidData": GuidInput,
         "OBBData": OBBInput,
