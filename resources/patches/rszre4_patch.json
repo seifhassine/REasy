@@ -3525,5 +3525,636 @@
 			}
 		],
 		"name": "via.render.Primitive"
+	},
+	"15d3b4ec": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "GameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Shape",
+				"native": true,
+				"original_type": "via.physics.Shape",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FilterInfo",
+				"native": true,
+				"original_type": "via.physics.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Userdata",
+				"native": true,
+				"original_type": "via.physics.UserData",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CollisionFilterResource",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CollisionMaterialResource",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointNameA",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointNameB",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.physics.Collider"
+	},
+	"7151a2d1": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "via.physics.Shape"
+	},
+	"7af3b809": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "via.physics.ConvexShape"
+	},
+	"affd38f9": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Center",
+				"native": true,
+				"original_type": "via.Float3",
+				"size": 12,
+				"type": "Float3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.physics.SphereShape"
+	},
+	"39954291": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "OBB",
+				"native": true,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			}
+		],
+		"name": "via.physics.BoxShape"
+	},
+	"864a4a8e": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_Capsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			}
+		],
+		"name": "via.physics.CapsuleShape"
+	},
+	"cbc83bfb": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_Shape",
+				"native": false,
+				"original_type": "via.AABB",
+				"size": 32,
+				"type": "AABB"
+			}
+		],
+		"name": "via.physics.AabbShape"
+	},
+	"d0c321df": {
+		"crc": "8ddb84fa",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Sphere",
+				"native": true,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			}
+		],
+		"name": "via.physics.ContinuousSphereShape"
+	},
+	"8d6f0e8": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Intensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RenderOutputID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Color",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "BlackBodyRadiation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Temperature",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BounceIntensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SpecularScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinRoughness",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AOEfficiency",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ImportantLevel",
+				"native": true,
+				"original_type": "via.render.LightImportantLevel",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LightingTarget",
+				"native": true,
+				"original_type": "via.render.LightingTarget",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LightBakeOption",
+				"native": true,
+				"original_type": "via.render.LightBakeOption",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UsingSameIntensity",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "VolumetricScatteringIntensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Unit",
+				"native": true,
+				"original_type": "via.render.LightPowerUnitType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ReferenceEffectiveRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseCustomAttenuation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttenuationCurve",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttenuationStartDistance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "IlluminanceThreshold",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Cone",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Spread",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Falloff",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "BackGroundShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceShadowCacheEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowCastFlag",
+				"native": true,
+				"original_type": "via.render.ShadowCastFlag",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AllowTranslucentShadows",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowLodBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UniformShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowNearPlane",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowVariance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowDepthBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowSlopeBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShadowOccluderMaxSlopeBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DetailShadow",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "DetailFocusTarget",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseRenderClip",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RenderClipPlane",
+				"native": true,
+				"original_type": "via.Float2",
+				"size": 8,
+				"type": "Float2"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "RayTracingShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.render.SpotLight"
 	}
 }
