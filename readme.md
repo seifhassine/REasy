@@ -31,7 +31,7 @@ I have currently rushed the release and the structure will be improved in the up
 | UVAR      | ✅       | ✅       | RE4, RE2  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | RE4, RE2, DMC5, RE2 RT, RE8, RE3, RE7, SF6       |
-| User       | ✅       | ✅       | RE4, MHWS       |
+| User       | ✅       | ✅       | RE4, MHWS (Theoretically works on other games)       |
 | PFB       | ✅       | ✅       | RE4, RE2, DMC5, RE2 RT, RE8, RE3, RE7, SF6      |
   
 </div>
