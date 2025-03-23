@@ -207,259 +207,259 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v0",
+				"name": "Vertex",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v1",
+				"name": "Face",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "BrushPrimitive",
 				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v3",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v4",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v5",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 16,
-				"array": false,
-				"name": "v6",
-				"native": true,
-				"original_type": "",
-				"size": 16,
-				"type": "Data"
-			},
-			{
-				"align": 16,
-				"array": false,
-				"name": "v7",
-				"native": true,
-				"original_type": "",
-				"size": 16,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v8",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v9",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v10",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v11",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v12",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v13",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v14",
-				"native": true,
-				"original_type": "",
+				"original_type": "via.geometry.BrushPrimitive",
 				"size": 4,
 				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "X",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "Y",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "Z",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
-				"align": 1,
+				"align": 16,
 				"array": false,
-				"name": "v18",
+				"name": "TopSize",
 				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "BottomSize",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "Radius",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "Sides",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "Tesselation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StepHeight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StepWidth",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StepDepth",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StepNum",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FirstStepHeight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StepThickness",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NumStepsPer360",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v22",
+				"name": "IsCounterClockWise",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Brightness",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BooleanGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BooleanOrder",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v23",
+				"name": "IsIgnoreBoolean",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v24",
+				"name": "IsDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "IsCollidable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "IsDrawShadow",
 				"native": true,
 				"original_type": "",
 				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsRigidBody",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Colliders",
+				"native": true,
+				"original_type": "",
+				"size": 4,
 				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v27",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": true,
-				"name": "v28",
+				"name": "ColliderPreset",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -468,7 +468,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "TextureResource",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -477,92 +477,92 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v30",
+				"name": "IsSyncUVScaleXY",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v31",
+				"name": "UVScaleX",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v32",
+				"name": "UVScaleY",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v33",
+				"name": "IsCanPick",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v34",
+				"name": "IsCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "BrushColor",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Color",
 				"size": 4,
-				"type": "Data"
+				"type": "Color"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "BrushAlpha",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "IsLightingDisabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v38",
+				"name": "IsOldUVStyle",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "LayoutBrush",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			}
 		],
 		"name": "via.geometry.GeometryBrush"
@@ -572,45 +572,45 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "VolumeType",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.VolumetricFogType",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "OBB",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.OBB",
 				"size": 80,
-				"type": "Data"
+				"type": "OBB"
 			},
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "LocalOBB",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.OBB",
 				"size": 80,
-				"type": "Data"
+				"type": "OBB"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "MeshResource",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "String"
 			},
@@ -707,20 +707,20 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "CustomMaterial",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "String"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "MaterialController",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			}
 		],
 		"name": "via.render.VolumetricFog"
@@ -771,7 +771,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderOutputID(?)",
+				"name": "RenderOutputID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1140,20 +1140,20 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v41",
+				"name": "UseStencilValuePriority",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v42",
+				"name": "IgnoreDepthStencilValueWrite",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1167,7 +1167,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "DrawPostDecal(?)",
+				"name": "DrawPostDecal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1176,7 +1176,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "MeshDecalPriority(?)",
+				"name": "MeshDecalPriority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1185,7 +1185,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v46",
+				"name": "DrawShadowCast",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1203,20 +1203,20 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v48",
+				"name": "RealMeshShadow",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v49",
+				"name": "DrawFarCascadeShadowCast",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1442,20 +1442,20 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateSelf",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "DrawSelf",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1474,7 +1474,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Name",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483,7 +1483,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "ParentUserData",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3187,6 +3187,15 @@
 			{
 				"align": 4,
 				"array": false,
+				"name": "Type",
+				"native": true,
+				"original_type": "via.effect.detail.ExternType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
 				"name": "Value",
 				"native": true,
 				"original_type": "",
@@ -3196,7 +3205,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "BoolValue",
+				"name": "MaxValue(?)",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3205,20 +3214,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "MinValue",
+				"name": "Color",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Color",
 				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "MaxValue",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
+				"type": "Color"
 			}
 		],
 		"name": "via.effect.ExternParameter"
