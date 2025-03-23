@@ -39,6 +39,7 @@ def scan_file(filepath, type_id, field_identifier, type_registry):
     try:
         scn_file.read(data)
     except Exception:
+        print(f"Error reading file: {filepath}")
         return []
     
     found_values = []
