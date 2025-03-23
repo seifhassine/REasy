@@ -9,11 +9,8 @@ class IdManager:
     """
     _instance = None
     
-    @classmethod
-    def instance(cls):
-        if cls._instance is None:
-            cls._instance = IdManager()
-        return cls._instance
+    def instance():
+        return IdManager()
     
     def __init__(self):
         self._next_id = 1  # Start at 1 (0 can be reserved for invalid)
