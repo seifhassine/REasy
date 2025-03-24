@@ -437,8 +437,6 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
             return CapsuleData
         elif field_size == 4 and is_native:
             return MaybeObject
-        elif field_size == 8:
-            return U64Data
         elif field_size == 1:
             return U8Data
 
@@ -457,5 +455,4 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
     if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
         return MaybeObject
 
-    result = TYPE_MAPPING.get(field_type, RawBytesData)
-    return result
+    return TYPE_MAPPING.get(field_type, RawBytesData)

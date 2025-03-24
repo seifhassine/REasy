@@ -721,18 +721,14 @@ class RszFile:
                 continue
 
             self.parsed_elements[idx] = {}
-            try:
-                new_offset = parse_instance_fields(
-                    raw=self.data,
-                    offset=current_offset,
-                    fields_def=fields_def,
-                    current_instance_index=idx,
-                    rsz_file=self
-                )
-                current_offset = new_offset
-            except Exception:
-                print(f"Error parsing instance name ", type_info.get("name"))
-        print("parsed instances")
+            new_offset = parse_instance_fields(
+                raw=self.data,
+                offset=current_offset,
+                fields_def=fields_def,
+                current_instance_index=idx,
+                rsz_file=self
+            )
+            current_offset = new_offset
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
