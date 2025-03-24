@@ -14,7 +14,7 @@ class EnumManager:
         
     def __init__(self):
         self.enums = {}
-        self._loaded = False
+        self._loaded_versions = set()
         self._game_version = "RE4"  
         self._enum_paths = {
             "RE4": "resources/data/enums/re4_enums.json",
@@ -27,7 +27,6 @@ class EnumManager:
             "DMC5": "resources/data/enums/dmc5_enums.json",
             "SF6": "resources/data/enums/sf6_enums.json",
         }
-        self.load_enums()
         
     @property
     def game_version(self):
@@ -37,12 +36,16 @@ class EnumManager:
     def game_version(self, version):
         if version != self._game_version and version in self._enum_paths:
             self._game_version = version
-            self.load_enums()  # Reload enums when version changes
+   
+    def _ensure_enums_loaded(self):
+        """Ensure enums for the current game version are loaded"""
+        if self._game_version in self._loaded_versions:
+            return
+            
+        self.load_enums()
     
     def load_enums(self):
         """Load enum values from the appropriate game version file"""
-        self.enums = {}
-        
         enum_path = self._enum_paths.get(self._game_version)
         if not enum_path:
             print(f"No enum file defined for game version: {self._game_version}")
@@ -51,20 +54,20 @@ class EnumManager:
         try:
             if os.path.exists(enum_path):
                 with open(enum_path, 'r') as f:
-                    self.enums = json.load(f)
+                    self.enums[self._game_version] = json.load(f)
                 print(f"Loaded enums for game version {self._game_version} from {enum_path}")
+                self._loaded_versions.add(self._game_version)
             else:
                 print(f"Enum file not found: {enum_path}")
-                default_path = self._enum_paths.get("RE4")
-                if default_path and os.path.exists(default_path):
-                    with open(default_path, 'r') as f:
-                        self.enums = json.load(f)
-                    print(f"Loaded default enums from {default_path}")
         except Exception as e:
             print(f"Error loading enum values: {str(e)}")
     
     def get_enum_values(self, enum_type):
         """Get enum values for a specific enum type"""
+        self._ensure_enums_loaded()
+        
         if not enum_type:
             return {}
-        return self.enums.get(enum_type, {})
+        
+        game_enums = self.enums.get(self._game_version, {})
+        return game_enums.get(enum_type, {})
