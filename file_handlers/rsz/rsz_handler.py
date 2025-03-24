@@ -734,6 +734,8 @@ class RszViewer(QWidget):
                 remove_from_folder(gameobjects_folder, node_dict)
                 remove_from_folder(folders_folder, node_dict)
                 children_node["children"].append(node_dict)
+        
+        print("added data block")
 
     def _create_field_dict(self, field_name, data_obj, embedded_context=None):
         """Create a dictionary representation of a field for the tree view"""
