@@ -3,8 +3,8 @@ import uuid
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
-from utils.hex_util import read_wstring, guid_le_to_str
-from file_handlers.rcol_file import align_offset
+from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
+
 
 
 ########################################
@@ -1928,12 +1928,6 @@ class RszFile:
     def set_rsz_userdata_string(self, rui, new_string: str):
         self._rsz_userdata_str_map[rui] = new_string
     
-def _align(offset: int, alignment: int) -> int:
-        remainder = offset % alignment
-        if remainder:
-            return offset + (alignment - remainder)
-        return offset
-
 def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                           current_instance_index=None, rsz_file=None):
     """Parse fields from raw data according to field definitions – optimized version."""

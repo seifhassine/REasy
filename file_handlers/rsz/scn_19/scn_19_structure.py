@@ -1,6 +1,7 @@
 import struct
 import traceback
 from file_handlers.rsz.rsz_data_types import *
+from utils.hex_util import align
 from utils.id_manager import EmbeddedIdManager
 from utils.hash_util import murmur3_hash  # Added import for murmur3_hash
 
@@ -797,11 +798,11 @@ def parse_scn19_rsz_userdata(rsz_file, data):
                 for rui in rsz_file.rsz_userdata_infos
                 if rui.rsz_offset > 0 and rui.data_size > 0
             )
-            current_offset = rsz_file._align(max_end_offset, 16)
+            current_offset = align(max_end_offset, 16)
         except ValueError:  
-            current_offset = rsz_file._align(current_offset, 16)
+            current_offset = align(current_offset, 16)
     else:
-        current_offset = rsz_file._align(current_offset, 16)
+        current_offset = align(current_offset, 16)
         
     return current_offset
 
