@@ -11,12 +11,13 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 import re
 
 from utils.enum_manager import EnumManager
+from utils.registry_manager import RegistryManager
 from utils.hex_util import guid_le_to_str
 from ..base_handler import BaseFileHandler
 from file_handlers.pyside.value_widgets import *
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
-from .rsz_file import ScnFile, ScnInstanceInfo
+from .rsz_file import RszFile, RszInstanceInfo
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
@@ -36,12 +37,13 @@ class RszHandler(BaseFileHandler):
 
     def __init__(self):
         super().__init__()
-        self.scn_file = None
+        self.rsz_file = None
         self.show_advanced = True
         self._viewer = None
         self._game_version = "RE4"
         self.filepath = ""
         self.array_clipboard = None
+        self.type_registry = None
 
     @property
     def game_version(self):
@@ -51,8 +53,8 @@ class RszHandler(BaseFileHandler):
     def game_version(self, value):
         """Set game version on handler and all child objects"""
         self._game_version = value
-        if self.scn_file:
-            self.scn_file.game_version = value
+        if self.rsz_file:
+            self.rsz_file.game_version = value
             
         EnumManager.instance().game_version = value
 
@@ -67,22 +69,29 @@ class RszHandler(BaseFileHandler):
         #aiwayp_sig = b"AIMP"
         #return data[:4] in [scn_sig, usr_sig, pfb_sig, aiwayp_sig]
 
+    def init_type_registry(self):
+        """Initialize type registry using shared registry manager"""
+        if hasattr(self, 'app') and self.app:
+            json_path = self.app.settings.get("rcol_json_path")
+            if json_path:
+                self.type_registry = RegistryManager.instance().get_registry(json_path)
+
     def read(self, data: bytes):
         """Parse the file data"""
         self.id_manager = IdManager.instance()
         self.init_type_registry()
-        self.scn_file = ScnFile()
-        self.scn_file.type_registry = self.type_registry
-        self.scn_file.game_version = self._game_version 
-        self.scn_file.filepath = self.filepath
+        self.rsz_file = RszFile()
+        self.rsz_file.type_registry = self.type_registry
+        self.rsz_file.game_version = self._game_version 
+        self.rsz_file.filepath = self.filepath
         print(f"Reading file with game version: {self._game_version}")
-        self.scn_file.read(data)
+        self.rsz_file.read(data)
         self.array_clipboard = RszArrayClipboard()
 
     def create_viewer(self):
         """Create a new viewer instance"""
         viewer = RszViewer()
-        viewer.scn = self.scn_file
+        viewer.scn = self.rsz_file
         viewer.handler = self
         viewer.type_registry = self.type_registry
         viewer.dark_mode = self.dark_mode
@@ -114,9 +123,9 @@ class RszHandler(BaseFileHandler):
 
     def rebuild(self) -> bytes:
         """Rebuild SCN file data with better error handling"""
-        if not self.scn_file:
+        if not self.rsz_file:
             raise ValueError("No SCN file loaded")
-        return self.scn_file.build()
+        return self.rsz_file.build()
         
     def get_array_clipboard(self):
         """Get the array clipboard instance"""
@@ -148,7 +157,7 @@ class RszViewer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._modified = False
-        self.scn = ScnFile()
+        self.scn = RszFile()
         self.handler = None
         self.type_registry = None
         self.dark_mode = False
@@ -550,7 +559,7 @@ class RszViewer(QWidget):
         return node
 
     def _add_data_block(self, parent_dict):
-        if self.handler.scn_file.is_usr:
+        if self.handler.rsz_file.is_usr:
             if len(self.scn.object_table) > 0:
                 root_instance_id = self.scn.object_table[0]
                 if root_instance_id in self.scn.parsed_elements:
@@ -1136,7 +1145,7 @@ class RszViewer(QWidget):
         if not self.handler:
             raise AttributeError("No handler assigned to viewer")
         try:
-            return self.handler.scn_file.build()
+            return self.handler.rsz_file.build()
         except Exception as e:
             raise RuntimeError(f"Failed to rebuild SCN file: {str(e)}")
 
@@ -1436,7 +1445,7 @@ class RszViewer(QWidget):
         if type_id == 0 or not type_info:
             return None
             
-        new_instance = ScnInstanceInfo()
+        new_instance = RszInstanceInfo()
         new_instance.type_id = type_id
         
         crc = self._parse_crc_value(type_info.get("crc", 0))
@@ -1540,8 +1549,8 @@ class RszViewer(QWidget):
                 self.scn._pfb16_direct_strings.append(path)
                 print(f"Added '{path}' to _pfb16_direct_strings")
         else:
-            from file_handlers.rsz.rsz_file import ScnResourceInfo
-            new_res = ScnResourceInfo()
+            from file_handlers.rsz.rsz_file import RszResourceInfo
+            new_res = RszResourceInfo()
             new_res.string_offset = 0
         
         resource_index = len(self.scn.resource_infos)

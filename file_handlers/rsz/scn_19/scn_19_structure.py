@@ -169,9 +169,9 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         
         # Parse instance data if data_offset is valid
         if embedded_header.data_offset < embedded_data_len:
-            #A complete mini ScnFile-like object with the needed fields for _parse_instances
-            from file_handlers.rsz.rsz_file import ScnFile
-            mini_scn = ScnFile()
+            #A complete mini RszFile-like object with the needed fields for _parse_instances
+            from file_handlers.rsz.rsz_file import RszFile
+            mini_scn = RszFile()
             
             mini_scn.type_registry = type_registry
             mini_scn.rsz_header = embedded_header
@@ -261,30 +261,30 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
     except Exception as e:
         return False
 
-def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
+def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     """Build function for SCN.19 files with modified header structure"""
-    scn_file.header.info_count = len(scn_file.gameobjects)
-    scn_file.header.folder_count = len(scn_file.folder_infos)
-    scn_file.header.resource_count = len(scn_file.resource_infos)
-    scn_file.header.userdata_count = 0  # SCN.19 doesn't use userdata_infos
-    scn_file.header.prefab_count = len(scn_file.prefab_infos)
+    rsz_file.header.info_count = len(rsz_file.gameobjects)
+    rsz_file.header.folder_count = len(rsz_file.folder_infos)
+    rsz_file.header.resource_count = len(rsz_file.resource_infos)
+    rsz_file.header.userdata_count = 0  # SCN.19 doesn't use userdata_infos
+    rsz_file.header.prefab_count = len(rsz_file.prefab_infos)
     
-    if (scn_file.rsz_header):
-        scn_file.rsz_header.object_count = len(scn_file.object_table)
-        scn_file.rsz_header.instance_count = len(scn_file.instance_infos)
-        scn_file.rsz_header.userdata_count = len(scn_file.rsz_userdata_infos)
+    if (rsz_file.rsz_header):
+        rsz_file.rsz_header.object_count = len(rsz_file.object_table)
+        rsz_file.rsz_header.instance_count = len(rsz_file.instance_infos)
+        rsz_file.rsz_header.userdata_count = len(rsz_file.rsz_userdata_infos)
         
     out = bytearray()
     
     # 1) Write header - note the changed order of userdata_count and prefab_count
     out += struct.pack(
         "<4s5I5Q",
-        scn_file.header.signature,
-        scn_file.header.info_count,
-        scn_file.header.resource_count,
-        scn_file.header.folder_count,
-        scn_file.header.userdata_count,  # userdata before prefab in SCN.19 (value is 0)
-        scn_file.header.prefab_count,
+        rsz_file.header.signature,
+        rsz_file.header.info_count,
+        rsz_file.header.resource_count,
+        rsz_file.header.folder_count,
+        rsz_file.header.userdata_count,  # userdata before prefab in SCN.19 (value is 0)
+        rsz_file.header.prefab_count,
         0,  # folder_tbl - placeholder
         0,  # resource_info_tbl - placeholder
         0,  # prefab_info_tbl - placeholder
@@ -293,7 +293,7 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     )
 
     # 2) Write gameobjects
-    for go in scn_file.gameobjects:
+    for go in rsz_file.gameobjects:
         out += go.guid
         out += struct.pack("<i", go.id)
         out += struct.pack("<i", go.parent_id)
@@ -304,14 +304,14 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     while len(out) % 16 != 0:
         out += b"\x00"
     folder_tbl_offset = len(out)
-    for fi in scn_file.folder_infos:
+    for fi in rsz_file.folder_infos:
         out += struct.pack("<ii", fi.id, fi.parent_id)
 
     while len(out) % 16 != 0:
         out += b"\x00"
     resource_info_tbl_offset = len(out)
     
-    for ri in scn_file.resource_infos:
+    for ri in rsz_file.resource_infos:
         out += struct.pack("<II", 0, ri.reserved)
         
     current_len = len(out)
@@ -323,15 +323,15 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
         
     prefab_info_tbl_offset = len(out)
     
-    for pi in scn_file.prefab_infos:
+    for pi in rsz_file.prefab_infos:
         out += struct.pack("<II", 0, pi.parent_id)
     
     strings_start_offset = len(out)
     current_offset = strings_start_offset
     
     new_resource_offsets = {}
-    for ri in scn_file.resource_infos:
-        resource_string = scn_file._resource_str_map.get(ri, "")
+    for ri in rsz_file.resource_infos:
+        resource_string = rsz_file._resource_str_map.get(ri, "")
         if resource_string:
             new_resource_offsets[ri] = current_offset
             current_offset += len(resource_string.encode('utf-16-le')) + 2
@@ -339,20 +339,20 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
             new_resource_offsets[ri] = 0
     
     new_prefab_offsets = {}
-    for pi in scn_file.prefab_infos:
-        prefab_string = scn_file._prefab_str_map.get(pi, "")
+    for pi in rsz_file.prefab_infos:
+        prefab_string = rsz_file._prefab_str_map.get(pi, "")
         if prefab_string:
             new_prefab_offsets[pi] = current_offset
             current_offset += len(prefab_string.encode('utf-16-le')) + 2
         else:
             new_prefab_offsets[pi] = 0
     
-    for i, ri in enumerate(scn_file.resource_infos):
+    for i, ri in enumerate(rsz_file.resource_infos):
         ri.string_offset = new_resource_offsets[ri]
         offset = resource_info_tbl_offset + (i * 8)
         struct.pack_into("<I", out, offset, ri.string_offset)
     
-    for i, pi in enumerate(scn_file.prefab_infos):
+    for i, pi in enumerate(rsz_file.prefab_infos):
         pi.string_offset = new_prefab_offsets[pi]
         offset = prefab_info_tbl_offset + (i * 8)
         struct.pack_into("<I", out, offset, pi.string_offset)
@@ -361,11 +361,11 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
     
     for ri, offset in new_resource_offsets.items():
         if offset: 
-            string_entries.append((offset, scn_file._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
+            string_entries.append((offset, rsz_file._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
             
     for pi, offset in new_prefab_offsets.items():
         if offset: 
-            string_entries.append((offset, scn_file._prefab_str_map.get(pi, "").encode("utf-16-le") + b"\x00\x00"))
+            string_entries.append((offset, rsz_file._prefab_str_map.get(pi, "").encode("utf-16-le") + b"\x00\x00"))
     
     string_entries.sort(key=lambda x: x[0])
     
@@ -379,36 +379,36 @@ def build_scn_19(scn_file, special_align_enabled = False) -> bytes:
         out += string_data
 
     # Write RSZ header/tables/userdata
-    if scn_file.rsz_header:
+    if rsz_file.rsz_header:
         if special_align_enabled:
             while len(out) % 16 != 0:
                 out += b"\x00"
             
         rsz_start = len(out)
-        scn_file.header.data_offset = rsz_start
+        rsz_file.header.data_offset = rsz_start
 
         # Custom RSZ section build for SCN.19
-        build_scn19_rsz_section(scn_file, out, special_align_enabled, rsz_start)
+        build_scn19_rsz_section(rsz_file, out, special_align_enabled, rsz_start)
 
     # Before rewriting header, update all table offsets:
-    scn_file.header.folder_tbl = folder_tbl_offset
-    scn_file.header.resource_info_tbl = resource_info_tbl_offset
-    scn_file.header.prefab_info_tbl = prefab_info_tbl_offset
-    scn_file.header.userdata_info_tbl = 0  # No userdata in SCN.19
+    rsz_file.header.folder_tbl = folder_tbl_offset
+    rsz_file.header.resource_info_tbl = resource_info_tbl_offset
+    rsz_file.header.prefab_info_tbl = prefab_info_tbl_offset
+    rsz_file.header.userdata_info_tbl = 0  # No userdata in SCN.19
 
     header_bytes = struct.pack(
         "<4s5I5Q",
-        scn_file.header.signature,
-        scn_file.header.info_count,
-        scn_file.header.resource_count,
-        scn_file.header.folder_count,
-        scn_file.header.userdata_count,  # userdata comes before prefab (value is 0)
-        scn_file.header.prefab_count,
-        scn_file.header.folder_tbl,
-        scn_file.header.resource_info_tbl,
-        scn_file.header.prefab_info_tbl,
-        scn_file.header.userdata_info_tbl,  # Will be 0
-        scn_file.header.data_offset
+        rsz_file.header.signature,
+        rsz_file.header.info_count,
+        rsz_file.header.resource_count,
+        rsz_file.header.folder_count,
+        rsz_file.header.userdata_count,  # userdata comes before prefab (value is 0)
+        rsz_file.header.prefab_count,
+        rsz_file.header.folder_tbl,
+        rsz_file.header.resource_info_tbl,
+        rsz_file.header.prefab_info_tbl,
+        rsz_file.header.userdata_info_tbl,  # Will be 0
+        rsz_file.header.data_offset
     )
     out[0:Scn19Header.SIZE] = header_bytes
     
@@ -426,8 +426,8 @@ def build_embedded_rsz(rui, type_registry=None):
     """
     if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
         recalculate_json_path_hash(rui)
-        from file_handlers.rsz.rsz_file import ScnFile
-        mini_scn = ScnFile()
+        from file_handlers.rsz.rsz_file import RszFile
+        mini_scn = RszFile()
         
         mini_scn.type_registry = type_registry
         mini_scn.rsz_header = rui.embedded_rsz_header
@@ -632,27 +632,27 @@ def _update_field_references(field_data, old_to_new_idx):
         for element in field_data.values:
             _update_field_references(element, old_to_new_idx)
 
-def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: bool, rsz_start: int):
+def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: bool, rsz_start: int):
     """Build the RSZ section specifically for SCN.19 format"""
     rsz_header_bytes = struct.pack(
         "<5I I Q Q Q",
-        scn_file.rsz_header.magic,
-        scn_file.rsz_header.version,
-        scn_file.rsz_header.object_count,
-        len(scn_file.instance_infos),
-        len(scn_file.rsz_userdata_infos),
-        scn_file.rsz_header.reserved,
+        rsz_file.rsz_header.magic,
+        rsz_file.rsz_header.version,
+        rsz_file.rsz_header.object_count,
+        len(rsz_file.instance_infos),
+        len(rsz_file.rsz_userdata_infos),
+        rsz_file.rsz_header.reserved,
         0,  # instance_offset - will update later
         0,  # data_offset - will update later 
         0   # userdata_offset - will update later
     )
     out += rsz_header_bytes
 
-    for obj_id in scn_file.object_table:
+    for obj_id in rsz_file.object_table:
         out += struct.pack("<i", obj_id)
 
     new_instance_offset = len(out) - rsz_start
-    for inst in scn_file.instance_infos:
+    for inst in rsz_file.instance_infos:
         out += struct.pack("<II", inst.type_id, inst.crc)
 
     while len(out) % 16 != 0:
@@ -660,16 +660,16 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
     new_userdata_offset = len(out) - rsz_start
 
     userdata_entries_start = len(out)
-    userdata_data_start = userdata_entries_start + len(scn_file.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
+    userdata_data_start = userdata_entries_start + len(rsz_file.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
     
     userdata_data_start = ((userdata_data_start + 15) & ~15)
     current_data_offset = userdata_data_start
     
-    for rui in scn_file.rsz_userdata_infos:
+    for rui in rsz_file.rsz_userdata_infos:
         # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
-                rui.data = build_embedded_rsz(rui, scn_file.type_registry)
+                rui.data = build_embedded_rsz(rui, rsz_file.type_registry)
             except Exception as e:
                 print(f"Error rebuilding embedded RSZ: {str(e)}")
                 traceback.print_exc()
@@ -693,7 +693,7 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
     while len(out) < userdata_data_start:
         out += b"\x00"
     
-    for rui in scn_file.rsz_userdata_infos:
+    for rui in rsz_file.rsz_userdata_infos:
         data_content = getattr(rui, "data", b"")
         if data_content is None:
             data_content = b""
@@ -705,43 +705,43 @@ def build_scn19_rsz_section(scn_file, out: bytearray, special_align_enabled: boo
 
     new_data_offset = len(out) - rsz_start
     
-    instance_data = scn_file._write_instance_data()
+    instance_data = rsz_file._write_instance_data()
     out += instance_data
 
     new_rsz_header = struct.pack(
         "<5I I Q Q Q",
-        scn_file.rsz_header.magic,
-        scn_file.rsz_header.version,
-        scn_file.rsz_header.object_count,
-        len(scn_file.instance_infos),
-        len(scn_file.rsz_userdata_infos),
-        scn_file.rsz_header.reserved,
+        rsz_file.rsz_header.magic,
+        rsz_file.rsz_header.version,
+        rsz_file.rsz_header.object_count,
+        len(rsz_file.instance_infos),
+        len(rsz_file.rsz_userdata_infos),
+        rsz_file.rsz_header.reserved,
         new_instance_offset,
         new_data_offset,
         new_userdata_offset
     )
-    out[rsz_start:rsz_start + scn_file.rsz_header.SIZE] = new_rsz_header
+    out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
 
-def parse_scn19_rsz_userdata(scn_file, data):
+def parse_scn19_rsz_userdata(rsz_file, data):
     """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
     
-    scn_file.rsz_userdata_infos = []
-    rsz_base_offset = scn_file.header.data_offset
-    current_offset = scn_file._current_offset
+    rsz_file.rsz_userdata_infos = []
+    rsz_base_offset = rsz_file.header.data_offset
+    current_offset = rsz_file._current_offset
     
-    for i in range(scn_file.rsz_header.userdata_count):
+    for i in range(rsz_file.rsz_header.userdata_count):
         rui = Scn19RSZUserDataInfo()
         current_offset = rui.parse(data, current_offset)
-        scn_file.rsz_userdata_infos.append(rui)
+        rsz_file.rsz_userdata_infos.append(rui)
     
     valid_blocks = 0
     failed_blocks = 0
     
-    for i, rui in enumerate(scn_file.rsz_userdata_infos):
+    for i, rui in enumerate(rsz_file.rsz_userdata_infos):
         try:
             if rui.rsz_offset <= 0 or rui.data_size <= 0:
                 rui.data = b""
-                scn_file.set_rsz_userdata_string(rui, "Empty UserData")
+                rsz_file.set_rsz_userdata_string(rui, "Empty UserData")
                 continue
             
             abs_data_offset = rsz_base_offset + rui.rsz_offset
@@ -751,7 +751,7 @@ def parse_scn19_rsz_userdata(scn_file, data):
             
             if abs_data_offset < rsz_base_offset or abs_data_offset >= len(data):
                 rui.data = b""
-                scn_file.set_rsz_userdata_string(rui, "Invalid UserData offset")
+                rsz_file.set_rsz_userdata_string(rui, "Invalid UserData offset")
                 failed_blocks += 1
                 continue
                 
@@ -762,7 +762,7 @@ def parse_scn19_rsz_userdata(scn_file, data):
                     magic, version = struct.unpack_from("<II", rui.data, 0)
                 
                 if len(rui.data) >= 48:
-                    success = parse_embedded_rsz(rui, scn_file.type_registry)
+                    success = parse_embedded_rsz(rui, rsz_file.type_registry)
                     
                     if success:
                         obj_count = len(rui.embedded_object_table)
@@ -770,38 +770,38 @@ def parse_scn19_rsz_userdata(scn_file, data):
                         parsed_count = len(rui.embedded_instances)
                         
                         desc = f"Embedded RSZ: {obj_count} objects, {inst_count} instances, {parsed_count} parsed"
-                        scn_file.set_rsz_userdata_string(rui, desc)
+                        rsz_file.set_rsz_userdata_string(rui, desc)
                         valid_blocks += 1
                     else:
                         # RSZ looked valid but failed to parse
-                        scn_file.set_rsz_userdata_string(rui, f"RSZ parse error (magic: 0x{magic:08X}, ver: {version})")
+                        rsz_file.set_rsz_userdata_string(rui, f"RSZ parse error (magic: 0x{magic:08X}, ver: {version})")
                         failed_blocks += 1
                 else:
                     # Not a valid RSZ block, too small
-                    scn_file.set_rsz_userdata_string(rui, f"Not RSZ data - too small ({rui.data_size} bytes)")
+                    rsz_file.set_rsz_userdata_string(rui, f"Not RSZ data - too small ({rui.data_size} bytes)")
                     failed_blocks += 1
             else:
                 rui.data = b""
-                scn_file.set_rsz_userdata_string(rui, "Invalid UserData (out of bounds)")
+                rsz_file.set_rsz_userdata_string(rui, "Invalid UserData (out of bounds)")
                 failed_blocks += 1
         except Exception as e:
             rui.data = b""
-            scn_file.set_rsz_userdata_string(rui, f"Error: {str(e)[:50]}...")
+            rsz_file.set_rsz_userdata_string(rui, f"Error: {str(e)[:50]}...")
             failed_blocks += 1
     
     # Find the end of userdata section by finding the highest offset + size
-    if scn_file.rsz_userdata_infos:
+    if rsz_file.rsz_userdata_infos:
         try:
             max_end_offset = max(
                 rsz_base_offset + rui.rsz_offset + rui.data_size 
-                for rui in scn_file.rsz_userdata_infos
+                for rui in rsz_file.rsz_userdata_infos
                 if rui.rsz_offset > 0 and rui.data_size > 0
             )
-            current_offset = scn_file._align(max_end_offset, 16)
+            current_offset = rsz_file._align(max_end_offset, 16)
         except ValueError:  
-            current_offset = scn_file._align(current_offset, 16)
+            current_offset = rsz_file._align(current_offset, 16)
     else:
-        current_offset = scn_file._align(current_offset, 16)
+        current_offset = rsz_file._align(current_offset, 16)
         
     return current_offset
 

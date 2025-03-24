@@ -784,7 +784,7 @@ class RszArrayClipboard:
             return None
         
         try:
-            from file_handlers.rsz.rsz_file import ScnInstanceInfo
+            from file_handlers.rsz.rsz_file import RszInstanceInfo
             
             relative_to_new_id = {}
             
@@ -798,7 +798,7 @@ class RszArrayClipboard:
                     print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
                     continue
                     
-                new_instance = ScnInstanceInfo()
+                new_instance = RszInstanceInfo()
                 new_instance.type_id = type_id
                 new_instance.crc = crc
                 

@@ -44,23 +44,23 @@ class Pfb16ResourceInfo:
         """Accept setting string_offset for compatibility but don't use the value"""
         pass 
 
-def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
+def parse_pfb16_resources(rsz_file, data: bytes, offset: int) -> int:
     """Parse resources for PFB.16 format where strings are stored directly
     
     This implementation uses a robust byte-by-byte scan to properly locate
     all UTF-16LE encoded resource strings in the file.
     """
-    current_offset = scn_file.header.resource_info_tbl
+    current_offset = rsz_file.header.resource_info_tbl
     
-    scn_file.resource_infos = []
+    rsz_file.resource_infos = []
     
-    scn_file._resource_str_map.clear()
+    rsz_file._resource_str_map.clear()
     
-    scn_file.is_pfb16 = True
+    rsz_file.is_pfb16 = True
     
     all_strings = []
     
-    for i in range(scn_file.header.resource_count):
+    for i in range(rsz_file.header.resource_count):
         string_start = current_offset
         string_bytes = bytearray()
         
@@ -92,11 +92,11 @@ def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
             print(f"Warning: String value mismatch for resource {i}: '{string_value}' vs '{resource_info.string_value}'")
             resource_info.string_value = string_value  
             
-        scn_file.resource_infos.append(resource_info)
-        scn_file._resource_str_map[resource_info] = string_value
+        rsz_file.resource_infos.append(resource_info)
+        rsz_file._resource_str_map[resource_info] = string_value
         
         verify_str1 = resource_info.string_value
-        verify_str2 = scn_file._resource_str_map.get(resource_info, "")
+        verify_str2 = rsz_file._resource_str_map.get(resource_info, "")
         if verify_str1 != string_value or verify_str2 != string_value:
             print(f"Warning: String verification failed for resource {i}")
             print(f"  - Original: '{string_value}'")
@@ -108,49 +108,49 @@ def parse_pfb16_resources(scn_file, data: bytes, offset: int) -> int:
     
     final_offset = ((current_offset + 15) & ~15)
     
-    setattr(scn_file, '_pfb16_direct_strings', all_strings)
+    setattr(rsz_file, '_pfb16_direct_strings', all_strings)
     
     return final_offset
 
-def build_pfb_16(scn_file, special_align_enabled = False) -> bytes:
+def build_pfb_16(rsz_file, special_align_enabled = False) -> bytes:
     """Build method specifically for PFB.16 files"""
-    scn_file.header.info_count = len(scn_file.gameobjects)
-    scn_file.header.resource_count = len(scn_file.resource_infos)
-    scn_file.header.gameobject_ref_info_count = len(scn_file.gameobject_ref_infos)
+    rsz_file.header.info_count = len(rsz_file.gameobjects)
+    rsz_file.header.resource_count = len(rsz_file.resource_infos)
+    rsz_file.header.gameobject_ref_info_count = len(rsz_file.gameobject_ref_infos)
     
-    if (scn_file.rsz_header):
-        scn_file.rsz_header.object_count = len(scn_file.object_table)
-        scn_file.rsz_header.instance_count = len(scn_file.instance_infos)
-        scn_file.rsz_header.userdata_count = len(scn_file.rsz_userdata_infos)
+    if (rsz_file.rsz_header):
+        rsz_file.rsz_header.object_count = len(rsz_file.object_table)
+        rsz_file.rsz_header.instance_count = len(rsz_file.instance_infos)
+        rsz_file.rsz_header.userdata_count = len(rsz_file.rsz_userdata_infos)
     
     out = bytearray()
     
     out += struct.pack(
         "<4s3I3Q",
-        scn_file.header.signature,
-        scn_file.header.info_count,
-        scn_file.header.resource_count,
-        scn_file.header.gameobject_ref_info_count,
+        rsz_file.header.signature,
+        rsz_file.header.info_count,
+        rsz_file.header.resource_count,
+        rsz_file.header.gameobject_ref_info_count,
         0,  # gameobject_ref_info_tbl - will update later
         0,  # resource_info_tbl - will update later
         0   # data_offset - will update later
     )
 
     # 2) Write gameobjects - PFB format is simpler (12 bytes each)
-    for go in scn_file.gameobjects:
+    for go in rsz_file.gameobjects:
         out += struct.pack("<iii", go.id, go.parent_id, go.component_count)
     
     gameobject_ref_info_tbl = len(out)
-    for gori in scn_file.gameobject_ref_infos:
+    for gori in rsz_file.gameobject_ref_infos:
         out += struct.pack("<4i", gori.object_id, gori.property_id, gori.array_index, gori.target_id)
     
     resource_info_tbl = len(out)
     
     # In PFB.16, write string data directly instead of using offsets
-    has_direct_strings = hasattr(scn_file, '_pfb16_direct_strings')
-    direct_strings = getattr(scn_file, '_pfb16_direct_strings', []) if has_direct_strings else []
+    has_direct_strings = hasattr(rsz_file, '_pfb16_direct_strings')
+    direct_strings = getattr(rsz_file, '_pfb16_direct_strings', []) if has_direct_strings else []
     
-    for i, ri in enumerate(scn_file.resource_infos):
+    for i, ri in enumerate(rsz_file.resource_infos):
         resource_string = ""
         
         if has_direct_strings and i < len(direct_strings):
@@ -158,7 +158,7 @@ def build_pfb_16(scn_file, special_align_enabled = False) -> bytes:
         elif hasattr(ri, 'string_value') and ri.string_value:
             resource_string = ri.string_value
         else:
-            resource_string = scn_file._resource_str_map.get(ri, "")
+            resource_string = rsz_file._resource_str_map.get(ri, "")
             
         if resource_string and resource_string.endswith('\0'):
             resource_string = resource_string[:-1]
@@ -167,23 +167,23 @@ def build_pfb_16(scn_file, special_align_enabled = False) -> bytes:
         out += string_bytes
 
     # No 16-byte alignment needed before RSZ section in PFB.16
-    rsz_start = build_pfb16_rsz_section(scn_file, out, special_align_enabled)
+    rsz_start = build_pfb16_rsz_section(rsz_file, out, special_align_enabled)
 
     header_bytes = struct.pack(
         "<4s3I3Q", 
-        scn_file.header.signature,
-        scn_file.header.info_count,
-        scn_file.header.resource_count,
-        scn_file.header.gameobject_ref_info_count,
+        rsz_file.header.signature,
+        rsz_file.header.info_count,
+        rsz_file.header.resource_count,
+        rsz_file.header.gameobject_ref_info_count,
         gameobject_ref_info_tbl,
         resource_info_tbl,
-        scn_file.header.data_offset
+        rsz_file.header.data_offset
     )
     out[0:Pfb16Header.SIZE] = header_bytes
 
     return bytes(out)
 
-def build_pfb16_rsz_section(scn_file, out: bytearray, special_align_enabled = False) -> int:
+def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = False) -> int:
     """Build the RSZ section for PFB.16 files with support for embedded RSZ"""
     if special_align_enabled:
         while len(out) % 16 != 0:
@@ -191,15 +191,15 @@ def build_pfb16_rsz_section(scn_file, out: bytearray, special_align_enabled = Fa
                 
     rsz_start = len(out)
     
-    scn_file.header.data_offset = rsz_start
+    rsz_file.header.data_offset = rsz_start
     
-    build_scn19_rsz_section(scn_file, out, special_align_enabled, rsz_start)
+    build_scn19_rsz_section(rsz_file, out, special_align_enabled, rsz_start)
     
     return rsz_start
 
-def parse_pfb16_rsz_userdata(scn_file, data):
+def parse_pfb16_rsz_userdata(rsz_file, data):
     """Parse embedded RSZ userdata in PFB.16 files by leveraging SCN.19 implementation"""
-    return parse_scn19_rsz_userdata(scn_file, data)
+    return parse_scn19_rsz_userdata(rsz_file, data)
 
 def create_pfb16_resource(path=""):
     """Create a new Pfb16ResourceInfo with the given path"""

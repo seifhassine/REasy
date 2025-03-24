@@ -187,7 +187,7 @@ class GameObjectRefInfo:
         self.object_id, self.property_id, self.array_index, self.target_id = struct.unpack_from("<4i", data, offset)
         return offset + self.SIZE
 
-class ScnGameObject:
+class RszGameObject:
     SIZE = 32
     def __init__(self):
         self.guid = b"\x00" * 16
@@ -226,7 +226,7 @@ class PfbGameObject:
         self.id, self.parent_id, self.component_count = struct.unpack_from("<iii", data, offset)
         return offset + self.SIZE
 
-class ScnFolderInfo:
+class RszFolderInfo:
     SIZE = 8
     def __init__(self):
         self.id = 0
@@ -237,7 +237,7 @@ class ScnFolderInfo:
         self.id, self.parent_id = struct.unpack_from("<ii", data, offset)
         return offset + self.SIZE
 
-class ScnResourceInfo:
+class RszResourceInfo:
     SIZE = 8
     def __init__(self):
         self.string_offset = 0
@@ -248,7 +248,7 @@ class ScnResourceInfo:
         self.string_offset, self.reserved = struct.unpack_from("<II", data, offset)
         return offset + self.SIZE
 
-class ScnPrefabInfo:
+class RszPrefabInfo:
     SIZE = 8
     def __init__(self):
         self.string_offset = 0
@@ -259,7 +259,7 @@ class ScnPrefabInfo:
         self.string_offset, self.parent_id = struct.unpack_from("<II", data, offset)
         return offset + self.SIZE
 
-class ScnUserDataInfo:
+class RszUserDataInfo:
     SIZE = 16
     def __init__(self):
         self.hash = 0
@@ -272,7 +272,7 @@ class ScnUserDataInfo:
         return offset + self.SIZE
 
 # RSZUserDataInfos – each entry is 16 bytes.
-class ScnRSZUserDataInfo:
+class RszRSZUserDataInfo:
     SIZE = 16
     def __init__(self):
         self.instance_id = 0   # 4 bytes: which instance this userdata is associated with
@@ -284,7 +284,7 @@ class ScnRSZUserDataInfo:
         self.instance_id, self.hash, self.string_offset = struct.unpack_from("<IIQ", data, offset)
         return offset + self.SIZE
 
-class ScnRSZHeader:
+class RszRSZHeader:
     SIZE = 48
     def __init__(self):
         self.magic = 0
@@ -309,7 +309,7 @@ class ScnRSZHeader:
          self.userdata_offset) = struct.unpack_from(fmt, data, offset)
         return offset + self.SIZE
 
-class ScnInstanceInfo:
+class RszInstanceInfo:
     SIZE = 8
     def __init__(self):
         self.type_id = 0
@@ -322,10 +322,10 @@ class ScnInstanceInfo:
 
 
 ########################################
-# Main SCN File Parser
+# Main Rsz File Parser
 ########################################
 
-class ScnFile:
+class RszFile:
     def __init__(self):
         self.full_data = b""
         self.header = None
@@ -444,7 +444,7 @@ class ScnFile:
         if self.header.rsz_offset > 0:
             # Create a root GameObject that's NOT in the object table
             # This GameObject exists outside the object table but owns all the components
-            go = ScnGameObject()
+            go = RszGameObject()
             go.id = -1  # Special ID to indicate it's not in the object table
             go.parent_id = -1  # No parent
             go.component_count = 0  # We don't know the component count yet
@@ -505,7 +505,7 @@ class ScnFile:
             # Regular SCN files use the 32-byte GameObject structure
             is_scn19 = self.filepath.lower().endswith('.19')
             for i in range(self.header.info_count):
-                go = ScnGameObject()
+                go = RszGameObject()
                 self._current_offset = go.parse(data, self._current_offset, is_scn19)
                 self.gameobjects.append(go)
 
@@ -518,28 +518,28 @@ class ScnFile:
 
     def _parse_folder_infos(self, data):
         for i in range(self.header.folder_count):
-            fi = ScnFolderInfo()
+            fi = RszFolderInfo()
             self._current_offset = fi.parse(data, self._current_offset)
             self.folder_infos.append(fi)
         self._current_offset = self._align(self._current_offset, 16)
 
     def _parse_resource_infos(self, data):
         for i in range(self.header.resource_count):
-            ri = ScnResourceInfo()
+            ri = RszResourceInfo()
             self._current_offset = ri.parse(data, self._current_offset)
             self.resource_infos.append(ri)
         self._current_offset = self._align(self._current_offset, 16)
 
     def _parse_prefab_infos(self, data):
         for i in range(self.header.prefab_count):
-            pi = ScnPrefabInfo()
+            pi = RszPrefabInfo()
             self._current_offset = pi.parse(data, self._current_offset)
             self.prefab_infos.append(pi)
         self._current_offset = self._align(self._current_offset, 16)
 
     def _parse_userdata_infos(self, data):
         for i in range(self.header.userdata_count):
-            ui = ScnUserDataInfo()
+            ui = RszUserDataInfo()
             self._current_offset = ui.parse(data, self._current_offset)
             self.userdata_infos.append(ui)
         self._current_offset = self._align(self._current_offset, 16)
@@ -591,7 +591,7 @@ class ScnFile:
         #else:
         self._current_offset = self.header.data_offset
 
-        self.rsz_header = ScnRSZHeader()
+        self.rsz_header = RszRSZHeader()
         self._current_offset = self.rsz_header.parse(data, self._current_offset)
 
         # Parse Object Table first
@@ -616,7 +616,7 @@ class ScnFile:
 
         # Parse Instance Infos –that has instance_count entries (8 bytes each)
         for i in range(self.rsz_header.instance_count):
-            ii = ScnInstanceInfo()
+            ii = RszInstanceInfo()
             self._current_offset = ii.parse(data, self._current_offset)
             self.instance_infos.append(ii)
             
@@ -644,7 +644,7 @@ class ScnFile:
         """Parse standard RSZ userdata entries (16 bytes each)"""
         self.rsz_userdata_infos = []
         for i in range(self.rsz_header.userdata_count):
-            rui = ScnRSZUserDataInfo()
+            rui = RszRSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
             if rui.string_offset != 0:
                 abs_offset = self.header.data_offset + rui.string_offset
@@ -668,7 +668,7 @@ class ScnFile:
         """Parse AIWAYP RSZ userdata entries - AIWAYP has no embedded RSZ"""
         self.rsz_userdata_infos = []
         for i in range(self.rsz_header.userdata_count):
-            rui = ScnRSZUserDataInfo()
+            rui = RszRSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
             if rui.string_offset != 0:
                 abs_offset = self.header.data_offset + rui.string_offset
@@ -725,14 +725,17 @@ class ScnFile:
                 continue
 
             self.parsed_elements[idx] = {}
-            new_offset = parse_instance_fields(
-                raw=self.data,
-                offset=current_offset,
-                fields_def=fields_def,
-                current_instance_index=idx,
-                scn_file=self
-            )
-            current_offset = new_offset
+            try:
+                new_offset = parse_instance_fields(
+                    raw=self.data,
+                    offset=current_offset,
+                    fields_def=fields_def,
+                    current_instance_index=idx,
+                    rsz_file=self
+                )
+                current_offset = new_offset
+            except Exception:
+                print(f"Error parsing instance name ", type_info.get("name"))
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
@@ -1914,9 +1917,6 @@ class ScnFile:
     def get_userdata_string(self, ui):
         return self._userdata_str_map.get(ui, "")
     
-    def get_rsz_userdata_string(self, rui):
-        return self._rsz_userdata_str_map.get(rui, "")
-
     def set_resource_string(self, ri, new_string: str):
         """Set resource string with special handling for PFB.16 format"""
         try:
@@ -1944,26 +1944,22 @@ def get_type_name(type_registry, instance_infos, idx):
         return f"{type_info['name']} (ID: {idx})"
     return f"Instance[{idx}]"
 
-def is_valid_reference(candidate, current_instance_index, scn_file=None):
+def is_valid_reference(candidate, current_instance_index, rsz_file=None):
     return (0 < candidate < current_instance_index and 
-            candidate not in scn_file._gameobject_instance_ids and 
-            candidate not in scn_file._folder_instance_ids)
-
-def ensure_enough_data(dataLen, offset, size):
-    if offset + size > dataLen:
-        raise ValueError(f"Insufficient data at offset {offset:#x}")
+            candidate not in rsz_file._gameobject_instance_ids and 
+            candidate not in rsz_file._folder_instance_ids)
 
 def parse_instance_fields(
     raw: bytes,
     offset: int, 
     fields_def: list,
     current_instance_index=None,
-    scn_file=None
+    rsz_file=None
 ):
     """Parse fields from raw data according to field definitions - optimized version"""
     pos = offset
     local_align = align_offset
-    rsz_userdataInfos = scn_file.rsz_userdata_infos
+    rsz_userdataInfos = rsz_file.rsz_userdata_infos
     unpack_uint = struct.Struct("<I").unpack_from
     unpack_float = struct.Struct("<f").unpack_from
     unpack_4float = struct.Struct("<4f").unpack_from
@@ -1982,12 +1978,11 @@ def parse_instance_fields(
     unpack_20float = struct.Struct("<20f").unpack_from
     unpack_16float = struct.Struct("<16f").unpack_from
 
-    raw_len = len(raw)
-    parsed_elements = scn_file.parsed_elements.setdefault(current_instance_index, {})
-    instance_hierarchy = scn_file.instance_hierarchy
-    gameobject_ids = scn_file._gameobject_instance_ids
-    folder_ids = scn_file._folder_instance_ids
-    rsz_userdata_map = scn_file._rsz_userdata_str_map
+    parsed_elements = rsz_file.parsed_elements.setdefault(current_instance_index, {})
+    instance_hierarchy = rsz_file.instance_hierarchy
+    gameobject_ids = rsz_file._gameobject_instance_ids
+    folder_ids = rsz_file._folder_instance_ids
+    rsz_userdata_map = rsz_file._rsz_userdata_str_map
     
     # a direct reference to dictionary element for faster access
     current_hierarchy = instance_hierarchy[current_instance_index]
@@ -2026,8 +2021,8 @@ def parse_instance_fields(
             struct_values = []
             
             struct_type_info = None
-            if original_type and scn_file.type_registry:
-                struct_type_info, _ = scn_file.type_registry.find_type_by_name(original_type)
+            if original_type and rsz_file.type_registry:
+                struct_type_info, _ = rsz_file.type_registry.find_type_by_name(original_type)
             
             if struct_type_info and struct_count > 0 and pos < len(raw):
                 struct_fields_def = struct_type_info.get("fields", [])
@@ -2038,12 +2033,12 @@ def parse_instance_fields(
                     
                     temp_parser = type('StructParser', (), {
                         'parsed_elements': {current_instance_index: struct_element},
-                        'instance_hierarchy': scn_file.instance_hierarchy,
-                        '_gameobject_instance_ids': scn_file._gameobject_instance_ids,
-                        '_folder_instance_ids': scn_file._folder_instance_ids,
-                        'rsz_userdata_infos': scn_file.rsz_userdata_infos,
-                        '_rsz_userdata_str_map': scn_file._rsz_userdata_str_map,
-                        'type_registry': scn_file.type_registry
+                        'instance_hierarchy': rsz_file.instance_hierarchy,
+                        '_gameobject_instance_ids': rsz_file._gameobject_instance_ids,
+                        '_folder_instance_ids': rsz_file._folder_instance_ids,
+                        'rsz_userdata_infos': rsz_file.rsz_userdata_infos,
+                        '_rsz_userdata_str_map': rsz_file._rsz_userdata_str_map,
+                        'type_registry': rsz_file.type_registry
                     })()
                     
                     next_pos = parse_instance_fields(
@@ -2051,7 +2046,7 @@ def parse_instance_fields(
                         offset=current_pos,
                         fields_def=struct_fields_def,
                         current_instance_index=current_instance_index,
-                        scn_file=temp_parser
+                        rsz_file=temp_parser
                     )
                     
                     if next_pos > current_pos and struct_element:
@@ -2143,7 +2138,6 @@ def parse_instance_fields(
                 child_indexes = []
                 for _ in range(count):
                     pos = local_align(pos, field_align)
-                    ensure_enough_data(raw_len, pos, fsize)
                     idx = unpack_uint(raw, pos)[0]
                     child_indexes.append(idx)
                     current_children.append(idx)

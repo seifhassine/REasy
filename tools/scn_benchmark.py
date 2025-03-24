@@ -7,7 +7,7 @@ import statistics
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
-from rsz.rsz_file import ScnFile
+from rsz.rsz_file import RszFile
 
 def format_size(size):
     """Convert bytes to human readable format"""
@@ -40,7 +40,7 @@ def benchmark_scn(file_path):
     times = []
     memory_before = get_memory_usage()
     
-    scn = ScnFile()
+    scn = RszFile()
     
     start = time.perf_counter()
     scn.read(data)

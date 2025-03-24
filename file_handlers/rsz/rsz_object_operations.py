@@ -11,7 +11,7 @@ This file contains utility methods for:
 import uuid
 from PySide6.QtWidgets import QMessageBox
 from .rsz_data_types import *
-from file_handlers.rsz.rsz_file import ScnRSZUserDataInfo,  ScnUserDataInfo, ScnPrefabInfo
+from file_handlers.rsz.rsz_file import RszRSZUserDataInfo,  RszUserDataInfo, RszPrefabInfo
 
 
 class RszObjectOperations:
@@ -79,8 +79,8 @@ class RszObjectOperations:
 
     def _create_gameobject_entry(self, object_id, parent_id, instance_id):
         """Create a new GameObject entry for the scene"""
-        from file_handlers.rsz.rsz_file import ScnGameObject
-        new_go = ScnGameObject()
+        from file_handlers.rsz.rsz_file import RszGameObject
+        new_go = RszGameObject()
         new_go.id = object_id
         new_go.parent_id = parent_id
         new_go.component_count = 0
@@ -890,8 +890,8 @@ class RszObjectOperations:
                 print("No prefab_infos array in scene")
                 return False
                 
-            from file_handlers.rsz.rsz_file import ScnPrefabInfo
-            new_prefab = ScnPrefabInfo()
+            from file_handlers.rsz.rsz_file import RszPrefabInfo
+            new_prefab = RszPrefabInfo()
             
             prefab_id = len(self.scn.prefab_infos)
             
@@ -1160,7 +1160,7 @@ class RszObjectOperations:
                     prefab_path = self.scn._prefab_str_map[source_prefab]
                     
                 if prefab_path:
-                    new_prefab = ScnPrefabInfo()
+                    new_prefab = RszPrefabInfo()
                     new_prefab.string_offset = 0
                     
                     prefab_id = len(self.scn.prefab_infos)
@@ -1311,7 +1311,7 @@ class RszObjectOperations:
             print(f"Warning: Could not find RSZ UserData for instance {old_instance_id}")
             return False
             
-        new_rui = ScnRSZUserDataInfo()
+        new_rui = RszRSZUserDataInfo()
         
         self.scn._rsz_userdata_set.add(new_instance_id)
         
@@ -1329,8 +1329,8 @@ class RszObjectOperations:
         matching_userdata_infos = [ui for ui in self.scn.userdata_infos if ui.hash == source_rui.hash]
         
         if not matching_userdata_infos and hasattr(self.scn, 'userdata_infos'):
-            from file_handlers.rsz.rsz_file import ScnUserDataInfo
-            new_ui = ScnUserDataInfo()
+            from file_handlers.rsz.rsz_file import RszUserDataInfo
+            new_ui = RszUserDataInfo()
             new_ui.hash = source_rui.hash
             new_ui.string_offset = 0
             self.scn.userdata_infos.append(new_ui)
@@ -1361,7 +1361,7 @@ class RszObjectOperations:
                 if key not in processed_strings:
                     processed_strings.add(key)
                     
-                    new_ui = ScnUserDataInfo()
+                    new_ui = RszUserDataInfo()
                     new_ui.hash = ui.hash
                     new_ui.string_offset = 0
                     self.scn.userdata_infos.append(new_ui)
@@ -1493,12 +1493,12 @@ class RszObjectOperations:
 
     def _create_duplicate_instance(self, source_instance):
         """Create a new instance that's an exact duplicate of the source instance"""
-        from file_handlers.rsz.rsz_file import ScnInstanceInfo
+        from file_handlers.rsz.rsz_file import RszInstanceInfo
         
         if not source_instance or source_instance.type_id <= 0:
             return None
             
-        new_instance = ScnInstanceInfo()
+        new_instance = RszInstanceInfo()
         new_instance.type_id = source_instance.type_id
         new_instance.crc = source_instance.crc 
         

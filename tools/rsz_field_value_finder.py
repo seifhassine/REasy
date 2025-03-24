@@ -31,13 +31,13 @@ def scan_file(filepath, type_id, field_identifier, type_registry):
     if len(data) < 4 or data[:4] not in valid_signatures:
         return []
 
-    from file_handlers.rsz.rsz_file import ScnFile
-    scn_file = ScnFile()
-    scn_file.type_registry = type_registry
-    scn_file.filepath = str(filepath)
+    from file_handlers.rsz.rsz_file import RszFile
+    rsz_file = RszFile()
+    rsz_file.type_registry = type_registry
+    rsz_file.filepath = str(filepath)
 
     try:
-        scn_file.read(data)
+        rsz_file.read(data)
     except Exception:
         print(f"Error reading file: {filepath}")
         return []
@@ -46,10 +46,10 @@ def scan_file(filepath, type_id, field_identifier, type_registry):
     
     type_info = type_registry.get_type_info(type_id)
     
-    for idx, instance in enumerate(scn_file.instance_infos):
+    for idx, instance in enumerate(rsz_file.instance_infos):
         if instance.type_id == type_id:
-            if idx in scn_file.parsed_elements:
-                fields = scn_file.parsed_elements[idx]
+            if idx in rsz_file.parsed_elements:
+                fields = rsz_file.parsed_elements[idx]
                 
                 if field_identifier is None:
                     if type_info and "fields" in type_info:
