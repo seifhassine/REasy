@@ -275,6 +275,10 @@ class GuidInput(BaseValueWidget):
         # Handle all GUID types
         if hasattr(self._data, 'guid_str'):
             self._data.guid_str = text
+
+            if(hasattr(self._data, 'gameobject')):
+                self._data.gameobject.guid = (uuid.UUID(text)).bytes_le
+                        
         elif hasattr(self._data, 'guid'):  # For GameObjectRef array elements
             self._data.guid = text
         elif hasattr(self._data, 'value'):

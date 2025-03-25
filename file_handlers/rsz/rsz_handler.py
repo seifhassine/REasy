@@ -655,6 +655,12 @@ class RszViewer(QWidget):
             nodes[go.id] = (go_dict, go.parent_id)
             settings_node = {"data": ["Settings", ""], "children": []}
             go_dict["children"].append(settings_node)
+            if not self.scn.is_pfb:
+                guid_data = GuidData(guid_le_to_str(go.guid), go.guid)
+                guid_data.gameobject = go
+                guid_field = self._create_field_dict("GUID", guid_data)
+                settings_node["children"].insert(0, guid_field)
+            
             if go_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[go_instance_id]
                 for field_name, field_data in fields.items():
