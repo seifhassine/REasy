@@ -757,6 +757,41 @@ class RszObjectOperations:
         
         to_delete_instances = sorted(nested_objects, reverse=True)
         
+
+
+        def _userdata_index_reference_count(target_instance_id, exclusions= []):
+            count = 0
+            for key, instance in self.scn.parsed_elements.items():
+                for field in instance.values():
+                    if isinstance(field, UserDataData) and field.index == target_instance_id and key not in exclusions:
+                        print("found userdata index reference")
+                        count += 1
+                    elif isinstance(field, ArrayData):
+                        for element in field.values:
+                            if isinstance(element, UserDataData) and element.index == target_instance_id and key not in exclusions:
+                                print("found userdata index reference")
+                                count += 1
+            print("count: ", count)
+            return count
+        
+        const_to_delete_instances = to_delete_instances.copy()
+        for instance_id in const_to_delete_instances:
+            for field in self.scn.parsed_elements[instance_id].values():
+                if isinstance(field, UserDataData) and field.index not in to_delete_instances and field.index:
+                    print("found userdata index reference")
+                    to_delete_instances.append(field.index)
+                elif isinstance(field, ArrayData):
+                    for element in field.values:
+                        if isinstance(element, UserDataData) and element.index not in to_delete_instances and element.index:
+                            print("found userdata index reference")
+                            to_delete_instances.append(element.index)
+                            
+        const_to_delete_instances = to_delete_instances.copy()
+        to_delete_instances = [instance_id for instance_id in const_to_delete_instances if _userdata_index_reference_count(instance_id, const_to_delete_instances) == 0]
+    
+
+
+
         owner_go.component_count -= 1
         
         self.scn.object_table.pop(object_table_index)
