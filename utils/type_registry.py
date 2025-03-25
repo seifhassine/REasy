@@ -20,11 +20,8 @@ class TypeRegistry:
         Returns a dict (or None if not found).
         """
         hex_key = format(type_id, "x")
-        hex_key_8 = format(type_id, "08x")
         if hex_key in self.registry:
             return self.registry[hex_key]
-        elif hex_key_8 in self.registry:
-            return self.registry[hex_key_8]
         return None
 
     def find_type_by_name(self, type_name: str) -> tuple:

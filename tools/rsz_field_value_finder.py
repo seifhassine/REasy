@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from utils.type_registry import TypeRegistry
 
-def scan_file(filepath, type_id, field_identifier, type_registry):
+def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     if not os.path.isfile(filepath):
         return []
         
@@ -39,6 +39,7 @@ def scan_file(filepath, type_id, field_identifier, type_registry):
     try:
         rsz_file.read(data)
     except Exception:
+        failures.append(filepath)
         print(f"Error reading file: {filepath}")
         return []
     
@@ -100,7 +101,7 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
     
     total_files = len(candidate_files)
     processed = 0
-    
+    failures = []
     try:
         for filepath in candidate_files:
             processed += 1
@@ -108,7 +109,7 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
             print(f"\rProgress: {progress:.1f}% ({processed}/{total_files}) - Found {matches_found} matches", end="")
             
             try:
-                file_results = scan_file(filepath, type_id, field_identifier, type_registry)
+                file_results = scan_file(filepath, type_id, field_identifier, type_registry, failures)
                 if file_results:
                     matches_found += len(file_results)
                     results.extend(file_results)
@@ -118,6 +119,13 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
         pass
     
     print("")
+    if failures:
+        print(f"\nTotal failures: {len(failures)}")
+        print("Failed files:")
+        for failure in failures:
+            print(f"  - {failure}")
+    else:
+        print("\nNo failures encountered.")
     
     return results
 

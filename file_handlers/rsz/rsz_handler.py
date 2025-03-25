@@ -236,10 +236,8 @@ class RszViewer(QWidget):
         pass
 
     def populate_tree(self):
-        self.tree.setUpdatesEnabled(False)
-        root_data = self._build_tree_data()
-        self.tree.setModelData(root_data)
-        self.tree.setUpdatesEnabled(True)
+        print("Populating tree")
+        self.tree.setModelData(self._build_tree_data())
         self.embed_forms()
 
     def _build_tree_data(self):

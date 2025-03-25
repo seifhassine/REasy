@@ -353,7 +353,8 @@ class FileTab:
                     self.status_label = QLabel(f"Loaded: {filename}")
                     layout.addWidget(self.tree)
                     layout.addWidget(self.status_label)
-                    self.refresh_tree()
+                    if not isinstance(self.handler, RszHandler):
+                        self.refresh_tree()
             except Exception as e:
                 print(f"Viewer creation failed: {e}")
                 self.viewer = None
