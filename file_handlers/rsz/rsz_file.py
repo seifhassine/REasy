@@ -838,6 +838,21 @@ class RszFile:
                         out.extend(str_bytes)
                     else:
                         out.extend(struct.pack("<I", 0))
+                elif isinstance(element, RuntimeTypeData):
+                    while len(out) % 4:
+                        out.extend(b'\x00')
+                    if element.value:
+                        str_bytes = element.value.encode('utf-8')
+                        char_count = len(element.value)
+                        if element.value[-1] == '\x00':
+                            char_count = len(element.value) 
+                        else:
+                            char_count = len(element.value) + 1  
+                            str_bytes += b'\x00\x00' 
+                        out.extend(struct.pack("<I", char_count))
+                        out.extend(str_bytes)
+                    else:
+                        out.extend(struct.pack("<I", 0))
                 elif isinstance(element, OBBData):
                     if isinstance(element.values, (list, tuple)):
                         float_values = [float(v) for v in element.values[:20]]
@@ -937,6 +952,22 @@ class RszFile:
                     
                 if data_obj.value:
                     str_bytes = data_obj.value.encode('utf-16-le')
+                    char_count = len(data_obj.value)
+                    if data_obj.value[-1] == '\x00':
+                        char_count = len(data_obj.value)  
+                    else:
+                        char_count = len(data_obj.value) + 1  
+                        str_bytes += b'\x00\x00' 
+                    out.extend(struct.pack("<I", char_count))
+                    out.extend(str_bytes)
+                else:
+                    out.extend(struct.pack("<I", 0))
+            elif isinstance(data_obj, (RuntimeTypeData)):
+                while len(out) % 4:
+                    out.extend(b'\x00')
+                    
+                if data_obj.value:
+                    str_bytes = data_obj.value.encode('utf-8')
                     char_count = len(data_obj.value)
                     if data_obj.value[-1] == '\x00':
                         char_count = len(data_obj.value)  
@@ -1981,12 +2012,17 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
         count = read_aligned_value(unpack_uint, 4, align=4)
         str_byte_count = count * 2
         segment = raw[pos:pos+str_byte_count]
-        try:
-            value = segment.decode('utf-16-le')
-        except UnicodeDecodeError:
-            value = ''.join(chr(segment[i] | (segment[i+1] << 8))
-                            for i in range(0, len(segment), 2))
+        value = segment.decode('utf-16-le')
         pos += str_byte_count
+        return value
+
+    def read_string_value_utf8():
+        nonlocal pos
+        pos = _align(pos, 4)
+        count = read_aligned_value(unpack_uint, 4, align=4)
+        segment = raw[pos:pos+count]
+        value = segment.decode('utf-8')
+        pos += count
         return value
 
     def set_parent(idx, parent_idx):
@@ -2107,7 +2143,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
 
             elif rsz_type == ObjectData:
                 child_indexes = []
-                for _ in range(count):
+                for x in range(count):
                     pos = _align(pos, field_align)
                     idx = read_aligned_value(unpack_uint, fsize, align=field_align)
                     child_indexes.append(idx)
@@ -2195,6 +2231,14 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     children.append(value)
 
                 data_obj = ArrayData([StringData(s) for s in children], StringData, original_type)
+
+            elif rsz_type == RuntimeTypeData:
+                children = []
+                for _ in range(count):
+                    value = read_string_value_utf8()
+                    children.append(value)
+
+                data_obj = ArrayData([RuntimeTypeData(s) for s in children], RuntimeTypeData, original_type)
 
             elif rsz_type == S8Data:
                 values = []
@@ -2368,6 +2412,10 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 value = read_string_value()
                 children.append(value)
                 data_obj = StringData(value, original_type)
+            elif rsz_type == RuntimeTypeData:
+                value = read_string_value_utf8()
+                children.append(value)
+                data_obj = RuntimeTypeData(value, original_type)
             elif rsz_type == BoolData:
                 value = raw[pos] != 0
                 pos += fsize

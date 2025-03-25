@@ -347,8 +347,8 @@ class GameObjectRefData:
         self.orig_type = orig_type
 
 class RuntimeTypeData:
-    def __init__(self, type_name: str = "", orig_type: str = ""):
-        self.type_name = type_name
+    def __init__(self, value: str = "", orig_type: str = ""):
+        self.value = value
         self.orig_type = orig_type
 
 class MaybeObject:
