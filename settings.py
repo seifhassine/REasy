@@ -1,14 +1,30 @@
 import os
 import json
 
-SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".reasy_editor_settings.json")
+SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
 DEFAULT_SETTINGS = {
     "dark_mode": True, 
     "rcol_json_path": "", 
     "show_debug_console": True,
     "show_rsz_advanced": True,
     "game_version": "RE4",  # Default game version
-    "backup_on_save": True
+    "backup_on_save": True,
+    "keyboard_shortcuts": {
+        "file_open": "Ctrl+O",
+        "file_save": "Ctrl+S",
+        "file_save_as": "Ctrl+Shift+S",
+        "file_reload": "Ctrl+R",
+        "file_close_tab": "Ctrl+W",
+        "edit_copy": "Ctrl+C",
+        "find_search": "Ctrl+F",
+        "find_search_guid": "Ctrl+G",
+        "find_search_text": "Ctrl+T",
+        "find_search_number": "Ctrl+N",
+        "view_dark_mode": "Ctrl+D",
+        "view_prev_tab": "PgDown",
+        "view_next_tab": "PgUp",
+        "view_debug_console": "Ctrl+Shift+D"
+    }
 }
 
 
@@ -19,7 +35,11 @@ def load_settings():
                 settings = json.load(f)
             # Ensure all default keys are present
             for key, value in DEFAULT_SETTINGS.items():
-                settings.setdefault(key, value)
+                if key == "keyboard_shortcuts" and key in settings:
+                    for shortcut_key, shortcut_value in DEFAULT_SETTINGS["keyboard_shortcuts"].items():
+                        settings["keyboard_shortcuts"].setdefault(shortcut_key, shortcut_value)
+                else:
+                    settings.setdefault(key, value)
             return settings
         except (IOError, json.JSONDecodeError) as e:
             print("Error loading settings:", e)

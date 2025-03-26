@@ -16,6 +16,8 @@ from file_handlers.rsz.rsz_handler import RszHandler
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
 from ui.about_dialog import create_about_dialog
+from ui.keyboard_shortcuts import create_shortcuts_tab
+from settings import DEFAULT_SETTINGS, load_settings, save_settings
 
 from PySide6.QtCore import (
     Qt,
@@ -138,6 +140,7 @@ class CustomNotebook(QTabWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTabsClosable(True)
+        self.setMovable(True)  # Allow reordering tabs by drag and drop
         self.tabCloseRequested.connect(self.on_tab_close_requested)
 
         self.dark_mode = False
@@ -746,15 +749,16 @@ class REasyEditorApp(QMainWindow):
         set_app_icon(self)
 
         try:
-            with open("settings.json", "r") as f:
-                self.settings = json.load(f)
+            self.settings = load_settings()
         except:
-            self.settings = {
-                "dark_mode": False,
-                "show_debug_console": True,
-                "show_advanced": True,
-                "rcol_json_path": "",
-            }
+            self.settings = DEFAULT_SETTINGS.copy()
+
+        if "keyboard_shortcuts" not in self.settings:
+            self.settings["keyboard_shortcuts"] = DEFAULT_SETTINGS["keyboard_shortcuts"].copy()
+        else:
+            for key, value in DEFAULT_SETTINGS["keyboard_shortcuts"].items():
+                if key not in self.settings["keyboard_shortcuts"]:
+                    self.settings["keyboard_shortcuts"][key] = value
 
         self.dark_mode = self.settings.get("dark_mode", False)
 
@@ -829,17 +833,20 @@ class REasyEditorApp(QMainWindow):
         file_menu = menubar.addMenu("File")
 
         open_act = QAction("Open...", self)
-        open_act.setShortcut(QKeySequence("Ctrl+O"))
+        open_act.setObjectName("file_open")
+        open_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_open", "Ctrl+O")))
         open_act.triggered.connect(self.on_open)
         file_menu.addAction(open_act)
 
         save_act = QAction("Save", self)
-        save_act.setShortcut(QKeySequence("Ctrl+S"))
+        save_act.setObjectName("file_save")
+        save_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_save", "Ctrl+S")))
         save_act.triggered.connect(self.on_direct_save)
         file_menu.addAction(save_act)
 
         save_as_act = QAction("Save As...", self)
-        save_as_act.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        save_as_act.setObjectName("file_save_as")
+        save_as_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_save_as", "Ctrl+Shift+S")))
         save_as_act.triggered.connect(self.on_save)
         file_menu.addAction(save_as_act)
         
@@ -848,12 +855,14 @@ class REasyEditorApp(QMainWindow):
         file_menu.addAction(restore_backup_act)
 
         reload_act = QAction("Reload", self)
-        reload_act.setShortcut(QKeySequence("Ctrl+R"))
+        reload_act.setObjectName("file_reload")
+        reload_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_reload", "Ctrl+R")))
         reload_act.triggered.connect(self.reload_file)
         file_menu.addAction(reload_act)
 
         close_tab_act = QAction("Close Tab", self)
-        close_tab_act.setShortcut(QKeySequence("Ctrl+W"))
+        close_tab_act.setObjectName("file_close_tab")
+        close_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_close_tab", "Ctrl+W")))
         close_tab_act.triggered.connect(self.close_current_tab)
         file_menu.addAction(close_tab_act)
 
@@ -869,41 +878,60 @@ class REasyEditorApp(QMainWindow):
 
         edit_menu = menubar.addMenu("Edit")
         copy_act = QAction("Copy", self)
-        copy_act.setShortcut(QKeySequence("Ctrl+C"))
+        copy_act.setObjectName("edit_copy")
+        copy_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("edit_copy", "Ctrl+C")))
         copy_act.triggered.connect(self.copy_to_clipboard)
         edit_menu.addAction(copy_act)
 
         find_menu = menubar.addMenu("Find")
 
         find_act = QAction("Find", self)
-        find_act.setShortcut(QKeySequence("Ctrl+F"))
+        find_act.setObjectName("find_search")
+        find_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search", "Ctrl+F")))
         find_act.triggered.connect(self.open_find_dialog)
         find_menu.addAction(find_act)
 
         guid_act = QAction("Search Directory for GUID", self)
-        guid_act.setShortcut(QKeySequence("Ctrl+G"))
+        guid_act.setObjectName("find_search_guid")
+        guid_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_guid", "Ctrl+G")))
         guid_act.triggered.connect(self.search_directory_for_guid)
         find_menu.addAction(guid_act)
 
         text_act = QAction("Search Directory for Text", self)
-        text_act.setShortcut(QKeySequence("Ctrl+T"))
+        text_act.setObjectName("find_search_text")
+        text_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_text", "Ctrl+T")))
         text_act.triggered.connect(self.search_directory_for_text)
         find_menu.addAction(text_act)
 
         num_act = QAction("Search Directory for Number", self)
-        num_act.setShortcut(QKeySequence("Ctrl+N"))
+        num_act.setObjectName("find_search_number")
+        num_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_number", "Ctrl+N")))
         num_act.triggered.connect(self.search_directory_for_number)
         find_menu.addAction(num_act)
 
         view_menu = menubar.addMenu("View")
 
         dark_act = QAction("Toggle Dark Mode", self)
-        dark_act.setShortcut(QKeySequence("Ctrl+D"))
+        dark_act.setObjectName("view_dark_mode")
+        dark_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_dark_mode", "Ctrl+D")))
         dark_act.triggered.connect(self.toggle_dark_mode)
         view_menu.addAction(dark_act)
 
+        prev_tab_act = QAction("Previous Tab", self)
+        prev_tab_act.setObjectName("view_prev_tab")
+        prev_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_prev_tab", "PgDown")))
+        prev_tab_act.triggered.connect(self.goto_previous_tab)
+        view_menu.addAction(prev_tab_act)
+
+        next_tab_act = QAction("Next Tab", self)
+        next_tab_act.setObjectName("view_next_tab")
+        next_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_next_tab", "PgUp")))
+        next_tab_act.triggered.connect(self.goto_next_tab)
+        view_menu.addAction(next_tab_act)
+
         dbg_act = QAction("Toggle Debug Console", self)
-        dbg_act.setShortcut(QKeySequence("Ctrl+Shift+D"))
+        dbg_act.setObjectName("view_debug_console")
+        dbg_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_debug_console", "Ctrl+Shift+D")))
         dbg_act.triggered.connect(
             lambda: self.toggle_debug_console(
                 not self.settings.get("show_debug_console", True)
@@ -1086,11 +1114,7 @@ class REasyEditorApp(QMainWindow):
             self.save_settings()
 
     def save_settings(self):
-        try:
-            with open("settings.json", "w") as f:
-                json.dump(self.settings, f, indent=4)
-        except Exception as e:
-            print(f"Failed to save settings: {e}")
+        save_settings(self.settings)
 
     def closeEvent(self, event):
         for tab in list(self.tabs.values()):
@@ -1122,12 +1146,21 @@ class REasyEditorApp(QMainWindow):
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
     def open_settings_dialog(self):
-        dialog, _ = create_standard_dialog(self, "Settings", "400x300")
-        layout = QVBoxLayout(dialog)
-        layout.setSpacing(15)
+        dialog, _ = create_standard_dialog(self, "Settings", "500x400")
+        
+        main_layout = QVBoxLayout(dialog)
+        
+        tab_widget = QTabWidget()
+        main_layout.addWidget(tab_widget)
+        
+        general_tab = QWidget()
+        tab_widget.addTab(general_tab, "General")
+        
+        general_layout = QVBoxLayout(general_tab)
+        general_layout.setSpacing(15)
 
         label = QLabel("RSZ JSON Path:")
-        layout.addWidget(label, 0, Qt.AlignBottom)
+        general_layout.addWidget(label, 0, Qt.AlignBottom)
 
         json_path_layout = QHBoxLayout()
         json_path_layout.setContentsMargins(0, 0, 0, 0)
@@ -1136,7 +1169,7 @@ class REasyEditorApp(QMainWindow):
 
         browse_btn = QPushButton("Browse...")
         json_path_layout.addWidget(browse_btn)
-        layout.addLayout(json_path_layout)
+        general_layout.addLayout(json_path_layout)
 
         # Game Version selection
         game_version_layout = QHBoxLayout()
@@ -1157,28 +1190,48 @@ class REasyEditorApp(QMainWindow):
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)
-        layout.addLayout(game_version_layout)
+        general_layout.addLayout(game_version_layout)
 
         dark_box = QCheckBox("Dark Mode")
         dark_box.setChecked(self.dark_mode)
-        layout.addWidget(dark_box)
+        general_layout.addWidget(dark_box)
 
         debug_box = QCheckBox("Show Debug Console")
         debug_box.setChecked(self.settings.get("show_debug_console", True))
-        layout.addWidget(debug_box)
+        general_layout.addWidget(debug_box)
         
         rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files (Reload Required)")
         rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
-        layout.addWidget(rsz_advanced_box)
+        general_layout.addWidget(rsz_advanced_box)
         
         backup_box = QCheckBox("Create backup on save")
         backup_box.setChecked(self.settings.get("backup_on_save", True))
-        layout.addWidget(backup_box)
+        general_layout.addWidget(backup_box)
 
-        layout.addStretch()
-
+        general_layout.addStretch()
+        
+        shortcuts_tab = create_shortcuts_tab()
+        tab_widget.addTab(shortcuts_tab, "Keyboard Shortcuts")
+        
+        shortcuts = self.settings.get("keyboard_shortcuts", {}).copy()
+        for key in shortcuts_tab.shortcut_names:
+            if key not in shortcuts:
+                shortcuts[key] = DEFAULT_SETTINGS["keyboard_shortcuts"].get(key, "")
+        
+        shortcuts_tab.populate_shortcuts_list(shortcuts)
+        
+        shortcuts_tab.edit_shortcut_btn.clicked.connect(
+            lambda: shortcuts_tab.edit_shortcut(shortcuts, dialog)
+        )
+        shortcuts_tab.reset_shortcut_btn.clicked.connect(
+            lambda: shortcuts_tab.reset_shortcut(shortcuts, dialog)
+        )
+        shortcuts_tab.shortcuts_list.itemDoubleClicked.connect(
+            lambda item: shortcuts_tab.edit_shortcut(shortcuts, dialog)
+        )
+        
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        layout.addWidget(button_box)
+        main_layout.addWidget(button_box)
 
         def on_ok():
             new_json_path = json_entry.text().strip()
@@ -1193,6 +1246,7 @@ class REasyEditorApp(QMainWindow):
             self.settings["show_debug_console"] = debug_box.isChecked()
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
             self.settings["backup_on_save"] = backup_box.isChecked()
+            self.settings["keyboard_shortcuts"] = shortcuts
             
             old_version = self.settings.get("game_version", "RE4")
             new_version = game_version_combo.currentText()
@@ -1204,6 +1258,8 @@ class REasyEditorApp(QMainWindow):
             self.toggle_debug_console(debug_box.isChecked())
             
             self.update_from_app_settings()
+            
+            self.apply_keyboard_shortcuts()
 
             self.save_settings()
             dialog.accept()
@@ -1226,6 +1282,24 @@ class REasyEditorApp(QMainWindow):
         browse_btn.clicked.connect(browse)
 
         dialog.exec()
+
+    def apply_keyboard_shortcuts(self):
+        shortcuts = self.settings.get("keyboard_shortcuts", {})
+        for action in self.findChildren(QAction):
+            action_name = action.objectName()
+            if action_name in shortcuts:
+                shortcut_text = shortcuts[action_name]
+                if shortcut_text:
+                    try:
+                        action.setShortcut(QKeySequence(shortcut_text))
+                        print(f"Applied shortcut: {action_name} -> {shortcut_text}")
+                    except Exception as e:
+                        print(f"Error setting shortcut for {action_name}: {e}")
+        
+        if hasattr(self, "menuBar"):
+            menubar = self.menuBar()
+            if menubar:
+                menubar.update()
 
     def open_guid_converter(self):
         create_guid_converter_dialog(self)
@@ -1483,6 +1557,16 @@ class REasyEditorApp(QMainWindow):
                 success = active.restore_backup(backup_path)
                 if success:
                     QMessageBox.information(self, "Success", "Backup restored successfully")
+
+    def goto_previous_tab(self):
+        current_index = self.notebook.currentIndex()
+        if current_index > 0:
+            self.notebook.setCurrentIndex(current_index - 1)
+
+    def goto_next_tab(self):
+        current_index = self.notebook.currentIndex()
+        if current_index < self.notebook.count() - 1:
+            self.notebook.setCurrentIndex(current_index + 1)
 
 
 def main():
