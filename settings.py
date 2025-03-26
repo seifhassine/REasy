@@ -9,6 +9,7 @@ DEFAULT_SETTINGS = {
     "show_rsz_advanced": True,
     "game_version": "RE4",  # Default game version
     "backup_on_save": True,
+    "translation_target_language": "en",
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",
         "file_save": "Ctrl+S",

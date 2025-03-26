@@ -3,7 +3,10 @@ from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView,
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication)
 from PySide6.QtGui import QIcon, QCursor
-from PySide6.QtCore import Qt, QModelIndex, QEvent
+from PySide6.QtCore import Qt, QModelIndex, QEvent, QUrl, QUrlQuery
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+import json
+import re
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
@@ -13,6 +16,7 @@ from .value_widgets import *
 from utils.enum_manager import EnumManager
 from file_handlers.rsz.rsz_data_types import StructData
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+from utils.translate_utils import TranslationManager, show_translation_error, show_translation_result
                         
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -46,7 +50,10 @@ class AdvancedTreeView(QTreeView):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
         self.shift_pressed = False
-        self.label_width = 150 
+        self.label_width = 150
+        # Create translation manager
+        self.translation_manager = TranslationManager(self)
+        self.translation_manager.translation_completed.connect(self._on_translation_completed)
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
@@ -205,6 +212,7 @@ class AdvancedTreeView(QTreeView):
         elif item_info['is_gameobject']:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
+            translate_action = menu.addAction("Translate Name")
             
             # Only show duplicate action if not a file with embedded RSZ
             duplicate_go_action = None
@@ -267,6 +275,8 @@ class AdvancedTreeView(QTreeView):
                 self.add_component_to_gameobject(index)
             elif action == create_child_go_action:
                 self.create_child_gameobject(index)
+            elif action == translate_action:
+                self.translate_node_text(index)
             elif duplicate_go_action and action == duplicate_go_action:
                 self.duplicate_gameobject(index)
             elif action == delete_go_action:
@@ -277,12 +287,16 @@ class AdvancedTreeView(QTreeView):
         elif item_info['is_folder']:
             create_go_action = menu.addAction("Create GameObject")
             delete_folder_action = menu.addAction("Delete Folder")
+            translate_action = menu.addAction("Translate Name")
+            
             action = menu.exec_(QCursor.pos())
             
             if action == create_go_action:
                 self.create_gameobject_in_folder(index)
             elif action == delete_folder_action:
                 self.delete_folder(index)
+            elif action == translate_action:
+                self.translate_node_text(index)
         
         elif item_info['is_gameobjects_root']:
             create_go_action = menu.addAction("Create GameObject")
@@ -2065,6 +2079,80 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
             traceback.print_exc()
 
+    def translate_node_text(self, index):
+        """Translate the name of a GameObject or folder using Google Translate API"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not hasattr(item, 'data') or not item.data:
+            return
+    
+        name_text = item.data[0]
+        if " (ID:" in name_text:
+            name_text = name_text.split(" (ID:")[0]
+        
+        if not name_text or name_text.strip() == "":
+            show_translation_error(self, "No text to translate")
+            return
+        
+        parent_widget = self.parent()
+        target_lang = "en"
+        
+        
+        target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
+            
+        original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""
+        
+        context = {"index": index, "original_id_part": original_id_part}
+        
+        self.setCursor(Qt.WaitCursor)
+        
+        success = self.translation_manager.translate_text(
+            text=name_text, 
+            source_lang="auto",
+            target_lang=target_lang, 
+            context=context
+        )
+        
+        if not success:
+            self.setCursor(Qt.ArrowCursor)
+            show_translation_error(self, "Failed to start translation")
+
+    def _on_translation_completed(self, original_text, translated_text, context):
+        """Handle translation completion"""
+        self.setCursor(Qt.ArrowCursor)
+        
+        if not translated_text:
+            show_translation_error(self, "Unable to translate text")
+            return
+            
+        index = context.get("index")
+        original_id_part = context.get("original_id_part", "")
+        
+        if not index or not index.isValid():
+            show_translation_error(self, "Invalid item index")
+            return
+        
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'data'):
+            show_translation_error(self, "Invalid item data")
+            return
+        
+        item.data[0] = translated_text + original_id_part
+        
+        model = self.model()
+        if model:
+            model.dataChanged.emit(index, index)
+            
+            widget = self.indexWidget(index)
+            if widget:
+                labels = widget.findChildren(QLabel)
+                if len(labels) >= 2:
+                    text_label = labels[1]
+                    text_label.setText(translated_text + original_id_part)
+        
+        show_translation_result(self, translated_text)
 
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""

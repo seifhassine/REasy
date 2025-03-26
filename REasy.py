@@ -1191,6 +1191,39 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)
         general_layout.addLayout(game_version_layout)
+        
+        translation_layout = QHBoxLayout()
+        translation_layout.setContentsMargins(0, 0, 0, 0)
+        translation_label = QLabel("Translation Target Language:")
+        translation_layout.addWidget(translation_label)
+        
+        translation_combo = QComboBox()
+        languages = [
+            ("en", "English"),
+            ("ar", "Arabic"),
+            ("es", "Spanish"),
+            ("fr", "French"),
+            ("de", "German"),
+            ("it", "Italian"),
+            ("ja", "Japanese"),
+            ("ko", "Korean"),
+            ("pt", "Portuguese"),
+            ("ru", "Russian"),
+            ("zh-CN", "Chinese (Simplified)"),
+            ("zh-TW", "Chinese (Traditional)")
+        ]
+        
+        for code, name in languages:
+            translation_combo.addItem(name, code)
+        
+        current_lang_code = self.settings.get("translation_target_language", "en")
+        for i, (code, _) in enumerate(languages):
+            if code == current_lang_code:
+                translation_combo.setCurrentIndex(i)
+                break
+                
+        translation_layout.addWidget(translation_combo)
+        general_layout.addLayout(translation_layout)
 
         dark_box = QCheckBox("Dark Mode")
         dark_box.setChecked(self.dark_mode)
@@ -1251,6 +1284,11 @@ class REasyEditorApp(QMainWindow):
             old_version = self.settings.get("game_version", "RE4")
             new_version = game_version_combo.currentText()
             self.settings["game_version"] = new_version
+            
+            selected_index = translation_combo.currentIndex()
+            if selected_index >= 0:
+                lang_code = translation_combo.itemData(selected_index)
+                self.settings["translation_target_language"] = lang_code
             
             if self.dark_mode != dark_box.isChecked():
                 self.set_dark_mode(dark_box.isChecked())
