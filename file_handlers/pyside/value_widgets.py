@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QDialog, QVBoxLayout)
+                              QDialog, QVBoxLayout, QTreeView)
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette
 import uuid
@@ -715,6 +715,39 @@ class StringInput(BaseValueWidget):
             self._data.value = text
             self.valueChanged.emit(text)
             self.mark_modified()
+            
+            if hasattr(self._data, "is_gameobject_or_folder_name") and self._data.is_gameobject_or_folder_name:
+                if isinstance(self._data.is_gameobject_or_folder_name, dict):
+                    node_dict = self._data.is_gameobject_or_folder_name
+                    
+                    current_name = node_dict["data"][0]
+                    id_part = current_name[current_name.find("(ID:"):] if "(ID:" in current_name else ""
+                    new_node_name = f"{text} {id_part}"
+                    node_dict["data"][0] = new_node_name
+                    
+                    parent_widget = self
+                    tree_view = None
+                    while parent_widget and not tree_view:
+                        parent_widget = parent_widget.parent()
+                        if hasattr(parent_widget, 'tree'):
+                            tree_view = parent_widget.tree
+                        elif isinstance(parent_widget, QTreeView):
+                            tree_view = parent_widget
+                    
+                    if tree_view and tree_view.model():
+                        model = tree_view.model()
+                        
+                        for visible_item in tree_view.findChildren(QLabel):
+                            if "(ID:" in visible_item.text() and visible_item.text().endswith(id_part):
+                                visible_item.setText(new_node_name)
+                        
+                        for i in range(model.rowCount()):
+                            parent_index = model.index(i, 0)
+                            for j in range(model.rowCount(parent_index)):
+                                child_index = model.index(j, 0, parent_index)
+                                tree_view.update(child_index)
+                        
+                        tree_view.repaint()
 
 class UserDataInput(BaseValueWidget):
     valueChanged = Signal(str) 

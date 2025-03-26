@@ -46,11 +46,19 @@ class RszObjectOperations:
         gameobject_fields = {}
         self.viewer._initialize_fields_from_type_info(gameobject_fields, type_info)
         
-        first_field_name = next(iter(gameobject_fields))
-        field_data = gameobject_fields[first_field_name]
-        if hasattr(field_data, "__class__") and field_data.__class__.__name__ == "StringData":
-            field_data.value = name
-            print(f"Setting GameObject name '{name}' in StringData field: '{first_field_name}'")
+        first_field = list(gameobject_fields.values())[0]
+        if hasattr(first_field, "__class__") and first_field.__class__.__name__ == "StringData":
+            first_field.value = name
+            print(f"Setting GameObject name '{name}' in first field")
+            
+            go_dict = {
+                "data": [f"{name} (ID: {insertion_index})", ""],
+                "type": "gameobject",
+                "instance_id": insertion_index,
+                "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(insertion_index),
+                "children": [],
+            }
+            first_field.is_gameobject_or_folder_name = go_dict
 
         self.scn.parsed_elements[insertion_index] = gameobject_fields
         object_table_index = len(self.scn.object_table)
@@ -764,26 +772,21 @@ class RszObjectOperations:
             for key, instance in self.scn.parsed_elements.items():
                 for field in instance.values():
                     if isinstance(field, UserDataData) and field.index == target_instance_id and key not in exclusions:
-                        print("found userdata index reference")
                         count += 1
                     elif isinstance(field, ArrayData):
                         for element in field.values:
                             if isinstance(element, UserDataData) and element.index == target_instance_id and key not in exclusions:
-                                print("found userdata index reference")
                                 count += 1
-            print("count: ", count)
             return count
         
         const_to_delete_instances = to_delete_instances.copy()
         for instance_id in const_to_delete_instances:
             for field in self.scn.parsed_elements[instance_id].values():
                 if isinstance(field, UserDataData) and field.index not in to_delete_instances and field.index:
-                    print("found userdata index reference")
                     to_delete_instances.append(field.index)
                 elif isinstance(field, ArrayData):
                     for element in field.values:
                         if isinstance(element, UserDataData) and element.index not in to_delete_instances and element.index:
-                            print("found userdata index reference")
                             to_delete_instances.append(element.index)
                             
         const_to_delete_instances = to_delete_instances.copy()
@@ -1018,8 +1021,9 @@ class RszObjectOperations:
         source_name = ""
         if source_instance_id in self.scn.parsed_elements:
             fields = self.scn.parsed_elements[source_instance_id]
-            if "v0" in fields and hasattr(fields["v0"], "value"):
-                source_name = fields["v0"].value
+            first_field = list(fields.values())[0]
+            if hasattr(first_field, "value"):
+                source_name = first_field.value
                     
         if parent_id is None:
             parent_id = source_go.parent_id
@@ -1139,8 +1143,17 @@ class RszObjectOperations:
                     new_fields = self._duplicate_fields_with_remapping(
                         source_fields, instance_mapping, userdata_mapping, guid_mapping
                     )
-                    if "v0" in new_fields and hasattr(new_fields["v0"], "set_value"):
-                        new_fields["v0"].set_value(new_name)
+                    first_field = list(new_fields.values())[0]
+                    first_field.value = new_name
+                    go_dict = {
+                        "data": [f"{new_name} (ID: {new_instance_id})", ""],
+                        "type": "gameobject",
+                        "instance_id": new_instance_id,
+                        "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(new_instance_id),
+                        "children": [],
+                    }
+                    first_field.is_gameobject_or_folder_name = go_dict
+                    print("Marked first field as GameObject name field for live updates in duplicated GameObject")
                 else:
                     new_fields = self._duplicate_fields_with_remapping(
                         source_fields, instance_mapping, userdata_mapping, guid_mapping
@@ -1255,8 +1268,9 @@ class RszObjectOperations:
             child_name = None
             if child_source_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[child_source_instance_id]
-                if "v0" in fields and hasattr(fields["v0"], "value"):
-                    child_name = fields["v0"].value
+                first_field = list(fields.values())[0]
+                if hasattr(first_field, "value"):
+                    child_name = first_field.value
             
             # Set the parent ID to the new parent GameObject
             print(f"  Duplicating child GameObject '{child_name}' (ID: {child_go.id}) with parent {new_parent_id}")

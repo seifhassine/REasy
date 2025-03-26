@@ -664,9 +664,10 @@ class RszViewer(QWidget):
             if go_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[go_instance_id]
                 for field_name, field_data in fields.items():
-                    settings_node["children"].append(
-                        self._create_field_dict(field_name, field_data)
-                    )
+                    field_node = self._create_field_dict(field_name, field_data)
+                    if len(settings_node["children"]) == 1:
+                        field_data.is_gameobject_or_folder_name = go_dict
+                    settings_node["children"].append(field_node)
             processed.add(go_instance_id)
             if go.component_count > 0:
                 comp_node = {"data": ["Components", ""], "children": []}
@@ -715,6 +716,12 @@ class RszViewer(QWidget):
             folder_dict["children"].append(settings_node)
             if folder_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[folder_instance_id]
+                first_field = True
+                for field_name, field_data in fields.items():
+                    if first_field:
+                        field_data.is_gameobject_or_folder_name = folder_dict
+                        first_field = False
+                
                 for field_name, field_data in fields.items():
                     settings_node["children"].append(
                         self._create_field_dict(field_name, field_data)
