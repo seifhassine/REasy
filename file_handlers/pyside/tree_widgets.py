@@ -1,9 +1,9 @@
 import traceback
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
-                               QLineEdit, QInputDialog)
+                               QLineEdit, QInputDialog, QApplication)
 from PySide6.QtGui import QIcon, QCursor
-from PySide6.QtCore import Qt, QModelIndex
+from PySide6.QtCore import Qt, QModelIndex, QEvent
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
@@ -50,9 +50,6 @@ class AdvancedTreeView(QTreeView):
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
-        if event.key() == Qt.Key_Shift:
-            self.shift_pressed = True
-            
         if event.key() == Qt.Key_Delete:
             indexes = self.selectedIndexes()
             if not indexes:
@@ -87,8 +84,6 @@ class AdvancedTreeView(QTreeView):
 
     def keyReleaseEvent(self, event):
         """Track shift key release"""
-        if event.key() == Qt.Key_Shift:
-            self.shift_pressed = False
         super().keyReleaseEvent(event)
 
     def setModelData(self, rootData):
@@ -108,6 +103,9 @@ class AdvancedTreeView(QTreeView):
             return
 
         def embed_children_on_expand(parent_index):
+            modifiers = QApplication.keyboardModifiers()
+            self.shift_pressed = bool(modifiers & Qt.ShiftModifier)
+            
             # Create widgets for immediate children
             self.create_widgets_for_children(parent_index)
             
@@ -116,9 +114,23 @@ class AdvancedTreeView(QTreeView):
 
         # Only connect the signal
         self.expanded.connect(embed_children_on_expand)
+        
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        """Reset shift_pressed when widget loses focus"""
+        if event.type() == QEvent.FocusOut:
+            self.shift_pressed = False
+        return super().eventFilter(obj, event)
 
     def expand_all_children(self, parent_index):
         """Recursively expand all children of the given parent"""
+        modifiers = QApplication.keyboardModifiers()
+        self.shift_pressed = bool(modifiers & Qt.ShiftModifier)
+        
+        if not self.shift_pressed:
+            return
+            
         model = self.model()
         if not model:
             return
