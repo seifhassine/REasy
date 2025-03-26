@@ -1224,9 +1224,10 @@ class RszObjectOperations:
                 new_gameobject.prefab_id = -1
         
         # Step 8: Now recursively duplicate all child GameObjects
-        if is_root_duplication:  # Only do this for  root duplication to avoid infinite recursion
+        duplicated_children = []
+        if is_root_duplication:  # Only do this for root duplication to avoid infinite recursion
             new_gameobject_id = new_gameobject.id
-            self._duplicate_children_recursive(gameobject_id, new_gameobject_id, guid_mapping, context_id_offset)
+            duplicated_children = self._duplicate_children_recursive(gameobject_id, new_gameobject_id, guid_mapping, context_id_offset)
             
         self.viewer.mark_modified()
         
@@ -1237,7 +1238,8 @@ class RszObjectOperations:
             "name": new_name,
             "parent_id": parent_id,
             "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(new_gameobject_instance_id),
-            "component_count": new_gameobject.component_count
+            "component_count": new_gameobject.component_count,
+            "children": duplicated_children 
         }
         
     def _duplicate_children_recursive(self, source_parent_id, new_parent_id, guid_mapping, context_id_offset):
@@ -1248,6 +1250,9 @@ class RszObjectOperations:
             new_parent_id: The new parent GameObject ID (the duplicate)
             guid_mapping: Dictionary mapping original GUIDs to new GUIDs
             context_id_offset: Fixed random number to add to chainsaw.ContextID._Group fields
+            
+        Returns:
+            list: A list of dictionaries containing information about the duplicated child GameObjects
         """
         child_gameobjects = []
         for go in self.scn.gameobjects:
@@ -1255,9 +1260,11 @@ class RszObjectOperations:
                 child_gameobjects.append(go)
                 
         if not child_gameobjects:
-            return
+            return []
             
         print(f"Duplicating {len(child_gameobjects)} child GameObjects for parent {source_parent_id} -> {new_parent_id}")
+        
+        duplicated_children = []
         
         # Duplicate each child, passing along the same GUID mapping and context ID offset
         for child_go in child_gameobjects:
@@ -1276,14 +1283,24 @@ class RszObjectOperations:
             print(f"  Duplicating child GameObject '{child_name}' (ID: {child_go.id}) with parent {new_parent_id}")
             
             # Use the main duplication function, but pass the shared GUID mapping and context ID offset
-            self.duplicate_gameobject(
+            child_result = self.duplicate_gameobject(
                 child_go.id,                # Source GameObject ID
                 child_name,                 # Keep the same name (or None to generate "Copy of X")
                 new_parent_id,              # New parent ID
                 guid_mapping,               # Shared GUID mapping
                 context_id_offset           # Shared context ID offset
             )
-            # Note: the above call will recursively duplicate this child's children as well
+            
+            if child_result and child_result.get('success', False):
+                duplicated_children.append(child_result)
+                # Add any children of this child recursively
+                if 'children' in child_result:
+                    # Already flattened in the recursive call
+                    duplicated_children.extend(child_result['children'])
+                    # Remove the children from the direct child to avoid duplication
+                    del child_result['children']
+                
+        return duplicated_children
 
     def _find_userdata_references(self, fields, userdata_refs):
         """Find all UserDataData references in fields
@@ -1375,9 +1392,7 @@ class RszObjectOperations:
             str_value = self.scn._rsz_userdata_str_map[source_rui]
             self.scn._rsz_userdata_str_map[new_rui] = str_value
 
-        matching_userdata_infos = [ui for ui in self.scn.userdata_infos if ui.hash == source_rui.hash]
-        
-        if not matching_userdata_infos and hasattr(self.scn, 'userdata_infos'):
+        if hasattr(self.scn, 'userdata_infos'):
             from file_handlers.rsz.rsz_file import RszUserDataInfo
             new_ui = RszUserDataInfo()
             new_ui.hash = source_rui.hash
@@ -1385,36 +1400,16 @@ class RszObjectOperations:
             self.scn.userdata_infos.append(new_ui)
             
             if hasattr(self.scn, '_userdata_str_map'):
+                source_string = None
                 for ui in self.scn.userdata_infos:
                     if ui.hash == source_rui.hash and ui in self.scn._userdata_str_map:
-                        str_value = self.scn._userdata_str_map[ui]
-                        self.scn._userdata_str_map[new_ui] = str_value
+                        source_string = self.scn._userdata_str_map[ui]
                         break
+                        
+                if source_string is not None:
+                    self.scn._userdata_str_map[new_ui] = source_string
         
-        self._ensure_userdata_strings_preserved(source_rui)
         return True
-    
-    def _ensure_userdata_strings_preserved(self, source_rui):
-        """Helper to ensure UserData strings are preserved when duplicating"""
-        if not hasattr(self.scn, '_userdata_str_map'):
-            return
-        
-        processed_strings = set()
-            
-        for ui in self.scn.userdata_infos:
-            if ui.hash == source_rui.hash and ui in self.scn._userdata_str_map:
-                str_value = self.scn._userdata_str_map[ui]
-                
-                key = (ui.hash, str_value)
-                
-                if key not in processed_strings:
-                    processed_strings.add(key)
-                    
-                    new_ui = RszUserDataInfo()
-                    new_ui.hash = ui.hash
-                    new_ui.string_offset = 0
-                    self.scn.userdata_infos.append(new_ui)
-                    self.scn._userdata_str_map[new_ui] = str_value
 
     def _duplicate_fields_with_remapping(self, source_fields, instance_mapping, userdata_mapping=None, guid_mapping=None):
         """Create a deep copy of fields with remapped object references"""

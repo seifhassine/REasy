@@ -1115,13 +1115,59 @@ class AdvancedTreeView(QTreeView):
                         if parent_index and parent_index.isValid():
                             break
                 
-                self.add_gameobject_to_ui_direct(go_data, parent_index)
+                go_node_index = self.add_gameobject_to_ui_direct(go_data, parent_index)
+                
+                if 'children' in go_data and go_data['children']:
+                    self.add_child_gameobjects_to_ui(go_data['children'], go_node_index)
+                
                 QMessageBox.information(self, "Success", f"GameObject '{name}' duplicated successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to duplicate GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error duplicating GameObject: {str(e)}")
             traceback.print_exc()
+
+    def add_child_gameobjects_to_ui(self, children_data, parent_node_index):
+        """Add child GameObjects to the UI recursively
+        
+        Args:
+            children_data: List of dictionaries with child GameObject data
+            parent_node_index: QModelIndex of the parent GameObject node in the tree
+        """
+        if not children_data or not parent_node_index or not parent_node_index.isValid():
+            return
+            
+        model = self.model()
+        parent_item = parent_node_index.internalPointer()
+        
+        children_node = None
+        for child in parent_item.children:
+            if child.data and child.data[0] == "Children":
+                children_node = child
+                break
+                
+        if not children_node:
+            children_dict = {"data": ["Children", ""], "children": []}
+            model.addChild(parent_item, children_dict)
+            
+            for child in parent_item.children:
+                if child.data and child.data[0] == "Children":
+                    children_node = child
+                    break
+                    
+        if not children_node:
+            print("Failed to find or create Children node")
+            return
+            
+        children_index = model.getIndexFromItem(children_node)
+        if not children_index.isValid():
+            return
+            
+        for child_data in children_data:
+            child_index = self.add_gameobject_to_ui_direct(child_data, children_index)
+            
+            if 'children' in child_data and child_data['children'] and child_index:
+                self.add_child_gameobjects_to_ui(child_data['children'], child_index)
 
     def _is_valid_parent_for_go(self, index):
         """Check if index is a valid parent for a GameObject node"""
@@ -1616,14 +1662,17 @@ class AdvancedTreeView(QTreeView):
         Args:
             go_data: Dictionary with GameObject data from the operation
             parent_index: Optional parent index for child GameObjects
+            
+        Returns:
+            QModelIndex: The index of the added GameObject node, or None if failed
         """
         parent = self.parent()
         if not parent or not hasattr(parent, "name_helper"):
-            return False
+            return None
         
         model = self.model()
         if not model:
-            return False
+            return None
             
         parent_node = None
         parent_item = None
@@ -1655,7 +1704,7 @@ class AdvancedTreeView(QTreeView):
             
             if not parent_node:
                 print("Failed to find GameObjects node for root GameObject placement")
-                return False
+                return None
         
         instance_id = go_data.get('instance_id', 0)
         name = go_data.get('name', 'GameObject')
@@ -1716,6 +1765,7 @@ class AdvancedTreeView(QTreeView):
         model.addChild(parent_node, go_dict)
         
         parent_index = model.getIndexFromItem(parent_node)
+        added_node_index = None
         if parent_index.isValid():
             child_index = model.index(len(parent_node.children) - 1, 0, parent_index)
             if child_index.isValid():
@@ -1732,8 +1782,10 @@ class AdvancedTreeView(QTreeView):
                     )
                     if widget:
                         self.setIndexWidget(child_index, widget)
+                
+                added_node_index = child_index
         
-        return True
+        return added_node_index
 
     def _find_gameobjects_node(self):
         """Find the GameObjects node in the tree for root GameObject placement"""
