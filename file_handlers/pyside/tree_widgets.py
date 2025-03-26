@@ -46,6 +46,7 @@ class AdvancedTreeView(QTreeView):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
         self.shift_pressed = False
+        self.label_width = 150 
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
@@ -2095,6 +2096,10 @@ class TreeWidgetFactory:
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(4)
         
+        min_label_width = 150
+        if hasattr(widget_parent, 'label_width'):
+            min_label_width = widget_parent.label_width
+        
         if data_obj and hasattr(data_obj, '__class__') and data_obj.__class__.__name__ == 'ArrayData':
             label = QLabel()
             label.setText(f"{name_text} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
@@ -2125,6 +2130,7 @@ class TreeWidgetFactory:
         
         if is_enum:
             label = QLabel(name_text)
+            label.setMinimumWidth(min_label_width)
             layout.addWidget(label)
             
             input_widget = EnumInput(parent=widget)
@@ -2137,6 +2143,7 @@ class TreeWidgetFactory:
         
         elif node_type in TreeWidgetFactory.WIDGET_TYPES and data_obj:
             label = QLabel(name_text)
+            label.setMinimumWidth(min_label_width)
             layout.addWidget(label)
             
             input_class = TreeWidgetFactory.WIDGET_TYPES[node_type]
@@ -2168,7 +2175,9 @@ class TreeWidgetFactory:
             
         # Default text widgets
         else:
-            layout.addWidget(QLabel(name_text))
+            label = QLabel(name_text)
+            label.setMinimumWidth(min_label_width)
+            layout.addWidget(label)
             widget.setFixedHeight(24)
             
         return widget
