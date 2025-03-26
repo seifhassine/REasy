@@ -1226,21 +1226,12 @@ class RszViewer(QWidget):
                 if isinstance(field_data, ObjectData):
                     if field_data.value >= index:
                         field_data.value += 1
-                elif isinstance(field_data, ResourceData) and hasattr(field_data, "value"):
-                    if field_data.value >= index:
-                        field_data.value += 1
                 elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
                     if field_data.index >= index:
                         field_data.index += 1
                 elif isinstance(field_data, ArrayData):
                     for elem in field_data.values:
                         if isinstance(elem, ObjectData) and elem.value >= index:
-                            elem.value += 1
-                        elif (
-                            isinstance(elem, ResourceData)
-                            and hasattr(elem, "value")
-                            and elem.value >= index
-                        ):
                             elem.value += 1
                         elif (
                             isinstance(elem, UserDataData)
@@ -1431,13 +1422,13 @@ class RszViewer(QWidget):
         """Update references in fields after deleting instances"""
         updated_fields = {}
         for field_name, field_data in fields.items():
-            if isinstance(field_data, ObjectData) or (isinstance(field_data, ResourceData) and hasattr(field_data, "value")):
+            if isinstance(field_data, ObjectData):
                 self._update_reference_value(field_data, "value", deleted_ids, id_mapping)
             elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
                 self._update_reference_value(field_data, "index", deleted_ids, id_mapping)
             elif isinstance(field_data, ArrayData):
                 for elem in field_data.values:
-                    if isinstance(elem, ObjectData) or (isinstance(elem, ResourceData) and hasattr(elem, "value")):
+                    if isinstance(elem, ObjectData):
                         self._update_reference_value(elem, "value", deleted_ids, id_mapping)
                     elif isinstance(elem, UserDataData) and hasattr(elem, "index"):
                         self._update_reference_value(elem, "index", deleted_ids, id_mapping)

@@ -922,15 +922,6 @@ class RszArrayOperations:
                         elif ref_id in id_adjustments:
                             field_data.index = id_adjustments[ref_id]
                 
-                # Update Resource references
-                elif isinstance(field_data, ResourceData) and hasattr(field_data, "value"):
-                    ref_id = field_data.value
-                    if ref_id > 0:
-                        if ref_id in deleted_ids:
-                            field_data.value = 0
-                        elif ref_id in id_adjustments:
-                            field_data.value = id_adjustments[ref_id]
-                
                 # Update array elements
                 elif isinstance(field_data, ArrayData):
                     for element in field_data.values:
@@ -950,15 +941,6 @@ class RszArrayOperations:
                                     element.index = 0
                                 elif ref_id in id_adjustments:
                                     element.index = id_adjustments[ref_id]
-                        
-                        # Update Resource references in array
-                        elif isinstance(element, ResourceData) and hasattr(element, "value"):
-                            ref_id = element.value
-                            if ref_id > 0:
-                                if ref_id in deleted_ids:
-                                    element.value = 0
-                                elif ref_id in id_adjustments:
-                                    element.value = id_adjustments[ref_id]
 
     def _is_exclusively_referenced_from(self, instance_id, source_id):
         """
@@ -986,10 +968,7 @@ class RszArrayOperations:
                     return False 
                     
                 elif isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
-                    return False 
-                    
-                elif isinstance(field_data, ResourceData) and hasattr(field_data, "value") and field_data.value == instance_id:
-                    return False 
+                    return False
                     
                 elif isinstance(field_data, ArrayData):
                     for item in field_data.values:
@@ -997,9 +976,6 @@ class RszArrayOperations:
                             return False 
                         
                         elif isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
-                            return False 
-                            
-                        elif isinstance(item, ResourceData) and hasattr(item, "value") and item.value == instance_id:
                             return False 
             
         return True

@@ -823,7 +823,7 @@ class RszFile:
                 elif isinstance(element, (GameObjectRefData, GuidData)):
                     guid = uuid.UUID(element.guid_str)
                     out.extend(guid.bytes_le)
-                elif isinstance(element, (StringData, ResourceData)):
+                elif isinstance(element, StringData):
                     while len(out) % 4:
                         out.extend(b'\x00')
                     if element.value:
@@ -946,7 +946,7 @@ class RszFile:
                 # Use UUID directly to avoid string cleaning issues
                 guid = uuid.UUID(data_obj.guid_str)
                 out.extend(guid.bytes_le)
-            elif isinstance(data_obj, (StringData, ResourceData)):
+            elif isinstance(data_obj, StringData):
                 while len(out) % 4:
                     out.extend(b'\x00')
                     
