@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QDialog, QVBoxLayout, QTreeView, QApplication)
-from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette
+                              QDialog, QVBoxLayout, QTreeView, QApplication,  QToolButton)
+from PySide6.QtCore import Signal, Qt, QTimer, QSize
+from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette, QFontMetrics
 import uuid
 
 from file_handlers.rsz.rsz_data_types import RawBytesData
@@ -242,24 +242,48 @@ class GuidInput(BaseValueWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.line_edit = OverwriteGuidLineEdit(self)
-        self.line_edit.setFixedWidth(230)
+        self.line_edit.setFixedWidth(238)
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         self.line_edit.textEdited.connect(self._on_text_edited)
 
-        self.gen_button = QPushButton("Generate")
+        self.gen_button = QToolButton()
+        self.gen_button.setText("Generate")
         self.gen_button.setToolTip("Generate a random GUID")
-        self.gen_button.setFixedWidth(70)
+        self.gen_button.setFixedWidth(60) 
         self.layout.addWidget(self.gen_button)
-        self.gen_button.clicked.connect(lambda: self._on_text_edited(str(uuid.uuid4())))
+        self.gen_button.clicked.connect(self._generate_guid)
         
-        self.reset_button = QPushButton("Reset")
+        self.reset_button = QToolButton()
+        self.reset_button.setText("Reset")
         self.reset_button.setToolTip("Reset to null GUID (all zeros)")
-        self.reset_button.setFixedWidth(50)
+        self.reset_button.setFixedWidth(40) 
         self.layout.addWidget(self.reset_button)
-        self.reset_button.clicked.connect(lambda: self._on_text_edited("00000000-0000-0000-0000-000000000000"))
+        self.reset_button.clicked.connect(self._reset_guid)
+
+    def _generate_guid(self):
+        """Generate a new random GUID"""
+        if not self._data:
+            return
         
-        self.layout.addStretch()
+        new_guid = str(uuid.uuid4())
+        self.line_edit.setText(new_guid)
+        self._data.guid_str = new_guid
+        self.valueChanged.emit(new_guid)
+        self.mark_modified()
+        self.line_edit.setStyleSheet("")
+        
+    def _reset_guid(self):
+        """Reset to null GUID (all zeros)"""
+        if not self._data:
+            return
+        
+        null_guid = "00000000-0000-0000-0000-000000000000"
+        self.line_edit.setText(null_guid)
+        self._data.guid_str = null_guid
+        self.valueChanged.emit(null_guid)
+        self.mark_modified()
+        self.line_edit.setStyleSheet("")
 
     def _format_guid(self, text):
         """Format text as UUID, removing invalid chars and adding hyphens"""
@@ -765,19 +789,31 @@ class StringInput(BaseValueWidget):
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         self.line_edit.textChanged.connect(self._on_text_changed)
+        
+        self.minimum_width = 150
 
     def update_display(self):
         if self._data:
             self.line_edit.blockSignals(True)
             self.line_edit.setText(self._data.value.rstrip('\x00'))
             self.line_edit.blockSignals(False)
+            fm = QFontMetrics(self.line_edit.font())
+            text_width = fm.horizontalAdvance(self._data.value) + 10
+            new_width = max(text_width, self.minimum_width)
+            self.line_edit.setFixedWidth(new_width)
 
     def _on_text_changed(self, text):
-        """Update data when text changes"""
+        """Update data when text changes and resize the line edit"""
         if self._data:
             self._data.value = text
             self.valueChanged.emit(text)
             self.mark_modified()
+            
+            fm = QFontMetrics(self.line_edit.font())
+            text_width = fm.horizontalAdvance(text) + 10
+            new_width = max(text_width, self.minimum_width)
+            self.line_edit.setFixedWidth(new_width)
+            
             
             if hasattr(self._data, "is_gameobject_or_folder_name") and self._data.is_gameobject_or_folder_name:
                 if isinstance(self._data.is_gameobject_or_folder_name, dict):
