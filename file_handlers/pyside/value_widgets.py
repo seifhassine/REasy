@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QDialog, QVBoxLayout, QTreeView)
+                              QDialog, QVBoxLayout, QTreeView, QApplication)
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette
 import uuid
@@ -238,59 +238,122 @@ class Vec4Input(BaseValueWidget):
 
 class GuidInput(BaseValueWidget):
     valueChanged = Signal(str)
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.line_edit = QLineEdit()
-        self.line_edit.setFixedWidth(230) 
+        self.line_edit = OverwriteGuidLineEdit(self)
+        self.line_edit.setFixedWidth(230)
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
-        self.line_edit.textChanged.connect(self._on_value_changed)
+        self.line_edit.textEdited.connect(self._on_text_edited)
 
         self.gen_button = QPushButton("Generate")
         self.gen_button.setToolTip("Generate a random GUID")
-        self.gen_button.setMaximumWidth(70)
+        self.gen_button.setFixedWidth(70)
         self.layout.addWidget(self.gen_button)
-        self.gen_button.clicked.connect(self._generate_random_guid)
+        self.gen_button.clicked.connect(lambda: self._on_text_edited(str(uuid.uuid4())))
+        
+        self.reset_button = QPushButton("Reset")
+        self.reset_button.setToolTip("Reset to null GUID (all zeros)")
+        self.reset_button.setFixedWidth(50)
+        self.layout.addWidget(self.reset_button)
+        self.reset_button.clicked.connect(lambda: self._on_text_edited("00000000-0000-0000-0000-000000000000"))
+        
+        self.layout.addStretch()
+
+    def _format_guid(self, text):
+        """Format text as UUID, removing invalid chars and adding hyphens"""
+        hex_only = ''.join(c for c in text.lower() if c in '0123456789abcdef')
+        hex_only = hex_only[:32]
+        
+        if not hex_only:
+            return ''
+            
+        parts = [
+            hex_only[:8],
+            hex_only[8:12],
+            hex_only[12:16],
+            hex_only[16:20],
+            hex_only[20:32]
+        ]
+        return '-'.join(part for part in parts if part)
+
+    def _on_text_edited(self, text):
+        if not self._data:
+            return
+            
+        cursor_pos = self.line_edit.cursorPosition()
+        hyphens_before = text[:cursor_pos].count('-')
+        
+        formatted = self._format_guid(text)
+        
+        if formatted != text:
+            new_hyphens = formatted[:cursor_pos].count('-')
+            new_pos = cursor_pos + (new_hyphens - hyphens_before)
+            
+            self.line_edit.setText(formatted)
+            self.line_edit.setCursorPosition(min(new_pos, len(formatted)))
+            
+        if len(formatted) == 36:
+            try:
+                uuid.UUID(formatted)
+                self._data.guid_str = formatted
+                self.valueChanged.emit(formatted)
+                self.mark_modified()
+                self.line_edit.setStyleSheet("")
+            except ValueError:
+                self.line_edit.setStyleSheet("border: 1px solid red;")
+        else:
+            self.line_edit.setStyleSheet("border: 1px solid red;")
 
     def update_display(self):
         if not self._data:
             return
         self.line_edit.blockSignals(True)
-
-        # Handle all GUID types
-        if hasattr(self._data, 'guid_str'):
-            self.line_edit.setText(self._data.guid_str)
-        elif hasattr(self._data, 'guid'):  # For GameObjectRef array elements
-            self.line_edit.setText(str(self._data.guid))
-        elif hasattr(self._data, 'value'):
-            self.line_edit.setText(str(self._data.value))
-        else:
-            self.line_edit.setText(str(self._data))
+        self.line_edit.setText(self._data.guid_str)
         self.line_edit.blockSignals(False)
 
-    def _on_value_changed(self, text):
-        if not self._data:
+class OverwriteGuidLineEdit(QLineEdit):
+    def __init__(self, guid_widget, parent=None):
+        super().__init__(parent)
+        self.guid_widget = guid_widget
+        
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A and event.modifiers() & Qt.ControlModifier:
+            self.selectAll()
             return
-        # Handle all GUID types
-        if hasattr(self._data, 'guid_str'):
-            self._data.guid_str = text
-
-            if(hasattr(self._data, 'gameobject')):
-                self._data.gameobject.guid = (uuid.UUID(text)).bytes_le
-                        
-        elif hasattr(self._data, 'guid'):  # For GameObjectRef array elements
-            self._data.guid = text
-        elif hasattr(self._data, 'value'):
-            self._data.value = text
-        self.valueChanged.emit(text)
-        self.mark_modified()
-
-    def _generate_random_guid(self):
-        """Generate a random GUID and set it as the current value"""
-        random_guid = str(uuid.uuid4())
-        self.line_edit.setText(random_guid)
-        self.valueChanged.emit(random_guid)
+            
+        if event.modifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_C:
+                super().keyPressEvent(event)
+            elif event.key() == Qt.Key_V:
+                self.guid_widget._on_text_edited(QApplication.clipboard().text())
+            return
+            
+        if event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End):
+            super().keyPressEvent(event)
+            return
+            
+        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            return
+        
+        text = event.text().lower()
+        if text and text in "0123456789abcdef":
+            pos = self.cursorPosition()
+            current_text = self.text()
+            
+            if pos < len(current_text):
+                if current_text[pos] == '-':
+                    pos += 1
+                
+                if pos < len(current_text):
+                    new_text = current_text[:pos] + text + current_text[pos+1:]
+                    self.setText(new_text)
+                    new_pos = pos + 1
+                    if new_pos < len(new_text) and new_text[new_pos] == '-':
+                        new_pos += 1
+                    self.setCursorPosition(new_pos)
+                    self.guid_widget._on_text_edited(new_text)
 
 class NumberInput(BaseValueWidget):
     """Base class for numeric inputs"""
@@ -612,7 +675,7 @@ class HexBytesInput(BaseValueWidget):
             
             original_text = self.text_field.text()
             
-            text_no_spaces = ''.join(c for c in text if c in '0123456789ABCDEF')
+            text_no_spaces = ''.join(c for c in text if c in '0123456789abcdef')
             
             if text_no_spaces:
                 if len(text_no_spaces) % 2 != 0:
@@ -655,11 +718,11 @@ class OverwriteHexLineEdit(QLineEdit):
 
     def keyPressEvent(self, event):
         text = event.text()
-        if text and text.upper() in "0123456789ABCDEF":
+        if text and text.upper() in "0123456789abcdef":
             pos = self.cursorPosition()
             full_text = self.text()
             
-            effective_index = len(full_text[:pos].replace(" ", ""))
+            effective_index = len(full_text[:pos].replace(" ", "")) 
             byte_index = effective_index // 2
             nibble_index = effective_index % 2
 
@@ -733,7 +796,7 @@ class StringInput(BaseValueWidget):
                             tree_view = parent_widget.tree
                         elif isinstance(parent_widget, QTreeView):
                             tree_view = parent_widget
-                    
+                        
                     if tree_view and tree_view.model():
                         model = tree_view.model()
                         
