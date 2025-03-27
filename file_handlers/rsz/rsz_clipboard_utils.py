@@ -32,13 +32,16 @@ class RszClipboardUtils:
         try:
             parent = widget.parent()
             json_path = parent.handler.type_registry.json_path
-            if (json_path):
-                base_name = os.path.basename(json_path)
-                base_name = os.path.splitext(base_name)[0]
-                return base_name
         except Exception as e:
-            print(f"Error retrieving JSON name: {str(e)}")
-            
+            parent = widget
+            json_path = parent.handler.type_registry.json_path
+        finally:
+            if json_path:
+                json_name = os.path.basename(json_path)
+                return json_name.split(".")[0]
+            else:
+                print("No JSON path found for the widget.")
+                return None
         return "default"
     
     @staticmethod

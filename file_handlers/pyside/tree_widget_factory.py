@@ -107,7 +107,7 @@ class TreeWidgetFactory:
                 widget.setFixedHeight(150)
                 
         # Icon widgets
-        elif node_type in ("gameobject", "folder"):
+        elif node_type in ("gameobject", "folder", "template"):
             icon_name = node_type
             
             icon = QIcon(f"resources/icons/{icon_name}.png")

@@ -346,7 +346,7 @@ class RszGameObjectClipboard:
                 
             if new_name is None or new_name.strip() == "":
                 if source_name and source_name.strip() != "":
-                    new_name = f"Copy of {source_name}"
+                    new_name = f"{source_name}"
                 else:
                     new_name = "GameObject_Copy"
             
@@ -959,24 +959,25 @@ class RszGameObjectClipboard:
     
     @staticmethod
     def _get_gameobject_name(viewer, instance_id, default_name=None):
-        if default_name is None:
-            default_name = RszGameObjectClipboard.DEFAULT_GO_NAME
+        """Get the name of a GameObject from its first field or default name"""
+        if not hasattr(viewer, 'scn') or not hasattr(viewer.scn, 'parsed_elements'):
+            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
             
-        if instance_id <= 0 or instance_id not in viewer.scn.parsed_elements:
-            return default_name
-        
+        if instance_id not in viewer.scn.parsed_elements:
+            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
+            
         fields = viewer.scn.parsed_elements[instance_id]
         if not fields:
-            return default_name
+            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
             
-        first_field = fields.get(1)
+        if fields:
+            first_field_name = next(iter(fields), None)
+            if first_field_name:
+                first_field = fields[first_field_name]
+                if hasattr(first_field, 'value'):
+                    return str(first_field.value.strip("\00")) or default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
         
-        if hasattr(first_field, 'value') and first_field.value:
-            if isinstance(first_field.value, str):
-                return first_field.value.strip("\00")
-            return str(first_field.value)
-        
-        return default_name
+        return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
 
     @staticmethod
     def _set_gameobject_name(viewer, instance_id, name):

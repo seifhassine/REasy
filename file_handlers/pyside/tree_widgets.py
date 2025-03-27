@@ -1,22 +1,20 @@
 import os
 import traceback
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
+from PySide6.QtWidgets import (QWidget, QLabel, QTreeView, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication)
-from PySide6.QtGui import QIcon, QCursor
-from PySide6.QtCore import Qt, QModelIndex, QEvent, QUrl, QUrlQuery
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-import json
-import re
+from PySide6.QtGui import QCursor
+from PySide6.QtCore import Qt, QModelIndex, QEvent
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
+from ui.template_manager_dialog import TemplateManagerDialog
+from ui.template_export_dialog import TemplateExportDialog
+from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
 from .value_widgets import *
 from .tree_widget_factory import TreeWidgetFactory
 
-from utils.enum_manager import EnumManager
-from file_handlers.rsz.rsz_data_types import StructData
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
 from utils.translate_utils import TranslationManager, show_translation_error, show_translation_result
                         
@@ -220,6 +218,9 @@ class AdvancedTreeView(QTreeView):
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
             copy_action = menu.addAction("Copy GameObject")
+            
+            export_template_action = menu.addAction("Export as Template")
+            
             paste_as_child_action = None
     
             if has_go_clipboard:
@@ -243,6 +244,8 @@ class AdvancedTreeView(QTreeView):
                 duplicate_go_action = menu.addAction("Duplicate GameObject")
 
             translate_action = menu.addAction("Translate Name")
+            
+            template_manager_action = menu.addAction("Template Manager")
             
             go_has_prefab = False
             prefab_path = ""
@@ -292,6 +295,10 @@ class AdvancedTreeView(QTreeView):
                 self.translate_node_text(index)
             elif action == copy_action:
                 self.copy_gameobject(index)
+            elif action == export_template_action:
+                self.export_gameobject_as_template(index)
+            elif action == template_manager_action:
+                self.open_template_manager(index)
             elif paste_as_child_action and action == paste_as_child_action:
                 self.paste_gameobject_as_child(index)
             elif duplicate_go_action and action == duplicate_go_action:
@@ -308,6 +315,8 @@ class AdvancedTreeView(QTreeView):
             if has_go_clipboard:
                 paste_go_action = menu.addAction("Paste GameObject")
             
+            template_manager_action = menu.addAction("Template Manager")
+            
             delete_folder_action = menu.addAction("Delete Folder")
             translate_action = menu.addAction("Translate Name")
             
@@ -317,6 +326,8 @@ class AdvancedTreeView(QTreeView):
                 self.create_gameobject_in_folder(index)
             elif paste_go_action and action == paste_go_action:
                 self.paste_gameobject_in_folder(index)
+            elif action == template_manager_action:
+                self.open_template_manager(index)
             elif action == delete_folder_action:
                 self.delete_folder(index)
             elif action == translate_action:
@@ -329,12 +340,16 @@ class AdvancedTreeView(QTreeView):
             if has_go_clipboard:
                 paste_go_action = menu.addAction("Paste GameObject")
             
+            template_manager_action = menu.addAction("Template Manager")
+            
             action = menu.exec_(QCursor.pos())
             
             if action == create_go_action:
                 self.create_root_gameobject(index)
             elif paste_go_action and action == paste_go_action:
                 self.paste_gameobject_at_root(index)
+            elif action == template_manager_action:
+                self.open_template_manager(index)
         
         elif item_info['is_component']:
             delete_action = menu.addAction("Delete Component")
@@ -382,6 +397,100 @@ class AdvancedTreeView(QTreeView):
             # Currently no special menu options for embedded instances
             return
 
+    def export_gameobject_as_template(self, index):
+        """Export a GameObject as a template"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        parent_widget = self.parent()
+        if not parent_widget or not hasattr(parent_widget, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+            
+        go_object_id = -1
+        for i, obj_id in enumerate(parent_widget.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
+                
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+            
+        go_name = ""
+        if hasattr(item, 'data') and item.data:
+            name_parts = item.data[0].split(' (ID:')
+            go_name = name_parts[0]
+        
+        if not go_name:
+            go_name = "GameObject"
+            
+        export_dialog = TemplateExportDialog(self, go_name)
+        if export_dialog.exec() != QDialog.Accepted:
+            return
+            
+        template_info = export_dialog.get_template_info()
+        
+        result = RszTemplateManager.export_gameobject_to_template(
+            parent_widget,
+            go_object_id,
+            template_info["name"],
+            template_info["tags"],
+            template_info["description"]
+        )
+        
+        if result["success"]:
+            QMessageBox.information(self, "Success", result["message"])
+        else:
+            QMessageBox.warning(self, "Error", result["message"])
+
+    def open_template_manager(self, index=None):
+        """Open the template manager dialog"""
+        parent_widget = self.parent()
+        if not parent_widget:
+            QMessageBox.warning(self, "Error", "Parent widget not available")
+            return
+            
+        dialog = TemplateManagerDialog(self, parent_widget)
+        
+        dialog.template_imported.connect(self._on_template_imported)
+        
+        dialog.exec()
+    
+    def _on_template_imported(self, template_data):
+        """Handle imported template - update UI if needed"""
+        if not template_data or not template_data.get("success", False):
+            return
+            
+        parent_id = template_data.get("parent_id", -1)
+        parent_index = None
+        
+        if parent_id >= 0:
+            model = self.model()
+            if model:
+                for i in range(model.rowCount(QModelIndex())):
+                    root_child_idx = model.index(i, 0, QModelIndex())
+                    parent_index = self._find_node_by_object_id(model, root_child_idx, parent_id)
+                    if parent_index and parent_index.isValid():
+                        break
+                        
+        # Add GameObject to UI
+        self.add_gameobject_to_ui_direct(template_data, parent_index)
 
     def _identify_item_type(self, item):
         """
@@ -1773,8 +1882,7 @@ class AdvancedTreeView(QTreeView):
                         continue
                         
                     reasy_id = parent_widget.handler.id_manager.get_reasy_id_for_instance(comp_instance_id)
-                    name = parent_widget.name_helper.get_instance_first_field_name(comp_instance_id)
-                    component_name = name if name else parent_widget.name_helper.get_instance_name(comp_instance_id)
+                    component_name = parent_widget.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
                         "instance_id": comp_instance_id,
@@ -1936,10 +2044,6 @@ class AdvancedTreeView(QTreeView):
         reasy_id = component_data.get('reasy_id', 0)
         
         component_name = component_type
-        if hasattr(parent.name_helper, 'get_instance_first_field_name'):
-            name = parent.name_helper.get_instance_first_field_name(component_instance_id)
-            if name:
-                component_name = name
                 
         display_name = component_name
         

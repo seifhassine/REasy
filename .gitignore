@@ -16,6 +16,7 @@ dist/
 backups/
 .clipboard
 src
+templates
 
 # VS Code settings (if you don't want to share them)
 .vscode/
