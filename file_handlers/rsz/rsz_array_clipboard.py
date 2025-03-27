@@ -3,34 +3,17 @@ import json
 import traceback
 import copy
 from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
 
 class RszArrayClipboard:
     
     @staticmethod
     def get_clipboard_directory():
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        clipboard_dir = os.path.join(base_dir, ".clipboard", "arrayelement")
-        
-        if not os.path.exists(clipboard_dir):
-            os.makedirs(clipboard_dir, exist_ok=True)
-            
-        return clipboard_dir
+        return RszClipboardUtils.get_type_clipboard_directory("arrayelement")
         
     @staticmethod
     def get_json_name(widget):
-        try:
-            parent = widget.parent()
-            if parent and hasattr(parent, "handler") and hasattr(parent.handler, "type_registry"):
-                json_path = parent.handler.type_registry.json_path
-                if json_path:
-                    base_name = os.path.basename(json_path)
-                    base_name = os.path.splitext(base_name)[0]
-                    return base_name
-        except Exception as e:
-            print(f"Error retrieving JSON name: {str(e)}")
-            pass
-            
-        return "default"
+        return RszClipboardUtils.get_json_name(widget)
         
     @staticmethod
     def get_clipboard_file(widget):
@@ -58,7 +41,7 @@ class RszArrayClipboard:
             
             clipboard_file = RszArrayClipboard.get_clipboard_file(widget)
             with open(clipboard_file, 'w') as f:
-                json.dump(clipboard_data, f, indent=2, default=RszArrayClipboard._json_serializer)
+                json.dump(clipboard_data, f, indent=2, default=RszClipboardUtils.json_serializer)
                 
             return True
         except Exception as e:
@@ -68,13 +51,7 @@ class RszArrayClipboard:
 
     @staticmethod
     def _json_serializer(obj):
-        if isinstance(obj, bytes):
-            return obj.hex()
-            
-        if hasattr(obj, '__dict__'):
-            return obj.__dict__
-            
-        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+        return RszClipboardUtils.json_serializer(obj)
 
     @staticmethod
     def _serialize_object_with_graph(element, viewer):
@@ -390,6 +367,12 @@ class RszArrayClipboard:
                 "value": element.value,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, RuntimeTypeData):
+            return {
+                "type": "RuntimeTypeData",
+                "value": element.value,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, Vec2Data):
             return {
                 "type": "Vec2Data",
@@ -400,6 +383,14 @@ class RszArrayClipboard:
         elif isinstance(element, Vec3Data):
             return {
                 "type": "Vec3Data",
+                "x": element.x,
+                "y": element.y,
+                "z": element.z,
+                "orig_type": element.orig_type
+            }
+        elif isinstance(element, Vec3ColorData):
+            return {
+                "type": "Vec3ColorData",
                 "x": element.x,
                 "y": element.y,
                 "z": element.z,
@@ -463,10 +454,11 @@ class RszArrayClipboard:
                 "orig_type": element.orig_type
             }
         elif isinstance(element, GameObjectRefData):
+            hex_string = element.raw_bytes.hex() if hasattr(element, 'raw_bytes') and element.raw_bytes else ""
             return {
                 "type": "GameObjectRefData",
                 "guid_str": element.guid_str,
-                "guid": element.raw_bytes.hex() if hasattr(element, 'raw_bytes') and element.raw_bytes else "",
+                "raw_bytes": hex_string,
                 "orig_type": element.orig_type
             }
         elif isinstance(element, ArrayData):
@@ -479,7 +471,6 @@ class RszArrayClipboard:
         elif isinstance(element, CapsuleData):
             return {
                 "type": "CapsuleData",
-                "height": element.height,
                 "radius": element.radius,
                 "start": RszArrayClipboard._serialize_element(element.start) if hasattr(element, 'start') else None,
                 "end": RszArrayClipboard._serialize_element(element.end) if hasattr(element, 'end') else None,
@@ -642,12 +633,6 @@ class RszArrayClipboard:
                 "z": element.z,
                 "orig_type": element.orig_type
             }
-        elif isinstance(element, RuntimeTypeData):
-            return {
-                "type": "RuntimeTypeData",
-                "type_name": element.type_name,
-                "orig_type": element.orig_type
-            }
         elif isinstance(element, StructData):
             struct_result = {
                 "type": "StructData",
@@ -671,15 +656,7 @@ class RszArrayClipboard:
     @staticmethod
     def get_clipboard_data(widget):
         clipboard_file = RszArrayClipboard.get_clipboard_file(widget)
-        if not os.path.exists(clipboard_file):
-            return None
-            
-        try:
-            with open(clipboard_file, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error reading clipboard: {str(e)}")
-            return None
+        return RszClipboardUtils.load_clipboard_data(clipboard_file)
             
     @staticmethod
     def is_compatible(target_type, source_type):
@@ -728,7 +705,8 @@ class RszArrayClipboard:
                     RszArrayClipboard._add_element_to_ui_direct(widget, array_item, element, array_data.orig_type)
                 return element
             else:
-                element = RszArrayClipboard._deserialize_element(element_data, array_data.element_class)
+                guid_mapping = {}
+                element = RszArrayClipboard._deserialize_element(element_data, array_data.element_class, guid_mapping)
                 
                 if element:
                     array_data.values.append(element)
@@ -787,6 +765,7 @@ class RszArrayClipboard:
             from file_handlers.rsz.rsz_file import RszInstanceInfo
             
             relative_to_new_id = {}
+            guid_mapping = {}
             
             current_index = insertion_index
             for instance_data in instances:
@@ -825,7 +804,7 @@ class RszArrayClipboard:
                 
                 for field_name, field_data in fields_data.items():
                     field_obj = RszArrayClipboard._deserialize_field_with_relative_mapping(
-                        field_data, relative_to_new_id
+                        field_data, relative_to_new_id, guid_mapping
                     )
                     if field_obj:
                         viewer.scn.parsed_elements[new_id][field_name] = field_obj
@@ -851,7 +830,10 @@ class RszArrayClipboard:
             return None
     
     @staticmethod
-    def _deserialize_field_with_relative_mapping(field_data, id_mapping):
+    def _deserialize_field_with_relative_mapping(field_data, id_mapping, guid_mapping=None):
+        if guid_mapping is None:
+            guid_mapping = {}
+            
         field_type = field_data.get("type", "")
         
         if field_type == "ObjectData":
@@ -875,6 +857,25 @@ class RszArrayClipboard:
                 index = id_mapping[index]
                 
             return UserDataData(value, index, orig_type)
+            
+        elif field_type == "GameObjectRefData":
+            guid_str = field_data.get("guid_str", "")
+            guid_hex = field_data.get("raw_bytes", "")
+            
+            is_null_ref = not guid_hex or guid_hex == "00000000000000000000000000000000"
+            
+            if is_null_ref:
+                return GameObjectRefData("", None, field_data.get("orig_type", ""))
+            else:
+                if guid_hex in guid_mapping:
+                    return guid_mapping[guid_hex].copy()
+                    
+                print(f"Creating new GameObjectRefData for GUID: {guid_hex}")
+                guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
+                ref = GameObjectRefData(guid_str, guid_bytes, field_data.get("orig_type", ""))
+                
+                guid_mapping[guid_hex] = ref
+                return ref
             
         elif field_type == "ArrayData":
             values = field_data.get("values", [])
@@ -909,17 +910,37 @@ class RszArrayClipboard:
                         array.values.append(UserDataData(value, new_index, orig_type))
                     else:
                         array.values.append(UserDataData(value, relative_index, orig_type))
+                elif value_type == "GameObjectRefData":
+                    guid_str = value_data.get("guid_str", "")
+                    guid_hex = value_data.get("raw_bytes", "")
+                    
+                    print(f"Creating new GameObjectRefData for GUID: {guid_hex}")
+                    is_null_ref = not guid_hex or guid_hex == "00000000000000000000000000000000"
+                    
+                    if is_null_ref:
+                        array.values.append(GameObjectRefData("", None, value_data.get("orig_type", "")))
+                    else:
+                        if guid_hex in guid_mapping:
+                            array.values.append(guid_mapping[guid_hex])
+                        else:
+                            guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
+                            ref = GameObjectRefData(guid_str, guid_bytes, value_data.get("orig_type", ""))
+                            guid_mapping[guid_hex] = ref
+                            array.values.append(ref)
                 else:
-                    element = RszArrayClipboard._deserialize_element(value_data, element_class)
+                    element = RszArrayClipboard._deserialize_element(value_data, element_class, guid_mapping)
                     if element:
                         array.values.append(element)
                     
             return array
             
-        return RszArrayClipboard._deserialize_element(field_data, None)
+        return RszArrayClipboard._deserialize_element(field_data, None, guid_mapping)
     
     @staticmethod
-    def _deserialize_element(element_data, element_class):
+    def _deserialize_element(element_data, element_class, guid_mapping=None):
+        if guid_mapping is None:
+            guid_mapping = {}
+            
         element_type = element_data.get("type", "")
         orig_type = element_data.get("orig_type", "")
         
@@ -959,7 +980,11 @@ class RszArrayClipboard:
             return BoolData(element_data.get("value", False), orig_type)
             
         elif element_type == "StringData":
-            return StringData(element_data.get("value", ""), orig_type)
+            string_value = element_data.get("value", "")
+            return StringData(string_value, orig_type)
+        
+        elif element_type == "RuntimeTypeData":
+            return RuntimeTypeData(element_data.get("value", ""), orig_type)
             
         elif element_type == "Vec2Data":
             return Vec2Data(
@@ -970,6 +995,14 @@ class RszArrayClipboard:
             
         elif element_type == "Vec3Data":
             return Vec3Data(
+                element_data.get("x", 0.0),
+                element_data.get("y", 0.0),
+                element_data.get("z", 0.0),
+                orig_type
+            )
+            
+        elif element_type == "Vec3ColorData":
+            return Vec3ColorData(
                 element_data.get("x", 0.0),
                 element_data.get("y", 0.0),
                 element_data.get("z", 0.0),
@@ -1015,12 +1048,7 @@ class RszArrayClipboard:
             guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
             return GuidData(guid_str, guid_bytes, orig_type)
             
-        elif element_type == "GameObjectRefData":
-            guid_str = element_data.get("guid_str", "")
-            guid_hex = element_data.get("guid", "")
-            guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
-            return GameObjectRefData(guid_str, guid_bytes, orig_type)
-            
+
         elif element_type == "ArrayData":
             values = element_data.get("values", [])
             element_type_name = element_data.get("element_type", "")
@@ -1032,7 +1060,7 @@ class RszArrayClipboard:
             array = ArrayData([], nested_element_class, orig_type)
             
             for value_data in values:
-                element = RszArrayClipboard._deserialize_element(value_data, nested_element_class)
+                element = RszArrayClipboard._deserialize_element(value_data, nested_element_class, guid_mapping)
                 if element:
                     array.values.append(element)
                     
@@ -1180,12 +1208,6 @@ class RszArrayClipboard:
                 element_data.get("x", 0.0),
                 element_data.get("y", 0.0),
                 element_data.get("z", 0.0),
-                orig_type
-            )
-        
-        elif element_type == "RuntimeTypeData":
-            return RuntimeTypeData(
-                element_data.get("type_name", ""),
                 orig_type
             )
         

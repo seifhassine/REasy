@@ -2138,8 +2138,8 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     pos = _align(pos, field_align)
                     guid_bytes = read_aligned_bytes(fsize, align=field_align)
                     guid_str = guid_le_to_str(guid_bytes)
-                    guids.append(guid_str)
-                data_obj = ArrayData([rsz_type(g) for g in guids], rsz_type, original_type)
+                    guids.append((guid_str, guid_bytes))
+                data_obj = ArrayData([rsz_type(g, raw, original_type) for g, raw in guids], rsz_type, original_type)
 
             elif rsz_type == ObjectData:
                 child_indexes = []

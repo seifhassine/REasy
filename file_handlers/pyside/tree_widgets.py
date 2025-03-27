@@ -1,3 +1,4 @@
+import os
 import traceback
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QTreeView, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
@@ -12,6 +13,7 @@ from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
 
 from .value_widgets import *
+from .tree_widget_factory import TreeWidgetFactory
 
 from utils.enum_manager import EnumManager
 from file_handlers.rsz.rsz_data_types import StructData
@@ -190,6 +192,11 @@ class AdvancedTreeView(QTreeView):
         item_info = self._identify_item_type(item)
         
         menu = QMenu(self)
+        
+        parent_widget = self.parent()
+        has_go_clipboard = False
+        
+        has_go_clipboard = parent_widget.handler.has_gameobject_clipboard_data(self)
 
         if item_info['is_resource']:
             # Context menu for a resource entry
@@ -212,7 +219,11 @@ class AdvancedTreeView(QTreeView):
         elif item_info['is_gameobject']:
             add_component_action = menu.addAction("Add Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
-            translate_action = menu.addAction("Translate Name")
+            copy_action = menu.addAction("Copy GameObject")
+            paste_as_child_action = None
+    
+            if has_go_clipboard:
+                paste_as_child_action = menu.addAction("Paste GameObject as Child")
             
             # Only show duplicate action if not a file with embedded RSZ
             duplicate_go_action = None
@@ -230,6 +241,8 @@ class AdvancedTreeView(QTreeView):
             
             if not has_embedded_rsz:
                 duplicate_go_action = menu.addAction("Duplicate GameObject")
+
+            translate_action = menu.addAction("Translate Name")
             
             go_has_prefab = False
             prefab_path = ""
@@ -277,6 +290,10 @@ class AdvancedTreeView(QTreeView):
                 self.create_child_gameobject(index)
             elif action == translate_action:
                 self.translate_node_text(index)
+            elif action == copy_action:
+                self.copy_gameobject(index)
+            elif paste_as_child_action and action == paste_as_child_action:
+                self.paste_gameobject_as_child(index)
             elif duplicate_go_action and action == duplicate_go_action:
                 self.duplicate_gameobject(index)
             elif action == delete_go_action:
@@ -286,6 +303,11 @@ class AdvancedTreeView(QTreeView):
                 
         elif item_info['is_folder']:
             create_go_action = menu.addAction("Create GameObject")
+            paste_go_action = None
+            
+            if has_go_clipboard:
+                paste_go_action = menu.addAction("Paste GameObject")
+            
             delete_folder_action = menu.addAction("Delete Folder")
             translate_action = menu.addAction("Translate Name")
             
@@ -293,6 +315,8 @@ class AdvancedTreeView(QTreeView):
             
             if action == create_go_action:
                 self.create_gameobject_in_folder(index)
+            elif paste_go_action and action == paste_go_action:
+                self.paste_gameobject_in_folder(index)
             elif action == delete_folder_action:
                 self.delete_folder(index)
             elif action == translate_action:
@@ -300,10 +324,17 @@ class AdvancedTreeView(QTreeView):
         
         elif item_info['is_gameobjects_root']:
             create_go_action = menu.addAction("Create GameObject")
+            paste_go_action = None
+            
+            if has_go_clipboard:
+                paste_go_action = menu.addAction("Paste GameObject")
+            
             action = menu.exec_(QCursor.pos())
             
             if action == create_go_action:
                 self.create_root_gameobject(index)
+            elif paste_go_action and action == paste_go_action:
+                self.paste_gameobject_at_root(index)
         
         elif item_info['is_component']:
             delete_action = menu.addAction("Delete Component")
@@ -1142,10 +1173,8 @@ class AdvancedTreeView(QTreeView):
                         if parent_index and parent_index.isValid():
                             break
                 
-                go_node_index = self.add_gameobject_to_ui_direct(go_data, parent_index)
-                
-                if 'children' in go_data and go_data['children']:
-                    self.add_child_gameobjects_to_ui(go_data['children'], go_node_index)
+                # The recursive add_gameobject_to_ui_direct will handle child objects automatically
+                self.add_gameobject_to_ui_direct(go_data, parent_index)
                 
                 QMessageBox.information(self, "Success", f"GameObject '{name}' duplicated successfully")
             else:
@@ -1153,48 +1182,6 @@ class AdvancedTreeView(QTreeView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error duplicating GameObject: {str(e)}")
             traceback.print_exc()
-
-    def add_child_gameobjects_to_ui(self, children_data, parent_node_index):
-        """Add child GameObjects to the UI recursively
-        
-        Args:
-            children_data: List of dictionaries with child GameObject data
-            parent_node_index: QModelIndex of the parent GameObject node in the tree
-        """
-        if not children_data or not parent_node_index or not parent_node_index.isValid():
-            return
-            
-        model = self.model()
-        parent_item = parent_node_index.internalPointer()
-        
-        children_node = None
-        for child in parent_item.children:
-            if child.data and child.data[0] == "Children":
-                children_node = child
-                break
-                
-        if not children_node:
-            children_dict = {"data": ["Children", ""], "children": []}
-            model.addChild(parent_item, children_dict)
-            
-            for child in parent_item.children:
-                if child.data and child.data[0] == "Children":
-                    children_node = child
-                    break
-                    
-        if not children_node:
-            print("Failed to find or create Children node")
-            return
-            
-        children_index = model.getIndexFromItem(children_node)
-        if not children_index.isValid():
-            return
-            
-        for child_data in children_data:
-            child_index = self.add_gameobject_to_ui_direct(child_data, children_index)
-            
-            if 'children' in child_data and child_data['children'] and child_index:
-                self.add_child_gameobjects_to_ui(child_data['children'], child_index)
 
     def _is_valid_parent_for_go(self, index):
         """Check if index is a valid parent for a GameObject node"""
@@ -1693,8 +1680,15 @@ class AdvancedTreeView(QTreeView):
         Returns:
             QModelIndex: The index of the added GameObject node, or None if failed
         """
-        parent = self.parent()
-        if not parent or not hasattr(parent, "name_helper"):
+        # Check if we're dealing with a list of children (this happens during recursive calls)
+        if isinstance(go_data, list):
+            # If it's a list of children GameObjects, process each one
+            for child_data in go_data:
+                self.add_gameobject_to_ui_direct(child_data, parent_index)
+            return None
+        
+        parent_widget = self.parent()
+        if not parent_widget or not hasattr(parent_widget, "name_helper"):
             return None
         
         model = self.model()
@@ -1736,6 +1730,7 @@ class AdvancedTreeView(QTreeView):
         instance_id = go_data.get('instance_id', 0)
         name = go_data.get('name', 'GameObject')
         reasy_id = go_data.get('reasy_id', 0)
+        go_id = go_data.get('go_id', -1)
         
         display_name = f"{name} (ID: {instance_id})"
         
@@ -1750,31 +1745,36 @@ class AdvancedTreeView(QTreeView):
         settings_node = {"data": ["Settings", ""], "children": []}
         go_dict["children"].append(settings_node)
         
-        if instance_id in parent.scn.parsed_elements:
-            fields = parent.scn.parsed_elements[instance_id]
+        if instance_id in parent_widget.scn.parsed_elements:
+            fields = parent_widget.scn.parsed_elements[instance_id]
+            first_field = True
+            
             for field_name, field_data in fields.items():
-                settings_node["children"].append(
-                    parent._create_field_dict(field_name, field_data)
-                )
+                field_node = parent_widget._create_field_dict(field_name, field_data)
+                
+                if first_field or (len(settings_node["children"]) == 1 and settings_node["children"][0]["data"][0].startswith("GUID")):
+                    field_data.is_gameobject_or_folder_name = go_dict
+                    first_field = False
+                    
+                settings_node["children"].append(field_node)
         
         component_count = go_data.get('component_count', 0)
         if component_count > 0:
             comp_node = {"data": ["Components", ""], "children": []}
             go_dict["children"].append(comp_node)
             
-            go_id = go_data.get('go_id', -1)
             if go_id >= 0:
                 for i in range(1, component_count + 1):
                     component_go_id = go_id + i
-                    if component_go_id >= len(parent.scn.object_table):
+                    if component_go_id >= len(parent_widget.scn.object_table):
                         break
-                    comp_instance_id = parent.scn.object_table[component_go_id]
+                    comp_instance_id = parent_widget.scn.object_table[component_go_id]
                     if comp_instance_id <= 0:
                         continue
                         
-                    reasy_id = parent.handler.id_manager.get_reasy_id_for_instance(comp_instance_id)
-                    name = parent.name_helper.get_instance_first_field_name(comp_instance_id)
-                    component_name = name if name else parent.name_helper.get_instance_name(comp_instance_id)
+                    reasy_id = parent_widget.handler.id_manager.get_reasy_id_for_instance(comp_instance_id)
+                    name = parent_widget.name_helper.get_instance_first_field_name(comp_instance_id)
+                    component_name = name if name else parent_widget.name_helper.get_instance_name(comp_instance_id)
                     comp_dict = {
                         "data": [f"{component_name} (ID: {comp_instance_id})", ""],
                         "instance_id": comp_instance_id,
@@ -1782,37 +1782,55 @@ class AdvancedTreeView(QTreeView):
                         "children": [],
                     }
                     
-                    if comp_instance_id in parent.scn.parsed_elements:
-                        fields = parent.scn.parsed_elements[comp_instance_id]
+                    if comp_instance_id in parent_widget.scn.parsed_elements:
+                        fields = parent_widget.scn.parsed_elements[comp_instance_id]
                         for f_name, f_data in fields.items():
-                            comp_dict["children"].append(parent._create_field_dict(f_name, f_data))
+                            comp_dict["children"].append(parent_widget._create_field_dict(f_name, f_data))
                             
                     comp_node["children"].append(comp_dict)
         
+        has_children = 'children' in go_data and go_data['children']
+        if has_children:
+            children_node = {"data": ["Children", ""], "children": []}
+            go_dict["children"].append(children_node)
+        
         model.addChild(parent_node, go_dict)
         
-        parent_index = model.getIndexFromItem(parent_node)
-        added_node_index = None
-        if parent_index.isValid():
-            child_index = model.index(len(parent_node.children) - 1, 0, parent_index)
-            if child_index.isValid():
-                self.expand(parent_index)
-                self.scrollTo(child_index)
+        parent_node_index = model.getIndexFromItem(parent_node)
+        go_index = None
+        if parent_node_index.isValid():
+            go_index = model.index(len(parent_node.children) - 1, 0, parent_node_index)
+            if go_index.isValid():
+                self.expand(parent_node_index)
+                self.scrollTo(go_index)
                 
-                item = child_index.internalPointer()
-                if item and hasattr(item, 'data'):
-                    name_text = item.data[0] if item.data else ""
-                    node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+                go_item = go_index.internalPointer()
+                if go_item and hasattr(go_item, 'data'):
+                    name_text = go_item.data[0] if go_item.data else ""
+                    node_type = go_item.raw.get("type", "") if isinstance(go_item.raw, dict) else ""
                     
                     widget = TreeWidgetFactory.create_widget(
                         node_type, None, name_text, self, self.parent_modified_callback
                     )
                     if widget:
-                        self.setIndexWidget(child_index, widget)
-                
-                added_node_index = child_index
+                        self.setIndexWidget(go_index, widget)
         
-        return added_node_index
+        if has_children and go_index and go_index.isValid():
+            go_item = go_index.internalPointer()
+            children_node_index = None
+            
+            for i, child in enumerate(go_item.children):
+                if child.data and child.data[0] == "Children":
+                    children_node_index = model.index(i, 0, go_index)
+                    break
+            
+            if children_node_index and children_node_index.isValid():
+                self.expand(go_index)
+                
+                for child_data in go_data['children']:
+                    self.add_gameobject_to_ui_direct(child_data, children_node_index)
+        
+        return go_index
 
     def _find_gameobjects_node(self):
         """Find the GameObjects node in the tree for root GameObject placement"""
@@ -2154,163 +2172,511 @@ class AdvancedTreeView(QTreeView):
         
         show_translation_result(self, translated_text)
 
-class TreeWidgetFactory:
-    """Factory class for creating tree node widgets"""
-    
-    # Centralized widget type mapping - used by RszViewer currently
-    WIDGET_TYPES = {
-        "Vec2Data": Vec2Input,
-        "Vec4Data": Vec4Input,
-        "Float4Data": Vec4Input,
-        "QuaternionData": Vec4Input,
-        "Vec3Data": Vec3Input,
-        "Float2Data": Vec2Input,
-        "Float3Data": Vec3Input,
-        "GameObjectRefData": GuidInput,
-        "GuidData": GuidInput,
-        "OBBData": OBBInput,
-        "Mat4Data": Mat4Input,
-        "RawBytesData": HexBytesInput,
-        "StringData": StringInput,
-        "RuntimeTypeData": StringInput,
-        "BoolData": BoolInput,
-        "F32Data": F32Input,
-        "S32Data": S32Input,
-        "U32Data": U32Input,
-        "U64Data": U64Input,
-        "S8Data": S8Input,
-        "UserDataData": UserDataInput,
-        "U8Data": U8Input, 
-        "RangeData": RangeInput,
-        "RangeIData": RangeIInput,
-        "ColorData": ColorInput,
-        "Vec3ColorData": Vec3ColorInput,
-        "CapsuleData": CapsuleInput,
-    }
-
-    @staticmethod
-    def create_widget(node_type, data_obj, name_text, widget_parent, on_modified=None):
-        """Create appropriate widget based on node type"""
-        widget = QWidget(widget_parent)
-        layout = QHBoxLayout(widget)
-        layout.setContentsMargins(2, 2, 2, 2)
-        layout.setSpacing(4)
-        
-        min_label_width = 150
-        if hasattr(widget_parent, 'label_width'):
-            min_label_width = widget_parent.label_width
-        
-        if data_obj and hasattr(data_obj, '__class__') and data_obj.__class__.__name__ == 'ArrayData':
-            label = QLabel()
-            label.setText(f"{name_text} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
-            label.setTextFormat(Qt.RichText)
-            layout.addWidget(label)
+    def copy_gameobject(self, index):
+        """Copy a GameObject to clipboard"""
+        if not index.isValid():
+            return
             
-            layout.addStretch(1)
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
             
-            return widget
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
             
-        if data_obj and isinstance(data_obj, StructData):
-
-            label = QLabel()
-            label.setText(f"{name_text} <span style='color: #666;'>(Struct: {len(data_obj.values)} items)</span>")
-            label.setTextFormat(Qt.RichText)
-            layout.addWidget(label)
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
             
-            return widget
-        
-        is_enum = False
-        enum_type = None
-        
-        if data_obj and hasattr(data_obj, 'orig_type') and data_obj.orig_type:
-            enum_type = data_obj.orig_type
-            enum_values = EnumManager.instance().get_enum_values(enum_type)
-            if enum_values:
-                is_enum = True
-        
-        if is_enum:
-            label = QLabel(name_text)
-            label.setMinimumWidth(min_label_width)
-            layout.addWidget(label)
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
             
-            input_widget = EnumInput(parent=widget)
-            input_widget.set_data(data_obj)
-            input_widget.set_enum_values(EnumManager.instance().get_enum_values(enum_type))
-            layout.addWidget(input_widget)
-            
-            if on_modified:
-                input_widget.modified_changed.connect(on_modified)
-        
-        elif node_type in TreeWidgetFactory.WIDGET_TYPES and data_obj:
-            label = QLabel(name_text)
-            label.setMinimumWidth(min_label_width)
-            layout.addWidget(label)
-            
-            input_class = TreeWidgetFactory.WIDGET_TYPES[node_type]
-            input_widget = input_class(parent=widget)
-            input_widget.set_data(data_obj)
-            layout.addWidget(input_widget)
-            
-            if on_modified:
-                input_widget.modified_changed.connect(on_modified)
+        go_object_id = -1
+        for i, obj_id in enumerate(parent.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
                 
-            if node_type == "OBBData" or node_type == "Mat4Data":
-                widget.setFixedHeight(150)
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+            
+        try:
+            success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id)
+            if success:
+                go_name = ""
+                if hasattr(item, 'data') and item.data:
+                    go_name = item.data[0].split(' (ID:')[0]
+                    
+                msg = f"GameObject '{go_name}' copied to clipboard"
+                QMessageBox.information(self, "Success", msg)
+            else:
+                QMessageBox.warning(self, "Error", "Failed to copy GameObject to clipboard")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error copying GameObject: {str(e)}")
+            traceback.print_exc()
+
+    def paste_gameobject_in_folder(self, folder_index):
+        """Paste a GameObject from clipboard into a folder"""
+        if not folder_index.isValid():
+            return
+            
+        folder_item = folder_index.internalPointer()
+        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid folder selection")
+            return
+            
+        reasy_id = folder_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder ID")
+            return
+            
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
+        if not folder_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
+            return
+            
+        folder_object_id = -1
+        for i, instance_id in enumerate(parent.scn.object_table):
+            if instance_id == folder_instance_id:
+                folder_object_id = i
+                break
                 
-        # Icon widgets
-        elif node_type in ("gameobject", "folder"):
-            icon_name = node_type
+        if folder_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            return
             
-            icon = QIcon(f"resources/icons/{icon_name}.png")
-            icon_label = QLabel()
-            icon_label.setFixedWidth(16)
-            icon_label.setPixmap(icon.pixmap(16, 16))
+        self._paste_gameobject_common(folder_object_id, folder_index)
+
+    def paste_gameobject_at_root(self, index):
+        """Paste a GameObject from clipboard at the root level"""
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
             
-            text_label = QLabel(name_text)
-            text_label.setStyleSheet("padding-left: 2px;")
+        self._paste_gameobject_common(-1, None)
+
+    def paste_gameobject_as_child(self, parent_go_index):
+        """Paste a GameObject from clipboard as a child of another GameObject"""
+        if not parent_go_index.isValid():
+            QMessageBox.warning(self, "Error", "Invalid parent GameObject selection")
+            return
             
-            layout.addWidget(icon_label)
-            layout.addWidget(text_label, 1)
-            widget.setFixedHeight(30)
+        parent_item = parent_go_index.internalPointer()
+        if not parent_item or not hasattr(parent_item, 'raw') or not isinstance(parent_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid parent GameObject")
+            return
             
-        # Default text widgets
+        reasy_id = parent_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine parent GameObject ID")
+            return
+            
+        parent_widget = self.parent()
+        if not parent_widget or not hasattr(parent_widget, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
+        if not parent_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine parent GameObject instance ID")
+            return
+            
+        parent_object_id = -1
+        for i, instance_id in enumerate(parent_widget.scn.object_table):
+            if instance_id == parent_instance_id:
+                parent_object_id = i
+                break
+                
+        if parent_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find parent GameObject in object table")
+            return
+            
+        self._paste_gameobject_common(parent_object_id, parent_go_index)
+            
+    def _paste_gameobject_common(self, parent_object_id, parent_index=None):
+        """
+        Common logic for pasting a GameObject from clipboard
+        
+        Args:
+            parent_object_id: Object table index of the parent (-1 for root)
+            parent_index: QModelIndex of the parent node for UI updating (None for root)
+        """
+        parent_widget = self.parent()
+        
+        if not parent_widget.handler.has_gameobject_clipboard_data(self):
+            QMessageBox.warning(self, "Error", "No GameObject data in clipboard")
+            return
+            
+        clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
+        if not clipboard_data:
+            QMessageBox.warning(self, "Error", "Failed to load GameObject data from clipboard")
+            return
+            
+        default_name = clipboard_data.get("name", "GameObject")
+        if default_name.strip() == "":
+            default_name = "GameObject"
+            
+        new_name, ok = QInputDialog.getText(self, "Paste GameObject", 
+                                          "Enter name for the pasted GameObject:", 
+                                          QLineEdit.Normal, default_name)
+        if not ok:
+            return
+            
+        try:
+            go_data = parent_widget.handler.paste_gameobject_from_clipboard(
+                parent_widget, parent_object_id, new_name, clipboard_data
+            )
+            
+            if go_data and go_data.get('success', False):
+                self.add_gameobject_to_ui_direct(go_data, parent_index)
+                QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
+            else:
+                QMessageBox.warning(self, "Error", "Failed to paste GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
+            traceback.print_exc()
+
+    def copy_array_element(self, parent_array_item, element_index, index):
+        """Copy an array element to clipboard"""
+        if not parent_array_item or not hasattr(parent_array_item, 'raw'):
+            QMessageBox.warning(self, "Error", "Invalid array item")
+            return
+            
+        array_data = parent_array_item.raw.get('obj')
+        if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
+            QMessageBox.warning(self, "Error", "Invalid array element")
+            return
+
+        embedded_context = self._find_embedded_context(parent_array_item)
+        if embedded_context:
+            QMessageBox.warning(self, "Error", "Copying elements in embedded userdata is currently not supported.")
+            return
+            
+        element = array_data.values[element_index]
+        array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
+        
+        parent = self.parent()
+        if parent and hasattr(parent, "handler"):
+            try:
+                success = parent.handler.copy_array_element_to_clipboard(self, element, array_type)
+                if success:
+                    QMessageBox.information(self, "Success", "Element copied to clipboard")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to copy element")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error copying element: {str(e)}")
+                traceback.print_exc()
         else:
-            label = QLabel(name_text)
-            label.setMinimumWidth(min_label_width)
-            layout.addWidget(label)
-            widget.setFixedHeight(24)
-            
-        return widget
+            QMessageBox.warning(self, "Error", "Cannot access handler")
 
-    @staticmethod
-    def should_create_widget(item):
-        """Check if we should create a widget for this item"""
-        if not isinstance(item.raw, dict):
-            return True
+    def paste_array_element(self, index, array_type, data_obj, array_item):
+        """Paste an element from clipboard to an array"""
+        parent = self.parent()
+        if not parent:
+            QMessageBox.warning(self, "Error", "Cannot access parent viewer")
+            return
+        
+        embedded_context = self._find_embedded_context(array_item)
             
-        # Skip array nodes and array elements
-        if item.raw.get("type") == "array" or item.raw.get("type") == "struct":
-            return False
-            
-        parent = item.parent
-        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") == "array" or parent.raw.get("type") == "struct":
-            return False
-            
-        return True
+        try:
+            if parent and hasattr(parent, "handler"):
+                new_element = parent.handler.paste_array_element_from_clipboard(
+                    self, parent.array_operations, data_obj, array_item, embedded_context
+                )
+                
+                if new_element:
+                    if not self.isExpanded(index):
+                        self.expand(index)
+                    
+                    model = self.model()
+                    array_item = index.internalPointer()
+                    if hasattr(array_item, 'children') and array_item.children:
+                        last_child_idx = model.index(len(array_item.children) - 1, 0, index)
+                        if last_child_idx.isValid():
+                            item = last_child_idx.internalPointer()
+                            if item and not TreeWidgetFactory.should_skip_widget(item):
+                                name_text = item.data[0] if item.data else ""
+                                node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+                                data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
+                                
+                                widget = TreeWidgetFactory.create_widget(
+                                    node_type, data_obj, name_text, self, self.parent_modified_callback
+                                )
+                                if widget:
+                                    self.setIndexWidget(last_child_idx, widget)
+                            
+                            self.scrollTo(last_child_idx)
+                            
+                    QMessageBox.information(self, "Success", "Element pasted successfully.")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to paste element. Make sure the clipboard contains a compatible element.")
+            else:
+                QMessageBox.warning(self, "Error", "Cannot access handler")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
+            traceback.print_exc()
 
-    @staticmethod
-    def should_skip_widget(item):
-        """Only create widgets for editable data objects"""
-        if not isinstance(item.raw, dict):
-            return True
-
-        # Trash, needs rework
-        name = item.raw.get("data", [""])[0]
-        if name in ("Header", "GameObjects", "RSZHeader", "Folder Infos", "Object Table", "Instance Infos", "RSZUserData Infos"):
-            return True
+    def translate_node_text(self, index):
+        """Translate the name of a GameObject or folder using Google Translate API"""
+        if not index.isValid():
+            return
             
-        # Don't skip array element widgets if they have a supported type
-        node_type = item.raw.get("type")
-        if node_type in TreeWidgetFactory.WIDGET_TYPES:
-            return False
-        return False
+        item = index.internalPointer()
+        if not hasattr(item, 'data') or not item.data:
+            return
+    
+        name_text = item.data[0]
+        if " (ID:" in name_text:
+            name_text = name_text.split(" (ID:")[0]
+        
+        if not name_text or name_text.strip() == "":
+            show_translation_error(self, "No text to translate")
+            return
+        
+        parent_widget = self.parent()
+        target_lang = "en"
+        
+        
+        target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
+            
+        original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""
+        
+        context = {"index": index, "original_id_part": original_id_part}
+        
+        self.setCursor(Qt.WaitCursor)
+        
+        success = self.translation_manager.translate_text(
+            text=name_text, 
+            source_lang="auto",
+            target_lang=target_lang, 
+            context=context
+        )
+        
+        if not success:
+            self.setCursor(Qt.ArrowCursor)
+            show_translation_error(self, "Failed to start translation")
+
+    def _on_translation_completed(self, original_text, translated_text, context):
+        """Handle translation completion"""
+        self.setCursor(Qt.ArrowCursor)
+        
+        if not translated_text:
+            show_translation_error(self, "Unable to translate text")
+            return
+            
+        index = context.get("index")
+        original_id_part = context.get("original_id_part", "")
+        
+        if not index or not index.isValid():
+            show_translation_error(self, "Invalid item index")
+            return
+        
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'data'):
+            show_translation_error(self, "Invalid item data")
+            return
+        
+        item.data[0] = translated_text + original_id_part
+        
+        model = self.model()
+        if model:
+            model.dataChanged.emit(index, index)
+            
+            widget = self.indexWidget(index)
+            if widget:
+                labels = widget.findChildren(QLabel)
+                if len(labels) >= 2:
+                    text_label = labels[1]
+                    text_label.setText(translated_text + original_id_part)
+        
+        show_translation_result(self, translated_text)
+
+    def copy_gameobject(self, index):
+        """Copy a GameObject to clipboard"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+            
+        go_object_id = -1
+        for i, obj_id in enumerate(parent.scn.object_table):
+            if obj_id == instance_id:
+                go_object_id = i
+                break
+                
+        if go_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+            
+        try:
+            success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id)
+            if success:
+                go_name = ""
+                if hasattr(item, 'data') and item.data:
+                    go_name = item.data[0].split(' (ID:')[0]
+                    
+                msg = f"GameObject '{go_name}' copied to clipboard"
+                QMessageBox.information(self, "Success", msg)
+            else:
+                QMessageBox.warning(self, "Error", "Failed to copy GameObject to clipboard")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error copying GameObject: {str(e)}")
+            traceback.print_exc()
+
+    def paste_gameobject_in_folder(self, folder_index):
+        """Paste a GameObject from clipboard into a folder"""
+        if not folder_index.isValid():
+            return
+            
+        folder_item = folder_index.internalPointer()
+        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid folder selection")
+            return
+            
+        reasy_id = folder_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder ID")
+            return
+            
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
+        if not folder_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
+            return
+            
+        folder_object_id = -1
+        for i, instance_id in enumerate(parent.scn.object_table):
+            if instance_id == folder_instance_id:
+                folder_object_id = i
+                break
+                
+        if folder_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            return
+            
+        self._paste_gameobject_common(folder_object_id, folder_index)
+
+    def paste_gameobject_at_root(self, index):
+        """Paste a GameObject from clipboard at the root level"""
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        self._paste_gameobject_common(-1, None)
+
+    def paste_gameobject_as_child(self, parent_go_index):
+        """Paste a GameObject from clipboard as a child of another GameObject"""
+        if not parent_go_index.isValid():
+            QMessageBox.warning(self, "Error", "Invalid parent GameObject selection")
+            return
+            
+        parent_item = parent_go_index.internalPointer()
+        if not parent_item or not hasattr(parent_item, 'raw') or not isinstance(parent_item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid parent GameObject")
+            return
+            
+        reasy_id = parent_item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine parent GameObject ID")
+            return
+            
+        parent_widget = self.parent()
+        if not parent_widget or not hasattr(parent_widget, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
+        if not parent_instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine parent GameObject instance ID")
+            return
+            
+        parent_object_id = -1
+        for i, instance_id in enumerate(parent_widget.scn.object_table):
+            if instance_id == parent_instance_id:
+                parent_object_id = i
+                break
+                
+        if parent_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find parent GameObject in object table")
+            return
+            
+        self._paste_gameobject_common(parent_object_id, parent_go_index)
+            
+    def _paste_gameobject_common(self, parent_object_id, parent_index=None):
+        """
+        Common logic for pasting a GameObject from clipboard
+        
+        Args:
+            parent_object_id: Object table index of the parent (-1 for root)
+            parent_index: QModelIndex of the parent node for UI updating (None for root)
+        """
+        parent_widget = self.parent()
+        
+        if not parent_widget.handler.has_gameobject_clipboard_data(self):
+            QMessageBox.warning(self, "Error", "No GameObject data in clipboard")
+            return
+            
+        clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
+        if not clipboard_data:
+            QMessageBox.warning(self, "Error", "Failed to load GameObject data from clipboard")
+            return
+            
+        default_name = clipboard_data.get("name", "GameObject")
+        if default_name.strip() == "":
+            default_name = "GameObject"
+            
+        new_name, ok = QInputDialog.getText(self, "Paste GameObject", 
+                                          "Enter name for the pasted GameObject:", 
+                                          QLineEdit.Normal, default_name)
+        if not ok:
+            return
+            
+        try:
+            go_data = parent_widget.handler.paste_gameobject_from_clipboard(
+                parent_widget, parent_object_id, new_name, clipboard_data
+            )
+            
+            if go_data and go_data.get('success', False):
+                self.add_gameobject_to_ui_direct(go_data, parent_index)
+                QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
+            else:
+                QMessageBox.warning(self, "Error", "Failed to paste GameObject")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
+            traceback.print_exc()

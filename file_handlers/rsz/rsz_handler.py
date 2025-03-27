@@ -27,6 +27,7 @@ from .rsz_array_operations import RszArrayOperations
 from .rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
 from .rsz_array_clipboard import RszArrayClipboard
+from .rsz_gameobject_clipboard import RszGameObjectClipboard
 
 
 class RszHandler(BaseFileHandler):
@@ -43,6 +44,7 @@ class RszHandler(BaseFileHandler):
         self._game_version = "RE4"
         self.filepath = ""
         self.array_clipboard = None
+        self.gameobject_clipboard = None
         self.type_registry = None
 
     @property
@@ -87,6 +89,7 @@ class RszHandler(BaseFileHandler):
         print(f"Reading file with game version: {self._game_version}")
         self.rsz_file.read(data)
         self.array_clipboard = RszArrayClipboard()
+        self.gameobject_clipboard = RszGameObjectClipboard()
 
     def create_viewer(self):
         """Create a new viewer instance"""
@@ -132,22 +135,48 @@ class RszHandler(BaseFileHandler):
         if not self.array_clipboard:
             self.array_clipboard = RszArrayClipboard()
         return self.array_clipboard
+    
+    def get_gameobject_clipboard(self):
+        """Get the GameObject clipboard instance"""
+        if not self.gameobject_clipboard:
+            self.gameobject_clipboard = RszGameObjectClipboard.load_from_clipboard(self)
+        return self.gameobject_clipboard
         
     def copy_array_element_to_clipboard(self, widget, element, array_type):
         """Copy an array element to clipboard through the handler"""
         return self.get_array_clipboard().copy_to_clipboard(widget, element, array_type)
+    
+    def copy_gameobject_to_clipboard(self, widget, gameobject_id):
+        """Copy a GameObject to clipboard through the handler"""
+        return self.get_gameobject_clipboard().copy_gameobject_to_clipboard(widget, gameobject_id)
         
     def paste_array_element_from_clipboard(self, widget, array_operations, array_data, array_item, embedded_context=None):
         """Paste an array element from clipboard through the handler"""
         return self.get_array_clipboard().paste_from_clipboard(widget, array_operations, array_data, array_item, embedded_context)
+    
+    def paste_gameobject_from_clipboard(self, viewer=None, parent_id=-1, new_name=None, clipboard_data=None):
+        """Paste a GameObject from clipboard through the handler"""
+        actual_viewer = viewer if viewer is not None else self
+        
+        return self.get_gameobject_clipboard().paste_gameobject_from_clipboard(
+            actual_viewer, parent_id, new_name, clipboard_data
+        )
         
     def get_clipboard_data(self, widget):
         """Get clipboard data through the handler"""
         return self.get_array_clipboard().get_clipboard_data(widget)
+    
+    def get_gameobject_clipboard_data(self, widget):
+        """Get GameObject clipboard data through the handler"""
+        return self.get_gameobject_clipboard().get_clipboard_data(widget)
         
     def is_clipboard_compatible(self, target_type, source_type):
         """Check if clipboard data is compatible with target type through the handler"""
         return self.get_array_clipboard().is_compatible(target_type, source_type)
+
+    def has_gameobject_clipboard_data(self, widget):
+        """Check if GameObject clipboard data exists without loading it"""
+        return RszGameObjectClipboard.has_clipboard_data(widget)
 
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
