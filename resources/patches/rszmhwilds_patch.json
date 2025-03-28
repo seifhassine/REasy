@@ -1,0 +1,79 @@
+{
+	"2f0768d8": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": true,
+				"original_type": "via.effect.detail.ExternType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BoolValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ResourceName",
+				"native": true,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Color",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ResourceIndex",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AllResource",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.effect.script.EffectCustomExternParameter"
+	}
+}
