@@ -75,7 +75,11 @@ I have currently rushed the release and the structure will be improved in the up
 
 - UVAR: No complex operations involved.
 - RSZ Files: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game as well as all .user.2 files. All files with valid data passed the tests.
-  
+
+## TODO List:
+
+- The entire project needs to be ported into .NET. 
+
 ## Installation
 
 - Run build.bat
