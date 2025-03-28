@@ -39,15 +39,15 @@ I have currently rushed the release and the structure will be improved in the up
 <br>
 
 - **UVAR File Editing:**  
-  View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
-  
-- **RSZ File Viewing and Editing:**  
-  User, PFB and SCN files are supported with advanced editing.
-  
-- **Flexible Variable Management:**  
+  - View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
   - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
   This allows you to add new flags to RE4R for example (which was not possible with existing tools).
   - Deletion of variables is also supported.
+  
+- **RSZ File Viewing and Editing:**  
+  - User, PFB and SCN files are supported with advanced editing.
+  - GameObjects and Array Elements are fully serializaible into JSON.
+  - You can export and import GameObjects in RSZ files through REasy using the Template Manager. Exported GameObjects can be found in the "templates" directory in plaintext (JSON).  
 
 - **Search Functionality:**  
   Search all files across directories for:
