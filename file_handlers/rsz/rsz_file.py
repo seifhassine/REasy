@@ -547,22 +547,6 @@ class RszFile:
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_blocks(self, data):
-        view = memoryview(data)
-        null_pattern = b'\x00\x00\x00'
-        
-        # Resource block
-        start = self._current_offset
-        end = view.obj.find(null_pattern, start)
-        if end != -1:
-            self.resource_block = bytes(view[start:end])
-            self._current_offset = end + 3
-
-        # Prefab block
-        start = self._current_offset
-        end = view.obj.find(null_pattern, start)
-        if end != -1:
-            self.prefab_block = bytes(view[start:end])
-            self._current_offset = end + 3
 
         self._resource_str_map.clear()
         self._prefab_str_map.clear()
