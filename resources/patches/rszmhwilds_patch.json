@@ -338,5 +338,28 @@
             }
         ],
         "name": "via.AnimationCurve3D"
-    }
+    },
+	"e4ede06": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.render.LDRColorDeficiencySimulation"
+	}
 }
