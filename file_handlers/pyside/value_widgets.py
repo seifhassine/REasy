@@ -419,7 +419,7 @@ class F32Input(NumberInput):
         
     def validate_and_convert(self, text):
         value = float(text)
-        if abs(value) > 3.402823e38:
+        if abs(value) > 3.4028235e38:
             raise ValueError("Out of F32 range")
         return value
         
