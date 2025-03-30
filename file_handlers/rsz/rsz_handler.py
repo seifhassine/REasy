@@ -28,6 +28,7 @@ from .rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
 from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
+from .rsz_component_clipboard import RszComponentClipboard
 
 
 class RszHandler(BaseFileHandler):
@@ -45,6 +46,7 @@ class RszHandler(BaseFileHandler):
         self.filepath = ""
         self.array_clipboard = None
         self.gameobject_clipboard = None
+        self.component_clipboard = None
         self.type_registry = None
 
     @property
@@ -90,7 +92,8 @@ class RszHandler(BaseFileHandler):
         self.rsz_file.read(data)
         self.array_clipboard = RszArrayClipboard()
         self.gameobject_clipboard = RszGameObjectClipboard()
-
+        self.component_clipboard = RszComponentClipboard()
+        
     def create_viewer(self):
         """Create a new viewer instance"""
         viewer = RszViewer()
@@ -177,6 +180,28 @@ class RszHandler(BaseFileHandler):
     def has_gameobject_clipboard_data(self, widget):
         """Check if GameObject clipboard data exists without loading it"""
         return RszGameObjectClipboard.has_clipboard_data(widget)
+    
+    def copy_component_to_clipboard(self, widget, component_instance_id):
+        """Copy a component to clipboard through the handler"""
+        if not self.component_clipboard:
+            self.component_clipboard = RszComponentClipboard()
+        return self.component_clipboard.copy_component_to_clipboard(widget, component_instance_id)
+        
+    def paste_component_from_clipboard(self, widget, go_instance_id, clipboard_data=None):
+        """Paste a component from clipboard to a GameObject through the handler"""
+        if not self.component_clipboard:
+            self.component_clipboard = RszComponentClipboard()
+        return self.component_clipboard.paste_component_from_clipboard(widget, go_instance_id, clipboard_data)
+        
+    def get_component_clipboard_data(self, widget):
+        """Get component clipboard data through the handler"""
+        if not self.component_clipboard:
+            self.component_clipboard = RszComponentClipboard()
+        return self.component_clipboard.get_clipboard_data(widget)
+        
+    def has_component_clipboard_data(self, widget):
+        """Check if component clipboard data exists without loading it"""
+        return RszComponentClipboard.has_clipboard_data(widget)
 
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1

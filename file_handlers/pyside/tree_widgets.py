@@ -195,6 +195,7 @@ class AdvancedTreeView(QTreeView):
         has_go_clipboard = False
         
         has_go_clipboard = parent_widget.handler.has_gameobject_clipboard_data(self)
+        has_component_clipboard = parent_widget.handler.has_component_clipboard_data(self)
 
         if item_info['is_resource']:
             # Context menu for a resource entry
@@ -214,20 +215,34 @@ class AdvancedTreeView(QTreeView):
             if action == add_action:
                 self.add_resource(index)
                 
+        elif item_info['is_component']:
+            copy_action = menu.addAction("Copy Component")
+            delete_action = menu.addAction("Delete Component")
+            
+            action = menu.exec_(QCursor.pos())
+            
+            if action == delete_action:
+                self.delete_component(index, item_info['component_instance_id'])
+            elif action == copy_action:
+                self.copy_component(index, item_info['component_instance_id'])
+        
         elif item_info['is_gameobject']:
             add_component_action = menu.addAction("Add Component")
+            paste_as_child_action = None
+            paste_component_action = None
+            if has_component_clipboard:
+                paste_component_action = menu.addAction("Paste Component")
             create_child_go_action = menu.addAction("Create Child GameObject")
             copy_action = menu.addAction("Copy GameObject")
+            if has_go_clipboard:
+                paste_as_child_action = menu.addAction("Paste GameObject as Child")
+            template_manager_action = menu.addAction("Template Manager")
+                
             
             export_template_action = menu.addAction("Export as Template")
             
-            paste_as_child_action = None
     
-            if has_go_clipboard:
-                paste_as_child_action = menu.addAction("Paste GameObject as Child")
             
-            # Only show duplicate action if not a file with embedded RSZ
-            duplicate_go_action = None
             parent_widget = self.parent()
             has_embedded_rsz = False
             
@@ -240,12 +255,8 @@ class AdvancedTreeView(QTreeView):
                         has_embedded_rsz = True
                         break
             
-            if not has_embedded_rsz:
-                duplicate_go_action = menu.addAction("Duplicate GameObject")
-
             translate_action = menu.addAction("Translate Name")
             
-            template_manager_action = menu.addAction("Template Manager")
             
             go_has_prefab = False
             prefab_path = ""
@@ -301,8 +312,8 @@ class AdvancedTreeView(QTreeView):
                 self.open_template_manager(index)
             elif paste_as_child_action and action == paste_as_child_action:
                 self.paste_gameobject_as_child(index)
-            elif duplicate_go_action and action == duplicate_go_action:
-                self.duplicate_gameobject(index)
+            elif paste_component_action and action == paste_component_action:
+                self.paste_component(index)
             elif action == delete_go_action:
                 self.delete_gameobject(index)
             elif action == manage_prefab_action:
@@ -350,13 +361,6 @@ class AdvancedTreeView(QTreeView):
                 self.paste_gameobject_at_root(index)
             elif action == template_manager_action:
                 self.open_template_manager(index)
-        
-        elif item_info['is_component']:
-            delete_action = menu.addAction("Delete Component")
-            action = menu.exec_(QCursor.pos())
-            
-            if action == delete_action:
-                self.delete_component(index, item_info['component_instance_id'])
         
         elif item_info['array_type'] and item_info['is_array']:
             if item_info['data_obj']:
@@ -1206,91 +1210,6 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to delete GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error deleting GameObject: {str(e)}")
-
-    def duplicate_gameobject(self, index):
-        """Duplicate a GameObject and all its children and components"""
-        if not index.isValid():
-            return
-            
-        item = index.internalPointer()
-        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
-            return                  
-        
-        reasy_id = item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
-            return
-            
-        parent = self.parent()
-
-        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
-            return
-        
-        if not hasattr(parent, "object_operations") or not hasattr(parent.object_operations, "duplicate_gameobject"):
-            QMessageBox.warning(self, "Error", "GameObject duplication not supported")
-            return
-        
-        go_object_id = -1
-        for i, obj_id in enumerate(parent.scn.object_table):
-            if obj_id == instance_id:
-                go_object_id = i
-                break
-        
-        if go_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
-            return
-        
-        name = ""
-        
-        if hasattr(item, 'data') and item.data:
-            name_parts = item.data[0].split(' (ID:')
-            name = name_parts[0]
-            
-        if not name or name == "":
-            name = "GameObject"
-        
-        new_name, ok = QInputDialog.getText(self, "Duplicate GameObject", 
-                                          "Enter name for the duplicate:", 
-                                          QLineEdit.Normal, f"{name}_Copy")
-        if not ok:
-            return
-        
-        if not new_name or new_name.strip() == "":
-            new_name = f"{name}_Copy"
-            
-        try:
-            # Find parent ID of the GameObject
-            parent_id = -1
-            for go in parent.scn.gameobjects:
-                if go.id == go_object_id:
-                    parent_id = go.parent_id
-                    break
-
-            go_data = parent.object_operations.duplicate_gameobject(go_object_id, new_name, parent_id)
-            
-            if go_data and go_data.get('success', False):
-                parent_index = None
-                
-                model = self.model()
-                if parent_id >= 0:
-                    for i in range(model.rowCount(QModelIndex())):
-                        root_child_idx = model.index(i, 0, QModelIndex())
-                        parent_index = self._find_node_by_object_id(model, root_child_idx, parent_id)
-                        if parent_index and parent_index.isValid():
-                            break
-                
-                # The recursive add_gameobject_to_ui_direct will handle child objects automatically
-                self.add_gameobject_to_ui_direct(go_data, parent_index)
-                
-                QMessageBox.information(self, "Success", f"GameObject '{name}' duplicated successfully")
-            else:
-                QMessageBox.warning(self, "Error", "Failed to duplicate GameObject")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error duplicating GameObject: {str(e)}")
-            traceback.print_exc()
 
     def _is_valid_parent_for_go(self, index):
         """Check if index is a valid parent for a GameObject node"""
@@ -2275,6 +2194,69 @@ class AdvancedTreeView(QTreeView):
                     text_label.setText(translated_text + original_id_part)
         
         show_translation_result(self, translated_text)
+
+    def copy_component(self, index, component_instance_id):
+        """Copy a component to clipboard for pasting to another GameObject"""
+        if component_instance_id <= 0:
+            QMessageBox.warning(self, "Error", "Invalid component")
+            return
+        
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        try:
+            success = parent.handler.copy_component_to_clipboard(parent, component_instance_id)
+            if success:
+                QMessageBox.information(self, "Success", "Component copied to clipboard")
+            else:
+                QMessageBox.warning(self, "Error", "Failed to copy component")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error copying component: {str(e)}")
+            
+    def paste_component(self, index):
+        """Paste a component from clipboard to a GameObject"""
+        if not index.isValid():
+            return
+            
+        item = index.internalPointer()
+        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
+            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
+            return
+            
+        reasy_id = item.raw.get("reasy_id")
+        if not reasy_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
+            return
+            
+        parent = self.parent()
+        if not parent or not hasattr(parent, "handler"):
+            QMessageBox.warning(self, "Error", "Handler not available")
+            return
+            
+        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
+        if not instance_id:
+            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            return
+            
+        clipboard_data = parent.handler.get_component_clipboard_data(self)
+        if not clipboard_data:
+            QMessageBox.warning(self, "Error", "No component data in clipboard")
+            return
+            
+        type_name = clipboard_data.get("type_name", "Component")
+        
+        try:
+            result = parent.handler.paste_component_from_clipboard(parent, instance_id, clipboard_data)
+            
+            if result and result.get("success", False):
+                self.add_component_to_ui_direct(index, result)
+                QMessageBox.information(self, "Success", f"Pasted {type_name} to GameObject")
+            else:
+                QMessageBox.warning(self, "Error", f"Failed to paste {type_name}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error pasting component: {str(e)}")
 
     def copy_gameobject(self, index):
         """Copy a GameObject to clipboard"""

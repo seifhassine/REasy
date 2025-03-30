@@ -747,26 +747,6 @@ class RszGameObjectClipboard:
                     new_index = instance_mapping.get(index, index)
                     new_fields[field_name] = UserDataData(value, new_index, orig_type)
                     
-            elif field_type == "GuidData":
-                guid_str = field_data.get("guid_str", "")
-                guid_hex = field_data.get("value", "")
-                orig_type = field_data.get("orig_type", "")
-                
-                if guid_hex:
-                    guid_bytes = bytes.fromhex(guid_hex)
-                    
-                    is_null_guid = RszGameObjectClipboard._is_null_guid(guid_bytes)
-                    if is_null_guid:
-                        print(f"Preserving null GUID for {field_name}")
-                        new_fields[field_name] = GuidData(guid_str, guid_bytes, orig_type)
-                    else:
-                        new_guid_bytes = RszGameObjectClipboard._handle_guid_mapping(guid_bytes, guid_mapping)
-                        new_guid_str = guid_le_to_str(new_guid_bytes)
-                            
-                        new_fields[field_name] = GuidData(new_guid_str, new_guid_bytes, orig_type)
-                else:
-                    new_fields[field_name] = GuidData(guid_str, None, orig_type)
-                    
             elif field_type == "GameObjectRefData":
                 guid_str = field_data.get("guid_str", "")
                 guid_hex = field_data.get("raw_bytes", "")
@@ -832,31 +812,7 @@ class RszGameObjectClipboard:
                         else:
                             new_index = instance_mapping.get(index, index)
                             new_array.values.append(UserDataData(value, new_index, value_orig_type))
-                            
-                    elif value_type == "GuidData":
-                        guid_str = value_data.get("guid_str", "")
-                        guid_hex = value_data.get("value", "")
-                        value_orig_type = value_data.get("orig_type", "")
-                        
-                        if guid_hex:
-                            guid_bytes = bytes.fromhex(guid_hex)
-                            
-                            if guid_bytes == RszGameObjectClipboard.NULL_GUID:
-                                print(f"Preserving null GUID in array {field_name}")
-                                new_array.values.append(GuidData(guid_str, guid_bytes, value_orig_type))
-                            else:
-                                if guid_bytes in guid_mapping:
-                                    new_guid_bytes = guid_mapping[guid_bytes]
-                                    new_guid_str = guid_le_to_str(new_guid_bytes)
-                                else:
-                                    new_guid_bytes = uuid.uuid4().bytes_le
-                                    new_guid_str = guid_le_to_str(new_guid_bytes)
-                                    guid_mapping[guid_bytes] = new_guid_bytes
-                                    
-                                new_array.values.append(GuidData(new_guid_str, new_guid_bytes, value_orig_type))
-                        else:
-                            new_array.values.append(GuidData(guid_str, None, value_orig_type))
-                            
+                          
                     elif value_type == "GameObjectRefData":
                         guid_str = value_data.get("guid_str", "")
                         guid_hex = value_data.get("raw_bytes", "")

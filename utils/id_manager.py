@@ -34,6 +34,25 @@ class IdManager:
         self._instance_to_reasy[instance_id] = reasy_id
         
         return reasy_id
+        
+    def force_register_instance(self, instance_id, reasy_id):
+        if instance_id in self._instance_to_reasy:
+            old_reasy = self._instance_to_reasy[instance_id]
+            if old_reasy in self._reasy_to_instance:
+                del self._reasy_to_instance[old_reasy]
+            
+        if reasy_id in self._reasy_to_instance:
+            old_instance = self._reasy_to_instance[reasy_id]
+            if old_instance in self._instance_to_reasy:
+                del self._instance_to_reasy[old_instance]
+        
+        self._reasy_to_instance[reasy_id] = instance_id
+        self._instance_to_reasy[instance_id] = reasy_id
+        
+        if reasy_id >= self._next_id:
+            self._next_id = reasy_id + 1
+            
+        return reasy_id
     
     def get_instance_id(self, reasy_id):
         """Get current instance_id for a reasy_id"""

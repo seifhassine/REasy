@@ -767,33 +767,66 @@ class RszObjectOperations:
         
 
 
-        def _userdata_index_reference_count(target_instance_id, exclusions= []):
+        def _userdata_index_reference_count(target_instance_id, exclusions=[]):
+            """
+            Count references to a UserData instance from outside the list of instances being deleted
+            
+            Args:
+                target_instance_id: The UserData instance ID to check
+                exclusions: List of instance IDs to exclude from the reference count
+                
+            Returns:
+                int: Number of references to the UserData instance
+            """
             count = 0
             for key, instance in self.scn.parsed_elements.items():
+                if key in exclusions:
+                    continue
+                    
                 for field in instance.values():
-                    if isinstance(field, UserDataData) and field.index == target_instance_id and key not in exclusions:
+                    if isinstance(field, UserDataData) and field.index == target_instance_id:
                         count += 1
                     elif isinstance(field, ArrayData):
                         for element in field.values:
-                            if isinstance(element, UserDataData) and element.index == target_instance_id and key not in exclusions:
+                            if isinstance(element, UserDataData) and element.index == target_instance_id:
                                 count += 1
             return count
         
+        # Find and collect additional UserData instances referenced by the instances being deleted
         const_to_delete_instances = to_delete_instances.copy()
         for instance_id in const_to_delete_instances:
-            for field in self.scn.parsed_elements[instance_id].values():
+            for field_name, field in self.scn.parsed_elements.get(instance_id, {}).items():
                 if isinstance(field, UserDataData) and field.index not in to_delete_instances and field.index:
                     to_delete_instances.append(field.index)
                 elif isinstance(field, ArrayData):
                     for element in field.values:
                         if isinstance(element, UserDataData) and element.index not in to_delete_instances and element.index:
                             to_delete_instances.append(element.index)
-                            
+        
+        userdata_reference_map = {}
+        for key, instance in self.scn.parsed_elements.items():
+            if key in to_delete_instances:
+                continue  # Skip instances that are already being deleted
+                
+            for field in instance.values():
+                if isinstance(field, UserDataData) and field.index in to_delete_instances:
+                    if field.index not in userdata_reference_map:
+                        userdata_reference_map[field.index] = 0
+                    userdata_reference_map[field.index] += 1
+                elif isinstance(field, ArrayData):
+                    for element in field.values:
+                        if isinstance(element, UserDataData) and element.index in to_delete_instances:
+                            if element.index not in userdata_reference_map:
+                                userdata_reference_map[element.index] = 0
+                            userdata_reference_map[element.index] += 1
+        
         const_to_delete_instances = to_delete_instances.copy()
-        to_delete_instances = [instance_id for instance_id in const_to_delete_instances if _userdata_index_reference_count(instance_id, const_to_delete_instances) == 0]
-    
-
-
+        to_delete_instances = []
+        for instance_id in const_to_delete_instances:
+            if instance_id in userdata_reference_map and userdata_reference_map[instance_id] > 0:
+                print(f"  Excluding UserData instance {instance_id} from deletion as it's referenced {userdata_reference_map[instance_id]} times elsewhere")
+                continue
+            to_delete_instances.append(instance_id)
 
         owner_go.component_count -= 1
         
