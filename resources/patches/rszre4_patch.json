@@ -4629,5 +4629,73 @@
 			}
 		],
 		"name": "via.effect.script.EffectCustomExternParameter"
+	},
+	"aea2d9cc": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Tag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Path",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "UniversalOffset",
+				"native": true,
+				"original_type": "via.Position",
+				"size": 24,
+				"type": "Position"
+			}
+		],
+		"name": "via.Folder"
 	}
 }
