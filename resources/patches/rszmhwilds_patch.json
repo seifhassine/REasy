@@ -361,5 +361,392 @@
 			}
 		],
 		"name": "via.render.LDRColorDeficiencySimulation"
+	},
+	"6c1b2afc": {
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "v0_Shape",
+				"native": true,
+				"original_type": "via.AABB",
+				"size": 32,
+				"type": "AABB"
+			}
+		],
+		"name": "via.navigation.map.InteractionShapeAABB"
+	},
+	"ab77eb0f": {
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.navigation.FilterSet"
+	},
+	"a5c38431": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.render.GridFluid2DObstacle"
+	},
+	"69270916": {
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.ContextLamm"
+	},
+	"ffd9eaab": {
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			}
+		],
+		"name": "via.network.ContextSteam"
+	},
+	"511ae18": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ExposureFrame",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_ShutterAngleEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_ShutterAngle",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_BlurLoopCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.render.MotionBlur"
+	},
+	"d816531e": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_StencilRef",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v2_Filters",
+				"native": true,
+				"original_type": "via.render.FilterShader",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v3_RenderTargets",
+				"native": true,
+				"original_type": "via.render.IntermediateTarget",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.render.CustomFilterBeforeTransparent"
+	},
+	"4f7d08d5": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.render.LightShaftFilterControl"
+	},
+	"c7d8e0a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.render.SSSSSControl"
 	}
 }
