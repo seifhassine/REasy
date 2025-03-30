@@ -475,12 +475,42 @@ class U64Input(NumberInput):
 class S64Input(NumberInput):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.line_edit.setPlaceholderText("UInt64")
+        self.line_edit.setPlaceholderText("SInt64")
         
     def validate_and_convert(self, text):
         value = int(text)
         if value < -9223372036854775808 or value > 9223372036854775807:
-            raise ValueError("Out of U64 range")
+            raise ValueError("Out of S64 range")
+        return value
+        
+    def update_display(self):
+        if self._data and hasattr(self._data, 'value'):
+            self.line_edit.setText(str(self._data.value))
+
+class S16Input(NumberInput):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit.setPlaceholderText("SInt16")
+        
+    def validate_and_convert(self, text):
+        value = int(text)
+        if value < -32768 or value > 32767:
+            raise ValueError("Out of S16 range")
+        return value
+        
+    def update_display(self):
+        if self._data and hasattr(self._data, 'value'):
+            self.line_edit.setText(str(self._data.value))
+
+class U16Input(NumberInput):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit.setPlaceholderText("UInt16")
+        
+    def validate_and_convert(self, text):
+        value = int(text)
+        if value < 0 or value > 65535:
+            raise ValueError("Out of U16 range")
         return value
         
     def update_display(self):

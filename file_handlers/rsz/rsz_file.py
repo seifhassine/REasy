@@ -757,13 +757,13 @@ class RszFile:
                 if isinstance(element, S8Data):
                     out.extend(struct.pack("<b", max(-128, min(127, element.value))))
                 elif isinstance(element, U8Data):
-                    out.extend(struct.pack("<B", element.value & 0xFF))
+                    out.extend(struct.pack("<B", element.value))
                 elif isinstance(element, BoolData):
                     out.extend(struct.pack("<?", element.value))
                 elif isinstance(element, S16Data):
-                    out.extend(struct.pack("<h", element.value & 0xFFFF))
+                    out.extend(struct.pack("<h", element.value))
                 elif isinstance(element, U16Data):
-                    out.extend(struct.pack("<H", element.value & 0xFFFF))
+                    out.extend(struct.pack("<H", element.value))
                 elif isinstance(element, S64Data):
                     out.extend(struct.pack("<q", element.value))
                 elif isinstance(element, S32Data):
@@ -879,13 +879,13 @@ class RszFile:
                 out.extend(struct.pack("<b", max(-128, min(127, data_obj.value))))
             elif isinstance(data_obj, U8Data):
                 #print("last is u8")
-                out.extend(struct.pack("<B", data_obj.value & 0xFF))
+                out.extend(struct.pack("<B", data_obj.value))
             elif isinstance(data_obj, S16Data):
                 #print("last is s16")
-                out.extend(struct.pack("<h", data_obj.value & 0xFFFF))
+                out.extend(struct.pack("<h", data_obj.value))
             elif isinstance(data_obj, U16Data):
                 #print("last is u16")
-                out.extend(struct.pack("<H", data_obj.value & 0xFFFF))
+                out.extend(struct.pack("<H", data_obj.value))
             elif isinstance(data_obj, S64Data):
                 #print("last is s64")
                 out.extend(struct.pack("<q", data_obj.value))
@@ -2409,6 +2409,12 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 data_obj = rsz_type(value, original_type)
             elif rsz_type == U8Data:
                 value = read_aligned_value(unpack_ubyte, fsize, align=field_align)
+                data_obj = rsz_type(value, original_type)
+            elif rsz_type == U16Data:
+                value = read_aligned_value(unpack_ushort, fsize, align=field_align)
+                data_obj = rsz_type(value, original_type)
+            elif rsz_type == S16Data:
+                value = read_aligned_value(unpack_short, fsize, align=field_align)
                 data_obj = rsz_type(value, original_type)
             elif rsz_type == S32Data:
                 value = read_aligned_value(unpack_int, fsize, align=field_align)
