@@ -472,6 +472,21 @@ class U64Input(NumberInput):
         if self._data and hasattr(self._data, 'value'):
             self.line_edit.setText(str(self._data.value))
 
+class S64Input(NumberInput):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit.setPlaceholderText("UInt64")
+        
+    def validate_and_convert(self, text):
+        value = int(text)
+        if value < -9223372036854775808 or value > 9223372036854775807:
+            raise ValueError("Out of U64 range")
+        return value
+        
+    def update_display(self):
+        if self._data and hasattr(self._data, 'value'):
+            self.line_edit.setText(str(self._data.value))
+
 class S8Input(NumberInput):
     def __init__(self, parent=None):
         super().__init__(parent)

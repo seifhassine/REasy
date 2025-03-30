@@ -2413,6 +2413,9 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
             elif rsz_type == S32Data:
                 value = read_aligned_value(unpack_int, fsize, align=field_align)
                 data_obj = rsz_type(value, original_type)
+            elif rsz_type == S64Data:
+                value = read_aligned_value(unpack_long, fsize, align=field_align)
+                data_obj = rsz_type(value, original_type)
             elif rsz_type == U32Data:
                 value = read_aligned_value(unpack_uint, fsize, align=field_align)
                 data_obj = rsz_type(value, original_type)

@@ -27,6 +27,7 @@ class TreeWidgetFactory:
         "S32Data": S32Input,
         "U32Data": U32Input,
         "U64Data": U64Input,
+        "S64Data": S64Input,
         "S8Data": S8Input,
         "UserDataData": UserDataInput,
         "U8Data": U8Input, 
