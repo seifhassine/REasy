@@ -75,5 +75,268 @@
 			}
 		],
 		"name": "via.effect.script.EffectCustomExternParameter"
-	}
+	},
+	"c902a417": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Tag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UpdateSelf",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawSelf",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Timescale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.GameObject"
+	},
+	"645fdb44": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "SkeletonResourceHandle",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.motion.DummySkeleton"
+	},
+	"2bced080": {
+        "fields": [
+            {
+                "align": 4,
+                "array": false,
+                "name": "v0_XMin",
+                "native": true,
+                "original_type": "",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v1_XMax",
+                "native": true,
+                "original_type": "",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v2_YMin",
+                "native": true,
+                "original_type": "",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v3_YMax",
+                "native": true,
+                "original_type": "",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v4_YValueType",
+                "native": true,
+                "original_type": "via.sound.SoundCurveYValueType",
+                "size": 4,
+                "type": "S32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v5_YValueDbType",
+                "native": true,
+                "original_type": "via.sound.SoundCurveYDbValueType",
+                "size": 4,
+                "type": "S32"
+            },
+            {
+                "align": 4,
+                "array": true,
+                "name": "v6_Points",
+                "native": true,
+                "original_type": "via.sound.SoundCurvePoint",
+                "size": 4,
+                "type": "Object"
+            },
+            {
+                "align": 1,
+                "array": false,
+                "name": "v7_Invalid",
+                "native": true,
+                "original_type": "",
+                "size": 1,
+                "type": "Bool"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v8_Name",
+                "native": true,
+                "original_type": "via.string",
+                "size": 4,
+                "type": "String"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v9_XLabel",
+                "native": true,
+                "original_type": "via.string",
+                "size": 4,
+                "type": "String"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v10_YLabel",
+                "native": true,
+                "original_type": "via.string",
+                "size": 4,
+                "type": "String"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "v11_Color",
+                "native": true,
+                "original_type": "via.Color",
+                "size": 4,
+                "type": "Color"
+            }
+        ],
+        "name": "via.sound.SoundCurve"
+    },
+	"90035a32": {
+        "fields": [
+            {
+                "align": 16,
+                "array": true,
+                "name": "XKeys",
+                "native": true,
+                "original_type": "via.KeyFrame",
+                "size": 16,
+                "type": "KeyFrame"
+            },
+            {
+                "align": 16,
+                "array": true,
+                "name": "YKeys",
+                "native": true,
+                "original_type": "via.KeyFrame",
+                "size": 16,
+                "type": "KeyFrame"
+            },
+            {
+                "align": 16,
+                "array": true,
+                "name": "ZKeys",
+                "native": true,
+                "original_type": "via.KeyFrame",
+                "size": 16,
+                "type": "KeyFrame"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "MinValue",
+                "native": true,
+                "original_type": "System.Single",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "MaxValue",
+                "native": true,
+                "original_type": "System.Single",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "MinTime",
+                "native": true,
+                "original_type": "System.Single",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "MaxTime",
+                "native": true,
+                "original_type": "System.Single",
+                "size": 4,
+                "type": "F32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "LoopCount",
+                "native": true,
+                "original_type": "System.UInt32",
+                "size": 4,
+                "type": "U32"
+            },
+            {
+                "align": 4,
+                "array": false,
+                "name": "LoopWrapNo",
+                "native": true,
+                "original_type": "System.Int32",
+                "size": 4,
+                "type": "S32"
+            }
+        ],
+        "name": "via.AnimationCurve3D"
+    }
 }

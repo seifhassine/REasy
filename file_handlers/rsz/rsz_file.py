@@ -802,7 +802,6 @@ class RszFile:
                             float_values.append(0.0)
                         out.extend(struct.pack("<16f", *float_values))
                     else:
-                        print("Mat4Data error while writing")
                         out.extend(struct.pack("<16f", *([0.0] * 16)))
                 elif isinstance(element, (GameObjectRefData, GuidData)):
                     guid = uuid.UUID(element.guid_str)
@@ -2030,6 +2029,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
         field_align = int(field.get("align", 1))
         rsz_type    = get_type_class(ftype, fsize, is_native, is_array,
                                      field_align, original_type, field_name)
+        
         data_obj = None
 
         if is_array:
