@@ -1162,5 +1162,73 @@
                 "name": "via.network.ContextSteam"
             }
         }
-    }
+    },
+	"eab06d4b": {
+		"fields": [
+			{
+				"align": 16,
+				"array": true,
+				"name": "Keys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinValue(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxValue(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopStartTime(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopEndTime(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopCount(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopWrapNo(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.AnimationCurve"
+	}
 }
