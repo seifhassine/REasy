@@ -4434,11 +4434,11 @@
 			"value": 3
 		},
 		{
-			"name": "Ch1f4z1Battle",
+			"name": "Ch1f4z1(Bitorez)Battle",
 			"value": 4
 		},
 		{
-			"name": "Ch1f0z0Battle",
+			"name": "ch1f0z0(El Gigante)Battle",
 			"value": 5
 		},
 		{
@@ -7836,67 +7836,67 @@
 			"value": 0
 		},
 		{
-			"name": "ch0a0z0_NormalCostume",
+			"name": "ch0a0z0(Leon)_NormalCostume",
 			"value": 1
 		},
 		{
-			"name": "ch0a0z0_Clear",
+			"name": "ch0a0z0(Leon)_Clear",
 			"value": 2
 		},
 		{
-			"name": "ch0a0z0_DLC_1001",
+			"name": "ch0a0z0(Leon)_DLC_1001",
 			"value": 3
 		},
 		{
-			"name": "ch0a0z0_DLC_1002",
+			"name": "ch0a0z0(Leon)_DLC_1002",
 			"value": 4
 		},
 		{
-			"name": "ch0a0z0_DLC_1003",
+			"name": "ch0a0z0(Leon)_DLC_1003",
 			"value": 5
 		},
 		{
-			"name": "ch0a0z0_DLC_1004",
+			"name": "ch0a0z0(Leon)_DLC_1004",
 			"value": 6
 		},
 		{
-			"name": "ch2a1z0_NormalCostume",
+			"name": "ch2a1z0(Ashley)_NormalCostume",
 			"value": 7
 		},
 		{
-			"name": "ch2a1z0_Clear",
+			"name": "ch2a1z0(Ashley)_Clear",
 			"value": 8
 		},
 		{
-			"name": "ch2a1z0_DLC_1005",
+			"name": "ch2a1z0(Ashley)_DLC_1005",
 			"value": 9
 		},
 		{
-			"name": "ch2a1z0_DLC_1006",
+			"name": "ch2a1z0(Ashley)_DLC_1006",
 			"value": 10
 		},
 		{
-			"name": "ch0a0z0_Clear_NoJacket",
+			"name": "ch0a0z0(Leon)_Clear_NoJacket",
 			"value": 11
 		},
 		{
-			"name": "ch0a0z0_Clear_Jacket",
+			"name": "ch0a0z0(Leon)_Clear_Jacket",
 			"value": 12
 		},
 		{
-			"name": "ch2a1z0_Clear_NoJacket",
+			"name": "ch2a1z0(Ashley)_Clear_NoJacket",
 			"value": 13
 		},
 		{
-			"name": "ch2a1z0_Clear_Jacket",
+			"name": "ch2a1z0(Ashley)_Clear_Jacket",
 			"value": 14
 		},
 		{
-			"name": "ch2a200_Costume01",
+			"name": "ch2a200(Ada Wong)_Costume01",
 			"value": 15
 		},
 		{
-			"name": "ch0a0z0_MC_RPD",
+			"name": "ch0a0z0(Leon)_MC_RPD",
 			"value": 16
 		}
 	],
@@ -9934,11 +9934,11 @@
 			"value": 0
 		},
 		{
-			"name": "ch2a1z0",
+			"name": "ch2a1z0(Ashley)",
 			"value": 1
 		},
 		{
-			"name": "ch2a3z0",
+			"name": "ch2a3z0(Luis Serra)",
 			"value": 2
 		}
 	],
@@ -26030,27 +26030,27 @@
 			"value": 0
 		},
 		{
-			"name": "StatusEffectID_00_010_000_0",
+			"name": "+{0}% handgun ammo craft bonus frequency.",
 			"value": 100000
 		},
 		{
-			"name": "StatusEffectID_00_010_010_0",
+			"name": "+{0}% magnum ammo craft bonus frequency.",
 			"value": 100100
 		},
 		{
-			"name": "StatusEffectID_00_010_020_0",
+			"name": "+{0}% shotgun shells craft bonus frequency.",
 			"value": 100200
 		},
 		{
-			"name": "StatusEffectID_00_010_030_0",
+			"name": "+{0}% rifle ammo craft bonus frequency.",
 			"value": 100300
 		},
 		{
-			"name": "StatusEffectID_00_010_040_0",
+			"name": "+{0}% submachine gun ammo craft bonus frequency.",
 			"value": 100400
 		},
 		{
-			"name": "StatusEffectID_00_010_050_0",
+			"name": "+{0}% attachable mines craft bonus frequency.",
 			"value": 100500
 		},
 		{
@@ -26058,7 +26058,7 @@
 			"value": 100600
 		},
 		{
-			"name": "StatusEffectID_00_010_070_0",
+			"name": "+{0}% bolts craft bonus frequency.",
 			"value": 100700
 		},
 		{
@@ -26066,47 +26066,47 @@
 			"value": 150000
 		},
 		{
-			"name": "StatusEffectID_00_020_000_0",
+			"name": "{0} gunpowder used when crafting.",
 			"value": 200000
 		},
 		{
-			"name": "StatusEffectID_00_030_000_0",
+			"name": "+{0}% health recovery for green herbs.",
 			"value": 300000
 		},
 		{
-			"name": "StatusEffectID_00_030_010_0",
+			"name": "+{0}% health recovery for all egg types.",
 			"value": 300100
 		},
 		{
-			"name": "StatusEffectID_00_030_020_0",
+			"name": "+{0}% health recovery for black bass.",
 			"value": 300200
 		},
 		{
-			"name": "StatusEffectID_00_030_030_0",
+			"name": "+{0}% health recovery for vipers.",
 			"value": 300300
 		},
 		{
-			"name": "StatusEffectID_00_040_000_0",
+			"name": "+{0}% running speed.",
 			"value": 400000
 		},
 		{
-			"name": "StatusEffectID_00_050_000_0",
+			"name": "Increased drop rate for red herbs.",
 			"value": 500000
 		},
 		{
-			"name": "StatusEffectID_00_050_010_0",
+			"name": "Increased drop rate for handgun ammo.",
 			"value": 500100
 		},
 		{
-			"name": "StatusEffectID_00_050_020_0",
+			"name": "Increased drop rate for resources (L).",
 			"value": 500200
 		},
 		{
-			"name": "StatusEffectID_00_050_030_0",
+			"name": "Increased drop rate for Pesetas.",
 			"value": 500300
 		},
 		{
-			"name": "StatusEffectID_00_050_040_0",
+			"name": "Increased drop rate for gunpowder.",
 			"value": 500400
 		},
 		{
@@ -26118,31 +26118,31 @@
 			"value": 500600
 		},
 		{
-			"name": "StatusEffectID_00_060_000_0",
+			"name": "{0}% off the rocket launcher.",
 			"value": 600000
 		},
 		{
-			"name": "StatusEffectID_00_060_010_0",
+			"name": "{0}% off resources.",
 			"value": 600100
 		},
 		{
-			"name": "StatusEffectID_00_070_000_0",
+			"name": "+{0}% ammo resale value.",
 			"value": 700000
 		},
 		{
-			"name": "StatusEffectID_00_070_010_0",
+			"name": "+{0}% recovery item resale value.",
 			"value": 700100
 		},
 		{
-			"name": "StatusEffectID_00_070_020_0",
+			"name": "+{0}% weapon resale value.",
 			"value": 700200
 		},
 		{
-			"name": "StatusEffectID_00_080_000_0",
+			"name": "{0}% off knife repairs.",
 			"value": 800000
 		},
 		{
-			"name": "StatusEffectID_00_080_010_0",
+			"name": "{0}% off body armor repairs.",
 			"value": 800100
 		},
 		{
@@ -26150,31 +26150,31 @@
 			"value": 800200
 		},
 		{
-			"name": "StatusEffectID_00_090_030_0",
+			"name": "{0}% off weapon upgrades.",
 			"value": 900300
 		},
 		{
-			"name": "StatusEffectID_00_100_000_0",
+			"name": "Greatly decreases the amount of damage you receive.",
 			"value": 1000000
 		},
 		{
-			"name": "StatusEffectID_00_100_010_0",
+			"name": "Greatly increases the power of melee attacks.",
 			"value": 1000100
 		},
 		{
-			"name": "StatusEffectID_00_100_020_0",
+			"name": "Greatly increases the power of knife attacks.",
 			"value": 1000200
 		},
 		{
-			"name": "StatusEffectID_00_105_000_0",
+			"name": "+{0}% melee critical hit rate.",
 			"value": 1050000
 		},
 		{
-			"name": "StatusEffectID_00_110_000_0",
+			"name": "All weapons can be reloaded indefinitely without\r\nusing the ammo items in your possession.",
 			"value": 1100000
 		},
 		{
-			"name": "StatusEffectID_00_120_000_0",
+			"name": "Aim assist can be used regardless of game mode (difficulty).",
 			"value": 1200000
 		},
 		{
@@ -27538,7 +27538,7 @@
 	],
 	"chainsaw.LocID": [
 		{
-			"name": "loc40",
+			"name": "loc40 (Village center)",
 			"value": 40000
 		},
 		{
@@ -27550,23 +27550,23 @@
 			"value": 42000
 		},
 		{
-			"name": "loc43",
+			"name": "loc43 (Farm -> Luis underground)",
 			"value": 43000
 		},
 		{
-			"name": "loc44",
+			"name": "loc44 (Valley -> Mendez house)",
 			"value": 44000
 		},
 		{
-			"name": "loc45",
+			"name": "loc45 (Church Area)",
 			"value": 45000
 		},
 		{
-			"name": "loc46",
+			"name": "loc46 (Gigante --> Del Lago)",
 			"value": 46000
 		},
 		{
-			"name": "loc47",
+			"name": "loc47 (Post cabin fight --> End of village)",
 			"value": 47000
 		},
 		{
@@ -30400,11 +30400,11 @@
 			"value": 4
 		},
 		{
-			"name": "Target_Ch2a1z0",
+			"name": "Target_ch2a1z0(Ashley)",
 			"value": 5
 		},
 		{
-			"name": "Target_Ch2a3z0",
+			"name": "Target_ch2a3z0(Luis Serra)",
 			"value": 6
 		},
 		{
@@ -32692,7 +32692,7 @@
 			"value": 74
 		},
 		{
-			"name": "Other_Cp11Chp31Ch2a3z0TimeOver",
+			"name": "Other_Cp11Chp31ch2a3z0(Luis Serra)TimeOver",
 			"value": 75
 		}
 	],
@@ -41671,7 +41671,7 @@
 			"value": 65536
 		},
 		{
-			"name": "Ch1d2z0Hedge",
+			"name": "ch1d2z0(Wolf)Hedge",
 			"value": 131072
 		},
 		{
@@ -41699,19 +41699,19 @@
 			"value": 8388608
 		},
 		{
-			"name": "Ch1c0z0CostA",
+			"name": "ch1c0z0(Ganados)CostA",
 			"value": 16777216
 		},
 		{
-			"name": "Ch1c0z0CostB",
+			"name": "ch1c0z0(Ganados)CostB",
 			"value": 33554432
 		},
 		{
-			"name": "Ch1c0z0CostC",
+			"name": "ch1c0z0(Ganados)CostC",
 			"value": 67108864
 		},
 		{
-			"name": "Ch1f0z0Cost",
+			"name": "ch1f0z0(El Gigante)Cost",
 			"value": 134217728
 		}
 	],
@@ -41949,15 +41949,15 @@
 			"value": 2048
 		},
 		{
-			"name": "Ch1b7z0Only",
+			"name": "ch1b7z0(Human Krauser)Only",
 			"value": 4096
 		},
 		{
-			"name": "Ch2a1z0DontUse",
+			"name": "ch2a1z0(Ashley)DontUse",
 			"value": 8192
 		},
 		{
-			"name": "Ch1f8z0Only",
+			"name": "ch1f8z0(Transformed Saddler)Only",
 			"value": 16384
 		},
 		{
@@ -41965,11 +41965,11 @@
 			"value": 32768
 		},
 		{
-			"name": "Ch1f0z0Only",
+			"name": "ch1f0z0(El Gigante)Only",
 			"value": 65536
 		},
 		{
-			"name": "Ch1f0z0DontUse",
+			"name": "ch1f0z0(El Gigante)DontUse",
 			"value": 131072
 		},
 		{
@@ -44397,7 +44397,7 @@
 	],
 	"chainsaw.character.ch1d2z0.RankParamHash": [
 		{
-			"name": "Ch2a1z0_GrowlWaitTime",
+			"name": "ch2a1z0(Ashley)_GrowlWaitTime",
 			"value": 126480277
 		},
 		{
@@ -48010,7 +48010,7 @@
 			"value": 4
 		},
 		{
-			"name": "Ch5_Ch4fez0",
+			"name": "Ch5_ch4fez0(Human Saddler)",
 			"value": 5
 		}
 	],
@@ -57542,76 +57542,168 @@
 	],
 	"chainsaw.character.ch1c0z2.MontageID": [
 		{
-			"name": "Montage_0015",
+			"name": "(0015) Orange Jumpsuit with Gas Mask",
 			"value": 244681229
 		},
 		{
-			"name": "Montage_2500",
+			"name": "(2500) Green Tac Vest & green mouth mask",
 			"value": 253025149
 		},
 		{
-			"name": "Montage_0020",
+			"name": "(0020) Orange Jumpsuit with green tac vest & green mouth mask",
 			"value": 308095703
 		},
 		{
-			"name": "Montage_0001",
+			"name": "(0001) Black vest & green mask mouth",
 			"value": 412031697
 		},
 		{
-			"name": "Montage_2300",
+			"name": "(2300) (Bullet proof torso)",
 			"value": 763052872
 		},
 		{
-			"name": "Montage_0023",
+			"name": "(0023) (Green hooded & green mouth mask 2)",
 			"value": 781075099
 		},
 		{
-			"name": "Montage_0002",
+			"name": "(0002) Black Tac Vest & Gas Mask",
 			"value": 897984333
 		},
 		{
-			"name": "Montage_0007",
+			"name": "(0007) Black vest & green mask mouth 3",
 			"value": 1017464743
 		},
 		{
-			"name": "Montage_0019",
+			"name": "(0019) Black vest & green mask mouth 2",
 			"value": 1018592117
 		},
 		{
-			"name": "Montage_0029",
+			"name": "(0029) Green hooded & green mouth mask",
 			"value": 1139658603
 		},
 		{
-			"name": "Montage_2400",
+			"name": "(2400) Shirtless with green helmet",
 			"value": 1579850443
 		},
 		{
-			"name": "Montage_0018",
+			"name": "(0018) Green Tac vest & green head mask",
 			"value": 1609598768
 		},
 		{
-			"name": "Montage_0028",
+			"name": "(0028) Orange jumpsuit with green vest & green mouth mask on top",
 			"value": 1790233674
 		},
 		{
-			"name": "Montage_0008",
+			"name": "(0008) Green hooded & green mouth mask 3",
 			"value": 1790819418
 		},
 		{
-			"name": "Montage_0024",
+			"name": "(0024) Green shirt & green mouth mask",
 			"value": 1903465655
 		},
 		{
-			"name": "Montage_0026",
+			"name": "(0026) Just Orange jumpsuit",
 			"value": 2001761790
 		},
 		{
-			"name": "Montage_0017",
+			"name": "(0017) Full torso green shirt & black vest underneath & green mouth mask",
 			"value": 2126434953
 		},
 		{
-			"name": "Montage_0006",
+			"name": "(0006) Orange Jumpsuit with green vest and green mouth mask",
 			"value": 2133529107
+		},
+		{
+			"name": "(2100) Welder bullet proof helmet",
+			"value": 3916455954
+		},
+		{
+			"name": "(2101) Welder bullet proof helmet",
+			"value": 2348057730
+		},
+		{
+			"name": "(2102) Welder bullet proof helmet",
+			"value": 2353979389
+		},
+		{
+			"name": "(2200) Brute",
+			"value": 2366387651
+		},
+		{
+			"name": "(2301) Bullet proof torso)",
+			"value": 3255288962
+		},
+		{
+			"name": "(2302) Bullet proof torso",
+			"value": 2968040625
+		},
+		{
+			"name": "(2401) Black Vest & green helmet",
+			"value": 3692766905
+		},
+		{
+			"name": "(2402) Green Tac Vest & green helmet 2",
+			"value": 2438733595
+		},
+		{
+			"name": "(0027) Black vest & green mask mouth",
+			"value": 3680364053
+		},
+		{
+			"name": "(0025) Shirtless",
+			"value": 2491554104
+		},
+		{
+			"name": "(0022) Shirtless & green head mask",
+			"value": 4264763154
+		},
+		{
+			"name": "(0021) Green tac vest & green mask mouth",
+			"value": 3594914692
+		},
+		{
+			"name": "(0016) Shirtless & green mouth mask",
+			"value": 4119352667
+		},
+		{
+			"name": "(0014) Green tac vest with Gas Mask",
+			"value": 2543973566
+		},
+		{
+			"name": "(0013) Black vest & green mouth mask 2",
+			"value": 2915949180
+		},
+		{
+			"name": "(0012) Full T shirt with Gas Mask",
+			"value": 3980194655
+		},
+		{
+			"name": "(0011) Black vest with Gas Mask",
+			"value": 4191550041
+		},
+		{
+			"name": "(0010) Shirtless with Gas Mask",
+			"value": 2240595251
+		},
+		{
+			"name": "(0009) Green tac vest & green mask mouth 3",
+			"value": 3722087590
+		},
+		{
+			"name": "(0005) Green hooded & green mouth mask 4",
+			"value": 3218068109
+		},
+		{
+			"name": "(0004) Orange Jumpsuit with black vest & green mouth mask",
+			"value": 3825917684
+		},
+		{
+			"name": "(0003) Shirtless & green mouth mask 2",
+			"value": 2655811582
+		},
+		{
+			"name": "(0000) Green vest & green mouth mask",
+			"value": 2253052265
 		}
 	],
 	"via.motion.SecondaryRetarget.TransStretchMode": [
@@ -57934,7 +58026,7 @@
 			"value": 5813
 		},
 		{
-			"name": "wp5831",
+			"name": "Extinct Molotov",
 			"value": 5831
 		}
 	],
@@ -65756,27 +65848,27 @@
 	],
 	"chainsaw.MercenariesRankingScoreOptionRawData_00000000.PlayerCharacter": [
 		{
-			"name": "Chi0",
+			"name": "Leon",
 			"value": 0
 		},
 		{
-			"name": "Chi1",
+			"name": "Luis",
 			"value": 1
 		},
 		{
-			"name": "Chi2",
+			"name": "Krauser",
 			"value": 2
 		},
 		{
-			"name": "Chi3",
+			"name": "Hunk",
 			"value": 3
 		},
 		{
-			"name": "Chi4",
+			"name": "Ada",
 			"value": 4
 		},
 		{
-			"name": "Chi5",
+			"name": "Wesker",
 			"value": 5
 		},
 		{
@@ -66394,7 +66486,7 @@
 	],
 	"chainsaw.Ch1c0z0BehaviorTreeCondition_MFSM_MoveVariation.VariationType": [
 		{
-			"name": "Ch2a1z0Target",
+			"name": "ch2a1z0(Ashley)Target",
 			"value": 0
 		},
 		{
@@ -66762,23 +66854,23 @@
 	],
 	"chainsaw.GunIDWithStock": [
 		{
-			"name": "wp4000",
+			"name": "SG-09 R",
 			"value": 4000
 		},
 		{
-			"name": "wp4001",
+			"name": "Punisher",
 			"value": 4001
 		},
 		{
-			"name": "wp4002",
+			"name": "Red9",
 			"value": 4002
 		},
 		{
-			"name": "wp4003",
+			"name": "Blacktail",
 			"value": 4003
 		},
 		{
-			"name": "wp4004",
+			"name": "Matilda",
 			"value": 4004
 		},
 		{
@@ -66790,27 +66882,27 @@
 			"value": 4014
 		},
 		{
-			"name": "wp4100",
+			"name": "W-870",
 			"value": 4100
 		},
 		{
-			"name": "wp4101",
+			"name": "Riot Gun",
 			"value": 4101
 		},
 		{
-			"name": "wp4102",
+			"name": "Striker",
 			"value": 4102
 		},
 		{
-			"name": "wp4200",
+			"name": "TMP",
 			"value": 4200
 		},
 		{
-			"name": "wp4201",
+			"name": "Chicago Sweeper",
 			"value": 4201
 		},
 		{
-			"name": "wp4202",
+			"name": "LE 5",
 			"value": 4202
 		},
 		{
@@ -66818,47 +66910,47 @@
 			"value": 4210
 		},
 		{
-			"name": "wp4400",
+			"name": "SR M1903",
 			"value": 4400
 		},
 		{
-			"name": "wp4401",
+			"name": "Stingray",
 			"value": 4401
 		},
 		{
-			"name": "wp4402",
+			"name": "CQBR Assault Rifle",
 			"value": 4402
 		},
 		{
-			"name": "wp4500",
+			"name": "Broken Butterfly",
 			"value": 4500
 		},
 		{
-			"name": "wp4501",
+			"name": "Killer7",
 			"value": 4501
 		},
 		{
-			"name": "wp4502",
+			"name": "Handcannon",
 			"value": 4502
 		},
 		{
-			"name": "wp4600",
+			"name": "Bolt Thrower",
 			"value": 4600
 		},
 		{
-			"name": "wp4900",
+			"name": "Rocket Launcher",
 			"value": 4900
 		},
 		{
-			"name": "wp4901",
+			"name": "Rocket Launcher (Special)",
 			"value": 4901
 		},
 		{
-			"name": "wp4902",
+			"name": "Infinite Rocket Launcher",
 			"value": 4902
 		},
 		{
-			"name": "wp6000",
+			"name": "Pistol 2",
 			"value": 6000
 		},
 		{
@@ -66866,35 +66958,35 @@
 			"value": 6001
 		},
 		{
-			"name": "wp6100",
+			"name": "Sawed-off W-870",
 			"value": 6100
 		},
 		{
-			"name": "wp6101",
+			"name": "Chicago Sweeper",
 			"value": 6101
 		},
 		{
-			"name": "wp6102",
+			"name": "Blast Crossbow",
 			"value": 6102
 		},
 		{
-			"name": "wp6103",
+			"name": "Blacktail AC",
 			"value": 6103
 		},
 		{
-			"name": "wp6104",
+			"name": "TMP",
 			"value": 6104
 		},
 		{
-			"name": "wp6105",
+			"name": "Stingray",
 			"value": 6105
 		},
 		{
-			"name": "wp6106",
+			"name": "Rocket Launcher",
 			"value": 6106
 		},
 		{
-			"name": "wp6111",
+			"name": "Infinite Rocket Launcher",
 			"value": 6111
 		},
 		{
@@ -70318,15 +70410,15 @@
 			"value": 7
 		},
 		{
-			"name": "Ch1d2z0Hedge_Layer_0",
+			"name": "ch1d2z0(Wolf)Hedge_Layer_0",
 			"value": 10
 		},
 		{
-			"name": "Ch1d2z0Hedge_Layer_1",
+			"name": "ch1d2z0(Wolf)Hedge_Layer_1",
 			"value": 11
 		},
 		{
-			"name": "Ch1d2z0Hedge_Layer_2",
+			"name": "ch1d2z0(Wolf)Hedge_Layer_2",
 			"value": 12
 		},
 		{
@@ -70378,15 +70470,15 @@
 			"value": 32
 		},
 		{
-			"name": "Ch1d2z0Hedge_Oneway_Layer0",
+			"name": "ch1d2z0(Wolf)Hedge_Oneway_Layer0",
 			"value": 35
 		},
 		{
-			"name": "Ch1d2z0Hedge_Oneway_Layer1",
+			"name": "ch1d2z0(Wolf)Hedge_Oneway_Layer1",
 			"value": 36
 		},
 		{
-			"name": "Ch1d2z0Hedge_Oneway_Layer2",
+			"name": "ch1d2z0(Wolf)Hedge_Oneway_Layer2",
 			"value": 37
 		}
 	],
@@ -75460,7 +75552,7 @@
 			"value": 3
 		},
 		{
-			"name": "Battle_ch1f0z0",
+			"name": "Battle_ch1f0z0(El Gigante)",
 			"value": 4
 		},
 		{
@@ -82213,11 +82305,11 @@
 			"value": 0
 		},
 		{
-			"name": "it_sm70_200_00_0",
+			"name": "Explosive Arrows",
 			"value": 112320000
 		},
 		{
-			"name": "it_sm70_300_00_0",
+			"name": "Blast Arrows",
 			"value": 112480000
 		},
 		{
@@ -82225,27 +82317,27 @@
 			"value": 112480160
 		},
 		{
-			"name": "it_sm70_500_00_0",
+			"name": "Handgun Ammo",
 			"value": 112800000
 		},
 		{
-			"name": "it_sm70_501_00_0",
+			"name": "Magnum Ammo",
 			"value": 112801600
 		},
 		{
-			"name": "it_sm70_502_00_0",
+			"name": "Shotgun Shells",
 			"value": 112803200
 		},
 		{
-			"name": "it_sm70_503_00_0",
+			"name": "Rifle Ammo",
 			"value": 112804800
 		},
 		{
-			"name": "it_sm70_504_00_0",
+			"name": "Submachine Gun Ammo",
 			"value": 112806400
 		},
 		{
-			"name": "it_sm70_505_00_0",
+			"name": "Bolts",
 			"value": 112808000
 		},
 		{
@@ -82265,11 +82357,11 @@
 			"value": 112814400
 		},
 		{
-			"name": "it_sm71_300_00_0",
+			"name": "Lord of the Waterway",
 			"value": 114080000
 		},
 		{
-			"name": "it_sm71_500_00_0",
+			"name": "Green Herb",
 			"value": 114400000
 		},
 		{
@@ -82277,7 +82369,7 @@
 			"value": 114400160
 		},
 		{
-			"name": "it_sm71_501_00_0",
+			"name": "Red Herb",
 			"value": 114401600
 		},
 		{
@@ -82285,107 +82377,107 @@
 			"value": 114401760
 		},
 		{
-			"name": "it_sm71_502_00_0",
+			"name": "Yellow Herb",
 			"value": 114403200
 		},
 		{
-			"name": "it_sm71_503_00_0",
+			"name": "Mixed Herb (G+G)",
 			"value": 114404800
 		},
 		{
-			"name": "it_sm71_504_00_0",
+			"name": "Mixed Herb (G+G+G)",
 			"value": 114406400
 		},
 		{
-			"name": "it_sm71_505_00_0",
+			"name": "Mixed Herb (G+R)",
 			"value": 114408000
 		},
 		{
-			"name": "it_sm71_506_00_0",
+			"name": "Mixed Herb (G+Y)",
 			"value": 114409600
 		},
 		{
-			"name": "it_sm71_507_00_0",
+			"name": "Mixed Herb (R+Y)",
 			"value": 114411200
 		},
 		{
-			"name": "it_sm71_508_00_0",
+			"name": "Mixed Herb (G+R+Y)",
 			"value": 114412800
 		},
 		{
-			"name": "it_sm71_509_00_0",
+			"name": "Mixed Herb (G+G+Y)",
 			"value": 114414400
 		},
 		{
-			"name": "it_sm71_510_00_0",
+			"name": "First Aid Spray",
 			"value": 114416000
 		},
 		{
-			"name": "it_sm71_511_00_0",
+			"name": "Black Bass",
 			"value": 114417600
 		},
 		{
-			"name": "it_sm71_512_00_0",
+			"name": "Lunker Bass",
 			"value": 114419200
 		},
 		{
-			"name": "it_sm71_513_00_0",
+			"name": "Black Bass (L)",
 			"value": 114420800
 		},
 		{
-			"name": "it_sm71_514_00_0",
+			"name": "Viper",
 			"value": 114422400
 		},
 		{
-			"name": "it_sm71_515_00_0",
+			"name": "Rhinoceros Beetle",
 			"value": 114424000
 		},
 		{
-			"name": "it_sm72_500_00_0",
+			"name": "Scope",
 			"value": 116000000
 		},
 		{
-			"name": "it_sm72_501_00_0",
+			"name": "Red9 Stock",
 			"value": 116001600
 		},
 		{
-			"name": "it_sm72_502_00_0",
+			"name": "High-power Scope",
 			"value": 116003200
 		},
 		{
-			"name": "it_sm72_503_00_0",
+			"name": "Biosensor Scope",
 			"value": 116004800
 		},
 		{
-			"name": "it_sm72_504_00_0",
+			"name": "TMP Stock",
 			"value": 116006400
 		},
 		{
-			"name": "it_sm72_505_00_0",
+			"name": "Laser Sight",
 			"value": 116008000
 		},
 		{
-			"name": "it_sm72_506_00_0",
+			"name": "Matilda Stock",
 			"value": 116009600
 		},
 		{
-			"name": "it_sm73_500_00_0",
+			"name": "Gunpowder",
 			"value": 117600000
 		},
 		{
-			"name": "it_sm73_501_00_0",
+			"name": "Resources (L)",
 			"value": 117601600
 		},
 		{
-			"name": "it_sm73_502_00_0",
+			"name": "Attachable Mines",
 			"value": 117603200
 		},
 		{
-			"name": "it_sm73_503_00_0",
+			"name": "Broken Knife",
 			"value": 117604800
 		},
 		{
-			"name": "it_sm73_504_00_0",
+			"name": "Resources (S)",
 			"value": 117606400
 		},
 		{
@@ -82409,15 +82501,15 @@
 			"value": 118886400
 		},
 		{
-			"name": "it_sm74_305_00_0",
+			"name": "Red Ink",
 			"value": 118888000
 		},
 		{
-			"name": "it_sm74_306_00_0",
+			"name": "Gold Bottle",
 			"value": 118889600
 		},
 		{
-			"name": "it_sm74_307_00_0",
+			"name": "Blue Butterfly",
 			"value": 118891200
 		},
 		{
@@ -82449,15 +82541,15 @@
 			"value": 118902400
 		},
 		{
-			"name": "it_sm74_315_00_0",
+			"name": "Rocket Launcher (Special)",
 			"value": 118904000
 		},
 		{
-			"name": "it_sm74_316_00_0",
+			"name": "Boat Key",
 			"value": 118905600
 		},
 		{
-			"name": "it_sm74_317_00_0",
+			"name": "Silver Bottle",
 			"value": 118907200
 		},
 		{
@@ -82469,19 +82561,19 @@
 			"value": 118910400
 		},
 		{
-			"name": "it_sm74_320_00_0",
+			"name": "Lithographic Stone A",
 			"value": 118912000
 		},
 		{
-			"name": "it_sm74_321_00_0",
+			"name": "Lithographic Stone B",
 			"value": 118913600
 		},
 		{
-			"name": "it_sm74_322_00_0",
+			"name": "Lithographic Stone C",
 			"value": 118915200
 		},
 		{
-			"name": "it_sm74_323_00_0",
+			"name": "Lithographic Stone D",
 			"value": 118916800
 		},
 		{
@@ -82489,191 +82581,191 @@
 			"value": 118918400
 		},
 		{
-			"name": "it_sm74_325_00_0",
+			"name": "Hidden Key",
 			"value": 118920000
 		},
 		{
-			"name": "it_sm74_326_00_0",
+			"name": "Blue Moonstone",
 			"value": 118921600
 		},
 		{
-			"name": "it_sm74_327_00_0",
+			"name": "Power Unit",
 			"value": 118923200
 		},
 		{
-			"name": "it_sm74_502_00_0",
+			"name": "Hexagonal Emblem",
 			"value": 119203200
 		},
 		{
-			"name": "it_sm74_503_00_0",
+			"name": "Insignia Key",
 			"value": 119204800
 		},
 		{
-			"name": "it_sm74_504_00_0",
+			"name": "Halo Wheel",
 			"value": 119206400
 		},
 		{
-			"name": "it_sm74_506_00_0",
+			"name": "Crimson Lantern",
 			"value": 119209600
 		},
 		{
-			"name": "it_sm74_507_00_0",
+			"name": "Level 1 Keycard",
 			"value": 119211200
 		},
 		{
-			"name": "it_sm74_508_00_0",
+			"name": "Level 2 Keycard",
 			"value": 119212800
 		},
 		{
-			"name": "it_sm74_509_00_0",
+			"name": "Level 3 Keycard",
 			"value": 119214400
 		},
 		{
-			"name": "it_sm74_511_00_0",
+			"name": "Crystal Marble",
 			"value": 119217600
 		},
 		{
-			"name": "it_sm74_512_00_0",
+			"name": "Wrench",
 			"value": 119219200
 		},
 		{
-			"name": "it_sm74_513_00_0",
+			"name": "Salazar Family Insignia",
 			"value": 119220800
 		},
 		{
-			"name": "it_sm74_514_00_0",
+			"name": "Lion Head",
 			"value": 119222400
 		},
 		{
-			"name": "it_sm74_515_00_0",
+			"name": "Goat Head",
 			"value": 119224000
 		},
 		{
-			"name": "it_sm74_516_00_0",
+			"name": "Serpent Head",
 			"value": 119225600
 		},
 		{
-			"name": "it_sm74_519_00_0",
+			"name": "Blasphemer's Head",
 			"value": 119230400
 		},
 		{
-			"name": "it_sm74_520_00_0",
+			"name": "Apostate's Head",
 			"value": 119232000
 		},
 		{
-			"name": "it_sm74_522_00_0",
+			"name": "Wooden Cog",
 			"value": 119235200
 		},
 		{
-			"name": "it_sm74_523_00_0",
+			"name": "Dynamite",
 			"value": 119236800
 		},
 		{
-			"name": "it_sm74_524_00_0",
+			"name": "Luis's Key",
 			"value": 119238400
 		},
 		{
-			"name": "it_sm74_528_00_0",
+			"name": "Small Key",
 			"value": 119244800
 		},
 		{
-			"name": "it_sm74_529_00_0",
+			"name": "Checkpoint Crank",
 			"value": 119246400
 		},
 		{
-			"name": "it_sm74_530_00_0",
+			"name": "Hexagon Piece A",
 			"value": 119248000
 		},
 		{
-			"name": "it_sm74_531_00_0",
+			"name": "Hexagon Piece B",
 			"value": 119249600
 		},
 		{
-			"name": "it_sm74_532_00_0",
+			"name": "Hexagon Piece C",
 			"value": 119251200
 		},
 		{
-			"name": "it_sm74_534_00_0",
+			"name": "Dungeon Key",
 			"value": 119254400
 		},
 		{
-			"name": "it_sm74_535_00_0",
+			"name": "Old Wayshrine Key",
 			"value": 119256000
 		},
 		{
-			"name": "it_sm74_536_00_0",
+			"name": "Church Insignia",
 			"value": 119257600
 		},
 		{
-			"name": "it_sm74_537_00_0",
+			"name": "Water Scooter Key",
 			"value": 119259200
 		},
 		{
-			"name": "it_sm74_538_00_0",
+			"name": "Golden Sword",
 			"value": 119260800
 		},
 		{
-			"name": "it_sm74_539_00_0",
+			"name": "Iron Sword",
 			"value": 119262400
 		},
 		{
-			"name": "it_sm74_541_00_0",
+			"name": "Lithographic Stone A",
 			"value": 119265600
 		},
 		{
-			"name": "it_sm74_542_00_0",
+			"name": "Lithographic Stone B",
 			"value": 119267200
 		},
 		{
-			"name": "it_sm74_543_00_0",
+			"name": "Lithographic Stone C",
 			"value": 119268800
 		},
 		{
-			"name": "it_sm74_544_00_0",
+			"name": "Lithographic Stone D",
 			"value": 119270400
 		},
 		{
-			"name": "it_sm74_546_00_0",
+			"name": "Boat Fuel",
 			"value": 119273600
 		},
 		{
-			"name": "it_sm74_547_00_0",
+			"name": "Bunch of Keys",
 			"value": 119275200
 		},
 		{
-			"name": "it_sm74_548_00_0",
+			"name": "Cubic Device",
 			"value": 119276800
 		},
 		{
-			"name": "it_sm74_549_00_0",
+			"name": "Bloodied Sword",
 			"value": 119278400
 		},
 		{
-			"name": "it_sm74_550_00_0",
+			"name": "Rusted Sword",
 			"value": 119280000
 		},
 		{
-			"name": "it_sm74_551_00_0",
+			"name": "Hunter's Lodge Key",
 			"value": 119281600
 		},
 		{
-			"name": "it_sm74_552_00_0",
+			"name": "Unicorn Horn",
 			"value": 119283200
 		},
 		{
-			"name": "it_sm74_553_00_0",
+			"name": "Blue Dial",
 			"value": 119284800
 		},
 		{
-			"name": "it_sm74_554_00_0",
+			"name": "Silver Token",
 			"value": 119286400
 		},
 		{
-			"name": "it_sm74_555_00_0",
+			"name": "Gold Token",
 			"value": 119288000
 		},
 		{
-			"name": "it_sm74_556_00_0",
+			"name": "Wooden Planks",
 			"value": 119289600
 		},
 		{
@@ -82681,7 +82773,7 @@
 			"value": 119291200
 		},
 		{
-			"name": "it_sm75_300_00_0",
+			"name": "Jacket",
 			"value": 120480000
 		},
 		{
@@ -82689,159 +82781,159 @@
 			"value": 120481600
 		},
 		{
-			"name": "it_sm75_302_00_0",
+			"name": "Beret",
 			"value": 120483200
 		},
 		{
-			"name": "it_sm75_303_00_0",
+			"name": "Housekeeper's Barrette",
 			"value": 120484800
 		},
 		{
-			"name": "it_sm75_304_00_0",
+			"name": "Glasses",
 			"value": 120486400
 		},
 		{
-			"name": "it_sm75_500_00_0",
+			"name": "Spinel",
 			"value": 120800000
 		},
 		{
-			"name": "it_sm75_501_00_0",
+			"name": "Pearl Pendant",
 			"value": 120801600
 		},
 		{
-			"name": "it_sm75_502_00_0",
+			"name": "Dirty Pearl Pendant",
 			"value": 120803200
 		},
 		{
-			"name": "it_sm75_506_00_0",
+			"name": "Brass Pocket Watch",
 			"value": 120809600
 		},
 		{
-			"name": "it_sm75_508_00_0",
+			"name": "Elegant Headdress",
 			"value": 120812800
 		},
 		{
-			"name": "it_sm75_509_00_0",
+			"name": "Antique Pipe",
 			"value": 120814400
 		},
 		{
-			"name": "it_sm75_510_00_0",
+			"name": "Pearl Bangle",
 			"value": 120816000
 		},
 		{
-			"name": "it_sm75_511_00_0",
+			"name": "Red Gemstone Ring",
 			"value": 120817600
 		},
 		{
-			"name": "it_sm75_512_00_0",
+			"name": "Gold Bangle",
 			"value": 120819200
 		},
 		{
-			"name": "it_sm75_513_00_0",
+			"name": "Iluminados Pendant",
 			"value": 120820800
 		},
 		{
-			"name": "it_sm75_514_00_0",
+			"name": "Mirror with Pearls & Rubies",
 			"value": 120822400
 		},
 		{
-			"name": "it_sm75_515_00_0",
+			"name": "Golden Hourglass",
 			"value": 120824000
 		},
 		{
-			"name": "it_sm75_516_00_0",
+			"name": "Elegant Perfume Bottle",
 			"value": 120825600
 		},
 		{
-			"name": "it_sm75_517_00_0",
+			"name": "Elegant Chessboard",
 			"value": 120827200
 		},
 		{
-			"name": "it_sm75_518_00_0",
+			"name": "Staff of Royalty",
 			"value": 120828800
 		},
 		{
-			"name": "it_sm75_519_00_0",
+			"name": "Ruby",
 			"value": 120830400
 		},
 		{
-			"name": "it_sm75_520_00_0",
+			"name": "Emerald",
 			"value": 120832000
 		},
 		{
-			"name": "it_sm75_521_00_0",
+			"name": "Sapphire",
 			"value": 120833600
 		},
 		{
-			"name": "it_sm75_522_00_0",
+			"name": "Yellow Diamond",
 			"value": 120835200
 		},
 		{
-			"name": "it_sm75_524_00_0",
+			"name": "Alexandrite",
 			"value": 120838400
 		},
 		{
-			"name": "it_sm75_525_00_0",
+			"name": "Gold Bar",
 			"value": 120840000
 		},
 		{
-			"name": "it_sm75_526_00_0",
+			"name": "Gold Bar (L)",
 			"value": 120841600
 		},
 		{
-			"name": "it_sm75_527_00_0",
+			"name": "Gold Ingot",
 			"value": 120843200
 		},
 		{
-			"name": "it_sm75_528_00_0",
+			"name": "Depraved Idol",
 			"value": 120844800
 		},
 		{
-			"name": "it_sm75_529_00_0",
+			"name": "Vintage Compass",
 			"value": 120846400
 		},
 		{
-			"name": "it_sm75_530_00_0",
+			"name": "Justitia Statue",
 			"value": 120848000
 		},
 		{
-			"name": "it_sm75_531_00_0",
+			"name": "Crystal Ore",
 			"value": 120849600
 		},
 		{
-			"name": "it_sm75_532_00_0",
+			"name": "Ornate Beetle",
 			"value": 120851200
 		},
 		{
-			"name": "it_sm75_533_00_0",
+			"name": "M\u00e9ndez's False Eye",
 			"value": 120852800
 		},
 		{
-			"name": "it_sm75_534_00_0",
+			"name": "Gold Monocle",
 			"value": 120854400
 		},
 		{
-			"name": "it_sm75_535_00_0",
+			"name": "Lip Rouge",
 			"value": 120856000
 		},
 		{
-			"name": "it_sm75_536_00_0",
+			"name": "Red Beryl",
 			"value": 120857600
 		},
 		{
-			"name": "it_sm75_538_00_0",
+			"name": "Antique Camera",
 			"value": 120860800
 		},
 		{
-			"name": "it_sm75_540_00_0",
+			"name": "Velvet Blue",
 			"value": 120864000
 		},
 		{
-			"name": "it_sm75_541_00_0",
+			"name": "Scratched Emerald",
 			"value": 120865600
 		},
 		{
-			"name": "it_sm75_542_00_0",
+			"name": "Exclusive Upgrade Ticket",
 			"value": 120867200
 		},
 		{
@@ -82849,43 +82941,43 @@
 			"value": 120960000
 		},
 		{
-			"name": "it_sm76_500_00_0",
+			"name": "Elegant Mask",
 			"value": 122400000
 		},
 		{
-			"name": "it_sm76_501_00_0",
+			"name": "Flagon",
 			"value": 122401600
 		},
 		{
-			"name": "it_sm76_502_00_0",
+			"name": "Butterfly Lamp",
 			"value": 122403200
 		},
 		{
-			"name": "it_sm76_503_00_0",
+			"name": "Elegant Crown",
 			"value": 122404800
 		},
 		{
-			"name": "it_sm76_504_00_0",
+			"name": "Golden Lynx",
 			"value": 122406400
 		},
 		{
-			"name": "it_sm76_505_00_0",
+			"name": "Extravagant Clock",
 			"value": 122408000
 		},
 		{
-			"name": "it_sm76_506_00_0",
+			"name": "Splendid Bangle",
 			"value": 122409600
 		},
 		{
-			"name": "it_sm76_507_00_0",
+			"name": "Chalice of Atonement",
 			"value": 122411200
 		},
 		{
-			"name": "it_sm76_508_00_0",
+			"name": "Ornate Necklace",
 			"value": 122412800
 		},
 		{
-			"name": "it_sm76_510_00_0",
+			"name": "Elegant Bangle",
 			"value": 122416000
 		},
 		{
@@ -82893,15 +82985,15 @@
 			"value": 123683200
 		},
 		{
-			"name": "it_sm77_303_00_0",
+			"name": "Attach\u00e9 Case: Carbon",
 			"value": 123684800
 		},
 		{
-			"name": "it_sm77_304_00_0",
+			"name": "Attach\u00e9 Case: Vintage",
 			"value": 123686400
 		},
 		{
-			"name": "it_sm77_305_00_0",
+			"name": "Treasure Maps: All",
 			"value": 123688000
 		},
 		{
@@ -82917,23 +83009,23 @@
 			"value": 123692800
 		},
 		{
-			"name": "it_sm77_500_00_0",
+			"name": "Pesetas",
 			"value": 124000000
 		},
 		{
-			"name": "it_sm77_501_00_0",
+			"name": "Body Armor",
 			"value": 124001600
 		},
 		{
-			"name": "it_sm77_502_00_0",
+			"name": "Treasure Map: Village",
 			"value": 124003200
 		},
 		{
-			"name": "it_sm77_503_00_0",
+			"name": "Treasure Map: Castle",
 			"value": 124004800
 		},
 		{
-			"name": "it_sm77_504_00_0",
+			"name": "Treasure Map: Island",
 			"value": 124006400
 		},
 		{
@@ -82941,71 +83033,71 @@
 			"value": 124008000
 		},
 		{
-			"name": "it_sm77_600_00_0",
+			"name": "Case Upgrade (7x10)",
 			"value": 124160000
 		},
 		{
-			"name": "it_sm77_601_00_0",
+			"name": "Case Upgrade (7x12)",
 			"value": 124161600
 		},
 		{
-			"name": "it_sm77_602_00_0",
+			"name": "Case Upgrade (8x12)",
 			"value": 124163200
 		},
 		{
-			"name": "it_sm77_603_00_0",
+			"name": "Case Upgrade (8x13)",
 			"value": 124164800
 		},
 		{
-			"name": "it_sm77_604_00_0",
+			"name": "Case Upgrade (9x13)",
 			"value": 124166400
 		},
 		{
-			"name": "it_sm77_610_00_0",
+			"name": "Attach\u00e9 Case: Silver",
 			"value": 124176000
 		},
 		{
-			"name": "it_sm77_611_00_0",
+			"name": "Attach\u00e9 Case: Black",
 			"value": 124177600
 		},
 		{
-			"name": "it_sm77_612_00_0",
+			"name": "Attach\u00e9 Case: Leather",
 			"value": 124179200
 		},
 		{
-			"name": "it_sm77_620_00_0",
+			"name": "Attaché Case: Gold",
 			"value": 124192000
 		},
 		{
-			"name": "it_sm77_621_00_0",
+			"name": "Attaché Case: Classic",
 			"value": 124193600
 		},
 		{
-			"name": "it_sm77_701_00_0",
+			"name": "Recipe: Handgun Ammo",
 			"value": 124321600
 		},
 		{
-			"name": "it_sm77_702_00_0",
+			"name": "Recipe: Shotgun Shells",
 			"value": 124323200
 		},
 		{
-			"name": "it_sm77_703_00_0",
+			"name": "Recipe: Submachine Gun Ammo",
 			"value": 124324800
 		},
 		{
-			"name": "it_sm77_704_00_0",
+			"name": "Recipe: Rifle Ammo",
 			"value": 124326400
 		},
 		{
-			"name": "it_sm77_705_00_0",
+			"name": "Recipe: Magnum Ammo",
 			"value": 124328000
 		},
 		{
-			"name": "it_sm77_706_00_0",
+			"name": "Recipe: Bolts",
 			"value": 124329600
 		},
 		{
-			"name": "it_sm77_707_00_0",
+			"name": "Recipe: Bolts",
 			"value": 124331200
 		},
 		{
@@ -83013,75 +83105,75 @@
 			"value": 124332800
 		},
 		{
-			"name": "it_sm77_709_00_0",
+			"name": "Recipe: Attachable Mines",
 			"value": 124334400
 		},
 		{
-			"name": "it_sm77_710_00_0",
+			"name": "Recipe: Heavy Grenade",
 			"value": 124336000
 		},
 		{
-			"name": "it_sm77_711_00_0",
+			"name": "Recipe: Flash Grenade",
 			"value": 124337600
 		},
 		{
-			"name": "it_sm77_721_00_0",
+			"name": "Recipe: Mixed Herb (G+G)",
 			"value": 124353600
 		},
 		{
-			"name": "it_sm77_722_00_0",
+			"name": "Recipe: Mixed Herb (G+R)",
 			"value": 124355200
 		},
 		{
-			"name": "it_sm77_723_00_0",
+			"name": "Recipe: Mixed Herb (G+Y)",
 			"value": 124356800
 		},
 		{
-			"name": "it_sm77_724_00_0",
+			"name": "Recipe: Mixed Herb (R+Y)",
 			"value": 124358400
 		},
 		{
-			"name": "it_sm77_725_00_0",
+			"name": "Recipe: Mixed Herb (G+G+G)",
 			"value": 124360000
 		},
 		{
-			"name": "it_sm77_726_00_0",
+			"name": "Recipe: Mixed Herb (G+G+Y)",
 			"value": 124361600
 		},
 		{
-			"name": "it_sm77_727_00_0",
+			"name": "Recipe: Mixed Herb (G+G+Y)",
 			"value": 124363200
 		},
 		{
-			"name": "it_sm77_728_00_0",
+			"name": "Recipe: Mixed Herb (G+R+Y)",
 			"value": 124364800
 		},
 		{
-			"name": "it_sm77_729_00_0",
+			"name": "Recipe: Mixed Herb (G+R+Y)",
 			"value": 124366400
 		},
 		{
-			"name": "it_sm77_730_00_0",
+			"name": "Recipe: Mixed Herb (G+R+Y)",
 			"value": 124368000
 		},
 		{
-			"name": "it_sm77_900_00_0",
+			"name": "Accessory: Hair Color (Red)",
 			"value": 124640000
 		},
 		{
-			"name": "it_sm77_901_00_0",
+			"name": "Accessory: Hair Color (Blue)",
 			"value": 124641600
 		},
 		{
-			"name": "it_sm77_902_00_0",
+			"name": "Accessory: Glasses (Wellington)",
 			"value": 124643200
 		},
 		{
-			"name": "it_sm77_903_00_0",
+			"name": "Accessory: Sunglasses (Cat Eye)",
 			"value": 124644800
 		},
 		{
-			"name": "it_sm77_904_00_0",
+			"name": "Accessory: Stylish Mask",
 			"value": 124646400
 		},
 		{
@@ -83089,431 +83181,431 @@
 			"value": 124648000
 		},
 		{
-			"name": "it_sm79_300_00_0",
+			"name": "Charm: Ada Wong (Special)",
 			"value": 126880000
 		},
 		{
-			"name": "it_sm79_500_00_0",
+			"name": "Charm: Don Jose",
 			"value": 127200000
 		},
 		{
-			"name": "it_sm79_501_00_0",
+			"name": "Charm: Don Diego",
 			"value": 127201600
 		},
 		{
-			"name": "it_sm79_502_00_0",
+			"name": "Charm: Don Esteban",
 			"value": 127203200
 		},
 		{
-			"name": "it_sm79_503_00_0",
+			"name": "Charm: Don Manuel",
 			"value": 127204800
 		},
 		{
-			"name": "it_sm79_504_00_0",
+			"name": "Charm: Isabel",
 			"value": 127206400
 		},
 		{
-			"name": "it_sm79_505_00_0",
+			"name": "Charm: Maria",
 			"value": 127208000
 		},
 		{
-			"name": "it_sm79_506_00_0",
+			"name": "Charm: Dr. Salvador",
 			"value": 127209600
 		},
 		{
-			"name": "it_sm79_507_00_0",
+			"name": "Charm: Bella Sisters",
 			"value": 127211200
 		},
 		{
-			"name": "it_sm79_508_00_0",
+			"name": "Charm: Don Pedro",
 			"value": 127212800
 		},
 		{
-			"name": "it_sm79_509_00_0",
+			"name": "Charm: Zealot w/ scythe",
 			"value": 127214400
 		},
 		{
-			"name": "it_sm79_510_00_0",
+			"name": "Charm: Zealot w/ shield",
 			"value": 127216000
 		},
 		{
-			"name": "it_sm79_511_00_0",
+			"name": "Charm: Zealot w/ bowgun",
 			"value": 127217600
 		},
 		{
-			"name": "it_sm79_512_00_0",
+			"name": "Charm: Leader zealot",
 			"value": 127219200
 		},
 		{
-			"name": "it_sm79_513_00_0",
+			"name": "Charm: Soldier w/ dynamite",
 			"value": 127220800
 		},
 		{
-			"name": "it_sm79_514_00_0",
+			"name": "Charm: Soldier w/ stun-rod",
 			"value": 127222400
 		},
 		{
-			"name": "it_sm79_515_00_0",
+			"name": "Charm: Soldier w/ hammer",
 			"value": 127224000
 		},
 		{
-			"name": "it_sm79_516_00_0",
+			"name": "Charm: J.J.",
 			"value": 127225600
 		},
 		{
-			"name": "it_sm79_517_00_0",
+			"name": "Charm: Leon w/ handgun",
 			"value": 127227200
 		},
 		{
-			"name": "it_sm79_518_00_0",
+			"name": "Charm: Leon w/ shotgun",
 			"value": 127228800
 		},
 		{
-			"name": "it_sm79_519_00_0",
+			"name": "Charm: Leon w/ rocket launcher",
 			"value": 127230400
 		},
 		{
-			"name": "it_sm79_520_00_0",
+			"name": "Charm: Merchant",
 			"value": 127232000
 		},
 		{
-			"name": "it_sm79_521_00_0",
+			"name": "Charm: Ashley Graham",
 			"value": 127233600
 		},
 		{
-			"name": "it_sm79_522_00_0",
+			"name": "Charm: Charm: Luis Sera",
 			"value": 127235200
 		},
 		{
-			"name": "it_sm79_523_00_0",
+			"name": "Charm: Ada Wong",
 			"value": 127236800
 		},
 		{
-			"name": "it_sm79_524_00_0",
+			"name": "Charm: Chicken",
 			"value": 127238400
 		},
 		{
-			"name": "it_sm79_525_00_0",
+			"name": "Charm: Black Bass",
 			"value": 127240000
 		},
 		{
-			"name": "it_sm79_526_00_0",
+			"name": "Charm: Rhinoceros Beetle",
 			"value": 127241600
 		},
 		{
-			"name": "it_sm79_527_00_0",
+			"name": "Charm: Iluminados Emblem",
 			"value": 127243200
 		},
 		{
-			"name": "it_sm79_528_00_0",
+			"name": "Charm: Striker",
 			"value": 127244800
 		},
 		{
-			"name": "it_sm79_529_00_0",
+			"name": "Charm: Cute Bear",
 			"value": 127246400
 		},
 		{
-			"name": "it_sm79_600_00_0",
+			"name": "Charm: Green Herb",
 			"value": 127360000
 		},
 		{
-			"name": "it_sm79_601_00_0",
+			"name": "Charm: Handgun Ammo",
 			"value": 127361600
 		},
 		{
-			"name": "it_wp4000_00_0",
+			"name": "Handgun SG-09 R",
 			"value": 274835456
 		},
 		{
-			"name": "it_wp4001_00_0",
+			"name": "Punisher",
 			"value": 274837056
 		},
 		{
-			"name": "it_wp4002_00_0",
+			"name": "Red9",
 			"value": 274838656
 		},
 		{
-			"name": "it_wp4003_00_0",
+			"name": "Blacktail",
 			"value": 274840256
 		},
 		{
-			"name": "it_wp4004_00_0",
+			"name": "Matilda",
 			"value": 274841856
 		},
 		{
-			"name": "it_wp4005_00_0",
+			"name": "Minecart Handgun",
 			"value": 274843456
 		},
 		{
-			"name": "it_wp4100_00_0",
+			"name": "W-870",
 			"value": 274995456
 		},
 		{
-			"name": "it_wp4101_00_0",
+			"name": "Riot Gun",
 			"value": 274997056
 		},
 		{
-			"name": "it_wp4102_00_0",
+			"name": "Striker",
 			"value": 274998656
 		},
 		{
-			"name": "it_wp4200_00_0",
+			"name": "TMP",
 			"value": 275155456
 		},
 		{
-			"name": "it_wp4201_00_0",
+			"name": "Chicago Sweeper",
 			"value": 275157056
 		},
 		{
-			"name": "it_wp4202_00_0",
+			"name": "LE 5",
 			"value": 275158656
 		},
 		{
-			"name": "it_wp4400_00_0",
+			"name": "SR M1903",
 			"value": 275475456
 		},
 		{
-			"name": "it_wp4401_00_0",
+			"name": "Stingray",
 			"value": 275477056
 		},
 		{
-			"name": "it_wp4402_00_0",
+			"name": "CQBR Assault Rifle",
 			"value": 275478656
 		},
 		{
-			"name": "it_wp4500_00_0",
+			"name": "Broken Butterfly",
 			"value": 275635456
 		},
 		{
-			"name": "it_wp4501_00_0",
+			"name": "Killer7",
 			"value": 275637056
 		},
 		{
-			"name": "it_wp4502_00_0",
+			"name": "Handcannon",
 			"value": 275638656
 		},
 		{
-			"name": "it_wp4600_00_0",
+			"name": "Bolt Thrower",
 			"value": 275795456
 		},
 		{
-			"name": "it_wp4600_10_0",
+			"name": "Bolts Ammo",
 			"value": 275795616
 		},
 		{
-			"name": "it_wp4701_00_0",
+			"name": "Flamethrower 1",
 			"value": 275957056
 		},
 		{
-			"name": "it_wp4702_00_0",
+			"name": "Flamethrower 2",
 			"value": 275958656
 		},
 		{
-			"name": "it_wp4800_00_0",
+			"name": "Dummy Weapon",
 			"value": 276115456
 		},
 		{
-			"name": "it_wp4801_00_0",
+			"name": "Dummy Box Weapon",
 			"value": 276117056
 		},
 		{
-			"name": "it_wp4900_00_0",
+			"name": "Rocket Launcher",
 			"value": 276275456
 		},
 		{
-			"name": "it_wp4901_00_0",
+			"name": "Rocket Launcher (Special)",
 			"value": 276277056
 		},
 		{
-			"name": "it_wp4902_00_0",
+			"name": "Infinite Rocket Launcher",
 			"value": 276278656
 		},
 		{
-			"name": "it_wp5000_00_0",
+			"name": "Combat Knife",
 			"value": 276435456
 		},
 		{
-			"name": "it_wp5001_00_0",
+			"name": "Fighting Knife",
 			"value": 276437056
 		},
 		{
-			"name": "it_wp5002_00_0",
+			"name": "Kitchen Knife",
 			"value": 276438656
 		},
 		{
-			"name": "it_wp5003_00_0",
+			"name": "Boot Knife",
 			"value": 276440256
 		},
 		{
-			"name": "it_wp5004_00_0",
+			"name": "Luis Iron Pipe",
 			"value": 276441856
 		},
 		{
-			"name": "it_wp5005_00_0",
+			"name": "El Gigant Throwing Rock",
 			"value": 276443456
 		},
 		{
-			"name": "it_wp5006_00_0",
+			"name": "Primal Knife",
 			"value": 276445056
 		},
 		{
-			"name": "it_wp5300_00_0",
+			"name": "Dummy Box",
 			"value": 276915456
 		},
 		{
-			"name": "it_wp5301_00_0",
+			"name": "Dummy Box",
 			"value": 276917056
 		},
 		{
-			"name": "it_wp5302_00_0",
+			"name": "Dummy Box",
 			"value": 276918656
 		},
 		{
-			"name": "it_wp5400_00_0",
+			"name": "Hand Grenade",
 			"value": 277075456
 		},
 		{
-			"name": "it_wp5401_00_0",
+			"name": "Heavy Grenade",
 			"value": 277077056
 		},
 		{
-			"name": "it_wp5402_00_0",
+			"name": "Flash Grenade",
 			"value": 277078656
 		},
 		{
-			"name": "it_wp5403_00_0",
+			"name": "Chicken Egg",
 			"value": 277080256
 		},
 		{
-			"name": "it_wp5404_00_0",
+			"name": "Brown Chicken Egg",
 			"value": 277081856
 		},
 		{
-			"name": "it_wp5405_00_0",
+			"name": "Gold Chicken Egg",
 			"value": 277083456
 		},
 		{
-			"name": "it_wp5406_00_0",
+			"name": "Dummy Box Boat Harpoon",
 			"value": 277085056
 		},
 		{
-			"name": "it_wp5407_00_0",
+			"name": "Dummy Box",
 			"value": 277086656
 		},
 		{
-			"name": "it_wp5408_00_0",
+			"name": "Dummy Box Invisible Pistol",
 			"value": 277088256
 		},
 		{
-			"name": "it_wp5500_00_0",
+			"name": "Dummy Box Invisible Turret",
 			"value": 277235456
 		},
 		{
-			"name": "it_wp5501_00_0",
+			"name": "Dummy Box",
 			"value": 277237056
 		},
 		{
-			"name": "it_wp5502_00_0",
+			"name": "Dummy Box",
 			"value": 277238656
 		},
 		{
-			"name": "it_wp6000_00_0",
+			"name": "Sentinel Nine",
 			"value": 278035456
 		},
 		{
-			"name": "it_wp6001_00_0",
+			"name": "Skull Shaker",
 			"value": 278037056
 		},
 		{
-			"name": "it_wp6100_00_0",
+			"name": "Sawed-off W-870",
 			"value": 278195456
 		},
 		{
-			"name": "it_wp6101_00_0",
+			"name": "Chicago Sweeper",
 			"value": 278197056
 		},
 		{
-			"name": "it_wp6102_00_0",
+			"name": "Blast Crossbow",
 			"value": 278198656
 		},
 		{
-			"name": "it_wp6102_10_0",
+			"name": "Dummy Box",
 			"value": 278198816
 		},
 		{
-			"name": "it_wp6103_00_0",
+			"name": "Blacktail",
 			"value": 278200256
 		},
 		{
-			"name": "it_wp6104_00_0",
+			"name": "TMP",
 			"value": 278201856
 		},
 		{
-			"name": "it_wp6105_00_0",
+			"name": "Stingray",
 			"value": 278203456
 		},
 		{
-			"name": "it_wp6106_00_0",
+			"name": "Rocket Launcher",
 			"value": 278205056
 		},
 		{
-			"name": "it_wp6107_00_0",
+			"name": "Tactical Knife",
 			"value": 278206656
 		},
 		{
-			"name": "it_wp6108_00_0",
+			"name": "Elite Knife",
 			"value": 278208256
 		},
 		{
-			"name": "it_wp6109_00_0",
+			"name": "Dummy Box",
 			"value": 278209856
 		},
 		{
-			"name": "it_wp6111_00_0",
+			"name": "Infinite Rocket Launcher",
 			"value": 278213056
 		},
 		{
-			"name": "it_wp6112_00_0",
+			"name": "SW - Punisher MC",
 			"value": 278214656
 		},
 		{
-			"name": "it_wp6113_00_0",
+			"name": "SW - Red9",
 			"value": 278216256
 		},
 		{
-			"name": "it_wp6114_00_0",
+			"name": "SW - SR M1903",
 			"value": 278217856
 		},
 		{
-			"name": "it_wp6300_00_0",
+			"name": "XM96E1",
 			"value": 278515456
 		},
 		{
-			"name": "it_wp6301_00_0",
+			"name": "Dummy Box",
 			"value": 278517056
 		},
 		{
-			"name": "it_wp6302_00_0",
+			"name": "Dummy Box",
 			"value": 278518656
 		},
 		{
-			"name": "it_wp6303_00_0",
+			"name": "Dummy Box",
 			"value": 278520256
 		},
 		{
-			"name": "it_wp6303_10_0",
+			"name": "Dummy Box",
 			"value": 278520416
 		},
 		{
-			"name": "it_wp6304_00_0",
+			"name": "EJF-338 Compound Bow (Mercenaries Krauser's bow)",
 			"value": 278521856
 		},
 		{
-			"name": "it_wp6304_10_0",
+			"name": "Dummy Box",
 			"value": 278522016
 		},
 		{
-			"name": "it_wp6305_00_0",
+			"name": "Dummy Box",
 			"value": 278523456
 		}
 	],
@@ -88831,11 +88923,11 @@
 			"value": 1
 		},
 		{
-			"name": "TargetCh2a1z0",
+			"name": "Targetch2a1z0(Ashley)",
 			"value": 2
 		},
 		{
-			"name": "TargetCh2a3z0",
+			"name": "Targetch2a3z0(Luis Serra)",
 			"value": 3
 		}
 	],
@@ -93393,11 +93485,11 @@
 			"value": 0
 		},
 		{
-			"name": "Ch1b7z0NormalParry",
+			"name": "ch1b7z0(Human Krauser)NormalParry",
 			"value": 1
 		},
 		{
-			"name": "Ch1b7z0SpecialParry",
+			"name": "ch1b7z0(Human Krauser)SpecialParry",
 			"value": 2
 		},
 		{
@@ -93405,7 +93497,7 @@
 			"value": 3
 		},
 		{
-			"name": "Wp5811Parry",
+			"name": "Stun Rod Parry",
 			"value": 4
 		},
 		{
@@ -93413,35 +93505,35 @@
 			"value": 5
 		},
 		{
-			"name": "Ch1d1z1Attack",
+			"name": "ch1d1z1(Dr.Salvador)Attack",
 			"value": 6
 		},
 		{
-			"name": "Ch1f0z0SwingLog",
+			"name": "ch1f0z0(El Gigante)SwingLog",
 			"value": 7
 		},
 		{
-			"name": "Ch1f0z0AttackDash",
+			"name": "ch1f0z0(El Gigante)AttackDash",
 			"value": 8
 		},
 		{
-			"name": "Ch1f7z0BackFlip",
+			"name": "ch1f7z0(Transformed Krauser)BackFlip",
 			"value": 9
 		},
 		{
-			"name": "Ch1c0z0EnhancedAttack",
+			"name": "ch1c0z0(Ganados)EnhancedAttack",
 			"value": 10
 		},
 		{
-			"name": "Ch1f8z0BackFlip",
+			"name": "ch1f8z0(Transformed Saddler)BackFlip",
 			"value": 11
 		},
 		{
-			"name": "Ch1c8z0AttackLarge",
+			"name": "ch1c8z0(Boar-JJ)AttackLarge",
 			"value": 12
 		},
 		{
-			"name": "Ch1d0z0AttackParry",
+			"name": "ch1d0z0(Garrador)AttackParry",
 			"value": 13
 		},
 		{
@@ -93449,7 +93541,7 @@
 			"value": 14
 		},
 		{
-			"name": "Ch1f2z0AttackAvoid",
+			"name": "ch1f2z0(Verdugo)AttackAvoid",
 			"value": 15
 		},
 		{
@@ -93461,27 +93553,27 @@
 			"value": 17
 		},
 		{
-			"name": "Ch1f4z1Avoid",
+			"name": "Ch1f4z1(Bitorez)Avoid",
 			"value": 18
 		},
 		{
-			"name": "Ch1f4z1AvoidStrikeNeer",
+			"name": "Ch1f4z1(Bitorez)AvoidStrikeNeer",
 			"value": 19
 		},
 		{
-			"name": "Ch1f4z1AvoidScissors",
+			"name": "Ch1f4z1(Bitorez)AvoidScissors",
 			"value": 20
 		},
 		{
-			"name": "Ch1f4z1AvoidScissorsB",
+			"name": "Ch1f4z1(Bitorez)AvoidScissorsB",
 			"value": 21
 		},
 		{
-			"name": "Ch1f5z1Avoid",
+			"name": "ch1f5z1(Bitorez Half Body)Avoid",
 			"value": 22
 		},
 		{
-			"name": "Ch1f8z0SideStep",
+			"name": "ch1f8z0(Transformed Saddler)SideStep",
 			"value": 23
 		},
 		{
@@ -97194,11 +97286,11 @@
 			"value": 26
 		},
 		{
-			"name": "Ch1f4z1Battle",
+			"name": "Ch1f4z1(Bitorez)Battle",
 			"value": 27
 		},
 		{
-			"name": "Ch1f0z0Battle",
+			"name": "ch1f0z0(El Gigante)Battle",
 			"value": 28
 		},
 		{
@@ -99028,35 +99120,35 @@
 			"value": 0
 		},
 		{
-			"name": "ch1c0z0_F_ShortSleeve",
+			"name": "ch1c0z0(Ganados)_F_ShortSleeve",
 			"value": 1
 		},
 		{
-			"name": "ch1c0z0_F_LongSleeve",
+			"name": "ch1c0z0(Ganados)_F_LongSleeve",
 			"value": 2
 		},
 		{
-			"name": "ch1c0z1_Robe",
+			"name": "ch1c0z1(Zealots)_Robe",
 			"value": 3
 		},
 		{
-			"name": "ch1c0z1_Naked",
+			"name": "ch1c0z1(Zealots)_Naked",
 			"value": 4
 		},
 		{
-			"name": "ch1c0z1_Shield",
+			"name": "ch1c0z1(Zealots)_Shield",
 			"value": 5
 		},
 		{
-			"name": "ch1c0z2_Naked",
+			"name": "ch1c0z2(Island Ganados)_Naked",
 			"value": 6
 		},
 		{
-			"name": "ch1c0z2_NoSleeve",
+			"name": "ch1c0z2(Island Ganados)_NoSleeve",
 			"value": 7
 		},
 		{
-			"name": "ch1c0z2_LongSleeve",
+			"name": "ch1c0z2(Island Ganados)_LongSleeve",
 			"value": 8
 		}
 	],
@@ -102058,7 +102150,7 @@
 	],
 	"chainsaw.Ch1d2z0BehaviorTreeAction_MFSM_CheckExitAction.CheckType": [
 		{
-			"name": "CautionCh2a1z0",
+			"name": "Cautionch2a1z0(Ashley)",
 			"value": 0
 		}
 	],
@@ -104564,7 +104656,7 @@
 			"value": 11
 		},
 		{
-			"name": "EmShellCh1c0z0Throwing",
+			"name": "EmShellch1c0z0(Ganados)Throwing",
 			"value": 12
 		},
 		{
@@ -104572,7 +104664,7 @@
 			"value": 13
 		},
 		{
-			"name": "Grenade_wp4600",
+			"name": "Grenade_wp4600 (Bolt?)",
 			"value": 14
 		},
 		{
@@ -104580,67 +104672,67 @@
 			"value": 15
 		},
 		{
-			"name": "EmShellCh1c8z0",
+			"name": "EmShellch1c8z0(Boar-JJ)",
 			"value": 16
 		},
 		{
-			"name": "EmBombShellCh1c8z0",
+			"name": "EmBombShellch1c8z0(Boar-JJ)",
 			"value": 17
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingAxe",
+			"name": "EmShellch1c0z0(Ganados)ThrowingAxe",
 			"value": 18
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingSickle",
+			"name": "EmShellch1c0z0(Ganados)ThrowingSickle",
 			"value": 19
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingTorch",
+			"name": "EmShellch1c0z0(Ganados)ThrowingTorch",
 			"value": 20
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingDynamite",
+			"name": "EmShellch1c0z0(Ganados)ThrowingDynamite",
 			"value": 21
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingDynamiteExplosion",
+			"name": "EmShellch1c0z0(Ganados)ThrowingDynamiteExplosion",
 			"value": 22
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingMolotovCocktail",
+			"name": "EmShellch1c0z0(Ganados)ThrowingMolotovCocktail",
 			"value": 23
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingMolotovCocktailEmber",
+			"name": "EmShellch1c0z0(Ganados)ThrowingMolotovCocktailEmber",
 			"value": 24
 		},
 		{
-			"name": "EmShellCh1c0z0Bolt",
+			"name": "EmShellch1c0z0(Ganados)Bolt",
 			"value": 25
 		},
 		{
-			"name": "EmShellCh1c0z0ExplosiveBolt",
+			"name": "EmShellch1c0z0(Ganados)ExplosiveBolt",
 			"value": 26
 		},
 		{
-			"name": "EmShellCh1c0z0ExplosiveBoltExplosion",
+			"name": "EmShellch1c0z0(Ganados)ExplosiveBoltExplosion",
 			"value": 27
 		},
 		{
-			"name": "EmShellCh1f0z0",
+			"name": "EmShellch1f0z0(El Gigante)",
 			"value": 28
 		},
 		{
-			"name": "EmBombShellCh1f0z0",
+			"name": "EmBombShellch1f0z0(El Gigante)",
 			"value": 29
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingHatchet",
+			"name": "EmShellch1c0z0(Ganados)ThrowingHatchet",
 			"value": 30
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingkitchenKnife",
+			"name": "EmShellch1c0z0(Ganados)ThrowingkitchenKnife",
 			"value": 31
 		},
 		{
@@ -104656,91 +104748,91 @@
 			"value": 34
 		},
 		{
-			"name": "EmShellCh1b7z0",
+			"name": "EmShellch1b7z0(Human Krauser)",
 			"value": 35
 		},
 		{
-			"name": "EmEmberShellCh1b7z0",
+			"name": "EmEmberShellch1b7z0(Human Krauser)",
 			"value": 36
 		},
 		{
-			"name": "EmShellCh1d4z0",
+			"name": "EmShellch1d4z0(Regenerator)",
 			"value": 37
 		},
 		{
-			"name": "EmBulletCh1b7z0",
+			"name": "EmBulletch1b7z0(Human Krauser)",
 			"value": 38
 		},
 		{
-			"name": "EmGBShellCh1b7z0",
+			"name": "EmGBShellch1b7z0(Human Krauser)",
 			"value": 39
 		},
 		{
-			"name": "EmShellCh1f0z0ThrowGannard",
+			"name": "EmShellch1f0z0(El Gigante)ThrowGannard",
 			"value": 40
 		},
 		{
-			"name": "EmArrowCh1b7z0",
+			"name": "EmArrowch1b7z0(Human Krauser)",
 			"value": 41
 		},
 		{
-			"name": "EmEmberShellCh1b7z0GB",
+			"name": "EmEmberShellch1b7z0(Human Krauser)GB",
 			"value": 42
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingFlail",
+			"name": "EmShellch1c0z0(Ganados)ThrowingFlail",
 			"value": 43
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingHammer",
+			"name": "EmShellch1c0z0(Ganados)ThrowingHammer",
 			"value": 44
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingStunRod",
+			"name": "EmShellch1c0z0(Ganados)ThrowingStunRod",
 			"value": 45
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingSword",
+			"name": "EmShellch1c0z0(Ganados)ThrowingSword",
 			"value": 46
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingBar",
+			"name": "EmShellch1c0z0(Ganados)ThrowingBar",
 			"value": 47
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingBat",
+			"name": "EmShellch1c0z0(Ganados)ThrowingBat",
 			"value": 48
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingFork",
+			"name": "EmShellch1c0z0(Ganados)ThrowingFork",
 			"value": 49
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingWoodShield",
+			"name": "EmShellch1c0z0(Ganados)ThrowingWoodShield",
 			"value": 50
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingScythe",
+			"name": "EmShellch1c0z0(Ganados)ThrowingScythe",
 			"value": 51
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingIronShield",
+			"name": "EmShellch1c0z0(Ganados)ThrowingIronShield",
 			"value": 52
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingHalberd",
+			"name": "EmShellch1c0z0(Ganados)ThrowingHalberd",
 			"value": 53
 		},
 		{
-			"name": "EmShellCh1c0z0ThrowingScoop",
+			"name": "EmShellch1c0z0(Ganados)ThrowingScoop",
 			"value": 54
 		},
 		{
-			"name": "EmShellCh1c0z0Crossbow",
+			"name": "EmShellch1c0z0(Ganados)Crossbow",
 			"value": 55
 		},
 		{
-			"name": "EmShellCh1c0z0RocketLauncher",
+			"name": "EmShellch1c0z0(Ganados)RocketLauncher",
 			"value": 56
 		},
 		{
@@ -104748,7 +104840,7 @@
 			"value": 57
 		},
 		{
-			"name": "EmKnifeCh1b7z0",
+			"name": "EmKnifech1b7z0(Human Krauser)",
 			"value": 58
 		},
 		{
@@ -104756,15 +104848,15 @@
 			"value": 59
 		},
 		{
-			"name": "EmShellCh1c0z0RocketLauncherShell",
+			"name": "EmShellch1c0z0(Ganados)RocketLauncherShell",
 			"value": 60
 		},
 		{
-			"name": "EmShellCh1c8z0ThrowingDynamite",
+			"name": "EmShellch1c8z0(Boar-JJ)ThrowingDynamite",
 			"value": 61
 		},
 		{
-			"name": "EmShellCh1c8z0ThrowingDynamiteExplosion",
+			"name": "EmShellch1c8z0(Boar-JJ)ThrowingDynamiteExplosion",
 			"value": 62
 		},
 		{
@@ -104776,7 +104868,7 @@
 			"value": 64
 		},
 		{
-			"name": "EmFireArrowCh1b7z0",
+			"name": "EmFireArrowch1b7z0(Human Krauser)",
 			"value": 65
 		},
 		{
@@ -104788,11 +104880,11 @@
 			"value": 67
 		},
 		{
-			"name": "EmShellCh1f5z1",
+			"name": "EmShellch1f5z1(Bitorez Half Body)",
 			"value": 68
 		},
 		{
-			"name": "EmShellCh1f5z1DynamiteEmber",
+			"name": "EmShellch1f5z1(Bitorez Half Body)DynamiteEmber",
 			"value": 69
 		},
 		{
@@ -104808,23 +104900,23 @@
 			"value": 72
 		},
 		{
-			"name": "Ch1f6z0BulletShell",
+			"name": "ch1f6z0(Transformed Salazar)BulletShell",
 			"value": 73
 		},
 		{
-			"name": "Ch1f6z0GrenadeShell",
+			"name": "ch1f6z0(Transformed Salazar)GrenadeShell",
 			"value": 74
 		},
 		{
-			"name": "Ch1f6z0BombShell",
+			"name": "ch1f6z0(Transformed Salazar)BombShell",
 			"value": 75
 		},
 		{
-			"name": "Ch1c8z0CrossbowBolt",
+			"name": "ch1c8z0(Boar-JJ)CrossbowBolt",
 			"value": 76
 		},
 		{
-			"name": "EmNeedleCh1f8z0",
+			"name": "EmNeedlech1f8z0(Transformed Saddler)",
 			"value": 77
 		},
 		{
@@ -104860,7 +104952,7 @@
 			"value": 85
 		},
 		{
-			"name": "EmShellCh4fez0",
+			"name": "EmShellch4fez0(Human Saddler)",
 			"value": 86
 		},
 		{
@@ -104884,11 +104976,11 @@
 			"value": 91
 		},
 		{
-			"name": "Ch4fbz0NeedleGrenade",
+			"name": "ch4fbz0(U3)NeedleGrenade",
 			"value": 92
 		},
 		{
-			"name": "Ch4fbz0NeedleGrenadeBomb",
+			"name": "ch4fbz0(U3)NeedleGrenadeBomb",
 			"value": 93
 		},
 		{
@@ -105094,7 +105186,7 @@
 	],
 	"chainsaw.Ch1c8z0BehaviorTreeAction_MFSM_SequenceActionCancelCheck.DetectTrackType": [
 		{
-			"name": "Ch1c8z0SequenceTimmingTrack",
+			"name": "ch1c8z0(Boar-JJ)SequenceTimmingTrack",
 			"value": 0
 		},
 		{
@@ -105682,199 +105774,199 @@
 	],
 	"chainsaw.EnemyDropPartsID": [
 		{
-			"name": "ch1c0z0_Head",
+			"name": "ch1c0z0(Ganados)_Head",
 			"value": 0
 		},
 		{
-			"name": "ch1c0z0_LowerBody",
+			"name": "ch1c0z0(Ganados)_LowerBody",
 			"value": 1
 		},
 		{
-			"name": "ch1c0z0_Chest_L",
+			"name": "ch1c0z0(Ganados)_Chest_L",
 			"value": 2
 		},
 		{
-			"name": "ch1c0z0_Chest_R",
+			"name": "ch1c0z0(Ganados)_Chest_R",
 			"value": 3
 		},
 		{
-			"name": "ch1c0z0_Leg_L",
+			"name": "ch1c0z0(Ganados)_Leg_L",
 			"value": 4
 		},
 		{
-			"name": "ch1c0z0_Leg_R",
+			"name": "ch1c0z0(Ganados)_Leg_R",
 			"value": 5
 		},
 		{
-			"name": "ch1c0z0_F_LowerBody",
+			"name": "ch1c0z0(Ganados)_F_LowerBody",
 			"value": 6
 		},
 		{
-			"name": "ch1c0z0_F_Chest_L",
+			"name": "ch1c0z0(Ganados)_F_Chest_L",
 			"value": 7
 		},
 		{
-			"name": "ch1c0z0_F_Chest_R",
+			"name": "ch1c0z0(Ganados)_F_Chest_R",
 			"value": 8
 		},
 		{
-			"name": "ch1c0z0_F_Leg_L",
+			"name": "ch1c0z0(Ganados)_F_Leg_L",
 			"value": 9
 		},
 		{
-			"name": "ch1c0z0_F_Leg_R",
+			"name": "ch1c0z0(Ganados)_F_Leg_R",
 			"value": 10
 		},
 		{
-			"name": "ch1c0z1_LowerBody",
+			"name": "ch1c0z1(Zealots)_LowerBody",
 			"value": 11
 		},
 		{
-			"name": "ch1c0z1_Chest_L",
+			"name": "ch1c0z1(Zealots)_Chest_L",
 			"value": 12
 		},
 		{
-			"name": "ch1c0z1_Chest_R",
+			"name": "ch1c0z1(Zealots)_Chest_R",
 			"value": 13
 		},
 		{
-			"name": "ch1c0z1_Leg_L",
+			"name": "ch1c0z1(Zealots)_Leg_L",
 			"value": 14
 		},
 		{
-			"name": "ch1c0z1_Leg_R",
+			"name": "ch1c0z1(Zealots)_Leg_R",
 			"value": 15
 		},
 		{
-			"name": "ch1c0z1_F_LowerBody",
+			"name": "ch1c0z1(Zealots)_F_LowerBody",
 			"value": 16
 		},
 		{
-			"name": "ch1c0z1_F_Chest_L",
+			"name": "ch1c0z1(Zealots)_F_Chest_L",
 			"value": 17
 		},
 		{
-			"name": "ch1c0z1_F_Chest_R",
+			"name": "ch1c0z1(Zealots)_F_Chest_R",
 			"value": 18
 		},
 		{
-			"name": "ch1c0z1_F_Leg_L",
+			"name": "ch1c0z1(Zealots)_F_Leg_L",
 			"value": 19
 		},
 		{
-			"name": "ch1c0z1_F_Leg_R",
+			"name": "ch1c0z1(Zealots)_F_Leg_R",
 			"value": 20
 		},
 		{
-			"name": "ch1c0z2_LowerBody",
+			"name": "ch1c0z2(Island Ganados)_LowerBody",
 			"value": 21
 		},
 		{
-			"name": "ch1c0z2_Chest_L",
+			"name": "ch1c0z2(Island Ganados)_Chest_L",
 			"value": 22
 		},
 		{
-			"name": "ch1c0z2_Chest_R",
+			"name": "ch1c0z2(Island Ganados)_Chest_R",
 			"value": 23
 		},
 		{
-			"name": "ch1c0z2_Leg_L",
+			"name": "ch1c0z2(Island Ganados)_Leg_L",
 			"value": 24
 		},
 		{
-			"name": "ch1c0z2_Leg_R",
+			"name": "ch1c0z2(Island Ganados)_Leg_R",
 			"value": 25
 		},
 		{
-			"name": "ch1c0z1_LeaderGoatHead",
+			"name": "ch1c0z1(Zealots)_LeaderGoatHead",
 			"value": 26
 		},
 		{
-			"name": "ch1c0z1_HeadGuard_c002_50_01",
+			"name": "ch1c0z1(Zealots)_HeadGuard_c002_50_01",
 			"value": 27
 		},
 		{
-			"name": "ch1c0z2_HeadGuard_c004_50_01",
+			"name": "ch1c0z2(Island Ganados)_HeadGuard_c004_50_01",
 			"value": 28
 		},
 		{
-			"name": "ch1c0z2_HeadGuard_c004_50_09",
+			"name": "ch1c0z2(Island Ganados)_HeadGuard_c004_50_09",
 			"value": 29
 		},
 		{
-			"name": "ch1d4z0_Arm_L",
+			"name": "ch1d4z0(Regenerator)_Arm_L",
 			"value": 30
 		},
 		{
-			"name": "ch1d4z0_Arm_R",
+			"name": "ch1d4z0(Regenerator)_Arm_R",
 			"value": 31
 		},
 		{
-			"name": "ch1d4z0_Leg_L",
+			"name": "ch1d4z0(Regenerator)_Leg_L",
 			"value": 32
 		},
 		{
-			"name": "ch1d4z0_Leg_R",
+			"name": "ch1d4z0(Regenerator)_Leg_R",
 			"value": 33
 		},
 		{
-			"name": "ch1b5z1_Hat",
+			"name": "ch1b5z1(Human Bitorez)_Hat",
 			"value": 34
 		},
 		{
-			"name": "ch1d4z0_S_Arm_L",
+			"name": "ch1d4z0(Regenerator)_S_Arm_L",
 			"value": 35
 		},
 		{
-			"name": "ch1d4z0_S_Arm_R",
+			"name": "ch1d4z0(Regenerator)_S_Arm_R",
 			"value": 36
 		},
 		{
-			"name": "ch1d4z0_S_Leg_L",
+			"name": "ch1d4z0(Regenerator)_S_Leg_L",
 			"value": 37
 		},
 		{
-			"name": "ch1d4z0_S_Leg_R",
+			"name": "ch1d4z0(Regenerator)_S_Leg_R",
 			"value": 38
 		},
 		{
-			"name": "ch1d6z0_Head_d6z1",
+			"name": "ch1d6z0(Armours)_Head_d6z1",
 			"value": 39
 		},
 		{
-			"name": "ch1d6z0_Head_d601",
+			"name": "ch1d6z0(Armours)_Head_d601",
 			"value": 40
 		},
 		{
-			"name": "ch1d6z0_Head_d602",
+			"name": "ch1d6z0(Armours)_Head_d602",
 			"value": 41
 		},
 		{
-			"name": "ch1d6z0_Head_d603",
+			"name": "ch1d6z0(Armours)_Head_d603",
 			"value": 42
 		},
 		{
-			"name": "ch1d6z0_Head_d6z1_str",
+			"name": "ch1d6z0(Armours)_Head_d6z1_str",
 			"value": 43
 		},
 		{
-			"name": "ch1d6z0_Head_d601_str",
+			"name": "ch1d6z0(Armours)_Head_d601_str",
 			"value": 44
 		},
 		{
-			"name": "ch1d6z0_Head_d602_str",
+			"name": "ch1d6z0(Armours)_Head_d602_str",
 			"value": 45
 		},
 		{
-			"name": "ch1d6z0_Head_d603_str",
+			"name": "ch1d6z0(Armours)_Head_d603_str",
 			"value": 46
 		},
 		{
-			"name": "ch1d4z0_Meat",
+			"name": "ch1d4z0(Regenerator)_Meat",
 			"value": 47
 		},
 		{
-			"name": "ch1c8z0_Redbox",
+			"name": "ch1c8z0(Boar-JJ)_Redbox",
 			"value": 48
 		}
 	],
@@ -106716,195 +106808,195 @@
 	],
 	"chainsaw.WeaponID": [
 		{
-			"name": "wp4000",
+			"name": "SG-09 R",
 			"value": 4000
 		},
 		{
-			"name": "wp4001",
+			"name": "Punisher",
 			"value": 4001
 		},
 		{
-			"name": "wp4002",
+			"name": "Red9",
 			"value": 4002
 		},
 		{
-			"name": "wp4003",
+			"name": "Blacktail",
 			"value": 4003
 		},
 		{
-			"name": "wp4004",
+			"name": "Matilda",
 			"value": 4004
 		},
 		{
-			"name": "wp4005",
+			"name": "Minecart Handgun",
 			"value": 4005
 		},
 		{
-			"name": "wp4100",
+			"name": "W-870",
 			"value": 4100
 		},
 		{
-			"name": "wp4101",
+			"name": "Riot Gun",
 			"value": 4101
 		},
 		{
-			"name": "wp4102",
+			"name": "Striker",
 			"value": 4102
 		},
 		{
-			"name": "wp4200",
+			"name": "TMP",
 			"value": 4200
 		},
 		{
-			"name": "wp4201",
+			"name": "Chicago Sweeper",
 			"value": 4201
 		},
 		{
-			"name": "wp4202",
+			"name": "LE 5",
 			"value": 4202
 		},
 		{
-			"name": "wp4400",
+			"name": "SR M1903",
 			"value": 4400
 		},
 		{
-			"name": "wp4401",
+			"name": "Stingray",
 			"value": 4401
 		},
 		{
-			"name": "wp4402",
+			"name": "CQBR Assault Rifle",
 			"value": 4402
 		},
 		{
-			"name": "wp4500",
+			"name": "Broken Butterfly",
 			"value": 4500
 		},
 		{
-			"name": "wp4501",
+			"name": "Killer7",
 			"value": 4501
 		},
 		{
-			"name": "wp4502",
+			"name": "Handcannon",
 			"value": 4502
 		},
 		{
-			"name": "wp4600",
+			"name": "Bolt Thrower",
 			"value": 4600
 		},
 		{
-			"name": "wp4701",
+			"name": "Flamethrower 1",
 			"value": 4701
 		},
 		{
-			"name": "wp4702",
+			"name": "Flamethrower 2",
 			"value": 4702
 		},
 		{
-			"name": "wp4800",
+			"name": "Dummy Weapon",
 			"value": 4800
 		},
 		{
-			"name": "wp4801",
+			"name": "Dummy Weapon",
 			"value": 4801
 		},
 		{
-			"name": "wp4900",
+			"name": "Rocket Launcher",
 			"value": 4900
 		},
 		{
-			"name": "wp4901",
+			"name": "Rocket Launcher (Special)",
 			"value": 4901
 		},
 		{
-			"name": "wp4902",
+			"name": "Infinite Rocket Launcher",
 			"value": 4902
 		},
 		{
-			"name": "wp5000",
+			"name": "Combat Knife",
 			"value": 5000
 		},
 		{
-			"name": "wp5001",
+			"name": "Fighting Knife",
 			"value": 5001
 		},
 		{
-			"name": "wp5002",
+			"name": "Kitchen Knife",
 			"value": 5002
 		},
 		{
-			"name": "wp5003",
+			"name": "Boot Knife",
 			"value": 5003
 		},
 		{
-			"name": "wp5004",
+			"name": "Luis Iron Pipe",
 			"value": 5004
 		},
 		{
-			"name": "wp5005",
+			"name": "El Gigant Throwing Rock",
 			"value": 5005
 		},
 		{
-			"name": "wp5006",
+			"name": "Primal Knife",
 			"value": 5006
 		},
 		{
-			"name": "wp5300",
+			"name": "Yellow Chainsaw",
 			"value": 5300
 		},
 		{
-			"name": "wp5301",
+			"name": "Red Chainsaw",
 			"value": 5301
 		},
 		{
-			"name": "wp5302",
+			"name": "Dummy Box",
 			"value": 5302
 		},
 		{
-			"name": "wp5400",
+			"name": "Hand Grenade",
 			"value": 5400
 		},
 		{
-			"name": "wp5401",
+			"name": "Heavy Grenade",
 			"value": 5401
 		},
 		{
-			"name": "wp5402",
+			"name": "Flash Grenade",
 			"value": 5402
 		},
 		{
-			"name": "wp5403",
+			"name": "Chicken Egg",
 			"value": 5403
 		},
 		{
-			"name": "wp5404",
+			"name": "Brown Chicken Egg",
 			"value": 5404
 		},
 		{
-			"name": "wp5405",
+			"name": "Gold Chicken Egg",
 			"value": 5405
 		},
 		{
-			"name": "wp5406",
+			"name": "Dummy Box Boat Harpoon",
 			"value": 5406
 		},
 		{
-			"name": "wp5407",
+			"name": "Dummy Box",
 			"value": 5407
 		},
 		{
-			"name": "wp5408",
+			"name": "Dummy Box Invisible Pistol",
 			"value": 5408
 		},
 		{
-			"name": "wp5500",
+			"name": "Dummy Box Invisible Turret",
 			"value": 5500
 		},
 		{
-			"name": "wp5501",
+			"name": "Dummy Box",
 			"value": 5501
 		},
 		{
-			"name": "wp5502",
+			"name": "Dummy Box",
 			"value": 5502
 		},
 		{
@@ -106920,15 +107012,15 @@
 			"value": 5600
 		},
 		{
-			"name": "wp5801",
+			"name": "Small Hand Axe",
 			"value": 5801
 		},
 		{
-			"name": "wp5802",
+			"name": "Large Kitchen Knife",
 			"value": 5802
 		},
 		{
-			"name": "wp5803",
+			"name": "Small Sickle/Hatchet",
 			"value": 5803
 		},
 		{
@@ -106952,7 +107044,7 @@
 			"value": 5808
 		},
 		{
-			"name": "wp5809",
+			"name": "Scythe",
 			"value": 5809
 		},
 		{
@@ -106960,11 +107052,11 @@
 			"value": 5810
 		},
 		{
-			"name": "wp5811",
+			"name": "Stun rod",
 			"value": 5811
 		},
 		{
-			"name": "wp5812",
+			"name": "Crossbow 2",
 			"value": 5812
 		},
 		{
@@ -106984,11 +107076,11 @@
 			"value": 5816
 		},
 		{
-			"name": "wp5818",
+			"name": "Sword",
 			"value": 5818
 		},
 		{
-			"name": "wp5819",
+			"name": "TMP",
 			"value": 5819
 		},
 		{
@@ -107012,7 +107104,7 @@
 			"value": 5824
 		},
 		{
-			"name": "wp5825",
+			"name": "Leon Crossbow",
 			"value": 5825
 		},
 		{
@@ -107024,11 +107116,11 @@
 			"value": 5827
 		},
 		{
-			"name": "wp5830",
+			"name": "Arm Minigun",
 			"value": 5830
 		},
 		{
-			"name": "wp5831",
+			"name": "Extinct Molotov",
 			"value": 5831
 		},
 		{
@@ -107040,7 +107132,7 @@
 			"value": 5837
 		},
 		{
-			"name": "wp6000",
+			"name": "Pistol 2",
 			"value": 6000
 		},
 		{
@@ -107048,43 +107140,43 @@
 			"value": 6001
 		},
 		{
-			"name": "wp6100",
+			"name": "Sawed-off W-870",
 			"value": 6100
 		},
 		{
-			"name": "wp6101",
+			"name": "Chicago Sweeper",
 			"value": 6101
 		},
 		{
-			"name": "wp6102",
+			"name": "Blast Crossbow",
 			"value": 6102
 		},
 		{
-			"name": "wp6103",
+			"name": "Blacktail AC",
 			"value": 6103
 		},
 		{
-			"name": "wp6104",
+			"name": "TMP",
 			"value": 6104
 		},
 		{
-			"name": "wp6105",
+			"name": "Stingray",
 			"value": 6105
 		},
 		{
-			"name": "wp6106",
+			"name": "Rocket Launcher",
 			"value": 6106
 		},
 		{
-			"name": "wp6107",
+			"name": "Tactical Knife",
 			"value": 6107
 		},
 		{
-			"name": "wp6108",
+			"name": "Elite Knife",
 			"value": 6108
 		},
 		{
-			"name": "wp6109",
+			"name": "Dummy Box",
 			"value": 6109
 		},
 		{
@@ -107092,7 +107184,7 @@
 			"value": 6110
 		},
 		{
-			"name": "wp6111",
+			"name": "Infinite Rocket Launcher",
 			"value": 6111
 		},
 		{
@@ -107120,27 +107212,27 @@
 			"value": 6117
 		},
 		{
-			"name": "wp6300",
+			"name": "Dummy Box",
 			"value": 6300
 		},
 		{
-			"name": "wp6301",
+			"name": "Dummy Box",
 			"value": 6301
 		},
 		{
-			"name": "wp6302",
+			"name": "Dummy Box",
 			"value": 6302
 		},
 		{
-			"name": "wp6303",
+			"name": "Dummy Box",
 			"value": 6303
 		},
 		{
-			"name": "wp6304",
+			"name": "Dummy Box",
 			"value": 6304
 		},
 		{
-			"name": "wp6305",
+			"name": "Dummy Box",
 			"value": 6305
 		},
 		{
@@ -107160,7 +107252,7 @@
 			"value": 6309
 		},
 		{
-			"name": "wp6400",
+			"name": "Super Chainsaw",
 			"value": 6400
 		},
 		{
@@ -120105,27 +120197,27 @@
 	],
 	"chainsaw.ShellDefine.DummyType": [
 		{
-			"name": "DummyEmShellCh1c0z0Axe",
+			"name": "DummyEmShellch1c0z0(Ganados)Axe",
 			"value": 0
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Sickle",
+			"name": "DummyEmShellch1c0z0(Ganados)Sickle",
 			"value": 1
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Torch",
+			"name": "DummyEmShellch1c0z0(Ganados)Torch",
 			"value": 2
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Hatchet",
+			"name": "DummyEmShellch1c0z0(Ganados)Hatchet",
 			"value": 3
 		},
 		{
-			"name": "DummyEmShellCh1c0z0kitchenKnife",
+			"name": "DummyEmShellch1c0z0(Ganados)kitchenKnife",
 			"value": 4
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Bolt",
+			"name": "DummyEmShellch1c0z0(Ganados)Bolt",
 			"value": 5
 		},
 		{
@@ -120133,75 +120225,75 @@
 			"value": 6
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Flail",
+			"name": "DummyEmShellch1c0z0(Ganados)Flail",
 			"value": 7
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Hammer",
+			"name": "DummyEmShellch1c0z0(Ganados)Hammer",
 			"value": 8
 		},
 		{
-			"name": "DummyEmShellCh1c0z0StunRod",
+			"name": "DummyEmShellch1c0z0(Ganados)StunRod",
 			"value": 9
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Sword",
+			"name": "DummyEmShellch1c0z0(Ganados)Sword",
 			"value": 10
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Bar",
+			"name": "DummyEmShellch1c0z0(Ganados)Bar",
 			"value": 11
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Bat",
+			"name": "DummyEmShellch1c0z0(Ganados)Bat",
 			"value": 12
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Fork",
+			"name": "DummyEmShellch1c0z0(Ganados)Fork",
 			"value": 13
 		},
 		{
-			"name": "DummyEmShellCh1c0z0WoodShield",
+			"name": "DummyEmShellch1c0z0(Ganados)WoodShield",
 			"value": 14
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Scythe",
+			"name": "DummyEmShellch1c0z0(Ganados)Scythe",
 			"value": 15
 		},
 		{
-			"name": "DummyEmShellCh1c0z0IronShield",
+			"name": "DummyEmShellch1c0z0(Ganados)IronShield",
 			"value": 16
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Halberd",
+			"name": "DummyEmShellch1c0z0(Ganados)Halberd",
 			"value": 17
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Scoop",
+			"name": "DummyEmShellch1c0z0(Ganados)Scoop",
 			"value": 18
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Crossbow",
+			"name": "DummyEmShellch1c0z0(Ganados)Crossbow",
 			"value": 19
 		},
 		{
-			"name": "DummyEmShellCh1c0z0RocketLauncher",
+			"name": "DummyEmShellch1c0z0(Ganados)RocketLauncher",
 			"value": 20
 		},
 		{
-			"name": "DummyEmShellCh1c8z0CrossbowBolt",
+			"name": "DummyEmShellch1c8z0(Boar-JJ)CrossbowBolt",
 			"value": 21
 		},
 		{
-			"name": "DummyEmShellCh1c0z0Crosier",
+			"name": "DummyEmShellch1c0z0(Ganados)Crosier",
 			"value": 22
 		},
 		{
-			"name": "DummyEmShellCh1c0z0WoodShieldParts",
+			"name": "DummyEmShellch1c0z0(Ganados)WoodShieldParts",
 			"value": 23
 		},
 		{
-			"name": "DummyEmShellCh1c0z0LegHoldTrap",
+			"name": "DummyEmShellch1c0z0(Ganados)LegHoldTrap",
 			"value": 24
 		}
 	],
@@ -120521,7 +120613,7 @@
 	],
 	"chainsaw.character.ch1f8z0.TowerJumpAttackType": [
 		{
-			"name": "CallCh1d3z0",
+			"name": "Callch1d3z0(Novistadors)",
 			"value": 0
 		},
 		{
@@ -128944,11 +129036,11 @@
 			"value": 0
 		},
 		{
-			"name": "TargetCh2a1z0",
+			"name": "Targetch2a1z0(Ashley)",
 			"value": 1
 		},
 		{
-			"name": "TargetCh2a3z0",
+			"name": "Targetch2a3z0(Luis Serra)",
 			"value": 2
 		}
 	],
@@ -132457,7 +132549,7 @@
 	],
 	"chainsaw.Ch1c0MainState_ForceMove.SubState": [
 		{
-			"name": "Ch2a1z0Escape",
+			"name": "ch2a1z0(Ashley)Escape",
 			"value": 0
 		},
 		{
@@ -145054,7 +145146,7 @@
 			"value": 82
 		},
 		{
-			"name": "wp4100",
+			"name": "Shotgun",
 			"value": 83
 		},
 		{
@@ -145098,7 +145190,7 @@
 			"value": 93
 		},
 		{
-			"name": "wp4600",
+			"name": "Bolt",
 			"value": 94
 		},
 		{
@@ -145130,7 +145222,7 @@
 			"value": 101
 		},
 		{
-			"name": "wp5300",
+			"name": "Yellow Chainsaw",
 			"value": 102
 		},
 		{
@@ -145170,7 +145262,7 @@
 			"value": 111
 		},
 		{
-			"name": "wp6300",
+			"name": "Dummy",
 			"value": 112
 		},
 		{
@@ -149425,11 +149517,11 @@
 	],
 	"chainsaw.Ch1c0z0BehaviorTreeCondition_MFSM_SquadMemberGRunDistance.CheckTarget": [
 		{
-			"name": "Ch0a0z0",
+			"name": "Ch0a0z0(Leon)",
 			"value": 0
 		},
 		{
-			"name": "Ch2a1z0",
+			"name": "ch2a1z0(Ashley)",
 			"value": 1
 		},
 		{
@@ -152937,116 +153029,212 @@
 	],
 	"chainsaw.character.ch1c0z0.MontageID": [
 		{
-			"name": "Montage_1006",
-			"value": 72376362
+			"name": "Montage_0000 ([Male]-Yellow)",
+			"value": 2253052265
 		},
 		{
-			"name": "Montage_0015",
-			"value": 244681229
-		},
-		{
-			"name": "Montage_1009",
-			"value": 272648290
-		},
-		{
-			"name": "Montage_0020",
-			"value": 308095703
-		},
-		{
-			"name": "Montage_0001",
+			"name": "Montage_0001 ([Male]-Grey)",
 			"value": 412031697
 		},
 		{
-			"name": "Montage_2001",
-			"value": 539313326
-		},
-		{
-			"name": "Montage_1000",
-			"value": 720240351
-		},
-		{
-			"name": "Montage_0023",
-			"value": 781075099
-		},
-		{
-			"name": "Montage_1010",
-			"value": 824773812
-		},
-		{
-			"name": "Montage_0031",
-			"value": 852951712
-		},
-		{
-			"name": "Montage_0002",
+			"name": "Montage_0002 ([Male]-Purple)",
 			"value": 897984333
 		},
 		{
-			"name": "Montage_1005",
-			"value": 1002902302
+			"name": "Montage_0003 ([Male]-Brown)",
+			"value": 2655811582
 		},
 		{
-			"name": "Montage_0007",
+			"name": "Montage_0004 ([Male]-Brown 2)",
+			"value": 3825917684
+		},
+		{
+			"name": "Montage_0005 ([Male]-Beige)",
+			"value": 3218068109
+		},
+		{
+			"name": "Montage_0006 ([Male]-Purple 2)",
+			"value": 2133529107
+		},
+		{
+			"name": "Montage_0007 ([Male]-Green)",
 			"value": 1017464743
 		},
 		{
-			"name": "Montage_0019",
-			"value": 1018592117
-		},
-		{
-			"name": "Montage_0029",
-			"value": 1139658603
-		},
-		{
-			"name": "Montage_1013",
-			"value": 1252948549
-		},
-		{
-			"name": "Montage_0030",
-			"value": 1356451679
-		},
-		{
-			"name": "Montage_1008",
-			"value": 1480734989
-		},
-		{
-			"name": "Montage_0018",
-			"value": 1609598768
-		},
-		{
-			"name": "Montage_1012",
-			"value": 1638404621
-		},
-		{
-			"name": "Montage_0028",
-			"value": 1790233674
-		},
-		{
-			"name": "Montage_0008",
+			"name": "Montage_0008 ([Male]-Beige with hat)",
 			"value": 1790819418
 		},
 		{
-			"name": "Montage_0024",
-			"value": 1903465655
+			"name": "Montage_0009 ([Male]-Yellow 2)",
+			"value": 3722087590
 		},
 		{
-			"name": "Montage_9998",
-			"value": 1964939210
+			"name": "Montage_0010 ([Male]-Grey 2)",
+			"value": 2240595251
 		},
 		{
-			"name": "Montage_1003",
-			"value": 1973329980
+			"name": "Montage_0011 ([Male]-Yellow with Cap)",
+			"value": 4191550041
 		},
 		{
-			"name": "Montage_0026",
-			"value": 2001761790
+			"name": "Montage_0012 ([Male]-Blue)",
+			"value": 3980194655
 		},
 		{
-			"name": "Montage_0017",
+			"name": "Montage_0013 ([Male]-Yellow 3)",
+			"value": 2915949180
+		},
+		{
+			"name": "Montage_0014 ([Male]-Blue 2)",
+			"value": 2543973566
+		},
+		{
+			"name": "Montage_0015 ([Male]-Brown 3)",
+			"value": 244681229
+		},
+		{
+			"name": "Montage_0016 ([Male]-Brown Bald)",
+			"value": 4119352667
+		},
+		{
+			"name": "Montage_0017 ([Male]-Grey)",
 			"value": 2126434953
 		},
 		{
-			"name": "Montage_0006",
-			"value": 2133529107
+			"name": "Montage_0018 ([Male]-Grey Bald)",
+			"value": 1609598768
+		},
+		{
+			"name": "Montage_0019 ([Male]-Yellow 4)",
+			"value": 1018592117
+		},
+		{
+			"name": "Montage_0020 ([Male]-Beige Strips)",
+			"value": 308095703
+		},
+		{
+			"name": "Montage_0021 ([Male]-Brown 4)",
+			"value": 3594914692
+		},
+		{
+			"name": "Montage_0022 ([Male]-Purple Pattern)",
+			"value": 4264763154
+		},
+		{
+			"name": "Montage_0023 ([Male]-Green Pattern)",
+			"value": 781075099
+		},
+		{
+			"name": "Montage_0024 ([Male]-Green 2)",
+			"value": 1903465655
+		},
+		{
+			"name": "Montage_0025 ([Male]-Purple 3)",
+			"value": 2491554104
+		},
+		{
+			"name": "Montage_0026 ([Male]-Blue 3)",
+			"value": 2001761790
+		},
+		{
+			"name": "Montage_0027 ([Male]-Purple 4)",
+			"value": 3680364053
+		},
+		{
+			"name": "Montage_0028 ([Male]-Purple with Green Pattern)",
+			"value": 1790233674
+		},
+		{
+			"name": "Montage_0029 ([Male]-Brown Pattern)",
+			"value": 1139658603
+		},
+		{
+			"name": "Montage_0030 ([Male]-Yellow 5)",
+			"value": 1356451679
+		},
+		{
+			"name": "Montage_0031 ([Male]-Yellow 6)",
+			"value": 852951712
+		},
+		{
+			"name": "Montage_1000 ([Female]-Beige)",
+			"value": 720240351
+		},
+		{
+			"name": "Montage_1001 ([Female]-Beige 2)",
+			"value": 3510933723
+		},
+		{
+			"name": "Montage_1002 ([Female]-Beige 3)",
+			"value": 2877752045
+		},
+		{
+			"name": "Montage_1003 ([Female]-Beige 4)",
+			"value": 1973329980
+		},
+		{
+			"name": "Montage_1004 ([Female]-Green)",
+			"value": 4121631600
+		},
+		{
+			"name": "Montage_1005 ([Female]-Purple)",
+			"value": 1002902302
+		},
+		{
+			"name": "Montage_1006 ([Female]-Yellow)",
+			"value": 72376362
+		},
+		{
+			"name": "Montage_1007 ([Female]-Beige 5)",
+			"value": 3377551140
+		},
+		{
+			"name": "Montage_1008 ([Female]-Purple 2)",
+			"value": 1480734989
+		},
+		{
+			"name": "Montage_1009 ([Female]-Purple 3)",
+			"value": 272648290
+		},
+		{
+			"name": "Montage_1010 ([Female]-Yellow 2)",
+			"value": 824773812
+		},
+		{
+			"name": "Montage_1011 ([Female]-Brown Pattern 1)",
+			"value": 3470263574
+		},
+		{
+			"name": "Montage_1012 ([Female]-Green Pattern 1)",
+			"value": 1638404621
+		},
+		{
+			"name": "Montage_1013 ([Female]-Beige Pattern 1)",
+			"value": 1252948549
+		},
+		{
+			"name": "Montage_1014 ([Female]-Purple 4)",
+			"value": 2400060261
+		},
+		{
+			"name": "Montage_2000 ([Male]-Yellow + Bugged Beard)",
+			"value": 2438350137
+		},
+		{
+			"name": "Montage_2001 ([Male]-Yellow + Bugged Beard 2)",
+			"value": 539313326
+		},
+		{
+			"name": "Montage_2200 ([Male]-Cow-man)",
+			"value": 2366387651
+		},
+		{
+			"name": "Montage_9999 ([Male]-Skirt with Missing Texture Coat)",
+			"value": 3170676912
+		},
+		{
+			"name": "Montage_9998 ([Male]-Yellow Repeated)",
+			"value": 1964939210
 		}
 	],
 	"via.render.RtvDimension": [
@@ -160461,11 +160649,11 @@
 			"value": 18
 		},
 		{
-			"name": "ch2a1z0PointingArmIK",
+			"name": "ch2a1z0(Ashley)PointingArmIK",
 			"value": 19
 		},
 		{
-			"name": "ch1f4z1StretchJoint",
+			"name": "ch1f4z1(Bitorez)StretchJoint",
 			"value": 20
 		},
 		{
@@ -160501,11 +160689,11 @@
 			"value": 28
 		},
 		{
-			"name": "Ch2a1z0HelmetControl",
+			"name": "ch2a1z0(Ashley)HelmetControl",
 			"value": 29
 		},
 		{
-			"name": "Ch1d1z1BlurredWeapon",
+			"name": "ch1d1z1(Dr.Salvador)BlurredWeapon",
 			"value": 30
 		},
 		{
@@ -164233,7 +164421,7 @@
 			"value": 4
 		},
 		{
-			"name": "Ch2a1z0RayCastHit",
+			"name": "ch2a1z0(Ashley)RayCastHit",
 			"value": 5
 		}
 	],
@@ -168755,83 +168943,83 @@
 			"value": 0
 		},
 		{
-			"name": "wp5801",
+			"name": "Small Hand Axe",
 			"value": 5801
 		},
 		{
-			"name": "wp5802",
+			"name": "Large Kitchen Knife",
 			"value": 5802
 		},
 		{
-			"name": "wp5803",
+			"name": "Small Sickle/Hatchet",
 			"value": 5803
 		},
 		{
-			"name": "wp5804",
+			"name": "Pitchfork",
 			"value": 5804
 		},
 		{
-			"name": "wp5805",
+			"name": "Torch",
 			"value": 5805
 		},
 		{
-			"name": "wp5806",
+			"name": "TNT",
 			"value": 5806
 		},
 		{
-			"name": "wp5807",
+			"name": "Morning Star",
 			"value": 5807
 		},
 		{
-			"name": "wp5808",
+			"name": "Zealot Shield",
 			"value": 5808
 		},
 		{
-			"name": "wp5809",
+			"name": "Scythe",
 			"value": 5809
 		},
 		{
-			"name": "wp5810",
+			"name": "Hammer",
 			"value": 5810
 		},
 		{
-			"name": "wp5811",
+			"name": "Stun rod",
 			"value": 5811
 		},
 		{
-			"name": "wp5813",
+			"name": "Soldiers Shield",
 			"value": 5813
 		},
 		{
-			"name": "wp5814",
+			"name": "Molotov",
 			"value": 5814
 		},
 		{
-			"name": "wp5815",
+			"name": "Crossbow",
 			"value": 5815
 		},
 		{
-			"name": "wp5816",
+			"name": "Machete",
 			"value": 5816
 		},
 		{
-			"name": "wp5821",
+			"name": "Shovel",
 			"value": 5821
 		},
 		{
-			"name": "wp5822",
+			"name": "Crowbar",
 			"value": 5822
 		},
 		{
-			"name": "wp5823",
+			"name": "Spike Club",
 			"value": 5823
 		},
 		{
-			"name": "wp5824",
+			"name": "RPG",
 			"value": 5824
 		},
 		{
-			"name": "wp5826",
+			"name": "Red Cultist Lantern",
 			"value": 5826
 		}
 	],

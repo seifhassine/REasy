@@ -24,18 +24,18 @@
 				"array": false,
 				"name": "LightProbes",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
 				"array": false,
 				"name": "Probes",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -470,9 +470,9 @@
 				"array": false,
 				"name": "TextureResource",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 1,
@@ -612,7 +612,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -711,7 +711,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -730,7 +730,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Name",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -739,11 +739,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "ParentUserData",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Object"
+				"type": "UserData"
 			},
 			{
 				"align": 4,
@@ -793,7 +793,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -802,7 +802,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 1,
@@ -1654,7 +1654,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -1663,7 +1663,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -1672,7 +1672,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -1681,7 +1681,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -2084,7 +2084,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.dynamics.RigidBodyMeshSet"
@@ -2116,7 +2116,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -2220,7 +2220,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 1,
@@ -2288,7 +2288,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 1,
@@ -2342,7 +2342,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -2559,7 +2559,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -2780,7 +2780,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 1,
@@ -2848,7 +2848,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -3078,7 +3078,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -3232,7 +3232,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.motion.DummySkeleton"
@@ -3253,9 +3253,9 @@
 				"array": false,
 				"name": "Asset",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -3318,7 +3318,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -3336,7 +3336,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.gui.GUI"
@@ -3580,7 +3580,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -3589,7 +3589,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
@@ -4625,7 +4625,7 @@
 				"native": false,
 				"original_type": "System.String",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.effect.script.EffectCustomExternParameter"
