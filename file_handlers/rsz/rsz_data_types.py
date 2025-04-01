@@ -378,6 +378,7 @@ TYPE_MAPPING = {
     "object": ObjectData,
     "vec3": Vec3Data,
     "vec4": Vec4Data,
+    "keyframe": Vec4Data,
     "obb": OBBData,
     "userdata": UserDataData,
     "vec2": Vec2Data,
