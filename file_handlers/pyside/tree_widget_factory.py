@@ -79,7 +79,12 @@ class TreeWidgetFactory:
             enum_values = EnumManager.instance().get_enum_values(enum_type)
             if enum_values:
                 is_enum = True
-        
+                if isinstance(data_obj, U32Data):
+                    original_value = data_obj.value
+                    data_obj.__class__ = S32Data
+                    if original_value > 0x7FFFFFFF: 
+                        data_obj.value = original_value - 0x100000000 
+
         if is_enum:
             label = QLabel(name_text)
             label.setMinimumWidth(min_label_width)
