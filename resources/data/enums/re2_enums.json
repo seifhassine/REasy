@@ -19,10 +19,6 @@
 	],
 	"app.ropeway.rogue.RogueDefine.ItemDropCategory": [
 		{
-			"name": "RandomSet",
-			"value": 1000
-		},
-		{
 			"name": "Pattern_00",
 			"value": 0
 		},
@@ -101,6 +97,10 @@
 		{
 			"name": "Pattern_19",
 			"value": 19
+		},
+		{
+			"name": "RandomSet",
+			"value": 1000
 		}
 	],
 	"app.ropeway.motion.MotionEventHandler.LayerKind": [
@@ -889,52 +889,16 @@
 	],
 	"app.ropeway.enemy.em5000.WeakPartsID": [
 		{
-			"name": "UL_Body00",
-			"value": 111
+			"name": "UR_RightArm00",
+			"value": 100
 		},
 		{
-			"name": "UL_Body01",
-			"value": 114
+			"name": "UR_RightArm01",
+			"value": 101
 		},
 		{
-			"name": "UL_Body02",
-			"value": 115
-		},
-		{
-			"name": "UR_Body03",
-			"value": 106
-		},
-		{
-			"name": "UR_Body04",
-			"value": 107
-		},
-		{
-			"name": "UR_Body05",
-			"value": 108
-		},
-		{
-			"name": "DL_Body06",
-			"value": 112
-		},
-		{
-			"name": "DL_Body07",
-			"value": 116
-		},
-		{
-			"name": "DL_Body08",
-			"value": 117
-		},
-		{
-			"name": "DR_Body09",
-			"value": 109
-		},
-		{
-			"name": "DR_Body10",
-			"value": 110
-		},
-		{
-			"name": "DR_Body11",
-			"value": 113
+			"name": "UR_RightArm02",
+			"value": 102
 		},
 		{
 			"name": "UL_LeftArm00",
@@ -949,28 +913,52 @@
 			"value": 105
 		},
 		{
-			"name": "UR_RightArm00",
-			"value": 100
+			"name": "UR_Body03",
+			"value": 106
 		},
 		{
-			"name": "UR_RightArm01",
-			"value": 101
+			"name": "UR_Body04",
+			"value": 107
 		},
 		{
-			"name": "UR_RightArm02",
-			"value": 102
+			"name": "UR_Body05",
+			"value": 108
 		},
 		{
-			"name": "DL_LeftLeg00",
-			"value": 121
+			"name": "DR_Body09",
+			"value": 109
 		},
 		{
-			"name": "DL_LeftLeg01",
-			"value": 122
+			"name": "DR_Body10",
+			"value": 110
 		},
 		{
-			"name": "DL_LeftLeg02",
-			"value": 123
+			"name": "UL_Body00",
+			"value": 111
+		},
+		{
+			"name": "DL_Body06",
+			"value": 112
+		},
+		{
+			"name": "DR_Body11",
+			"value": 113
+		},
+		{
+			"name": "UL_Body01",
+			"value": 114
+		},
+		{
+			"name": "UL_Body02",
+			"value": 115
+		},
+		{
+			"name": "DL_Body07",
+			"value": 116
+		},
+		{
+			"name": "DL_Body08",
+			"value": 117
 		},
 		{
 			"name": "DR_RightLeg00",
@@ -983,6 +971,18 @@
 		{
 			"name": "DR_RightLeg02",
 			"value": 120
+		},
+		{
+			"name": "DL_LeftLeg00",
+			"value": 121
+		},
+		{
+			"name": "DL_LeftLeg01",
+			"value": 122
+		},
+		{
+			"name": "DL_LeftLeg02",
+			"value": 123
 		}
 	],
 	"via.uvsequence.UVTransform": [
@@ -1049,12 +1049,12 @@
 			"value": 4
 		},
 		{
-			"name": "AlandIslands",
-			"value": 248
-		},
-		{
 			"name": "Albania",
 			"value": 8
+		},
+		{
+			"name": "AntArtica",
+			"value": 10
 		},
 		{
 			"name": "Algeria",
@@ -1073,28 +1073,16 @@
 			"value": 24
 		},
 		{
-			"name": "Anguilla",
-			"value": 660
-		},
-		{
-			"name": "AntArtica",
-			"value": 10
-		},
-		{
 			"name": "AntiguaAndBarbuda",
 			"value": 28
 		},
 		{
+			"name": "Azerbaijan",
+			"value": 31
+		},
+		{
 			"name": "Argentina",
 			"value": 32
-		},
-		{
-			"name": "Armenia",
-			"value": 51
-		},
-		{
-			"name": "Aruba",
-			"value": 533
 		},
 		{
 			"name": "Australia",
@@ -1103,10 +1091,6 @@
 		{
 			"name": "Austria",
 			"value": 40
-		},
-		{
-			"name": "Azerbaijan",
-			"value": 31
 		},
 		{
 			"name": "Bahamas",
@@ -1121,24 +1105,16 @@
 			"value": 50
 		},
 		{
+			"name": "Armenia",
+			"value": 51
+		},
+		{
 			"name": "Barados",
 			"value": 52
 		},
 		{
-			"name": "Belarus",
-			"value": 112
-		},
-		{
 			"name": "Belgium",
 			"value": 56
-		},
-		{
-			"name": "Belize",
-			"value": 84
-		},
-		{
-			"name": "Benin",
-			"value": 204
 		},
 		{
 			"name": "Bermuda",
@@ -1151,10 +1127,6 @@
 		{
 			"name": "Bolivia",
 			"value": 68
-		},
-		{
-			"name": "Bonaire",
-			"value": 535
 		},
 		{
 			"name": "BosniaAndHerzegovina",
@@ -1173,8 +1145,20 @@
 			"value": 76
 		},
 		{
+			"name": "Belize",
+			"value": 84
+		},
+		{
 			"name": "BritishIndianOceanTerritory",
 			"value": 86
+		},
+		{
+			"name": "SolomonIslands",
+			"value": 90
+		},
+		{
+			"name": "VirginIslandsBritish",
+			"value": 92
 		},
 		{
 			"name": "BruneiDarussalam",
@@ -1185,16 +1169,16 @@
 			"value": 100
 		},
 		{
-			"name": "BurkinaFaso",
-			"value": 854
+			"name": "Myanmar",
+			"value": 104
 		},
 		{
 			"name": "Burundi",
 			"value": 108
 		},
 		{
-			"name": "CaboVerde",
-			"value": 132
+			"name": "Belarus",
+			"value": 112
 		},
 		{
 			"name": "Cambodia",
@@ -1209,12 +1193,20 @@
 			"value": 124
 		},
 		{
+			"name": "CaboVerde",
+			"value": 132
+		},
+		{
 			"name": "CaymanIslands",
 			"value": 136
 		},
 		{
 			"name": "CentralAfricanRepublic",
 			"value": 140
+		},
+		{
+			"name": "SriLanka",
+			"value": 144
 		},
 		{
 			"name": "Chad",
@@ -1227,6 +1219,14 @@
 		{
 			"name": "China",
 			"value": 156
+		},
+		{
+			"name": "Prchina",
+			"value": 156
+		},
+		{
+			"name": "Taiwan",
+			"value": 158
 		},
 		{
 			"name": "ChristmasIsland",
@@ -1245,6 +1245,10 @@
 			"value": 174
 		},
 		{
+			"name": "Mayotte",
+			"value": 175
+		},
+		{
 			"name": "Congo",
 			"value": 178
 		},
@@ -1261,20 +1265,12 @@
 			"value": 188
 		},
 		{
-			"name": "CotedDIVoire",
-			"value": 384
-		},
-		{
 			"name": "Croatia",
 			"value": 191
 		},
 		{
 			"name": "Cuba",
 			"value": 192
-		},
-		{
-			"name": "Curacao",
-			"value": 531
 		},
 		{
 			"name": "Cyprus",
@@ -1285,12 +1281,16 @@
 			"value": 203
 		},
 		{
-			"name": "Denmark",
-			"value": 208
+			"name": "Czech",
+			"value": 203
 		},
 		{
-			"name": "Djibouti",
-			"value": 262
+			"name": "Benin",
+			"value": 204
+		},
+		{
+			"name": "Denmark",
+			"value": 208
 		},
 		{
 			"name": "Dominica",
@@ -1305,16 +1305,16 @@
 			"value": 218
 		},
 		{
-			"name": "Egypt",
-			"value": 818
-		},
-		{
 			"name": "ElSalvador",
 			"value": 222
 		},
 		{
 			"name": "EquatorialGuinea",
 			"value": 226
+		},
+		{
+			"name": "Ethiopia",
+			"value": 231
 		},
 		{
 			"name": "Eritrea",
@@ -1325,16 +1325,16 @@
 			"value": 233
 		},
 		{
-			"name": "Ethiopia",
-			"value": 231
+			"name": "FaroeIslands",
+			"value": 234
 		},
 		{
 			"name": "FalkanIslands",
 			"value": 236
 		},
 		{
-			"name": "FaroeIslands",
-			"value": 234
+			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
+			"value": 239
 		},
 		{
 			"name": "Fiji",
@@ -1343,6 +1343,10 @@
 		{
 			"name": "Finland",
 			"value": 246
+		},
+		{
+			"name": "AlandIslands",
+			"value": 248
 		},
 		{
 			"name": "France",
@@ -1361,16 +1365,24 @@
 			"value": 260
 		},
 		{
+			"name": "Djibouti",
+			"value": 262
+		},
+		{
 			"name": "Gabon",
 			"value": 266
+		},
+		{
+			"name": "Georgia",
+			"value": 268
 		},
 		{
 			"name": "Gambia",
 			"value": 270
 		},
 		{
-			"name": "Georgia",
-			"value": 268
+			"name": "Palestine",
+			"value": 275
 		},
 		{
 			"name": "Germany",
@@ -1383,6 +1395,10 @@
 		{
 			"name": "Gibraltar",
 			"value": 292
+		},
+		{
+			"name": "Kiribati",
+			"value": 296
 		},
 		{
 			"name": "Greece",
@@ -1409,16 +1425,8 @@
 			"value": 320
 		},
 		{
-			"name": "Guernsey",
-			"value": 831
-		},
-		{
 			"name": "Guinea",
 			"value": 324
-		},
-		{
-			"name": "GuineaBissau",
-			"value": 624
 		},
 		{
 			"name": "Guyana",
@@ -1433,11 +1441,19 @@
 			"value": 334
 		},
 		{
+			"name": "VaticanCity",
+			"value": 336
+		},
+		{
 			"name": "Honduras",
 			"value": 340
 		},
 		{
 			"name": "HongKong",
+			"value": 344
+		},
+		{
+			"name": "Hong_kong",
 			"value": 344
 		},
 		{
@@ -1469,16 +1485,16 @@
 			"value": 372
 		},
 		{
-			"name": "IsleOfMan",
-			"value": 833
-		},
-		{
 			"name": "Israel",
 			"value": 376
 		},
 		{
 			"name": "Italy",
 			"value": 380
+		},
+		{
+			"name": "CotedDIVoire",
+			"value": 384
 		},
 		{
 			"name": "Jamaica",
@@ -1489,24 +1505,16 @@
 			"value": 392
 		},
 		{
-			"name": "Jersey",
-			"value": 832
+			"name": "Kazakhstan",
+			"value": 398
 		},
 		{
 			"name": "Jordan",
 			"value": 400
 		},
 		{
-			"name": "Kazakhstan",
-			"value": 398
-		},
-		{
 			"name": "Kenya",
 			"value": 404
-		},
-		{
-			"name": "Kiribati",
-			"value": 296
 		},
 		{
 			"name": "NorthKorea",
@@ -1514,6 +1522,10 @@
 		},
 		{
 			"name": "SouthKorea",
+			"value": 410
+		},
+		{
+			"name": "South_korea",
 			"value": 410
 		},
 		{
@@ -1529,16 +1541,16 @@
 			"value": 418
 		},
 		{
-			"name": "Latvia",
-			"value": 428
-		},
-		{
 			"name": "Lebanon",
 			"value": 422
 		},
 		{
 			"name": "Lesotho",
 			"value": 426
+		},
+		{
+			"name": "Latvia",
+			"value": 428
 		},
 		{
 			"name": "Liberia",
@@ -1565,10 +1577,6 @@
 			"value": 446
 		},
 		{
-			"name": "Macedonia",
-			"value": 807
-		},
-		{
 			"name": "Madagascar",
 			"value": 450
 		},
@@ -1593,10 +1601,6 @@
 			"value": 470
 		},
 		{
-			"name": "MarshallIslands",
-			"value": 584
-		},
-		{
 			"name": "Martinique",
 			"value": 474
 		},
@@ -1609,20 +1613,8 @@
 			"value": 480
 		},
 		{
-			"name": "Mayotte",
-			"value": 175
-		},
-		{
 			"name": "Mexico",
 			"value": 484
-		},
-		{
-			"name": "Micronesia",
-			"value": 583
-		},
-		{
-			"name": "Moldova",
-			"value": 498
 		},
 		{
 			"name": "Monaco",
@@ -1631,6 +1623,10 @@
 		{
 			"name": "Mongolia",
 			"value": 496
+		},
+		{
+			"name": "Moldova",
+			"value": 498
 		},
 		{
 			"name": "Montenegro",
@@ -1649,8 +1645,8 @@
 			"value": 508
 		},
 		{
-			"name": "Myanmar",
-			"value": 104
+			"name": "Oman",
+			"value": 512
 		},
 		{
 			"name": "Namibia",
@@ -1669,11 +1665,35 @@
 			"value": 528
 		},
 		{
+			"name": "Curacao",
+			"value": 531
+		},
+		{
+			"name": "Aruba",
+			"value": 533
+		},
+		{
+			"name": "SintMaarten",
+			"value": 534
+		},
+		{
+			"name": "Bonaire",
+			"value": 535
+		},
+		{
 			"name": "NewCaledonia",
 			"value": 540
 		},
 		{
+			"name": "Vanauatu",
+			"value": 548
+		},
+		{
 			"name": "NewZealand",
+			"value": 554
+		},
+		{
+			"name": "New_zealand",
 			"value": 554
 		},
 		{
@@ -1697,28 +1717,32 @@
 			"value": 574
 		},
 		{
-			"name": "NorthernMarianaIsland",
-			"value": 580
-		},
-		{
 			"name": "Norway",
 			"value": 578
 		},
 		{
-			"name": "Oman",
-			"value": 512
+			"name": "NorthernMarianaIsland",
+			"value": 580
 		},
 		{
-			"name": "Pakistan",
-			"value": 586
+			"name": "UnitedStatesMinorOutlyingIslands",
+			"value": 581
+		},
+		{
+			"name": "Micronesia",
+			"value": 583
+		},
+		{
+			"name": "MarshallIslands",
+			"value": 584
 		},
 		{
 			"name": "Palau",
 			"value": 585
 		},
 		{
-			"name": "Palestine",
-			"value": 275
+			"name": "Pakistan",
+			"value": 586
 		},
 		{
 			"name": "Panama",
@@ -1747,6 +1771,14 @@
 		{
 			"name": "Poland",
 			"value": 616
+		},
+		{
+			"name": "GuineaBissau",
+			"value": 624
+		},
+		{
+			"name": "TimorLeste",
+			"value": 626
 		},
 		{
 			"name": "Portugal",
@@ -1789,6 +1821,10 @@
 			"value": 659
 		},
 		{
+			"name": "Anguilla",
+			"value": 660
+		},
+		{
 			"name": "SaintLucia",
 			"value": 662
 		},
@@ -1803,10 +1839,6 @@
 		{
 			"name": "SaintVincentAndTheGrenadines",
 			"value": 670
-		},
-		{
-			"name": "Samoa",
-			"value": 882
 		},
 		{
 			"name": "SanMarino",
@@ -1841,20 +1873,16 @@
 			"value": 702
 		},
 		{
-			"name": "SintMaarten",
-			"value": 534
-		},
-		{
 			"name": "Slovakia",
 			"value": 703
 		},
 		{
-			"name": "Slovenia",
-			"value": 705
+			"name": "VietNam",
+			"value": 704
 		},
 		{
-			"name": "SolomonIslands",
-			"value": 90
+			"name": "Slovenia",
+			"value": 705
 		},
 		{
 			"name": "Somalia",
@@ -1865,24 +1893,24 @@
 			"value": 710
 		},
 		{
-			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
-			"value": 239
-		},
-		{
-			"name": "SouthSudan",
-			"value": 728
+			"name": "Zimbabwe",
+			"value": 716
 		},
 		{
 			"name": "Spain",
 			"value": 724
 		},
 		{
-			"name": "SriLanka",
-			"value": 144
+			"name": "SouthSudan",
+			"value": 728
 		},
 		{
 			"name": "Sudan",
 			"value": 729
+		},
+		{
+			"name": "WesternSahara",
+			"value": 732
 		},
 		{
 			"name": "Suriname",
@@ -1893,12 +1921,12 @@
 			"value": 744
 		},
 		{
-			"name": "Swaziland",
-			"value": 756
-		},
-		{
 			"name": "Sweden",
 			"value": 752
+		},
+		{
+			"name": "Swaziland",
+			"value": 756
 		},
 		{
 			"name": "Switzerland",
@@ -1909,24 +1937,12 @@
 			"value": 760
 		},
 		{
-			"name": "Taiwan",
-			"value": 158
-		},
-		{
 			"name": "Tajikistan",
 			"value": 762
 		},
 		{
-			"name": "Tanzania",
-			"value": 834
-		},
-		{
 			"name": "Thailand",
 			"value": 764
-		},
-		{
-			"name": "TimorLeste",
-			"value": 626
 		},
 		{
 			"name": "Togo",
@@ -1943,6 +1959,14 @@
 		{
 			"name": "TrinidadAndTobago",
 			"value": 780
+		},
+		{
+			"name": "UnitedArabEmirates",
+			"value": 784
+		},
+		{
+			"name": "Uae",
+			"value": 784
 		},
 		{
 			"name": "Tunisia",
@@ -1973,20 +1997,52 @@
 			"value": 804
 		},
 		{
-			"name": "UnitedArabEmirates",
-			"value": 784
+			"name": "Macedonia",
+			"value": 807
+		},
+		{
+			"name": "Egypt",
+			"value": 818
 		},
 		{
 			"name": "UnitedKingdom",
 			"value": 826
 		},
 		{
-			"name": "UnitedStatesMinorOutlyingIslands",
-			"value": 581
+			"name": "United_kingdom",
+			"value": 826
+		},
+		{
+			"name": "Guernsey",
+			"value": 831
+		},
+		{
+			"name": "Jersey",
+			"value": 832
+		},
+		{
+			"name": "IsleOfMan",
+			"value": 833
+		},
+		{
+			"name": "Tanzania",
+			"value": 834
 		},
 		{
 			"name": "UnitedStatesOfAmerica",
 			"value": 840
+		},
+		{
+			"name": "United_states",
+			"value": 840
+		},
+		{
+			"name": "VirginIslandsUS",
+			"value": 850
+		},
+		{
+			"name": "BurkinaFaso",
+			"value": 854
 		},
 		{
 			"name": "Uruguay",
@@ -1997,36 +2053,16 @@
 			"value": 860
 		},
 		{
-			"name": "Vanauatu",
-			"value": 548
-		},
-		{
-			"name": "VaticanCity",
-			"value": 336
-		},
-		{
 			"name": "Venezuela",
 			"value": 862
-		},
-		{
-			"name": "VietNam",
-			"value": 704
-		},
-		{
-			"name": "VirginIslandsBritish",
-			"value": 92
-		},
-		{
-			"name": "VirginIslandsUS",
-			"value": 850
 		},
 		{
 			"name": "WallisAndFutuna",
 			"value": 876
 		},
 		{
-			"name": "WesternSahara",
-			"value": 732
+			"name": "Samoa",
+			"value": 882
 		},
 		{
 			"name": "Yemen",
@@ -2035,42 +2071,6 @@
 		{
 			"name": "Zambia",
 			"value": 894
-		},
-		{
-			"name": "Zimbabwe",
-			"value": 716
-		},
-		{
-			"name": "Prchina",
-			"value": 156
-		},
-		{
-			"name": "Czech",
-			"value": 203
-		},
-		{
-			"name": "Hong_kong",
-			"value": 344
-		},
-		{
-			"name": "New_zealand",
-			"value": 554
-		},
-		{
-			"name": "South_korea",
-			"value": 410
-		},
-		{
-			"name": "United_states",
-			"value": 840
-		},
-		{
-			"name": "United_kingdom",
-			"value": 826
-		},
-		{
-			"name": "Uae",
-			"value": 784
 		}
 	],
 	"app.ropeway.gui.RogueInventoryBehavior.CloseTrigger": [
@@ -2471,16 +2471,16 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "Develop",
 			"value": 1
 		},
 		{
 			"name": "KernelLand",
 			"value": 2
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.gui.ReticleBehavior.SparkShotState": [
@@ -2621,20 +2621,20 @@
 			"value": 0
 		},
 		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "Include",
+			"value": 1
+		},
+		{
+			"name": "INCLUDE",
 			"value": 1
 		},
 		{
 			"name": "Exclude",
 			"value": 2
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "INCLUDE",
-			"value": 1
 		},
 		{
 			"name": "EXCLUDE",
@@ -4215,20 +4215,20 @@
 			"value": 0
 		},
 		{
+			"name": "ZIgnoreBegin",
+			"value": 0
+		},
+		{
 			"name": "PrepareRoughTransparent",
+			"value": 1
+		},
+		{
+			"name": "ZIgnorePrepassSolid",
 			"value": 1
 		},
 		{
 			"name": "DrawRoughTransparent",
 			"value": 2
-		},
-		{
-			"name": "ZIgnoreBegin",
-			"value": 0
-		},
-		{
-			"name": "ZIgnorePrepassSolid",
-			"value": 1
 		},
 		{
 			"name": "ZIgnorePrepassTwoSide",
@@ -4907,12 +4907,12 @@
 			"value": 1
 		},
 		{
-			"name": "Assert",
-			"value": 2
-		},
-		{
 			"name": "Default",
 			"value": 1
+		},
+		{
+			"name": "Assert",
+			"value": 2
 		}
 	],
 	"via.hid.VibrationOutputNode": [
@@ -4934,6 +4934,10 @@
 		}
 	],
 	"via.hid.GamePadButton": [
+		{
+			"name": "None",
+			"value": 0
+		},
 		{
 			"name": "LUp",
 			"value": 1
@@ -5061,10 +5065,6 @@
 		{
 			"name": "RSR",
 			"value": 2147483648
-		},
-		{
-			"name": "None",
-			"value": 0
 		},
 		{
 			"name": "All",
@@ -7040,6 +7040,10 @@
 			"value": 0
 		},
 		{
+			"name": "Min",
+			"value": 0
+		},
+		{
 			"name": "China",
 			"value": 1
 		},
@@ -7052,20 +7056,16 @@
 			"value": 3
 		},
 		{
+			"name": "Max",
+			"value": 3
+		},
+		{
 			"name": "Count",
 			"value": 4
 		},
 		{
 			"name": "Term",
 			"value": 4
-		},
-		{
-			"name": "Min",
-			"value": 0
-		},
-		{
-			"name": "Max",
-			"value": 3
 		}
 	],
 	"via.relib.playlog.JsonWriter.ValueType": [
@@ -8522,28 +8522,28 @@
 	],
 	"app.ropeway.gamemastering.SaveDataManager.SaveDataNumber": [
 		{
-			"name": "SYSTEM_DATA_COUNT",
-			"value": 1
-		},
-		{
 			"name": "SCENARIO_DATA_BEGIN",
 			"value": 0
 		},
 		{
-			"name": "SCENARIO_DATA_COUNT",
-			"value": 21
+			"name": "SYSTEM_DATA_COUNT",
+			"value": 1
+		},
+		{
+			"name": "ROGUE_DATA_COUNT",
+			"value": 11
 		},
 		{
 			"name": "SCENARIO_DATA_END",
 			"value": 20
 		},
 		{
-			"name": "ROGUE_DATA_BEGIN",
+			"name": "SCENARIO_DATA_COUNT",
 			"value": 21
 		},
 		{
-			"name": "ROGUE_DATA_COUNT",
-			"value": 11
+			"name": "ROGUE_DATA_BEGIN",
+			"value": 21
 		},
 		{
 			"name": "ROGUE_DATA_END",
@@ -10018,7 +10018,15 @@
 			"value": 4
 		},
 		{
+			"name": "StaticShadowSolid",
+			"value": 4
+		},
+		{
 			"name": "ShadowTwoSide",
+			"value": 5
+		},
+		{
+			"name": "StaticShadowTwoSide",
 			"value": 5
 		},
 		{
@@ -10026,28 +10034,20 @@
 			"value": 6
 		},
 		{
+			"name": "StaticShadowTwoSideAlphaTest",
+			"value": 6
+		},
+		{
 			"name": "ShadowAlphaTest",
+			"value": 7
+		},
+		{
+			"name": "StaticShadowAlphaTest",
 			"value": 7
 		},
 		{
 			"name": "ShadowDitherCoverage",
 			"value": 8
-		},
-		{
-			"name": "StaticShadowSolid",
-			"value": 4
-		},
-		{
-			"name": "StaticShadowTwoSide",
-			"value": 5
-		},
-		{
-			"name": "StaticShadowTwoSideAlphaTest",
-			"value": 6
-		},
-		{
-			"name": "StaticShadowAlphaTest",
-			"value": 7
 		},
 		{
 			"name": "CacheCopy",
@@ -10236,24 +10236,24 @@
 			"value": 2
 		},
 		{
-			"name": "LeftLegStop",
-			"value": 4
+			"name": "BothLegContact",
+			"value": 3
 		},
 		{
-			"name": "RightLegStop",
-			"value": 8
+			"name": "LeftLegStop",
+			"value": 4
 		},
 		{
 			"name": "LeftLegFix",
 			"value": 5
 		},
 		{
-			"name": "RightLegFix",
-			"value": 10
+			"name": "RightLegStop",
+			"value": 8
 		},
 		{
-			"name": "BothLegContact",
-			"value": 3
+			"name": "RightLegFix",
+			"value": 10
 		},
 		{
 			"name": "BothLegFix",
@@ -10272,12 +10272,12 @@
 			"value": 64
 		},
 		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
 			"name": "LeftToeFix",
 			"value": 65
+		},
+		{
+			"name": "RightToeStop",
+			"value": 128
 		},
 		{
 			"name": "RightToeFix",
@@ -10300,24 +10300,24 @@
 			"value": 512
 		},
 		{
-			"name": "LeftHandStop",
-			"value": 1024
+			"name": "BothHandContact",
+			"value": 768
 		},
 		{
-			"name": "RightHandStop",
-			"value": 2048
+			"name": "LeftHandStop",
+			"value": 1024
 		},
 		{
 			"name": "LeftHandFix",
 			"value": 1280
 		},
 		{
-			"name": "RightHandFix",
-			"value": 2560
+			"name": "RightHandStop",
+			"value": 2048
 		},
 		{
-			"name": "BothHandContact",
-			"value": 768
+			"name": "RightHandFix",
+			"value": 2560
 		},
 		{
 			"name": "BothHandFix",
@@ -10336,12 +10336,12 @@
 			"value": 16384
 		},
 		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
 			"name": "LeftHandTipFix",
 			"value": 16640
+		},
+		{
+			"name": "RightHandTipStop",
+			"value": 32768
 		},
 		{
 			"name": "RightHandTipFix",
@@ -15218,16 +15218,8 @@
 	],
 	"app.ropeway.Em4000Define.RankParamHash": [
 		{
-			"name": "NO_ATTACK_TIME",
-			"value": 3730143395
-		},
-		{
 			"name": "NO_HOLD_TIME",
 			"value": 470028201
-		},
-		{
-			"name": "NO_BACK_HOLD_TIME",
-			"value": 3236473812
 		},
 		{
 			"name": "REACTION_RATE",
@@ -15236,6 +15228,14 @@
 		{
 			"name": "REACTION_STOP_TIME",
 			"value": 2950829043
+		},
+		{
+			"name": "NO_BACK_HOLD_TIME",
+			"value": 3236473812
+		},
+		{
+			"name": "NO_ATTACK_TIME",
+			"value": 3730143395
 		}
 	],
 	"via.motion.detail.IkFingerSolver.fingerType": [
@@ -15366,6 +15366,14 @@
 			"value": 0
 		},
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "OrderOrMotionEnd",
 			"value": 1
 		},
@@ -15374,11 +15382,35 @@
 			"value": 2
 		},
 		{
+			"name": "MotionEnd",
+			"value": 2
+		},
+		{
+			"name": "EXIT_MOTION_END",
+			"value": 2
+		},
+		{
 			"name": "OrderAndActionTimer",
 			"value": 3
 		},
 		{
+			"name": "ActionTimer",
+			"value": 3
+		},
+		{
+			"name": "EXIT_ACT_TIMER",
+			"value": 3
+		},
+		{
 			"name": "OrderAndVariable",
+			"value": 4
+		},
+		{
+			"name": "Variable",
+			"value": 4
+		},
+		{
+			"name": "EXIT_VARIABLE",
 			"value": 4
 		},
 		{
@@ -15388,38 +15420,6 @@
 		{
 			"name": "OrderAndUnderLayerEnd",
 			"value": 6
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "MotionEnd",
-			"value": 2
-		},
-		{
-			"name": "ActionTimer",
-			"value": 3
-		},
-		{
-			"name": "Variable",
-			"value": 4
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "EXIT_MOTION_END",
-			"value": 2
-		},
-		{
-			"name": "EXIT_ACT_TIMER",
-			"value": 3
-		},
-		{
-			"name": "EXIT_VARIABLE",
-			"value": 4
 		}
 	],
 	"via.fsm.ExecGroup": [
@@ -16109,12 +16109,12 @@
 	],
 	"via.clr.MethodCodeFlag": [
 		{
-			"name": "FatFormat",
-			"value": 3
-		},
-		{
 			"name": "TinyFormat",
 			"value": 2
+		},
+		{
+			"name": "FatFormat",
+			"value": 3
 		},
 		{
 			"name": "MoreSects",
@@ -16665,6 +16665,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default_Head",
+			"value": 0
+		},
+		{
 			"name": "Default_1",
 			"value": 1
 		},
@@ -16701,11 +16705,27 @@
 			"value": 9
 		},
 		{
+			"name": "Default_Tail",
+			"value": 9
+		},
+		{
 			"name": "Temp_0",
 			"value": 10
 		},
 		{
+			"name": "Temp_Head",
+			"value": 10
+		},
+		{
+			"name": "Temp_Tail",
+			"value": 10
+		},
+		{
 			"name": "Telemetry_0",
+			"value": 11
+		},
+		{
+			"name": "Telemetry_Head",
 			"value": 11
 		},
 		{
@@ -16745,36 +16765,16 @@
 			"value": 20
 		},
 		{
+			"name": "Telemetry_Tail",
+			"value": 20
+		},
+		{
 			"name": "OldFormat_0",
 			"value": 21
 		},
 		{
 			"name": "Max",
 			"value": 22
-		},
-		{
-			"name": "Default_Head",
-			"value": 0
-		},
-		{
-			"name": "Default_Tail",
-			"value": 9
-		},
-		{
-			"name": "Temp_Head",
-			"value": 10
-		},
-		{
-			"name": "Temp_Tail",
-			"value": 10
-		},
-		{
-			"name": "Telemetry_Head",
-			"value": 11
-		},
-		{
-			"name": "Telemetry_Tail",
-			"value": 20
 		}
 	],
 	"via.physics.CastRayOption": [
@@ -17247,10 +17247,6 @@
 	],
 	"System.Reflection.FieldAttributes": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -17279,6 +17275,10 @@
 			"value": 6
 		},
 		{
+			"name": "FieldAccessMask",
+			"value": 7
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -17295,12 +17295,12 @@
 			"value": 128
 		},
 		{
-			"name": "SpecialName",
-			"value": 512
+			"name": "HasFieldRVA",
+			"value": 256
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
+			"name": "SpecialName",
+			"value": 512
 		},
 		{
 			"name": "RTSpecialName",
@@ -17311,12 +17311,12 @@
 			"value": 4096
 		},
 		{
-			"name": "HasDefault",
-			"value": 32768
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
-			"name": "HasFieldRVA",
-			"value": 256
+			"name": "HasDefault",
+			"value": 32768
 		},
 		{
 			"name": "ReservedMask",
@@ -17643,28 +17643,32 @@
 	],
 	"app.ropeway.enemy.em7200.RankParamHash": [
 		{
+			"name": "BACK_EYE_ENABLE",
+			"value": 94937356
+		},
+		{
+			"name": "SIGN_OF_ATK_SPEED_RATE",
+			"value": 117012651
+		},
+		{
+			"name": "FIRE_WALL_TIME",
+			"value": 305581750
+		},
+		{
 			"name": "MOVE_SPEED_RATE",
 			"value": 408292737
 		},
 		{
-			"name": "SIGN_OF_ATK_HOLD_SPEED_RATE",
-			"value": 4078249293
-		},
-		{
-			"name": "DMG_ACID_TIME",
-			"value": 2406071476
+			"name": "ADD_ATK_RATE_TURN",
+			"value": 631551570
 		},
 		{
 			"name": "DMG_FLASH_TIME",
 			"value": 1079981001
 		},
 		{
-			"name": "BACK_EYE_ENABLE",
-			"value": 94937356
-		},
-		{
-			"name": "FIRE_WALL_TIME",
-			"value": 305581750
+			"name": "ADD_ATK_RATE_HR",
+			"value": 1518359747
 		},
 		{
 			"name": "ATK_HOLD_RATE",
@@ -17675,20 +17679,16 @@
 			"value": 2050828995
 		},
 		{
-			"name": "ADD_ATK_RATE_HR",
-			"value": 1518359747
-		},
-		{
-			"name": "ADD_ATK_RATE_TURN",
-			"value": 631551570
+			"name": "DMG_ACID_TIME",
+			"value": 2406071476
 		},
 		{
 			"name": "ADD_ATK_RATE_MIDR",
 			"value": 3582474766
 		},
 		{
-			"name": "SIGN_OF_ATK_SPEED_RATE",
-			"value": 117012651
+			"name": "SIGN_OF_ATK_HOLD_SPEED_RATE",
+			"value": 4078249293
 		}
 	],
 	"via.clr.VM.CounterType": [
@@ -17785,36 +17785,52 @@
 	],
 	"app.ropeway.player.tag.StateAttribute": [
 		{
-			"name": "IDLE",
-			"value": 1603047924
-		},
-		{
-			"name": "WALK",
-			"value": 2546078274
-		},
-		{
-			"name": "JOG",
-			"value": 3884239614
-		},
-		{
-			"name": "TURN",
-			"value": 3340187646
-		},
-		{
-			"name": "HOLD",
-			"value": 1751707637
-		},
-		{
 			"name": "FOCUS",
 			"value": 106233786
 		},
 		{
-			"name": "GAZING",
-			"value": 3693037717
+			"name": "JOG_END",
+			"value": 259076557
+		},
+		{
+			"name": "CHANGE_WEAPON",
+			"value": 372752890
 		},
 		{
 			"name": "REACTION",
 			"value": 404851248
+		},
+		{
+			"name": "WALK_END",
+			"value": 902931070
+		},
+		{
+			"name": "SWITCH_LIGHT",
+			"value": 1031087176
+		},
+		{
+			"name": "PUMP_ACTION",
+			"value": 1277488769
+		},
+		{
+			"name": "RELOAD",
+			"value": 1426028817
+		},
+		{
+			"name": "SUPPORT",
+			"value": 1435645415
+		},
+		{
+			"name": "DAMAGE",
+			"value": 1587301165
+		},
+		{
+			"name": "IDLE",
+			"value": 1603047924
+		},
+		{
+			"name": "HOLD",
+			"value": 1751707637
 		},
 		{
 			"name": "JACK",
@@ -17825,80 +17841,64 @@
 			"value": 1973888406
 		},
 		{
-			"name": "SUPPORT",
-			"value": 1435645415
-		},
-		{
-			"name": "KNIFE",
-			"value": 2773707206
-		},
-		{
-			"name": "CREEPING",
-			"value": 3273685968
-		},
-		{
-			"name": "DAMAGE",
-			"value": 1587301165
-		},
-		{
-			"name": "STEP",
-			"value": 3000703046
-		},
-		{
-			"name": "ATTACK",
-			"value": 2612146075
+			"name": "WALK",
+			"value": 2546078274
 		},
 		{
 			"name": "HOLD_START",
 			"value": 2548707948
 		},
 		{
-			"name": "RELOAD",
-			"value": 1426028817
+			"name": "ATTACK",
+			"value": 2612146075
 		},
 		{
-			"name": "CHANGE_BULLET",
-			"value": 2876079280
-		},
-		{
-			"name": "CHANGE_WEAPON",
-			"value": 372752890
+			"name": "KNIFE",
+			"value": 2773707206
 		},
 		{
 			"name": "JOG_START",
 			"value": 2789137022
 		},
 		{
-			"name": "SWITCH_LIGHT",
-			"value": 1031087176
+			"name": "CHANGE_BULLET",
+			"value": 2876079280
 		},
 		{
-			"name": "WALK_END",
-			"value": 902931070
+			"name": "STEP",
+			"value": 3000703046
 		},
 		{
-			"name": "JOG_END",
-			"value": 259076557
+			"name": "CREEPING",
+			"value": 3273685968
 		},
 		{
-			"name": "COUGH",
-			"value": 3843926585
+			"name": "SPARK_SHOT",
+			"value": 3338892891
 		},
 		{
-			"name": "PUMP_ACTION",
-			"value": 1277488769
-		},
-		{
-			"name": "TOUCH_DOOR",
-			"value": 4287355391
+			"name": "TURN",
+			"value": 3340187646
 		},
 		{
 			"name": "WHEEL",
 			"value": 3442724071
 		},
 		{
-			"name": "SPARK_SHOT",
-			"value": 3338892891
+			"name": "GAZING",
+			"value": 3693037717
+		},
+		{
+			"name": "COUGH",
+			"value": 3843926585
+		},
+		{
+			"name": "JOG",
+			"value": 3884239614
+		},
+		{
+			"name": "TOUCH_DOOR",
+			"value": 4287355391
 		}
 	],
 	"via.behavior.EffectEvent.LifeState": [
@@ -18420,44 +18420,44 @@
 	],
 	"app.ropeway.enemy.em6200.fsm.tag.StateAttr": [
 		{
-			"name": "ThrowEnable",
-			"value": 1693310175
-		},
-		{
-			"name": "PushEnable",
-			"value": 2007970753
-		},
-		{
-			"name": "WalkPushAction",
-			"value": 3336304650
-		},
-		{
-			"name": "DoorOpening",
-			"value": 1935418311
-		},
-		{
-			"name": "DoorAccessEnable",
-			"value": 4291428196
-		},
-		{
-			"name": "ToWalkContinue",
-			"value": 2048993541
-		},
-		{
 			"name": "NoCansel",
 			"value": 891747236
-		},
-		{
-			"name": "CrouchEnable",
-			"value": 1228666758
 		},
 		{
 			"name": "IgnoreChaserCancelOnWarp",
 			"value": 975362516
 		},
 		{
+			"name": "CrouchEnable",
+			"value": 1228666758
+		},
+		{
+			"name": "ThrowEnable",
+			"value": 1693310175
+		},
+		{
+			"name": "DoorOpening",
+			"value": 1935418311
+		},
+		{
+			"name": "PushEnable",
+			"value": 2007970753
+		},
+		{
+			"name": "ToWalkContinue",
+			"value": 2048993541
+		},
+		{
 			"name": "WalkFootCheck",
 			"value": 2359255362
+		},
+		{
+			"name": "WalkPushAction",
+			"value": 3336304650
+		},
+		{
+			"name": "DoorAccessEnable",
+			"value": 4291428196
 		}
 	],
 	"app.ropeway.enemy.em5000.ColliderGroup": [
@@ -20024,12 +20024,12 @@
 			"value": 408292737
 		},
 		{
-			"name": "WALL_FALL_EYE_BREAK_COUNT",
-			"value": 3697269126
-		},
-		{
 			"name": "TRAIN_FALL_EYE_BREAK_COUNT",
 			"value": 626928270
+		},
+		{
+			"name": "WALL_FALL_EYE_BREAK_COUNT",
+			"value": 3697269126
 		}
 	],
 	"app.ropeway.enemy.em6200.MotionPattern.Search": [
@@ -20184,12 +20184,12 @@
 			"value": 500911402
 		},
 		{
-			"name": "DISABLE_LIGHT_SWITCH",
-			"value": 1734260481
-		},
-		{
 			"name": "RELOAD",
 			"value": 1584842619
+		},
+		{
+			"name": "DISABLE_LIGHT_SWITCH",
+			"value": 1734260481
 		},
 		{
 			"name": "INHIBIT_NEXT_LAYER_ACTION",
@@ -20298,7 +20298,15 @@
 	],
 	"via.Rect3DXZ.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -20306,44 +20314,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -20402,10 +20402,6 @@
 			"value": 0
 		},
 		{
-			"name": "TargetMachine_Mask",
-			"value": 15
-		},
-		{
 			"name": "TargetMachine_PC",
 			"value": 1
 		},
@@ -20422,8 +20418,8 @@
 			"value": 4
 		},
 		{
-			"name": "TargetMachineDetail_Mask",
-			"value": 240
+			"name": "TargetMachine_Mask",
+			"value": 15
 		},
 		{
 			"name": "TargetMachineDetail_PS4Base",
@@ -20442,8 +20438,8 @@
 			"value": 64
 		},
 		{
-			"name": "TargetOS_Mask",
-			"value": 3840
+			"name": "TargetMachineDetail_Mask",
+			"value": 240
 		},
 		{
 			"name": "TargetOS_Windows",
@@ -20458,8 +20454,8 @@
 			"value": 768
 		},
 		{
-			"name": "TargetServicePlatform_Mask",
-			"value": 61440
+			"name": "TargetOS_Mask",
+			"value": 3840
 		},
 		{
 			"name": "TargetServicePlatform_Default",
@@ -20476,6 +20472,10 @@
 		{
 			"name": "TargetServicePlatform_WeGame",
 			"value": 16384
+		},
+		{
+			"name": "TargetServicePlatform_Mask",
+			"value": 61440
 		}
 	],
 	"app.ropeway.SurvivorColliderTrack.ColliderGroup": [
@@ -20536,6 +20536,10 @@
 			"value": 0
 		},
 		{
+			"name": "WwiseProjectNo_Default",
+			"value": 0
+		},
+		{
 			"name": "WwiseProjectNo_1",
 			"value": 1
 		},
@@ -20546,10 +20550,6 @@
 		{
 			"name": "WwiseProjectNo_3",
 			"value": 3
-		},
-		{
-			"name": "WwiseProjectNo_Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.ChoreographPlayer.ChoreographType": [
@@ -20960,12 +20960,12 @@
 			"value": 8
 		},
 		{
-			"name": "EventSpecialControl",
-			"value": 65536
-		},
-		{
 			"name": "NormalControlMask",
 			"value": 13
+		},
+		{
+			"name": "EventSpecialControl",
+			"value": 65536
 		}
 	],
 	"app.ropeway.fsmv2.TraceVariableAction.TimingType": [
@@ -21517,12 +21517,12 @@
 	],
 	"app.ropeway.enemy.em5000.RankParamHash": [
 		{
-			"name": "MOVE_SPEED",
-			"value": 3791250704
+			"name": "HOLD_RANGE_BURNUP",
+			"value": 840914917
 		},
 		{
-			"name": "WALK_TOTTER",
-			"value": 3613919294
+			"name": "WEAK_PARTS_REVIVAL_TIME",
+			"value": 1553321746
 		},
 		{
 			"name": "HOLD_RANGE",
@@ -21533,12 +21533,12 @@
 			"value": 3584082088
 		},
 		{
-			"name": "HOLD_RANGE_BURNUP",
-			"value": 840914917
+			"name": "WALK_TOTTER",
+			"value": 3613919294
 		},
 		{
-			"name": "WEAK_PARTS_REVIVAL_TIME",
-			"value": 1553321746
+			"name": "MOVE_SPEED",
+			"value": 3791250704
 		},
 		{
 			"name": "WAKEUP_TIME",
@@ -23085,30 +23085,6 @@
 			"value": 114
 		},
 		{
-			"name": "st4_201_0",
-			"value": 219
-		},
-		{
-			"name": "st4_202_0",
-			"value": 220
-		},
-		{
-			"name": "st4_203_0",
-			"value": 221
-		},
-		{
-			"name": "st4_204_0",
-			"value": 222
-		},
-		{
-			"name": "st4_205_0",
-			"value": 223
-		},
-		{
-			"name": "st4_206_0",
-			"value": 224
-		},
-		{
 			"name": "st4_207_0",
 			"value": 118
 		},
@@ -23137,16 +23113,36 @@
 			"value": 125
 		},
 		{
+			"name": "st4_201_0",
+			"value": 219
+		},
+		{
+			"name": "st4_202_0",
+			"value": 220
+		},
+		{
+			"name": "st4_203_0",
+			"value": 221
+		},
+		{
+			"name": "st4_204_0",
+			"value": 222
+		},
+		{
+			"name": "st4_205_0",
+			"value": 223
+		},
+		{
+			"name": "st4_206_0",
+			"value": 224
+		},
+		{
 			"name": "st4_215_0",
 			"value": 225
 		},
 		{
 			"name": "st4_216_0",
 			"value": 226
-		},
-		{
-			"name": "st4_217_0",
-			"value": 431
 		},
 		{
 			"name": "st4_301_0",
@@ -23321,10 +23317,6 @@
 			"value": 279
 		},
 		{
-			"name": "st4_713_0",
-			"value": 409
-		},
-		{
 			"name": "st4_714_0",
 			"value": 282
 		},
@@ -23343,6 +23335,14 @@
 		{
 			"name": "st4_754_0",
 			"value": 356
+		},
+		{
+			"name": "st4_713_0",
+			"value": 409
+		},
+		{
+			"name": "st4_217_0",
+			"value": 431
 		}
 	],
 	"via.Stream.Attribute": [
@@ -23499,12 +23499,12 @@
 			"value": 3
 		},
 		{
-			"name": "Assert",
-			"value": 4
-		},
-		{
 			"name": "Default",
 			"value": 3
+		},
+		{
+			"name": "Assert",
+			"value": 4
 		}
 	],
 	"app.ropeway.CameraTwirler.Mode": [
@@ -24277,10 +24277,6 @@
 	],
 	"via.SystemServiceSkuFlag": [
 		{
-			"name": "Unknown",
-			"value": 65535
-		},
-		{
 			"name": "Default",
 			"value": 0
 		},
@@ -24291,6 +24287,10 @@
 		{
 			"name": "Full",
 			"value": 3
+		},
+		{
+			"name": "Unknown",
+			"value": 65535
 		}
 	],
 	"via.memory.CounterType": [
@@ -24331,7 +24331,15 @@
 	],
 	"via.Rect3D.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -24339,44 +24347,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -25348,12 +25348,12 @@
 			"value": 4
 		},
 		{
-			"name": "IgnoreSameGroupCollision",
-			"value": 8
-		},
-		{
 			"name": "VirtualGroundMask",
 			"value": 6
+		},
+		{
+			"name": "IgnoreSameGroupCollision",
+			"value": 8
 		}
 	],
 	"via.gui.detail.SubFontNo": [
@@ -25957,24 +25957,24 @@
 			"value": 0
 		},
 		{
-			"name": "Always",
-			"value": 2147483647
-		},
-		{
-			"name": "OnLedTrackerProcessSuccessful",
-			"value": 4
-		},
-		{
-			"name": "OnLedTrackerProcessFailed",
-			"value": 3
-		},
-		{
 			"name": "OnVrTrackerGpuSubmitFailed",
 			"value": 1
 		},
 		{
 			"name": "OnVrTrackerGpuWaitAndCpuProcessFailed",
 			"value": 2
+		},
+		{
+			"name": "OnLedTrackerProcessFailed",
+			"value": 3
+		},
+		{
+			"name": "OnLedTrackerProcessSuccessful",
+			"value": 4
+		},
+		{
+			"name": "Always",
+			"value": 2147483647
 		}
 	],
 	"app.ropeway.gamemastering.StaffRollFlow.State": [
@@ -29812,12 +29812,12 @@
 			"value": 0
 		},
 		{
-			"name": "RIGHT",
-			"value": 1
-		},
-		{
 			"name": "BACK_LEFT",
 			"value": 0
+		},
+		{
+			"name": "RIGHT",
+			"value": 1
 		},
 		{
 			"name": "BACK_RIGHT",
@@ -30154,28 +30154,28 @@
 	],
 	"app.ropeway.enemy.em6300.fsm.tag.StateAttr": [
 		{
-			"name": "Walk",
-			"value": 1009902001
-		},
-		{
-			"name": "Dash",
-			"value": 3584463383
+			"name": "AttackDisable",
+			"value": 50910426
 		},
 		{
 			"name": "DashStagger",
 			"value": 273777789
 		},
 		{
-			"name": "LookAt",
-			"value": 3968314242
-		},
-		{
-			"name": "AttackDisable",
-			"value": 50910426
+			"name": "Walk",
+			"value": 1009902001
 		},
 		{
 			"name": "ToWalk",
 			"value": 1975550168
+		},
+		{
+			"name": "Dash",
+			"value": 3584463383
+		},
+		{
+			"name": "LookAt",
+			"value": 3968314242
 		}
 	],
 	"via.movie.Codec": [
@@ -30680,10 +30680,6 @@
 	],
 	"via.storage.SaveServiceWriteMode": [
 		{
-			"name": "SaveServiceWriteMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceWriteMode_1_Byte",
 			"value": 1
 		},
@@ -30702,6 +30698,10 @@
 		{
 			"name": "SaveServiceWriteMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceWriteMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceWriteMode_128_KiloByte",
@@ -36534,44 +36534,44 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
-			"name": "LeftBaseline",
-			"value": 12
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
-		},
-		{
-			"name": "CenterBaseline",
-			"value": 13
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
 		},
 		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
+		},
+		{
 			"name": "RightBottom",
 			"value": 10
+		},
+		{
+			"name": "LeftBaseline",
+			"value": 12
+		},
+		{
+			"name": "CenterBaseline",
+			"value": 13
 		},
 		{
 			"name": "RightBaseline",
@@ -37120,6 +37120,10 @@
 			"value": 772
 		},
 		{
+			"name": "SessionLock",
+			"value": 773
+		},
+		{
 			"name": "SessionKick",
 			"value": 774
 		},
@@ -37206,10 +37210,6 @@
 		{
 			"name": "UtilityShowProfile",
 			"value": 3072
-		},
-		{
-			"name": "SessionLock",
-			"value": 773
 		}
 	],
 	"app.ropeway.PostEffectControllerUnitRoot.Status": [
@@ -37274,6 +37274,10 @@
 			"value": 64
 		},
 		{
+			"name": "WeaponFlags",
+			"value": 112
+		},
+		{
 			"name": "HealItem",
 			"value": 128
 		},
@@ -37286,12 +37290,20 @@
 			"value": 512
 		},
 		{
+			"name": "ItemFlags",
+			"value": 896
+		},
+		{
 			"name": "DefeatEnemy",
 			"value": 1024
 		},
 		{
 			"name": "BreakParts",
 			"value": 2048
+		},
+		{
+			"name": "EnemyFlags",
+			"value": 3072
 		},
 		{
 			"name": "GameOver",
@@ -37356,18 +37368,6 @@
 		{
 			"name": "RecordLost",
 			"value": 134217728
-		},
-		{
-			"name": "WeaponFlags",
-			"value": 112
-		},
-		{
-			"name": "ItemFlags",
-			"value": 896
-		},
-		{
-			"name": "EnemyFlags",
-			"value": 3072
 		}
 	],
 	"app.ropeway.RogueActivityLogManager.ActivityLogType": [
@@ -39214,18 +39214,6 @@
 	],
 	"app.ropeway.UpdateOrderGroup.Unexpected": [
 		{
-			"name": "Default",
-			"value": 121
-		},
-		{
-			"name": "Abstract",
-			"value": 122
-		},
-		{
-			"name": "Setting",
-			"value": 1000
-		},
-		{
 			"name": "Tool",
 			"value": 2
 		},
@@ -39240,6 +39228,18 @@
 		{
 			"name": "DevelopLog",
 			"value": 5
+		},
+		{
+			"name": "Default",
+			"value": 121
+		},
+		{
+			"name": "Abstract",
+			"value": 122
+		},
+		{
+			"name": "Setting",
+			"value": 1000
 		}
 	],
 	"via.effect.detail.Shape3DType": [
@@ -40170,12 +40170,12 @@
 			"value": 225628402
 		},
 		{
-			"name": "GHOST_MOVE_SPEED_SCALE",
-			"value": 1602663712
-		},
-		{
 			"name": "PROVOKE_RATE",
 			"value": 1474837118
+		},
+		{
+			"name": "GHOST_MOVE_SPEED_SCALE",
+			"value": 1602663712
 		},
 		{
 			"name": "GRAPPLE_COMBO_RATE",
@@ -41562,16 +41562,16 @@
 			"value": 5400
 		},
 		{
+			"name": "PL5600",
+			"value": 5600
+		},
+		{
 			"name": "PL5700",
 			"value": 5700
 		},
 		{
 			"name": "PL6400",
 			"value": 6400
-		},
-		{
-			"name": "PL5600",
-			"value": 5600
 		},
 		{
 			"name": "PL7500",
@@ -41818,10 +41818,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea0to7": [
 		{
-			"name": "FreeArea0to7_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea0to7_0",
 			"value": 0
 		},
@@ -41852,6 +41848,10 @@
 		{
 			"name": "FreeArea0to7_7",
 			"value": 7
+		},
+		{
+			"name": "FreeArea0to7_None",
+			"value": 4294967295
 		}
 	],
 	"via.os.ClipboardFormat": [
@@ -42582,8 +42582,12 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7000.RANK_MOTION_SPEED": [
 		{
-			"name": "WMODE_WALK",
-			"value": 1012468819
+			"name": "GMODE_RUN",
+			"value": 9641753
+		},
+		{
+			"name": "GMODE_WALK",
+			"value": 261095494
 		},
 		{
 			"name": "WMODE_CATCH_WALK",
@@ -42594,16 +42598,12 @@
 			"value": 879001903
 		},
 		{
-			"name": "GMODE_WALK",
-			"value": 261095494
+			"name": "WMODE_WALK",
+			"value": 1012468819
 		},
 		{
 			"name": "GMODE_ANGER_WALK",
 			"value": 3020054378
-		},
-		{
-			"name": "GMODE_RUN",
-			"value": 9641753
 		}
 	],
 	"app.ropeway.enemy.em7000.fsmv2.action.MotionCameraPlayRequest.CameraTarget": [
@@ -42672,12 +42672,12 @@
 			"value": 4
 		},
 		{
-			"name": "EnableAlpha",
-			"value": 8
-		},
-		{
 			"name": "EnableRGB",
 			"value": 7
+		},
+		{
+			"name": "EnableAlpha",
+			"value": 8
 		},
 		{
 			"name": "EnableAll",
@@ -43096,6 +43096,10 @@
 			"value": 0
 		},
 		{
+			"name": "VendorUnkown",
+			"value": 0
+		},
+		{
 			"name": "HMD",
 			"value": 1
 		},
@@ -43109,6 +43113,10 @@
 		},
 		{
 			"name": "AsyncCompute",
+			"value": 8
+		},
+		{
+			"name": "UavOverlapSupported",
 			"value": 8
 		},
 		{
@@ -43128,6 +43136,10 @@
 			"value": 128
 		},
 		{
+			"name": "DefaultCBRSetting",
+			"value": 128
+		},
+		{
 			"name": "HardwareCBRIDBuffer",
 			"value": 256
 		},
@@ -43136,40 +43148,32 @@
 			"value": 512
 		},
 		{
-			"name": "LateCBRResolve",
-			"value": 1024
+			"name": "HighQualityCBRSetting",
+			"value": 640
 		},
 		{
 			"name": "UseIDBuffer",
 			"value": 768
 		},
 		{
-			"name": "UseCheckerBoard",
-			"value": 2048
+			"name": "LateCBRResolve",
+			"value": 1024
 		},
 		{
 			"name": "FastCBRSetting",
 			"value": 1152
 		},
 		{
-			"name": "DefaultCBRSetting",
-			"value": 128
-		},
-		{
-			"name": "HighQualityCBRSetting",
-			"value": 640
-		},
-		{
 			"name": "PS4ProtCBRSetting",
 			"value": 1408
 		},
 		{
-			"name": "NotSupportedPredicateRenderingOnBuffer",
-			"value": 4096
+			"name": "UseCheckerBoard",
+			"value": 2048
 		},
 		{
-			"name": "UavOverlapSupported",
-			"value": 8
+			"name": "NotSupportedPredicateRenderingOnBuffer",
+			"value": 4096
 		},
 		{
 			"name": "VendorAMD",
@@ -43184,8 +43188,8 @@
 			"value": 67108864
 		},
 		{
-			"name": "VendorUnkown",
-			"value": 0
+			"name": "GL_Family",
+			"value": 134217728
 		},
 		{
 			"name": "Gen2",
@@ -43198,10 +43202,6 @@
 		{
 			"name": "Gen4",
 			"value": 1073741824
-		},
-		{
-			"name": "GL_Family",
-			"value": 134217728
 		}
 	],
 	"via.areamap.AreaConnectionObject.ConnectionState": [
@@ -43300,10 +43300,6 @@
 			"value": 0
 		},
 		{
-			"name": "All",
-			"value": 255
-		},
-		{
 			"name": "SceneBeauty",
 			"value": 1
 		},
@@ -43318,6 +43314,10 @@
 		{
 			"name": "MaskIgnoreDepthMesh",
 			"value": 8
+		},
+		{
+			"name": "All",
+			"value": 255
 		}
 	],
 	"via.render.OptionFlag": [
@@ -44200,12 +44200,12 @@
 			"value": 10
 		},
 		{
-			"name": "PusID_Last",
-			"value": 130
-		},
-		{
 			"name": "PusID_Offset",
 			"value": 10
+		},
+		{
+			"name": "PusID_Last",
+			"value": 130
 		}
 	],
 	"via.render.LightPowerUnitType": [
@@ -46843,28 +46843,28 @@
 	],
 	"app.ropeway.enemy.em6100.fsm.tag.StateAttr": [
 		{
-			"name": "Swim",
-			"value": 531802718
-		},
-		{
 			"name": "Attack",
 			"value": 445732949
-		},
-		{
-			"name": "Jump",
-			"value": 4231658239
 		},
 		{
 			"name": "Dead",
 			"value": 527691310
 		},
 		{
-			"name": "Turn",
-			"value": 1801898850
+			"name": "Swim",
+			"value": 531802718
 		},
 		{
 			"name": "Float",
 			"value": 849320574
+		},
+		{
+			"name": "Turn",
+			"value": 1801898850
+		},
+		{
+			"name": "Jump",
+			"value": 4231658239
 		}
 	],
 	"app.ropeway.gamemastering.TimelineEventManager.EventOrderRequeest.AsseptingStatus": [
@@ -52284,6 +52284,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -52308,20 +52312,8 @@
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
 			"name": "StringFormatMask",
 			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
 		},
 		{
 			"name": "HasSecurity",
@@ -52330,6 +52322,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		}
 	],
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.State": [
@@ -52360,20 +52360,20 @@
 			"value": 0
 		},
 		{
+			"name": "WallRight",
+			"value": 0
+		},
+		{
 			"name": "GroundFromCeilling",
+			"value": 1
+		},
+		{
+			"name": "WallLeft",
 			"value": 1
 		},
 		{
 			"name": "ChaseCeillingFromGround",
 			"value": 2
-		},
-		{
-			"name": "WallRight",
-			"value": 0
-		},
-		{
-			"name": "WallLeft",
-			"value": 1
 		}
 	],
 	"via.motion.JointExMultiRemapValue.OutputData.Interpolation": [
@@ -52588,24 +52588,24 @@
 	],
 	"app.ropeway.player.tag.LookAtAttribute": [
 		{
-			"name": "EYE",
-			"value": 1662058075
-		},
-		{
 			"name": "FACE",
 			"value": 231585437
 		},
 		{
-			"name": "LIGHT",
-			"value": 1568811990
+			"name": "NONE",
+			"value": 270830317
 		},
 		{
 			"name": "HOLD",
 			"value": 926659005
 		},
 		{
-			"name": "NONE",
-			"value": 270830317
+			"name": "LIGHT",
+			"value": 1568811990
+		},
+		{
+			"name": "EYE",
+			"value": 1662058075
 		}
 	],
 	"via.hid.VrTracker.StartStatus": [
@@ -53088,24 +53088,24 @@
 	],
 	"app.ropeway.enemy.em3000.CharacterControllerType": [
 		{
-			"name": "DEFAULT",
-			"value": 1106175613
+			"name": "CONNER_DOWN",
+			"value": 726343862
 		},
 		{
-			"name": "JUMP",
-			"value": 2595772414
+			"name": "DEFAULT",
+			"value": 1106175613
 		},
 		{
 			"name": "JUMP_ATTACK",
 			"value": 1933262719
 		},
 		{
-			"name": "CONNER_UP",
-			"value": 3599879432
+			"name": "JUMP",
+			"value": 2595772414
 		},
 		{
-			"name": "CONNER_DOWN",
-			"value": 726343862
+			"name": "CONNER_UP",
+			"value": 3599879432
 		}
 	],
 	"app.ropeway.UserServiceManager.Phase": [
@@ -53268,12 +53268,12 @@
 			"value": 4
 		},
 		{
-			"name": "ACT_PROVOKE",
-			"value": 6
-		},
-		{
 			"name": "ACT_OTHER_GRAP_WAIT",
 			"value": 5
+		},
+		{
+			"name": "ACT_PROVOKE",
+			"value": 6
 		},
 		{
 			"name": "ACT_WAIT_LADDER",
@@ -53558,10 +53558,6 @@
 			"value": 32
 		},
 		{
-			"name": "L_STICK_ANY",
-			"value": 3840
-		},
-		{
 			"name": "L_STICK_XP",
 			"value": 256
 		},
@@ -53576,6 +53572,10 @@
 		{
 			"name": "L_STICK_ZM",
 			"value": 2048
+		},
+		{
+			"name": "L_STICK_ANY",
+			"value": 3840
 		}
 	],
 	"app.ropeway.UpdateOrderGroup.TailSystemPhase": [],
@@ -54037,11 +54037,19 @@
 	],
 	"via.clr.TypeFlag": [
 		{
-			"name": "VisibilityMask",
-			"value": 7
+			"name": "NotPublic",
+			"value": 0
 		},
 		{
-			"name": "NotPublic",
+			"name": "AutoLayout",
+			"value": 0
+		},
+		{
+			"name": "Class",
+			"value": 0
+		},
+		{
+			"name": "AnsiClass",
 			"value": 0
 		},
 		{
@@ -54069,16 +54077,12 @@
 			"value": 6
 		},
 		{
-			"name": "NestedFamorAssem",
+			"name": "VisibilityMask",
 			"value": 7
 		},
 		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
+			"name": "NestedFamorAssem",
+			"value": 7
 		},
 		{
 			"name": "SequentialLayout",
@@ -54089,12 +54093,12 @@
 			"value": 16
 		},
 		{
-			"name": "ClassSemanticsMask",
-			"value": 32
+			"name": "LayoutMask",
+			"value": 24
 		},
 		{
-			"name": "Class",
-			"value": 0
+			"name": "ClassSemanticsMask",
+			"value": 32
 		},
 		{
 			"name": "Interface",
@@ -54113,6 +54117,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -54125,14 +54133,6 @@
 			"value": 16384
 		},
 		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
 			"name": "UnicodeClass",
 			"value": 65536
 		},
@@ -54141,20 +54141,12 @@
 			"value": 131072
 		},
 		{
-			"name": "CustomFormatClass",
+			"name": "StringFormatMask",
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
+			"name": "CustomFormatClass",
+			"value": 196608
 		},
 		{
 			"name": "HasSecurity",
@@ -54163,6 +54155,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		},
 		{
 			"name": "LocalHeap",
@@ -55846,10 +55846,6 @@
 	],
 	"via.storage.saveService.SaveServiceMode": [
 		{
-			"name": "SaveServiceMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceMode_1_Byte",
 			"value": 1
 		},
@@ -55868,6 +55864,10 @@
 		{
 			"name": "SaveServiceMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceMode_128_KiloByte",
@@ -56032,7 +56032,15 @@
 	],
 	"via.AABB.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "X_MinBit",
+			"value": 1
+		},
+		{
+			"name": "P_YZX0",
 			"value": 1
 		},
 		{
@@ -56040,80 +56048,16 @@
 			"value": 2
 		},
 		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
 			"name": "P_YZX1",
 			"value": 2
 		},
 		{
-			"name": "P_ZXY0",
+			"name": "Y_MinBit",
 			"value": 4
 		},
 		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
+			"name": "P_ZXY0",
+			"value": 4
 		},
 		{
 			"name": "E_ZX0Y0",
@@ -56124,12 +56068,40 @@
 			"value": 6
 		},
 		{
+			"name": "Y_MaxBit",
+			"value": 8
+		},
+		{
+			"name": "P_ZXY1",
+			"value": 8
+		},
+		{
 			"name": "E_ZX0Y1",
 			"value": 9
 		},
 		{
 			"name": "E_ZX1Y1",
 			"value": 10
+		},
+		{
+			"name": "Z_MinBit",
+			"value": 16
+		},
+		{
+			"name": "P_XYZ0",
+			"value": 16
+		},
+		{
+			"name": "E_YZ0X0",
+			"value": 17
+		},
+		{
+			"name": "E_YZ0X1",
+			"value": 18
+		},
+		{
+			"name": "E_XY0Z0",
+			"value": 20
 		},
 		{
 			"name": "V_X0Y0Z0",
@@ -56140,6 +56112,10 @@
 			"value": 22
 		},
 		{
+			"name": "E_XY1Z0",
+			"value": 24
+		},
+		{
 			"name": "V_X0Y1Z0",
 			"value": 25
 		},
@@ -56148,12 +56124,36 @@
 			"value": 26
 		},
 		{
+			"name": "Z_MaxBit",
+			"value": 32
+		},
+		{
+			"name": "P_XYZ1",
+			"value": 32
+		},
+		{
+			"name": "E_YZ1X0",
+			"value": 33
+		},
+		{
+			"name": "E_YZ1X1",
+			"value": 34
+		},
+		{
+			"name": "E_XY0Z1",
+			"value": 36
+		},
+		{
 			"name": "V_X0Y0Z1",
 			"value": 37
 		},
 		{
 			"name": "V_X1Y0Z1",
 			"value": 38
+		},
+		{
+			"name": "E_XY1Z1",
+			"value": 40
 		},
 		{
 			"name": "V_X0Y1Z1",
@@ -56306,16 +56306,16 @@
 			"value": 1
 		},
 		{
+			"name": "Game",
+			"value": 1
+		},
+		{
 			"name": "Consumable",
 			"value": 4
 		},
 		{
 			"name": "Durable",
 			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
 		},
 		{
 			"name": "GameDemo",
@@ -57936,6 +57936,10 @@
 			"value": 0
 		},
 		{
+			"name": "Native",
+			"value": 0
+		},
+		{
 			"name": "BE",
 			"value": 1
 		},
@@ -57946,10 +57950,6 @@
 		{
 			"name": "BE_BOM",
 			"value": 3
-		},
-		{
-			"name": "Native",
-			"value": 0
 		}
 	],
 	"app.ropeway.survivor.npc.NpcNoticePointSelector.SettingType": [
@@ -58712,6 +58712,10 @@
 			"value": 191
 		},
 		{
+			"name": "Slash",
+			"value": 191
+		},
+		{
 			"name": "OEM_3",
 			"value": 192
 		},
@@ -58721,6 +58725,10 @@
 		},
 		{
 			"name": "OEM_5",
+			"value": 220
+		},
+		{
+			"name": "BackSlash",
 			"value": 220
 		},
 		{
@@ -58738,14 +58746,6 @@
 		{
 			"name": "OEM_102",
 			"value": 226
-		},
-		{
-			"name": "Slash",
-			"value": 191
-		},
-		{
-			"name": "BackSlash",
-			"value": 220
 		}
 	],
 	"via.network.Codec.Mode": [
@@ -60801,16 +60801,16 @@
 	],
 	"app.ropeway.enemy.em6000.fsm.tag.StateAttr": [
 		{
-			"name": "Swim",
-			"value": 1614742265
+			"name": "WalkContinue",
+			"value": 614595396
 		},
 		{
 			"name": "Vomit",
 			"value": 1594678060
 		},
 		{
-			"name": "WalkContinue",
-			"value": 614595396
+			"name": "Swim",
+			"value": 1614742265
 		},
 		{
 			"name": "NoGunSensor",
@@ -61539,6 +61539,10 @@
 			"value": 225628402
 		},
 		{
+			"name": "CHILDREN_POISON_RATE",
+			"value": 557429514
+		},
+		{
 			"name": "WINCE_RATE",
 			"value": 2531057400
 		},
@@ -61549,10 +61553,6 @@
 		{
 			"name": "CHILDREN_VOMIT_RATE",
 			"value": 3609457783
-		},
-		{
-			"name": "CHILDREN_POISON_RATE",
-			"value": 557429514
 		}
 	],
 	"app.ropeway.gimmick.action.GimmickDialLockBehavior.CylinderChars": [
@@ -61785,14 +61785,6 @@
 			"value": 2007
 		},
 		{
-			"name": "SPT_KNIFE",
-			"value": 4000
-		},
-		{
-			"name": "SPT_GRENADE",
-			"value": 4001
-		},
-		{
 			"name": "DMG_S",
 			"value": 3000
 		},
@@ -61835,6 +61827,14 @@
 		{
 			"name": "DMG_SHOCK_DOWN",
 			"value": 3010
+		},
+		{
+			"name": "SPT_KNIFE",
+			"value": 4000
+		},
+		{
+			"name": "SPT_GRENADE",
+			"value": 4001
 		},
 		{
 			"name": "DIE_NORMAL",
@@ -62248,12 +62248,12 @@
 			"value": 2
 		},
 		{
-			"name": "Emissive",
-			"value": 8
-		},
-		{
 			"name": "BaseColorAndNormal",
 			"value": 3
+		},
+		{
+			"name": "Emissive",
+			"value": 8
 		},
 		{
 			"name": "BaseColorAndEmissive",
@@ -63106,6 +63106,14 @@
 			"value": 1002
 		},
 		{
+			"name": "Eat_Face_Down_End",
+			"value": 4300
+		},
+		{
+			"name": "Eat_Face_Up_End",
+			"value": 4350
+		},
+		{
 			"name": "Eat_Face_Down_00",
 			"value": 4501
 		},
@@ -63114,16 +63122,8 @@
 			"value": 4503
 		},
 		{
-			"name": "Eat_Face_Down_End",
-			"value": 4300
-		},
-		{
 			"name": "Eat_Face_Up_00",
 			"value": 4511
-		},
-		{
-			"name": "Eat_Face_Up_End",
-			"value": 4350
 		}
 	],
 	"app.ropeway.enemy.em0000.SimplePoseType": [
@@ -63236,11 +63236,11 @@
 	],
 	"via.clr.MethodImplFlag": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -63250,6 +63250,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -63264,36 +63268,28 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
 		},
 		{
 			"name": "HasRetVal",
@@ -63306,6 +63302,10 @@
 		{
 			"name": "EmptyCtor",
 			"value": 2048
+		},
+		{
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "ContainsGenericParameters",
@@ -63592,24 +63592,132 @@
 	],
 	"app.ropeway.GUISegmentOrder": [
 		{
-			"name": "MouesCursor",
-			"value": 60
+			"name": "DEFAULT_LOWER",
+			"value": 0
 		},
 		{
-			"name": "SaveIcon",
-			"value": 59
+			"name": "Reticle",
+			"value": 9
 		},
 		{
-			"name": "GuideIcon",
-			"value": 58
+			"name": "FsmFade",
+			"value": 10
 		},
 		{
-			"name": "GeneralDialog",
-			"value": 57
+			"name": "EventFade",
+			"value": 13
 		},
 		{
-			"name": "LoadingIcon",
-			"value": 56
+			"name": "SkipFade",
+			"value": 14
+		},
+		{
+			"name": "InventoryPlayer",
+			"value": 15
+		},
+		{
+			"name": "InventoryBG",
+			"value": 16
+		},
+		{
+			"name": "InventoryVital",
+			"value": 17
+		},
+		{
+			"name": "InventorySlot",
+			"value": 18
+		},
+		{
+			"name": "MapBg",
+			"value": 20
+		},
+		{
+			"name": "MapGrid",
+			"value": 21
+		},
+		{
+			"name": "Map",
+			"value": 22
+		},
+		{
+			"name": "MapFrame",
+			"value": 23
+		},
+		{
+			"name": "InventoryDetail",
+			"value": 25
+		},
+		{
+			"name": "InventoryCaption",
+			"value": 26
+		},
+		{
+			"name": "FileViewer",
+			"value": 30
+		},
+		{
+			"name": "Purpose",
+			"value": 34
+		},
+		{
+			"name": "InventoryFront",
+			"value": 35
+		},
+		{
+			"name": "SubtitleFullScreenMovie",
+			"value": 36
+		},
+		{
+			"name": "EventTextureForDevelop",
+			"value": 37
+		},
+		{
+			"name": "Subtitle",
+			"value": 38
+		},
+		{
+			"name": "InGameFade",
+			"value": 40
+		},
+		{
+			"name": "GameOver",
+			"value": 42
+		},
+		{
+			"name": "Title",
+			"value": 43
+		},
+		{
+			"name": "BootFlow",
+			"value": 44
+		},
+		{
+			"name": "Tutorial",
+			"value": 45
+		},
+		{
+			"name": "Pause",
+			"value": 46
+		},
+		{
+			"name": "Option",
+			"value": 48
+		},
+		{
+			"name": "FullScreenMovie",
+			"value": 49
+		},
+		{
+			"name": "TitleDialog",
+			"value": 50
+		},
+		{
+			"name": "MenuFade",
+			"value": 53
+		},
+		{
+			"name": "OverMenuFade",
+			"value": 54
 		},
 		{
 			"name": "LoadingFade",
@@ -63620,132 +63728,24 @@
 			"value": 55
 		},
 		{
-			"name": "OverMenuFade",
-			"value": 54
+			"name": "LoadingIcon",
+			"value": 56
 		},
 		{
-			"name": "MenuFade",
-			"value": 53
+			"name": "GeneralDialog",
+			"value": 57
 		},
 		{
-			"name": "TitleDialog",
-			"value": 50
+			"name": "GuideIcon",
+			"value": 58
 		},
 		{
-			"name": "FullScreenMovie",
-			"value": 49
+			"name": "SaveIcon",
+			"value": 59
 		},
 		{
-			"name": "Option",
-			"value": 48
-		},
-		{
-			"name": "Pause",
-			"value": 46
-		},
-		{
-			"name": "Tutorial",
-			"value": 45
-		},
-		{
-			"name": "BootFlow",
-			"value": 44
-		},
-		{
-			"name": "Title",
-			"value": 43
-		},
-		{
-			"name": "GameOver",
-			"value": 42
-		},
-		{
-			"name": "InGameFade",
-			"value": 40
-		},
-		{
-			"name": "Subtitle",
-			"value": 38
-		},
-		{
-			"name": "EventTextureForDevelop",
-			"value": 37
-		},
-		{
-			"name": "SubtitleFullScreenMovie",
-			"value": 36
-		},
-		{
-			"name": "InventoryFront",
-			"value": 35
-		},
-		{
-			"name": "Purpose",
-			"value": 34
-		},
-		{
-			"name": "FileViewer",
-			"value": 30
-		},
-		{
-			"name": "InventoryCaption",
-			"value": 26
-		},
-		{
-			"name": "InventoryDetail",
-			"value": 25
-		},
-		{
-			"name": "MapFrame",
-			"value": 23
-		},
-		{
-			"name": "Map",
-			"value": 22
-		},
-		{
-			"name": "MapGrid",
-			"value": 21
-		},
-		{
-			"name": "MapBg",
-			"value": 20
-		},
-		{
-			"name": "InventorySlot",
-			"value": 18
-		},
-		{
-			"name": "InventoryVital",
-			"value": 17
-		},
-		{
-			"name": "InventoryBG",
-			"value": 16
-		},
-		{
-			"name": "InventoryPlayer",
-			"value": 15
-		},
-		{
-			"name": "SkipFade",
-			"value": 14
-		},
-		{
-			"name": "EventFade",
-			"value": 13
-		},
-		{
-			"name": "FsmFade",
-			"value": 10
-		},
-		{
-			"name": "Reticle",
-			"value": 9
-		},
-		{
-			"name": "DEFAULT_LOWER",
-			"value": 0
+			"name": "MouesCursor",
+			"value": 60
 		}
 	],
 	"via.DateFormat": [
@@ -64114,11 +64114,11 @@
 	],
 	"System.Reflection.MethodImplAttributes": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -64128,6 +64128,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -64142,36 +64146,32 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
 		},
 		{
-			"name": "NoOptimization",
-			"value": 64
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "MaxMethodImplVal",
@@ -65730,10 +65730,6 @@
 	],
 	"via.clr.FieldFlag": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -65760,6 +65756,10 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "FieldAccessMask",
+			"value": 7
 		},
 		{
 			"name": "Static",
@@ -66332,6 +66332,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "EdgeShort",
 			"value": 1
 		},
@@ -66358,10 +66362,6 @@
 		{
 			"name": "Assert",
 			"value": 7
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.gui.RogueAccessoryBehavior.ChangeState": [
@@ -66526,10 +66526,6 @@
 			"value": 0
 		},
 		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
 			"name": "Covariant",
 			"value": 1
 		},
@@ -66538,8 +66534,8 @@
 			"value": 2
 		},
 		{
-			"name": "SpecialConstraintMask",
-			"value": 28
+			"name": "VarianceMask",
+			"value": 3
 		},
 		{
 			"name": "ReferenceTypeConstraint",
@@ -66552,6 +66548,10 @@
 		{
 			"name": "DefaultConstructorConstraint",
 			"value": 16
+		},
+		{
+			"name": "SpecialConstraintMask",
+			"value": 28
 		}
 	],
 	"via.os.FileAttr": [
@@ -66632,6 +66632,10 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7100.THINK_TAG": [
 		{
+			"name": "DISABLE_CHARACTER_CONTROLLER",
+			"value": 321479229
+		},
+		{
 			"name": "DISABLE_EYE_LOOK_AT",
 			"value": 2085186476
 		},
@@ -66642,10 +66646,6 @@
 		{
 			"name": "RANK_MOVE_SPEED",
 			"value": 3648666295
-		},
-		{
-			"name": "DISABLE_CHARACTER_CONTROLLER",
-			"value": 321479229
 		}
 	],
 	"app.ropeway.BehaviorTreeActionCategory": [
@@ -68706,11 +68706,19 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
-			"name": "Ignore",
-			"value": 4294967295
+			"name": "AecAgcEnable",
+			"value": 0
 		},
 		{
-			"name": "AecAgcEnable",
+			"name": "ExposureGainMode0",
+			"value": 0
+		},
+		{
+			"name": "WhiteBalanceAuto",
+			"value": 0
+		},
+		{
+			"name": "GammaControlOn",
 			"value": 0
 		},
 		{
@@ -68718,28 +68726,20 @@
 			"value": 1
 		},
 		{
-			"name": "ExposureGainMode0",
-			"value": 0
-		},
-		{
 			"name": "ExposureGainMode1",
 			"value": 1
-		},
-		{
-			"name": "WhiteBalanceAuto",
-			"value": 0
 		},
 		{
 			"name": "WhiteBalanceManual",
 			"value": 1
 		},
 		{
-			"name": "GammaControlOn",
-			"value": 0
-		},
-		{
 			"name": "GammaControlOff",
 			"value": 1
+		},
+		{
+			"name": "Ignore",
+			"value": 4294967295
 		}
 	],
 	"via.hid.virtualKeyboard.nsw.InputFormMode": [
@@ -69476,70 +69476,6 @@
 			"value": 0
 		},
 		{
-			"name": "StaggerSmall",
-			"value": 16843008
-		},
-		{
-			"name": "StaggerMedium",
-			"value": 16908544
-		},
-		{
-			"name": "StaggerLarge",
-			"value": 16974080
-		},
-		{
-			"name": "StaggerExtraLarge",
-			"value": 17039616
-		},
-		{
-			"name": "TossSmall",
-			"value": 16843264
-		},
-		{
-			"name": "TossMedium",
-			"value": 16908800
-		},
-		{
-			"name": "TossLarge",
-			"value": 16974336
-		},
-		{
-			"name": "TossExtraLarge",
-			"value": 17039872
-		},
-		{
-			"name": "BurstSmall",
-			"value": 16843520
-		},
-		{
-			"name": "BurstMedium",
-			"value": 16909056
-		},
-		{
-			"name": "BurstLarge",
-			"value": 16974592
-		},
-		{
-			"name": "BurstExtraLarge",
-			"value": 17040128
-		},
-		{
-			"name": "ExplosionSmall",
-			"value": 16843776
-		},
-		{
-			"name": "ExplosionMedium",
-			"value": 16909312
-		},
-		{
-			"name": "ExplosionLarge",
-			"value": 16974848
-		},
-		{
-			"name": "ExplosionExtraLarge",
-			"value": 17040384
-		},
-		{
 			"name": "Flash",
 			"value": 16778496
 		},
@@ -69554,6 +69490,70 @@
 		{
 			"name": "Fear",
 			"value": 16779264
+		},
+		{
+			"name": "StaggerSmall",
+			"value": 16843008
+		},
+		{
+			"name": "TossSmall",
+			"value": 16843264
+		},
+		{
+			"name": "BurstSmall",
+			"value": 16843520
+		},
+		{
+			"name": "ExplosionSmall",
+			"value": 16843776
+		},
+		{
+			"name": "StaggerMedium",
+			"value": 16908544
+		},
+		{
+			"name": "TossMedium",
+			"value": 16908800
+		},
+		{
+			"name": "BurstMedium",
+			"value": 16909056
+		},
+		{
+			"name": "ExplosionMedium",
+			"value": 16909312
+		},
+		{
+			"name": "StaggerLarge",
+			"value": 16974080
+		},
+		{
+			"name": "TossLarge",
+			"value": 16974336
+		},
+		{
+			"name": "BurstLarge",
+			"value": 16974592
+		},
+		{
+			"name": "ExplosionLarge",
+			"value": 16974848
+		},
+		{
+			"name": "StaggerExtraLarge",
+			"value": 17039616
+		},
+		{
+			"name": "TossExtraLarge",
+			"value": 17039872
+		},
+		{
+			"name": "BurstExtraLarge",
+			"value": 17040128
+		},
+		{
+			"name": "ExplosionExtraLarge",
+			"value": 17040384
 		},
 		{
 			"name": "Flick",
@@ -71458,11 +71458,11 @@
 	],
 	"System.Reflection.MethodAttributes": [
 		{
-			"name": "MemberAccessMask",
-			"value": 7
+			"name": "PrivateScope",
+			"value": 0
 		},
 		{
-			"name": "PrivateScope",
+			"name": "ReuseSlot",
 			"value": 0
 		},
 		{
@@ -71490,6 +71490,14 @@
 			"value": 6
 		},
 		{
+			"name": "MemberAccessMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExport",
+			"value": 8
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -71506,20 +71514,16 @@
 			"value": 128
 		},
 		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
 			"name": "VtableLayoutMask",
 			"value": 256
 		},
 		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
 			"name": "NewSlot",
 			"value": 256
+		},
+		{
+			"name": "CheckAccessOnOverride",
+			"value": 512
 		},
 		{
 			"name": "Abstract",
@@ -71530,16 +71534,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "HasSecurity",
@@ -72280,10 +72280,6 @@
 			"value": 12
 		},
 		{
-			"name": "Attack_Fall",
-			"value": 22
-		},
-		{
 			"name": "Tangle_Push_R",
 			"value": 13
 		},
@@ -72304,16 +72300,20 @@
 			"value": 17
 		},
 		{
-			"name": "Tangle_Fall",
-			"value": 23
-		},
-		{
 			"name": "Glapple_Hold",
 			"value": 18
 		},
 		{
 			"name": "Glapple_Throw",
 			"value": 19
+		},
+		{
+			"name": "Attack_Fall",
+			"value": 22
+		},
+		{
+			"name": "Tangle_Fall",
+			"value": 23
 		}
 	],
 	"via.hid.NpadStyle": [
@@ -73566,6 +73566,10 @@
 			"value": 1
 		},
 		{
+			"name": "CreateSST",
+			"value": 1
+		},
+		{
 			"name": "ImplicitStaticMesh",
 			"value": 2
 		},
@@ -73574,16 +73578,12 @@
 			"value": 4
 		},
 		{
-			"name": "Default",
-			"value": 7
-		},
-		{
 			"name": "UsingSST",
 			"value": 6
 		},
 		{
-			"name": "CreateSST",
-			"value": 1
+			"name": "Default",
+			"value": 7
 		}
 	],
 	"app.ropeway.NoticePoint.ResultKind": [
@@ -74172,6 +74172,10 @@
 			"value": 4
 		},
 		{
+			"name": "Integer",
+			"value": 7
+		},
+		{
 			"name": "AllowTrailingSign",
 			"value": 8
 		},
@@ -74188,32 +74192,20 @@
 			"value": 64
 		},
 		{
-			"name": "AllowExponent",
-			"value": 128
-		},
-		{
-			"name": "AllowCurrencySymbol",
-			"value": 256
-		},
-		{
-			"name": "AllowHexSpecifier",
-			"value": 512
-		},
-		{
-			"name": "Integer",
-			"value": 7
-		},
-		{
-			"name": "HexNumber",
-			"value": 515
-		},
-		{
 			"name": "Number",
 			"value": 111
 		},
 		{
+			"name": "AllowExponent",
+			"value": 128
+		},
+		{
 			"name": "Float",
 			"value": 167
+		},
+		{
+			"name": "AllowCurrencySymbol",
+			"value": 256
 		},
 		{
 			"name": "Currency",
@@ -74222,6 +74214,14 @@
 		{
 			"name": "Any",
 			"value": 511
+		},
+		{
+			"name": "AllowHexSpecifier",
+			"value": 512
+		},
+		{
+			"name": "HexNumber",
+			"value": 515
 		}
 	],
 	"app.ropeway.weapon.shell.ShellCartridgeController.WeaponTypes": [
@@ -75088,6 +75088,10 @@
 	],
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_AUTO",
+			"value": 0
+		},
+		{
 			"name": "SparseShadowTreeResolution_4K",
 			"value": 4
 		},
@@ -75106,10 +75110,6 @@
 		{
 			"name": "SparseShadowTreeResolution_64K",
 			"value": 64
-		},
-		{
-			"name": "SparseShadowTreeResolution_AUTO",
-			"value": 0
 		}
 	],
 	"via.motion.IkDog.FootLockMode": [
@@ -75256,12 +75256,12 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7000.ACT_WALK_G_TAG": [
 		{
-			"name": "Walk",
-			"value": 2991702624
-		},
-		{
 			"name": "Run",
 			"value": 161703095
+		},
+		{
+			"name": "Walk",
+			"value": 2991702624
 		}
 	],
 	"app.ropeway.enemy.em5000.ActionStatus.ID": [
@@ -75396,12 +75396,12 @@
 			"value": 256
 		},
 		{
-			"name": "WC",
-			"value": 512
-		},
-		{
 			"name": "Default",
 			"value": 256
+		},
+		{
+			"name": "WC",
+			"value": 512
 		}
 	],
 	"app.ropeway.network.StoreType": [
@@ -75986,12 +75986,12 @@
 			"value": 0
 		},
 		{
-			"name": "Raw",
-			"value": 1
-		},
-		{
 			"name": "Default",
 			"value": 0
+		},
+		{
+			"name": "Raw",
+			"value": 1
 		}
 	],
 	"via.gui.MaterialParamType": [
@@ -76080,20 +76080,20 @@
 			"value": 93519404
 		},
 		{
-			"name": "DISABLE_ARM_SCALE",
-			"value": 1033952981
+			"name": "DISABLE_EYE_MOTION",
+			"value": 991946528
 		},
 		{
-			"name": "DISABLE_EYE_LOOK_AT",
-			"value": 4027191138
+			"name": "DISABLE_ARM_SCALE",
+			"value": 1033952981
 		},
 		{
 			"name": "DISABLE_ARM_SCALE_MOTION",
 			"value": 2898327988
 		},
 		{
-			"name": "DISABLE_EYE_MOTION",
-			"value": 991946528
+			"name": "DISABLE_EYE_LOOK_AT",
+			"value": 4027191138
 		}
 	],
 	"via.hid.DeviceKind": [
@@ -76852,16 +76852,16 @@
 	],
 	"via.render.FenceState": [
 		{
-			"name": "Invalidate",
-			"value": 4294967295
+			"name": "UAVSync",
+			"value": 4294967293
 		},
 		{
 			"name": "DoNotWait",
 			"value": 4294967294
 		},
 		{
-			"name": "UAVSync",
-			"value": 4294967293
+			"name": "Invalidate",
+			"value": 4294967295
 		}
 	],
 	"via.navigation.PathObjectOperator.ForwardResult": [
@@ -77258,16 +77258,16 @@
 			"value": 1187282292
 		},
 		{
-			"name": "LOW",
-			"value": 3277248676
-		},
-		{
 			"name": "MIDDLE",
 			"value": 1712691171
 		},
 		{
 			"name": "HIGH",
 			"value": 2952374375
+		},
+		{
+			"name": "LOW",
+			"value": 3277248676
 		}
 	],
 	"app.ropeway.gamemastering.Map.AreaFlag": [
@@ -79090,12 +79090,12 @@
 			"value": 1262840115
 		},
 		{
-			"name": "NUMBER_OF_PERSISTENT",
-			"value": 4059898801
-		},
-		{
 			"name": "TARGETED_TO_ESCAPE_TIME_RATE",
 			"value": 3576281015
+		},
+		{
+			"name": "NUMBER_OF_PERSISTENT",
+			"value": 4059898801
 		}
 	],
 	"via.hid.camera.PlayStationCameraFormatLevel": [
@@ -79112,16 +79112,16 @@
 			"value": 4
 		},
 		{
+			"name": "LevelMax",
+			"value": 4
+		},
+		{
 			"name": "Level3",
 			"value": 8
 		},
 		{
 			"name": "All",
 			"value": 15
-		},
-		{
-			"name": "LevelMax",
-			"value": 4
 		}
 	],
 	"via.effect.detail.EmitterStateType": [
@@ -80225,32 +80225,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -81695,10 +81695,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea8to11": [
 		{
-			"name": "FreeArea8to11_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea8to11_8",
 			"value": 8
 		},
@@ -81713,6 +81709,10 @@
 		{
 			"name": "FreeArea8to11_11",
 			"value": 11
+		},
+		{
+			"name": "FreeArea8to11_None",
+			"value": 4294967295
 		}
 	],
 	"via.render.fluid.TextureResourceType": [
@@ -83881,8 +83881,8 @@
 	],
 	"via.render.Stamp.StampChannelMask": [
 		{
-			"name": "All",
-			"value": 15
+			"name": "None",
+			"value": 0
 		},
 		{
 			"name": "R",
@@ -83893,56 +83893,56 @@
 			"value": 2
 		},
 		{
-			"name": "B",
-			"value": 4
-		},
-		{
-			"name": "A",
-			"value": 8
-		},
-		{
 			"name": "RG",
 			"value": 3
+		},
+		{
+			"name": "B",
+			"value": 4
 		},
 		{
 			"name": "RB",
 			"value": 5
 		},
 		{
-			"name": "RA",
-			"value": 9
-		},
-		{
 			"name": "GB",
 			"value": 6
-		},
-		{
-			"name": "GA",
-			"value": 10
-		},
-		{
-			"name": "BA",
-			"value": 12
 		},
 		{
 			"name": "RGB",
 			"value": 7
 		},
 		{
-			"name": "RBA",
-			"value": 13
+			"name": "A",
+			"value": 8
+		},
+		{
+			"name": "RA",
+			"value": 9
+		},
+		{
+			"name": "GA",
+			"value": 10
 		},
 		{
 			"name": "RGA",
 			"value": 11
 		},
 		{
+			"name": "BA",
+			"value": 12
+		},
+		{
+			"name": "RBA",
+			"value": 13
+		},
+		{
 			"name": "GBA",
 			"value": 14
 		},
 		{
-			"name": "None",
-			"value": 0
+			"name": "All",
+			"value": 15
 		}
 	],
 	"System.Diagnostics.DebuggerBrowsableState": [
@@ -84727,10 +84727,6 @@
 	],
 	"via.clr.MethodFlag": [
 		{
-			"name": "AccessibilityMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -84757,6 +84753,14 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "AccessibilityMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExp",
+			"value": 8
 		},
 		{
 			"name": "Static",
@@ -84787,16 +84791,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExp",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "NoILAsmKeyword",
@@ -84823,10 +84823,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea12to15": [
 		{
-			"name": "FreeArea12to15_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea12to15_12",
 			"value": 12
 		},
@@ -84841,6 +84837,10 @@
 		{
 			"name": "FreeArea12to15_15",
 			"value": 15
+		},
+		{
+			"name": "FreeArea12to15_None",
+			"value": 4294967295
 		}
 	],
 	"app.ropeway.gimmick.action.GimmickCustomJackControl.TriggerAdditionalForEnemy.TriggerType": [
@@ -86898,20 +86898,20 @@
 			"value": 2
 		},
 		{
-			"name": "BLUE",
-			"value": 4
+			"name": "YELLOW",
+			"value": 3
 		},
 		{
-			"name": "CYAN",
-			"value": 6
+			"name": "BLUE",
+			"value": 4
 		},
 		{
 			"name": "MAGENTA",
 			"value": 5
 		},
 		{
-			"name": "YELLOW",
-			"value": 3
+			"name": "CYAN",
+			"value": 6
 		},
 		{
 			"name": "WHITE",
@@ -87392,12 +87392,12 @@
 			"value": 3
 		},
 		{
-			"name": "DELAY",
-			"value": 128
-		},
-		{
 			"name": "DELAYMASK",
 			"value": 127
+		},
+		{
+			"name": "DELAY",
+			"value": 128
 		},
 		{
 			"name": "RTV_DELAY",
@@ -88380,6 +88380,10 @@
 			"value": 8
 		},
 		{
+			"name": "BodySensorAll",
+			"value": 14
+		},
+		{
 			"name": "Swim",
 			"value": 32
 		},
@@ -88402,10 +88406,6 @@
 		{
 			"name": "PusBroken",
 			"value": 2048
-		},
-		{
-			"name": "BodySensorAll",
-			"value": 14
 		}
 	],
 	"via.wwise.StopAllTargetType": [
@@ -88512,12 +88512,12 @@
 			"value": 2
 		},
 		{
-			"name": "Item",
-			"value": 8
-		},
-		{
 			"name": "Weapon",
 			"value": 4
+		},
+		{
+			"name": "Item",
+			"value": 8
 		},
 		{
 			"name": "Prop",
@@ -90982,36 +90982,36 @@
 	],
 	"app.ropeway.survivor.tag.ActConditionAttribute": [
 		{
-			"name": "HOLD",
-			"value": 3300504884
-		},
-		{
-			"name": "REACTION_DOWN",
-			"value": 1943340773
+			"name": "COVER_END",
+			"value": 394693696
 		},
 		{
 			"name": "REACTION_STAND",
 			"value": 1214026829
 		},
 		{
-			"name": "DEAD",
-			"value": 2846171846
+			"name": "COVER_HOLD",
+			"value": 1337625907
 		},
 		{
 			"name": "QUICK_TURN",
 			"value": 1677611524
 		},
 		{
+			"name": "REACTION_DOWN",
+			"value": 1943340773
+		},
+		{
 			"name": "COVER_START",
 			"value": 2588540973
 		},
 		{
-			"name": "COVER_HOLD",
-			"value": 1337625907
+			"name": "DEAD",
+			"value": 2846171846
 		},
 		{
-			"name": "COVER_END",
-			"value": 394693696
+			"name": "HOLD",
+			"value": 3300504884
 		}
 	],
 	"via.navigation.RelationMapInfo.Attribute": [
@@ -91142,32 +91142,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -93716,10 +93716,6 @@
 	],
 	"via.UserState": [
 		{
-			"name": "Invalid",
-			"value": 65535
-		},
-		{
 			"name": "Login",
 			"value": 0
 		},
@@ -93730,6 +93726,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": 65535
 		}
 	],
 	"via.motion.IkLeg.RayCastSkipOption": [
@@ -94202,6 +94202,238 @@
 		{
 			"name": "GameObject",
 			"value": 1
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.ThrowShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombEmberGeneratorSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation_": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombRocketGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.RadiateShellStatusInfomation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BombEmberShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BombShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombGrenadeGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation__": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombBiteGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombBulletGrenadeGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation___": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.controller.ShellGeneratorControllerBase.SparkShellGeneratorControlUserData": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Init",
+			"value": 1
+		},
+		{
+			"name": "Operation",
+			"value": 2
+		},
+		{
+			"name": "Destroy",
+			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": 4
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation____": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.SparkShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
 		}
 	]
 }

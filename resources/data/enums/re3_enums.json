@@ -785,12 +785,12 @@
 			"value": 4
 		},
 		{
-			"name": "AlandIslands",
-			"value": 248
-		},
-		{
 			"name": "Albania",
 			"value": 8
+		},
+		{
+			"name": "AntArtica",
+			"value": 10
 		},
 		{
 			"name": "Algeria",
@@ -809,28 +809,16 @@
 			"value": 24
 		},
 		{
-			"name": "Anguilla",
-			"value": 660
-		},
-		{
-			"name": "AntArtica",
-			"value": 10
-		},
-		{
 			"name": "AntiguaAndBarbuda",
 			"value": 28
 		},
 		{
+			"name": "Azerbaijan",
+			"value": 31
+		},
+		{
 			"name": "Argentina",
 			"value": 32
-		},
-		{
-			"name": "Armenia",
-			"value": 51
-		},
-		{
-			"name": "Aruba",
-			"value": 533
 		},
 		{
 			"name": "Australia",
@@ -839,10 +827,6 @@
 		{
 			"name": "Austria",
 			"value": 40
-		},
-		{
-			"name": "Azerbaijan",
-			"value": 31
 		},
 		{
 			"name": "Bahamas",
@@ -857,24 +841,16 @@
 			"value": 50
 		},
 		{
+			"name": "Armenia",
+			"value": 51
+		},
+		{
 			"name": "Barados",
 			"value": 52
 		},
 		{
-			"name": "Belarus",
-			"value": 112
-		},
-		{
 			"name": "Belgium",
 			"value": 56
-		},
-		{
-			"name": "Belize",
-			"value": 84
-		},
-		{
-			"name": "Benin",
-			"value": 204
 		},
 		{
 			"name": "Bermuda",
@@ -887,10 +863,6 @@
 		{
 			"name": "Bolivia",
 			"value": 68
-		},
-		{
-			"name": "Bonaire",
-			"value": 535
 		},
 		{
 			"name": "BosniaAndHerzegovina",
@@ -909,8 +881,20 @@
 			"value": 76
 		},
 		{
+			"name": "Belize",
+			"value": 84
+		},
+		{
 			"name": "BritishIndianOceanTerritory",
 			"value": 86
+		},
+		{
+			"name": "SolomonIslands",
+			"value": 90
+		},
+		{
+			"name": "VirginIslandsBritish",
+			"value": 92
 		},
 		{
 			"name": "BruneiDarussalam",
@@ -921,16 +905,16 @@
 			"value": 100
 		},
 		{
-			"name": "BurkinaFaso",
-			"value": 854
+			"name": "Myanmar",
+			"value": 104
 		},
 		{
 			"name": "Burundi",
 			"value": 108
 		},
 		{
-			"name": "CaboVerde",
-			"value": 132
+			"name": "Belarus",
+			"value": 112
 		},
 		{
 			"name": "Cambodia",
@@ -945,12 +929,20 @@
 			"value": 124
 		},
 		{
+			"name": "CaboVerde",
+			"value": 132
+		},
+		{
 			"name": "CaymanIslands",
 			"value": 136
 		},
 		{
 			"name": "CentralAfricanRepublic",
 			"value": 140
+		},
+		{
+			"name": "SriLanka",
+			"value": 144
 		},
 		{
 			"name": "Chad",
@@ -963,6 +955,14 @@
 		{
 			"name": "China",
 			"value": 156
+		},
+		{
+			"name": "Prchina",
+			"value": 156
+		},
+		{
+			"name": "Taiwan",
+			"value": 158
 		},
 		{
 			"name": "ChristmasIsland",
@@ -981,6 +981,10 @@
 			"value": 174
 		},
 		{
+			"name": "Mayotte",
+			"value": 175
+		},
+		{
 			"name": "Congo",
 			"value": 178
 		},
@@ -997,20 +1001,12 @@
 			"value": 188
 		},
 		{
-			"name": "CotedDIVoire",
-			"value": 384
-		},
-		{
 			"name": "Croatia",
 			"value": 191
 		},
 		{
 			"name": "Cuba",
 			"value": 192
-		},
-		{
-			"name": "Curacao",
-			"value": 531
 		},
 		{
 			"name": "Cyprus",
@@ -1021,12 +1017,16 @@
 			"value": 203
 		},
 		{
-			"name": "Denmark",
-			"value": 208
+			"name": "Czech",
+			"value": 203
 		},
 		{
-			"name": "Djibouti",
-			"value": 262
+			"name": "Benin",
+			"value": 204
+		},
+		{
+			"name": "Denmark",
+			"value": 208
 		},
 		{
 			"name": "Dominica",
@@ -1041,16 +1041,16 @@
 			"value": 218
 		},
 		{
-			"name": "Egypt",
-			"value": 818
-		},
-		{
 			"name": "ElSalvador",
 			"value": 222
 		},
 		{
 			"name": "EquatorialGuinea",
 			"value": 226
+		},
+		{
+			"name": "Ethiopia",
+			"value": 231
 		},
 		{
 			"name": "Eritrea",
@@ -1061,16 +1061,16 @@
 			"value": 233
 		},
 		{
-			"name": "Ethiopia",
-			"value": 231
+			"name": "FaroeIslands",
+			"value": 234
 		},
 		{
 			"name": "FalkanIslands",
 			"value": 236
 		},
 		{
-			"name": "FaroeIslands",
-			"value": 234
+			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
+			"value": 239
 		},
 		{
 			"name": "Fiji",
@@ -1079,6 +1079,10 @@
 		{
 			"name": "Finland",
 			"value": 246
+		},
+		{
+			"name": "AlandIslands",
+			"value": 248
 		},
 		{
 			"name": "France",
@@ -1097,16 +1101,24 @@
 			"value": 260
 		},
 		{
+			"name": "Djibouti",
+			"value": 262
+		},
+		{
 			"name": "Gabon",
 			"value": 266
+		},
+		{
+			"name": "Georgia",
+			"value": 268
 		},
 		{
 			"name": "Gambia",
 			"value": 270
 		},
 		{
-			"name": "Georgia",
-			"value": 268
+			"name": "Palestine",
+			"value": 275
 		},
 		{
 			"name": "Germany",
@@ -1119,6 +1131,10 @@
 		{
 			"name": "Gibraltar",
 			"value": 292
+		},
+		{
+			"name": "Kiribati",
+			"value": 296
 		},
 		{
 			"name": "Greece",
@@ -1145,16 +1161,8 @@
 			"value": 320
 		},
 		{
-			"name": "Guernsey",
-			"value": 831
-		},
-		{
 			"name": "Guinea",
 			"value": 324
-		},
-		{
-			"name": "GuineaBissau",
-			"value": 624
 		},
 		{
 			"name": "Guyana",
@@ -1169,11 +1177,19 @@
 			"value": 334
 		},
 		{
+			"name": "VaticanCity",
+			"value": 336
+		},
+		{
 			"name": "Honduras",
 			"value": 340
 		},
 		{
 			"name": "HongKong",
+			"value": 344
+		},
+		{
+			"name": "Hong_kong",
 			"value": 344
 		},
 		{
@@ -1205,16 +1221,16 @@
 			"value": 372
 		},
 		{
-			"name": "IsleOfMan",
-			"value": 833
-		},
-		{
 			"name": "Israel",
 			"value": 376
 		},
 		{
 			"name": "Italy",
 			"value": 380
+		},
+		{
+			"name": "CotedDIVoire",
+			"value": 384
 		},
 		{
 			"name": "Jamaica",
@@ -1225,24 +1241,16 @@
 			"value": 392
 		},
 		{
-			"name": "Jersey",
-			"value": 832
+			"name": "Kazakhstan",
+			"value": 398
 		},
 		{
 			"name": "Jordan",
 			"value": 400
 		},
 		{
-			"name": "Kazakhstan",
-			"value": 398
-		},
-		{
 			"name": "Kenya",
 			"value": 404
-		},
-		{
-			"name": "Kiribati",
-			"value": 296
 		},
 		{
 			"name": "NorthKorea",
@@ -1250,6 +1258,10 @@
 		},
 		{
 			"name": "SouthKorea",
+			"value": 410
+		},
+		{
+			"name": "South_korea",
 			"value": 410
 		},
 		{
@@ -1265,16 +1277,16 @@
 			"value": 418
 		},
 		{
-			"name": "Latvia",
-			"value": 428
-		},
-		{
 			"name": "Lebanon",
 			"value": 422
 		},
 		{
 			"name": "Lesotho",
 			"value": 426
+		},
+		{
+			"name": "Latvia",
+			"value": 428
 		},
 		{
 			"name": "Liberia",
@@ -1301,10 +1313,6 @@
 			"value": 446
 		},
 		{
-			"name": "Macedonia",
-			"value": 807
-		},
-		{
 			"name": "Madagascar",
 			"value": 450
 		},
@@ -1329,10 +1337,6 @@
 			"value": 470
 		},
 		{
-			"name": "MarshallIslands",
-			"value": 584
-		},
-		{
 			"name": "Martinique",
 			"value": 474
 		},
@@ -1345,20 +1349,8 @@
 			"value": 480
 		},
 		{
-			"name": "Mayotte",
-			"value": 175
-		},
-		{
 			"name": "Mexico",
 			"value": 484
-		},
-		{
-			"name": "Micronesia",
-			"value": 583
-		},
-		{
-			"name": "Moldova",
-			"value": 498
 		},
 		{
 			"name": "Monaco",
@@ -1367,6 +1359,10 @@
 		{
 			"name": "Mongolia",
 			"value": 496
+		},
+		{
+			"name": "Moldova",
+			"value": 498
 		},
 		{
 			"name": "Montenegro",
@@ -1385,8 +1381,8 @@
 			"value": 508
 		},
 		{
-			"name": "Myanmar",
-			"value": 104
+			"name": "Oman",
+			"value": 512
 		},
 		{
 			"name": "Namibia",
@@ -1405,11 +1401,35 @@
 			"value": 528
 		},
 		{
+			"name": "Curacao",
+			"value": 531
+		},
+		{
+			"name": "Aruba",
+			"value": 533
+		},
+		{
+			"name": "SintMaarten",
+			"value": 534
+		},
+		{
+			"name": "Bonaire",
+			"value": 535
+		},
+		{
 			"name": "NewCaledonia",
 			"value": 540
 		},
 		{
+			"name": "Vanauatu",
+			"value": 548
+		},
+		{
 			"name": "NewZealand",
+			"value": 554
+		},
+		{
+			"name": "New_zealand",
 			"value": 554
 		},
 		{
@@ -1433,28 +1453,32 @@
 			"value": 574
 		},
 		{
-			"name": "NorthernMarianaIsland",
-			"value": 580
-		},
-		{
 			"name": "Norway",
 			"value": 578
 		},
 		{
-			"name": "Oman",
-			"value": 512
+			"name": "NorthernMarianaIsland",
+			"value": 580
 		},
 		{
-			"name": "Pakistan",
-			"value": 586
+			"name": "UnitedStatesMinorOutlyingIslands",
+			"value": 581
+		},
+		{
+			"name": "Micronesia",
+			"value": 583
+		},
+		{
+			"name": "MarshallIslands",
+			"value": 584
 		},
 		{
 			"name": "Palau",
 			"value": 585
 		},
 		{
-			"name": "Palestine",
-			"value": 275
+			"name": "Pakistan",
+			"value": 586
 		},
 		{
 			"name": "Panama",
@@ -1483,6 +1507,14 @@
 		{
 			"name": "Poland",
 			"value": 616
+		},
+		{
+			"name": "GuineaBissau",
+			"value": 624
+		},
+		{
+			"name": "TimorLeste",
+			"value": 626
 		},
 		{
 			"name": "Portugal",
@@ -1525,6 +1557,10 @@
 			"value": 659
 		},
 		{
+			"name": "Anguilla",
+			"value": 660
+		},
+		{
 			"name": "SaintLucia",
 			"value": 662
 		},
@@ -1539,10 +1575,6 @@
 		{
 			"name": "SaintVincentAndTheGrenadines",
 			"value": 670
-		},
-		{
-			"name": "Samoa",
-			"value": 882
 		},
 		{
 			"name": "SanMarino",
@@ -1577,20 +1609,16 @@
 			"value": 702
 		},
 		{
-			"name": "SintMaarten",
-			"value": 534
-		},
-		{
 			"name": "Slovakia",
 			"value": 703
 		},
 		{
-			"name": "Slovenia",
-			"value": 705
+			"name": "VietNam",
+			"value": 704
 		},
 		{
-			"name": "SolomonIslands",
-			"value": 90
+			"name": "Slovenia",
+			"value": 705
 		},
 		{
 			"name": "Somalia",
@@ -1601,24 +1629,24 @@
 			"value": 710
 		},
 		{
-			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
-			"value": 239
-		},
-		{
-			"name": "SouthSudan",
-			"value": 728
+			"name": "Zimbabwe",
+			"value": 716
 		},
 		{
 			"name": "Spain",
 			"value": 724
 		},
 		{
-			"name": "SriLanka",
-			"value": 144
+			"name": "SouthSudan",
+			"value": 728
 		},
 		{
 			"name": "Sudan",
 			"value": 729
+		},
+		{
+			"name": "WesternSahara",
+			"value": 732
 		},
 		{
 			"name": "Suriname",
@@ -1629,12 +1657,12 @@
 			"value": 744
 		},
 		{
-			"name": "Swaziland",
-			"value": 756
-		},
-		{
 			"name": "Sweden",
 			"value": 752
+		},
+		{
+			"name": "Swaziland",
+			"value": 756
 		},
 		{
 			"name": "Switzerland",
@@ -1645,24 +1673,12 @@
 			"value": 760
 		},
 		{
-			"name": "Taiwan",
-			"value": 158
-		},
-		{
 			"name": "Tajikistan",
 			"value": 762
 		},
 		{
-			"name": "Tanzania",
-			"value": 834
-		},
-		{
 			"name": "Thailand",
 			"value": 764
-		},
-		{
-			"name": "TimorLeste",
-			"value": 626
 		},
 		{
 			"name": "Togo",
@@ -1679,6 +1695,14 @@
 		{
 			"name": "TrinidadAndTobago",
 			"value": 780
+		},
+		{
+			"name": "UnitedArabEmirates",
+			"value": 784
+		},
+		{
+			"name": "Uae",
+			"value": 784
 		},
 		{
 			"name": "Tunisia",
@@ -1709,20 +1733,52 @@
 			"value": 804
 		},
 		{
-			"name": "UnitedArabEmirates",
-			"value": 784
+			"name": "Macedonia",
+			"value": 807
+		},
+		{
+			"name": "Egypt",
+			"value": 818
 		},
 		{
 			"name": "UnitedKingdom",
 			"value": 826
 		},
 		{
-			"name": "UnitedStatesMinorOutlyingIslands",
-			"value": 581
+			"name": "United_kingdom",
+			"value": 826
+		},
+		{
+			"name": "Guernsey",
+			"value": 831
+		},
+		{
+			"name": "Jersey",
+			"value": 832
+		},
+		{
+			"name": "IsleOfMan",
+			"value": 833
+		},
+		{
+			"name": "Tanzania",
+			"value": 834
 		},
 		{
 			"name": "UnitedStatesOfAmerica",
 			"value": 840
+		},
+		{
+			"name": "United_states",
+			"value": 840
+		},
+		{
+			"name": "VirginIslandsUS",
+			"value": 850
+		},
+		{
+			"name": "BurkinaFaso",
+			"value": 854
 		},
 		{
 			"name": "Uruguay",
@@ -1733,36 +1789,16 @@
 			"value": 860
 		},
 		{
-			"name": "Vanauatu",
-			"value": 548
-		},
-		{
-			"name": "VaticanCity",
-			"value": 336
-		},
-		{
 			"name": "Venezuela",
 			"value": 862
-		},
-		{
-			"name": "VietNam",
-			"value": 704
-		},
-		{
-			"name": "VirginIslandsBritish",
-			"value": 92
-		},
-		{
-			"name": "VirginIslandsUS",
-			"value": 850
 		},
 		{
 			"name": "WallisAndFutuna",
 			"value": 876
 		},
 		{
-			"name": "WesternSahara",
-			"value": 732
+			"name": "Samoa",
+			"value": 882
 		},
 		{
 			"name": "Yemen",
@@ -1771,42 +1807,6 @@
 		{
 			"name": "Zambia",
 			"value": 894
-		},
-		{
-			"name": "Zimbabwe",
-			"value": 716
-		},
-		{
-			"name": "Prchina",
-			"value": 156
-		},
-		{
-			"name": "Czech",
-			"value": 203
-		},
-		{
-			"name": "Hong_kong",
-			"value": 344
-		},
-		{
-			"name": "New_zealand",
-			"value": 554
-		},
-		{
-			"name": "South_korea",
-			"value": 410
-		},
-		{
-			"name": "United_states",
-			"value": 840
-		},
-		{
-			"name": "United_kingdom",
-			"value": 826
-		},
-		{
-			"name": "Uae",
-			"value": 784
 		}
 	],
 	"offline.fsmv2.ConstActionTargetAction.ConstTargetType": [
@@ -2019,8 +2019,16 @@
 	],
 	"via.audiorender.SourceType": [
 		{
-			"name": "None",
-			"value": 4294967295
+			"name": "Atrac9",
+			"value": 540636257
+		},
+		{
+			"name": "XMA",
+			"value": 543255928
+		},
+		{
+			"name": "Vorbis",
+			"value": 543647599
 		},
 		{
 			"name": "Wave",
@@ -2031,16 +2039,8 @@
 			"value": 2003137400
 		},
 		{
-			"name": "Vorbis",
-			"value": 543647599
-		},
-		{
-			"name": "Atrac9",
-			"value": 540636257
-		},
-		{
-			"name": "XMA",
-			"value": 543255928
+			"name": "None",
+			"value": 4294967295
 		}
 	],
 	"via.eq.Operator.Type": [
@@ -2407,16 +2407,16 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "Develop",
 			"value": 1
 		},
 		{
 			"name": "KernelLand",
 			"value": 2
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"offline.effect.script.EffectPositionHolder.PositionInfo.Status": [
@@ -2651,12 +2651,12 @@
 			"value": 2977577761
 		},
 		{
-			"name": "RELOAD",
-			"value": 3671242949
-		},
-		{
 			"name": "INHIBIT_NEXT_LAYER_ACTION",
 			"value": 3012583039
+		},
+		{
+			"name": "RELOAD",
+			"value": 3671242949
 		}
 	],
 	"via.math.FpClassify": [
@@ -2729,44 +2729,44 @@
 	],
 	"offline.escape.enemy.em9000.tag.StateAttr": [
 		{
-			"name": "DoorOpening",
-			"value": 3465102983
+			"name": "EnableZoneWarp",
+			"value": 60869695
+		},
+		{
+			"name": "FastWalk",
+			"value": 305234711
 		},
 		{
 			"name": "DoorAccessEnable",
 			"value": 611785742
 		},
 		{
-			"name": "EnableZoneWarp",
-			"value": 60869695
-		},
-		{
-			"name": "NoCansel",
-			"value": 2570526130
-		},
-		{
 			"name": "EnableZoneJumpOver",
 			"value": 644458359
-		},
-		{
-			"name": "DisableForceKeepEscape",
-			"value": 3770182893
-		},
-		{
-			"name": "DisableDie",
-			"value": 2927722761
-		},
-		{
-			"name": "DisableMiniDown",
-			"value": 1012457859
 		},
 		{
 			"name": "HalfDamage",
 			"value": 861945140
 		},
 		{
-			"name": "FastWalk",
-			"value": 305234711
+			"name": "DisableMiniDown",
+			"value": 1012457859
+		},
+		{
+			"name": "NoCansel",
+			"value": 2570526130
+		},
+		{
+			"name": "DisableDie",
+			"value": 2927722761
+		},
+		{
+			"name": "DoorOpening",
+			"value": 3465102983
+		},
+		{
+			"name": "DisableForceKeepEscape",
+			"value": 3770182893
 		}
 	],
 	"offline.survivor.npc.NpcOrderDefine.InsteadActionKind": [
@@ -6717,24 +6717,24 @@
 	],
 	"offline.enemy.em3000.CharacterControllerType": [
 		{
-			"name": "DEFAULT",
-			"value": 1106175613
+			"name": "CONNER_DOWN",
+			"value": 726343862
 		},
 		{
-			"name": "JUMP",
-			"value": 2595772414
+			"name": "DEFAULT",
+			"value": 1106175613
 		},
 		{
 			"name": "JUMP_ATTACK",
 			"value": 1933262719
 		},
 		{
-			"name": "CONNER_UP",
-			"value": 3599879432
+			"name": "JUMP",
+			"value": 2595772414
 		},
 		{
-			"name": "CONNER_DOWN",
-			"value": 726343862
+			"name": "CONNER_UP",
+			"value": 3599879432
 		}
 	],
 	"via.PlaneXZ.NGLevel": [
@@ -6747,12 +6747,12 @@
 			"value": 1
 		},
 		{
-			"name": "Assert",
-			"value": 2
-		},
-		{
 			"name": "Default",
 			"value": 1
+		},
+		{
+			"name": "Assert",
+			"value": 2
 		}
 	],
 	"offline.escape.gimmick.action.EsGimmickSiegeBreaker.MOT_NO": [
@@ -6836,6 +6836,10 @@
 		}
 	],
 	"via.hid.GamePadButton": [
+		{
+			"name": "None",
+			"value": 0
+		},
 		{
 			"name": "LUp",
 			"value": 1
@@ -6963,10 +6967,6 @@
 		{
 			"name": "RSR",
 			"value": 2147483648
-		},
-		{
-			"name": "None",
-			"value": 0
 		},
 		{
 			"name": "All",
@@ -7357,6 +7357,10 @@
 			"value": 179045077
 		},
 		{
+			"name": "HOLDRUN",
+			"value": 1964617847
+		},
+		{
 			"name": "FACE",
 			"value": 3026421864
 		},
@@ -7365,16 +7369,12 @@
 			"value": 3458936648
 		},
 		{
-			"name": "HOLD",
-			"value": 4142854866
-		},
-		{
 			"name": "NONE",
 			"value": 3809301661
 		},
 		{
-			"name": "HOLDRUN",
-			"value": 1964617847
+			"name": "HOLD",
+			"value": 4142854866
 		}
 	],
 	"offline.DynamicsManager.PauseCause": [
@@ -9013,6 +9013,10 @@
 			"value": 0
 		},
 		{
+			"name": "Min",
+			"value": 0
+		},
+		{
 			"name": "China",
 			"value": 1
 		},
@@ -9025,20 +9029,16 @@
 			"value": 3
 		},
 		{
+			"name": "Max",
+			"value": 3
+		},
+		{
 			"name": "Count",
 			"value": 4
 		},
 		{
 			"name": "Term",
 			"value": 4
-		},
-		{
-			"name": "Min",
-			"value": 0
-		},
-		{
-			"name": "Max",
-			"value": 3
 		}
 	],
 	"via.effect.gpgpu.DeformedMesh.MeshCsResource.SkinningShaderType": [
@@ -11427,12 +11427,12 @@
 			"value": 2
 		},
 		{
-			"name": "C",
-			"value": 4
-		},
-		{
 			"name": "AB",
 			"value": 3
+		},
+		{
+			"name": "C",
+			"value": 4
 		},
 		{
 			"name": "AC",
@@ -12535,7 +12535,15 @@
 			"value": 4
 		},
 		{
+			"name": "StaticShadowSolid",
+			"value": 4
+		},
+		{
 			"name": "ShadowTwoSide",
+			"value": 5
+		},
+		{
+			"name": "StaticShadowTwoSide",
 			"value": 5
 		},
 		{
@@ -12543,28 +12551,20 @@
 			"value": 6
 		},
 		{
+			"name": "StaticShadowTwoSideAlphaTest",
+			"value": 6
+		},
+		{
 			"name": "ShadowAlphaTest",
+			"value": 7
+		},
+		{
+			"name": "StaticShadowAlphaTest",
 			"value": 7
 		},
 		{
 			"name": "ShadowDitherCoverage",
 			"value": 8
-		},
-		{
-			"name": "StaticShadowSolid",
-			"value": 4
-		},
-		{
-			"name": "StaticShadowTwoSide",
-			"value": 5
-		},
-		{
-			"name": "StaticShadowTwoSideAlphaTest",
-			"value": 6
-		},
-		{
-			"name": "StaticShadowAlphaTest",
-			"value": 7
 		},
 		{
 			"name": "CacheCopy",
@@ -15030,14 +15030,6 @@
 			"value": 2
 		},
 		{
-			"name": "ACT_SLEEP",
-			"value": 5002
-		},
-		{
-			"name": "ACT_JACK",
-			"value": 5003
-		},
-		{
 			"name": "DMG_SMALL_F",
 			"value": 3001
 		},
@@ -15060,6 +15052,14 @@
 		{
 			"name": "DIE_RIGID",
 			"value": 5001
+		},
+		{
+			"name": "ACT_SLEEP",
+			"value": 5002
+		},
+		{
+			"name": "ACT_JACK",
+			"value": 5003
 		}
 	],
 	"offline.enemy.em0000.RoleMotionID.Dead": [
@@ -17434,6 +17434,10 @@
 	],
 	"offline.escape.guiderail.EsSplinePointAttribute": [
 		{
+			"name": "HermiteSegment",
+			"value": 0
+		},
+		{
 			"name": "AlignGradients",
 			"value": 1
 		},
@@ -17442,16 +17446,12 @@
 			"value": 8
 		},
 		{
-			"name": "SegmentTypeMask",
-			"value": 3840
-		},
-		{
-			"name": "HermiteSegment",
-			"value": 0
-		},
-		{
 			"name": "LinerSegment",
 			"value": 256
+		},
+		{
+			"name": "SegmentTypeMask",
+			"value": 3840
 		}
 	],
 	"offline.camera.CameraLockType": [
@@ -17788,12 +17788,12 @@
 	],
 	"via.clr.MethodCodeFlag": [
 		{
-			"name": "FatFormat",
-			"value": 3
-		},
-		{
 			"name": "TinyFormat",
 			"value": 2
+		},
+		{
+			"name": "FatFormat",
+			"value": 3
 		},
 		{
 			"name": "MoreSects",
@@ -18618,6 +18618,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default_Head",
+			"value": 0
+		},
+		{
 			"name": "Default_1",
 			"value": 1
 		},
@@ -18654,11 +18658,27 @@
 			"value": 9
 		},
 		{
+			"name": "Default_Tail",
+			"value": 9
+		},
+		{
 			"name": "Temp_0",
 			"value": 10
 		},
 		{
+			"name": "Temp_Head",
+			"value": 10
+		},
+		{
+			"name": "Temp_Tail",
+			"value": 10
+		},
+		{
 			"name": "Telemetry_0",
+			"value": 11
+		},
+		{
+			"name": "Telemetry_Head",
 			"value": 11
 		},
 		{
@@ -18698,7 +18718,15 @@
 			"value": 20
 		},
 		{
+			"name": "Telemetry_Tail",
+			"value": 20
+		},
+		{
 			"name": "CacheStorage_0",
+			"value": 21
+		},
+		{
+			"name": "CacheStorage_Head",
 			"value": 21
 		},
 		{
@@ -18738,44 +18766,16 @@
 			"value": 30
 		},
 		{
+			"name": "CacheStorage_Tail",
+			"value": 30
+		},
+		{
 			"name": "OldFormat_0",
 			"value": 31
 		},
 		{
 			"name": "Max",
 			"value": 32
-		},
-		{
-			"name": "Default_Head",
-			"value": 0
-		},
-		{
-			"name": "Default_Tail",
-			"value": 9
-		},
-		{
-			"name": "Temp_Head",
-			"value": 10
-		},
-		{
-			"name": "Temp_Tail",
-			"value": 10
-		},
-		{
-			"name": "Telemetry_Head",
-			"value": 11
-		},
-		{
-			"name": "Telemetry_Tail",
-			"value": 20
-		},
-		{
-			"name": "CacheStorage_Head",
-			"value": 21
-		},
-		{
-			"name": "CacheStorage_Tail",
-			"value": 30
 		}
 	],
 	"offline.AimUserDataBase.GroupKind": [
@@ -19188,10 +19188,6 @@
 	],
 	"System.Reflection.FieldAttributes": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -19220,6 +19216,10 @@
 			"value": 6
 		},
 		{
+			"name": "FieldAccessMask",
+			"value": 7
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -19236,12 +19236,12 @@
 			"value": 128
 		},
 		{
-			"name": "SpecialName",
-			"value": 512
+			"name": "HasFieldRVA",
+			"value": 256
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
+			"name": "SpecialName",
+			"value": 512
 		},
 		{
 			"name": "RTSpecialName",
@@ -19252,12 +19252,12 @@
 			"value": 4096
 		},
 		{
-			"name": "HasDefault",
-			"value": 32768
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
-			"name": "HasFieldRVA",
-			"value": 256
+			"name": "HasDefault",
+			"value": 32768
 		},
 		{
 			"name": "ReservedMask",
@@ -22761,16 +22761,16 @@
 			"value": 2
 		},
 		{
-			"name": "Transparent",
-			"value": 8
-		},
-		{
 			"name": "Forward",
 			"value": 4
 		},
 		{
 			"name": "NoTransparent",
 			"value": 7
+		},
+		{
+			"name": "Transparent",
+			"value": 8
 		}
 	],
 	"offline.enemy.em0000.RoleMotionID.DeadIdle": [
@@ -23553,7 +23553,15 @@
 	],
 	"via.Rect3DXZ.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -23561,44 +23569,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -23675,10 +23675,6 @@
 			"value": 0
 		},
 		{
-			"name": "TargetMachine_Mask",
-			"value": 15
-		},
-		{
 			"name": "TargetMachine_PC",
 			"value": 1
 		},
@@ -23695,8 +23691,8 @@
 			"value": 4
 		},
 		{
-			"name": "TargetMachineDetail_Mask",
-			"value": 240
+			"name": "TargetMachine_Mask",
+			"value": 15
 		},
 		{
 			"name": "TargetMachineDetail_PS4Base",
@@ -23715,8 +23711,8 @@
 			"value": 64
 		},
 		{
-			"name": "TargetOS_Mask",
-			"value": 3840
+			"name": "TargetMachineDetail_Mask",
+			"value": 240
 		},
 		{
 			"name": "TargetOS_Windows",
@@ -23731,8 +23727,8 @@
 			"value": 768
 		},
 		{
-			"name": "TargetServicePlatform_Mask",
-			"value": 61440
+			"name": "TargetOS_Mask",
+			"value": 3840
 		},
 		{
 			"name": "TargetServicePlatform_Default",
@@ -23753,6 +23749,10 @@
 		{
 			"name": "TargetServicePlatform_Ubitus",
 			"value": 20480
+		},
+		{
+			"name": "TargetServicePlatform_Mask",
+			"value": 61440
 		}
 	],
 	"offline.enemy.em0000.EM0200_MONTAGE": [
@@ -24053,6 +24053,10 @@
 			"value": 0
 		},
 		{
+			"name": "WwiseProjectNo_Default",
+			"value": 0
+		},
+		{
 			"name": "WwiseProjectNo_1",
 			"value": 1
 		},
@@ -24063,10 +24067,6 @@
 		{
 			"name": "WwiseProjectNo_3",
 			"value": 3
-		},
-		{
-			"name": "WwiseProjectNo_Default",
-			"value": 0
 		}
 	],
 	"offline.weapon.ElectrodeController.StateKind": [
@@ -27189,12 +27189,12 @@
 			"value": 3
 		},
 		{
-			"name": "Assert",
-			"value": 4
-		},
-		{
 			"name": "Default",
 			"value": 3
+		},
+		{
+			"name": "Assert",
+			"value": 4
 		}
 	],
 	"offline.escape.enemy.em9000.NemesisControlCollisionType.Type": [
@@ -28431,10 +28431,6 @@
 	],
 	"via.SystemServiceSkuFlag": [
 		{
-			"name": "Unknown",
-			"value": 65535
-		},
-		{
 			"name": "Default",
 			"value": 0
 		},
@@ -28445,6 +28441,10 @@
 		{
 			"name": "Full",
 			"value": 3
+		},
+		{
+			"name": "Unknown",
+			"value": 65535
 		}
 	],
 	"via.memory.CounterType": [
@@ -28547,7 +28547,15 @@
 	],
 	"via.Rect3D.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -28555,44 +28563,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -30181,12 +30181,12 @@
 			"value": 4
 		},
 		{
-			"name": "IgnoreSameGroupCollision",
-			"value": 8
-		},
-		{
 			"name": "VirtualGroundMask",
 			"value": 6
+		},
+		{
+			"name": "IgnoreSameGroupCollision",
+			"value": 8
 		}
 	],
 	"offline.enemy.EnemyWeaponDataUserData.WeaponValueInfoBase.RocketLauncherShellType": [
@@ -30820,24 +30820,24 @@
 			"value": 0
 		},
 		{
-			"name": "Always",
-			"value": 2147483647
-		},
-		{
-			"name": "OnLedTrackerProcessSuccessful",
-			"value": 4
-		},
-		{
-			"name": "OnLedTrackerProcessFailed",
-			"value": 3
-		},
-		{
 			"name": "OnVrTrackerGpuSubmitFailed",
 			"value": 1
 		},
 		{
 			"name": "OnVrTrackerGpuWaitAndCpuProcessFailed",
 			"value": 2
+		},
+		{
+			"name": "OnLedTrackerProcessFailed",
+			"value": 3
+		},
+		{
+			"name": "OnLedTrackerProcessSuccessful",
+			"value": 4
+		},
+		{
+			"name": "Always",
+			"value": 2147483647
 		}
 	],
 	"via.hid.camera.PlayStationCameraCaptureFrameResult": [
@@ -32500,6 +32500,14 @@
 			"value": 0
 		},
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "OrderOrMotionEnd",
 			"value": 1
 		},
@@ -32508,11 +32516,35 @@
 			"value": 2
 		},
 		{
+			"name": "MotionEnd",
+			"value": 2
+		},
+		{
+			"name": "EXIT_MOTION_END",
+			"value": 2
+		},
+		{
 			"name": "OrderAndActionTimer",
 			"value": 3
 		},
 		{
+			"name": "ActionTimer",
+			"value": 3
+		},
+		{
+			"name": "EXIT_ACT_TIMER",
+			"value": 3
+		},
+		{
 			"name": "OrderAndVariable",
+			"value": 4
+		},
+		{
+			"name": "Variable",
+			"value": 4
+		},
+		{
+			"name": "EXIT_VARIABLE",
 			"value": 4
 		},
 		{
@@ -32522,38 +32554,6 @@
 		{
 			"name": "OrderAndUnderLayerEnd",
 			"value": 6
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "MotionEnd",
-			"value": 2
-		},
-		{
-			"name": "ActionTimer",
-			"value": 3
-		},
-		{
-			"name": "Variable",
-			"value": 4
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "EXIT_MOTION_END",
-			"value": 2
-		},
-		{
-			"name": "EXIT_ACT_TIMER",
-			"value": 3
-		},
-		{
-			"name": "EXIT_VARIABLE",
-			"value": 4
 		}
 	],
 	"offline.enemy.em0000.BreakPartsIgnoreOption": [
@@ -33492,6 +33492,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "No1",
 			"value": 1
 		},
@@ -33502,10 +33506,6 @@
 		{
 			"name": "No3",
 			"value": 3
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"via.motion.detail.ChainLinkData.LinkMode": [
@@ -33724,12 +33724,12 @@
 	],
 	"offline.escape.enemy.em3400.RankParamHash": [
 		{
-			"name": "WINCE_RATE",
-			"value": 2531057400
-		},
-		{
 			"name": "SWALLOW_MOVE_MOTION_SPEED",
 			"value": 520556456
+		},
+		{
+			"name": "WINCE_RATE",
+			"value": 2531057400
 		}
 	],
 	"via.audiorender.SourceStatus": [
@@ -34266,10 +34266,6 @@
 			"value": 4
 		},
 		{
-			"name": "Float32",
-			"value": 10
-		},
-		{
 			"name": "Str",
 			"value": 5
 		},
@@ -34288,6 +34284,10 @@
 		{
 			"name": "Ext",
 			"value": 9
+		},
+		{
+			"name": "Float32",
+			"value": 10
 		},
 		{
 			"name": "None",
@@ -34878,10 +34878,6 @@
 	],
 	"via.storage.SaveServiceWriteMode": [
 		{
-			"name": "SaveServiceWriteMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceWriteMode_1_Byte",
 			"value": 1
 		},
@@ -34900,6 +34896,10 @@
 		{
 			"name": "SaveServiceWriteMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceWriteMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceWriteMode_128_KiloByte",
@@ -34946,12 +34946,12 @@
 	],
 	"via.audiorender.ResourceChunkTag": [
 		{
-			"name": "Head",
-			"value": 1751347827
-		},
-		{
 			"name": "Data",
 			"value": 1684238963
+		},
+		{
+			"name": "Head",
+			"value": 1751347827
 		}
 	],
 	"via.audiorender.FilterType": [
@@ -35240,12 +35240,12 @@
 			"value": 1106175613
 		},
 		{
-			"name": "GRAPPLE",
-			"value": 3104764490
-		},
-		{
 			"name": "DEAD",
 			"value": 1854607113
+		},
+		{
+			"name": "GRAPPLE",
+			"value": 3104764490
 		}
 	],
 	"offline.gamemastering.SaveDataManager.UsableBool": [
@@ -35790,10 +35790,6 @@
 	],
 	"offline.escape.enemy.em9000.ActionStatus.ID": [
 		{
-			"name": "INVALID_ACTION_ID",
-			"value": 10000
-		},
-		{
 			"name": "ACT_IDLE",
 			"value": 0
 		},
@@ -35896,6 +35892,98 @@
 		{
 			"name": "ACT_END",
 			"value": 25
+		},
+		{
+			"name": "GMK_DOOR_OPEN",
+			"value": 1000
+		},
+		{
+			"name": "GMK_LADDER_UP",
+			"value": 1001
+		},
+		{
+			"name": "GMK_LADDER_DOWN",
+			"value": 1002
+		},
+		{
+			"name": "GMK_DODGEOBJECT_STING",
+			"value": 1003
+		},
+		{
+			"name": "GMK_RUN_OVER",
+			"value": 1004
+		},
+		{
+			"name": "GMK_BURIED_WALL",
+			"value": 1005
+		},
+		{
+			"name": "GMK_GRAPPLE",
+			"value": 1006
+		},
+		{
+			"name": "GMK_HOLDWALK",
+			"value": 1007
+		},
+		{
+			"name": "GMK_PASSING_THROUGH",
+			"value": 1008
+		},
+		{
+			"name": "GMK_CAR_BASE",
+			"value": 1009
+		},
+		{
+			"name": "GMK_ESCAPE",
+			"value": 1010
+		},
+		{
+			"name": "GMK_JUMPOVER",
+			"value": 1011
+		},
+		{
+			"name": "GMK_JUMPOVER_WALL",
+			"value": 1012
+		},
+		{
+			"name": "GMK_AP_DOWN_ONGROUND",
+			"value": 1013
+		},
+		{
+			"name": "GMK_WALLBRAKE_R",
+			"value": 1014
+		},
+		{
+			"name": "GMK_WALLBRAKE_L",
+			"value": 1015
+		},
+		{
+			"name": "GMK_WALLBRAKE_LOW_R",
+			"value": 1016
+		},
+		{
+			"name": "GMK_WALLBRAKE_LOW_L",
+			"value": 1017
+		},
+		{
+			"name": "GMK_FTAP2F4F",
+			"value": 1018
+		},
+		{
+			"name": "GMK_FTAP4F5F",
+			"value": 1019
+		},
+		{
+			"name": "GMK_FTAP5F6F",
+			"value": 1020
+		},
+		{
+			"name": "GMK_FTAP6F7F",
+			"value": 1021
+		},
+		{
+			"name": "GMK_END",
+			"value": 1022
 		},
 		{
 			"name": "ATK_ATTACK",
@@ -36134,98 +36222,6 @@
 			"value": 2058
 		},
 		{
-			"name": "GMK_DOOR_OPEN",
-			"value": 1000
-		},
-		{
-			"name": "GMK_LADDER_UP",
-			"value": 1001
-		},
-		{
-			"name": "GMK_LADDER_DOWN",
-			"value": 1002
-		},
-		{
-			"name": "GMK_DODGEOBJECT_STING",
-			"value": 1003
-		},
-		{
-			"name": "GMK_RUN_OVER",
-			"value": 1004
-		},
-		{
-			"name": "GMK_BURIED_WALL",
-			"value": 1005
-		},
-		{
-			"name": "GMK_GRAPPLE",
-			"value": 1006
-		},
-		{
-			"name": "GMK_HOLDWALK",
-			"value": 1007
-		},
-		{
-			"name": "GMK_PASSING_THROUGH",
-			"value": 1008
-		},
-		{
-			"name": "GMK_CAR_BASE",
-			"value": 1009
-		},
-		{
-			"name": "GMK_ESCAPE",
-			"value": 1010
-		},
-		{
-			"name": "GMK_JUMPOVER",
-			"value": 1011
-		},
-		{
-			"name": "GMK_JUMPOVER_WALL",
-			"value": 1012
-		},
-		{
-			"name": "GMK_AP_DOWN_ONGROUND",
-			"value": 1013
-		},
-		{
-			"name": "GMK_WALLBRAKE_R",
-			"value": 1014
-		},
-		{
-			"name": "GMK_WALLBRAKE_L",
-			"value": 1015
-		},
-		{
-			"name": "GMK_WALLBRAKE_LOW_R",
-			"value": 1016
-		},
-		{
-			"name": "GMK_WALLBRAKE_LOW_L",
-			"value": 1017
-		},
-		{
-			"name": "GMK_FTAP2F4F",
-			"value": 1018
-		},
-		{
-			"name": "GMK_FTAP4F5F",
-			"value": 1019
-		},
-		{
-			"name": "GMK_FTAP5F6F",
-			"value": 1020
-		},
-		{
-			"name": "GMK_FTAP6F7F",
-			"value": 1021
-		},
-		{
-			"name": "GMK_END",
-			"value": 1022
-		},
-		{
 			"name": "DMG_STUN",
 			"value": 3000
 		},
@@ -36296,6 +36292,10 @@
 		{
 			"name": "SET_END",
 			"value": 6003
+		},
+		{
+			"name": "INVALID_ACTION_ID",
+			"value": 10000
 		}
 	],
 	"via.network.error.MethodRanking": [
@@ -36882,6 +36882,10 @@
 			"value": 64
 		},
 		{
+			"name": "WeaponFlags",
+			"value": 112
+		},
+		{
 			"name": "HealItem",
 			"value": 128
 		},
@@ -36894,12 +36898,20 @@
 			"value": 512
 		},
 		{
+			"name": "ItemFlags",
+			"value": 896
+		},
+		{
 			"name": "DefeatEnemy",
 			"value": 1024
 		},
 		{
 			"name": "BreakParts",
 			"value": 2048
+		},
+		{
+			"name": "EnemyFlags",
+			"value": 3072
 		},
 		{
 			"name": "GameOver",
@@ -36960,18 +36972,6 @@
 		{
 			"name": "ShopItem",
 			"value": 67108864
-		},
-		{
-			"name": "WeaponFlags",
-			"value": 112
-		},
-		{
-			"name": "ItemFlags",
-			"value": 896
-		},
-		{
-			"name": "EnemyFlags",
-			"value": 3072
 		}
 	],
 	"via.simplewwise.OutputDevice": [
@@ -37682,20 +37682,20 @@
 			"value": 0
 		},
 		{
+			"name": "WallRight",
+			"value": 0
+		},
+		{
 			"name": "GroundFromCeilling",
+			"value": 1
+		},
+		{
+			"name": "WallLeft",
 			"value": 1
 		},
 		{
 			"name": "ChaseCeillingFromGround",
 			"value": 2
-		},
-		{
-			"name": "WallRight",
-			"value": 0
-		},
-		{
-			"name": "WallLeft",
-			"value": 1
 		}
 	],
 	"offline.OptionManager.DisplayModeCol": [
@@ -37868,6 +37868,10 @@
 			"value": 0
 		},
 		{
+			"name": "Begin",
+			"value": 0
+		},
+		{
 			"name": "AlphaTest",
 			"value": 1
 		},
@@ -37882,10 +37886,6 @@
 		{
 			"name": "Max",
 			"value": 4
-		},
-		{
-			"name": "Begin",
-			"value": 0
 		}
 	],
 	"via.motion.IkDamageAction.CalculationAddRotation": [
@@ -39555,6 +39555,10 @@
 	],
 	"offline.escape.enemy.em9000.MeshNo": [
 		{
+			"name": "Hand_Normal",
+			"value": 3
+		},
+		{
 			"name": "Up_Body",
 			"value": 5
 		},
@@ -39609,10 +39613,6 @@
 		{
 			"name": "Dmg_Arm_Up_R2",
 			"value": 28
-		},
-		{
-			"name": "Hand_Normal",
-			"value": 3
 		},
 		{
 			"name": "Hand_Flame",
@@ -39687,16 +39687,8 @@
 	],
 	"offline.Em4000Define.RankParamHash": [
 		{
-			"name": "NO_ATTACK_TIME",
-			"value": 3730143395
-		},
-		{
 			"name": "NO_HOLD_TIME",
 			"value": 470028201
-		},
-		{
-			"name": "NO_BACK_HOLD_TIME",
-			"value": 3236473812
 		},
 		{
 			"name": "REACTION_RATE",
@@ -39705,6 +39697,14 @@
 		{
 			"name": "REACTION_STOP_TIME",
 			"value": 2950829043
+		},
+		{
+			"name": "NO_BACK_HOLD_TIME",
+			"value": 3236473812
+		},
+		{
+			"name": "NO_ATTACK_TIME",
+			"value": 3730143395
 		}
 	],
 	"via.gui.AssetLanguage": [
@@ -40325,10 +40325,6 @@
 			"value": 32
 		},
 		{
-			"name": "L_STICK_ANY",
-			"value": 3840
-		},
-		{
 			"name": "L_STICK_XP",
 			"value": 256
 		},
@@ -40343,6 +40339,10 @@
 		{
 			"name": "L_STICK_ZM",
 			"value": 2048
+		},
+		{
+			"name": "L_STICK_ANY",
+			"value": 3840
 		}
 	],
 	"offline.EnemyDefine.ENEMY_PLANE_ANGLE": [
@@ -41167,44 +41167,44 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
-			"name": "LeftBaseline",
-			"value": 12
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
-		},
-		{
-			"name": "CenterBaseline",
-			"value": 13
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
 		},
 		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
+		},
+		{
 			"name": "RightBottom",
 			"value": 10
+		},
+		{
+			"name": "LeftBaseline",
+			"value": 12
+		},
+		{
+			"name": "CenterBaseline",
+			"value": 13
 		},
 		{
 			"name": "RightBaseline",
@@ -43805,12 +43805,12 @@
 			"value": 0
 		},
 		{
-			"name": "RIGHT",
-			"value": 1
-		},
-		{
 			"name": "BACK_LEFT",
 			"value": 0
+		},
+		{
+			"name": "RIGHT",
+			"value": 1
 		},
 		{
 			"name": "BACK_RIGHT",
@@ -45965,10 +45965,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea0to7": [
 		{
-			"name": "FreeArea0to7_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea0to7_0",
 			"value": 0
 		},
@@ -45999,6 +45995,10 @@
 		{
 			"name": "FreeArea0to7_7",
 			"value": 7
+		},
+		{
+			"name": "FreeArea0to7_None",
+			"value": 4294967295
 		}
 	],
 	"offline.Log.Level": [
@@ -47367,12 +47367,12 @@
 			"value": 4
 		},
 		{
-			"name": "EnableAlpha",
-			"value": 8
-		},
-		{
 			"name": "EnableRGB",
 			"value": 7
+		},
+		{
+			"name": "EnableAlpha",
+			"value": 8
 		},
 		{
 			"name": "EnableAll",
@@ -48062,6 +48062,10 @@
 			"value": 0
 		},
 		{
+			"name": "VendorUnkown",
+			"value": 0
+		},
+		{
 			"name": "HMD",
 			"value": 1
 		},
@@ -48075,6 +48079,10 @@
 		},
 		{
 			"name": "AsyncCompute",
+			"value": 8
+		},
+		{
+			"name": "UavOverlapSupported",
 			"value": 8
 		},
 		{
@@ -48094,6 +48102,10 @@
 			"value": 128
 		},
 		{
+			"name": "DefaultCBRSetting",
+			"value": 128
+		},
+		{
 			"name": "HardwareCBRIDBuffer",
 			"value": 256
 		},
@@ -48102,40 +48114,32 @@
 			"value": 512
 		},
 		{
-			"name": "LateCBRResolve",
-			"value": 1024
+			"name": "HighQualityCBRSetting",
+			"value": 640
 		},
 		{
 			"name": "UseIDBuffer",
 			"value": 768
 		},
 		{
-			"name": "UseCheckerBoard",
-			"value": 2048
+			"name": "LateCBRResolve",
+			"value": 1024
 		},
 		{
 			"name": "FastCBRSetting",
 			"value": 1152
 		},
 		{
-			"name": "DefaultCBRSetting",
-			"value": 128
-		},
-		{
-			"name": "HighQualityCBRSetting",
-			"value": 640
-		},
-		{
 			"name": "PS4ProtCBRSetting",
 			"value": 1408
 		},
 		{
-			"name": "NotSupportedPredicateRenderingOnBuffer",
-			"value": 4096
+			"name": "UseCheckerBoard",
+			"value": 2048
 		},
 		{
-			"name": "UavOverlapSupported",
-			"value": 8
+			"name": "NotSupportedPredicateRenderingOnBuffer",
+			"value": 4096
 		},
 		{
 			"name": "VendorAMD",
@@ -48150,8 +48154,8 @@
 			"value": 67108864
 		},
 		{
-			"name": "VendorUnkown",
-			"value": 0
+			"name": "GL_Family",
+			"value": 134217728
 		},
 		{
 			"name": "Gen2",
@@ -48164,10 +48168,6 @@
 		{
 			"name": "Gen4",
 			"value": 1073741824
-		},
-		{
-			"name": "GL_Family",
-			"value": 134217728
 		}
 	],
 	"offline.escape.enemy.em9000.behaviortree.condition.EsEm9000BtCondition_CheckBox.CheckType": [
@@ -48228,6 +48228,10 @@
 			"value": 0
 		},
 		{
+			"name": "Lowest",
+			"value": 0
+		},
+		{
 			"name": "Coarse1x2",
 			"value": 1
 		},
@@ -48237,6 +48241,14 @@
 		},
 		{
 			"name": "Coarse2x2",
+			"value": 3
+		},
+		{
+			"name": "Fast",
+			"value": 3
+		},
+		{
+			"name": "Default",
 			"value": 3
 		},
 		{
@@ -48250,18 +48262,6 @@
 		{
 			"name": "Coarse4x4",
 			"value": 6
-		},
-		{
-			"name": "Lowest",
-			"value": 0
-		},
-		{
-			"name": "Fast",
-			"value": 3
-		},
-		{
-			"name": "Default",
-			"value": 3
 		}
 	],
 	"offline.gui.OptionResultTextureLoader.ExecType": [
@@ -48430,10 +48430,6 @@
 			"value": 0
 		},
 		{
-			"name": "All",
-			"value": 255
-		},
-		{
 			"name": "SceneBeauty",
 			"value": 1
 		},
@@ -48448,6 +48444,10 @@
 		{
 			"name": "MaskIgnoreDepthMesh",
 			"value": 8
+		},
+		{
+			"name": "All",
+			"value": 255
 		}
 	],
 	"via.render.OptionFlag": [
@@ -49816,6 +49816,14 @@
 			"value": 1
 		},
 		{
+			"name": "GMK_RAILGUN",
+			"value": 1000
+		},
+		{
+			"name": "GMK_END",
+			"value": 1001
+		},
+		{
 			"name": "ATK_ATTACK",
 			"value": 2000
 		},
@@ -49930,14 +49938,6 @@
 		{
 			"name": "ATK_END",
 			"value": 2028
-		},
-		{
-			"name": "GMK_RAILGUN",
-			"value": 1000
-		},
-		{
-			"name": "GMK_END",
-			"value": 1001
 		},
 		{
 			"name": "DMG_STUN",
@@ -50954,12 +50954,12 @@
 			"value": 1262840115
 		},
 		{
-			"name": "NUMBER_OF_PERSISTENT",
-			"value": 4059898801
-		},
-		{
 			"name": "TARGETED_TO_ESCAPE_TIME_RATE",
 			"value": 3576281015
+		},
+		{
+			"name": "NUMBER_OF_PERSISTENT",
+			"value": 4059898801
 		}
 	],
 	"offline.ChoreographPlayer.ChoreographTimeline.GimmickEventEnd": [
@@ -52282,11 +52282,23 @@
 			"value": 0
 		},
 		{
+			"name": "CARLOS",
+			"value": 0
+		},
+		{
 			"name": "PL1000",
 			"value": 1
 		},
 		{
+			"name": "CLAIRE",
+			"value": 1
+		},
+		{
 			"name": "PL2000",
+			"value": 2
+		},
+		{
+			"name": "JILL",
 			"value": 2
 		},
 		{
@@ -52298,7 +52310,15 @@
 			"value": 4
 		},
 		{
+			"name": "JILL_MIRROR",
+			"value": 4
+		},
+		{
 			"name": "PL2910",
+			"value": 5
+		},
+		{
+			"name": "JILL_MIRROR_DEF",
 			"value": 5
 		},
 		{
@@ -52306,7 +52326,15 @@
 			"value": 6
 		},
 		{
+			"name": "NICHOLAI",
+			"value": 6
+		},
+		{
 			"name": "PL5000",
+			"value": 7
+		},
+		{
+			"name": "MIKHAIL",
 			"value": 7
 		},
 		{
@@ -52314,7 +52342,15 @@
 			"value": 8
 		},
 		{
+			"name": "ZOMBIE_A",
+			"value": 8
+		},
+		{
 			"name": "PL7010",
+			"value": 9
+		},
+		{
+			"name": "ZOMBIE_B",
 			"value": 9
 		},
 		{
@@ -52322,7 +52358,15 @@
 			"value": 10
 		},
 		{
+			"name": "ZOMBIE_C",
+			"value": 10
+		},
+		{
 			"name": "PL7030",
+			"value": 11
+		},
+		{
+			"name": "POLICE_H",
 			"value": 11
 		},
 		{
@@ -52330,7 +52374,15 @@
 			"value": 12
 		},
 		{
+			"name": "BRAD",
+			"value": 12
+		},
+		{
 			"name": "PL8010",
+			"value": 13
+		},
+		{
+			"name": "TYRELL",
 			"value": 13
 		},
 		{
@@ -52338,7 +52390,15 @@
 			"value": 14
 		},
 		{
+			"name": "MURPHY",
+			"value": 14
+		},
+		{
 			"name": "PL8030",
+			"value": 15
+		},
+		{
+			"name": "DARIO",
 			"value": 15
 		},
 		{
@@ -52346,7 +52406,15 @@
 			"value": 16
 		},
 		{
+			"name": "AMY",
+			"value": 16
+		},
+		{
 			"name": "PL8050",
+			"value": 17
+		},
+		{
+			"name": "RACCOON_CITIZEN",
 			"value": 17
 		},
 		{
@@ -52354,7 +52422,15 @@
 			"value": 18
 		},
 		{
+			"name": "NATHANIEL",
+			"value": 18
+		},
+		{
 			"name": "PL8070",
+			"value": 19
+		},
+		{
+			"name": "CARLOSZONBI",
 			"value": 19
 		},
 		{
@@ -52370,7 +52446,15 @@
 			"value": 22
 		},
 		{
+			"name": "MAVIN",
+			"value": 22
+		},
+		{
 			"name": "PL8140",
+			"value": 23
+		},
+		{
+			"name": "BRIAN",
 			"value": 23
 		},
 		{
@@ -52378,7 +52462,15 @@
 			"value": 24
 		},
 		{
+			"name": "BEN",
+			"value": 24
+		},
+		{
 			"name": "PL8170",
+			"value": 25
+		},
+		{
+			"name": "ROBERT",
 			"value": 25
 		},
 		{
@@ -52390,11 +52482,23 @@
 			"value": 27
 		},
 		{
+			"name": "POLICEMAN_A",
+			"value": 27
+		},
+		{
 			"name": "PL8510",
 			"value": 28
 		},
 		{
+			"name": "POLICEMAN_B",
+			"value": 28
+		},
+		{
 			"name": "PL8520",
+			"value": 29
+		},
+		{
+			"name": "RESEARCHER_MOB",
 			"value": 29
 		},
 		{
@@ -52411,6 +52515,10 @@
 		},
 		{
 			"name": "PL8560",
+			"value": 33
+		},
+		{
+			"name": "PROTECTIVECLOTH",
 			"value": 33
 		},
 		{
@@ -52452,114 +52560,6 @@
 		{
 			"name": "PL9900",
 			"value": 43
-		},
-		{
-			"name": "CARLOS",
-			"value": 0
-		},
-		{
-			"name": "CLAIRE",
-			"value": 1
-		},
-		{
-			"name": "JILL",
-			"value": 2
-		},
-		{
-			"name": "JILL_MIRROR",
-			"value": 4
-		},
-		{
-			"name": "JILL_MIRROR_DEF",
-			"value": 5
-		},
-		{
-			"name": "NICHOLAI",
-			"value": 6
-		},
-		{
-			"name": "MIKHAIL",
-			"value": 7
-		},
-		{
-			"name": "BRAD",
-			"value": 12
-		},
-		{
-			"name": "ZOMBIE_A",
-			"value": 8
-		},
-		{
-			"name": "ZOMBIE_B",
-			"value": 9
-		},
-		{
-			"name": "ZOMBIE_C",
-			"value": 10
-		},
-		{
-			"name": "POLICE_H",
-			"value": 11
-		},
-		{
-			"name": "TYRELL",
-			"value": 13
-		},
-		{
-			"name": "MURPHY",
-			"value": 14
-		},
-		{
-			"name": "DARIO",
-			"value": 15
-		},
-		{
-			"name": "AMY",
-			"value": 16
-		},
-		{
-			"name": "RACCOON_CITIZEN",
-			"value": 17
-		},
-		{
-			"name": "NATHANIEL",
-			"value": 18
-		},
-		{
-			"name": "CARLOSZONBI",
-			"value": 19
-		},
-		{
-			"name": "MAVIN",
-			"value": 22
-		},
-		{
-			"name": "BRIAN",
-			"value": 23
-		},
-		{
-			"name": "BEN",
-			"value": 24
-		},
-		{
-			"name": "ROBERT",
-			"value": 25
-		},
-		{
-			"name": "POLICEMAN_A",
-			"value": 27
-		},
-		{
-			"name": "POLICEMAN_B",
-			"value": 28
-		},
-		{
-			"name": "RESEARCHER_MOB",
-			"value": 29
-		},
-		{
-			"name": "PROTECTIVECLOTH",
-			"value": 33
 		}
 	],
 	"offline.timeline.TimelineEventSettingTable.CameraSetting.EndCameraState": [
@@ -54404,10 +54404,6 @@
 	],
 	"via.simplewwise.EventListResource.Event.FreeArea.FreeArea8to11": [
 		{
-			"name": "FreeArea8to11_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea8to11_8",
 			"value": 8
 		},
@@ -54422,6 +54418,10 @@
 		{
 			"name": "FreeArea8to11_11",
 			"value": 11
+		},
+		{
+			"name": "FreeArea8to11_None",
+			"value": 4294967295
 		}
 	],
 	"offline.network.StoreType": [
@@ -54456,36 +54456,36 @@
 	],
 	"offline.survivor.tag.ActConditionAttribute": [
 		{
-			"name": "HOLD",
-			"value": 1066935813
-		},
-		{
-			"name": "REACTION_DOWN",
-			"value": 2697554731
-		},
-		{
-			"name": "REACTION_STAND",
-			"value": 2657302038
-		},
-		{
-			"name": "DEAD",
-			"value": 3801792997
-		},
-		{
-			"name": "QUICK_TURN",
-			"value": 1051970710
+			"name": "COVER_END",
+			"value": 14867230
 		},
 		{
 			"name": "COVER_START",
 			"value": 374694928
 		},
 		{
-			"name": "COVER_HOLD",
-			"value": 4188479397
+			"name": "QUICK_TURN",
+			"value": 1051970710
 		},
 		{
-			"name": "COVER_END",
-			"value": 14867230
+			"name": "HOLD",
+			"value": 1066935813
+		},
+		{
+			"name": "REACTION_STAND",
+			"value": 2657302038
+		},
+		{
+			"name": "REACTION_DOWN",
+			"value": 2697554731
+		},
+		{
+			"name": "DEAD",
+			"value": 3801792997
+		},
+		{
+			"name": "COVER_HOLD",
+			"value": 4188479397
 		}
 	],
 	"offline.escape.enemy.em9000.NemesisMode": [
@@ -58531,6 +58531,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -58555,20 +58559,8 @@
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
 			"name": "StringFormatMask",
 			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
 		},
 		{
 			"name": "HasSecurity",
@@ -58577,6 +58569,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		}
 	],
 	"offline.effect.script.CreatedEffectContainer.RequestCommand.Command": [
@@ -61576,11 +61576,19 @@
 	],
 	"via.clr.TypeFlag": [
 		{
-			"name": "VisibilityMask",
-			"value": 7
+			"name": "NotPublic",
+			"value": 0
 		},
 		{
-			"name": "NotPublic",
+			"name": "AutoLayout",
+			"value": 0
+		},
+		{
+			"name": "Class",
+			"value": 0
+		},
+		{
+			"name": "AnsiClass",
 			"value": 0
 		},
 		{
@@ -61608,16 +61616,12 @@
 			"value": 6
 		},
 		{
-			"name": "NestedFamorAssem",
+			"name": "VisibilityMask",
 			"value": 7
 		},
 		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
+			"name": "NestedFamorAssem",
+			"value": 7
 		},
 		{
 			"name": "SequentialLayout",
@@ -61628,12 +61632,12 @@
 			"value": 16
 		},
 		{
-			"name": "ClassSemanticsMask",
-			"value": 32
+			"name": "LayoutMask",
+			"value": 24
 		},
 		{
-			"name": "Class",
-			"value": 0
+			"name": "ClassSemanticsMask",
+			"value": 32
 		},
 		{
 			"name": "Interface",
@@ -61652,6 +61656,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -61664,14 +61672,6 @@
 			"value": 16384
 		},
 		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
 			"name": "UnicodeClass",
 			"value": 65536
 		},
@@ -61680,20 +61680,12 @@
 			"value": 131072
 		},
 		{
-			"name": "CustomFormatClass",
+			"name": "StringFormatMask",
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
+			"name": "CustomFormatClass",
+			"value": 196608
 		},
 		{
 			"name": "HasSecurity",
@@ -61702,6 +61694,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		},
 		{
 			"name": "LocalHeap",
@@ -63368,10 +63368,6 @@
 	],
 	"via.storage.saveService.SaveServiceMode": [
 		{
-			"name": "SaveServiceMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceMode_1_Byte",
 			"value": 1
 		},
@@ -63390,6 +63386,10 @@
 		{
 			"name": "SaveServiceMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceMode_128_KiloByte",
@@ -63496,7 +63496,15 @@
 	],
 	"via.AABB.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "X_MinBit",
+			"value": 1
+		},
+		{
+			"name": "P_YZX0",
 			"value": 1
 		},
 		{
@@ -63504,80 +63512,16 @@
 			"value": 2
 		},
 		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
 			"name": "P_YZX1",
 			"value": 2
 		},
 		{
-			"name": "P_ZXY0",
+			"name": "Y_MinBit",
 			"value": 4
 		},
 		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
+			"name": "P_ZXY0",
+			"value": 4
 		},
 		{
 			"name": "E_ZX0Y0",
@@ -63588,12 +63532,40 @@
 			"value": 6
 		},
 		{
+			"name": "Y_MaxBit",
+			"value": 8
+		},
+		{
+			"name": "P_ZXY1",
+			"value": 8
+		},
+		{
 			"name": "E_ZX0Y1",
 			"value": 9
 		},
 		{
 			"name": "E_ZX1Y1",
 			"value": 10
+		},
+		{
+			"name": "Z_MinBit",
+			"value": 16
+		},
+		{
+			"name": "P_XYZ0",
+			"value": 16
+		},
+		{
+			"name": "E_YZ0X0",
+			"value": 17
+		},
+		{
+			"name": "E_YZ0X1",
+			"value": 18
+		},
+		{
+			"name": "E_XY0Z0",
+			"value": 20
 		},
 		{
 			"name": "V_X0Y0Z0",
@@ -63604,6 +63576,10 @@
 			"value": 22
 		},
 		{
+			"name": "E_XY1Z0",
+			"value": 24
+		},
+		{
 			"name": "V_X0Y1Z0",
 			"value": 25
 		},
@@ -63612,12 +63588,36 @@
 			"value": 26
 		},
 		{
+			"name": "Z_MaxBit",
+			"value": 32
+		},
+		{
+			"name": "P_XYZ1",
+			"value": 32
+		},
+		{
+			"name": "E_YZ1X0",
+			"value": 33
+		},
+		{
+			"name": "E_YZ1X1",
+			"value": 34
+		},
+		{
+			"name": "E_XY0Z1",
+			"value": 36
+		},
+		{
 			"name": "V_X0Y0Z1",
 			"value": 37
 		},
 		{
 			"name": "V_X1Y0Z1",
 			"value": 38
+		},
+		{
+			"name": "E_XY1Z1",
+			"value": 40
 		},
 		{
 			"name": "V_X0Y1Z1",
@@ -65703,24 +65703,24 @@
 			"value": 2
 		},
 		{
-			"name": "LeftLegStop",
-			"value": 4
+			"name": "BothLegContact",
+			"value": 3
 		},
 		{
-			"name": "RightLegStop",
-			"value": 8
+			"name": "LeftLegStop",
+			"value": 4
 		},
 		{
 			"name": "LeftLegFix",
 			"value": 5
 		},
 		{
-			"name": "RightLegFix",
-			"value": 10
+			"name": "RightLegStop",
+			"value": 8
 		},
 		{
-			"name": "BothLegContact",
-			"value": 3
+			"name": "RightLegFix",
+			"value": 10
 		},
 		{
 			"name": "BothLegFix",
@@ -65739,12 +65739,12 @@
 			"value": 64
 		},
 		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
 			"name": "LeftToeFix",
 			"value": 65
+		},
+		{
+			"name": "RightToeStop",
+			"value": 128
 		},
 		{
 			"name": "RightToeFix",
@@ -65767,24 +65767,24 @@
 			"value": 512
 		},
 		{
-			"name": "LeftHandStop",
-			"value": 1024
+			"name": "BothHandContact",
+			"value": 768
 		},
 		{
-			"name": "RightHandStop",
-			"value": 2048
+			"name": "LeftHandStop",
+			"value": 1024
 		},
 		{
 			"name": "LeftHandFix",
 			"value": 1280
 		},
 		{
-			"name": "RightHandFix",
-			"value": 2560
+			"name": "RightHandStop",
+			"value": 2048
 		},
 		{
-			"name": "BothHandContact",
-			"value": 768
+			"name": "RightHandFix",
+			"value": 2560
 		},
 		{
 			"name": "BothHandFix",
@@ -65803,12 +65803,12 @@
 			"value": 16384
 		},
 		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
 			"name": "LeftHandTipFix",
 			"value": 16640
+		},
+		{
+			"name": "RightHandTipStop",
+			"value": 32768
 		},
 		{
 			"name": "RightHandTipFix",
@@ -66293,6 +66293,10 @@
 			"value": 0
 		},
 		{
+			"name": "Native",
+			"value": 0
+		},
+		{
 			"name": "BE",
 			"value": 1
 		},
@@ -66303,10 +66307,6 @@
 		{
 			"name": "BE_BOM",
 			"value": 3
-		},
-		{
-			"name": "Native",
-			"value": 0
 		}
 	],
 	"via.os.SemaphoreError": [
@@ -67109,6 +67109,10 @@
 			"value": 191
 		},
 		{
+			"name": "Slash",
+			"value": 191
+		},
+		{
 			"name": "OEM_3",
 			"value": 192
 		},
@@ -67118,6 +67122,10 @@
 		},
 		{
 			"name": "OEM_5",
+			"value": 220
+		},
+		{
+			"name": "BackSlash",
 			"value": 220
 		},
 		{
@@ -67135,14 +67143,6 @@
 		{
 			"name": "OEM_102",
 			"value": 226
-		},
-		{
-			"name": "Slash",
-			"value": 191
-		},
-		{
-			"name": "BackSlash",
-			"value": 220
 		},
 		{
 			"name": "DefinedEnter",
@@ -67587,6 +67587,10 @@
 			"value": 1
 		},
 		{
+			"name": "ACT_WAKEUP",
+			"value": 2
+		},
+		{
 			"name": "ACT_ATTENTION",
 			"value": 7
 		},
@@ -67595,12 +67599,8 @@
 			"value": 8
 		},
 		{
-			"name": "ACT_BOX_INTERACT",
-			"value": 2011
-		},
-		{
-			"name": "ACT_WAKEUP",
-			"value": 2
+			"name": "ACT_LOOKUP",
+			"value": 12
 		},
 		{
 			"name": "ATK_HOLD",
@@ -67611,8 +67611,8 @@
 			"value": 2002
 		},
 		{
-			"name": "ACT_LOOKUP",
-			"value": 12
+			"name": "ACT_BOX_INTERACT",
+			"value": 2011
 		}
 	],
 	"via.render.RenderConfig.DeinterlaceType": [
@@ -67957,72 +67957,12 @@
 	],
 	"offline.player.tag.StateAttribute": [
 		{
-			"name": "IDLE",
-			"value": 4068036120
-		},
-		{
-			"name": "WALK",
-			"value": 3256568682
-		},
-		{
-			"name": "JOG",
-			"value": 2088515488
-		},
-		{
-			"name": "TURN",
-			"value": 860490442
-		},
-		{
-			"name": "HOLD",
-			"value": 1483866028
-		},
-		{
-			"name": "FOCUS",
-			"value": 2144765589
-		},
-		{
-			"name": "GAZING",
-			"value": 3099384174
-		},
-		{
-			"name": "REACTION",
-			"value": 2019971691
-		},
-		{
-			"name": "JACK",
-			"value": 1737993198
-		},
-		{
-			"name": "DEAD",
-			"value": 1396936476
-		},
-		{
-			"name": "SUPPORT",
-			"value": 1928232529
-		},
-		{
-			"name": "KNIFE",
-			"value": 4143855984
-		},
-		{
 			"name": "CREEPING",
 			"value": 96787651
 		},
 		{
-			"name": "DAMAGE",
-			"value": 1382710551
-		},
-		{
-			"name": "STEP",
-			"value": 2716723989
-		},
-		{
-			"name": "ATTACK",
-			"value": 1479106544
-		},
-		{
-			"name": "HOLD_START",
-			"value": 2343824593
+			"name": "PUMP_ACTION",
+			"value": 196729181
 		},
 		{
 			"name": "RELOAD",
@@ -68033,80 +67973,140 @@
 			"value": 513335796
 		},
 		{
-			"name": "CHANGE_WEAPON",
-			"value": 1941950089
-		},
-		{
-			"name": "JOG_START",
-			"value": 3239034986
-		},
-		{
-			"name": "SWITCH_LIGHT",
-			"value": 4201499153
-		},
-		{
-			"name": "WALK_END",
-			"value": 3308134375
-		},
-		{
-			"name": "JOG_END",
-			"value": 1854710253
-		},
-		{
-			"name": "RunHold",
-			"value": 4219460681
-		},
-		{
-			"name": "Dodge",
-			"value": 3089588532
-		},
-		{
-			"name": "Stagger",
-			"value": 3224944760
-		},
-		{
-			"name": "Squat",
-			"value": 3844326912
-		},
-		{
-			"name": "Sliding",
-			"value": 1288686163
-		},
-		{
-			"name": "TOUCH_DOOR",
-			"value": 4065766588
-		},
-		{
-			"name": "COUGH",
-			"value": 2185882065
-		},
-		{
-			"name": "PUMP_ACTION",
-			"value": 196729181
-		},
-		{
-			"name": "ResistParasite",
-			"value": 1733642319
+			"name": "Reverse",
+			"value": 686905550
 		},
 		{
 			"name": "WHEEL",
 			"value": 765812017
 		},
 		{
-			"name": "Reverse",
-			"value": 686905550
+			"name": "TURN",
+			"value": 860490442
 		},
 		{
-			"name": "HoldDodge",
-			"value": 2684488665
+			"name": "Sliding",
+			"value": 1288686163
+		},
+		{
+			"name": "DAMAGE",
+			"value": 1382710551
+		},
+		{
+			"name": "DEAD",
+			"value": 1396936476
+		},
+		{
+			"name": "ATTACK",
+			"value": 1479106544
+		},
+		{
+			"name": "HOLD",
+			"value": 1483866028
+		},
+		{
+			"name": "ResistParasite",
+			"value": 1733642319
+		},
+		{
+			"name": "JACK",
+			"value": 1737993198
+		},
+		{
+			"name": "JOG_END",
+			"value": 1854710253
+		},
+		{
+			"name": "SUPPORT",
+			"value": 1928232529
 		},
 		{
 			"name": "Punch",
 			"value": 1928665555
 		},
 		{
+			"name": "CHANGE_WEAPON",
+			"value": 1941950089
+		},
+		{
+			"name": "REACTION",
+			"value": 2019971691
+		},
+		{
+			"name": "JOG",
+			"value": 2088515488
+		},
+		{
+			"name": "FOCUS",
+			"value": 2144765589
+		},
+		{
+			"name": "COUGH",
+			"value": 2185882065
+		},
+		{
+			"name": "HOLD_START",
+			"value": 2343824593
+		},
+		{
 			"name": "KnifeDodgeHoldStart",
 			"value": 2576088736
+		},
+		{
+			"name": "HoldDodge",
+			"value": 2684488665
+		},
+		{
+			"name": "STEP",
+			"value": 2716723989
+		},
+		{
+			"name": "Dodge",
+			"value": 3089588532
+		},
+		{
+			"name": "GAZING",
+			"value": 3099384174
+		},
+		{
+			"name": "Stagger",
+			"value": 3224944760
+		},
+		{
+			"name": "JOG_START",
+			"value": 3239034986
+		},
+		{
+			"name": "WALK",
+			"value": 3256568682
+		},
+		{
+			"name": "WALK_END",
+			"value": 3308134375
+		},
+		{
+			"name": "Squat",
+			"value": 3844326912
+		},
+		{
+			"name": "TOUCH_DOOR",
+			"value": 4065766588
+		},
+		{
+			"name": "IDLE",
+			"value": 4068036120
+		},
+		{
+			"name": "KNIFE",
+			"value": 4143855984
+		},
+		{
+			"name": "SWITCH_LIGHT",
+			"value": 4201499153
+		},
+		{
+			"name": "RunHold",
+			"value": 4219460681
 		}
 	],
 	"offline.GimmickOptionFlagSettings.FlagStatus": [
@@ -68255,20 +68255,20 @@
 			"value": 2
 		},
 		{
-			"name": "BLUE",
-			"value": 4
+			"name": "YELLOW",
+			"value": 3
 		},
 		{
-			"name": "CYAN",
-			"value": 6
+			"name": "BLUE",
+			"value": 4
 		},
 		{
 			"name": "MAGENTA",
 			"value": 5
 		},
 		{
-			"name": "YELLOW",
-			"value": 3
+			"name": "CYAN",
+			"value": 6
 		},
 		{
 			"name": "WHITE",
@@ -68469,12 +68469,56 @@
 			"value": 12
 		},
 		{
+			"name": "Gapple_Hold",
+			"value": 13
+		},
+		{
+			"name": "Feeler_Hold",
+			"value": 14
+		},
+		{
+			"name": "KickR",
+			"value": 15
+		},
+		{
+			"name": "KickL",
+			"value": 16
+		},
+		{
+			"name": "BeastR",
+			"value": 17
+		},
+		{
+			"name": "BeastL",
+			"value": 18
+		},
+		{
+			"name": "SuperMode",
+			"value": 19
+		},
+		{
+			"name": "Hummer",
+			"value": 20
+		},
+		{
+			"name": "Grapple_Wall_RHand",
+			"value": 21
+		},
+		{
+			"name": "Grapple_Floor_RHand",
+			"value": 22
+		},
+		{
 			"name": "Attack_ToEm_R",
 			"value": 23
 		},
 		{
 			"name": "Attack_ToEm_L",
 			"value": 24
+		},
+		{
+			"name": "Feeler_Wide_Hold",
+			"value": 25
 		},
 		{
 			"name": "Push_ToEm_R",
@@ -68517,26 +68561,6 @@
 			"value": 35
 		},
 		{
-			"name": "Gapple_Hold",
-			"value": 13
-		},
-		{
-			"name": "Feeler_Hold",
-			"value": 14
-		},
-		{
-			"name": "Grapple_Wall_RHand",
-			"value": 21
-		},
-		{
-			"name": "Grapple_Floor_RHand",
-			"value": 22
-		},
-		{
-			"name": "Feeler_Wide_Hold",
-			"value": 25
-		},
-		{
 			"name": "Grapple_LV3Rush",
 			"value": 36
 		},
@@ -68547,18 +68571,6 @@
 		{
 			"name": "LV2ArmFlame",
 			"value": 38
-		},
-		{
-			"name": "KickR",
-			"value": 15
-		},
-		{
-			"name": "KickL",
-			"value": 16
-		},
-		{
-			"name": "Hummer",
-			"value": 20
 		},
 		{
 			"name": "FootR",
@@ -68587,18 +68599,6 @@
 		{
 			"name": "HummerSub",
 			"value": 45
-		},
-		{
-			"name": "BeastR",
-			"value": 17
-		},
-		{
-			"name": "BeastL",
-			"value": 18
-		},
-		{
-			"name": "SuperMode",
-			"value": 19
 		},
 		{
 			"name": "Dodge",
@@ -69501,24 +69501,136 @@
 	],
 	"offline.GUISegmentOrder": [
 		{
-			"name": "MouesCursor",
-			"value": 60
+			"name": "DEFAULT_LOWER",
+			"value": 0
 		},
 		{
-			"name": "SaveIcon",
-			"value": 59
+			"name": "Reticle",
+			"value": 9
 		},
 		{
-			"name": "GuideIcon",
-			"value": 58
+			"name": "FsmFade",
+			"value": 10
 		},
 		{
-			"name": "GeneralDialog",
-			"value": 57
+			"name": "EventFade",
+			"value": 13
 		},
 		{
-			"name": "LoadingIcon",
-			"value": 56
+			"name": "SkipFade",
+			"value": 14
+		},
+		{
+			"name": "InventoryPlayer",
+			"value": 15
+		},
+		{
+			"name": "InventoryBG",
+			"value": 16
+		},
+		{
+			"name": "InventoryVital",
+			"value": 17
+		},
+		{
+			"name": "InventorySlot",
+			"value": 18
+		},
+		{
+			"name": "MapBg",
+			"value": 20
+		},
+		{
+			"name": "MapGrid",
+			"value": 21
+		},
+		{
+			"name": "Map",
+			"value": 22
+		},
+		{
+			"name": "MapFrame",
+			"value": 23
+		},
+		{
+			"name": "InventoryDetail",
+			"value": 25
+		},
+		{
+			"name": "InventoryCaption",
+			"value": 26
+		},
+		{
+			"name": "FileViewer",
+			"value": 30
+		},
+		{
+			"name": "Purpose",
+			"value": 34
+		},
+		{
+			"name": "InventoryFront",
+			"value": 35
+		},
+		{
+			"name": "SubtitleFullScreenMovie",
+			"value": 36
+		},
+		{
+			"name": "EventTextureForDevelop",
+			"value": 37
+		},
+		{
+			"name": "Subtitle",
+			"value": 38
+		},
+		{
+			"name": "InGameFade",
+			"value": 40
+		},
+		{
+			"name": "GameOver",
+			"value": 42
+		},
+		{
+			"name": "Title",
+			"value": 43
+		},
+		{
+			"name": "BootFlow",
+			"value": 44
+		},
+		{
+			"name": "Tutorial",
+			"value": 45
+		},
+		{
+			"name": "Pause",
+			"value": 46
+		},
+		{
+			"name": "Option",
+			"value": 48
+		},
+		{
+			"name": "FullScreenMovie",
+			"value": 49
+		},
+		{
+			"name": "TitleDialog",
+			"value": 50
+		},
+		{
+			"name": "TotalPlayTime",
+			"value": 51
+		},
+		{
+			"name": "MenuFade",
+			"value": 53
+		},
+		{
+			"name": "OverMenuFade",
+			"value": 54
 		},
 		{
 			"name": "LoadingFade",
@@ -69529,136 +69641,24 @@
 			"value": 55
 		},
 		{
-			"name": "OverMenuFade",
-			"value": 54
+			"name": "LoadingIcon",
+			"value": 56
 		},
 		{
-			"name": "MenuFade",
-			"value": 53
+			"name": "GeneralDialog",
+			"value": 57
 		},
 		{
-			"name": "TotalPlayTime",
-			"value": 51
+			"name": "GuideIcon",
+			"value": 58
 		},
 		{
-			"name": "TitleDialog",
-			"value": 50
+			"name": "SaveIcon",
+			"value": 59
 		},
 		{
-			"name": "FullScreenMovie",
-			"value": 49
-		},
-		{
-			"name": "Option",
-			"value": 48
-		},
-		{
-			"name": "Pause",
-			"value": 46
-		},
-		{
-			"name": "Tutorial",
-			"value": 45
-		},
-		{
-			"name": "BootFlow",
-			"value": 44
-		},
-		{
-			"name": "Title",
-			"value": 43
-		},
-		{
-			"name": "GameOver",
-			"value": 42
-		},
-		{
-			"name": "InGameFade",
-			"value": 40
-		},
-		{
-			"name": "Subtitle",
-			"value": 38
-		},
-		{
-			"name": "EventTextureForDevelop",
-			"value": 37
-		},
-		{
-			"name": "SubtitleFullScreenMovie",
-			"value": 36
-		},
-		{
-			"name": "InventoryFront",
-			"value": 35
-		},
-		{
-			"name": "Purpose",
-			"value": 34
-		},
-		{
-			"name": "FileViewer",
-			"value": 30
-		},
-		{
-			"name": "InventoryCaption",
-			"value": 26
-		},
-		{
-			"name": "InventoryDetail",
-			"value": 25
-		},
-		{
-			"name": "MapFrame",
-			"value": 23
-		},
-		{
-			"name": "Map",
-			"value": 22
-		},
-		{
-			"name": "MapGrid",
-			"value": 21
-		},
-		{
-			"name": "MapBg",
-			"value": 20
-		},
-		{
-			"name": "InventorySlot",
-			"value": 18
-		},
-		{
-			"name": "InventoryVital",
-			"value": 17
-		},
-		{
-			"name": "InventoryBG",
-			"value": 16
-		},
-		{
-			"name": "InventoryPlayer",
-			"value": 15
-		},
-		{
-			"name": "SkipFade",
-			"value": 14
-		},
-		{
-			"name": "EventFade",
-			"value": 13
-		},
-		{
-			"name": "FsmFade",
-			"value": 10
-		},
-		{
-			"name": "Reticle",
-			"value": 9
-		},
-		{
-			"name": "DEFAULT_LOWER",
-			"value": 0
+			"name": "MouesCursor",
+			"value": 60
 		}
 	],
 	"offline.enemy.em0000.param.ContextParameter.TransformParasiteZoneTargetType": [
@@ -70015,10 +70015,6 @@
 			"value": 1
 		},
 		{
-			"name": "ACT_LOOKAROUND",
-			"value": 7
-		},
-		{
 			"name": "ACT_MOVE",
 			"value": 2
 		},
@@ -70037,6 +70033,10 @@
 		{
 			"name": "ACT_DASH_MOVE",
 			"value": 6
+		},
+		{
+			"name": "ACT_LOOKAROUND",
+			"value": 7
 		},
 		{
 			"name": "ATK_CLAW_RIGHT",
@@ -71580,12 +71580,12 @@
 			"value": 2
 		},
 		{
-			"name": "Emissive",
-			"value": 8
-		},
-		{
 			"name": "BaseColorAndNormal",
 			"value": 3
+		},
+		{
+			"name": "Emissive",
+			"value": 8
 		},
 		{
 			"name": "BaseColorAndEmissive",
@@ -72300,11 +72300,11 @@
 	],
 	"via.clr.MethodImplFlag": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -72314,6 +72314,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -72328,36 +72332,28 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
 		},
 		{
 			"name": "HasRetVal",
@@ -72370,6 +72366,10 @@
 		{
 			"name": "EmptyCtor",
 			"value": 2048
+		},
+		{
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "ContainsGenericParameters",
@@ -72516,6 +72516,10 @@
 	],
 	"offline.rogue.RogueDefine.RogueSpecialItemTable": [
 		{
+			"name": "Scrap",
+			"value": 281
+		},
+		{
 			"name": "SpItemA",
 			"value": 289
 		},
@@ -72526,10 +72530,6 @@
 		{
 			"name": "SpItemC",
 			"value": 291
-		},
-		{
-			"name": "Scrap",
-			"value": 281
 		}
 	],
 	"via.fsm.FsmSelectorType": [
@@ -73740,11 +73740,11 @@
 	],
 	"System.Reflection.MethodImplAttributes": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -73754,6 +73754,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -73768,36 +73772,32 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
 		},
 		{
-			"name": "NoOptimization",
-			"value": 64
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "MaxMethodImplVal",
@@ -75172,10 +75172,6 @@
 	],
 	"via.simplewwise.EventListResource.Event.FreeArea.FreeArea0to7": [
 		{
-			"name": "FreeArea0to7_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea0to7_0",
 			"value": 0
 		},
@@ -75206,6 +75202,10 @@
 		{
 			"name": "FreeArea0to7_7",
 			"value": 7
+		},
+		{
+			"name": "FreeArea0to7_None",
+			"value": 4294967295
 		}
 	],
 	"via.motion.ChainSpringCalcType": [
@@ -75452,10 +75452,6 @@
 	],
 	"via.clr.FieldFlag": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -75482,6 +75478,10 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "FieldAccessMask",
+			"value": 7
 		},
 		{
 			"name": "Static",
@@ -75788,6 +75788,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "EdgeShort",
 			"value": 1
 		},
@@ -75814,10 +75818,6 @@
 		{
 			"name": "Assert",
 			"value": 7
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"offline.timeline.TimelineEventSettingTable.ApplyTiming": [
@@ -76194,10 +76194,6 @@
 			"value": 0
 		},
 		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
 			"name": "Covariant",
 			"value": 1
 		},
@@ -76206,8 +76202,8 @@
 			"value": 2
 		},
 		{
-			"name": "SpecialConstraintMask",
-			"value": 28
+			"name": "VarianceMask",
+			"value": 3
 		},
 		{
 			"name": "ReferenceTypeConstraint",
@@ -76220,6 +76216,10 @@
 		{
 			"name": "DefaultConstructorConstraint",
 			"value": 16
+		},
+		{
+			"name": "SpecialConstraintMask",
+			"value": 28
 		}
 	],
 	"via.os.FileAttr": [
@@ -76538,10 +76538,6 @@
 	],
 	"offline.escape.enemy.em9040.ActionStatus.ID": [
 		{
-			"name": "INVALID_ACTION_ID",
-			"value": 10000
-		},
-		{
 			"name": "ACT_IDLE",
 			"value": 0
 		},
@@ -76572,6 +76568,10 @@
 		{
 			"name": "DIE_RIGID",
 			"value": 5001
+		},
+		{
+			"name": "INVALID_ACTION_ID",
+			"value": 10000
 		}
 	],
 	"offline.gimmick.action.EsGimmickProcessingPlantCrane.MsgKey": [
@@ -77006,70 +77006,6 @@
 			"value": 0
 		},
 		{
-			"name": "StaggerSmall",
-			"value": 16843008
-		},
-		{
-			"name": "StaggerMedium",
-			"value": 16908544
-		},
-		{
-			"name": "StaggerLarge",
-			"value": 16974080
-		},
-		{
-			"name": "StaggerExtraLarge",
-			"value": 17039616
-		},
-		{
-			"name": "TossSmall",
-			"value": 16843264
-		},
-		{
-			"name": "TossMedium",
-			"value": 16908800
-		},
-		{
-			"name": "TossLarge",
-			"value": 16974336
-		},
-		{
-			"name": "TossExtraLarge",
-			"value": 17039872
-		},
-		{
-			"name": "BurstSmall",
-			"value": 16843520
-		},
-		{
-			"name": "BurstMedium",
-			"value": 16909056
-		},
-		{
-			"name": "BurstLarge",
-			"value": 16974592
-		},
-		{
-			"name": "BurstExtraLarge",
-			"value": 17040128
-		},
-		{
-			"name": "ExplosionSmall",
-			"value": 16843776
-		},
-		{
-			"name": "ExplosionMedium",
-			"value": 16909312
-		},
-		{
-			"name": "ExplosionLarge",
-			"value": 16974848
-		},
-		{
-			"name": "ExplosionExtraLarge",
-			"value": 17040384
-		},
-		{
 			"name": "Flash",
 			"value": 16778496
 		},
@@ -77086,12 +77022,76 @@
 			"value": 16779264
 		},
 		{
+			"name": "StaggerSmall",
+			"value": 16843008
+		},
+		{
+			"name": "TossSmall",
+			"value": 16843264
+		},
+		{
+			"name": "BurstSmall",
+			"value": 16843520
+		},
+		{
+			"name": "ExplosionSmall",
+			"value": 16843776
+		},
+		{
 			"name": "BindVoice_S",
 			"value": 16845824
 		},
 		{
+			"name": "StaggerMedium",
+			"value": 16908544
+		},
+		{
+			"name": "TossMedium",
+			"value": 16908800
+		},
+		{
+			"name": "BurstMedium",
+			"value": 16909056
+		},
+		{
+			"name": "ExplosionMedium",
+			"value": 16909312
+		},
+		{
 			"name": "BindVoice_M",
 			"value": 16911360
+		},
+		{
+			"name": "StaggerLarge",
+			"value": 16974080
+		},
+		{
+			"name": "TossLarge",
+			"value": 16974336
+		},
+		{
+			"name": "BurstLarge",
+			"value": 16974592
+		},
+		{
+			"name": "ExplosionLarge",
+			"value": 16974848
+		},
+		{
+			"name": "StaggerExtraLarge",
+			"value": 17039616
+		},
+		{
+			"name": "TossExtraLarge",
+			"value": 17039872
+		},
+		{
+			"name": "BurstExtraLarge",
+			"value": 17040128
+		},
+		{
+			"name": "ExplosionExtraLarge",
+			"value": 17040384
 		},
 		{
 			"name": "Flick",
@@ -77572,12 +77572,12 @@
 			"value": 2
 		},
 		{
-			"name": "Item",
-			"value": 8
-		},
-		{
 			"name": "Weapon",
 			"value": 4
+		},
+		{
+			"name": "Item",
+			"value": 8
 		},
 		{
 			"name": "Prop",
@@ -78124,10 +78124,6 @@
 	],
 	"via.simplewwise.EventListResource.Event.FreeArea.FreeArea12to15": [
 		{
-			"name": "FreeArea12to15_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea12to15_12",
 			"value": 12
 		},
@@ -78142,6 +78138,10 @@
 		{
 			"name": "FreeArea12to15_15",
 			"value": 15
+		},
+		{
+			"name": "FreeArea12to15_None",
+			"value": 4294967295
 		}
 	],
 	"via.render.DebugSeverity": [
@@ -78650,11 +78650,19 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
-			"name": "Ignore",
-			"value": 4294967295
+			"name": "AecAgcEnable",
+			"value": 0
 		},
 		{
-			"name": "AecAgcEnable",
+			"name": "ExposureGainMode0",
+			"value": 0
+		},
+		{
+			"name": "WhiteBalanceAuto",
+			"value": 0
+		},
+		{
+			"name": "GammaControlOn",
 			"value": 0
 		},
 		{
@@ -78662,28 +78670,20 @@
 			"value": 1
 		},
 		{
-			"name": "ExposureGainMode0",
-			"value": 0
-		},
-		{
 			"name": "ExposureGainMode1",
 			"value": 1
-		},
-		{
-			"name": "WhiteBalanceAuto",
-			"value": 0
 		},
 		{
 			"name": "WhiteBalanceManual",
 			"value": 1
 		},
 		{
-			"name": "GammaControlOn",
-			"value": 0
-		},
-		{
 			"name": "GammaControlOff",
 			"value": 1
+		},
+		{
+			"name": "Ignore",
+			"value": 4294967295
 		}
 	],
 	"via.hid.virtualKeyboard.nsw.InputFormMode": [
@@ -79452,14 +79452,6 @@
 			"value": 2007
 		},
 		{
-			"name": "SPT_KNIFE",
-			"value": 4000
-		},
-		{
-			"name": "SPT_GRENADE",
-			"value": 4001
-		},
-		{
 			"name": "DMG_S",
 			"value": 3000
 		},
@@ -79510,6 +79502,14 @@
 		{
 			"name": "DMG_PUNCH",
 			"value": 3012
+		},
+		{
+			"name": "SPT_KNIFE",
+			"value": 4000
+		},
+		{
+			"name": "SPT_GRENADE",
+			"value": 4001
 		},
 		{
 			"name": "DIE_NORMAL",
@@ -79574,16 +79574,16 @@
 	],
 	"offline.player.tag.WaterResistanceAttribute": [
 		{
+			"name": "MIDDLE",
+			"value": 1270622478
+		},
+		{
 			"name": "NONE",
 			"value": 1865675384
 		},
 		{
 			"name": "LOW",
 			"value": 3420020458
-		},
-		{
-			"name": "MIDDLE",
-			"value": 1270622478
 		},
 		{
 			"name": "HIGH",
@@ -80111,11 +80111,11 @@
 	],
 	"System.Reflection.MethodAttributes": [
 		{
-			"name": "MemberAccessMask",
-			"value": 7
+			"name": "PrivateScope",
+			"value": 0
 		},
 		{
-			"name": "PrivateScope",
+			"name": "ReuseSlot",
 			"value": 0
 		},
 		{
@@ -80143,6 +80143,14 @@
 			"value": 6
 		},
 		{
+			"name": "MemberAccessMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExport",
+			"value": 8
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -80159,20 +80167,16 @@
 			"value": 128
 		},
 		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
 			"name": "VtableLayoutMask",
 			"value": 256
 		},
 		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
 			"name": "NewSlot",
 			"value": 256
+		},
+		{
+			"name": "CheckAccessOnOverride",
+			"value": 512
 		},
 		{
 			"name": "Abstract",
@@ -80183,16 +80187,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "HasSecurity",
@@ -81845,16 +81845,16 @@
 			"value": 1
 		},
 		{
+			"name": "Game",
+			"value": 1
+		},
+		{
 			"name": "Consumable",
 			"value": 4
 		},
 		{
 			"name": "Durable",
 			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
 		},
 		{
 			"name": "GameDemo",
@@ -81961,6 +81961,10 @@
 			"value": 1
 		},
 		{
+			"name": "CreateSST",
+			"value": 1
+		},
+		{
 			"name": "ImplicitStaticMesh",
 			"value": 2
 		},
@@ -81969,16 +81973,12 @@
 			"value": 4
 		},
 		{
-			"name": "Default",
-			"value": 7
-		},
-		{
 			"name": "UsingSST",
 			"value": 6
 		},
 		{
-			"name": "CreateSST",
-			"value": 1
+			"name": "Default",
+			"value": 7
 		}
 	],
 	"offline.MainSceneUpdateManager.InstantiatePhase": [
@@ -82760,6 +82760,10 @@
 			"value": 4
 		},
 		{
+			"name": "Integer",
+			"value": 7
+		},
+		{
 			"name": "AllowTrailingSign",
 			"value": 8
 		},
@@ -82776,32 +82780,20 @@
 			"value": 64
 		},
 		{
-			"name": "AllowExponent",
-			"value": 128
-		},
-		{
-			"name": "AllowCurrencySymbol",
-			"value": 256
-		},
-		{
-			"name": "AllowHexSpecifier",
-			"value": 512
-		},
-		{
-			"name": "Integer",
-			"value": 7
-		},
-		{
-			"name": "HexNumber",
-			"value": 515
-		},
-		{
 			"name": "Number",
 			"value": 111
 		},
 		{
+			"name": "AllowExponent",
+			"value": 128
+		},
+		{
 			"name": "Float",
 			"value": 167
+		},
+		{
+			"name": "AllowCurrencySymbol",
+			"value": 256
 		},
 		{
 			"name": "Currency",
@@ -82810,6 +82802,14 @@
 		{
 			"name": "Any",
 			"value": 511
+		},
+		{
+			"name": "AllowHexSpecifier",
+			"value": 512
+		},
+		{
+			"name": "HexNumber",
+			"value": 515
 		}
 	],
 	"offline.escape.gimmick.action.EsGimmickAddAccessoryOption.ADD_TYPE": [
@@ -83600,10 +83600,6 @@
 	],
 	"offline.escape.enemy.em3300.MeshNo": [
 		{
-			"name": "Breakable_LeftClaw",
-			"value": 6
-		},
-		{
 			"name": "Breakable_Jaw",
 			"value": 2
 		},
@@ -83614,6 +83610,10 @@
 		{
 			"name": "Breakable_HeadRight",
 			"value": 4
+		},
+		{
+			"name": "Breakable_LeftClaw",
+			"value": 6
 		},
 		{
 			"name": "Breakable_BrokeJaw",
@@ -83870,6 +83870,14 @@
 			"value": 1002
 		},
 		{
+			"name": "Eat_Face_Down_End",
+			"value": 4300
+		},
+		{
+			"name": "Eat_Face_Up_End",
+			"value": 4350
+		},
+		{
 			"name": "Eat_Face_Down_00",
 			"value": 4501
 		},
@@ -83878,16 +83886,8 @@
 			"value": 4503
 		},
 		{
-			"name": "Eat_Face_Down_End",
-			"value": 4300
-		},
-		{
 			"name": "Eat_Face_Up_00",
 			"value": 4511
-		},
-		{
-			"name": "Eat_Face_Up_End",
-			"value": 4350
 		}
 	],
 	"via.render.SemanticType": [
@@ -84349,6 +84349,10 @@
 	],
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_AUTO",
+			"value": 0
+		},
+		{
 			"name": "SparseShadowTreeResolution_4K",
 			"value": 4
 		},
@@ -84367,10 +84371,6 @@
 		{
 			"name": "SparseShadowTreeResolution_64K",
 			"value": 64
-		},
-		{
-			"name": "SparseShadowTreeResolution_AUTO",
-			"value": 0
 		}
 	],
 	"via.motion.IkDog.FootLockMode": [
@@ -84635,12 +84635,12 @@
 			"value": 256
 		},
 		{
-			"name": "WC",
-			"value": 512
-		},
-		{
 			"name": "Default",
 			"value": 256
+		},
+		{
+			"name": "WC",
+			"value": 512
 		}
 	],
 	"offline.gui.GimmickNumberLockHothouseGuiBehavior2.RoutineType": [
@@ -85143,12 +85143,12 @@
 			"value": 0
 		},
 		{
-			"name": "Raw",
-			"value": 1
-		},
-		{
 			"name": "Default",
 			"value": 0
+		},
+		{
+			"name": "Raw",
+			"value": 1
 		}
 	],
 	"via.gui.MaterialParamType": [
@@ -86035,16 +86035,16 @@
 	],
 	"via.render.FenceState": [
 		{
-			"name": "Invalidate",
-			"value": 4294967295
+			"name": "UAVSync",
+			"value": 4294967293
 		},
 		{
 			"name": "DoNotWait",
 			"value": 4294967294
 		},
 		{
-			"name": "UAVSync",
-			"value": 4294967293
+			"name": "Invalidate",
+			"value": 4294967295
 		}
 	],
 	"offline.camera.ControlMotionArg.ActionCallType": [
@@ -88821,10 +88821,6 @@
 			"value": 257
 		},
 		{
-			"name": "st04_0202_1",
-			"value": 282
-		},
-		{
 			"name": "st04_0203_0",
 			"value": 258
 		},
@@ -88849,10 +88845,6 @@
 			"value": 263
 		},
 		{
-			"name": "st04_0208_1",
-			"value": 288
-		},
-		{
 			"name": "st04_0209_0",
 			"value": 264
 		},
@@ -88871,6 +88863,14 @@
 		{
 			"name": "st04_0101_1",
 			"value": 268
+		},
+		{
+			"name": "st04_0202_1",
+			"value": 282
+		},
+		{
+			"name": "st04_0208_1",
+			"value": 288
 		},
 		{
 			"name": "st04_0301_1",
@@ -91467,16 +91467,16 @@
 			"value": 4
 		},
 		{
+			"name": "LevelMax",
+			"value": 4
+		},
+		{
 			"name": "Level3",
 			"value": 8
 		},
 		{
 			"name": "All",
 			"value": 15
-		},
-		{
-			"name": "LevelMax",
-			"value": 4
 		}
 	],
 	"via.effect.detail.EmitterStateType": [
@@ -92507,6 +92507,22 @@
 			"value": 1
 		},
 		{
+			"name": "ACT_RUN",
+			"value": 3
+		},
+		{
+			"name": "ACT_TURN_AFTERATTACK",
+			"value": 5
+		},
+		{
+			"name": "ACT_IKAKU",
+			"value": 7
+		},
+		{
+			"name": "ACT_SERACH",
+			"value": 8
+		},
+		{
 			"name": "ACT_BOX_GOTO_WALK",
 			"value": 10
 		},
@@ -92515,16 +92531,24 @@
 			"value": 11
 		},
 		{
-			"name": "ACT_RUN",
-			"value": 3
-		},
-		{
 			"name": "ACT_RELOAD",
 			"value": 13
 		},
 		{
-			"name": "ACT_SERACH",
-			"value": 8
+			"name": "ACT_BEAST_IDLE",
+			"value": 19
+		},
+		{
+			"name": "ACT_BEAST_WALK",
+			"value": 20
+		},
+		{
+			"name": "ACT_SUPERMODE_IDLE",
+			"value": 22
+		},
+		{
+			"name": "ACT_SUPERMODE_WALK",
+			"value": 23
 		},
 		{
 			"name": "ATK_ATTACK",
@@ -92539,8 +92563,28 @@
 			"value": 2002
 		},
 		{
+			"name": "ATK_RUN_ATTACK",
+			"value": 2003
+		},
+		{
+			"name": "ACT_HOLDFIRE",
+			"value": 2005
+		},
+		{
 			"name": "ATK_SIDEATTACK",
 			"value": 2008
+		},
+		{
+			"name": "ATK_GRAPPLE",
+			"value": 2009
+		},
+		{
+			"name": "ATK_EXTEND_TENTACLE",
+			"value": 2010
+		},
+		{
+			"name": "ATK_BOX_THROW",
+			"value": 2011
 		},
 		{
 			"name": "ATK_KICK",
@@ -92555,26 +92599,6 @@
 			"value": 2014
 		},
 		{
-			"name": "ATK_GRAUND_TENTACLE",
-			"value": 2018
-		},
-		{
-			"name": "ATK_RUN_ATTACK",
-			"value": 2003
-		},
-		{
-			"name": "ATK_BOX_THROW",
-			"value": 2011
-		},
-		{
-			"name": "ATK_GRAPPLE",
-			"value": 2009
-		},
-		{
-			"name": "ATK_GRAPPLEHOLD_EM0000",
-			"value": 2037
-		},
-		{
 			"name": "ATK_GRAPPLE_WALL",
 			"value": 2015
 		},
@@ -92587,16 +92611,12 @@
 			"value": 2017
 		},
 		{
+			"name": "ATK_GRAUND_TENTACLE",
+			"value": 2018
+		},
+		{
 			"name": "ATK_GRAPPLE_WIDE",
 			"value": 2019
-		},
-		{
-			"name": "ACT_TURN_AFTERATTACK",
-			"value": 5
-		},
-		{
-			"name": "ACT_HOLDFIRE",
-			"value": 2005
 		},
 		{
 			"name": "ATK_BINDVOICE_S",
@@ -92619,28 +92639,12 @@
 			"value": 2024
 		},
 		{
-			"name": "ATK_EXTEND_TENTACLE",
-			"value": 2010
-		},
-		{
 			"name": "ATK_BACK_EXTEND_TENTACLE",
 			"value": 2025
 		},
 		{
 			"name": "ATK_RPG_DASHGRAPPLE",
 			"value": 2026
-		},
-		{
-			"name": "ATK_GRAPPLE_LV3RUSH",
-			"value": 2057
-		},
-		{
-			"name": "ACT_BEAST_IDLE",
-			"value": 19
-		},
-		{
-			"name": "ACT_BEAST_WALK",
-			"value": 20
 		},
 		{
 			"name": "ATK_BEAST_2",
@@ -92651,12 +92655,8 @@
 			"value": 2028
 		},
 		{
-			"name": "ACT_SUPERMODE_IDLE",
-			"value": 22
-		},
-		{
-			"name": "ACT_SUPERMODE_WALK",
-			"value": 23
+			"name": "ATK_GRAPPLEHOLD_EM0000",
+			"value": 2037
 		},
 		{
 			"name": "ATK_LV3_LINERFLAME",
@@ -92723,8 +92723,8 @@
 			"value": 2056
 		},
 		{
-			"name": "ACT_IKAKU",
-			"value": 7
+			"name": "ATK_GRAPPLE_LV3RUSH",
+			"value": 2057
 		},
 		{
 			"name": "NONE",
@@ -93253,32 +93253,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -93919,10 +93919,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea8to11": [
 		{
-			"name": "FreeArea8to11_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea8to11_8",
 			"value": 8
 		},
@@ -93937,6 +93933,10 @@
 		{
 			"name": "FreeArea8to11_11",
 			"value": 11
+		},
+		{
+			"name": "FreeArea8to11_None",
+			"value": 4294967295
 		}
 	],
 	"via.render.fluid.TextureResourceType": [
@@ -94647,8 +94647,8 @@
 	],
 	"via.render.Stamp.StampChannelMask": [
 		{
-			"name": "All",
-			"value": 15
+			"name": "None",
+			"value": 0
 		},
 		{
 			"name": "R",
@@ -94659,56 +94659,56 @@
 			"value": 2
 		},
 		{
-			"name": "B",
-			"value": 4
-		},
-		{
-			"name": "A",
-			"value": 8
-		},
-		{
 			"name": "RG",
 			"value": 3
+		},
+		{
+			"name": "B",
+			"value": 4
 		},
 		{
 			"name": "RB",
 			"value": 5
 		},
 		{
-			"name": "RA",
-			"value": 9
-		},
-		{
 			"name": "GB",
 			"value": 6
-		},
-		{
-			"name": "GA",
-			"value": 10
-		},
-		{
-			"name": "BA",
-			"value": 12
 		},
 		{
 			"name": "RGB",
 			"value": 7
 		},
 		{
-			"name": "RBA",
-			"value": 13
+			"name": "A",
+			"value": 8
+		},
+		{
+			"name": "RA",
+			"value": 9
+		},
+		{
+			"name": "GA",
+			"value": 10
 		},
 		{
 			"name": "RGA",
 			"value": 11
 		},
 		{
+			"name": "BA",
+			"value": 12
+		},
+		{
+			"name": "RBA",
+			"value": 13
+		},
+		{
 			"name": "GBA",
 			"value": 14
 		},
 		{
-			"name": "None",
-			"value": 0
+			"name": "All",
+			"value": 15
 		}
 	],
 	"offline.EsUIShopUserData.ShopCategory": [
@@ -95221,27 +95221,23 @@
 	],
 	"offline.esacpe.enemy.em9030.StateName": [
 		{
-			"name": "Attach",
-			"value": 3020854120
-		},
-		{
 			"name": "GraundIdle",
 			"value": 2897043859
 		},
 		{
-			"name": "GraundAttack",
-			"value": 4006737639
+			"name": "Attach",
+			"value": 3020854120
 		},
 		{
 			"name": "PreGraundAttack",
 			"value": 3404869177
+		},
+		{
+			"name": "GraundAttack",
+			"value": 4006737639
 		}
 	],
 	"via.clr.MethodFlag": [
-		{
-			"name": "AccessibilityMask",
-			"value": 7
-		},
 		{
 			"name": "PrivateScope",
 			"value": 0
@@ -95269,6 +95265,14 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "AccessibilityMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExp",
+			"value": 8
 		},
 		{
 			"name": "Static",
@@ -95299,16 +95303,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExp",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "NoILAsmKeyword",
@@ -95320,10 +95320,6 @@
 		}
 	],
 	"via.wwise.FreeArea.FreeArea12to15": [
-		{
-			"name": "FreeArea12to15_None",
-			"value": 4294967295
-		},
 		{
 			"name": "FreeArea12to15_12",
 			"value": 12
@@ -95339,6 +95335,10 @@
 		{
 			"name": "FreeArea12to15_15",
 			"value": 15
+		},
+		{
+			"name": "FreeArea12to15_None",
+			"value": 4294967295
 		}
 	],
 	"offline.escape.gimmick.action.EsGimmickExplode.RNO_EXPLODE": [
@@ -95547,20 +95547,20 @@
 			"value": 0
 		},
 		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "Include",
+			"value": 1
+		},
+		{
+			"name": "INCLUDE",
 			"value": 1
 		},
 		{
 			"name": "Exclude",
 			"value": 2
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "INCLUDE",
-			"value": 1
 		},
 		{
 			"name": "EXCLUDE",
@@ -97969,12 +97969,12 @@
 			"value": 3
 		},
 		{
-			"name": "DELAY",
-			"value": 128
-		},
-		{
 			"name": "DELAYMASK",
 			"value": 127
+		},
+		{
+			"name": "DELAY",
+			"value": 128
 		},
 		{
 			"name": "RTV_DELAY",
@@ -98369,12 +98369,12 @@
 			"value": 8
 		},
 		{
-			"name": "EventSpecialControl",
-			"value": 65536
-		},
-		{
 			"name": "NormalControlMask",
 			"value": 13
+		},
+		{
+			"name": "EventSpecialControl",
+			"value": 65536
 		}
 	],
 	"offline.fsmv2.condition.CheckCameraMode.CameraMode": [
@@ -98397,16 +98397,16 @@
 			"value": 1
 		},
 		{
+			"name": "Game",
+			"value": 1
+		},
+		{
 			"name": "Consumable",
 			"value": 4
 		},
 		{
 			"name": "Durable",
 			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
 		},
 		{
 			"name": "GameDemo",
@@ -100610,28 +100610,28 @@
 	],
 	"offline.gamemastering.SaveDataManager.SaveDataNumber": [
 		{
-			"name": "SYSTEM_DATA_COUNT",
-			"value": 1
-		},
-		{
 			"name": "SCENARIO_DATA_BEGIN",
 			"value": 0
 		},
 		{
-			"name": "SCENARIO_DATA_COUNT",
-			"value": 21
+			"name": "SYSTEM_DATA_COUNT",
+			"value": 1
+		},
+		{
+			"name": "ROGUE_DATA_COUNT",
+			"value": 11
 		},
 		{
 			"name": "SCENARIO_DATA_END",
 			"value": 20
 		},
 		{
-			"name": "ROGUE_DATA_BEGIN",
+			"name": "SCENARIO_DATA_COUNT",
 			"value": 21
 		},
 		{
-			"name": "ROGUE_DATA_COUNT",
-			"value": 11
+			"name": "ROGUE_DATA_BEGIN",
+			"value": 21
 		},
 		{
 			"name": "ROGUE_DATA_END",
@@ -101330,32 +101330,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -103280,8 +103280,8 @@
 	],
 	"offline.escape.enemy.em9300.tag.State": [
 		{
-			"name": "Down",
-			"value": 964612236
+			"name": "DisableSolutionFire",
+			"value": 406813506
 		},
 		{
 			"name": "Attack",
@@ -103292,20 +103292,20 @@
 			"value": 682559756
 		},
 		{
-			"name": "Idle",
-			"value": 3102109502
-		},
-		{
-			"name": "Grapple",
-			"value": 2798536737
+			"name": "Down",
+			"value": 964612236
 		},
 		{
 			"name": "Gimmick",
 			"value": 1724589143
 		},
 		{
-			"name": "DisableSolutionFire",
-			"value": 406813506
+			"name": "Grapple",
+			"value": 2798536737
+		},
+		{
+			"name": "Idle",
+			"value": 3102109502
 		}
 	],
 	"offline.survivor.npc.NpcOrderDefine.EquipCommandKind": [
@@ -104177,10 +104177,6 @@
 	],
 	"via.UserState": [
 		{
-			"name": "Invalid",
-			"value": 65535
-		},
-		{
 			"name": "Login",
 			"value": 0
 		},
@@ -104191,6 +104187,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": 65535
 		}
 	],
 	"offline.survivor.npc.NpcOrderDefine.UniqueCommandKind": [
@@ -104489,18 +104489,6 @@
 	],
 	"offline.UpdateOrderGroup.Unexpected": [
 		{
-			"name": "Default",
-			"value": 121
-		},
-		{
-			"name": "Abstract",
-			"value": 122
-		},
-		{
-			"name": "Setting",
-			"value": 1000
-		},
-		{
 			"name": "Tool",
 			"value": 2
 		},
@@ -104515,6 +104503,18 @@
 		{
 			"name": "DevelopLog",
 			"value": 5
+		},
+		{
+			"name": "Default",
+			"value": 121
+		},
+		{
+			"name": "Abstract",
+			"value": 122
+		},
+		{
+			"name": "Setting",
+			"value": 1000
 		}
 	],
 	"via.wwise.SetState2.SetTiming": [
@@ -104835,6 +104835,3890 @@
 		{
 			"name": "Matrix",
 			"value": 19
+		}
+	],
+	"via.effect.script.EffectControlAction.TargetModeEnum": [
+		{
+			"name": "TargetOnly",
+			"value": 0
+		},
+		{
+			"name": "TargetAndChildren",
+			"value": 1
+		},
+		{
+			"name": "ChildrenOnly",
+			"value": 2
+		}
+	],
+	"via.motion.script.FootEffectController.NoHitEmitEffectType": [
+		{
+			"name": "Previous",
+			"value": 0
+		},
+		{
+			"name": "Joint",
+			"value": 1
+		},
+		{
+			"name": "None",
+			"value": 2
+		}
+	],
+	"via.effect.script.Collision.ReLibEffectHitController.DamageInfo.Scale": [
+		{
+			"name": "L",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "S",
+			"value": 2
+		}
+	],
+	"via.network.AutoMatchmaking.Phase": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "Host_Init",
+			"value": 1
+		},
+		{
+			"name": "Host_SetRule",
+			"value": 2
+		},
+		{
+			"name": "Host_CreateSession",
+			"value": 3
+		},
+		{
+			"name": "Host_CreateWait",
+			"value": 4
+		},
+		{
+			"name": "Host_InGame",
+			"value": 5
+		},
+		{
+			"name": "Host_Timeout",
+			"value": 6
+		},
+		{
+			"name": "Guest_Init",
+			"value": 7
+		},
+		{
+			"name": "Guest_CreateSession",
+			"value": 8
+		},
+		{
+			"name": "Guest_CreateWait",
+			"value": 9
+		},
+		{
+			"name": "Guest_SetSearchRule",
+			"value": 10
+		},
+		{
+			"name": "Guest_SearchSession",
+			"value": 11
+		},
+		{
+			"name": "Guest_SearchWait",
+			"value": 12
+		},
+		{
+			"name": "Guest_ThinkRule",
+			"value": 13
+		},
+		{
+			"name": "Guest_GiveupSession",
+			"value": 14
+		},
+		{
+			"name": "Guest_GiveupWait",
+			"value": 15
+		},
+		{
+			"name": "Guest_JoinSession",
+			"value": 16
+		},
+		{
+			"name": "Guest_JoinWait",
+			"value": 17
+		},
+		{
+			"name": "Guest_InGame",
+			"value": 18
+		},
+		{
+			"name": "Guest_SearchInterval",
+			"value": 19
+		},
+		{
+			"name": "Guest_Timeout",
+			"value": 20
+		},
+		{
+			"name": "Guest_TimeoutWait",
+			"value": 21
+		},
+		{
+			"name": "Guest_XboxSmartMatch",
+			"value": 22
+		},
+		{
+			"name": "Guest_XboxSmartMatchWait",
+			"value": 23
+		},
+		{
+			"name": "Guest_XboxSmartMatchHoge",
+			"value": 24
+		}
+	],
+	"via.relib.playlog.JsonWriter.ValueType": [
+		{
+			"name": "Unknown",
+			"value": 0
+		},
+		{
+			"name": "Object",
+			"value": 1
+		},
+		{
+			"name": "Array",
+			"value": 2
+		},
+		{
+			"name": "String",
+			"value": 3
+		},
+		{
+			"name": "Int",
+			"value": 4
+		},
+		{
+			"name": "Float",
+			"value": 5
+		},
+		{
+			"name": "TRUE_",
+			"value": 6
+		},
+		{
+			"name": "FALSE_",
+			"value": 7
+		},
+		{
+			"name": "NULL_",
+			"value": 8
+		}
+	],
+	"app.Collision.CollisionSystem.AsyncCastRayState": [
+		{
+			"name": "Unknown",
+			"value": 0
+		},
+		{
+			"name": "NotYet",
+			"value": 1
+		},
+		{
+			"name": "TRUE_",
+			"value": 2
+		},
+		{
+			"name": "FALSE_",
+			"value": 3
+		}
+	],
+	"via.effect.script.EffectLoadZone.Status": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "ActiveTrigger",
+			"value": 1
+		},
+		{
+			"name": "Active",
+			"value": 2
+		},
+		{
+			"name": "InactiveTrigger",
+			"value": 3
+		},
+		{
+			"name": "Inactive",
+			"value": 4
+		}
+	],
+	"via.effect.script.EffectCommonDefine.EffectEndType": [
+		{
+			"name": "Kill",
+			"value": 0
+		},
+		{
+			"name": "Finish",
+			"value": 1
+		}
+	],
+	"via.motion.script.MotionExtraData.ContactStatus": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "LeftLegContact",
+			"value": 1
+		},
+		{
+			"name": "RightLegContact",
+			"value": 2
+		},
+		{
+			"name": "BothLegContact",
+			"value": 3
+		},
+		{
+			"name": "LeftLegStop",
+			"value": 4
+		},
+		{
+			"name": "LeftLegFix",
+			"value": 5
+		},
+		{
+			"name": "RightLegStop",
+			"value": 8
+		},
+		{
+			"name": "RightLegFix",
+			"value": 10
+		},
+		{
+			"name": "BothLegFix",
+			"value": 15
+		},
+		{
+			"name": "LeftLegStep",
+			"value": 16
+		},
+		{
+			"name": "RightLegStep",
+			"value": 32
+		},
+		{
+			"name": "LeftToeStop",
+			"value": 64
+		},
+		{
+			"name": "LeftToeFix",
+			"value": 65
+		},
+		{
+			"name": "RightToeStop",
+			"value": 128
+		},
+		{
+			"name": "RightToeFix",
+			"value": 130
+		},
+		{
+			"name": "BothToeFix",
+			"value": 195
+		},
+		{
+			"name": "LegAll",
+			"value": 255
+		},
+		{
+			"name": "LeftHandContact",
+			"value": 256
+		},
+		{
+			"name": "RightHandContact",
+			"value": 512
+		},
+		{
+			"name": "BothHandContact",
+			"value": 768
+		},
+		{
+			"name": "LeftHandStop",
+			"value": 1024
+		},
+		{
+			"name": "LeftHandFix",
+			"value": 1280
+		},
+		{
+			"name": "RightHandStop",
+			"value": 2048
+		},
+		{
+			"name": "RightHandFix",
+			"value": 2560
+		},
+		{
+			"name": "BothHandFix",
+			"value": 3840
+		},
+		{
+			"name": "LeftHandStep",
+			"value": 4096
+		},
+		{
+			"name": "RightHandStep",
+			"value": 8192
+		},
+		{
+			"name": "LeftHandTipStop",
+			"value": 16384
+		},
+		{
+			"name": "LeftHandTipFix",
+			"value": 16640
+		},
+		{
+			"name": "RightHandTipStop",
+			"value": 32768
+		},
+		{
+			"name": "RightHandTipFix",
+			"value": 33280
+		},
+		{
+			"name": "BothHandTipFix",
+			"value": 49920
+		}
+	],
+	"via.effect.script.EffectManager.PriorigyGroup": [
+		{
+			"name": "PriorityGroup_Default",
+			"value": 0
+		},
+		{
+			"name": "PriorityGroup_RadialBlur",
+			"value": 1
+		},
+		{
+			"name": "PriorityGroup_DirtMask",
+			"value": 2
+		},
+		{
+			"name": "PriorityGroup_ColorCorrect",
+			"value": 3
+		},
+		{
+			"name": "PriorityGroup_Num",
+			"value": 4
+		}
+	],
+	"via.browser.utility.Request.State": [
+		{
+			"name": "Dead",
+			"value": 0
+		},
+		{
+			"name": "Start",
+			"value": 1
+		},
+		{
+			"name": "StartFail",
+			"value": 2
+		},
+		{
+			"name": "Update",
+			"value": 3
+		},
+		{
+			"name": "Finish",
+			"value": 4
+		}
+	],
+	"via.effect.script.EffectEmitZoneGroup.State": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "EmitOffTrigger",
+			"value": 1
+		},
+		{
+			"name": "EmitOnTrigger",
+			"value": 2
+		},
+		{
+			"name": "EmitOn",
+			"value": 3
+		}
+	],
+	"via.effect.script.VolumeDecalContainer.Type": [
+		{
+			"name": "Blood",
+			"value": 0
+		},
+		{
+			"name": "Scar",
+			"value": 1
+		},
+		{
+			"name": "Water",
+			"value": 2
+		}
+	],
+	"via.network.utility.RequestManager.Attr": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NeedAnswer",
+			"value": 1
+		},
+		{
+			"name": "IsReentrant",
+			"value": 2
+		}
+	],
+	"via.effect.script.EffectSphereHolder.SphereInfo.Status": [
+		{
+			"name": "Start",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "End",
+			"value": 2
+		}
+	],
+	"app.Collision.CollisionSystem.Material.Effect": [
+		{
+			"name": "EmSoilA",
+			"value": 0
+		},
+		{
+			"name": "EmGravelA",
+			"value": 1
+		},
+		{
+			"name": "EmSloughA",
+			"value": 2
+		},
+		{
+			"name": "EmStoneA",
+			"value": 3
+		},
+		{
+			"name": "EmRubbleA",
+			"value": 4
+		},
+		{
+			"name": "EmWoodA",
+			"value": 5
+		},
+		{
+			"name": "EmWoodB",
+			"value": 6
+		},
+		{
+			"name": "EmIronA",
+			"value": 7
+		},
+		{
+			"name": "EmIronNetA",
+			"value": 8
+		},
+		{
+			"name": "EmGlassPieceA",
+			"value": 9
+		},
+		{
+			"name": "EmClothA",
+			"value": 10
+		},
+		{
+			"name": "EmMeatA",
+			"value": 11
+		},
+		{
+			"name": "EmPaperA",
+			"value": 12
+		},
+		{
+			"name": "EmWaterA",
+			"value": 13
+		},
+		{
+			"name": "EmWaterB",
+			"value": 14
+		},
+		{
+			"name": "EmWaterC",
+			"value": 15
+		},
+		{
+			"name": "EmWaterDeepD",
+			"value": 16
+		},
+		{
+			"name": "EmNoneA",
+			"value": 17
+		}
+	],
+	"via.network.Protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": 4294967295
+		}
+	],
+	"via.render.detail.PrimitiveGUIMaskMode": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Target",
+			"value": 1
+		},
+		{
+			"name": "TargetReverse",
+			"value": 2
+		},
+		{
+			"name": "Mask",
+			"value": 3
+		},
+		{
+			"name": "MaskBlend2",
+			"value": 4
+		},
+		{
+			"name": "MaskBlend3",
+			"value": 5
+		}
+	],
+	"via.effect.script.EffectMaterialController.PlayTypeEnum": [
+		{
+			"name": "Return",
+			"value": 0
+		},
+		{
+			"name": "EndKeep",
+			"value": 1
+		}
+	],
+	"via.effect.script.EffectTimelineChecker.Routine": [
+		{
+			"name": "Initialize",
+			"value": 0
+		},
+		{
+			"name": "Check",
+			"value": 1
+		},
+		{
+			"name": "Finish",
+			"value": 2
+		},
+		{
+			"name": "WaitEnd",
+			"value": 3
+		}
+	],
+	"via.effect.script.EPVExpertFootLandingData.FootLandingRelationType": [
+		{
+			"name": "Defalut",
+			"value": 0
+		},
+		{
+			"name": "FollowParent",
+			"value": 1
+		},
+		{
+			"name": "InitializationParent",
+			"value": 2
+		}
+	],
+	"via.relib.effect.EffectControlAction.TargetModeEnum": [
+		{
+			"name": "TargetOnly",
+			"value": 0
+		},
+		{
+			"name": "TargetAndChildren",
+			"value": 1
+		},
+		{
+			"name": "ChildrenOnly",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVDataBase.RotateBase": [
+		{
+			"name": "ParentJoint",
+			"value": 0
+		},
+		{
+			"name": "ModelNULL_",
+			"value": 1
+		}
+	],
+	"via.motion.script.FootEffectController.SETriggerTypeEnum": [
+		{
+			"name": "FOOT_CONTACT_L",
+			"value": 0
+		},
+		{
+			"name": "FOOT_CONTACT_R",
+			"value": 1
+		},
+		{
+			"name": "FOOT_SLIDE_L",
+			"value": 2
+		},
+		{
+			"name": "FOOT_SLIDE_R",
+			"value": 3
+		},
+		{
+			"name": "FOOT_STEP_L",
+			"value": 4
+		},
+		{
+			"name": "FOOT_STEP_R",
+			"value": 5
+		},
+		{
+			"name": "HAND_CONTACT_L",
+			"value": 6
+		},
+		{
+			"name": "HAND_CONTACT_R",
+			"value": 7
+		},
+		{
+			"name": "NUM",
+			"value": 8
+		}
+	],
+	"via.motion.script.FootEffectController.SETriggerTargetEnum": [
+		{
+			"name": "PLAYER",
+			"value": 0
+		},
+		{
+			"name": "ENEMY",
+			"value": 1
+		},
+		{
+			"name": "NUM",
+			"value": 2
+		}
+	],
+	"via.gui.detail.SubFontNo": [
+		{
+			"name": "No0",
+			"value": 0
+		},
+		{
+			"name": "No1",
+			"value": 1
+		},
+		{
+			"name": "Max",
+			"value": 2
+		}
+	],
+	"via.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": [
+		{
+			"name": "Stamp",
+			"value": 1
+		},
+		{
+			"name": "Decal",
+			"value": 2
+		},
+		{
+			"name": "StampAndDecal",
+			"value": 3
+		}
+	],
+	"via.motion.script.CharacterSetting.MoveTypeEnum": [
+		{
+			"name": "Bipedal",
+			"value": 0
+		},
+		{
+			"name": "Quadrupedal",
+			"value": 1
+		},
+		{
+			"name": "Both",
+			"value": 2
+		},
+		{
+			"name": "Other",
+			"value": 3
+		}
+	],
+	"via.browser.RequestId": [
+		{
+			"name": "ContextStart",
+			"value": 257
+		},
+		{
+			"name": "BrowserOpen",
+			"value": 513
+		},
+		{
+			"name": "BrowserClose",
+			"value": 514
+		}
+	],
+	"via.effect.script.EPVDefine.AttackTypeEnum": [
+		{
+			"name": "Slash",
+			"value": 96
+		},
+		{
+			"name": "Stab",
+			"value": 97
+		},
+		{
+			"name": "Shoot",
+			"value": 98
+		},
+		{
+			"name": "Strike",
+			"value": 99
+		},
+		{
+			"name": "Bite",
+			"value": 100
+		},
+		{
+			"name": "Explosion",
+			"value": 102
+		},
+		{
+			"name": "Special",
+			"value": 111
+		}
+	],
+	"via.effect.script.EffectPositionHolder.PositionInfo.Status": [
+		{
+			"name": "Start",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "End",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVExpertFootLandingData.FootStepType": [
+		{
+			"name": "Contact",
+			"value": 0
+		},
+		{
+			"name": "Lift",
+			"value": 1
+		},
+		{
+			"name": "Step",
+			"value": 2
+		},
+		{
+			"name": "Slide",
+			"value": 3
+		}
+	],
+	"via.effect.script.PropID": [
+		{
+			"name": "Etc",
+			"value": 0
+		}
+	],
+	"via.effect.script.EnvironmentEffectManager.ExternalProperty.PlayState": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "Play",
+			"value": 1
+		},
+		{
+			"name": "Finish",
+			"value": 2
+		},
+		{
+			"name": "Kill",
+			"value": 3
+		}
+	],
+	"via.render.PrimitiveGUIResource.ShaderType": [
+		{
+			"name": "GUIPoly2D",
+			"value": 0
+		},
+		{
+			"name": "GUIPoly2DMask",
+			"value": 1
+		},
+		{
+			"name": "GUIPoly2DMaskReverse",
+			"value": 2
+		},
+		{
+			"name": "GUIPoly2DAdd",
+			"value": 3
+		},
+		{
+			"name": "GUIPoly2DAddMask",
+			"value": 4
+		},
+		{
+			"name": "GUIPoly2DAddMaskReverse",
+			"value": 5
+		},
+		{
+			"name": "GUIPoly2DDetone",
+			"value": 6
+		},
+		{
+			"name": "GUIPoly2DMaskDetone",
+			"value": 7
+		},
+		{
+			"name": "GUIPoly2DMaskReverseDetone",
+			"value": 8
+		},
+		{
+			"name": "GUIPoly2DAddDetone",
+			"value": 9
+		},
+		{
+			"name": "GUIPoly2DAddMaskDetone",
+			"value": 10
+		},
+		{
+			"name": "GUIPoly2DAddMaskReverseDetone",
+			"value": 11
+		},
+		{
+			"name": "GUIGlyph2D",
+			"value": 12
+		},
+		{
+			"name": "GUIGlyph2DMask",
+			"value": 13
+		},
+		{
+			"name": "GUIGlyph2DMaskReverse",
+			"value": 14
+		},
+		{
+			"name": "GUIGlyph2DAdd",
+			"value": 15
+		},
+		{
+			"name": "GUIGlyph2DAddMask",
+			"value": 16
+		},
+		{
+			"name": "GUIGlyph2DAddMaskReverse",
+			"value": 17
+		},
+		{
+			"name": "GUIGlyph2DDetone",
+			"value": 18
+		},
+		{
+			"name": "GUIGlyph2DMaskDetone",
+			"value": 19
+		},
+		{
+			"name": "GUIGlyph2DMaskReverseDetone",
+			"value": 20
+		},
+		{
+			"name": "GUIGlyph2DAddDetone",
+			"value": 21
+		},
+		{
+			"name": "GUIGlyph2DAddMaskDetone",
+			"value": 22
+		},
+		{
+			"name": "GUIGlyph2DAddMaskReverseDetone",
+			"value": 23
+		},
+		{
+			"name": "GUIPoly3D",
+			"value": 24
+		},
+		{
+			"name": "GUIPoly3DTest",
+			"value": 25
+		},
+		{
+			"name": "GUIPoly3DMask",
+			"value": 26
+		},
+		{
+			"name": "GUIPoly3DMaskTest",
+			"value": 27
+		},
+		{
+			"name": "GUIPoly3DMaskReverse",
+			"value": 28
+		},
+		{
+			"name": "GUIPoly3DMaskReverseTest",
+			"value": 29
+		},
+		{
+			"name": "GUIPoly3DAdd",
+			"value": 30
+		},
+		{
+			"name": "GUIPoly3DAddTest",
+			"value": 31
+		},
+		{
+			"name": "GUIPoly3DAddMask",
+			"value": 32
+		},
+		{
+			"name": "GUIPoly3DAddMaskTest",
+			"value": 33
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverse",
+			"value": 34
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseTest",
+			"value": 35
+		},
+		{
+			"name": "GUIPoly3DDetone",
+			"value": 36
+		},
+		{
+			"name": "GUIPoly3DTestDetone",
+			"value": 37
+		},
+		{
+			"name": "GUIPoly3DMaskDetone",
+			"value": 38
+		},
+		{
+			"name": "GUIPoly3DMaskTestDetone",
+			"value": 39
+		},
+		{
+			"name": "GUIPoly3DMaskReverseDetone",
+			"value": 40
+		},
+		{
+			"name": "GUIPoly3DMaskReverseTestDetone",
+			"value": 41
+		},
+		{
+			"name": "GUIPoly3DAddDetone",
+			"value": 42
+		},
+		{
+			"name": "GUIPoly3DAddTestDetone",
+			"value": 43
+		},
+		{
+			"name": "GUIPoly3DAddMaskDetone",
+			"value": 44
+		},
+		{
+			"name": "GUIPoly3DAddMaskTestDetone",
+			"value": 45
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseDetone",
+			"value": 46
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseTestDetone",
+			"value": 47
+		},
+		{
+			"name": "GUIGlyph3D",
+			"value": 48
+		},
+		{
+			"name": "GUIGlyph3DTest",
+			"value": 49
+		},
+		{
+			"name": "GUIGlyph3DMask",
+			"value": 50
+		},
+		{
+			"name": "GUIGlyph3DMaskTest",
+			"value": 51
+		},
+		{
+			"name": "GUIGlyph3DMaskReverse",
+			"value": 52
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseTest",
+			"value": 53
+		},
+		{
+			"name": "GUIGlyph3DAdd",
+			"value": 54
+		},
+		{
+			"name": "GUIGlyph3DAddTest",
+			"value": 55
+		},
+		{
+			"name": "GUIGlyph3DAddMask",
+			"value": 56
+		},
+		{
+			"name": "GUIGlyph3DAddMaskTest",
+			"value": 57
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverse",
+			"value": 58
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseTest",
+			"value": 59
+		},
+		{
+			"name": "GUIGlyph3DDetone",
+			"value": 60
+		},
+		{
+			"name": "GUIGlyph3DTestDetone",
+			"value": 61
+		},
+		{
+			"name": "GUIGlyph3DMaskDetone",
+			"value": 62
+		},
+		{
+			"name": "GUIGlyph3DMaskTestDetone",
+			"value": 63
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseDetone",
+			"value": 64
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseTestDetone",
+			"value": 65
+		},
+		{
+			"name": "GUIGlyph3DAddDetone",
+			"value": 66
+		},
+		{
+			"name": "GUIGlyph3DAddTestDetone",
+			"value": 67
+		},
+		{
+			"name": "GUIGlyph3DAddMaskDetone",
+			"value": 68
+		},
+		{
+			"name": "GUIGlyph3DAddMaskTestDetone",
+			"value": 69
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseDetone",
+			"value": 70
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseTestDetone",
+			"value": 71
+		},
+		{
+			"name": "GUIPolyPers",
+			"value": 72
+		},
+		{
+			"name": "GUIPolyPersTest",
+			"value": 73
+		},
+		{
+			"name": "GUIPolyPersMask",
+			"value": 74
+		},
+		{
+			"name": "GUIPolyPersMaskTest",
+			"value": 75
+		},
+		{
+			"name": "GUIPolyPersMaskReverse",
+			"value": 76
+		},
+		{
+			"name": "GUIPolyPersMaskReverseTest",
+			"value": 77
+		},
+		{
+			"name": "GUIPolyPersAdd",
+			"value": 78
+		},
+		{
+			"name": "GUIPolyPersAddTest",
+			"value": 79
+		},
+		{
+			"name": "GUIPolyPersAddMask",
+			"value": 80
+		},
+		{
+			"name": "GUIPolyPersAddMaskTest",
+			"value": 81
+		},
+		{
+			"name": "GUIPolyPersAddMaskReverse",
+			"value": 82
+		},
+		{
+			"name": "GUIPolyPersAddMaskReverseTest",
+			"value": 83
+		},
+		{
+			"name": "GUIGlyphPers",
+			"value": 84
+		},
+		{
+			"name": "GUIGlyphPersTest",
+			"value": 85
+		},
+		{
+			"name": "GUIGlyphPersMask",
+			"value": 86
+		},
+		{
+			"name": "GUIGlyphPersMaskTest",
+			"value": 87
+		},
+		{
+			"name": "GUIGlyphPersMaskReverse",
+			"value": 88
+		},
+		{
+			"name": "GUIGlyphPersMaskReverseTest",
+			"value": 89
+		},
+		{
+			"name": "GUIGlyphPersAdd",
+			"value": 90
+		},
+		{
+			"name": "GUIGlyphPersAddTest",
+			"value": 91
+		},
+		{
+			"name": "GUIGlyphPersAddMask",
+			"value": 92
+		},
+		{
+			"name": "GUIGlyphPersAddMaskTest",
+			"value": 93
+		},
+		{
+			"name": "GUIGlyphPersAddMaskReverse",
+			"value": 94
+		},
+		{
+			"name": "GUIGlyphPersAddMaskReverseTest",
+			"value": 95
+		},
+		{
+			"name": "GUIPoly2DMaskWrite",
+			"value": 96
+		},
+		{
+			"name": "GUIPoly3DMaskWrite",
+			"value": 97
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTest",
+			"value": 98
+		},
+		{
+			"name": "GUIPolyPersMaskWrite",
+			"value": 99
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTest",
+			"value": 100
+		},
+		{
+			"name": "GUIGlyph2DMaskWrite",
+			"value": 101
+		},
+		{
+			"name": "GUIGlyph3DMaskWrite",
+			"value": 102
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTest",
+			"value": 103
+		},
+		{
+			"name": "GUIGlyphPersMaskWrite",
+			"value": 104
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTest",
+			"value": 105
+		},
+		{
+			"name": "GUIPoly2DMaskWriteBlend2",
+			"value": 106
+		},
+		{
+			"name": "GUIPoly3DMaskWriteBlend2",
+			"value": 107
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTestBlend2",
+			"value": 108
+		},
+		{
+			"name": "GUIPolyPersMaskWriteBlend2",
+			"value": 109
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTestBlend2",
+			"value": 110
+		},
+		{
+			"name": "GUIGlyph2DMaskWriteBlend2",
+			"value": 111
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteBlend2",
+			"value": 112
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTestBlend2",
+			"value": 113
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteBlend2",
+			"value": 114
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTestBlend2",
+			"value": 115
+		},
+		{
+			"name": "GUIPoly2DMaskWriteBlend3",
+			"value": 116
+		},
+		{
+			"name": "GUIPoly3DMaskWriteBlend3",
+			"value": 117
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTestBlend3",
+			"value": 118
+		},
+		{
+			"name": "GUIPolyPersMaskWriteBlend3",
+			"value": 119
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTestBlend3",
+			"value": 120
+		},
+		{
+			"name": "GUIGlyph2DMaskWriteBlend3",
+			"value": 121
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteBlend3",
+			"value": 122
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTestBlend3",
+			"value": 123
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteBlend3",
+			"value": 124
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTestBlend3",
+			"value": 125
+		},
+		{
+			"name": "GUIGlyphGlow2D",
+			"value": 126
+		},
+		{
+			"name": "GUIGlyphGlow2DMask",
+			"value": 127
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskReverse",
+			"value": 128
+		},
+		{
+			"name": "GUIGlyphGlow2DAdd",
+			"value": 129
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMask",
+			"value": 130
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskReverse",
+			"value": 131
+		},
+		{
+			"name": "GUIGlyphGlow2DDetone",
+			"value": 132
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskDetone",
+			"value": 133
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskReverseDetone",
+			"value": 134
+		},
+		{
+			"name": "GUIGlyphGlow2DAddDetone",
+			"value": 135
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskDetone",
+			"value": 136
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskReverseDetone",
+			"value": 137
+		},
+		{
+			"name": "GUIGlyphGlow3D",
+			"value": 138
+		},
+		{
+			"name": "GUIGlyphGlow3DTest",
+			"value": 139
+		},
+		{
+			"name": "GUIGlyphGlow3DMask",
+			"value": 140
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskTest",
+			"value": 141
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverse",
+			"value": 142
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseTest",
+			"value": 143
+		},
+		{
+			"name": "GUIGlyphGlow3DAdd",
+			"value": 144
+		},
+		{
+			"name": "GUIGlyphGlow3DAddTest",
+			"value": 145
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMask",
+			"value": 146
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskTest",
+			"value": 147
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverse",
+			"value": 148
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseTest",
+			"value": 149
+		},
+		{
+			"name": "GUIGlyphGlow3DDetone",
+			"value": 150
+		},
+		{
+			"name": "GUIGlyphGlow3DTestDetone",
+			"value": 151
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskDetone",
+			"value": 152
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskTestDetone",
+			"value": 153
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseDetone",
+			"value": 154
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseTestDetone",
+			"value": 155
+		},
+		{
+			"name": "GUIGlyphGlow3DAddDetone",
+			"value": 156
+		},
+		{
+			"name": "GUIGlyphGlow3DAddTestDetone",
+			"value": 157
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskDetone",
+			"value": 158
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskTestDetone",
+			"value": 159
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseDetone",
+			"value": 160
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseTestDetone",
+			"value": 161
+		},
+		{
+			"name": "GUIGlyphGlowPers",
+			"value": 162
+		},
+		{
+			"name": "GUIGlyphGlowPersTest",
+			"value": 163
+		},
+		{
+			"name": "GUIGlyphGlowPersMask",
+			"value": 164
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskTest",
+			"value": 165
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskReverse",
+			"value": 166
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskReverseTest",
+			"value": 167
+		},
+		{
+			"name": "GUIGlyphGlowPersAdd",
+			"value": 168
+		},
+		{
+			"name": "GUIGlyphGlowPersAddTest",
+			"value": 169
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMask",
+			"value": 170
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskTest",
+			"value": 171
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskReverse",
+			"value": 172
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskReverseTest",
+			"value": 173
+		},
+		{
+			"name": "Max",
+			"value": 174
+		}
+	],
+	"via.hid.virtualKeyboard.nsw.KeyboardMode": [
+		{
+			"name": "Full",
+			"value": 0
+		},
+		{
+			"name": "Numeric",
+			"value": 1
+		},
+		{
+			"name": "ASCII",
+			"value": 2
+		},
+		{
+			"name": "FullLatIN_",
+			"value": 3
+		}
+	],
+	"via.effect.script.EffectDecal.DecalDirectionEnum": [
+		{
+			"name": "XPlus",
+			"value": 0
+		},
+		{
+			"name": "XMinus",
+			"value": 1
+		},
+		{
+			"name": "YPlus",
+			"value": 2
+		},
+		{
+			"name": "YMinus",
+			"value": 3
+		},
+		{
+			"name": "ZPlus",
+			"value": 4
+		},
+		{
+			"name": "ZMinus",
+			"value": 5
+		}
+	],
+	"via.browser.utility.RequestManager.Attr": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NeedAnswer",
+			"value": 1
+		},
+		{
+			"name": "IsReentrant",
+			"value": 2
+		},
+		{
+			"name": "ManageLastArg",
+			"value": 4
+		}
+	],
+	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "SetPlaySpeed",
+			"value": 1
+		},
+		{
+			"name": "SetExternParameter",
+			"value": 2
+		},
+		{
+			"name": "SetRootColor",
+			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": 4294967295
+		}
+	],
+	"via.network.session.Region": [
+		{
+			"name": "Region_0",
+			"value": 0
+		},
+		{
+			"name": "Region_1",
+			"value": 1
+		},
+		{
+			"name": "Region_2",
+			"value": 2
+		},
+		{
+			"name": "Region_3",
+			"value": 3
+		},
+		{
+			"name": "Region_Max",
+			"value": 4
+		}
+	],
+	"via.effect.script.EPVExpertObjectLandingData.ZDirectionType": [
+		{
+			"name": "CollisionNormal",
+			"value": 0
+		},
+		{
+			"name": "InverseCollisionNormal",
+			"value": 1
+		},
+		{
+			"name": "AttackDirection",
+			"value": 2
+		},
+		{
+			"name": "InverseAttackDirection",
+			"value": 3
+		},
+		{
+			"name": "SawRotation",
+			"value": 4
+		}
+	],
+	"via.render.detail.PrimitiveDistortion": [
+		{
+			"name": "Blur",
+			"value": 0
+		},
+		{
+			"name": "Refract",
+			"value": 1
+		}
+	],
+	"app.MathEx.RotationOrder": [
+		{
+			"name": "XYZ",
+			"value": 0
+		},
+		{
+			"name": "XZY",
+			"value": 1
+		},
+		{
+			"name": "YXZ",
+			"value": 2
+		},
+		{
+			"name": "YZX",
+			"value": 3
+		},
+		{
+			"name": "ZXY",
+			"value": 4
+		},
+		{
+			"name": "ZYX",
+			"value": 5
+		}
+	],
+	"via.effect.script.ObjectEffectManager.ExternalProperty.PlayState": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "Play",
+			"value": 1
+		},
+		{
+			"name": "Finish",
+			"value": 2
+		},
+		{
+			"name": "Kill",
+			"value": 3
+		}
+	],
+	"via.render.RoughTransparent.DebugMode": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Downsample",
+			"value": 1
+		},
+		{
+			"name": "Blur",
+			"value": 2
+		}
+	],
+	"via.motion.script.FootEffectController.JointSideType": [
+		{
+			"name": "Left",
+			"value": 0
+		},
+		{
+			"name": "Right",
+			"value": 1
+		},
+		{
+			"name": "Other",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVDataBase.EffectRelationType": [
+		{
+			"name": "FollowParent",
+			"value": 0
+		},
+		{
+			"name": "InitializationParent",
+			"value": 1
+		},
+		{
+			"name": "World",
+			"value": 2
+		},
+		{
+			"name": "WorldAng",
+			"value": 3
+		},
+		{
+			"name": "FollowCamera",
+			"value": 4
+		},
+		{
+			"name": "FollowCameraPos",
+			"value": 5
+		},
+		{
+			"name": "CameraNodeBillboard",
+			"value": 6
+		}
+	],
+	"app.Collision.CollisionSystem.HitResult.PlaneType": [
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
+			"name": "GROUND",
+			"value": 1
+		},
+		{
+			"name": "SLOPE",
+			"value": 2
+		},
+		{
+			"name": "WALL",
+			"value": 3
+		},
+		{
+			"name": "CEILING",
+			"value": 4
+		}
+	],
+	"via.motion.SmoothDissimilarityFrameType": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "EndFrame",
+			"value": 1
+		}
+	],
+	"app.MathEx.SliceType": [
+		{
+			"name": "Round",
+			"value": 0
+		},
+		{
+			"name": "Pizza",
+			"value": 1
+		}
+	],
+	"via.motion.script.FootEffectController.WwiseSpecialMaterialID": [
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
+			"name": "WATER",
+			"value": 1
+		}
+	],
+	"via.effect.script.PropCategory": [
+		{
+			"name": "Door",
+			"value": 0
+		},
+		{
+			"name": "Etc",
+			"value": 1
+		}
+	],
+	"via.effect.script.EffectChainMeshAnim.PlayTypeEnum": [
+		{
+			"name": "Once",
+			"value": 0
+		},
+		{
+			"name": "Loop",
+			"value": 1
+		},
+		{
+			"name": "Pause",
+			"value": 2
+		}
+	],
+	"via.motion.script.FootEffectController.NoHitMaterialIdType": [
+		{
+			"name": "Previous",
+			"value": 0
+		},
+		{
+			"name": "Direct",
+			"value": 1
+		}
+	],
+	"app.Collision.MotionDecalTrackRoot.AXIS_TYPE": [
+		{
+			"name": "Y_MINUS",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "X_MINUS",
+			"value": 2
+		},
+		{
+			"name": "X",
+			"value": 3
+		},
+		{
+			"name": "Z_MINUS",
+			"value": 4
+		},
+		{
+			"name": "Z",
+			"value": 5
+		}
+	],
+	"via.effect.script.MathEx.SliceType": [
+		{
+			"name": "Round",
+			"value": 0
+		},
+		{
+			"name": "Pizza",
+			"value": 1
+		}
+	],
+	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.EffectControlAction.TargetGameObjectModeEnum": [
+		{
+			"name": "GameObjectRef",
+			"value": 0
+		},
+		{
+			"name": "OwnGameObject",
+			"value": 1
+		}
+	],
+	"via.effect.script.EffectManager.EffectEndType": [
+		{
+			"name": "Kill",
+			"value": 0
+		},
+		{
+			"name": "Finish",
+			"value": 1
+		}
+	],
+	"via.effect.gpgpu.BillboardCS.BillboardResource.ComputeShaderType": [
+		{
+			"name": "InitializeCS",
+			"value": 0
+		},
+		{
+			"name": "EmitCS",
+			"value": 1
+		},
+		{
+			"name": "EmitShapeOperatorCS",
+			"value": 2
+		},
+		{
+			"name": "EmitOnMeshContourCS",
+			"value": 3
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMap",
+			"value": 4
+		},
+		{
+			"name": "EmitOnMeshContourCS_MaskMap",
+			"value": 5
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMaskMap",
+			"value": 6
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS",
+			"value": 7
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMap",
+			"value": 8
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_MaskMap",
+			"value": 9
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMaskMap",
+			"value": 10
+		},
+		{
+			"name": "UpdateCS",
+			"value": 11
+		},
+		{
+			"name": "UpdateVectorFieldCS",
+			"value": 12
+		},
+		{
+			"name": "UpdateSimpleVectorFieldCS",
+			"value": 13
+		},
+		{
+			"name": "UpdateVolumeFieldCS",
+			"value": 14
+		},
+		{
+			"name": "UpdateSimpleVolumeFieldCS",
+			"value": 15
+		},
+		{
+			"name": "UpdateMeshContourCS",
+			"value": 16
+		},
+		{
+			"name": "UpdateMeshContourVectorFieldCS",
+			"value": 17
+		},
+		{
+			"name": "UpdateMeshContourSimpleVectorFieldCS",
+			"value": 18
+		},
+		{
+			"name": "UpdateMeshContourVolumeFieldCS",
+			"value": 19
+		},
+		{
+			"name": "UpdateMeshContourSimpleVolumeFieldCS",
+			"value": 20
+		},
+		{
+			"name": "ParticleWarmingCS",
+			"value": 21
+		},
+		{
+			"name": "ParticleWarmingVectorFieldCS",
+			"value": 22
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldCS",
+			"value": 23
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldCS",
+			"value": 24
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldCS",
+			"value": 25
+		},
+		{
+			"name": "ParticleWarmingShapeOperatorCS",
+			"value": 26
+		},
+		{
+			"name": "ParticleWarmingVectorFieldShapeOperatorCS",
+			"value": 27
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldShapeOperatorCS",
+			"value": 28
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldShapeOperatorCS",
+			"value": 29
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldShapeOperatorCS",
+			"value": 30
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS",
+			"value": 31
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMap",
+			"value": 32
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_MaskMap",
+			"value": 33
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMaskMap",
+			"value": 34
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS",
+			"value": 35
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMap",
+			"value": 36
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_MaskMap",
+			"value": 37
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMaskMap",
+			"value": 38
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS",
+			"value": 39
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMap",
+			"value": 40
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_MaskMap",
+			"value": 41
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMaskMap",
+			"value": 42
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS",
+			"value": 43
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMap",
+			"value": 44
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_MaskMap",
+			"value": 45
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 46
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS",
+			"value": 47
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMap",
+			"value": 48
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_MaskMap",
+			"value": 49
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 50
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS",
+			"value": 51
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMap",
+			"value": 52
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_MaskMap",
+			"value": 53
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMaskMap",
+			"value": 54
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS",
+			"value": 55
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMap",
+			"value": 56
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_MaskMap",
+			"value": 57
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMaskMap",
+			"value": 58
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS",
+			"value": 59
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMap",
+			"value": 60
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_MaskMap",
+			"value": 61
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMaskMap",
+			"value": 62
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS",
+			"value": 63
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMap",
+			"value": 64
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_MaskMap",
+			"value": 65
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 66
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS",
+			"value": 67
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMap",
+			"value": 68
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_MaskMap",
+			"value": 69
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 70
+		},
+		{
+			"name": "LightingCS",
+			"value": 71
+		},
+		{
+			"name": "ParticleCollider",
+			"value": 72
+		},
+		{
+			"name": "MaxType",
+			"value": 73
+		}
+	],
+	"app.assets.SectionRoot.Script.Character.Enemy.Em0000.Behavior.Em0000IntestineChainStarter.StatusType": [
+		{
+			"name": "Setup",
+			"value": 0
+		},
+		{
+			"name": "Active",
+			"value": 1
+		},
+		{
+			"name": "Sleep",
+			"value": 2
+		}
+	],
+	"via.effect.script.EffectCommonDefine.EffectActionOnProviderDestroy": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Finish",
+			"value": 1
+		},
+		{
+			"name": "Kill",
+			"value": 2
+		}
+	],
+	"via.effect.script.EffectManager.LODType": [
+		{
+			"name": "ObjectEffectManager",
+			"value": 0
+		},
+		{
+			"name": "EnviromentEffectManager",
+			"value": 1
+		}
+	],
+	"via.motion.DevelopRetargetResource.RetargetJointName": [
+		{
+			"name": "HeadName",
+			"value": 0
+		},
+		{
+			"name": "NeckName",
+			"value": 1
+		},
+		{
+			"name": "Spine0Name",
+			"value": 2
+		},
+		{
+			"name": "Spine1Name",
+			"value": 3
+		},
+		{
+			"name": "Spine2Name",
+			"value": 4
+		},
+		{
+			"name": "Spine3Name",
+			"value": 5
+		},
+		{
+			"name": "Spine4Name",
+			"value": 6
+		},
+		{
+			"name": "HipsName",
+			"value": 7
+		},
+		{
+			"name": "LHandName",
+			"value": 8
+		},
+		{
+			"name": "LForeArmName",
+			"value": 9
+		},
+		{
+			"name": "LArmName",
+			"value": 10
+		},
+		{
+			"name": "LShoulderName",
+			"value": 11
+		},
+		{
+			"name": "RHandName",
+			"value": 12
+		},
+		{
+			"name": "RForeArmName",
+			"value": 13
+		},
+		{
+			"name": "RArmName",
+			"value": 14
+		},
+		{
+			"name": "RShoulderName",
+			"value": 15
+		},
+		{
+			"name": "LFootName",
+			"value": 16
+		},
+		{
+			"name": "LLegName",
+			"value": 17
+		},
+		{
+			"name": "LUpLegName",
+			"value": 18
+		},
+		{
+			"name": "RFootName",
+			"value": 19
+		},
+		{
+			"name": "RLegName",
+			"value": 20
+		},
+		{
+			"name": "RUpLegName",
+			"value": 21
+		},
+		{
+			"name": "MAX",
+			"value": 22
+		}
+	],
+	"via.relib.render.UpdateOrder": [],
+	"app.Collision.CollisionSystem.AsyncCastRayMode": [
+		{
+			"name": "IsHit",
+			"value": 0
+		},
+		{
+			"name": "NearHitDetail",
+			"value": 1
+		},
+		{
+			"name": "AllHitsDetail",
+			"value": 2
+		}
+	],
+	"via.relib.effect.behavior.ReLibMarkStampController.SaveStateEnum": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Preparing",
+			"value": 1
+		},
+		{
+			"name": "Ready",
+			"value": 2
+		}
+	],
+	"app.Collision.CollisionSystem.AsyncCastRequestBase.CastType": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Ray",
+			"value": 1
+		},
+		{
+			"name": "Sphere",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVExpertHitEffectData.DIRECTIONTYPE": [
+		{
+			"name": "DefenderCollisionNomal",
+			"value": 0
+		},
+		{
+			"name": "InverseDefenderCollisionNormal",
+			"value": 1
+		},
+		{
+			"name": "AttackDirection",
+			"value": 2
+		},
+		{
+			"name": "InverseAttackDirection",
+			"value": 3
+		}
+	],
+	"via.effect.script.EnvironmentEffectManager.RequestStatus": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Create",
+			"value": 1
+		}
+	],
+	"via.effect.gpgpu.RibbonFollowCS.RibbonResource.ComputeShaderType": [
+		{
+			"name": "InitializeCS",
+			"value": 0
+		},
+		{
+			"name": "EmitCS",
+			"value": 1
+		},
+		{
+			"name": "EmitShapeOperatorCS",
+			"value": 2
+		},
+		{
+			"name": "EmitOnMeshContourCS",
+			"value": 3
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMap",
+			"value": 4
+		},
+		{
+			"name": "EmitOnMeshContourCS_MaskMap",
+			"value": 5
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMaskMap",
+			"value": 6
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS",
+			"value": 7
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMap",
+			"value": 8
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_MaskMap",
+			"value": 9
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMaskMap",
+			"value": 10
+		},
+		{
+			"name": "UpdateCS",
+			"value": 11
+		},
+		{
+			"name": "UpdateVectorFieldCS",
+			"value": 12
+		},
+		{
+			"name": "UpdateSimpleVectorFieldCS",
+			"value": 13
+		},
+		{
+			"name": "UpdateVolumeFieldCS",
+			"value": 14
+		},
+		{
+			"name": "UpdateSimpleVolumeFieldCS",
+			"value": 15
+		},
+		{
+			"name": "UpdateMeshContourCS",
+			"value": 16
+		},
+		{
+			"name": "UpdateMeshContourVectorFieldCS",
+			"value": 17
+		},
+		{
+			"name": "UpdateMeshContourSimpleVectorFieldCS",
+			"value": 18
+		},
+		{
+			"name": "UpdateMeshContourVolumeFieldCS",
+			"value": 19
+		},
+		{
+			"name": "UpdateMeshContourSimpleVolumeFieldCS",
+			"value": 20
+		},
+		{
+			"name": "ParticleWarmingCS",
+			"value": 21
+		},
+		{
+			"name": "ParticleWarmingVectorFieldCS",
+			"value": 22
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldCS",
+			"value": 23
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldCS",
+			"value": 24
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldCS",
+			"value": 25
+		},
+		{
+			"name": "ParticleWarmingShapeOperatorCS",
+			"value": 26
+		},
+		{
+			"name": "ParticleWarmingVectorFieldShapeOperatorCS",
+			"value": 27
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldShapeOperatorCS",
+			"value": 28
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldShapeOperatorCS",
+			"value": 29
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldShapeOperatorCS",
+			"value": 30
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS",
+			"value": 31
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMap",
+			"value": 32
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_MaskMap",
+			"value": 33
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMaskMap",
+			"value": 34
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS",
+			"value": 35
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMap",
+			"value": 36
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_MaskMap",
+			"value": 37
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMaskMap",
+			"value": 38
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS",
+			"value": 39
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMap",
+			"value": 40
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_MaskMap",
+			"value": 41
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMaskMap",
+			"value": 42
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS",
+			"value": 43
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMap",
+			"value": 44
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_MaskMap",
+			"value": 45
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 46
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS",
+			"value": 47
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMap",
+			"value": 48
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_MaskMap",
+			"value": 49
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 50
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS",
+			"value": 51
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMap",
+			"value": 52
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_MaskMap",
+			"value": 53
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMaskMap",
+			"value": 54
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS",
+			"value": 55
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMap",
+			"value": 56
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_MaskMap",
+			"value": 57
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMaskMap",
+			"value": 58
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS",
+			"value": 59
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMap",
+			"value": 60
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_MaskMap",
+			"value": 61
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMaskMap",
+			"value": 62
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS",
+			"value": 63
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMap",
+			"value": 64
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_MaskMap",
+			"value": 65
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 66
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS",
+			"value": 67
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMap",
+			"value": 68
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_MaskMap",
+			"value": 69
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 70
+		},
+		{
+			"name": "LightingCS",
+			"value": 71
+		},
+		{
+			"name": "ParticleCollider",
+			"value": 72
+		},
+		{
+			"name": "MaxType",
+			"value": 73
+		}
+	],
+	"via.effect.script.EPVExpertPhysicsData.TriggerTypeEnum": [
+		{
+			"name": "Contact",
+			"value": 0
+		},
+		{
+			"name": "Slide",
+			"value": 1
+		}
+	],
+	"via.network.NetworkEntry.TraceLevelType": [
+		{
+			"name": "Verbose",
+			"value": 0
+		},
+		{
+			"name": "Info",
+			"value": 1
+		}
+	],
+	"via.effect.script.RecordOrderContainer.Type": [
+		{
+			"name": "Blood",
+			"value": 0
+		},
+		{
+			"name": "Scar",
+			"value": 1
+		},
+		{
+			"name": "Water",
+			"value": 2
+		},
+		{
+			"name": "Foam",
+			"value": 3
+		}
+	],
+	"via.effect.script.MathEx.RotationOrder": [
+		{
+			"name": "XYZ",
+			"value": 0
+		},
+		{
+			"name": "XZY",
+			"value": 1
+		},
+		{
+			"name": "YXZ",
+			"value": 2
+		},
+		{
+			"name": "YZX",
+			"value": 3
+		},
+		{
+			"name": "ZXY",
+			"value": 4
+		},
+		{
+			"name": "ZYX",
+			"value": 5
+		}
+	],
+	"via.effect.script.EffectCullingZoneGroup.Status": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "CullingOnTrigger",
+			"value": 1
+		},
+		{
+			"name": "CullingOffTrigger",
+			"value": 2
+		},
+		{
+			"name": "CullingOff",
+			"value": 3
+		}
+	],
+	"via.effect.script.StampController.SaveStateEnum": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Preparing",
+			"value": 1
+		},
+		{
+			"name": "Ready",
+			"value": 2
+		}
+	],
+	"via.render.detail.PrimitiveGUIFilter": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "InstantBlur",
+			"value": 1
+		},
+		{
+			"name": "GaussianBlur",
+			"value": 2
+		}
+	],
+	"via.browser.ServiceType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Steam",
+			"value": 1
+		},
+		{
+			"name": "Psn",
+			"value": 2
+		},
+		{
+			"name": "Live",
+			"value": 3
+		},
+		{
+			"name": "Max",
+			"value": 4
+		}
+	],
+	"via.hid.virtualKeyboard.nsw.PasswordMode": [
+		{
+			"name": "Show",
+			"value": 0
+		},
+		{
+			"name": "Hide",
+			"value": 1
+		}
+	],
+	"app.Collision.CollisionSystem.Material.Terrain": [
+		{
+			"name": "TmDefault",
+			"value": 0
+		}
+	],
+	"via.effect.script.WeaponID": [
+		{
+			"name": "Hand",
+			"value": 0
+		},
+		{
+			"name": "HandAxe",
+			"value": 1
+		},
+		{
+			"name": "CircularSaw",
+			"value": 2
+		},
+		{
+			"name": "Knife",
+			"value": 3
+		},
+		{
+			"name": "Handgun",
+			"value": 4
+		},
+		{
+			"name": "Handgun_M19",
+			"value": 5
+		},
+		{
+			"name": "Handgun_G17",
+			"value": 6
+		},
+		{
+			"name": "Handgun_MPM",
+			"value": 7
+		},
+		{
+			"name": "Handgun_Albert",
+			"value": 8
+		},
+		{
+			"name": "ShotGun",
+			"value": 9
+		},
+		{
+			"name": "Shotgun_M37",
+			"value": 10
+		},
+		{
+			"name": "Shotgun_M37S",
+			"value": 11
+		},
+		{
+			"name": "Shotgun_DB",
+			"value": 12
+		},
+		{
+			"name": "MachineGun",
+			"value": 13
+		},
+		{
+			"name": "Magnum",
+			"value": 14
+		},
+		{
+			"name": "GrenadeLauncher",
+			"value": 15
+		},
+		{
+			"name": "Burner",
+			"value": 16
+		},
+		{
+			"name": "Candle",
+			"value": 17
+		},
+		{
+			"name": "Glasses",
+			"value": 18
+		},
+		{
+			"name": "EvelynRadar",
+			"value": 19
+		},
+		{
+			"name": "LiquidBomb",
+			"value": 20
+		},
+		{
+			"name": "Remedy",
+			"value": 21
+		},
+		{
+			"name": "Stimulant",
+			"value": 22
+		},
+		{
+			"name": "Depressant",
+			"value": 23
+		},
+		{
+			"name": "KitchenKnife",
+			"value": 24
+		},
+		{
+			"name": "ChainSaw",
+			"value": 25
+		},
+		{
+			"name": "WoodChip",
+			"value": 26
+		},
+		{
+			"name": "HandLight",
+			"value": 27
+		},
+		{
+			"name": "ChainCutter",
+			"value": 28
+		},
+		{
+			"name": "ScrewDriver",
+			"value": 29
+		},
+		{
+			"name": "Shovel",
+			"value": 30
+		},
+		{
+			"name": "Lantern",
+			"value": 31
+		},
+		{
+			"name": "Roller",
+			"value": 32
+		},
+		{
+			"name": "Scissors",
+			"value": 33
+		},
+		{
+			"name": "Stick",
+			"value": 34
+		},
+		{
+			"name": "Num",
+			"value": 35
+		},
+		{
+			"name": "Etc",
+			"value": 36
+		},
+		{
+			"name": "wp1010",
+			"value": 37
+		},
+		{
+			"name": "wp0000",
+			"value": 38
+		},
+		{
+			"name": "wp0100",
+			"value": 39
+		},
+		{
+			"name": "wp0200",
+			"value": 40
+		},
+		{
+			"name": "wp0210",
+			"value": 41
+		},
+		{
+			"name": "wp0300",
+			"value": 42
+		},
+		{
+			"name": "wp0400",
+			"value": 43
+		},
+		{
+			"name": "wp0500",
+			"value": 44
+		},
+		{
+			"name": "wp0600",
+			"value": 45
+		},
+		{
+			"name": "wp0700",
+			"value": 46
+		},
+		{
+			"name": "wp0800",
+			"value": 47
+		},
+		{
+			"name": "wp0900",
+			"value": 48
+		},
+		{
+			"name": "wp1000",
+			"value": 49
+		},
+		{
+			"name": "wp1100",
+			"value": 50
+		},
+		{
+			"name": "wp1200",
+			"value": 51
+		},
+		{
+			"name": "wp1300",
+			"value": 52
+		},
+		{
+			"name": "wp1400",
+			"value": 53
+		},
+		{
+			"name": "wp1500",
+			"value": 54
+		},
+		{
+			"name": "wp1600",
+			"value": 55
+		},
+		{
+			"name": "wp1700",
+			"value": 56
+		},
+		{
+			"name": "wp1800",
+			"value": 57
+		},
+		{
+			"name": "wp1900",
+			"value": 58
+		},
+		{
+			"name": "wp2000",
+			"value": 59
+		},
+		{
+			"name": "wp2100",
+			"value": 60
+		},
+		{
+			"name": "wp2200",
+			"value": 61
+		},
+		{
+			"name": "wp2300",
+			"value": 62
+		},
+		{
+			"name": "wp2400",
+			"value": 63
+		},
+		{
+			"name": "wp2500",
+			"value": 64
+		},
+		{
+			"name": "wp2600",
+			"value": 65
+		},
+		{
+			"name": "wp2700",
+			"value": 66
+		},
+		{
+			"name": "wp2800",
+			"value": 67
+		},
+		{
+			"name": "wp2900",
+			"value": 68
+		},
+		{
+			"name": "wp3000",
+			"value": 69
+		},
+		{
+			"name": "wp3010",
+			"value": 70
+		},
+		{
+			"name": "wp3100",
+			"value": 71
+		},
+		{
+			"name": "wp3200",
+			"value": 72
+		},
+		{
+			"name": "wp3300",
+			"value": 73
+		},
+		{
+			"name": "wp3400",
+			"value": 74
+		},
+		{
+			"name": "wp3500",
+			"value": 75
+		},
+		{
+			"name": "wp3600",
+			"value": 76
+		},
+		{
+			"name": "wp3700",
+			"value": 77
+		},
+		{
+			"name": "wp3800",
+			"value": 78
+		},
+		{
+			"name": "wp3900",
+			"value": 79
+		},
+		{
+			"name": "wp4000",
+			"value": 80
+		},
+		{
+			"name": "wp4010",
+			"value": 81
+		},
+		{
+			"name": "wp4020",
+			"value": 82
+		},
+		{
+			"name": "wp4100",
+			"value": 83
+		},
+		{
+			"name": "wp4110",
+			"value": 84
+		},
+		{
+			"name": "wp4120",
+			"value": 85
+		},
+		{
+			"name": "wp4130",
+			"value": 86
+		},
+		{
+			"name": "wp4200",
+			"value": 87
+		},
+		{
+			"name": "wp4300",
+			"value": 88
+		},
+		{
+			"name": "wp4400",
+			"value": 89
+		},
+		{
+			"name": "wp4410",
+			"value": 90
+		},
+		{
+			"name": "wp4500",
+			"value": 91
+		},
+		{
+			"name": "wp4510",
+			"value": 92
+		},
+		{
+			"name": "wp4520",
+			"value": 93
+		},
+		{
+			"name": "wp4600",
+			"value": 94
+		},
+		{
+			"name": "wp4610",
+			"value": 95
+		},
+		{
+			"name": "wp4700",
+			"value": 96
+		},
+		{
+			"name": "wp4800",
+			"value": 97
+		},
+		{
+			"name": "wp4900",
+			"value": 98
+		},
+		{
+			"name": "wp5000",
+			"value": 99
+		},
+		{
+			"name": "wp5100",
+			"value": 100
+		},
+		{
+			"name": "wp5200",
+			"value": 101
+		},
+		{
+			"name": "wp5300",
+			"value": 102
+		},
+		{
+			"name": "wp5400",
+			"value": 103
+		},
+		{
+			"name": "wp5500",
+			"value": 104
+		},
+		{
+			"name": "wp5600",
+			"value": 105
+		},
+		{
+			"name": "wp5700",
+			"value": 106
+		},
+		{
+			"name": "wp5800",
+			"value": 107
+		},
+		{
+			"name": "wp5900",
+			"value": 108
+		},
+		{
+			"name": "wp6000",
+			"value": 109
+		},
+		{
+			"name": "wp6100",
+			"value": 110
+		},
+		{
+			"name": "wp6200",
+			"value": 111
+		},
+		{
+			"name": "wp6300",
+			"value": 112
+		},
+		{
+			"name": "wp6400",
+			"value": 113
+		},
+		{
+			"name": "wp6500",
+			"value": 114
+		},
+		{
+			"name": "wp6600",
+			"value": 115
+		},
+		{
+			"name": "wp6700",
+			"value": 116
+		},
+		{
+			"name": "wp6800",
+			"value": 117
+		},
+		{
+			"name": "wp6900",
+			"value": 118
+		},
+		{
+			"name": "wp7000",
+			"value": 119
+		},
+		{
+			"name": "wp7100",
+			"value": 120
+		},
+		{
+			"name": "wp7200",
+			"value": 121
+		},
+		{
+			"name": "wp7300",
+			"value": 122
+		},
+		{
+			"name": "wp7400",
+			"value": 123
+		},
+		{
+			"name": "wp7500",
+			"value": 124
+		},
+		{
+			"name": "wp7600",
+			"value": 125
+		},
+		{
+			"name": "wp7700",
+			"value": 126
+		},
+		{
+			"name": "wp7800",
+			"value": 127
+		},
+		{
+			"name": "wp7900",
+			"value": 128
+		},
+		{
+			"name": "wp8000",
+			"value": 129
+		},
+		{
+			"name": "wp8100",
+			"value": 130
+		},
+		{
+			"name": "wp8200",
+			"value": 131
+		},
+		{
+			"name": "wp8300",
+			"value": 132
+		},
+		{
+			"name": "wp8400",
+			"value": 133
+		},
+		{
+			"name": "wp8500",
+			"value": 134
+		},
+		{
+			"name": "wp8600",
+			"value": 135
+		},
+		{
+			"name": "wp8700",
+			"value": 136
+		},
+		{
+			"name": "wp8800",
+			"value": 137
+		},
+		{
+			"name": "wp8900",
+			"value": 138
+		},
+		{
+			"name": "wp9000",
+			"value": 139
+		},
+		{
+			"name": "wp9100",
+			"value": 140
+		},
+		{
+			"name": "wp9200",
+			"value": 141
+		},
+		{
+			"name": "wp9300",
+			"value": 142
+		},
+		{
+			"name": "wp9400",
+			"value": 143
+		},
+		{
+			"name": "wp9500",
+			"value": 144
+		},
+		{
+			"name": "wp9600",
+			"value": 145
+		},
+		{
+			"name": "wp9700",
+			"value": 146
+		},
+		{
+			"name": "wp9800",
+			"value": 147
+		},
+		{
+			"name": "wp9900",
+			"value": 148
+		}
+	],
+	"via.hid.TouchScreenAction": [
+		{
+			"name": "Move",
+			"value": 0
+		},
+		{
+			"name": "Down",
+			"value": 1
+		},
+		{
+			"name": "Up",
+			"value": 2
+		},
+		{
+			"name": "Cancel",
+			"value": 3
+		}
+	],
+	"via.effect.script.StampController.Type": [
+		{
+			"name": "Blood",
+			"value": 0
+		},
+		{
+			"name": "Scar",
+			"value": 1
+		},
+		{
+			"name": "Water",
+			"value": 2
+		},
+		{
+			"name": "Other",
+			"value": 3
+		},
+		{
+			"name": "Num",
+			"value": 4
+		}
+	],
+	"via.effect.script.EffectDecal.DecalFollowEnum": [
+		{
+			"name": "NotFollow",
+			"value": 0
+		},
+		{
+			"name": "FollowEffect",
+			"value": 1
+		}
+	],
+	"via.relib.effect.behavior.ReLibMarkStampController.Type": [
+		{
+			"name": "Blood",
+			"value": 0
+		},
+		{
+			"name": "Scar",
+			"value": 1
+		},
+		{
+			"name": "Water",
+			"value": 2
+		},
+		{
+			"name": "Other",
+			"value": 3
+		},
+		{
+			"name": "Num",
+			"value": 4
+		}
+	],
+	"via.effect.script.TinyTimer.Mode": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Up",
+			"value": 1
+		},
+		{
+			"name": "Down",
+			"value": 2
+		}
+	],
+	"via.effect.script.EffectTimeline.EndType": [
+		{
+			"name": "PlayEnd",
+			"value": 0
+		},
+		{
+			"name": "Stop",
+			"value": 1
+		},
+		{
+			"name": "Resoter",
+			"value": 2
+		},
+		{
+			"name": "End",
+			"value": 3
+		}
+	],
+	"via.effect.script.EffectCommonDefine.EffectActionOnParentDisappear": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Finish",
+			"value": 1
+		},
+		{
+			"name": "Kill",
+			"value": 2
+		},
+		{
+			"name": "Unparent",
+			"value": 3
+		}
+	],
+	"app.Collision.HitManager.Direction": [
+		{
+			"name": "Front",
+			"value": 0
+		},
+		{
+			"name": "Back",
+			"value": 1
+		},
+		{
+			"name": "Left",
+			"value": 2
+		},
+		{
+			"name": "Right",
+			"value": 3
+		},
+		{
+			"name": "FrontLeft",
+			"value": 4
+		},
+		{
+			"name": "FrontRight",
+			"value": 5
+		},
+		{
+			"name": "BackLeft",
+			"value": 6
+		},
+		{
+			"name": "BackRight",
+			"value": 7
+		}
+	],
+	"app.Collision.CollisionSystem.AsyncCastHandleBase.CastType": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Ray",
+			"value": 1
+		},
+		{
+			"name": "Sphere",
+			"value": 2
+		}
+	],
+	"via.effect.script.EffectManager.PriorityType": [
+		{
+			"name": "LastPriority",
+			"value": 0
+		},
+		{
+			"name": "FirstPriority",
+			"value": 1
+		}
+	],
+	"via.effect.script.GroupFlag": [
+		{
+			"name": "Player",
+			"value": 1
+		},
+		{
+			"name": "Enemy",
+			"value": 2
+		},
+		{
+			"name": "Weapon",
+			"value": 4
+		},
+		{
+			"name": "Item",
+			"value": 8
+		},
+		{
+			"name": "Prop",
+			"value": 16
+		},
+		{
+			"name": "Etc",
+			"value": 32
+		},
+		{
+			"name": "Vfx",
+			"value": 64
+		},
+		{
+			"name": "Camera",
+			"value": 128
+		},
+		{
+			"name": "ActionPoint",
+			"value": 256
+		},
+		{
+			"name": "EventChara",
+			"value": 512
+		}
+	],
+	"via.network.Protocol.SendOption": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Unreliable",
+			"value": 0
+		},
+		{
+			"name": "Reliable",
+			"value": 1
+		},
+		{
+			"name": "ReliableBuffer",
+			"value": 3
+		},
+		{
+			"name": "FastCallback",
+			"value": 4
+		},
+		{
+			"name": "CheckAbsent",
+			"value": 8
+		}
+	],
+	"via.effect.script.EPVExpertHitEffectRecordData.DECALTOPDIRECTION": [
+		{
+			"name": "Random",
+			"value": 0
+		},
+		{
+			"name": "DirectionY",
+			"value": 1
+		}
+	],
+	"via.effect.script.CameraID": [
+		{
+			"name": "MainCamera",
+			"value": 0
+		}
+	],
+	"via.effect.script.EffectTimeline.TimeLineBindType": [
+		{
+			"name": "Children",
+			"value": 0
+		},
+		{
+			"name": "Scene",
+			"value": 1
+		},
+		{
+			"name": "Fixed",
+			"value": 2
+		},
+		{
+			"name": "Direct",
+			"value": 3
+		},
+		{
+			"name": "Parent",
+			"value": 4
+		}
+	],
+	"via.motion.script.CharacterSetting.ContactAdjustTypeEnum": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Scale",
+			"value": 1
+		}
+	],
+	"via.relib.effect.EffectControlAction.TargetGameObjectModeEnum": [
+		{
+			"name": "GameObjectRef",
+			"value": 0
+		},
+		{
+			"name": "OwnGameObject",
+			"value": 1
+		}
+	],
+	"via.effect.script.Group": [
+		{
+			"name": "Player",
+			"value": 0
+		},
+		{
+			"name": "Enemy",
+			"value": 1
+		},
+		{
+			"name": "Weapon",
+			"value": 2
+		},
+		{
+			"name": "Item",
+			"value": 3
+		},
+		{
+			"name": "Prop",
+			"value": 4
+		},
+		{
+			"name": "Etc",
+			"value": 5
+		},
+		{
+			"name": "Vfx",
+			"value": 6
+		},
+		{
+			"name": "Camera",
+			"value": 7
+		},
+		{
+			"name": "ActionPoint",
+			"value": 8
+		},
+		{
+			"name": "EventChara",
+			"value": 9
+		}
+	],
+	"via.effect.script.EffectDecal.DecalUpEnum": [
+		{
+			"name": "XPlus",
+			"value": 0
+		},
+		{
+			"name": "XMinus",
+			"value": 1
+		},
+		{
+			"name": "YPlus",
+			"value": 2
+		},
+		{
+			"name": "YMinus",
+			"value": 3
+		},
+		{
+			"name": "ZPlus",
+			"value": 4
+		},
+		{
+			"name": "ZMinus",
+			"value": 5
+		}
+	],
+	"via.effect.script.EffectManager.LODLevel": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Level01",
+			"value": 1
+		},
+		{
+			"name": "Level02",
+			"value": 2
+		},
+		{
+			"name": "Level03",
+			"value": 3
+		},
+		{
+			"name": "Level04",
+			"value": 4
+		},
+		{
+			"name": "Level05",
+			"value": 5
+		},
+		{
+			"name": "Level06",
+			"value": 6
+		},
+		{
+			"name": "Level07",
+			"value": 7
+		}
+	],
+	"via.motion.script.FootEffectController.JointPartsType": [
+		{
+			"name": "Foot",
+			"value": 0
+		},
+		{
+			"name": "Hand",
+			"value": 1
 		}
 	]
 }

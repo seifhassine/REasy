@@ -57,10 +57,6 @@
 	],
 	"app.ropeway.rogue.RogueDefine.ItemDropCategory": [
 		{
-			"name": "RandomSet",
-			"value": 1000
-		},
-		{
 			"name": "Pattern_00",
 			"value": 0
 		},
@@ -139,6 +135,10 @@
 		{
 			"name": "Pattern_19",
 			"value": 19
+		},
+		{
+			"name": "RandomSet",
+			"value": 1000
 		}
 	],
 	"app.ropeway.motion.MotionEventHandler.LayerKind": [
@@ -1025,52 +1025,16 @@
 	],
 	"app.ropeway.enemy.em5000.WeakPartsID": [
 		{
-			"name": "UL_Body00",
-			"value": 111
+			"name": "UR_RightArm00",
+			"value": 100
 		},
 		{
-			"name": "UL_Body01",
-			"value": 114
+			"name": "UR_RightArm01",
+			"value": 101
 		},
 		{
-			"name": "UL_Body02",
-			"value": 115
-		},
-		{
-			"name": "UR_Body03",
-			"value": 106
-		},
-		{
-			"name": "UR_Body04",
-			"value": 107
-		},
-		{
-			"name": "UR_Body05",
-			"value": 108
-		},
-		{
-			"name": "DL_Body06",
-			"value": 112
-		},
-		{
-			"name": "DL_Body07",
-			"value": 116
-		},
-		{
-			"name": "DL_Body08",
-			"value": 117
-		},
-		{
-			"name": "DR_Body09",
-			"value": 109
-		},
-		{
-			"name": "DR_Body10",
-			"value": 110
-		},
-		{
-			"name": "DR_Body11",
-			"value": 113
+			"name": "UR_RightArm02",
+			"value": 102
 		},
 		{
 			"name": "UL_LeftArm00",
@@ -1085,28 +1049,52 @@
 			"value": 105
 		},
 		{
-			"name": "UR_RightArm00",
-			"value": 100
+			"name": "UR_Body03",
+			"value": 106
 		},
 		{
-			"name": "UR_RightArm01",
-			"value": 101
+			"name": "UR_Body04",
+			"value": 107
 		},
 		{
-			"name": "UR_RightArm02",
-			"value": 102
+			"name": "UR_Body05",
+			"value": 108
 		},
 		{
-			"name": "DL_LeftLeg00",
-			"value": 121
+			"name": "DR_Body09",
+			"value": 109
 		},
 		{
-			"name": "DL_LeftLeg01",
-			"value": 122
+			"name": "DR_Body10",
+			"value": 110
 		},
 		{
-			"name": "DL_LeftLeg02",
-			"value": 123
+			"name": "UL_Body00",
+			"value": 111
+		},
+		{
+			"name": "DL_Body06",
+			"value": 112
+		},
+		{
+			"name": "DR_Body11",
+			"value": 113
+		},
+		{
+			"name": "UL_Body01",
+			"value": 114
+		},
+		{
+			"name": "UL_Body02",
+			"value": 115
+		},
+		{
+			"name": "DL_Body07",
+			"value": 116
+		},
+		{
+			"name": "DL_Body08",
+			"value": 117
 		},
 		{
 			"name": "DR_RightLeg00",
@@ -1119,6 +1107,18 @@
 		{
 			"name": "DR_RightLeg02",
 			"value": 120
+		},
+		{
+			"name": "DL_LeftLeg00",
+			"value": 121
+		},
+		{
+			"name": "DL_LeftLeg01",
+			"value": 122
+		},
+		{
+			"name": "DL_LeftLeg02",
+			"value": 123
 		}
 	],
 	"via.uvsequence.UVTransform": [
@@ -1185,12 +1185,12 @@
 			"value": 4
 		},
 		{
-			"name": "AlandIslands",
-			"value": 248
-		},
-		{
 			"name": "Albania",
 			"value": 8
+		},
+		{
+			"name": "AntArtica",
+			"value": 10
 		},
 		{
 			"name": "Algeria",
@@ -1209,28 +1209,16 @@
 			"value": 24
 		},
 		{
-			"name": "Anguilla",
-			"value": 660
-		},
-		{
-			"name": "AntArtica",
-			"value": 10
-		},
-		{
 			"name": "AntiguaAndBarbuda",
 			"value": 28
 		},
 		{
+			"name": "Azerbaijan",
+			"value": 31
+		},
+		{
 			"name": "Argentina",
 			"value": 32
-		},
-		{
-			"name": "Armenia",
-			"value": 51
-		},
-		{
-			"name": "Aruba",
-			"value": 533
 		},
 		{
 			"name": "Australia",
@@ -1239,10 +1227,6 @@
 		{
 			"name": "Austria",
 			"value": 40
-		},
-		{
-			"name": "Azerbaijan",
-			"value": 31
 		},
 		{
 			"name": "Bahamas",
@@ -1257,24 +1241,16 @@
 			"value": 50
 		},
 		{
+			"name": "Armenia",
+			"value": 51
+		},
+		{
 			"name": "Barados",
 			"value": 52
 		},
 		{
-			"name": "Belarus",
-			"value": 112
-		},
-		{
 			"name": "Belgium",
 			"value": 56
-		},
-		{
-			"name": "Belize",
-			"value": 84
-		},
-		{
-			"name": "Benin",
-			"value": 204
 		},
 		{
 			"name": "Bermuda",
@@ -1287,10 +1263,6 @@
 		{
 			"name": "Bolivia",
 			"value": 68
-		},
-		{
-			"name": "Bonaire",
-			"value": 535
 		},
 		{
 			"name": "BosniaAndHerzegovina",
@@ -1309,8 +1281,20 @@
 			"value": 76
 		},
 		{
+			"name": "Belize",
+			"value": 84
+		},
+		{
 			"name": "BritishIndianOceanTerritory",
 			"value": 86
+		},
+		{
+			"name": "SolomonIslands",
+			"value": 90
+		},
+		{
+			"name": "VirginIslandsBritish",
+			"value": 92
 		},
 		{
 			"name": "BruneiDarussalam",
@@ -1321,16 +1305,16 @@
 			"value": 100
 		},
 		{
-			"name": "BurkinaFaso",
-			"value": 854
+			"name": "Myanmar",
+			"value": 104
 		},
 		{
 			"name": "Burundi",
 			"value": 108
 		},
 		{
-			"name": "CaboVerde",
-			"value": 132
+			"name": "Belarus",
+			"value": 112
 		},
 		{
 			"name": "Cambodia",
@@ -1345,12 +1329,20 @@
 			"value": 124
 		},
 		{
+			"name": "CaboVerde",
+			"value": 132
+		},
+		{
 			"name": "CaymanIslands",
 			"value": 136
 		},
 		{
 			"name": "CentralAfricanRepublic",
 			"value": 140
+		},
+		{
+			"name": "SriLanka",
+			"value": 144
 		},
 		{
 			"name": "Chad",
@@ -1363,6 +1355,14 @@
 		{
 			"name": "China",
 			"value": 156
+		},
+		{
+			"name": "Prchina",
+			"value": 156
+		},
+		{
+			"name": "Taiwan",
+			"value": 158
 		},
 		{
 			"name": "ChristmasIsland",
@@ -1381,6 +1381,10 @@
 			"value": 174
 		},
 		{
+			"name": "Mayotte",
+			"value": 175
+		},
+		{
 			"name": "Congo",
 			"value": 178
 		},
@@ -1397,20 +1401,12 @@
 			"value": 188
 		},
 		{
-			"name": "CotedDIVoire",
-			"value": 384
-		},
-		{
 			"name": "Croatia",
 			"value": 191
 		},
 		{
 			"name": "Cuba",
 			"value": 192
-		},
-		{
-			"name": "Curacao",
-			"value": 531
 		},
 		{
 			"name": "Cyprus",
@@ -1421,12 +1417,16 @@
 			"value": 203
 		},
 		{
-			"name": "Denmark",
-			"value": 208
+			"name": "Czech",
+			"value": 203
 		},
 		{
-			"name": "Djibouti",
-			"value": 262
+			"name": "Benin",
+			"value": 204
+		},
+		{
+			"name": "Denmark",
+			"value": 208
 		},
 		{
 			"name": "Dominica",
@@ -1441,16 +1441,16 @@
 			"value": 218
 		},
 		{
-			"name": "Egypt",
-			"value": 818
-		},
-		{
 			"name": "ElSalvador",
 			"value": 222
 		},
 		{
 			"name": "EquatorialGuinea",
 			"value": 226
+		},
+		{
+			"name": "Ethiopia",
+			"value": 231
 		},
 		{
 			"name": "Eritrea",
@@ -1461,16 +1461,16 @@
 			"value": 233
 		},
 		{
-			"name": "Ethiopia",
-			"value": 231
+			"name": "FaroeIslands",
+			"value": 234
 		},
 		{
 			"name": "FalkanIslands",
 			"value": 236
 		},
 		{
-			"name": "FaroeIslands",
-			"value": 234
+			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
+			"value": 239
 		},
 		{
 			"name": "Fiji",
@@ -1479,6 +1479,10 @@
 		{
 			"name": "Finland",
 			"value": 246
+		},
+		{
+			"name": "AlandIslands",
+			"value": 248
 		},
 		{
 			"name": "France",
@@ -1497,16 +1501,24 @@
 			"value": 260
 		},
 		{
+			"name": "Djibouti",
+			"value": 262
+		},
+		{
 			"name": "Gabon",
 			"value": 266
+		},
+		{
+			"name": "Georgia",
+			"value": 268
 		},
 		{
 			"name": "Gambia",
 			"value": 270
 		},
 		{
-			"name": "Georgia",
-			"value": 268
+			"name": "Palestine",
+			"value": 275
 		},
 		{
 			"name": "Germany",
@@ -1519,6 +1531,10 @@
 		{
 			"name": "Gibraltar",
 			"value": 292
+		},
+		{
+			"name": "Kiribati",
+			"value": 296
 		},
 		{
 			"name": "Greece",
@@ -1545,16 +1561,8 @@
 			"value": 320
 		},
 		{
-			"name": "Guernsey",
-			"value": 831
-		},
-		{
 			"name": "Guinea",
 			"value": 324
-		},
-		{
-			"name": "GuineaBissau",
-			"value": 624
 		},
 		{
 			"name": "Guyana",
@@ -1569,11 +1577,19 @@
 			"value": 334
 		},
 		{
+			"name": "VaticanCity",
+			"value": 336
+		},
+		{
 			"name": "Honduras",
 			"value": 340
 		},
 		{
 			"name": "HongKong",
+			"value": 344
+		},
+		{
+			"name": "Hong_kong",
 			"value": 344
 		},
 		{
@@ -1605,16 +1621,16 @@
 			"value": 372
 		},
 		{
-			"name": "IsleOfMan",
-			"value": 833
-		},
-		{
 			"name": "Israel",
 			"value": 376
 		},
 		{
 			"name": "Italy",
 			"value": 380
+		},
+		{
+			"name": "CotedDIVoire",
+			"value": 384
 		},
 		{
 			"name": "Jamaica",
@@ -1625,24 +1641,16 @@
 			"value": 392
 		},
 		{
-			"name": "Jersey",
-			"value": 832
+			"name": "Kazakhstan",
+			"value": 398
 		},
 		{
 			"name": "Jordan",
 			"value": 400
 		},
 		{
-			"name": "Kazakhstan",
-			"value": 398
-		},
-		{
 			"name": "Kenya",
 			"value": 404
-		},
-		{
-			"name": "Kiribati",
-			"value": 296
 		},
 		{
 			"name": "NorthKorea",
@@ -1650,6 +1658,10 @@
 		},
 		{
 			"name": "SouthKorea",
+			"value": 410
+		},
+		{
+			"name": "South_korea",
 			"value": 410
 		},
 		{
@@ -1665,16 +1677,16 @@
 			"value": 418
 		},
 		{
-			"name": "Latvia",
-			"value": 428
-		},
-		{
 			"name": "Lebanon",
 			"value": 422
 		},
 		{
 			"name": "Lesotho",
 			"value": 426
+		},
+		{
+			"name": "Latvia",
+			"value": 428
 		},
 		{
 			"name": "Liberia",
@@ -1701,10 +1713,6 @@
 			"value": 446
 		},
 		{
-			"name": "Macedonia",
-			"value": 807
-		},
-		{
 			"name": "Madagascar",
 			"value": 450
 		},
@@ -1729,10 +1737,6 @@
 			"value": 470
 		},
 		{
-			"name": "MarshallIslands",
-			"value": 584
-		},
-		{
 			"name": "Martinique",
 			"value": 474
 		},
@@ -1745,20 +1749,8 @@
 			"value": 480
 		},
 		{
-			"name": "Mayotte",
-			"value": 175
-		},
-		{
 			"name": "Mexico",
 			"value": 484
-		},
-		{
-			"name": "Micronesia",
-			"value": 583
-		},
-		{
-			"name": "Moldova",
-			"value": 498
 		},
 		{
 			"name": "Monaco",
@@ -1767,6 +1759,10 @@
 		{
 			"name": "Mongolia",
 			"value": 496
+		},
+		{
+			"name": "Moldova",
+			"value": 498
 		},
 		{
 			"name": "Montenegro",
@@ -1785,8 +1781,8 @@
 			"value": 508
 		},
 		{
-			"name": "Myanmar",
-			"value": 104
+			"name": "Oman",
+			"value": 512
 		},
 		{
 			"name": "Namibia",
@@ -1805,11 +1801,35 @@
 			"value": 528
 		},
 		{
+			"name": "Curacao",
+			"value": 531
+		},
+		{
+			"name": "Aruba",
+			"value": 533
+		},
+		{
+			"name": "SintMaarten",
+			"value": 534
+		},
+		{
+			"name": "Bonaire",
+			"value": 535
+		},
+		{
 			"name": "NewCaledonia",
 			"value": 540
 		},
 		{
+			"name": "Vanauatu",
+			"value": 548
+		},
+		{
 			"name": "NewZealand",
+			"value": 554
+		},
+		{
+			"name": "New_zealand",
 			"value": 554
 		},
 		{
@@ -1833,28 +1853,32 @@
 			"value": 574
 		},
 		{
-			"name": "NorthernMarianaIsland",
-			"value": 580
-		},
-		{
 			"name": "Norway",
 			"value": 578
 		},
 		{
-			"name": "Oman",
-			"value": 512
+			"name": "NorthernMarianaIsland",
+			"value": 580
 		},
 		{
-			"name": "Pakistan",
-			"value": 586
+			"name": "UnitedStatesMinorOutlyingIslands",
+			"value": 581
+		},
+		{
+			"name": "Micronesia",
+			"value": 583
+		},
+		{
+			"name": "MarshallIslands",
+			"value": 584
 		},
 		{
 			"name": "Palau",
 			"value": 585
 		},
 		{
-			"name": "Palestine",
-			"value": 275
+			"name": "Pakistan",
+			"value": 586
 		},
 		{
 			"name": "Panama",
@@ -1883,6 +1907,14 @@
 		{
 			"name": "Poland",
 			"value": 616
+		},
+		{
+			"name": "GuineaBissau",
+			"value": 624
+		},
+		{
+			"name": "TimorLeste",
+			"value": 626
 		},
 		{
 			"name": "Portugal",
@@ -1925,6 +1957,10 @@
 			"value": 659
 		},
 		{
+			"name": "Anguilla",
+			"value": 660
+		},
+		{
 			"name": "SaintLucia",
 			"value": 662
 		},
@@ -1939,10 +1975,6 @@
 		{
 			"name": "SaintVincentAndTheGrenadines",
 			"value": 670
-		},
-		{
-			"name": "Samoa",
-			"value": 882
 		},
 		{
 			"name": "SanMarino",
@@ -1977,20 +2009,16 @@
 			"value": 702
 		},
 		{
-			"name": "SintMaarten",
-			"value": 534
-		},
-		{
 			"name": "Slovakia",
 			"value": 703
 		},
 		{
-			"name": "Slovenia",
-			"value": 705
+			"name": "VietNam",
+			"value": 704
 		},
 		{
-			"name": "SolomonIslands",
-			"value": 90
+			"name": "Slovenia",
+			"value": 705
 		},
 		{
 			"name": "Somalia",
@@ -2001,24 +2029,24 @@
 			"value": 710
 		},
 		{
-			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
-			"value": 239
-		},
-		{
-			"name": "SouthSudan",
-			"value": 728
+			"name": "Zimbabwe",
+			"value": 716
 		},
 		{
 			"name": "Spain",
 			"value": 724
 		},
 		{
-			"name": "SriLanka",
-			"value": 144
+			"name": "SouthSudan",
+			"value": 728
 		},
 		{
 			"name": "Sudan",
 			"value": 729
+		},
+		{
+			"name": "WesternSahara",
+			"value": 732
 		},
 		{
 			"name": "Suriname",
@@ -2029,12 +2057,12 @@
 			"value": 744
 		},
 		{
-			"name": "Swaziland",
-			"value": 756
-		},
-		{
 			"name": "Sweden",
 			"value": 752
+		},
+		{
+			"name": "Swaziland",
+			"value": 756
 		},
 		{
 			"name": "Switzerland",
@@ -2045,24 +2073,12 @@
 			"value": 760
 		},
 		{
-			"name": "Taiwan",
-			"value": 158
-		},
-		{
 			"name": "Tajikistan",
 			"value": 762
 		},
 		{
-			"name": "Tanzania",
-			"value": 834
-		},
-		{
 			"name": "Thailand",
 			"value": 764
-		},
-		{
-			"name": "TimorLeste",
-			"value": 626
 		},
 		{
 			"name": "Togo",
@@ -2079,6 +2095,14 @@
 		{
 			"name": "TrinidadAndTobago",
 			"value": 780
+		},
+		{
+			"name": "UnitedArabEmirates",
+			"value": 784
+		},
+		{
+			"name": "Uae",
+			"value": 784
 		},
 		{
 			"name": "Tunisia",
@@ -2109,20 +2133,52 @@
 			"value": 804
 		},
 		{
-			"name": "UnitedArabEmirates",
-			"value": 784
+			"name": "Macedonia",
+			"value": 807
+		},
+		{
+			"name": "Egypt",
+			"value": 818
 		},
 		{
 			"name": "UnitedKingdom",
 			"value": 826
 		},
 		{
-			"name": "UnitedStatesMinorOutlyingIslands",
-			"value": 581
+			"name": "United_kingdom",
+			"value": 826
+		},
+		{
+			"name": "Guernsey",
+			"value": 831
+		},
+		{
+			"name": "Jersey",
+			"value": 832
+		},
+		{
+			"name": "IsleOfMan",
+			"value": 833
+		},
+		{
+			"name": "Tanzania",
+			"value": 834
 		},
 		{
 			"name": "UnitedStatesOfAmerica",
 			"value": 840
+		},
+		{
+			"name": "United_states",
+			"value": 840
+		},
+		{
+			"name": "VirginIslandsUS",
+			"value": 850
+		},
+		{
+			"name": "BurkinaFaso",
+			"value": 854
 		},
 		{
 			"name": "Uruguay",
@@ -2133,36 +2189,16 @@
 			"value": 860
 		},
 		{
-			"name": "Vanauatu",
-			"value": 548
-		},
-		{
-			"name": "VaticanCity",
-			"value": 336
-		},
-		{
 			"name": "Venezuela",
 			"value": 862
-		},
-		{
-			"name": "VietNam",
-			"value": 704
-		},
-		{
-			"name": "VirginIslandsBritish",
-			"value": 92
-		},
-		{
-			"name": "VirginIslandsUS",
-			"value": 850
 		},
 		{
 			"name": "WallisAndFutuna",
 			"value": 876
 		},
 		{
-			"name": "WesternSahara",
-			"value": 732
+			"name": "Samoa",
+			"value": 882
 		},
 		{
 			"name": "Yemen",
@@ -2171,42 +2207,6 @@
 		{
 			"name": "Zambia",
 			"value": 894
-		},
-		{
-			"name": "Zimbabwe",
-			"value": 716
-		},
-		{
-			"name": "Prchina",
-			"value": 156
-		},
-		{
-			"name": "Czech",
-			"value": 203
-		},
-		{
-			"name": "Hong_kong",
-			"value": 344
-		},
-		{
-			"name": "New_zealand",
-			"value": 554
-		},
-		{
-			"name": "South_korea",
-			"value": 410
-		},
-		{
-			"name": "United_states",
-			"value": 840
-		},
-		{
-			"name": "United_kingdom",
-			"value": 826
-		},
-		{
-			"name": "Uae",
-			"value": 784
 		}
 	],
 	"via.render.ExperimentalRayTrace.RayTracingResoultion": [
@@ -2427,8 +2427,16 @@
 	],
 	"via.audiorender.SourceType": [
 		{
-			"name": "None",
-			"value": 4294967295
+			"name": "Atrac9",
+			"value": 540636257
+		},
+		{
+			"name": "XMA",
+			"value": 543255928
+		},
+		{
+			"name": "Vorbis",
+			"value": 543647599
 		},
 		{
 			"name": "Wave",
@@ -2439,16 +2447,8 @@
 			"value": 2003137400
 		},
 		{
-			"name": "Vorbis",
-			"value": 543647599
-		},
-		{
-			"name": "Atrac9",
-			"value": 540636257
-		},
-		{
-			"name": "XMA",
-			"value": 543255928
+			"name": "None",
+			"value": 4294967295
 		}
 	],
 	"via.eq.Operator.Type": [
@@ -2717,16 +2717,16 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "Develop",
 			"value": 1
 		},
 		{
 			"name": "KernelLand",
 			"value": 2
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.gui.ReticleBehavior.SparkShotState": [
@@ -2867,20 +2867,20 @@
 			"value": 0
 		},
 		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "Include",
+			"value": 1
+		},
+		{
+			"name": "INCLUDE",
 			"value": 1
 		},
 		{
 			"name": "Exclude",
 			"value": 2
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "INCLUDE",
-			"value": 1
 		},
 		{
 			"name": "EXCLUDE",
@@ -3413,10 +3413,6 @@
 			"value": 1
 		},
 		{
-			"name": "Hardware",
-			"value": 65
-		},
-		{
 			"name": "JPEG",
 			"value": 2
 		},
@@ -3427,6 +3423,10 @@
 		{
 			"name": "PNG24",
 			"value": 4
+		},
+		{
+			"name": "Hardware",
+			"value": 65
 		}
 	],
 	"via.dynamics.BoxShape.VoronoiId": [
@@ -3985,6 +3985,10 @@
 			"value": 1
 		},
 		{
+			"name": "ParticleDepthOperation",
+			"value": 1
+		},
+		{
 			"name": "SSAO_Process",
 			"value": 2
 		},
@@ -3995,10 +3999,6 @@
 		{
 			"name": "IndirectIllumination",
 			"value": 4
-		},
-		{
-			"name": "ParticleDepthOperation",
-			"value": 1
 		}
 	],
 	"via.landscape.DummyPipelineType": [
@@ -5709,12 +5709,12 @@
 			"value": 83886080
 		},
 		{
-			"name": "Bottom",
-			"value": 117440512
-		},
-		{
 			"name": "BelowDefault",
 			"value": 100663296
+		},
+		{
+			"name": "Bottom",
+			"value": 117440512
 		},
 		{
 			"name": "BottomMost",
@@ -5889,12 +5889,12 @@
 			"value": 1
 		},
 		{
-			"name": "Assert",
-			"value": 2
-		},
-		{
 			"name": "Default",
 			"value": 1
+		},
+		{
+			"name": "Assert",
+			"value": 2
 		}
 	],
 	"via.audiorender.Channel_3oAmb": [
@@ -5986,6 +5986,10 @@
 		}
 	],
 	"via.hid.GamePadButton": [
+		{
+			"name": "None",
+			"value": 0
+		},
 		{
 			"name": "LUp",
 			"value": 1
@@ -6107,7 +6111,15 @@
 			"value": 268435456
 		},
 		{
+			"name": "LSide",
+			"value": 268435456
+		},
+		{
 			"name": "LSR",
+			"value": 536870912
+		},
+		{
+			"name": "RSide",
 			"value": 536870912
 		},
 		{
@@ -6117,18 +6129,6 @@
 		{
 			"name": "RSR",
 			"value": 2147483648
-		},
-		{
-			"name": "LSide",
-			"value": 268435456
-		},
-		{
-			"name": "RSide",
-			"value": 536870912
-		},
-		{
-			"name": "None",
-			"value": 0
 		},
 		{
 			"name": "All",
@@ -8362,6 +8362,10 @@
 			"value": 0
 		},
 		{
+			"name": "Min",
+			"value": 0
+		},
+		{
 			"name": "China",
 			"value": 1
 		},
@@ -8374,20 +8378,16 @@
 			"value": 3
 		},
 		{
+			"name": "Max",
+			"value": 3
+		},
+		{
 			"name": "Count",
 			"value": 4
 		},
 		{
 			"name": "Term",
 			"value": 4
-		},
-		{
-			"name": "Min",
-			"value": 0
-		},
-		{
-			"name": "Max",
-			"value": 3
 		}
 	],
 	"via.relib.playlog.JsonWriter.ValueType": [
@@ -15288,28 +15288,28 @@
 	],
 	"app.ropeway.gamemastering.SaveDataManager.SaveDataNumber": [
 		{
-			"name": "SYSTEM_DATA_COUNT",
-			"value": 1
-		},
-		{
 			"name": "SCENARIO_DATA_BEGIN",
 			"value": 0
 		},
 		{
-			"name": "SCENARIO_DATA_COUNT",
-			"value": 21
+			"name": "SYSTEM_DATA_COUNT",
+			"value": 1
+		},
+		{
+			"name": "ROGUE_DATA_COUNT",
+			"value": 11
 		},
 		{
 			"name": "SCENARIO_DATA_END",
 			"value": 20
 		},
 		{
-			"name": "ROGUE_DATA_BEGIN",
+			"name": "SCENARIO_DATA_COUNT",
 			"value": 21
 		},
 		{
-			"name": "ROGUE_DATA_COUNT",
-			"value": 11
+			"name": "ROGUE_DATA_BEGIN",
+			"value": 21
 		},
 		{
 			"name": "ROGUE_DATA_END",
@@ -15334,64 +15334,16 @@
 	],
 	"via.motion.RIKJointId": [
 		{
-			"name": "Hip",
-			"value": 7
+			"name": "Head",
+			"value": 0
 		},
 		{
-			"name": "LeftHip",
-			"value": 26
-		},
-		{
-			"name": "LeftKnee",
-			"value": 27
-		},
-		{
-			"name": "LeftAnkle",
-			"value": 28
-		},
-		{
-			"name": "RightHip",
-			"value": 30
-		},
-		{
-			"name": "RightKnee",
-			"value": 31
-		},
-		{
-			"name": "RightAnkle",
-			"value": 32
+			"name": "Neck",
+			"value": 1
 		},
 		{
 			"name": "Waist",
 			"value": 2
-		},
-		{
-			"name": "LeftShoulder",
-			"value": 9
-		},
-		{
-			"name": "LeftElbow",
-			"value": 10
-		},
-		{
-			"name": "LeftWrist",
-			"value": 11
-		},
-		{
-			"name": "RightShoulder",
-			"value": 18
-		},
-		{
-			"name": "RightElbow",
-			"value": 19
-		},
-		{
-			"name": "RightWrist",
-			"value": 20
-		},
-		{
-			"name": "Head",
-			"value": 0
 		},
 		{
 			"name": "Spine1",
@@ -15410,28 +15362,76 @@
 			"value": 6
 		},
 		{
-			"name": "Neck",
-			"value": 1
+			"name": "Hip",
+			"value": 7
 		},
 		{
 			"name": "LeftCollar",
 			"value": 8
 		},
 		{
+			"name": "LeftShoulder",
+			"value": 9
+		},
+		{
+			"name": "LeftElbow",
+			"value": 10
+		},
+		{
+			"name": "LeftWrist",
+			"value": 11
+		},
+		{
 			"name": "RightCollar",
 			"value": 17
+		},
+		{
+			"name": "RightShoulder",
+			"value": 18
+		},
+		{
+			"name": "RightElbow",
+			"value": 19
+		},
+		{
+			"name": "RightWrist",
+			"value": 20
+		},
+		{
+			"name": "Max",
+			"value": 24
+		},
+		{
+			"name": "LeftHip",
+			"value": 26
+		},
+		{
+			"name": "LeftKnee",
+			"value": 27
+		},
+		{
+			"name": "LeftAnkle",
+			"value": 28
 		},
 		{
 			"name": "LeftFoot",
 			"value": 29
 		},
 		{
-			"name": "RightFoot",
-			"value": 33
+			"name": "RightHip",
+			"value": 30
 		},
 		{
-			"name": "Max",
-			"value": 24
+			"name": "RightKnee",
+			"value": 31
+		},
+		{
+			"name": "RightAnkle",
+			"value": 32
+		},
+		{
+			"name": "RightFoot",
+			"value": 33
 		}
 	],
 	"via.render.InstanceKeyState": [
@@ -17088,7 +17088,15 @@
 			"value": 4
 		},
 		{
+			"name": "StaticShadowSolid",
+			"value": 4
+		},
+		{
 			"name": "ShadowTwoSide",
+			"value": 5
+		},
+		{
+			"name": "StaticShadowTwoSide",
 			"value": 5
 		},
 		{
@@ -17096,7 +17104,15 @@
 			"value": 6
 		},
 		{
+			"name": "StaticShadowTwoSideAlphaTest",
+			"value": 6
+		},
+		{
 			"name": "ShadowAlphaTest",
+			"value": 7
+		},
+		{
+			"name": "StaticShadowAlphaTest",
 			"value": 7
 		},
 		{
@@ -17106,22 +17122,6 @@
 		{
 			"name": "ShadowTranslucent",
 			"value": 9
-		},
-		{
-			"name": "StaticShadowSolid",
-			"value": 4
-		},
-		{
-			"name": "StaticShadowTwoSide",
-			"value": 5
-		},
-		{
-			"name": "StaticShadowTwoSideAlphaTest",
-			"value": 6
-		},
-		{
-			"name": "StaticShadowAlphaTest",
-			"value": 7
 		},
 		{
 			"name": "CacheCopy",
@@ -17332,24 +17332,24 @@
 			"value": 2
 		},
 		{
-			"name": "LeftLegStop",
-			"value": 4
+			"name": "BothLegContact",
+			"value": 3
 		},
 		{
-			"name": "RightLegStop",
-			"value": 8
+			"name": "LeftLegStop",
+			"value": 4
 		},
 		{
 			"name": "LeftLegFix",
 			"value": 5
 		},
 		{
-			"name": "RightLegFix",
-			"value": 10
+			"name": "RightLegStop",
+			"value": 8
 		},
 		{
-			"name": "BothLegContact",
-			"value": 3
+			"name": "RightLegFix",
+			"value": 10
 		},
 		{
 			"name": "BothLegFix",
@@ -17368,12 +17368,12 @@
 			"value": 64
 		},
 		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
 			"name": "LeftToeFix",
 			"value": 65
+		},
+		{
+			"name": "RightToeStop",
+			"value": 128
 		},
 		{
 			"name": "RightToeFix",
@@ -17396,24 +17396,24 @@
 			"value": 512
 		},
 		{
-			"name": "LeftHandStop",
-			"value": 1024
+			"name": "BothHandContact",
+			"value": 768
 		},
 		{
-			"name": "RightHandStop",
-			"value": 2048
+			"name": "LeftHandStop",
+			"value": 1024
 		},
 		{
 			"name": "LeftHandFix",
 			"value": 1280
 		},
 		{
-			"name": "RightHandFix",
-			"value": 2560
+			"name": "RightHandStop",
+			"value": 2048
 		},
 		{
-			"name": "BothHandContact",
-			"value": 768
+			"name": "RightHandFix",
+			"value": 2560
 		},
 		{
 			"name": "BothHandFix",
@@ -17432,12 +17432,12 @@
 			"value": 16384
 		},
 		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
 			"name": "LeftHandTipFix",
 			"value": 16640
+		},
+		{
+			"name": "RightHandTipStop",
+			"value": 32768
 		},
 		{
 			"name": "RightHandTipFix",
@@ -22434,10 +22434,6 @@
 			"value": 0
 		},
 		{
-			"name": "Field",
-			"value": 1
-		},
-		{
 			"name": "Method",
 			"value": 0
 		},
@@ -22464,6 +22460,10 @@
 		{
 			"name": "Assembly",
 			"value": 0
+		},
+		{
+			"name": "Field",
+			"value": 1
 		},
 		{
 			"name": "Num",
@@ -23104,16 +23104,8 @@
 	],
 	"app.ropeway.Em4000Define.RankParamHash": [
 		{
-			"name": "NO_ATTACK_TIME",
-			"value": 3730143395
-		},
-		{
 			"name": "NO_HOLD_TIME",
 			"value": 470028201
-		},
-		{
-			"name": "NO_BACK_HOLD_TIME",
-			"value": 3236473812
 		},
 		{
 			"name": "REACTION_RATE",
@@ -23122,6 +23114,14 @@
 		{
 			"name": "REACTION_STOP_TIME",
 			"value": 2950829043
+		},
+		{
+			"name": "NO_BACK_HOLD_TIME",
+			"value": 3236473812
+		},
+		{
+			"name": "NO_ATTACK_TIME",
+			"value": 3730143395
 		}
 	],
 	"via.motion.detail.IkFingerSolver.fingerType": [
@@ -23288,6 +23288,14 @@
 			"value": 0
 		},
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
 			"name": "OrderOrMotionEnd",
 			"value": 1
 		},
@@ -23296,11 +23304,35 @@
 			"value": 2
 		},
 		{
+			"name": "MotionEnd",
+			"value": 2
+		},
+		{
+			"name": "EXIT_MOTION_END",
+			"value": 2
+		},
+		{
 			"name": "OrderAndActionTimer",
 			"value": 3
 		},
 		{
+			"name": "ActionTimer",
+			"value": 3
+		},
+		{
+			"name": "EXIT_ACT_TIMER",
+			"value": 3
+		},
+		{
 			"name": "OrderAndVariable",
+			"value": 4
+		},
+		{
+			"name": "Variable",
+			"value": 4
+		},
+		{
+			"name": "EXIT_VARIABLE",
 			"value": 4
 		},
 		{
@@ -23310,38 +23342,6 @@
 		{
 			"name": "OrderAndUnderLayerEnd",
 			"value": 6
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "MotionEnd",
-			"value": 2
-		},
-		{
-			"name": "ActionTimer",
-			"value": 3
-		},
-		{
-			"name": "Variable",
-			"value": 4
-		},
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "EXIT_MOTION_END",
-			"value": 2
-		},
-		{
-			"name": "EXIT_ACT_TIMER",
-			"value": 3
-		},
-		{
-			"name": "EXIT_VARIABLE",
-			"value": 4
 		}
 	],
 	"via.fsm.ExecGroup": [
@@ -24046,16 +24046,16 @@
 			"value": 4
 		},
 		{
+			"name": "LevelMax",
+			"value": 4
+		},
+		{
 			"name": "Level3",
 			"value": 8
 		},
 		{
 			"name": "All",
 			"value": 15
-		},
-		{
-			"name": "LevelMax",
-			"value": 4
 		}
 	],
 	"via.physics.DynamicBoundingVolumeHierarchy.ErrorCode": [
@@ -24213,12 +24213,12 @@
 	],
 	"via.clr.MethodCodeFlag": [
 		{
-			"name": "FatFormat",
-			"value": 3
-		},
-		{
 			"name": "TinyFormat",
 			"value": 2
+		},
+		{
+			"name": "FatFormat",
+			"value": 3
 		},
 		{
 			"name": "MoreSects",
@@ -24927,6 +24927,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default_Head",
+			"value": 0
+		},
+		{
 			"name": "Default_1",
 			"value": 1
 		},
@@ -24963,11 +24967,27 @@
 			"value": 9
 		},
 		{
+			"name": "Default_Tail",
+			"value": 9
+		},
+		{
 			"name": "Temp_0",
 			"value": 10
 		},
 		{
+			"name": "Temp_Head",
+			"value": 10
+		},
+		{
+			"name": "Temp_Tail",
+			"value": 10
+		},
+		{
 			"name": "Telemetry_0",
+			"value": 11
+		},
+		{
+			"name": "Telemetry_Head",
 			"value": 11
 		},
 		{
@@ -25007,7 +25027,15 @@
 			"value": 20
 		},
 		{
+			"name": "Telemetry_Tail",
+			"value": 20
+		},
+		{
 			"name": "CacheStorage_0",
+			"value": 21
+		},
+		{
+			"name": "CacheStorage_Head",
 			"value": 21
 		},
 		{
@@ -25047,7 +25075,19 @@
 			"value": 30
 		},
 		{
+			"name": "CacheStorage_Tail",
+			"value": 30
+		},
+		{
 			"name": "ImportMemory_0",
+			"value": 31
+		},
+		{
+			"name": "ImportMemory_Head",
+			"value": 31
+		},
+		{
+			"name": "ImportMemory_Tail",
 			"value": 31
 		},
 		{
@@ -25057,46 +25097,6 @@
 		{
 			"name": "Max",
 			"value": 33
-		},
-		{
-			"name": "Default_Head",
-			"value": 0
-		},
-		{
-			"name": "Default_Tail",
-			"value": 9
-		},
-		{
-			"name": "Temp_Head",
-			"value": 10
-		},
-		{
-			"name": "Temp_Tail",
-			"value": 10
-		},
-		{
-			"name": "Telemetry_Head",
-			"value": 11
-		},
-		{
-			"name": "Telemetry_Tail",
-			"value": 20
-		},
-		{
-			"name": "CacheStorage_Head",
-			"value": 21
-		},
-		{
-			"name": "CacheStorage_Tail",
-			"value": 30
-		},
-		{
-			"name": "ImportMemory_Head",
-			"value": 31
-		},
-		{
-			"name": "ImportMemory_Tail",
-			"value": 31
 		}
 	],
 	"via.physics.CastRayOption": [
@@ -25637,10 +25637,6 @@
 	],
 	"System.Reflection.FieldAttributes": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -25669,6 +25665,10 @@
 			"value": 6
 		},
 		{
+			"name": "FieldAccessMask",
+			"value": 7
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -25685,12 +25685,12 @@
 			"value": 128
 		},
 		{
-			"name": "SpecialName",
-			"value": 512
+			"name": "HasFieldRVA",
+			"value": 256
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
+			"name": "SpecialName",
+			"value": 512
 		},
 		{
 			"name": "RTSpecialName",
@@ -25701,12 +25701,12 @@
 			"value": 4096
 		},
 		{
-			"name": "HasDefault",
-			"value": 32768
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
-			"name": "HasFieldRVA",
-			"value": 256
+			"name": "HasDefault",
+			"value": 32768
 		},
 		{
 			"name": "ReservedMask",
@@ -26039,28 +26039,32 @@
 	],
 	"app.ropeway.enemy.em7200.RankParamHash": [
 		{
+			"name": "BACK_EYE_ENABLE",
+			"value": 94937356
+		},
+		{
+			"name": "SIGN_OF_ATK_SPEED_RATE",
+			"value": 117012651
+		},
+		{
+			"name": "FIRE_WALL_TIME",
+			"value": 305581750
+		},
+		{
 			"name": "MOVE_SPEED_RATE",
 			"value": 408292737
 		},
 		{
-			"name": "SIGN_OF_ATK_HOLD_SPEED_RATE",
-			"value": 4078249293
-		},
-		{
-			"name": "DMG_ACID_TIME",
-			"value": 2406071476
+			"name": "ADD_ATK_RATE_TURN",
+			"value": 631551570
 		},
 		{
 			"name": "DMG_FLASH_TIME",
 			"value": 1079981001
 		},
 		{
-			"name": "BACK_EYE_ENABLE",
-			"value": 94937356
-		},
-		{
-			"name": "FIRE_WALL_TIME",
-			"value": 305581750
+			"name": "ADD_ATK_RATE_HR",
+			"value": 1518359747
 		},
 		{
 			"name": "ATK_HOLD_RATE",
@@ -26071,20 +26075,16 @@
 			"value": 2050828995
 		},
 		{
-			"name": "ADD_ATK_RATE_HR",
-			"value": 1518359747
-		},
-		{
-			"name": "ADD_ATK_RATE_TURN",
-			"value": 631551570
+			"name": "DMG_ACID_TIME",
+			"value": 2406071476
 		},
 		{
 			"name": "ADD_ATK_RATE_MIDR",
 			"value": 3582474766
 		},
 		{
-			"name": "SIGN_OF_ATK_SPEED_RATE",
-			"value": 117012651
+			"name": "SIGN_OF_ATK_HOLD_SPEED_RATE",
+			"value": 4078249293
 		}
 	],
 	"via.landscape.EcotopePipelineState": [
@@ -26271,36 +26271,52 @@
 	],
 	"app.ropeway.player.tag.StateAttribute": [
 		{
-			"name": "IDLE",
-			"value": 1603047924
-		},
-		{
-			"name": "WALK",
-			"value": 2546078274
-		},
-		{
-			"name": "JOG",
-			"value": 3884239614
-		},
-		{
-			"name": "TURN",
-			"value": 3340187646
-		},
-		{
-			"name": "HOLD",
-			"value": 1751707637
-		},
-		{
 			"name": "FOCUS",
 			"value": 106233786
 		},
 		{
-			"name": "GAZING",
-			"value": 3693037717
+			"name": "JOG_END",
+			"value": 259076557
+		},
+		{
+			"name": "CHANGE_WEAPON",
+			"value": 372752890
 		},
 		{
 			"name": "REACTION",
 			"value": 404851248
+		},
+		{
+			"name": "WALK_END",
+			"value": 902931070
+		},
+		{
+			"name": "SWITCH_LIGHT",
+			"value": 1031087176
+		},
+		{
+			"name": "PUMP_ACTION",
+			"value": 1277488769
+		},
+		{
+			"name": "RELOAD",
+			"value": 1426028817
+		},
+		{
+			"name": "SUPPORT",
+			"value": 1435645415
+		},
+		{
+			"name": "DAMAGE",
+			"value": 1587301165
+		},
+		{
+			"name": "IDLE",
+			"value": 1603047924
+		},
+		{
+			"name": "HOLD",
+			"value": 1751707637
 		},
 		{
 			"name": "JACK",
@@ -26311,80 +26327,64 @@
 			"value": 1973888406
 		},
 		{
-			"name": "SUPPORT",
-			"value": 1435645415
-		},
-		{
-			"name": "KNIFE",
-			"value": 2773707206
-		},
-		{
-			"name": "CREEPING",
-			"value": 3273685968
-		},
-		{
-			"name": "DAMAGE",
-			"value": 1587301165
-		},
-		{
-			"name": "STEP",
-			"value": 3000703046
-		},
-		{
-			"name": "ATTACK",
-			"value": 2612146075
+			"name": "WALK",
+			"value": 2546078274
 		},
 		{
 			"name": "HOLD_START",
 			"value": 2548707948
 		},
 		{
-			"name": "RELOAD",
-			"value": 1426028817
+			"name": "ATTACK",
+			"value": 2612146075
 		},
 		{
-			"name": "CHANGE_BULLET",
-			"value": 2876079280
-		},
-		{
-			"name": "CHANGE_WEAPON",
-			"value": 372752890
+			"name": "KNIFE",
+			"value": 2773707206
 		},
 		{
 			"name": "JOG_START",
 			"value": 2789137022
 		},
 		{
-			"name": "SWITCH_LIGHT",
-			"value": 1031087176
+			"name": "CHANGE_BULLET",
+			"value": 2876079280
 		},
 		{
-			"name": "WALK_END",
-			"value": 902931070
+			"name": "STEP",
+			"value": 3000703046
 		},
 		{
-			"name": "JOG_END",
-			"value": 259076557
+			"name": "CREEPING",
+			"value": 3273685968
 		},
 		{
-			"name": "COUGH",
-			"value": 3843926585
+			"name": "SPARK_SHOT",
+			"value": 3338892891
 		},
 		{
-			"name": "PUMP_ACTION",
-			"value": 1277488769
-		},
-		{
-			"name": "TOUCH_DOOR",
-			"value": 4287355391
+			"name": "TURN",
+			"value": 3340187646
 		},
 		{
 			"name": "WHEEL",
 			"value": 3442724071
 		},
 		{
-			"name": "SPARK_SHOT",
-			"value": 3338892891
+			"name": "GAZING",
+			"value": 3693037717
+		},
+		{
+			"name": "COUGH",
+			"value": 3843926585
+		},
+		{
+			"name": "JOG",
+			"value": 3884239614
+		},
+		{
+			"name": "TOUCH_DOOR",
+			"value": 4287355391
 		}
 	],
 	"via.behavior.EffectEvent.LifeState": [
@@ -27029,44 +27029,44 @@
 	],
 	"app.ropeway.enemy.em6200.fsm.tag.StateAttr": [
 		{
-			"name": "ThrowEnable",
-			"value": 1693310175
-		},
-		{
-			"name": "PushEnable",
-			"value": 2007970753
-		},
-		{
-			"name": "WalkPushAction",
-			"value": 3336304650
-		},
-		{
-			"name": "DoorOpening",
-			"value": 1935418311
-		},
-		{
-			"name": "DoorAccessEnable",
-			"value": 4291428196
-		},
-		{
-			"name": "ToWalkContinue",
-			"value": 2048993541
-		},
-		{
 			"name": "NoCansel",
 			"value": 891747236
-		},
-		{
-			"name": "CrouchEnable",
-			"value": 1228666758
 		},
 		{
 			"name": "IgnoreChaserCancelOnWarp",
 			"value": 975362516
 		},
 		{
+			"name": "CrouchEnable",
+			"value": 1228666758
+		},
+		{
+			"name": "ThrowEnable",
+			"value": 1693310175
+		},
+		{
+			"name": "DoorOpening",
+			"value": 1935418311
+		},
+		{
+			"name": "PushEnable",
+			"value": 2007970753
+		},
+		{
+			"name": "ToWalkContinue",
+			"value": 2048993541
+		},
+		{
 			"name": "WalkFootCheck",
 			"value": 2359255362
+		},
+		{
+			"name": "WalkPushAction",
+			"value": 3336304650
+		},
+		{
+			"name": "DoorAccessEnable",
+			"value": 4291428196
 		}
 	],
 	"app.ropeway.enemy.em5000.ColliderGroup": [
@@ -27425,7 +27425,39 @@
 			"value": 0
 		},
 		{
+			"name": "RenderTargetPS",
+			"value": 0
+		},
+		{
+			"name": "PostProcess",
+			"value": 0
+		},
+		{
+			"name": "SpeedTreeV8Optimize0",
+			"value": 0
+		},
+		{
+			"name": "SpeedTreeV8Billboard",
+			"value": 0
+		},
+		{
 			"name": "Dynamic",
+			"value": 1
+		},
+		{
+			"name": "RenderTargetCS",
+			"value": 1
+		},
+		{
+			"name": "PostProcessTonemap",
+			"value": 1
+		},
+		{
+			"name": "SpeedTreeV8Optimize1",
+			"value": 1
+		},
+		{
+			"name": "SpeedTreeV8BillboardFaceCrossFading",
 			"value": 1
 		},
 		{
@@ -27433,40 +27465,36 @@
 			"value": 2
 		},
 		{
-			"name": "PreTransformDynamic",
-			"value": 3
-		},
-		{
-			"name": "Max",
-			"value": 4
-		},
-		{
-			"name": "RenderTargetPS",
-			"value": 0
-		},
-		{
-			"name": "RenderTargetCS",
-			"value": 1
-		},
-		{
 			"name": "RenderTargetMax",
 			"value": 2
-		},
-		{
-			"name": "PostProcess",
-			"value": 0
-		},
-		{
-			"name": "PostProcessTonemap",
-			"value": 1
 		},
 		{
 			"name": "PostProcessTonemapTriplesection",
 			"value": 2
 		},
 		{
+			"name": "SpeedTreeV8Optimize2",
+			"value": 2
+		},
+		{
+			"name": "SpeedTreeV8BillboardMax",
+			"value": 2
+		},
+		{
+			"name": "PreTransformDynamic",
+			"value": 3
+		},
+		{
 			"name": "PostProcessTonemapTriplesectionHdr",
 			"value": 3
+		},
+		{
+			"name": "SpeedTreeV8OptimizeMax",
+			"value": 3
+		},
+		{
+			"name": "Max",
+			"value": 4
 		},
 		{
 			"name": "PostProcessTonemapHdr",
@@ -27491,34 +27519,6 @@
 		{
 			"name": "PostProcessMax",
 			"value": 9
-		},
-		{
-			"name": "SpeedTreeV8Optimize0",
-			"value": 0
-		},
-		{
-			"name": "SpeedTreeV8Optimize1",
-			"value": 1
-		},
-		{
-			"name": "SpeedTreeV8Optimize2",
-			"value": 2
-		},
-		{
-			"name": "SpeedTreeV8OptimizeMax",
-			"value": 3
-		},
-		{
-			"name": "SpeedTreeV8Billboard",
-			"value": 0
-		},
-		{
-			"name": "SpeedTreeV8BillboardFaceCrossFading",
-			"value": 1
-		},
-		{
-			"name": "SpeedTreeV8BillboardMax",
-			"value": 2
 		}
 	],
 	"app.ropeway.enemy.em0000.EM0200_MONTAGE_PARTS_FACE": [
@@ -28155,16 +28155,16 @@
 			"value": 2
 		},
 		{
-			"name": "Transparent",
-			"value": 16
-		},
-		{
 			"name": "Forward",
 			"value": 8
 		},
 		{
 			"name": "NoTransparent",
 			"value": 11
+		},
+		{
+			"name": "Transparent",
+			"value": 16
 		}
 	],
 	"via.landscape.MapBakerPointCloudBakeType": [
@@ -29005,12 +29005,12 @@
 			"value": 408292737
 		},
 		{
-			"name": "WALL_FALL_EYE_BREAK_COUNT",
-			"value": 3697269126
-		},
-		{
 			"name": "TRAIN_FALL_EYE_BREAK_COUNT",
 			"value": 626928270
+		},
+		{
+			"name": "WALL_FALL_EYE_BREAK_COUNT",
+			"value": 3697269126
 		}
 	],
 	"app.ropeway.enemy.em6200.MotionPattern.Search": [
@@ -29165,12 +29165,12 @@
 			"value": 500911402
 		},
 		{
-			"name": "DISABLE_LIGHT_SWITCH",
-			"value": 1734260481
-		},
-		{
 			"name": "RELOAD",
 			"value": 1584842619
+		},
+		{
+			"name": "DISABLE_LIGHT_SWITCH",
+			"value": 1734260481
 		},
 		{
 			"name": "INHIBIT_NEXT_LAYER_ACTION",
@@ -29403,7 +29403,15 @@
 	],
 	"via.Rect3DXZ.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -29411,44 +29419,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -29521,10 +29521,6 @@
 			"value": 0
 		},
 		{
-			"name": "TargetMachine_Mask",
-			"value": 15
-		},
-		{
 			"name": "TargetMachine_PC",
 			"value": 1
 		},
@@ -29565,8 +29561,8 @@
 			"value": 10
 		},
 		{
-			"name": "TargetMachineDetail_Mask",
-			"value": 240
+			"name": "TargetMachine_Mask",
+			"value": 15
 		},
 		{
 			"name": "TargetMachineDetail_PS4Base",
@@ -29593,8 +29589,8 @@
 			"value": 96
 		},
 		{
-			"name": "TargetOS_Mask",
-			"value": 3840
+			"name": "TargetMachineDetail_Mask",
+			"value": 240
 		},
 		{
 			"name": "TargetOS_Windows",
@@ -29633,8 +29629,8 @@
 			"value": 2304
 		},
 		{
-			"name": "TargetServicePlatform_Mask",
-			"value": 61440
+			"name": "TargetOS_Mask",
+			"value": 3840
 		},
 		{
 			"name": "TargetServicePlatform_Default",
@@ -29659,6 +29655,10 @@
 		{
 			"name": "TargetServicePlatform_Solstice",
 			"value": 24576
+		},
+		{
+			"name": "TargetServicePlatform_Mask",
+			"value": 61440
 		}
 	],
 	"app.ropeway.SurvivorColliderTrack.ColliderGroup": [
@@ -29751,6 +29751,10 @@
 			"value": 0
 		},
 		{
+			"name": "WwiseProjectNo_Default",
+			"value": 0
+		},
+		{
 			"name": "WwiseProjectNo_1",
 			"value": 1
 		},
@@ -29761,10 +29765,6 @@
 		{
 			"name": "WwiseProjectNo_3",
 			"value": 3
-		},
-		{
-			"name": "WwiseProjectNo_Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.ChoreographPlayer.ChoreographType": [
@@ -30195,12 +30195,12 @@
 			"value": 8
 		},
 		{
-			"name": "EventSpecialControl",
-			"value": 65536
-		},
-		{
 			"name": "NormalControlMask",
 			"value": 13
+		},
+		{
+			"name": "EventSpecialControl",
+			"value": 65536
 		}
 	],
 	"app.ropeway.fsmv2.TraceVariableAction.TimingType": [
@@ -30836,12 +30836,12 @@
 	],
 	"app.ropeway.enemy.em5000.RankParamHash": [
 		{
-			"name": "MOVE_SPEED",
-			"value": 3791250704
+			"name": "HOLD_RANGE_BURNUP",
+			"value": 840914917
 		},
 		{
-			"name": "WALK_TOTTER",
-			"value": 3613919294
+			"name": "WEAK_PARTS_REVIVAL_TIME",
+			"value": 1553321746
 		},
 		{
 			"name": "HOLD_RANGE",
@@ -30852,12 +30852,12 @@
 			"value": 3584082088
 		},
 		{
-			"name": "HOLD_RANGE_BURNUP",
-			"value": 840914917
+			"name": "WALK_TOTTER",
+			"value": 3613919294
 		},
 		{
-			"name": "WEAK_PARTS_REVIVAL_TIME",
-			"value": 1553321746
+			"name": "MOVE_SPEED",
+			"value": 3791250704
 		},
 		{
 			"name": "WAKEUP_TIME",
@@ -33032,30 +33032,6 @@
 			"value": 114
 		},
 		{
-			"name": "st4_201_0",
-			"value": 219
-		},
-		{
-			"name": "st4_202_0",
-			"value": 220
-		},
-		{
-			"name": "st4_203_0",
-			"value": 221
-		},
-		{
-			"name": "st4_204_0",
-			"value": 222
-		},
-		{
-			"name": "st4_205_0",
-			"value": 223
-		},
-		{
-			"name": "st4_206_0",
-			"value": 224
-		},
-		{
 			"name": "st4_207_0",
 			"value": 118
 		},
@@ -33084,16 +33060,36 @@
 			"value": 125
 		},
 		{
+			"name": "st4_201_0",
+			"value": 219
+		},
+		{
+			"name": "st4_202_0",
+			"value": 220
+		},
+		{
+			"name": "st4_203_0",
+			"value": 221
+		},
+		{
+			"name": "st4_204_0",
+			"value": 222
+		},
+		{
+			"name": "st4_205_0",
+			"value": 223
+		},
+		{
+			"name": "st4_206_0",
+			"value": 224
+		},
+		{
 			"name": "st4_215_0",
 			"value": 225
 		},
 		{
 			"name": "st4_216_0",
 			"value": 226
-		},
-		{
-			"name": "st4_217_0",
-			"value": 431
 		},
 		{
 			"name": "st4_301_0",
@@ -33268,10 +33264,6 @@
 			"value": 279
 		},
 		{
-			"name": "st4_713_0",
-			"value": 409
-		},
-		{
 			"name": "st4_714_0",
 			"value": 282
 		},
@@ -33290,6 +33282,14 @@
 		{
 			"name": "st4_754_0",
 			"value": 356
+		},
+		{
+			"name": "st4_713_0",
+			"value": 409
+		},
+		{
+			"name": "st4_217_0",
+			"value": 431
 		}
 	],
 	"via.Stream.Attribute": [
@@ -33456,12 +33456,12 @@
 			"value": 3
 		},
 		{
-			"name": "Assert",
-			"value": 4
-		},
-		{
 			"name": "Default",
 			"value": 3
+		},
+		{
+			"name": "Assert",
+			"value": 4
 		}
 	],
 	"via.timeline.DialogueTimelinePlayer.ResourceType": [
@@ -34428,10 +34428,6 @@
 	],
 	"via.SystemServiceSkuFlag": [
 		{
-			"name": "Unknown",
-			"value": 65535
-		},
-		{
 			"name": "Default",
 			"value": 0
 		},
@@ -34442,6 +34438,10 @@
 		{
 			"name": "Full",
 			"value": 3
+		},
+		{
+			"name": "Unknown",
+			"value": 65535
 		}
 	],
 	"via.memory.CounterType": [
@@ -34496,7 +34496,15 @@
 	],
 	"via.Rect3D.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -34504,44 +34512,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -35461,7 +35461,15 @@
 			"value": 1
 		},
 		{
+			"name": "PhysicalPropsMask",
+			"value": 1
+		},
+		{
 			"name": "ExtForceProps",
+			"value": 2
+		},
+		{
+			"name": "TexturePropsMask",
 			"value": 2
 		},
 		{
@@ -35473,20 +35481,12 @@
 			"value": 4
 		},
 		{
-			"name": "PropsNum",
-			"value": 5
-		},
-		{
-			"name": "PhysicalPropsMask",
-			"value": 1
-		},
-		{
-			"name": "TexturePropsMask",
-			"value": 2
-		},
-		{
 			"name": "ExtForcePropsMask",
 			"value": 4
+		},
+		{
+			"name": "PropsNum",
+			"value": 5
 		},
 		{
 			"name": "CollisionPropsMask",
@@ -35721,12 +35721,12 @@
 			"value": 4
 		},
 		{
-			"name": "IgnoreSameGroupCollision",
-			"value": 8
-		},
-		{
 			"name": "VirtualGroundMask",
 			"value": 6
+		},
+		{
+			"name": "IgnoreSameGroupCollision",
+			"value": 8
 		}
 	],
 	"app.ropeway.posteffect.SetPostEffectParam.SettingMode": [
@@ -36458,24 +36458,24 @@
 			"value": 0
 		},
 		{
-			"name": "Always",
-			"value": 2147483647
-		},
-		{
-			"name": "OnLedTrackerProcessSuccessful",
-			"value": 4
-		},
-		{
-			"name": "OnLedTrackerProcessFailed",
-			"value": 3
-		},
-		{
 			"name": "OnVrTrackerGpuSubmitFailed",
 			"value": 1
 		},
 		{
 			"name": "OnVrTrackerGpuWaitAndCpuProcessFailed",
 			"value": 2
+		},
+		{
+			"name": "OnLedTrackerProcessFailed",
+			"value": 3
+		},
+		{
+			"name": "OnLedTrackerProcessSuccessful",
+			"value": 4
+		},
+		{
+			"name": "Always",
+			"value": 2147483647
 		}
 	],
 	"app.ropeway.gamemastering.StaffRollFlow.State": [
@@ -41253,6 +41253,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "No1",
 			"value": 1
 		},
@@ -41263,10 +41267,6 @@
 		{
 			"name": "No3",
 			"value": 3
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.ropeway.gimmick.action.GimmickRogueEnteranceGate.ArgNo": [
@@ -41331,12 +41331,12 @@
 			"value": 0
 		},
 		{
-			"name": "RIGHT",
-			"value": 1
-		},
-		{
 			"name": "BACK_LEFT",
 			"value": 0
+		},
+		{
+			"name": "RIGHT",
+			"value": 1
 		},
 		{
 			"name": "BACK_RIGHT",
@@ -41753,10 +41753,6 @@
 			"value": 4
 		},
 		{
-			"name": "Float32",
-			"value": 10
-		},
-		{
 			"name": "Str",
 			"value": 5
 		},
@@ -41777,6 +41773,10 @@
 			"value": 9
 		},
 		{
+			"name": "Float32",
+			"value": 10
+		},
+		{
 			"name": "None",
 			"value": 255
 		}
@@ -41793,28 +41793,28 @@
 	],
 	"app.ropeway.enemy.em6300.fsm.tag.StateAttr": [
 		{
-			"name": "Walk",
-			"value": 1009902001
-		},
-		{
-			"name": "Dash",
-			"value": 3584463383
+			"name": "AttackDisable",
+			"value": 50910426
 		},
 		{
 			"name": "DashStagger",
 			"value": 273777789
 		},
 		{
-			"name": "LookAt",
-			"value": 3968314242
-		},
-		{
-			"name": "AttackDisable",
-			"value": 50910426
+			"name": "Walk",
+			"value": 1009902001
 		},
 		{
 			"name": "ToWalk",
 			"value": 1975550168
+		},
+		{
+			"name": "Dash",
+			"value": 3584463383
+		},
+		{
+			"name": "LookAt",
+			"value": 3968314242
 		}
 	],
 	"via.movie.Codec": [
@@ -42335,10 +42335,6 @@
 	],
 	"via.storage.SaveServiceWriteMode": [
 		{
-			"name": "SaveServiceWriteMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceWriteMode_1_Byte",
 			"value": 1
 		},
@@ -42357,6 +42353,10 @@
 		{
 			"name": "SaveServiceWriteMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceWriteMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceWriteMode_128_KiloByte",
@@ -42423,12 +42423,12 @@
 	],
 	"via.audiorender.ResourceChunkTag": [
 		{
-			"name": "Head",
-			"value": 1751347827
-		},
-		{
 			"name": "Data",
 			"value": 1684238963
+		},
+		{
+			"name": "Head",
+			"value": 1751347827
 		}
 	],
 	"via.navigation.Navigation.AdjustPositionType": [
@@ -45633,6 +45633,10 @@
 			"value": 0
 		},
 		{
+			"name": "Begin",
+			"value": 0
+		},
+		{
 			"name": "AlphaTest",
 			"value": 1
 		},
@@ -45651,10 +45655,6 @@
 		{
 			"name": "Max",
 			"value": 5
-		},
-		{
-			"name": "Begin",
-			"value": 0
 		}
 	],
 	"app.ropeway.ReNet.PostType": [
@@ -47869,6 +47869,10 @@
 	],
 	"via.render.detail.EnabledPrimitiveProcessor": [
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
 			"name": "DOFBlend",
 			"value": 1
 		},
@@ -47899,10 +47903,6 @@
 		{
 			"name": "DeferredLighting",
 			"value": 128
-		},
-		{
-			"name": "None",
-			"value": 0
 		},
 		{
 			"name": "All",
@@ -49257,44 +49257,44 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
-			"name": "LeftBaseline",
-			"value": 12
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
-		},
-		{
-			"name": "CenterBaseline",
-			"value": 13
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
 		},
 		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
+		},
+		{
 			"name": "RightBottom",
 			"value": 10
+		},
+		{
+			"name": "LeftBaseline",
+			"value": 12
+		},
+		{
+			"name": "CenterBaseline",
+			"value": 13
 		},
 		{
 			"name": "RightBaseline",
@@ -49843,10 +49843,6 @@
 			"value": 772
 		},
 		{
-			"name": "SessionGetInfo",
-			"value": 780
-		},
-		{
 			"name": "SessionJoin",
 			"value": 773
 		},
@@ -49873,6 +49869,10 @@
 		{
 			"name": "SessionSetClose",
 			"value": 779
+		},
+		{
+			"name": "SessionGetInfo",
+			"value": 780
 		},
 		{
 			"name": "SessionInviteByUniqueId",
@@ -50005,6 +50005,10 @@
 			"value": 64
 		},
 		{
+			"name": "WeaponFlags",
+			"value": 112
+		},
+		{
 			"name": "HealItem",
 			"value": 128
 		},
@@ -50017,12 +50021,20 @@
 			"value": 512
 		},
 		{
+			"name": "ItemFlags",
+			"value": 896
+		},
+		{
 			"name": "DefeatEnemy",
 			"value": 1024
 		},
 		{
 			"name": "BreakParts",
 			"value": 2048
+		},
+		{
+			"name": "EnemyFlags",
+			"value": 3072
 		},
 		{
 			"name": "GameOver",
@@ -50091,18 +50103,6 @@
 		{
 			"name": "TransferSaveData",
 			"value": 268435456
-		},
-		{
-			"name": "WeaponFlags",
-			"value": 112
-		},
-		{
-			"name": "ItemFlags",
-			"value": 896
-		},
-		{
-			"name": "EnemyFlags",
-			"value": 3072
 		}
 	],
 	"via.motion.LowerBodyRetarget.TransformMode": [
@@ -52323,18 +52323,6 @@
 	],
 	"app.ropeway.UpdateOrderGroup.Unexpected": [
 		{
-			"name": "Default",
-			"value": 121
-		},
-		{
-			"name": "Abstract",
-			"value": 122
-		},
-		{
-			"name": "Setting",
-			"value": 1000
-		},
-		{
 			"name": "Tool",
 			"value": 2
 		},
@@ -52349,6 +52337,18 @@
 		{
 			"name": "DevelopLog",
 			"value": 5
+		},
+		{
+			"name": "Default",
+			"value": 121
+		},
+		{
+			"name": "Abstract",
+			"value": 122
+		},
+		{
+			"name": "Setting",
+			"value": 1000
 		}
 	],
 	"via.effect.detail.Shape3DType": [
@@ -53363,12 +53363,12 @@
 			"value": 225628402
 		},
 		{
-			"name": "GHOST_MOVE_SPEED_SCALE",
-			"value": 1602663712
-		},
-		{
 			"name": "PROVOKE_RATE",
 			"value": 1474837118
+		},
+		{
+			"name": "GHOST_MOVE_SPEED_SCALE",
+			"value": 1602663712
 		},
 		{
 			"name": "GRAPPLE_COMBO_RATE",
@@ -55435,16 +55435,16 @@
 			"value": 5400
 		},
 		{
+			"name": "PL5600",
+			"value": 5600
+		},
+		{
 			"name": "PL5700",
 			"value": 5700
 		},
 		{
 			"name": "PL6400",
 			"value": 6400
-		},
-		{
-			"name": "PL5600",
-			"value": 5600
 		},
 		{
 			"name": "PL7500",
@@ -55841,10 +55841,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea0to7": [
 		{
-			"name": "FreeArea0to7_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea0to7_0",
 			"value": 0
 		},
@@ -55875,6 +55871,10 @@
 		{
 			"name": "FreeArea0to7_7",
 			"value": 7
+		},
+		{
+			"name": "FreeArea0to7_None",
+			"value": 4294967295
 		}
 	],
 	"via.os.ClipboardFormat": [
@@ -56683,8 +56683,12 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7000.RANK_MOTION_SPEED": [
 		{
-			"name": "WMODE_WALK",
-			"value": 1012468819
+			"name": "GMODE_RUN",
+			"value": 9641753
+		},
+		{
+			"name": "GMODE_WALK",
+			"value": 261095494
 		},
 		{
 			"name": "WMODE_CATCH_WALK",
@@ -56695,16 +56699,12 @@
 			"value": 879001903
 		},
 		{
-			"name": "GMODE_WALK",
-			"value": 261095494
+			"name": "WMODE_WALK",
+			"value": 1012468819
 		},
 		{
 			"name": "GMODE_ANGER_WALK",
 			"value": 3020054378
-		},
-		{
-			"name": "GMODE_RUN",
-			"value": 9641753
 		}
 	],
 	"app.ropeway.enemy.em7000.fsmv2.action.MotionCameraPlayRequest.CameraTarget": [
@@ -56799,12 +56799,12 @@
 			"value": 4
 		},
 		{
-			"name": "EnableAlpha",
-			"value": 8
-		},
-		{
 			"name": "EnableRGB",
 			"value": 7
+		},
+		{
+			"name": "EnableAlpha",
+			"value": 8
 		},
 		{
 			"name": "EnableAll",
@@ -57301,6 +57301,10 @@
 			"value": 0
 		},
 		{
+			"name": "VendorUnkown",
+			"value": 0
+		},
+		{
 			"name": "HMD",
 			"value": 1
 		},
@@ -57314,6 +57318,10 @@
 		},
 		{
 			"name": "AsyncCompute",
+			"value": 8
+		},
+		{
+			"name": "UavOverlapSupported",
 			"value": 8
 		},
 		{
@@ -57333,7 +57341,15 @@
 			"value": 128
 		},
 		{
+			"name": "DefaultCBRSetting",
+			"value": 128
+		},
+		{
 			"name": "HardwareCBRIDBuffer",
+			"value": 256
+		},
+		{
+			"name": "UseIDBuffer",
 			"value": 256
 		},
 		{
@@ -57341,24 +57357,16 @@
 			"value": 512
 		},
 		{
-			"name": "UseIDBuffer",
-			"value": 256
-		},
-		{
-			"name": "UseCheckerBoard",
-			"value": 1024
-		},
-		{
 			"name": "FastCBRSetting",
 			"value": 640
 		},
 		{
-			"name": "DefaultCBRSetting",
-			"value": 128
-		},
-		{
 			"name": "PS4ProtCBRSetting",
 			"value": 896
+		},
+		{
+			"name": "UseCheckerBoard",
+			"value": 1024
 		},
 		{
 			"name": "NotSupportedPredicateRenderingOnBuffer",
@@ -57405,10 +57413,6 @@
 			"value": 4194304
 		},
 		{
-			"name": "UavOverlapSupported",
-			"value": 8
-		},
-		{
 			"name": "VendorAMD",
 			"value": 16777216
 		},
@@ -57421,8 +57425,8 @@
 			"value": 67108864
 		},
 		{
-			"name": "VendorUnkown",
-			"value": 0
+			"name": "GL_Family",
+			"value": 134217728
 		},
 		{
 			"name": "Gen2",
@@ -57439,15 +57443,15 @@
 		{
 			"name": "Gen5",
 			"value": 2147483648
-		},
-		{
-			"name": "GL_Family",
-			"value": 134217728
 		}
 	],
 	"via.render.PrimitiveShadingRate": [
 		{
 			"name": "Coarse1x1",
+			"value": 0
+		},
+		{
+			"name": "Lowest",
 			"value": 0
 		},
 		{
@@ -57463,6 +57467,14 @@
 			"value": 3
 		},
 		{
+			"name": "Fast",
+			"value": 3
+		},
+		{
+			"name": "Default",
+			"value": 3
+		},
+		{
 			"name": "Coarse2x4",
 			"value": 4
 		},
@@ -57473,18 +57485,6 @@
 		{
 			"name": "Coarse4x4",
 			"value": 6
-		},
-		{
-			"name": "Lowest",
-			"value": 0
-		},
-		{
-			"name": "Fast",
-			"value": 3
-		},
-		{
-			"name": "Default",
-			"value": 3
 		}
 	],
 	"via.SystemServiceEnterButtonAssign": [
@@ -57641,10 +57641,6 @@
 			"value": 0
 		},
 		{
-			"name": "All",
-			"value": 255
-		},
-		{
 			"name": "SceneBeauty",
 			"value": 1
 		},
@@ -57663,6 +57659,10 @@
 		{
 			"name": "IgnoreDepthStencilValueWrite",
 			"value": 16
+		},
+		{
+			"name": "All",
+			"value": 255
 		}
 	],
 	"via.render.OptionFlag": [
@@ -57771,16 +57771,16 @@
 			"value": 268435456
 		},
 		{
-			"name": "ExecuteTimingNormal",
-			"value": 2147483648
+			"name": "GPUReadOnly",
+			"value": 536870912
 		},
 		{
 			"name": "ExecuteTimingPrecede",
 			"value": 1073741824
 		},
 		{
-			"name": "GPUReadOnly",
-			"value": 536870912
+			"name": "ExecuteTimingNormal",
+			"value": 2147483648
 		}
 	],
 	"via.gui.ResolutionAdjustScale": [
@@ -58815,12 +58815,12 @@
 			"value": 10
 		},
 		{
-			"name": "PusID_Last",
-			"value": 130
-		},
-		{
 			"name": "PusID_Offset",
 			"value": 10
+		},
+		{
+			"name": "PusID_Last",
+			"value": 130
 		}
 	],
 	"via.render.LightPowerUnitType": [
@@ -61952,28 +61952,28 @@
 	],
 	"app.ropeway.enemy.em6100.fsm.tag.StateAttr": [
 		{
-			"name": "Swim",
-			"value": 531802718
-		},
-		{
 			"name": "Attack",
 			"value": 445732949
-		},
-		{
-			"name": "Jump",
-			"value": 4231658239
 		},
 		{
 			"name": "Dead",
 			"value": 527691310
 		},
 		{
-			"name": "Turn",
-			"value": 1801898850
+			"name": "Swim",
+			"value": 531802718
 		},
 		{
 			"name": "Float",
 			"value": 849320574
+		},
+		{
+			"name": "Turn",
+			"value": 1801898850
+		},
+		{
+			"name": "Jump",
+			"value": 4231658239
 		}
 	],
 	"app.ropeway.gamemastering.TimelineEventManager.EventOrderRequeest.AsseptingStatus": [
@@ -62157,6 +62157,10 @@
 		}
 	],
 	"via.hid.KeyboardDisplayKey": [
+		{
+			"name": "Unknown",
+			"value": 0
+		},
 		{
 			"name": "A",
 			"value": 1
@@ -62428,10 +62432,6 @@
 		{
 			"name": "Pipe",
 			"value": 68
-		},
-		{
-			"name": "Unknown",
-			"value": 0
 		}
 	],
 	"app.ropeway.network.service.AuthorizationServiceControllerForPS5.Phase": [
@@ -65929,12 +65929,12 @@
 			"value": 40
 		},
 		{
-			"name": "AccelerationStructureTopLevelVFX",
-			"value": 41
-		},
-		{
 			"name": "RayTracingSTOC",
 			"value": 40
+		},
+		{
+			"name": "AccelerationStructureTopLevelVFX",
+			"value": 41
 		},
 		{
 			"name": "PostGraphicsBase",
@@ -66915,7 +66915,15 @@
 			"value": 150
 		},
 		{
+			"name": "Failed_GameCore_StartNumber",
+			"value": 150
+		},
+		{
 			"name": "Failed_XB1_InvalidUserIndex",
+			"value": 151
+		},
+		{
+			"name": "Failed_GameCore_InvalidUserIndex",
 			"value": 151
 		},
 		{
@@ -66927,7 +66935,15 @@
 			"value": 153
 		},
 		{
+			"name": "Failed_GameCore_NoAccess",
+			"value": 153
+		},
+		{
 			"name": "Failed_XB1_UpdateTooBig",
+			"value": 154
+		},
+		{
+			"name": "Failed_GameCore_UpdateTooBig",
 			"value": 154
 		},
 		{
@@ -66935,7 +66951,15 @@
 			"value": 155
 		},
 		{
+			"name": "Failed_GameCore_QuotaExceeded",
+			"value": 155
+		},
+		{
 			"name": "Failed_XB1_OutOfLocalStorage",
+			"value": 156
+		},
+		{
+			"name": "Failed_GameCore_OutOfLocalStorage",
 			"value": 156
 		},
 		{
@@ -66963,34 +66987,6 @@
 			"value": 162
 		},
 		{
-			"name": "Failed_NoXB1",
-			"value": 199
-		},
-		{
-			"name": "Failed_GameCore_StartNumber",
-			"value": 150
-		},
-		{
-			"name": "Failed_GameCore_InvalidUserIndex",
-			"value": 151
-		},
-		{
-			"name": "Failed_GameCore_NoAccess",
-			"value": 153
-		},
-		{
-			"name": "Failed_GameCore_UpdateTooBig",
-			"value": 154
-		},
-		{
-			"name": "Failed_GameCore_QuotaExceeded",
-			"value": 155
-		},
-		{
-			"name": "Failed_GameCore_OutOfLocalStorage",
-			"value": 156
-		},
-		{
 			"name": "Failed_GameCore_TransferringSCIDNull",
 			"value": 162
 		},
@@ -67001,6 +66997,10 @@
 		{
 			"name": "Failed_GameCore_HandleExpired",
 			"value": 164
+		},
+		{
+			"name": "Failed_NoXB1",
+			"value": 199
 		},
 		{
 			"name": "Failed_NoGameCore",
@@ -68539,6 +68539,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -68563,20 +68567,8 @@
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
 			"name": "StringFormatMask",
 			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
 		},
 		{
 			"name": "HasSecurity",
@@ -68585,6 +68577,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		}
 	],
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.State": [
@@ -68615,20 +68615,20 @@
 			"value": 0
 		},
 		{
+			"name": "WallRight",
+			"value": 0
+		},
+		{
 			"name": "GroundFromCeilling",
+			"value": 1
+		},
+		{
+			"name": "WallLeft",
 			"value": 1
 		},
 		{
 			"name": "ChaseCeillingFromGround",
 			"value": 2
-		},
-		{
-			"name": "WallRight",
-			"value": 0
-		},
-		{
-			"name": "WallLeft",
-			"value": 1
 		}
 	],
 	"via.motion.JointExMultiRemapValue.OutputData.Interpolation": [
@@ -68815,12 +68815,12 @@
 			"value": 8
 		},
 		{
-			"name": "Depth",
-			"value": 268435456
-		},
-		{
 			"name": "AllColor",
 			"value": 268435455
+		},
+		{
+			"name": "Depth",
+			"value": 268435456
 		},
 		{
 			"name": "AllTargets",
@@ -68935,24 +68935,24 @@
 	],
 	"app.ropeway.player.tag.LookAtAttribute": [
 		{
-			"name": "EYE",
-			"value": 1662058075
-		},
-		{
 			"name": "FACE",
 			"value": 231585437
 		},
 		{
-			"name": "LIGHT",
-			"value": 1568811990
+			"name": "NONE",
+			"value": 270830317
 		},
 		{
 			"name": "HOLD",
 			"value": 926659005
 		},
 		{
-			"name": "NONE",
-			"value": 270830317
+			"name": "LIGHT",
+			"value": 1568811990
+		},
+		{
+			"name": "EYE",
+			"value": 1662058075
 		}
 	],
 	"via.hid.VrTracker.StartStatus": [
@@ -69729,24 +69729,24 @@
 	],
 	"app.ropeway.enemy.em3000.CharacterControllerType": [
 		{
-			"name": "DEFAULT",
-			"value": 1106175613
+			"name": "CONNER_DOWN",
+			"value": 726343862
 		},
 		{
-			"name": "JUMP",
-			"value": 2595772414
+			"name": "DEFAULT",
+			"value": 1106175613
 		},
 		{
 			"name": "JUMP_ATTACK",
 			"value": 1933262719
 		},
 		{
-			"name": "CONNER_UP",
-			"value": 3599879432
+			"name": "JUMP",
+			"value": 2595772414
 		},
 		{
-			"name": "CONNER_DOWN",
-			"value": 726343862
+			"name": "CONNER_UP",
+			"value": 3599879432
 		}
 	],
 	"via.motion.HipLegRig.LegSolverMode": [
@@ -70047,12 +70047,12 @@
 			"value": 4
 		},
 		{
-			"name": "ACT_PROVOKE",
-			"value": 6
-		},
-		{
 			"name": "ACT_OTHER_GRAP_WAIT",
 			"value": 5
+		},
+		{
+			"name": "ACT_PROVOKE",
+			"value": 6
 		},
 		{
 			"name": "ACT_WAIT_LADDER",
@@ -70475,10 +70475,6 @@
 			"value": 32
 		},
 		{
-			"name": "L_STICK_ANY",
-			"value": 3840
-		},
-		{
 			"name": "L_STICK_XP",
 			"value": 256
 		},
@@ -70493,6 +70489,10 @@
 		{
 			"name": "L_STICK_ZM",
 			"value": 2048
+		},
+		{
+			"name": "L_STICK_ANY",
+			"value": 3840
 		}
 	],
 	"app.ropeway.UpdateOrderGroup.TailSystemPhase": [],
@@ -71172,11 +71172,19 @@
 	],
 	"via.clr.TypeFlag": [
 		{
-			"name": "VisibilityMask",
-			"value": 7
+			"name": "NotPublic",
+			"value": 0
 		},
 		{
-			"name": "NotPublic",
+			"name": "AutoLayout",
+			"value": 0
+		},
+		{
+			"name": "Class",
+			"value": 0
+		},
+		{
+			"name": "AnsiClass",
 			"value": 0
 		},
 		{
@@ -71204,16 +71212,12 @@
 			"value": 6
 		},
 		{
-			"name": "NestedFamorAssem",
+			"name": "VisibilityMask",
 			"value": 7
 		},
 		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
+			"name": "NestedFamorAssem",
+			"value": 7
 		},
 		{
 			"name": "SequentialLayout",
@@ -71224,12 +71228,12 @@
 			"value": 16
 		},
 		{
-			"name": "ClassSemanticsMask",
-			"value": 32
+			"name": "LayoutMask",
+			"value": 24
 		},
 		{
-			"name": "Class",
-			"value": 0
+			"name": "ClassSemanticsMask",
+			"value": 32
 		},
 		{
 			"name": "Interface",
@@ -71248,6 +71252,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -71260,14 +71268,6 @@
 			"value": 16384
 		},
 		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
 			"name": "UnicodeClass",
 			"value": 65536
 		},
@@ -71276,20 +71276,12 @@
 			"value": 131072
 		},
 		{
-			"name": "CustomFormatClass",
+			"name": "StringFormatMask",
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
+			"name": "CustomFormatClass",
+			"value": 196608
 		},
 		{
 			"name": "HasSecurity",
@@ -71298,6 +71290,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		},
 		{
 			"name": "LocalHeap",
@@ -73085,10 +73085,6 @@
 	],
 	"via.storage.saveService.SaveServiceMode": [
 		{
-			"name": "SaveServiceMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceMode_1_Byte",
 			"value": 1
 		},
@@ -73107,6 +73103,10 @@
 		{
 			"name": "SaveServiceMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceMode_128_KiloByte",
@@ -73285,7 +73285,15 @@
 	],
 	"via.AABB.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "X_MinBit",
+			"value": 1
+		},
+		{
+			"name": "P_YZX0",
 			"value": 1
 		},
 		{
@@ -73293,80 +73301,16 @@
 			"value": 2
 		},
 		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
 			"name": "P_YZX1",
 			"value": 2
 		},
 		{
-			"name": "P_ZXY0",
+			"name": "Y_MinBit",
 			"value": 4
 		},
 		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
+			"name": "P_ZXY0",
+			"value": 4
 		},
 		{
 			"name": "E_ZX0Y0",
@@ -73377,12 +73321,40 @@
 			"value": 6
 		},
 		{
+			"name": "Y_MaxBit",
+			"value": 8
+		},
+		{
+			"name": "P_ZXY1",
+			"value": 8
+		},
+		{
 			"name": "E_ZX0Y1",
 			"value": 9
 		},
 		{
 			"name": "E_ZX1Y1",
 			"value": 10
+		},
+		{
+			"name": "Z_MinBit",
+			"value": 16
+		},
+		{
+			"name": "P_XYZ0",
+			"value": 16
+		},
+		{
+			"name": "E_YZ0X0",
+			"value": 17
+		},
+		{
+			"name": "E_YZ0X1",
+			"value": 18
+		},
+		{
+			"name": "E_XY0Z0",
+			"value": 20
 		},
 		{
 			"name": "V_X0Y0Z0",
@@ -73393,6 +73365,10 @@
 			"value": 22
 		},
 		{
+			"name": "E_XY1Z0",
+			"value": 24
+		},
+		{
 			"name": "V_X0Y1Z0",
 			"value": 25
 		},
@@ -73401,12 +73377,36 @@
 			"value": 26
 		},
 		{
+			"name": "Z_MaxBit",
+			"value": 32
+		},
+		{
+			"name": "P_XYZ1",
+			"value": 32
+		},
+		{
+			"name": "E_YZ1X0",
+			"value": 33
+		},
+		{
+			"name": "E_YZ1X1",
+			"value": 34
+		},
+		{
+			"name": "E_XY0Z1",
+			"value": 36
+		},
+		{
 			"name": "V_X0Y0Z1",
 			"value": 37
 		},
 		{
 			"name": "V_X1Y0Z1",
 			"value": 38
+		},
+		{
+			"name": "E_XY1Z1",
+			"value": 40
 		},
 		{
 			"name": "V_X0Y1Z1",
@@ -73597,16 +73597,16 @@
 			"value": 1
 		},
 		{
+			"name": "Game",
+			"value": 1
+		},
+		{
 			"name": "Consumable",
 			"value": 4
 		},
 		{
 			"name": "Durable",
 			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
 		},
 		{
 			"name": "GameDemo",
@@ -75433,6 +75433,10 @@
 			"value": 0
 		},
 		{
+			"name": "Native",
+			"value": 0
+		},
+		{
 			"name": "BE",
 			"value": 1
 		},
@@ -75443,10 +75447,6 @@
 		{
 			"name": "BE_BOM",
 			"value": 3
-		},
-		{
-			"name": "Native",
-			"value": 0
 		}
 	],
 	"app.ropeway.survivor.npc.NpcNoticePointSelector.SettingType": [
@@ -76227,6 +76227,10 @@
 			"value": 191
 		},
 		{
+			"name": "Slash",
+			"value": 191
+		},
+		{
 			"name": "OEM_3",
 			"value": 192
 		},
@@ -76236,6 +76240,10 @@
 		},
 		{
 			"name": "OEM_5",
+			"value": 220
+		},
+		{
+			"name": "BackSlash",
 			"value": 220
 		},
 		{
@@ -76253,14 +76261,6 @@
 		{
 			"name": "OEM_102",
 			"value": 226
-		},
-		{
-			"name": "Slash",
-			"value": 191
-		},
-		{
-			"name": "BackSlash",
-			"value": 220
 		},
 		{
 			"name": "DefinedEnter",
@@ -78670,16 +78670,16 @@
 	],
 	"app.ropeway.enemy.em6000.fsm.tag.StateAttr": [
 		{
-			"name": "Swim",
-			"value": 1614742265
+			"name": "WalkContinue",
+			"value": 614595396
 		},
 		{
 			"name": "Vomit",
 			"value": 1594678060
 		},
 		{
-			"name": "WalkContinue",
-			"value": 614595396
+			"name": "Swim",
+			"value": 1614742265
 		},
 		{
 			"name": "NoGunSensor",
@@ -79516,6 +79516,10 @@
 			"value": 225628402
 		},
 		{
+			"name": "CHILDREN_POISON_RATE",
+			"value": 557429514
+		},
+		{
 			"name": "WINCE_RATE",
 			"value": 2531057400
 		},
@@ -79526,10 +79530,6 @@
 		{
 			"name": "CHILDREN_VOMIT_RATE",
 			"value": 3609457783
-		},
-		{
-			"name": "CHILDREN_POISON_RATE",
-			"value": 557429514
 		}
 	],
 	"app.ropeway.gimmick.action.GimmickDialLockBehavior.CylinderChars": [
@@ -79782,14 +79782,6 @@
 			"value": 2007
 		},
 		{
-			"name": "SPT_KNIFE",
-			"value": 4000
-		},
-		{
-			"name": "SPT_GRENADE",
-			"value": 4001
-		},
-		{
 			"name": "DMG_S",
 			"value": 3000
 		},
@@ -79832,6 +79824,14 @@
 		{
 			"name": "DMG_SHOCK_DOWN",
 			"value": 3010
+		},
+		{
+			"name": "SPT_KNIFE",
+			"value": 4000
+		},
+		{
+			"name": "SPT_GRENADE",
+			"value": 4001
 		},
 		{
 			"name": "DIE_NORMAL",
@@ -80381,12 +80381,12 @@
 			"value": 2
 		},
 		{
-			"name": "Emissive",
-			"value": 8
-		},
-		{
 			"name": "BaseColorAndNormal",
 			"value": 3
+		},
+		{
+			"name": "Emissive",
+			"value": 8
 		},
 		{
 			"name": "BaseColorAndEmissive",
@@ -81461,6 +81461,14 @@
 			"value": 1002
 		},
 		{
+			"name": "Eat_Face_Down_End",
+			"value": 4300
+		},
+		{
+			"name": "Eat_Face_Up_End",
+			"value": 4350
+		},
+		{
 			"name": "Eat_Face_Down_00",
 			"value": 4501
 		},
@@ -81469,16 +81477,8 @@
 			"value": 4503
 		},
 		{
-			"name": "Eat_Face_Down_End",
-			"value": 4300
-		},
-		{
 			"name": "Eat_Face_Up_00",
 			"value": 4511
-		},
-		{
-			"name": "Eat_Face_Up_End",
-			"value": 4350
 		}
 	],
 	"app.ropeway.enemy.em0000.SimplePoseType": [
@@ -81591,11 +81591,11 @@
 	],
 	"via.clr.MethodImplFlag": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -81605,6 +81605,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -81619,36 +81623,28 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
 		},
 		{
 			"name": "HasRetVal",
@@ -81661,6 +81657,10 @@
 		{
 			"name": "EmptyCtor",
 			"value": 2048
+		},
+		{
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "ContainsGenericParameters",
@@ -82201,24 +82201,132 @@
 	],
 	"app.ropeway.GUISegmentOrder": [
 		{
-			"name": "MouesCursor",
-			"value": 60
+			"name": "DEFAULT_LOWER",
+			"value": 0
 		},
 		{
-			"name": "SaveIcon",
-			"value": 59
+			"name": "Reticle",
+			"value": 9
 		},
 		{
-			"name": "GuideIcon",
-			"value": 58
+			"name": "FsmFade",
+			"value": 10
 		},
 		{
-			"name": "GeneralDialog",
-			"value": 57
+			"name": "EventFade",
+			"value": 13
 		},
 		{
-			"name": "LoadingIcon",
-			"value": 56
+			"name": "SkipFade",
+			"value": 14
+		},
+		{
+			"name": "InventoryPlayer",
+			"value": 15
+		},
+		{
+			"name": "InventoryBG",
+			"value": 16
+		},
+		{
+			"name": "InventoryVital",
+			"value": 17
+		},
+		{
+			"name": "InventorySlot",
+			"value": 18
+		},
+		{
+			"name": "MapBg",
+			"value": 20
+		},
+		{
+			"name": "MapGrid",
+			"value": 21
+		},
+		{
+			"name": "Map",
+			"value": 22
+		},
+		{
+			"name": "MapFrame",
+			"value": 23
+		},
+		{
+			"name": "InventoryDetail",
+			"value": 25
+		},
+		{
+			"name": "InventoryCaption",
+			"value": 26
+		},
+		{
+			"name": "FileViewer",
+			"value": 30
+		},
+		{
+			"name": "Purpose",
+			"value": 34
+		},
+		{
+			"name": "InventoryFront",
+			"value": 35
+		},
+		{
+			"name": "SubtitleFullScreenMovie",
+			"value": 36
+		},
+		{
+			"name": "EventTextureForDevelop",
+			"value": 37
+		},
+		{
+			"name": "Subtitle",
+			"value": 38
+		},
+		{
+			"name": "InGameFade",
+			"value": 40
+		},
+		{
+			"name": "GameOver",
+			"value": 42
+		},
+		{
+			"name": "Title",
+			"value": 43
+		},
+		{
+			"name": "BootFlow",
+			"value": 44
+		},
+		{
+			"name": "Tutorial",
+			"value": 45
+		},
+		{
+			"name": "Pause",
+			"value": 46
+		},
+		{
+			"name": "Option",
+			"value": 48
+		},
+		{
+			"name": "FullScreenMovie",
+			"value": 49
+		},
+		{
+			"name": "TitleDialog",
+			"value": 50
+		},
+		{
+			"name": "MenuFade",
+			"value": 53
+		},
+		{
+			"name": "OverMenuFade",
+			"value": 54
 		},
 		{
 			"name": "LoadingFade",
@@ -82229,132 +82337,24 @@
 			"value": 55
 		},
 		{
-			"name": "OverMenuFade",
-			"value": 54
+			"name": "LoadingIcon",
+			"value": 56
 		},
 		{
-			"name": "MenuFade",
-			"value": 53
+			"name": "GeneralDialog",
+			"value": 57
 		},
 		{
-			"name": "TitleDialog",
-			"value": 50
+			"name": "GuideIcon",
+			"value": 58
 		},
 		{
-			"name": "FullScreenMovie",
-			"value": 49
+			"name": "SaveIcon",
+			"value": 59
 		},
 		{
-			"name": "Option",
-			"value": 48
-		},
-		{
-			"name": "Pause",
-			"value": 46
-		},
-		{
-			"name": "Tutorial",
-			"value": 45
-		},
-		{
-			"name": "BootFlow",
-			"value": 44
-		},
-		{
-			"name": "Title",
-			"value": 43
-		},
-		{
-			"name": "GameOver",
-			"value": 42
-		},
-		{
-			"name": "InGameFade",
-			"value": 40
-		},
-		{
-			"name": "Subtitle",
-			"value": 38
-		},
-		{
-			"name": "EventTextureForDevelop",
-			"value": 37
-		},
-		{
-			"name": "SubtitleFullScreenMovie",
-			"value": 36
-		},
-		{
-			"name": "InventoryFront",
-			"value": 35
-		},
-		{
-			"name": "Purpose",
-			"value": 34
-		},
-		{
-			"name": "FileViewer",
-			"value": 30
-		},
-		{
-			"name": "InventoryCaption",
-			"value": 26
-		},
-		{
-			"name": "InventoryDetail",
-			"value": 25
-		},
-		{
-			"name": "MapFrame",
-			"value": 23
-		},
-		{
-			"name": "Map",
-			"value": 22
-		},
-		{
-			"name": "MapGrid",
-			"value": 21
-		},
-		{
-			"name": "MapBg",
-			"value": 20
-		},
-		{
-			"name": "InventorySlot",
-			"value": 18
-		},
-		{
-			"name": "InventoryVital",
-			"value": 17
-		},
-		{
-			"name": "InventoryBG",
-			"value": 16
-		},
-		{
-			"name": "InventoryPlayer",
-			"value": 15
-		},
-		{
-			"name": "SkipFade",
-			"value": 14
-		},
-		{
-			"name": "EventFade",
-			"value": 13
-		},
-		{
-			"name": "FsmFade",
-			"value": 10
-		},
-		{
-			"name": "Reticle",
-			"value": 9
-		},
-		{
-			"name": "DEFAULT_LOWER",
-			"value": 0
+			"name": "MouesCursor",
+			"value": 60
 		}
 	],
 	"via.DateFormat": [
@@ -82803,11 +82803,11 @@
 	],
 	"System.Reflection.MethodImplAttributes": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -82817,6 +82817,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -82831,36 +82835,32 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
 		},
 		{
-			"name": "NoOptimization",
-			"value": 64
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "MaxMethodImplVal",
@@ -84543,10 +84543,6 @@
 	],
 	"via.clr.FieldFlag": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -84573,6 +84569,10 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "FieldAccessMask",
+			"value": 7
 		},
 		{
 			"name": "Static",
@@ -85369,6 +85369,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "EdgeShort",
 			"value": 1
 		},
@@ -85395,10 +85399,6 @@
 		{
 			"name": "Assert",
 			"value": 7
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"via.network.error.MethodAchievements": [
@@ -85617,10 +85617,6 @@
 			"value": 0
 		},
 		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
 			"name": "Covariant",
 			"value": 1
 		},
@@ -85629,8 +85625,8 @@
 			"value": 2
 		},
 		{
-			"name": "SpecialConstraintMask",
-			"value": 28
+			"name": "VarianceMask",
+			"value": 3
 		},
 		{
 			"name": "ReferenceTypeConstraint",
@@ -85643,6 +85639,10 @@
 		{
 			"name": "DefaultConstructorConstraint",
 			"value": 16
+		},
+		{
+			"name": "SpecialConstraintMask",
+			"value": 28
 		}
 	],
 	"via.os.FileAttr": [
@@ -85751,6 +85751,10 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7100.THINK_TAG": [
 		{
+			"name": "DISABLE_CHARACTER_CONTROLLER",
+			"value": 321479229
+		},
+		{
 			"name": "DISABLE_EYE_LOOK_AT",
 			"value": 2085186476
 		},
@@ -85761,10 +85765,6 @@
 		{
 			"name": "RANK_MOVE_SPEED",
 			"value": 3648666295
-		},
-		{
-			"name": "DISABLE_CHARACTER_CONTROLLER",
-			"value": 321479229
 		}
 	],
 	"via.render.DeviceChangeReason": [
@@ -86061,10 +86061,6 @@
 	],
 	"via.motion.IkLegSpine.RayCastCallbackID": [
 		{
-			"name": "PartsMask",
-			"value": 255
-		},
-		{
 			"name": "BackLeft",
 			"value": 1
 		},
@@ -86097,6 +86093,10 @@
 			"value": 128
 		},
 		{
+			"name": "PartsMask",
+			"value": 255
+		},
+		{
 			"name": "Detail",
 			"value": 256
 		},
@@ -86125,7 +86125,15 @@
 			"value": 513
 		},
 		{
+			"name": "HeadBase",
+			"value": 513
+		},
+		{
 			"name": "BackRightBase",
+			"value": 514
+		},
+		{
+			"name": "ChestBase",
 			"value": 514
 		},
 		{
@@ -86133,20 +86141,12 @@
 			"value": 516
 		},
 		{
-			"name": "ForeRightBase",
-			"value": 520
-		},
-		{
-			"name": "HeadBase",
-			"value": 513
-		},
-		{
-			"name": "ChestBase",
-			"value": 514
-		},
-		{
 			"name": "HipBase",
 			"value": 516
+		},
+		{
+			"name": "ForeRightBase",
+			"value": 520
 		},
 		{
 			"name": "TailBase",
@@ -86155,10 +86155,6 @@
 		{
 			"name": "SpineV",
 			"value": 1024
-		},
-		{
-			"name": "SpineH",
-			"value": 2048
 		},
 		{
 			"name": "HeadSpineV",
@@ -86175,6 +86171,10 @@
 		{
 			"name": "TailSpineV",
 			"value": 1040
+		},
+		{
+			"name": "SpineH",
+			"value": 2048
 		},
 		{
 			"name": "HipToHead",
@@ -88867,11 +88867,19 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
-			"name": "Ignore",
-			"value": 4294967295
+			"name": "AecAgcEnable",
+			"value": 0
 		},
 		{
-			"name": "AecAgcEnable",
+			"name": "ExposureGainMode0",
+			"value": 0
+		},
+		{
+			"name": "WhiteBalanceAuto",
+			"value": 0
+		},
+		{
+			"name": "GammaControlOn",
 			"value": 0
 		},
 		{
@@ -88879,28 +88887,20 @@
 			"value": 1
 		},
 		{
-			"name": "ExposureGainMode0",
-			"value": 0
-		},
-		{
 			"name": "ExposureGainMode1",
 			"value": 1
-		},
-		{
-			"name": "WhiteBalanceAuto",
-			"value": 0
 		},
 		{
 			"name": "WhiteBalanceManual",
 			"value": 1
 		},
 		{
-			"name": "GammaControlOn",
-			"value": 0
-		},
-		{
 			"name": "GammaControlOff",
 			"value": 1
+		},
+		{
+			"name": "Ignore",
+			"value": 4294967295
 		}
 	],
 	"via.hid.virtualKeyboard.nsw.InputFormMode": [
@@ -89805,70 +89805,6 @@
 			"value": 0
 		},
 		{
-			"name": "StaggerSmall",
-			"value": 16843008
-		},
-		{
-			"name": "StaggerMedium",
-			"value": 16908544
-		},
-		{
-			"name": "StaggerLarge",
-			"value": 16974080
-		},
-		{
-			"name": "StaggerExtraLarge",
-			"value": 17039616
-		},
-		{
-			"name": "TossSmall",
-			"value": 16843264
-		},
-		{
-			"name": "TossMedium",
-			"value": 16908800
-		},
-		{
-			"name": "TossLarge",
-			"value": 16974336
-		},
-		{
-			"name": "TossExtraLarge",
-			"value": 17039872
-		},
-		{
-			"name": "BurstSmall",
-			"value": 16843520
-		},
-		{
-			"name": "BurstMedium",
-			"value": 16909056
-		},
-		{
-			"name": "BurstLarge",
-			"value": 16974592
-		},
-		{
-			"name": "BurstExtraLarge",
-			"value": 17040128
-		},
-		{
-			"name": "ExplosionSmall",
-			"value": 16843776
-		},
-		{
-			"name": "ExplosionMedium",
-			"value": 16909312
-		},
-		{
-			"name": "ExplosionLarge",
-			"value": 16974848
-		},
-		{
-			"name": "ExplosionExtraLarge",
-			"value": 17040384
-		},
-		{
 			"name": "Flash",
 			"value": 16778496
 		},
@@ -89883,6 +89819,70 @@
 		{
 			"name": "Fear",
 			"value": 16779264
+		},
+		{
+			"name": "StaggerSmall",
+			"value": 16843008
+		},
+		{
+			"name": "TossSmall",
+			"value": 16843264
+		},
+		{
+			"name": "BurstSmall",
+			"value": 16843520
+		},
+		{
+			"name": "ExplosionSmall",
+			"value": 16843776
+		},
+		{
+			"name": "StaggerMedium",
+			"value": 16908544
+		},
+		{
+			"name": "TossMedium",
+			"value": 16908800
+		},
+		{
+			"name": "BurstMedium",
+			"value": 16909056
+		},
+		{
+			"name": "ExplosionMedium",
+			"value": 16909312
+		},
+		{
+			"name": "StaggerLarge",
+			"value": 16974080
+		},
+		{
+			"name": "TossLarge",
+			"value": 16974336
+		},
+		{
+			"name": "BurstLarge",
+			"value": 16974592
+		},
+		{
+			"name": "ExplosionLarge",
+			"value": 16974848
+		},
+		{
+			"name": "StaggerExtraLarge",
+			"value": 17039616
+		},
+		{
+			"name": "TossExtraLarge",
+			"value": 17039872
+		},
+		{
+			"name": "BurstExtraLarge",
+			"value": 17040128
+		},
+		{
+			"name": "ExplosionExtraLarge",
+			"value": 17040384
 		},
 		{
 			"name": "Flick",
@@ -91943,11 +91943,11 @@
 	],
 	"System.Reflection.MethodAttributes": [
 		{
-			"name": "MemberAccessMask",
-			"value": 7
+			"name": "PrivateScope",
+			"value": 0
 		},
 		{
-			"name": "PrivateScope",
+			"name": "ReuseSlot",
 			"value": 0
 		},
 		{
@@ -91975,6 +91975,14 @@
 			"value": 6
 		},
 		{
+			"name": "MemberAccessMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExport",
+			"value": 8
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -91991,20 +91999,16 @@
 			"value": 128
 		},
 		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
 			"name": "VtableLayoutMask",
 			"value": 256
 		},
 		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
 			"name": "NewSlot",
 			"value": 256
+		},
+		{
+			"name": "CheckAccessOnOverride",
+			"value": 512
 		},
 		{
 			"name": "Abstract",
@@ -92015,16 +92019,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "HasSecurity",
@@ -93373,10 +93373,6 @@
 			"value": 12
 		},
 		{
-			"name": "Attack_Fall",
-			"value": 22
-		},
-		{
 			"name": "Tangle_Push_R",
 			"value": 13
 		},
@@ -93397,16 +93393,20 @@
 			"value": 17
 		},
 		{
-			"name": "Tangle_Fall",
-			"value": 23
-		},
-		{
 			"name": "Glapple_Hold",
 			"value": 18
 		},
 		{
 			"name": "Glapple_Throw",
 			"value": 19
+		},
+		{
+			"name": "Attack_Fall",
+			"value": 22
+		},
+		{
+			"name": "Tangle_Fall",
+			"value": 23
 		}
 	],
 	"via.hid.NpadStyle": [
@@ -93801,12 +93801,12 @@
 			"value": 2
 		},
 		{
-			"name": "SaveDataVersion_Max",
-			"value": 3
-		},
-		{
 			"name": "SaveDataVersion_Latest",
 			"value": 2
+		},
+		{
+			"name": "SaveDataVersion_Max",
+			"value": 3
 		}
 	],
 	"via.motion.GpuMotion.WrapMode": [
@@ -94879,6 +94879,10 @@
 			"value": 1
 		},
 		{
+			"name": "CreateSST",
+			"value": 1
+		},
+		{
 			"name": "ImplicitStaticMesh",
 			"value": 2
 		},
@@ -94887,16 +94891,12 @@
 			"value": 4
 		},
 		{
-			"name": "Default",
-			"value": 7
-		},
-		{
 			"name": "UsingSST",
 			"value": 6
 		},
 		{
-			"name": "CreateSST",
-			"value": 1
+			"name": "Default",
+			"value": 7
 		}
 	],
 	"app.ropeway.NoticePoint.ResultKind": [
@@ -95709,6 +95709,10 @@
 			"value": 4
 		},
 		{
+			"name": "Integer",
+			"value": 7
+		},
+		{
 			"name": "AllowTrailingSign",
 			"value": 8
 		},
@@ -95725,32 +95729,20 @@
 			"value": 64
 		},
 		{
-			"name": "AllowExponent",
-			"value": 128
-		},
-		{
-			"name": "AllowCurrencySymbol",
-			"value": 256
-		},
-		{
-			"name": "AllowHexSpecifier",
-			"value": 512
-		},
-		{
-			"name": "Integer",
-			"value": 7
-		},
-		{
-			"name": "HexNumber",
-			"value": 515
-		},
-		{
 			"name": "Number",
 			"value": 111
 		},
 		{
+			"name": "AllowExponent",
+			"value": 128
+		},
+		{
 			"name": "Float",
 			"value": 167
+		},
+		{
+			"name": "AllowCurrencySymbol",
+			"value": 256
 		},
 		{
 			"name": "Currency",
@@ -95759,6 +95751,14 @@
 		{
 			"name": "Any",
 			"value": 511
+		},
+		{
+			"name": "AllowHexSpecifier",
+			"value": 512
+		},
+		{
+			"name": "HexNumber",
+			"value": 515
 		}
 	],
 	"app.ropeway.weapon.shell.ShellCartridgeController.WeaponTypes": [
@@ -96795,6 +96795,10 @@
 	],
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_AUTO",
+			"value": 0
+		},
+		{
 			"name": "SparseShadowTreeResolution_4K",
 			"value": 4
 		},
@@ -96817,10 +96821,6 @@
 		{
 			"name": "SparseShadowTreeResolution_64K",
 			"value": 64
-		},
-		{
-			"name": "SparseShadowTreeResolution_AUTO",
-			"value": 0
 		}
 	],
 	"via.motion.IkDog.FootLockMode": [
@@ -97009,12 +97009,12 @@
 	],
 	"app.ropeway.fsmv2.enemy.em7000.ACT_WALK_G_TAG": [
 		{
-			"name": "Walk",
-			"value": 2991702624
-		},
-		{
 			"name": "Run",
 			"value": 161703095
+		},
+		{
+			"name": "Walk",
+			"value": 2991702624
 		}
 	],
 	"app.ropeway.enemy.em5000.ActionStatus.ID": [
@@ -97149,12 +97149,12 @@
 			"value": 256
 		},
 		{
-			"name": "WC",
-			"value": 512
-		},
-		{
 			"name": "Default",
 			"value": 256
+		},
+		{
+			"name": "WC",
+			"value": 512
 		}
 	],
 	"app.ropeway.network.StoreType": [
@@ -99111,12 +99111,12 @@
 			"value": 0
 		},
 		{
-			"name": "Raw",
-			"value": 1
-		},
-		{
 			"name": "Default",
 			"value": 0
+		},
+		{
+			"name": "Raw",
+			"value": 1
 		}
 	],
 	"via.gui.MaterialParamType": [
@@ -99201,20 +99201,20 @@
 			"value": 93519404
 		},
 		{
-			"name": "DISABLE_ARM_SCALE",
-			"value": 1033952981
+			"name": "DISABLE_EYE_MOTION",
+			"value": 991946528
 		},
 		{
-			"name": "DISABLE_EYE_LOOK_AT",
-			"value": 4027191138
+			"name": "DISABLE_ARM_SCALE",
+			"value": 1033952981
 		},
 		{
 			"name": "DISABLE_ARM_SCALE_MOTION",
 			"value": 2898327988
 		},
 		{
-			"name": "DISABLE_EYE_MOTION",
-			"value": 991946528
+			"name": "DISABLE_EYE_LOOK_AT",
+			"value": 4027191138
 		}
 	],
 	"via.vr.psCamera.PSCameraStartResult": [
@@ -100055,16 +100055,16 @@
 	],
 	"via.render.FenceState": [
 		{
-			"name": "Invalidate",
-			"value": 4294967295
+			"name": "UAVSync",
+			"value": 4294967293
 		},
 		{
 			"name": "DoNotWait",
 			"value": 4294967294
 		},
 		{
-			"name": "UAVSync",
-			"value": 4294967293
+			"name": "Invalidate",
+			"value": 4294967295
 		}
 	],
 	"via.navigation.PathObjectOperator.ForwardResult": [
@@ -100693,16 +100693,16 @@
 			"value": 1187282292
 		},
 		{
-			"name": "LOW",
-			"value": 3277248676
-		},
-		{
 			"name": "MIDDLE",
 			"value": 1712691171
 		},
 		{
 			"name": "HIGH",
 			"value": 2952374375
+		},
+		{
+			"name": "LOW",
+			"value": 3277248676
 		}
 	],
 	"app.ropeway.gamemastering.Map.AreaFlag": [
@@ -103175,12 +103175,12 @@
 			"value": 1262840115
 		},
 		{
-			"name": "NUMBER_OF_PERSISTENT",
-			"value": 4059898801
-		},
-		{
 			"name": "TARGETED_TO_ESCAPE_TIME_RATE",
 			"value": 3576281015
+		},
+		{
+			"name": "NUMBER_OF_PERSISTENT",
+			"value": 4059898801
 		}
 	],
 	"via.hid.camera.PlayStationCameraFormatLevel": [
@@ -103197,16 +103197,16 @@
 			"value": 4
 		},
 		{
+			"name": "LevelMax",
+			"value": 4
+		},
+		{
 			"name": "Level3",
 			"value": 8
 		},
 		{
 			"name": "All",
 			"value": 15
-		},
-		{
-			"name": "LevelMax",
-			"value": 4
 		}
 	],
 	"via.effect.detail.EmitterStateType": [
@@ -104606,32 +104606,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -106256,10 +106256,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea8to11": [
 		{
-			"name": "FreeArea8to11_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea8to11_8",
 			"value": 8
 		},
@@ -106274,6 +106270,10 @@
 		{
 			"name": "FreeArea8to11_11",
 			"value": 11
+		},
+		{
+			"name": "FreeArea8to11_None",
+			"value": 4294967295
 		}
 	],
 	"via.render.fluid.TextureResourceType": [
@@ -109078,8 +109078,8 @@
 	],
 	"via.render.Stamp.StampChannelMask": [
 		{
-			"name": "All",
-			"value": 15
+			"name": "None",
+			"value": 0
 		},
 		{
 			"name": "R",
@@ -109090,56 +109090,56 @@
 			"value": 2
 		},
 		{
-			"name": "B",
-			"value": 4
-		},
-		{
-			"name": "A",
-			"value": 8
-		},
-		{
 			"name": "RG",
 			"value": 3
+		},
+		{
+			"name": "B",
+			"value": 4
 		},
 		{
 			"name": "RB",
 			"value": 5
 		},
 		{
-			"name": "RA",
-			"value": 9
-		},
-		{
 			"name": "GB",
 			"value": 6
-		},
-		{
-			"name": "GA",
-			"value": 10
-		},
-		{
-			"name": "BA",
-			"value": 12
 		},
 		{
 			"name": "RGB",
 			"value": 7
 		},
 		{
-			"name": "RBA",
-			"value": 13
+			"name": "A",
+			"value": 8
+		},
+		{
+			"name": "RA",
+			"value": 9
+		},
+		{
+			"name": "GA",
+			"value": 10
 		},
 		{
 			"name": "RGA",
 			"value": 11
 		},
 		{
+			"name": "BA",
+			"value": 12
+		},
+		{
+			"name": "RBA",
+			"value": 13
+		},
+		{
 			"name": "GBA",
 			"value": 14
 		},
 		{
-			"name": "None",
-			"value": 0
+			"name": "All",
+			"value": 15
 		}
 	],
 	"System.Diagnostics.DebuggerBrowsableState": [
@@ -109960,10 +109960,6 @@
 	],
 	"via.clr.MethodFlag": [
 		{
-			"name": "AccessibilityMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -109990,6 +109986,14 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "AccessibilityMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExp",
+			"value": 8
 		},
 		{
 			"name": "Static",
@@ -110020,16 +110024,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExp",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "NoILAsmKeyword",
@@ -110078,10 +110078,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea12to15": [
 		{
-			"name": "FreeArea12to15_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea12to15_12",
 			"value": 12
 		},
@@ -110096,6 +110092,10 @@
 		{
 			"name": "FreeArea12to15_15",
 			"value": 15
+		},
+		{
+			"name": "FreeArea12to15_None",
+			"value": 4294967295
 		}
 	],
 	"via.motion.JointExMultiRemapValue.ConstraintType": [
@@ -112563,20 +112563,20 @@
 			"value": 2
 		},
 		{
-			"name": "BLUE",
-			"value": 4
+			"name": "YELLOW",
+			"value": 3
 		},
 		{
-			"name": "CYAN",
-			"value": 6
+			"name": "BLUE",
+			"value": 4
 		},
 		{
 			"name": "MAGENTA",
 			"value": 5
 		},
 		{
-			"name": "YELLOW",
-			"value": 3
+			"name": "CYAN",
+			"value": 6
 		},
 		{
 			"name": "WHITE",
@@ -113155,12 +113155,12 @@
 			"value": 3
 		},
 		{
-			"name": "DELAY",
-			"value": 128
-		},
-		{
 			"name": "DELAYMASK",
 			"value": 127
+		},
+		{
+			"name": "DELAY",
+			"value": 128
 		},
 		{
 			"name": "RTV_DELAY",
@@ -114535,6 +114535,10 @@
 			"value": 8
 		},
 		{
+			"name": "BodySensorAll",
+			"value": 14
+		},
+		{
 			"name": "Swim",
 			"value": 32
 		},
@@ -114557,10 +114561,6 @@
 		{
 			"name": "PusBroken",
 			"value": 2048
-		},
-		{
-			"name": "BodySensorAll",
-			"value": 14
 		}
 	],
 	"via.wwise.StopAllTargetType": [
@@ -114667,12 +114667,12 @@
 			"value": 2
 		},
 		{
-			"name": "Item",
-			"value": 8
-		},
-		{
 			"name": "Weapon",
 			"value": 4
+		},
+		{
+			"name": "Item",
+			"value": 8
 		},
 		{
 			"name": "Prop",
@@ -117462,11 +117462,19 @@
 	],
 	"via.vr.psCamera.PSCameraAttr": [
 		{
-			"name": "Ignore",
-			"value": 4294967295
+			"name": "AecAgcEnable",
+			"value": 0
 		},
 		{
-			"name": "AecAgcEnable",
+			"name": "ExposureGainMode0",
+			"value": 0
+		},
+		{
+			"name": "WhiteBalanceAuto",
+			"value": 0
+		},
+		{
+			"name": "GammaControlOn",
 			"value": 0
 		},
 		{
@@ -117474,28 +117482,20 @@
 			"value": 1
 		},
 		{
-			"name": "ExposureGainMode0",
-			"value": 0
-		},
-		{
 			"name": "ExposureGainMode1",
 			"value": 1
-		},
-		{
-			"name": "WhiteBalanceAuto",
-			"value": 0
 		},
 		{
 			"name": "WhiteBalanceManual",
 			"value": 1
 		},
 		{
-			"name": "GammaControlOn",
-			"value": 0
-		},
-		{
 			"name": "GammaControlOff",
 			"value": 1
+		},
+		{
+			"name": "Ignore",
+			"value": 4294967295
 		}
 	],
 	"via.detail_qt.qt_cell_link_bit": [
@@ -117554,36 +117554,36 @@
 	],
 	"app.ropeway.survivor.tag.ActConditionAttribute": [
 		{
-			"name": "HOLD",
-			"value": 3300504884
-		},
-		{
-			"name": "REACTION_DOWN",
-			"value": 1943340773
+			"name": "COVER_END",
+			"value": 394693696
 		},
 		{
 			"name": "REACTION_STAND",
 			"value": 1214026829
 		},
 		{
-			"name": "DEAD",
-			"value": 2846171846
+			"name": "COVER_HOLD",
+			"value": 1337625907
 		},
 		{
 			"name": "QUICK_TURN",
 			"value": 1677611524
 		},
 		{
+			"name": "REACTION_DOWN",
+			"value": 1943340773
+		},
+		{
 			"name": "COVER_START",
 			"value": 2588540973
 		},
 		{
-			"name": "COVER_HOLD",
-			"value": 1337625907
+			"name": "DEAD",
+			"value": 2846171846
 		},
 		{
-			"name": "COVER_END",
-			"value": 394693696
+			"name": "HOLD",
+			"value": 3300504884
 		}
 	],
 	"via.navigation.RelationMapInfo.Attribute": [
@@ -117760,32 +117760,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -119939,56 +119939,56 @@
 	],
 	"via.audiorender.WavChunkTag": [
 		{
-			"name": "Riff",
-			"value": 1380533830
-		},
-		{
-			"name": "Fmt",
-			"value": 1718449184
-		},
-		{
-			"name": "Data",
-			"value": 1684108385
-		},
-		{
-			"name": "Smpl",
-			"value": 1936552044
-		},
-		{
-			"name": "Fact",
-			"value": 1717658484
-		},
-		{
-			"name": "Version",
-			"value": 1986359854
-		},
-		{
-			"name": "Cue",
-			"value": 1668637984
-		},
-		{
-			"name": "List",
-			"value": 1818848884
-		},
-		{
-			"name": "LIST",
-			"value": 1279873876
-		},
-		{
-			"name": "Labl",
-			"value": 1818321516
-		},
-		{
-			"name": "Ixml",
-			"value": 1767394636
+			"name": "Cdif",
+			"value": 1128556902
 		},
 		{
 			"name": "Junk",
 			"value": 1247104587
 		},
 		{
-			"name": "Cdif",
-			"value": 1128556902
+			"name": "LIST",
+			"value": 1279873876
+		},
+		{
+			"name": "Riff",
+			"value": 1380533830
+		},
+		{
+			"name": "Cue",
+			"value": 1668637984
+		},
+		{
+			"name": "Data",
+			"value": 1684108385
+		},
+		{
+			"name": "Fact",
+			"value": 1717658484
+		},
+		{
+			"name": "Fmt",
+			"value": 1718449184
+		},
+		{
+			"name": "Ixml",
+			"value": 1767394636
+		},
+		{
+			"name": "Labl",
+			"value": 1818321516
+		},
+		{
+			"name": "List",
+			"value": 1818848884
+		},
+		{
+			"name": "Smpl",
+			"value": 1936552044
+		},
+		{
+			"name": "Version",
+			"value": 1986359854
 		}
 	],
 	"via.landscape.BakerBakeTarget": [
@@ -120473,10 +120473,6 @@
 	],
 	"via.UserState": [
 		{
-			"name": "Invalid",
-			"value": 65535
-		},
-		{
 			"name": "Login",
 			"value": 0
 		},
@@ -120487,6 +120483,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": 65535
 		}
 	],
 	"via.motion.IkLeg.RayCastSkipOption": [
@@ -120957,7 +120957,15 @@
 			"value": 1
 		},
 		{
+			"name": "FastTrace",
+			"value": 1
+		},
+		{
 			"name": "PreferFastBuild",
+			"value": 2
+		},
+		{
+			"name": "FastBuild",
 			"value": 2
 		},
 		{
@@ -120965,28 +120973,20 @@
 			"value": 4
 		},
 		{
-			"name": "AllowCompaction",
-			"value": 8
-		},
-		{
-			"name": "FastBuild",
-			"value": 2
+			"name": "FastTraceAndUpdate",
+			"value": 5
 		},
 		{
 			"name": "FastBuildAndUpdate",
 			"value": 6
 		},
 		{
-			"name": "FastTrace",
-			"value": 1
+			"name": "AllowCompaction",
+			"value": 8
 		},
 		{
 			"name": "FastTraceAllowCompaction",
 			"value": 9
-		},
-		{
-			"name": "FastTraceAndUpdate",
-			"value": 5
 		}
 	],
 	"app.ropeway.fsmv2.GroundFixSwitch.SwitchType": [
@@ -121213,6 +121213,2537 @@
 		{
 			"name": "GameObject",
 			"value": 1
+		}
+	],
+	"via.network.AutoMatchmaking.Phase": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "Host_Init",
+			"value": 1
+		},
+		{
+			"name": "Host_SetRule",
+			"value": 2
+		},
+		{
+			"name": "Host_CreateSession",
+			"value": 3
+		},
+		{
+			"name": "Host_CreateWait",
+			"value": 4
+		},
+		{
+			"name": "Host_InGame",
+			"value": 5
+		},
+		{
+			"name": "Host_Timeout",
+			"value": 6
+		},
+		{
+			"name": "Guest_Init",
+			"value": 7
+		},
+		{
+			"name": "Guest_CreateSession",
+			"value": 8
+		},
+		{
+			"name": "Guest_CreateWait",
+			"value": 9
+		},
+		{
+			"name": "Guest_SetSearchRule",
+			"value": 10
+		},
+		{
+			"name": "Guest_SearchSession",
+			"value": 11
+		},
+		{
+			"name": "Guest_SearchWait",
+			"value": 12
+		},
+		{
+			"name": "Guest_ThinkRule",
+			"value": 13
+		},
+		{
+			"name": "Guest_GiveupSession",
+			"value": 14
+		},
+		{
+			"name": "Guest_GiveupWait",
+			"value": 15
+		},
+		{
+			"name": "Guest_JoinSession",
+			"value": 16
+		},
+		{
+			"name": "Guest_JoinWait",
+			"value": 17
+		},
+		{
+			"name": "Guest_InGame",
+			"value": 18
+		},
+		{
+			"name": "Guest_SearchInterval",
+			"value": 19
+		},
+		{
+			"name": "Guest_Timeout",
+			"value": 20
+		},
+		{
+			"name": "Guest_TimeoutWait",
+			"value": 21
+		},
+		{
+			"name": "Guest_XboxSmartMatch",
+			"value": 22
+		},
+		{
+			"name": "Guest_XboxSmartMatchWait",
+			"value": 23
+		},
+		{
+			"name": "Guest_XboxSmartMatchHoge",
+			"value": 24
+		}
+	],
+	"via.gui.GlowManager.BlurFilterType": [
+		{
+			"name": "BlurMipMapHorizontal",
+			"value": 0
+		},
+		{
+			"name": "BlurMipMapVertical",
+			"value": 1
+		},
+		{
+			"name": "BlurFinal",
+			"value": 2
+		}
+	],
+	"via.render.AsyncPipe": [
+		{
+			"name": "Disable",
+			"value": 0
+		},
+		{
+			"name": "Compute",
+			"value": 1
+		},
+		{
+			"name": "Copy",
+			"value": 2
+		},
+		{
+			"name": "ComputeJustNow",
+			"value": 3
+		},
+		{
+			"name": "CopyJustNow",
+			"value": 4
+		}
+	],
+	"via.motion.JointData.BlendMode": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Root",
+			"value": 1
+		}
+	],
+	"via.browser.utility.Request.State": [
+		{
+			"name": "Dead",
+			"value": 0
+		},
+		{
+			"name": "Start",
+			"value": 1
+		},
+		{
+			"name": "StartFail",
+			"value": 2
+		},
+		{
+			"name": "Update",
+			"value": 3
+		},
+		{
+			"name": "Finish",
+			"value": 4
+		}
+	],
+	"via.network.utility.RequestManager.Attr": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NeedAnswer",
+			"value": 1
+		},
+		{
+			"name": "IsReentrant",
+			"value": 2
+		}
+	],
+	"via.network.Protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": 4294967295
+		}
+	],
+	"via.render.detail.PrimitiveGUIMaskMode": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Target",
+			"value": 1
+		},
+		{
+			"name": "TargetReverse",
+			"value": 2
+		},
+		{
+			"name": "Mask",
+			"value": 3
+		},
+		{
+			"name": "MaskBlend2",
+			"value": 4
+		},
+		{
+			"name": "MaskBlend3",
+			"value": 5
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.ThrowShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombEmberGeneratorSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"via.motion.SyncPointData.SyncType": [
+		{
+			"name": "Loop",
+			"value": 0
+		},
+		{
+			"name": "Once",
+			"value": 1
+		},
+		{
+			"name": "Both",
+			"value": 2
+		}
+	],
+	"via.gui.detail.SubFontNo": [
+		{
+			"name": "No0",
+			"value": 0
+		},
+		{
+			"name": "No1",
+			"value": 1
+		},
+		{
+			"name": "Max",
+			"value": 2
+		}
+	],
+	"via.browser.RequestId": [
+		{
+			"name": "ContextStart",
+			"value": 257
+		},
+		{
+			"name": "BrowserOpen",
+			"value": 513
+		},
+		{
+			"name": "BrowserClose",
+			"value": 514
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.PropKind": [
+		{
+			"name": "AutoDetect",
+			"value": 0
+		},
+		{
+			"name": "Getter",
+			"value": 1
+		},
+		{
+			"name": "Setter",
+			"value": 2
+		},
+		{
+			"name": "ArrayGetter",
+			"value": 3
+		},
+		{
+			"name": "ArraySetter",
+			"value": 4
+		},
+		{
+			"name": "Event",
+			"value": 5
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation_": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombRocketGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"via.gui.GlowManager.BlurFilterLayerType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Transparent",
+			"value": 1
+		},
+		{
+			"name": "PostEffect",
+			"value": 2
+		},
+		{
+			"name": "Overlay",
+			"value": 3
+		}
+	],
+	"via.render.PrimitiveGUIResource.ShaderType": [
+		{
+			"name": "GUIPoly2D",
+			"value": 0
+		},
+		{
+			"name": "GUIPoly2DMask",
+			"value": 1
+		},
+		{
+			"name": "GUIPoly2DMaskReverse",
+			"value": 2
+		},
+		{
+			"name": "GUIPoly2DAdd",
+			"value": 3
+		},
+		{
+			"name": "GUIPoly2DAddMask",
+			"value": 4
+		},
+		{
+			"name": "GUIPoly2DAddMaskReverse",
+			"value": 5
+		},
+		{
+			"name": "GUIPoly2DDetone",
+			"value": 6
+		},
+		{
+			"name": "GUIPoly2DMaskDetone",
+			"value": 7
+		},
+		{
+			"name": "GUIPoly2DMaskReverseDetone",
+			"value": 8
+		},
+		{
+			"name": "GUIPoly2DAddDetone",
+			"value": 9
+		},
+		{
+			"name": "GUIPoly2DAddMaskDetone",
+			"value": 10
+		},
+		{
+			"name": "GUIPoly2DAddMaskReverseDetone",
+			"value": 11
+		},
+		{
+			"name": "GUIGlyph2D",
+			"value": 12
+		},
+		{
+			"name": "GUIGlyph2DMask",
+			"value": 13
+		},
+		{
+			"name": "GUIGlyph2DMaskReverse",
+			"value": 14
+		},
+		{
+			"name": "GUIGlyph2DAdd",
+			"value": 15
+		},
+		{
+			"name": "GUIGlyph2DAddMask",
+			"value": 16
+		},
+		{
+			"name": "GUIGlyph2DAddMaskReverse",
+			"value": 17
+		},
+		{
+			"name": "GUIGlyph2DDetone",
+			"value": 18
+		},
+		{
+			"name": "GUIGlyph2DMaskDetone",
+			"value": 19
+		},
+		{
+			"name": "GUIGlyph2DMaskReverseDetone",
+			"value": 20
+		},
+		{
+			"name": "GUIGlyph2DAddDetone",
+			"value": 21
+		},
+		{
+			"name": "GUIGlyph2DAddMaskDetone",
+			"value": 22
+		},
+		{
+			"name": "GUIGlyph2DAddMaskReverseDetone",
+			"value": 23
+		},
+		{
+			"name": "GUIPoly3D",
+			"value": 24
+		},
+		{
+			"name": "GUIPoly3DTest",
+			"value": 25
+		},
+		{
+			"name": "GUIPoly3DMask",
+			"value": 26
+		},
+		{
+			"name": "GUIPoly3DMaskTest",
+			"value": 27
+		},
+		{
+			"name": "GUIPoly3DMaskReverse",
+			"value": 28
+		},
+		{
+			"name": "GUIPoly3DMaskReverseTest",
+			"value": 29
+		},
+		{
+			"name": "GUIPoly3DAdd",
+			"value": 30
+		},
+		{
+			"name": "GUIPoly3DAddTest",
+			"value": 31
+		},
+		{
+			"name": "GUIPoly3DAddMask",
+			"value": 32
+		},
+		{
+			"name": "GUIPoly3DAddMaskTest",
+			"value": 33
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverse",
+			"value": 34
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseTest",
+			"value": 35
+		},
+		{
+			"name": "GUIPoly3DDetone",
+			"value": 36
+		},
+		{
+			"name": "GUIPoly3DTestDetone",
+			"value": 37
+		},
+		{
+			"name": "GUIPoly3DMaskDetone",
+			"value": 38
+		},
+		{
+			"name": "GUIPoly3DMaskTestDetone",
+			"value": 39
+		},
+		{
+			"name": "GUIPoly3DMaskReverseDetone",
+			"value": 40
+		},
+		{
+			"name": "GUIPoly3DMaskReverseTestDetone",
+			"value": 41
+		},
+		{
+			"name": "GUIPoly3DAddDetone",
+			"value": 42
+		},
+		{
+			"name": "GUIPoly3DAddTestDetone",
+			"value": 43
+		},
+		{
+			"name": "GUIPoly3DAddMaskDetone",
+			"value": 44
+		},
+		{
+			"name": "GUIPoly3DAddMaskTestDetone",
+			"value": 45
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseDetone",
+			"value": 46
+		},
+		{
+			"name": "GUIPoly3DAddMaskReverseTestDetone",
+			"value": 47
+		},
+		{
+			"name": "GUIGlyph3D",
+			"value": 48
+		},
+		{
+			"name": "GUIGlyph3DTest",
+			"value": 49
+		},
+		{
+			"name": "GUIGlyph3DMask",
+			"value": 50
+		},
+		{
+			"name": "GUIGlyph3DMaskTest",
+			"value": 51
+		},
+		{
+			"name": "GUIGlyph3DMaskReverse",
+			"value": 52
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseTest",
+			"value": 53
+		},
+		{
+			"name": "GUIGlyph3DAdd",
+			"value": 54
+		},
+		{
+			"name": "GUIGlyph3DAddTest",
+			"value": 55
+		},
+		{
+			"name": "GUIGlyph3DAddMask",
+			"value": 56
+		},
+		{
+			"name": "GUIGlyph3DAddMaskTest",
+			"value": 57
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverse",
+			"value": 58
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseTest",
+			"value": 59
+		},
+		{
+			"name": "GUIGlyph3DDetone",
+			"value": 60
+		},
+		{
+			"name": "GUIGlyph3DTestDetone",
+			"value": 61
+		},
+		{
+			"name": "GUIGlyph3DMaskDetone",
+			"value": 62
+		},
+		{
+			"name": "GUIGlyph3DMaskTestDetone",
+			"value": 63
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseDetone",
+			"value": 64
+		},
+		{
+			"name": "GUIGlyph3DMaskReverseTestDetone",
+			"value": 65
+		},
+		{
+			"name": "GUIGlyph3DAddDetone",
+			"value": 66
+		},
+		{
+			"name": "GUIGlyph3DAddTestDetone",
+			"value": 67
+		},
+		{
+			"name": "GUIGlyph3DAddMaskDetone",
+			"value": 68
+		},
+		{
+			"name": "GUIGlyph3DAddMaskTestDetone",
+			"value": 69
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseDetone",
+			"value": 70
+		},
+		{
+			"name": "GUIGlyph3DAddMaskReverseTestDetone",
+			"value": 71
+		},
+		{
+			"name": "GUIPolyPers",
+			"value": 72
+		},
+		{
+			"name": "GUIPolyPersTest",
+			"value": 73
+		},
+		{
+			"name": "GUIPolyPersMask",
+			"value": 74
+		},
+		{
+			"name": "GUIPolyPersMaskTest",
+			"value": 75
+		},
+		{
+			"name": "GUIPolyPersMaskReverse",
+			"value": 76
+		},
+		{
+			"name": "GUIPolyPersMaskReverseTest",
+			"value": 77
+		},
+		{
+			"name": "GUIPolyPersAdd",
+			"value": 78
+		},
+		{
+			"name": "GUIPolyPersAddTest",
+			"value": 79
+		},
+		{
+			"name": "GUIPolyPersAddMask",
+			"value": 80
+		},
+		{
+			"name": "GUIPolyPersAddMaskTest",
+			"value": 81
+		},
+		{
+			"name": "GUIPolyPersAddMaskReverse",
+			"value": 82
+		},
+		{
+			"name": "GUIPolyPersAddMaskReverseTest",
+			"value": 83
+		},
+		{
+			"name": "GUIGlyphPers",
+			"value": 84
+		},
+		{
+			"name": "GUIGlyphPersTest",
+			"value": 85
+		},
+		{
+			"name": "GUIGlyphPersMask",
+			"value": 86
+		},
+		{
+			"name": "GUIGlyphPersMaskTest",
+			"value": 87
+		},
+		{
+			"name": "GUIGlyphPersMaskReverse",
+			"value": 88
+		},
+		{
+			"name": "GUIGlyphPersMaskReverseTest",
+			"value": 89
+		},
+		{
+			"name": "GUIGlyphPersAdd",
+			"value": 90
+		},
+		{
+			"name": "GUIGlyphPersAddTest",
+			"value": 91
+		},
+		{
+			"name": "GUIGlyphPersAddMask",
+			"value": 92
+		},
+		{
+			"name": "GUIGlyphPersAddMaskTest",
+			"value": 93
+		},
+		{
+			"name": "GUIGlyphPersAddMaskReverse",
+			"value": 94
+		},
+		{
+			"name": "GUIGlyphPersAddMaskReverseTest",
+			"value": 95
+		},
+		{
+			"name": "GUIPoly2DMaskWrite",
+			"value": 96
+		},
+		{
+			"name": "GUIPoly3DMaskWrite",
+			"value": 97
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTest",
+			"value": 98
+		},
+		{
+			"name": "GUIPolyPersMaskWrite",
+			"value": 99
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTest",
+			"value": 100
+		},
+		{
+			"name": "GUIGlyph2DMaskWrite",
+			"value": 101
+		},
+		{
+			"name": "GUIGlyph3DMaskWrite",
+			"value": 102
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTest",
+			"value": 103
+		},
+		{
+			"name": "GUIGlyphPersMaskWrite",
+			"value": 104
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTest",
+			"value": 105
+		},
+		{
+			"name": "GUIPoly2DMaskWriteBlend2",
+			"value": 106
+		},
+		{
+			"name": "GUIPoly3DMaskWriteBlend2",
+			"value": 107
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTestBlend2",
+			"value": 108
+		},
+		{
+			"name": "GUIPolyPersMaskWriteBlend2",
+			"value": 109
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTestBlend2",
+			"value": 110
+		},
+		{
+			"name": "GUIGlyph2DMaskWriteBlend2",
+			"value": 111
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteBlend2",
+			"value": 112
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTestBlend2",
+			"value": 113
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteBlend2",
+			"value": 114
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTestBlend2",
+			"value": 115
+		},
+		{
+			"name": "GUIPoly2DMaskWriteBlend3",
+			"value": 116
+		},
+		{
+			"name": "GUIPoly3DMaskWriteBlend3",
+			"value": 117
+		},
+		{
+			"name": "GUIPoly3DMaskWriteTestBlend3",
+			"value": 118
+		},
+		{
+			"name": "GUIPolyPersMaskWriteBlend3",
+			"value": 119
+		},
+		{
+			"name": "GUIPolyPersMaskWriteTestBlend3",
+			"value": 120
+		},
+		{
+			"name": "GUIGlyph2DMaskWriteBlend3",
+			"value": 121
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteBlend3",
+			"value": 122
+		},
+		{
+			"name": "GUIGlyph3DMaskWriteTestBlend3",
+			"value": 123
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteBlend3",
+			"value": 124
+		},
+		{
+			"name": "GUIGlyphPersMaskWriteTestBlend3",
+			"value": 125
+		},
+		{
+			"name": "GUIGlyphGlow2D",
+			"value": 126
+		},
+		{
+			"name": "GUIGlyphGlow2DMask",
+			"value": 127
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskReverse",
+			"value": 128
+		},
+		{
+			"name": "GUIGlyphGlow2DAdd",
+			"value": 129
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMask",
+			"value": 130
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskReverse",
+			"value": 131
+		},
+		{
+			"name": "GUIGlyphGlow2DDetone",
+			"value": 132
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskDetone",
+			"value": 133
+		},
+		{
+			"name": "GUIGlyphGlow2DMaskReverseDetone",
+			"value": 134
+		},
+		{
+			"name": "GUIGlyphGlow2DAddDetone",
+			"value": 135
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskDetone",
+			"value": 136
+		},
+		{
+			"name": "GUIGlyphGlow2DAddMaskReverseDetone",
+			"value": 137
+		},
+		{
+			"name": "GUIGlyphGlow3D",
+			"value": 138
+		},
+		{
+			"name": "GUIGlyphGlow3DTest",
+			"value": 139
+		},
+		{
+			"name": "GUIGlyphGlow3DMask",
+			"value": 140
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskTest",
+			"value": 141
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverse",
+			"value": 142
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseTest",
+			"value": 143
+		},
+		{
+			"name": "GUIGlyphGlow3DAdd",
+			"value": 144
+		},
+		{
+			"name": "GUIGlyphGlow3DAddTest",
+			"value": 145
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMask",
+			"value": 146
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskTest",
+			"value": 147
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverse",
+			"value": 148
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseTest",
+			"value": 149
+		},
+		{
+			"name": "GUIGlyphGlow3DDetone",
+			"value": 150
+		},
+		{
+			"name": "GUIGlyphGlow3DTestDetone",
+			"value": 151
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskDetone",
+			"value": 152
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskTestDetone",
+			"value": 153
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseDetone",
+			"value": 154
+		},
+		{
+			"name": "GUIGlyphGlow3DMaskReverseTestDetone",
+			"value": 155
+		},
+		{
+			"name": "GUIGlyphGlow3DAddDetone",
+			"value": 156
+		},
+		{
+			"name": "GUIGlyphGlow3DAddTestDetone",
+			"value": 157
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskDetone",
+			"value": 158
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskTestDetone",
+			"value": 159
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseDetone",
+			"value": 160
+		},
+		{
+			"name": "GUIGlyphGlow3DAddMaskReverseTestDetone",
+			"value": 161
+		},
+		{
+			"name": "GUIGlyphGlowPers",
+			"value": 162
+		},
+		{
+			"name": "GUIGlyphGlowPersTest",
+			"value": 163
+		},
+		{
+			"name": "GUIGlyphGlowPersMask",
+			"value": 164
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskTest",
+			"value": 165
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskReverse",
+			"value": 166
+		},
+		{
+			"name": "GUIGlyphGlowPersMaskReverseTest",
+			"value": 167
+		},
+		{
+			"name": "GUIGlyphGlowPersAdd",
+			"value": 168
+		},
+		{
+			"name": "GUIGlyphGlowPersAddTest",
+			"value": 169
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMask",
+			"value": 170
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskTest",
+			"value": 171
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskReverse",
+			"value": 172
+		},
+		{
+			"name": "GUIGlyphGlowPersAddMaskReverseTest",
+			"value": 173
+		},
+		{
+			"name": "Max",
+			"value": 174
+		}
+	],
+	"via.hid.virtualKeyboard.nsw.KeyboardMode": [
+		{
+			"name": "Full",
+			"value": 0
+		},
+		{
+			"name": "Numeric",
+			"value": 1
+		},
+		{
+			"name": "ASCII",
+			"value": 2
+		},
+		{
+			"name": "FullLatIN_",
+			"value": 3
+		}
+	],
+	"via.gui.GlowManager.BlurFilterMipMap": [
+		{
+			"name": "MipMapMax",
+			"value": 6
+		}
+	],
+	"via.browser.utility.RequestManager.Attr": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "NeedAnswer",
+			"value": 1
+		},
+		{
+			"name": "IsReentrant",
+			"value": 2
+		},
+		{
+			"name": "ManageLastArg",
+			"value": 4
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.RadiateShellStatusInfomation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.network.session.Region": [
+		{
+			"name": "Region_0",
+			"value": 0
+		},
+		{
+			"name": "Region_1",
+			"value": 1
+		},
+		{
+			"name": "Region_2",
+			"value": 2
+		},
+		{
+			"name": "Region_3",
+			"value": 3
+		},
+		{
+			"name": "Region_Max",
+			"value": 4
+		}
+	],
+	"via.render.detail.PrimitiveDistortion": [
+		{
+			"name": "Blur",
+			"value": 0
+		},
+		{
+			"name": "Refract",
+			"value": 1
+		}
+	],
+	"via.render.RoughTransparent.DebugMode": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Downsample",
+			"value": 1
+		},
+		{
+			"name": "Blur",
+			"value": 2
+		}
+	],
+	"via.render.LightVolumeDecal.ValidFlag": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Color",
+			"value": 1
+		},
+		{
+			"name": "Alpha",
+			"value": 2
+		},
+		{
+			"name": "BaseAlpha",
+			"value": 3
+		},
+		{
+			"name": "Normal",
+			"value": 4
+		},
+		{
+			"name": "Roughness",
+			"value": 8
+		},
+		{
+			"name": "NormalRoughness",
+			"value": 12
+		},
+		{
+			"name": "All",
+			"value": 15
+		}
+	],
+	"via.ThreadPool.JobManager.Job.State": [
+		{
+			"name": "Uninitialized",
+			"value": 0
+		},
+		{
+			"name": "Started",
+			"value": 1
+		},
+		{
+			"name": "Wait",
+			"value": 2
+		},
+		{
+			"name": "WaitRelease",
+			"value": 3
+		},
+		{
+			"name": "Ended",
+			"value": 4
+		}
+	],
+	"via.Frustum.HIT_TYPE": [
+		{
+			"name": "HIT_OUTSIDE",
+			"value": 0
+		},
+		{
+			"name": "HIT_INSIDE",
+			"value": 1
+		},
+		{
+			"name": "HIT_INTERSECT",
+			"value": 2
+		}
+	],
+	"via.dynamics.ConeTwist.Initializer.PositionType": [
+		{
+			"name": "World",
+			"value": 0
+		},
+		{
+			"name": "Local",
+			"value": 1
+		}
+	],
+	"via.effect.gpgpu.BillboardCS.BillboardResource.ComputeShaderType": [
+		{
+			"name": "InitializeCS",
+			"value": 0
+		},
+		{
+			"name": "EmitCS",
+			"value": 1
+		},
+		{
+			"name": "EmitShapeOperatorCS",
+			"value": 2
+		},
+		{
+			"name": "EmitOnMeshContourCS",
+			"value": 3
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMap",
+			"value": 4
+		},
+		{
+			"name": "EmitOnMeshContourCS_MaskMap",
+			"value": 5
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMaskMap",
+			"value": 6
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS",
+			"value": 7
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMap",
+			"value": 8
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_MaskMap",
+			"value": 9
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMaskMap",
+			"value": 10
+		},
+		{
+			"name": "UpdateCS",
+			"value": 11
+		},
+		{
+			"name": "UpdateVectorFieldCS",
+			"value": 12
+		},
+		{
+			"name": "UpdateSimpleVectorFieldCS",
+			"value": 13
+		},
+		{
+			"name": "UpdateVolumeFieldCS",
+			"value": 14
+		},
+		{
+			"name": "UpdateSimpleVolumeFieldCS",
+			"value": 15
+		},
+		{
+			"name": "UpdateMeshContourCS",
+			"value": 16
+		},
+		{
+			"name": "UpdateMeshContourVectorFieldCS",
+			"value": 17
+		},
+		{
+			"name": "UpdateMeshContourSimpleVectorFieldCS",
+			"value": 18
+		},
+		{
+			"name": "UpdateMeshContourVolumeFieldCS",
+			"value": 19
+		},
+		{
+			"name": "UpdateMeshContourSimpleVolumeFieldCS",
+			"value": 20
+		},
+		{
+			"name": "ParticleWarmingCS",
+			"value": 21
+		},
+		{
+			"name": "ParticleWarmingVectorFieldCS",
+			"value": 22
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldCS",
+			"value": 23
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldCS",
+			"value": 24
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldCS",
+			"value": 25
+		},
+		{
+			"name": "ParticleWarmingShapeOperatorCS",
+			"value": 26
+		},
+		{
+			"name": "ParticleWarmingVectorFieldShapeOperatorCS",
+			"value": 27
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldShapeOperatorCS",
+			"value": 28
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldShapeOperatorCS",
+			"value": 29
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldShapeOperatorCS",
+			"value": 30
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS",
+			"value": 31
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMap",
+			"value": 32
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_MaskMap",
+			"value": 33
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMaskMap",
+			"value": 34
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS",
+			"value": 35
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMap",
+			"value": 36
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_MaskMap",
+			"value": 37
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMaskMap",
+			"value": 38
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS",
+			"value": 39
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMap",
+			"value": 40
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_MaskMap",
+			"value": 41
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMaskMap",
+			"value": 42
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS",
+			"value": 43
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMap",
+			"value": 44
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_MaskMap",
+			"value": 45
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 46
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS",
+			"value": 47
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMap",
+			"value": 48
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_MaskMap",
+			"value": 49
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 50
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS",
+			"value": 51
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMap",
+			"value": 52
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_MaskMap",
+			"value": 53
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMaskMap",
+			"value": 54
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS",
+			"value": 55
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMap",
+			"value": 56
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_MaskMap",
+			"value": 57
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMaskMap",
+			"value": 58
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS",
+			"value": 59
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMap",
+			"value": 60
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_MaskMap",
+			"value": 61
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMaskMap",
+			"value": 62
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS",
+			"value": 63
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMap",
+			"value": 64
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_MaskMap",
+			"value": 65
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 66
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS",
+			"value": 67
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMap",
+			"value": 68
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_MaskMap",
+			"value": 69
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 70
+		},
+		{
+			"name": "LightingCS",
+			"value": 71
+		},
+		{
+			"name": "ParticleCollider",
+			"value": 72
+		},
+		{
+			"name": "MaxType",
+			"value": 73
+		}
+	],
+	"via.render.AtmosphereSimulationPreset": [
+		{
+			"name": "Custom",
+			"value": 0
+		},
+		{
+			"name": "Noon",
+			"value": 1
+		},
+		{
+			"name": "Sunset",
+			"value": 2
+		},
+		{
+			"name": "NightWithSunAsMoon",
+			"value": 3
+		}
+	],
+	"via.render.detail.PrimCmdType": [
+		{
+			"name": "Unknown",
+			"value": 0
+		},
+		{
+			"name": "Polygon",
+			"value": 1
+		},
+		{
+			"name": "Mesh",
+			"value": 2
+		},
+		{
+			"name": "MeshInstancing",
+			"value": 3
+		}
+	],
+	"via.motion.DevelopRetargetResource.RetargetJointName": [
+		{
+			"name": "HeadName",
+			"value": 0
+		},
+		{
+			"name": "NeckName",
+			"value": 1
+		},
+		{
+			"name": "Spine0Name",
+			"value": 2
+		},
+		{
+			"name": "Spine1Name",
+			"value": 3
+		},
+		{
+			"name": "Spine2Name",
+			"value": 4
+		},
+		{
+			"name": "Spine3Name",
+			"value": 5
+		},
+		{
+			"name": "Spine4Name",
+			"value": 6
+		},
+		{
+			"name": "HipsName",
+			"value": 7
+		},
+		{
+			"name": "LHandName",
+			"value": 8
+		},
+		{
+			"name": "LForeArmName",
+			"value": 9
+		},
+		{
+			"name": "LArmName",
+			"value": 10
+		},
+		{
+			"name": "LShoulderName",
+			"value": 11
+		},
+		{
+			"name": "RHandName",
+			"value": 12
+		},
+		{
+			"name": "RForeArmName",
+			"value": 13
+		},
+		{
+			"name": "RArmName",
+			"value": 14
+		},
+		{
+			"name": "RShoulderName",
+			"value": 15
+		},
+		{
+			"name": "LFootName",
+			"value": 16
+		},
+		{
+			"name": "LLegName",
+			"value": 17
+		},
+		{
+			"name": "LUpLegName",
+			"value": 18
+		},
+		{
+			"name": "RFootName",
+			"value": 19
+		},
+		{
+			"name": "RLegName",
+			"value": 20
+		},
+		{
+			"name": "RUpLegName",
+			"value": 21
+		},
+		{
+			"name": "MAX",
+			"value": 22
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BombEmberShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.effect.detail.LightingType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Vertex",
+			"value": 1
+		},
+		{
+			"name": "Vertex2x2",
+			"value": 2
+		},
+		{
+			"name": "Vertex4x4",
+			"value": 3
+		},
+		{
+			"name": "Vertex8x8",
+			"value": 4
+		},
+		{
+			"name": "ForceWord",
+			"value": 4294967295
+		}
+	],
+	"via.Frustum.PLANE_TYPE": [
+		{
+			"name": "PLANE_BOTTOM",
+			"value": 0
+		},
+		{
+			"name": "PLANE_TOP",
+			"value": 1
+		},
+		{
+			"name": "PLANE_LEFT",
+			"value": 2
+		},
+		{
+			"name": "PLANE_RIGHT",
+			"value": 3
+		},
+		{
+			"name": "PLANE_NEAR",
+			"value": 4
+		},
+		{
+			"name": "PLANE_FAR",
+			"value": 5
+		}
+	],
+	"via.effect.gpgpu.RibbonFollowCS.RibbonResource.ComputeShaderType": [
+		{
+			"name": "InitializeCS",
+			"value": 0
+		},
+		{
+			"name": "EmitCS",
+			"value": 1
+		},
+		{
+			"name": "EmitShapeOperatorCS",
+			"value": 2
+		},
+		{
+			"name": "EmitOnMeshContourCS",
+			"value": 3
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMap",
+			"value": 4
+		},
+		{
+			"name": "EmitOnMeshContourCS_MaskMap",
+			"value": 5
+		},
+		{
+			"name": "EmitOnMeshContourCS_ColorMaskMap",
+			"value": 6
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS",
+			"value": 7
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMap",
+			"value": 8
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_MaskMap",
+			"value": 9
+		},
+		{
+			"name": "EmitOnMeshNormalContourCS_ColorMaskMap",
+			"value": 10
+		},
+		{
+			"name": "UpdateCS",
+			"value": 11
+		},
+		{
+			"name": "UpdateVectorFieldCS",
+			"value": 12
+		},
+		{
+			"name": "UpdateSimpleVectorFieldCS",
+			"value": 13
+		},
+		{
+			"name": "UpdateVolumeFieldCS",
+			"value": 14
+		},
+		{
+			"name": "UpdateSimpleVolumeFieldCS",
+			"value": 15
+		},
+		{
+			"name": "UpdateMeshContourCS",
+			"value": 16
+		},
+		{
+			"name": "UpdateMeshContourVectorFieldCS",
+			"value": 17
+		},
+		{
+			"name": "UpdateMeshContourSimpleVectorFieldCS",
+			"value": 18
+		},
+		{
+			"name": "UpdateMeshContourVolumeFieldCS",
+			"value": 19
+		},
+		{
+			"name": "UpdateMeshContourSimpleVolumeFieldCS",
+			"value": 20
+		},
+		{
+			"name": "ParticleWarmingCS",
+			"value": 21
+		},
+		{
+			"name": "ParticleWarmingVectorFieldCS",
+			"value": 22
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldCS",
+			"value": 23
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldCS",
+			"value": 24
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldCS",
+			"value": 25
+		},
+		{
+			"name": "ParticleWarmingShapeOperatorCS",
+			"value": 26
+		},
+		{
+			"name": "ParticleWarmingVectorFieldShapeOperatorCS",
+			"value": 27
+		},
+		{
+			"name": "ParticleWarmingSimpleVectorFieldShapeOperatorCS",
+			"value": 28
+		},
+		{
+			"name": "ParticleWarmingVolumeFieldShapeOperatorCS",
+			"value": 29
+		},
+		{
+			"name": "ParticleWarmingSimpleVolumeFieldShapeOperatorCS",
+			"value": 30
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS",
+			"value": 31
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMap",
+			"value": 32
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_MaskMap",
+			"value": 33
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourCS_ColorMaskMap",
+			"value": 34
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS",
+			"value": 35
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMap",
+			"value": 36
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_MaskMap",
+			"value": 37
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVectorFieldCS_ColorMaskMap",
+			"value": 38
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS",
+			"value": 39
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMap",
+			"value": 40
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_MaskMap",
+			"value": 41
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourVolumeFieldCS_ColorMaskMap",
+			"value": 42
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS",
+			"value": 43
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMap",
+			"value": 44
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_MaskMap",
+			"value": 45
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 46
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS",
+			"value": 47
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMap",
+			"value": 48
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_MaskMap",
+			"value": 49
+		},
+		{
+			"name": "ParticleWarmingOnMeshContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 50
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS",
+			"value": 51
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMap",
+			"value": 52
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_MaskMap",
+			"value": 53
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourCS_ColorMaskMap",
+			"value": 54
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS",
+			"value": 55
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMap",
+			"value": 56
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_MaskMap",
+			"value": 57
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVectorFieldCS_ColorMaskMap",
+			"value": 58
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS",
+			"value": 59
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMap",
+			"value": 60
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_MaskMap",
+			"value": 61
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourVolumeFieldCS_ColorMaskMap",
+			"value": 62
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS",
+			"value": 63
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMap",
+			"value": 64
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_MaskMap",
+			"value": 65
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVectorFieldCS_ColorMaskMap",
+			"value": 66
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS",
+			"value": 67
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMap",
+			"value": 68
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_MaskMap",
+			"value": 69
+		},
+		{
+			"name": "ParticleWarmingOnMeshNormalContourSimpleVolumeFieldCS_ColorMaskMap",
+			"value": 70
+		},
+		{
+			"name": "LightingCS",
+			"value": 71
+		},
+		{
+			"name": "ParticleCollider",
+			"value": 72
+		},
+		{
+			"name": "MaxType",
+			"value": 73
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BombShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombGrenadeGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation__": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.network.NetworkEntry.TraceLevelType": [
+		{
+			"name": "Verbose",
+			"value": 0
+		},
+		{
+			"name": "Info",
+			"value": 1
+		}
+	],
+	"via.render.AsyncExecuteFlag": [
+		{
+			"name": "Disable",
+			"value": 0
+		},
+		{
+			"name": "CommandPriorityWait",
+			"value": 1
+		},
+		{
+			"name": "NoWait",
+			"value": 2
+		},
+		{
+			"name": "CurrentFrameExecute",
+			"value": 3
+		},
+		{
+			"name": "CurrentFrameExecuteNoWait",
+			"value": 4
+		}
+	],
+	"via.motion.ChainVGroundType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Root",
+			"value": 1
+		},
+		{
+			"name": "Target",
+			"value": 2
+		}
+	],
+	"via.render.detail.PrimitiveGUIFilter": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "InstantBlur",
+			"value": 1
+		},
+		{
+			"name": "GaussianBlur",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombBiteGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"via.browser.ServiceType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Steam",
+			"value": 1
+		},
+		{
+			"name": "Psn",
+			"value": 2
+		},
+		{
+			"name": "Live",
+			"value": 3
+		},
+		{
+			"name": "Max",
+			"value": 4
+		}
+	],
+	"app.ropeway.weapon.generator.BombGeneratorUserDataBase.BombBulletGrenadeGenerateSetting": [
+		{
+			"name": "S",
+			"value": 0
+		},
+		{
+			"name": "M",
+			"value": 1
+		},
+		{
+			"name": "L",
+			"value": 2
+		}
+	],
+	"via.hid.virtualKeyboard.nsw.PasswordMode": [
+		{
+			"name": "Show",
+			"value": 0
+		},
+		{
+			"name": "Hide",
+			"value": 1
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation___": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.effect.graph.ErrorType": [
+		{
+			"name": "NoERROR_",
+			"value": 0
+		},
+		{
+			"name": "InvalidType",
+			"value": 1
+		},
+		{
+			"name": "InsufficientMemory",
+			"value": 2
+		},
+		{
+			"name": "InvalidOperation",
+			"value": 3
+		}
+	],
+	"via.hid.TouchScreenAction": [
+		{
+			"name": "Move",
+			"value": 0
+		},
+		{
+			"name": "Down",
+			"value": 1
+		},
+		{
+			"name": "Up",
+			"value": 2
+		},
+		{
+			"name": "Cancel",
+			"value": 3
+		}
+	],
+	"via.render.RegisteredMeshType": [
+		{
+			"name": "Static",
+			"value": 0
+		},
+		{
+			"name": "Dynamic",
+			"value": 1
+		}
+	],
+	"via.puppet.RemoteGameObject.Priority": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Unreliable",
+			"value": 1
+		},
+		{
+			"name": "Reliable",
+			"value": 2
+		},
+		{
+			"name": "Both",
+			"value": 3
+		},
+		{
+			"name": "SyncImmediate",
+			"value": 4
+		}
+	],
+	"via.motion.ExtraJoint.AttrFlags": [
+		{
+			"name": "DisableEmptyInterpolation",
+			"value": 1
+		}
+	],
+	"via.Access": [
+		{
+			"name": "Private",
+			"value": 0
+		},
+		{
+			"name": "Public",
+			"value": 1
+		}
+	],
+	"via.effect.detail.RotationOrder": [
+		{
+			"name": "XYZ",
+			"value": 0
+		},
+		{
+			"name": "XZY",
+			"value": 1
+		},
+		{
+			"name": "YXZ",
+			"value": 2
+		},
+		{
+			"name": "YZX",
+			"value": 3
+		},
+		{
+			"name": "ZXY",
+			"value": 4
+		},
+		{
+			"name": "ZYX",
+			"value": 5
+		}
+	],
+	"app.ropeway.weapon.controller.ShellGeneratorControllerBase.SparkShellGeneratorControlUserData": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Init",
+			"value": 1
+		},
+		{
+			"name": "Operation",
+			"value": 2
+		},
+		{
+			"name": "Destroy",
+			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": 4
+		}
+	],
+	"via.effect.detail.GpuBlendType": [
+		{
+			"name": "AlphaBlend",
+			"value": 0
+		},
+		{
+			"name": "Physical",
+			"value": 1
+		},
+		{
+			"name": "AddContrast",
+			"value": 2
+		},
+		{
+			"name": "EdgeBlend",
+			"value": 3
+		},
+		{
+			"name": "Multiply",
+			"value": 4
+		}
+	],
+	"via.effect.graph.ContainerType": [
+		{
+			"name": "Unknown",
+			"value": 0
+		},
+		{
+			"name": "Emiter",
+			"value": 1
+		},
+		{
+			"name": "Action",
+			"value": 2
+		},
+		{
+			"name": "Field",
+			"value": 3
+		}
+	],
+	"via.navigation.NavigationManager.NavigationUpdateTiming": [
+		{
+			"name": "Prev",
+			"value": 1
+		},
+		{
+			"name": "Late",
+			"value": 2
+		}
+	],
+	"via.dynamics.Hinge.Initializer.PositionType": [
+		{
+			"name": "World",
+			"value": 0
+		},
+		{
+			"name": "Local",
+			"value": 1
+		}
+	],
+	"via.network.Protocol.SendOption": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Unreliable",
+			"value": 0
+		},
+		{
+			"name": "Reliable",
+			"value": 1
+		},
+		{
+			"name": "ReliableBuffer",
+			"value": 3
+		},
+		{
+			"name": "FastCallback",
+			"value": 4
+		},
+		{
+			"name": "CheckAbsent",
+			"value": 8
+		}
+	],
+	"via.SoftwarePrefetchLevel": [],
+	"app.ropeway.weapon.shell.ShellBase.BulletShellStatusInformation____": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"app.ropeway.weapon.shell.ShellBase.SparkShellStatusInformation": [
+		{
+			"name": "NoSuspend",
+			"value": 0
+		},
+		{
+			"name": "Update",
+			"value": 1
+		},
+		{
+			"name": "LateUpdate",
+			"value": 2
+		}
+	],
+	"via.ThreadPool.Worker.State": [
+		{
+			"name": "Uninitialized",
+			"value": 0
+		},
+		{
+			"name": "Idle",
+			"value": 1
+		},
+		{
+			"name": "Assigned",
+			"value": 2
+		},
+		{
+			"name": "Executing",
+			"value": 3
+		},
+		{
+			"name": "Halt",
+			"value": 4
+		},
+		{
+			"name": "Terminated",
+			"value": 5
+		}
+	],
+	"via.effect.detail.MieLightingType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Vertex",
+			"value": 1
+		},
+		{
+			"name": "Vertex2x2",
+			"value": 2
+		},
+		{
+			"name": "Vertex4x4",
+			"value": 3
+		},
+		{
+			"name": "Vertex8x8",
+			"value": 4
+		},
+		{
+			"name": "Vertex16x16",
+			"value": 5
+		},
+		{
+			"name": "Vertex32x32",
+			"value": 6
+		},
+		{
+			"name": "ForceWord",
+			"value": 4294967295
 		}
 	]
 }

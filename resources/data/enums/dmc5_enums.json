@@ -955,8 +955,16 @@
 			"value": 2
 		},
 		{
+			"name": "CanThinkShotLaser",
+			"value": 3
+		},
+		{
 			"name": "CanRepair",
 			"value": 4
+		},
+		{
+			"name": "CanThinkRepair",
+			"value": 5
 		},
 		{
 			"name": "CanAllAction",
@@ -965,14 +973,6 @@
 		{
 			"name": "CanAll",
 			"value": 7
-		},
-		{
-			"name": "CanThinkShotLaser",
-			"value": 3
-		},
-		{
-			"name": "CanThinkRepair",
-			"value": 5
 		}
 	],
 	"via.uvsequence.UVTransform": [
@@ -1023,12 +1023,12 @@
 			"value": 2
 		},
 		{
-			"name": "White",
-			"value": 4
-		},
-		{
 			"name": "RG",
 			"value": 3
+		},
+		{
+			"name": "White",
+			"value": 4
 		},
 		{
 			"name": "RW",
@@ -1059,12 +1059,12 @@
 			"value": 4
 		},
 		{
-			"name": "AlandIslands",
-			"value": 248
-		},
-		{
 			"name": "Albania",
 			"value": 8
+		},
+		{
+			"name": "AntArtica",
+			"value": 10
 		},
 		{
 			"name": "Algeria",
@@ -1083,28 +1083,16 @@
 			"value": 24
 		},
 		{
-			"name": "Anguilla",
-			"value": 660
-		},
-		{
-			"name": "AntArtica",
-			"value": 10
-		},
-		{
 			"name": "AntiguaAndBarbuda",
 			"value": 28
 		},
 		{
+			"name": "Azerbaijan",
+			"value": 31
+		},
+		{
 			"name": "Argentina",
 			"value": 32
-		},
-		{
-			"name": "Armenia",
-			"value": 51
-		},
-		{
-			"name": "Aruba",
-			"value": 533
 		},
 		{
 			"name": "Australia",
@@ -1113,10 +1101,6 @@
 		{
 			"name": "Austria",
 			"value": 40
-		},
-		{
-			"name": "Azerbaijan",
-			"value": 31
 		},
 		{
 			"name": "Bahamas",
@@ -1131,24 +1115,16 @@
 			"value": 50
 		},
 		{
+			"name": "Armenia",
+			"value": 51
+		},
+		{
 			"name": "Barados",
 			"value": 52
 		},
 		{
-			"name": "Belarus",
-			"value": 112
-		},
-		{
 			"name": "Belgium",
 			"value": 56
-		},
-		{
-			"name": "Belize",
-			"value": 84
-		},
-		{
-			"name": "Benin",
-			"value": 204
 		},
 		{
 			"name": "Bermuda",
@@ -1161,10 +1137,6 @@
 		{
 			"name": "Bolivia",
 			"value": 68
-		},
-		{
-			"name": "Bonaire",
-			"value": 535
 		},
 		{
 			"name": "BosniaAndHerzegovina",
@@ -1183,8 +1155,20 @@
 			"value": 76
 		},
 		{
+			"name": "Belize",
+			"value": 84
+		},
+		{
 			"name": "BritishIndianOceanTerritory",
 			"value": 86
+		},
+		{
+			"name": "SolomonIslands",
+			"value": 90
+		},
+		{
+			"name": "VirginIslandsBritish",
+			"value": 92
 		},
 		{
 			"name": "BruneiDarussalam",
@@ -1195,16 +1179,16 @@
 			"value": 100
 		},
 		{
-			"name": "BurkinaFaso",
-			"value": 854
+			"name": "Myanmar",
+			"value": 104
 		},
 		{
 			"name": "Burundi",
 			"value": 108
 		},
 		{
-			"name": "CaboVerde",
-			"value": 132
+			"name": "Belarus",
+			"value": 112
 		},
 		{
 			"name": "Cambodia",
@@ -1219,12 +1203,20 @@
 			"value": 124
 		},
 		{
+			"name": "CaboVerde",
+			"value": 132
+		},
+		{
 			"name": "CaymanIslands",
 			"value": 136
 		},
 		{
 			"name": "CentralAfricanRepublic",
 			"value": 140
+		},
+		{
+			"name": "SriLanka",
+			"value": 144
 		},
 		{
 			"name": "Chad",
@@ -1237,6 +1229,14 @@
 		{
 			"name": "China",
 			"value": 156
+		},
+		{
+			"name": "Prchina",
+			"value": 156
+		},
+		{
+			"name": "Taiwan",
+			"value": 158
 		},
 		{
 			"name": "ChristmasIsland",
@@ -1255,6 +1255,10 @@
 			"value": 174
 		},
 		{
+			"name": "Mayotte",
+			"value": 175
+		},
+		{
 			"name": "Congo",
 			"value": 178
 		},
@@ -1271,20 +1275,12 @@
 			"value": 188
 		},
 		{
-			"name": "CotedDIVoire",
-			"value": 384
-		},
-		{
 			"name": "Croatia",
 			"value": 191
 		},
 		{
 			"name": "Cuba",
 			"value": 192
-		},
-		{
-			"name": "Curacao",
-			"value": 531
 		},
 		{
 			"name": "Cyprus",
@@ -1295,12 +1291,16 @@
 			"value": 203
 		},
 		{
-			"name": "Denmark",
-			"value": 208
+			"name": "Czech",
+			"value": 203
 		},
 		{
-			"name": "Djibouti",
-			"value": 262
+			"name": "Benin",
+			"value": 204
+		},
+		{
+			"name": "Denmark",
+			"value": 208
 		},
 		{
 			"name": "Dominica",
@@ -1315,16 +1315,16 @@
 			"value": 218
 		},
 		{
-			"name": "Egypt",
-			"value": 818
-		},
-		{
 			"name": "ElSalvador",
 			"value": 222
 		},
 		{
 			"name": "EquatorialGuinea",
 			"value": 226
+		},
+		{
+			"name": "Ethiopia",
+			"value": 231
 		},
 		{
 			"name": "Eritrea",
@@ -1335,16 +1335,16 @@
 			"value": 233
 		},
 		{
-			"name": "Ethiopia",
-			"value": 231
+			"name": "FaroeIslands",
+			"value": 234
 		},
 		{
 			"name": "FalkanIslands",
 			"value": 236
 		},
 		{
-			"name": "FaroeIslands",
-			"value": 234
+			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
+			"value": 239
 		},
 		{
 			"name": "Fiji",
@@ -1353,6 +1353,10 @@
 		{
 			"name": "Finland",
 			"value": 246
+		},
+		{
+			"name": "AlandIslands",
+			"value": 248
 		},
 		{
 			"name": "France",
@@ -1371,16 +1375,24 @@
 			"value": 260
 		},
 		{
+			"name": "Djibouti",
+			"value": 262
+		},
+		{
 			"name": "Gabon",
 			"value": 266
+		},
+		{
+			"name": "Georgia",
+			"value": 268
 		},
 		{
 			"name": "Gambia",
 			"value": 270
 		},
 		{
-			"name": "Georgia",
-			"value": 268
+			"name": "Palestine",
+			"value": 275
 		},
 		{
 			"name": "Germany",
@@ -1393,6 +1405,10 @@
 		{
 			"name": "Gibraltar",
 			"value": 292
+		},
+		{
+			"name": "Kiribati",
+			"value": 296
 		},
 		{
 			"name": "Greece",
@@ -1419,16 +1435,8 @@
 			"value": 320
 		},
 		{
-			"name": "Guernsey",
-			"value": 831
-		},
-		{
 			"name": "Guinea",
 			"value": 324
-		},
-		{
-			"name": "GuineaBissau",
-			"value": 624
 		},
 		{
 			"name": "Guyana",
@@ -1443,11 +1451,19 @@
 			"value": 334
 		},
 		{
+			"name": "VaticanCity",
+			"value": 336
+		},
+		{
 			"name": "Honduras",
 			"value": 340
 		},
 		{
 			"name": "HongKong",
+			"value": 344
+		},
+		{
+			"name": "Hong_kong",
 			"value": 344
 		},
 		{
@@ -1479,16 +1495,16 @@
 			"value": 372
 		},
 		{
-			"name": "IsleOfMan",
-			"value": 833
-		},
-		{
 			"name": "Israel",
 			"value": 376
 		},
 		{
 			"name": "Italy",
 			"value": 380
+		},
+		{
+			"name": "CotedDIVoire",
+			"value": 384
 		},
 		{
 			"name": "Jamaica",
@@ -1499,24 +1515,16 @@
 			"value": 392
 		},
 		{
-			"name": "Jersey",
-			"value": 832
+			"name": "Kazakhstan",
+			"value": 398
 		},
 		{
 			"name": "Jordan",
 			"value": 400
 		},
 		{
-			"name": "Kazakhstan",
-			"value": 398
-		},
-		{
 			"name": "Kenya",
 			"value": 404
-		},
-		{
-			"name": "Kiribati",
-			"value": 296
 		},
 		{
 			"name": "NorthKorea",
@@ -1524,6 +1532,10 @@
 		},
 		{
 			"name": "SouthKorea",
+			"value": 410
+		},
+		{
+			"name": "South_korea",
 			"value": 410
 		},
 		{
@@ -1539,16 +1551,16 @@
 			"value": 418
 		},
 		{
-			"name": "Latvia",
-			"value": 428
-		},
-		{
 			"name": "Lebanon",
 			"value": 422
 		},
 		{
 			"name": "Lesotho",
 			"value": 426
+		},
+		{
+			"name": "Latvia",
+			"value": 428
 		},
 		{
 			"name": "Liberia",
@@ -1575,10 +1587,6 @@
 			"value": 446
 		},
 		{
-			"name": "Macedonia",
-			"value": 807
-		},
-		{
 			"name": "Madagascar",
 			"value": 450
 		},
@@ -1603,10 +1611,6 @@
 			"value": 470
 		},
 		{
-			"name": "MarshallIslands",
-			"value": 584
-		},
-		{
 			"name": "Martinique",
 			"value": 474
 		},
@@ -1619,20 +1623,8 @@
 			"value": 480
 		},
 		{
-			"name": "Mayotte",
-			"value": 175
-		},
-		{
 			"name": "Mexico",
 			"value": 484
-		},
-		{
-			"name": "Micronesia",
-			"value": 583
-		},
-		{
-			"name": "Moldova",
-			"value": 498
 		},
 		{
 			"name": "Monaco",
@@ -1641,6 +1633,10 @@
 		{
 			"name": "Mongolia",
 			"value": 496
+		},
+		{
+			"name": "Moldova",
+			"value": 498
 		},
 		{
 			"name": "Montenegro",
@@ -1659,8 +1655,8 @@
 			"value": 508
 		},
 		{
-			"name": "Myanmar",
-			"value": 104
+			"name": "Oman",
+			"value": 512
 		},
 		{
 			"name": "Namibia",
@@ -1679,11 +1675,35 @@
 			"value": 528
 		},
 		{
+			"name": "Curacao",
+			"value": 531
+		},
+		{
+			"name": "Aruba",
+			"value": 533
+		},
+		{
+			"name": "SintMaarten",
+			"value": 534
+		},
+		{
+			"name": "Bonaire",
+			"value": 535
+		},
+		{
 			"name": "NewCaledonia",
 			"value": 540
 		},
 		{
+			"name": "Vanauatu",
+			"value": 548
+		},
+		{
 			"name": "NewZealand",
+			"value": 554
+		},
+		{
+			"name": "New_zealand",
 			"value": 554
 		},
 		{
@@ -1707,28 +1727,32 @@
 			"value": 574
 		},
 		{
-			"name": "NorthernMarianaIsland",
-			"value": 580
-		},
-		{
 			"name": "Norway",
 			"value": 578
 		},
 		{
-			"name": "Oman",
-			"value": 512
+			"name": "NorthernMarianaIsland",
+			"value": 580
 		},
 		{
-			"name": "Pakistan",
-			"value": 586
+			"name": "UnitedStatesMinorOutlyingIslands",
+			"value": 581
+		},
+		{
+			"name": "Micronesia",
+			"value": 583
+		},
+		{
+			"name": "MarshallIslands",
+			"value": 584
 		},
 		{
 			"name": "Palau",
 			"value": 585
 		},
 		{
-			"name": "Palestine",
-			"value": 275
+			"name": "Pakistan",
+			"value": 586
 		},
 		{
 			"name": "Panama",
@@ -1757,6 +1781,14 @@
 		{
 			"name": "Poland",
 			"value": 616
+		},
+		{
+			"name": "GuineaBissau",
+			"value": 624
+		},
+		{
+			"name": "TimorLeste",
+			"value": 626
 		},
 		{
 			"name": "Portugal",
@@ -1799,6 +1831,10 @@
 			"value": 659
 		},
 		{
+			"name": "Anguilla",
+			"value": 660
+		},
+		{
 			"name": "SaintLucia",
 			"value": 662
 		},
@@ -1813,10 +1849,6 @@
 		{
 			"name": "SaintVincentAndTheGrenadines",
 			"value": 670
-		},
-		{
-			"name": "Samoa",
-			"value": 882
 		},
 		{
 			"name": "SanMarino",
@@ -1851,20 +1883,16 @@
 			"value": 702
 		},
 		{
-			"name": "SintMaarten",
-			"value": 534
-		},
-		{
 			"name": "Slovakia",
 			"value": 703
 		},
 		{
-			"name": "Slovenia",
-			"value": 705
+			"name": "VietNam",
+			"value": 704
 		},
 		{
-			"name": "SolomonIslands",
-			"value": 90
+			"name": "Slovenia",
+			"value": 705
 		},
 		{
 			"name": "Somalia",
@@ -1875,24 +1903,24 @@
 			"value": 710
 		},
 		{
-			"name": "SouthGeorgiaAndTheSouthSandwichIslands",
-			"value": 239
-		},
-		{
-			"name": "SouthSudan",
-			"value": 728
+			"name": "Zimbabwe",
+			"value": 716
 		},
 		{
 			"name": "Spain",
 			"value": 724
 		},
 		{
-			"name": "SriLanka",
-			"value": 144
+			"name": "SouthSudan",
+			"value": 728
 		},
 		{
 			"name": "Sudan",
 			"value": 729
+		},
+		{
+			"name": "WesternSahara",
+			"value": 732
 		},
 		{
 			"name": "Suriname",
@@ -1903,12 +1931,12 @@
 			"value": 744
 		},
 		{
-			"name": "Swaziland",
-			"value": 756
-		},
-		{
 			"name": "Sweden",
 			"value": 752
+		},
+		{
+			"name": "Swaziland",
+			"value": 756
 		},
 		{
 			"name": "Switzerland",
@@ -1919,24 +1947,12 @@
 			"value": 760
 		},
 		{
-			"name": "Taiwan",
-			"value": 158
-		},
-		{
 			"name": "Tajikistan",
 			"value": 762
 		},
 		{
-			"name": "Tanzania",
-			"value": 834
-		},
-		{
 			"name": "Thailand",
 			"value": 764
-		},
-		{
-			"name": "TimorLeste",
-			"value": 626
 		},
 		{
 			"name": "Togo",
@@ -1953,6 +1969,14 @@
 		{
 			"name": "TrinidadAndTobago",
 			"value": 780
+		},
+		{
+			"name": "UnitedArabEmirates",
+			"value": 784
+		},
+		{
+			"name": "Uae",
+			"value": 784
 		},
 		{
 			"name": "Tunisia",
@@ -1983,20 +2007,52 @@
 			"value": 804
 		},
 		{
-			"name": "UnitedArabEmirates",
-			"value": 784
+			"name": "Macedonia",
+			"value": 807
+		},
+		{
+			"name": "Egypt",
+			"value": 818
 		},
 		{
 			"name": "UnitedKingdom",
 			"value": 826
 		},
 		{
-			"name": "UnitedStatesMinorOutlyingIslands",
-			"value": 581
+			"name": "United_kingdom",
+			"value": 826
+		},
+		{
+			"name": "Guernsey",
+			"value": 831
+		},
+		{
+			"name": "Jersey",
+			"value": 832
+		},
+		{
+			"name": "IsleOfMan",
+			"value": 833
+		},
+		{
+			"name": "Tanzania",
+			"value": 834
 		},
 		{
 			"name": "UnitedStatesOfAmerica",
 			"value": 840
+		},
+		{
+			"name": "United_states",
+			"value": 840
+		},
+		{
+			"name": "VirginIslandsUS",
+			"value": 850
+		},
+		{
+			"name": "BurkinaFaso",
+			"value": 854
 		},
 		{
 			"name": "Uruguay",
@@ -2007,36 +2063,16 @@
 			"value": 860
 		},
 		{
-			"name": "Vanauatu",
-			"value": 548
-		},
-		{
-			"name": "VaticanCity",
-			"value": 336
-		},
-		{
 			"name": "Venezuela",
 			"value": 862
-		},
-		{
-			"name": "VietNam",
-			"value": 704
-		},
-		{
-			"name": "VirginIslandsBritish",
-			"value": 92
-		},
-		{
-			"name": "VirginIslandsUS",
-			"value": 850
 		},
 		{
 			"name": "WallisAndFutuna",
 			"value": 876
 		},
 		{
-			"name": "WesternSahara",
-			"value": 732
+			"name": "Samoa",
+			"value": 882
 		},
 		{
 			"name": "Yemen",
@@ -2045,42 +2081,6 @@
 		{
 			"name": "Zambia",
 			"value": 894
-		},
-		{
-			"name": "Zimbabwe",
-			"value": 716
-		},
-		{
-			"name": "Prchina",
-			"value": 156
-		},
-		{
-			"name": "Czech",
-			"value": 203
-		},
-		{
-			"name": "Hong_kong",
-			"value": 344
-		},
-		{
-			"name": "New_zealand",
-			"value": 554
-		},
-		{
-			"name": "South_korea",
-			"value": 410
-		},
-		{
-			"name": "United_states",
-			"value": 840
-		},
-		{
-			"name": "United_kingdom",
-			"value": 826
-		},
-		{
-			"name": "Uae",
-			"value": 784
 		}
 	],
 	"app.fsm2.player.pl0100.weapon.wp01_006.InterceptionApproachAction.ApproachType": [
@@ -2553,16 +2553,16 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "Develop",
 			"value": 1
 		},
 		{
 			"name": "KernelLand",
 			"value": 2
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.fsm2.player.pl0120.Pl0120WarpAction.PhaseType": [
@@ -4379,20 +4379,20 @@
 			"value": 0
 		},
 		{
+			"name": "ZIgnoreBegin",
+			"value": 0
+		},
+		{
 			"name": "PrepareRoughTransparent",
+			"value": 1
+		},
+		{
+			"name": "ZIgnorePrepassSolid",
 			"value": 1
 		},
 		{
 			"name": "DrawRoughTransparent",
 			"value": 2
-		},
-		{
-			"name": "ZIgnoreBegin",
-			"value": 0
-		},
-		{
-			"name": "ZIgnorePrepassSolid",
-			"value": 1
 		},
 		{
 			"name": "ZIgnorePrepassTwoSide",
@@ -5143,6 +5143,10 @@
 	],
 	"app.GameModel.EventCategory": [
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
 			"name": "Interaction",
 			"value": 1
 		},
@@ -5153,10 +5157,6 @@
 		{
 			"name": "Die",
 			"value": 4
-		},
-		{
-			"name": "None",
-			"value": 0
 		}
 	],
 	"app.StylishManager.NoRankDownType": [
@@ -5375,12 +5375,12 @@
 			"value": 1
 		},
 		{
-			"name": "Assert",
-			"value": 2
-		},
-		{
 			"name": "Default",
 			"value": 1
+		},
+		{
+			"name": "Assert",
+			"value": 2
 		}
 	],
 	"via.hid.VibrationOutputNode": [
@@ -5969,6 +5969,10 @@
 	],
 	"via.hid.GamePadButton": [
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
 			"name": "LUp",
 			"value": 1
 		},
@@ -6095,10 +6099,6 @@
 		{
 			"name": "RSR",
 			"value": 2147483648
-		},
-		{
-			"name": "None",
-			"value": 0
 		},
 		{
 			"name": "All",
@@ -8641,6 +8641,10 @@
 			"value": 0
 		},
 		{
+			"name": "Min",
+			"value": 0
+		},
+		{
 			"name": "China",
 			"value": 1
 		},
@@ -8653,20 +8657,16 @@
 			"value": 3
 		},
 		{
+			"name": "Max",
+			"value": 3
+		},
+		{
 			"name": "Count",
 			"value": 4
 		},
 		{
 			"name": "Term",
 			"value": 4
-		},
-		{
-			"name": "Min",
-			"value": 0
-		},
-		{
-			"name": "Max",
-			"value": 3
 		}
 	],
 	"via.relib.playlog.JsonWriter.ValueType": [
@@ -10891,6 +10891,10 @@
 	],
 	"app.Em5500.TempGeryonStatus": [
 		{
+			"name": "NON",
+			"value": 0
+		},
+		{
 			"name": "RotateApproachSide",
 			"value": 1
 		},
@@ -10997,10 +11001,6 @@
 		{
 			"name": "DoNotApplyRotateRate",
 			"value": 67108864
-		},
-		{
-			"name": "NON",
-			"value": 0
 		}
 	],
 	"app.GalleryCutsceneData.GalleryCutScenePlayerID": [
@@ -11485,16 +11485,16 @@
 	],
 	"app.Em0800.MotionID": [
 		{
-			"name": "Wait",
-			"value": 3
-		},
-		{
 			"name": "FlightLoop",
 			"value": 1
 		},
 		{
 			"name": "FlightEnd",
 			"value": 2
+		},
+		{
+			"name": "Wait",
+			"value": 3
 		},
 		{
 			"name": "FallStart",
@@ -11791,16 +11791,16 @@
 			"value": 16
 		},
 		{
+			"name": "IsManual",
+			"value": 22
+		},
+		{
 			"name": "Puppet",
 			"value": 32
 		},
 		{
 			"name": "IsMediation",
 			"value": 52
-		},
-		{
-			"name": "IsManual",
-			"value": 22
 		}
 	],
 	"app.SecretMissionMenuManager.StateID": [
@@ -12255,20 +12255,20 @@
 	],
 	"app.player.pl0100.weapon.EbonyIvoryActionTag": [
 		{
-			"name": "RainStorm",
-			"value": 4211714077
-		},
-		{
-			"name": "TwosomeTime",
-			"value": 3886831625
-		},
-		{
 			"name": "HoneycombFire",
 			"value": 850151708
 		},
 		{
 			"name": "BackStep",
 			"value": 2149372521
+		},
+		{
+			"name": "TwosomeTime",
+			"value": 3886831625
+		},
+		{
+			"name": "RainStorm",
+			"value": 4211714077
 		}
 	],
 	"via.gui.Memo.MemoRotationType": [
@@ -12733,7 +12733,15 @@
 			"value": 4
 		},
 		{
+			"name": "StaticShadowSolid",
+			"value": 4
+		},
+		{
 			"name": "ShadowTwoSide",
+			"value": 5
+		},
+		{
+			"name": "StaticShadowTwoSide",
 			"value": 5
 		},
 		{
@@ -12741,28 +12749,20 @@
 			"value": 6
 		},
 		{
+			"name": "StaticShadowTwoSideAlphaTest",
+			"value": 6
+		},
+		{
 			"name": "ShadowAlphaTest",
+			"value": 7
+		},
+		{
+			"name": "StaticShadowAlphaTest",
 			"value": 7
 		},
 		{
 			"name": "ShadowDitherCoverage",
 			"value": 8
-		},
-		{
-			"name": "StaticShadowSolid",
-			"value": 4
-		},
-		{
-			"name": "StaticShadowTwoSide",
-			"value": 5
-		},
-		{
-			"name": "StaticShadowTwoSideAlphaTest",
-			"value": 6
-		},
-		{
-			"name": "StaticShadowAlphaTest",
-			"value": 7
 		},
 		{
 			"name": "CacheCopy",
@@ -12951,24 +12951,24 @@
 			"value": 2
 		},
 		{
-			"name": "LeftLegStop",
-			"value": 4
+			"name": "BothLegContact",
+			"value": 3
 		},
 		{
-			"name": "RightLegStop",
-			"value": 8
+			"name": "LeftLegStop",
+			"value": 4
 		},
 		{
 			"name": "LeftLegFix",
 			"value": 5
 		},
 		{
-			"name": "RightLegFix",
-			"value": 10
+			"name": "RightLegStop",
+			"value": 8
 		},
 		{
-			"name": "BothLegContact",
-			"value": 3
+			"name": "RightLegFix",
+			"value": 10
 		},
 		{
 			"name": "BothLegFix",
@@ -12987,12 +12987,12 @@
 			"value": 64
 		},
 		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
 			"name": "LeftToeFix",
 			"value": 65
+		},
+		{
+			"name": "RightToeStop",
+			"value": 128
 		},
 		{
 			"name": "RightToeFix",
@@ -13015,24 +13015,24 @@
 			"value": 512
 		},
 		{
-			"name": "LeftHandStop",
-			"value": 1024
+			"name": "BothHandContact",
+			"value": 768
 		},
 		{
-			"name": "RightHandStop",
-			"value": 2048
+			"name": "LeftHandStop",
+			"value": 1024
 		},
 		{
 			"name": "LeftHandFix",
 			"value": 1280
 		},
 		{
-			"name": "RightHandFix",
-			"value": 2560
+			"name": "RightHandStop",
+			"value": 2048
 		},
 		{
-			"name": "BothHandContact",
-			"value": 768
+			"name": "RightHandFix",
+			"value": 2560
 		},
 		{
 			"name": "BothHandFix",
@@ -13051,12 +13051,12 @@
 			"value": 16384
 		},
 		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
 			"name": "LeftHandTipFix",
 			"value": 16640
+		},
+		{
+			"name": "RightHandTipStop",
+			"value": 32768
 		},
 		{
 			"name": "RightHandTipFix",
@@ -13625,6 +13625,10 @@
 	],
 	"app.Em0103.TempEm0103Status": [
 		{
+			"name": "NON",
+			"value": 0
+		},
+		{
 			"name": "AbsorbingOrb",
 			"value": 1
 		},
@@ -13647,10 +13651,6 @@
 		{
 			"name": "JumpLand",
 			"value": 32
-		},
-		{
-			"name": "NON",
-			"value": 0
 		}
 	],
 	"app.Em0601.TargetType": [
@@ -14869,12 +14869,12 @@
 			"value": 1
 		},
 		{
-			"name": "Next",
-			"value": 2
-		},
-		{
 			"name": "Latest",
 			"value": 1
+		},
+		{
+			"name": "Next",
+			"value": 2
 		}
 	],
 	"via.userdata.CalculateNode.Operation": [
@@ -14967,12 +14967,12 @@
 	],
 	"app.Em2100Tag": [
 		{
-			"name": "Em2100ShotMaterial",
-			"value": 3381986299
-		},
-		{
 			"name": "Em2100ShotEff",
 			"value": 189799139
+		},
+		{
+			"name": "Em2100ShotMaterial",
+			"value": 3381986299
 		}
 	],
 	"app.fsm2.player.pl0120.Pl0120DemolitionAction.TriggerEvent": [
@@ -15673,7 +15673,15 @@
 			"value": 0
 		},
 		{
+			"name": "Always",
+			"value": 0
+		},
+		{
 			"name": "CP",
+			"value": 1
+		},
+		{
+			"name": "CancelPoint",
 			"value": 1
 		},
 		{
@@ -15681,20 +15689,12 @@
 			"value": 2
 		},
 		{
-			"name": "AP",
-			"value": 3
-		},
-		{
-			"name": "Always",
-			"value": 0
-		},
-		{
-			"name": "CancelPoint",
-			"value": 1
-		},
-		{
 			"name": "CancelPoint2",
 			"value": 2
+		},
+		{
+			"name": "AP",
+			"value": 3
 		},
 		{
 			"name": "AttackPoint",
@@ -15817,40 +15817,24 @@
 	],
 	"app.player.pl0800.VergilPLTag": [
 		{
-			"name": "ConcentStop",
-			"value": 2895305273
-		},
-		{
-			"name": "JudgeMentCutOK",
-			"value": 992137452
-		},
-		{
-			"name": "IsExplosionSword",
-			"value": 2999872311
-		},
-		{
-			"name": "AfterImageAction",
-			"value": 1105998126
-		},
-		{
-			"name": "NormalEscape",
-			"value": 3005128978
-		},
-		{
-			"name": "TrickEscape",
-			"value": 2888438092
-		},
-		{
-			"name": "AirTrickEscape",
-			"value": 3692390584
+			"name": "DeepStinger",
+			"value": 50445612
 		},
 		{
 			"name": "ForceReleaseTheDevil",
 			"value": 409916624
 		},
 		{
-			"name": "DTActionSpeedUpOff",
-			"value": 3201931894
+			"name": "JudgeMentCutOK",
+			"value": 992137452
+		},
+		{
+			"name": "AfterImageAction",
+			"value": 1105998126
+		},
+		{
+			"name": "AirProvokeEnemyStepBanTimeSet",
+			"value": 1465841352
 		},
 		{
 			"name": "DoppelControlOff",
@@ -15861,40 +15845,56 @@
 			"value": 2247181734
 		},
 		{
-			"name": "CurrentAttackHitReset",
-			"value": 2345012769
-		},
-		{
 			"name": "MotionBlendJudgementCutOff",
 			"value": 2304840913
 		},
 		{
-			"name": "NoMotionTransTheDevil",
-			"value": 2983839632
-		},
-		{
-			"name": "DisableDoppelMode",
-			"value": 3610069107
+			"name": "CurrentAttackHitReset",
+			"value": 2345012769
 		},
 		{
 			"name": "VMode",
 			"value": 2746357024
 		},
 		{
-			"name": "DeepStinger",
-			"value": 50445612
+			"name": "TrickEscape",
+			"value": 2888438092
+		},
+		{
+			"name": "ConcentStop",
+			"value": 2895305273
+		},
+		{
+			"name": "NoMotionTransTheDevil",
+			"value": 2983839632
+		},
+		{
+			"name": "IsExplosionSword",
+			"value": 2999872311
+		},
+		{
+			"name": "NormalEscape",
+			"value": 3005128978
 		},
 		{
 			"name": "DisableAccumulate",
 			"value": 3133959054
 		},
 		{
-			"name": "AirProvokeEnemyStepBanTimeSet",
-			"value": 1465841352
-		},
-		{
 			"name": "ReverseSheath",
 			"value": 3179144126
+		},
+		{
+			"name": "DTActionSpeedUpOff",
+			"value": 3201931894
+		},
+		{
+			"name": "DisableDoppelMode",
+			"value": 3610069107
+		},
+		{
+			"name": "AirTrickEscape",
+			"value": 3692390584
 		},
 		{
 			"name": "GimmickCancelAction",
@@ -15963,12 +15963,12 @@
 	],
 	"app.player.pl0100.weapon.EmperorActionTag": [
 		{
-			"name": "Bike",
-			"value": 1787170344
-		},
-		{
 			"name": "StingerJump",
 			"value": 1453623496
+		},
+		{
+			"name": "Bike",
+			"value": 1787170344
 		}
 	],
 	"app.SequenceTrackObject.CharacterCommonTrack.DownDirEnum": [
@@ -17835,12 +17835,12 @@
 	],
 	"via.clr.MethodCodeFlag": [
 		{
-			"name": "FatFormat",
-			"value": 3
-		},
-		{
 			"name": "TinyFormat",
 			"value": 2
+		},
+		{
+			"name": "FatFormat",
+			"value": 3
 		},
 		{
 			"name": "MoreSects",
@@ -18629,6 +18629,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default_Head",
+			"value": 0
+		},
+		{
 			"name": "Default_1",
 			"value": 1
 		},
@@ -18665,11 +18669,27 @@
 			"value": 9
 		},
 		{
+			"name": "Default_Tail",
+			"value": 9
+		},
+		{
 			"name": "Temp_0",
 			"value": 10
 		},
 		{
+			"name": "Temp_Head",
+			"value": 10
+		},
+		{
+			"name": "Temp_Tail",
+			"value": 10
+		},
+		{
 			"name": "Telemetry_0",
+			"value": 11
+		},
+		{
+			"name": "Telemetry_Head",
 			"value": 11
 		},
 		{
@@ -18709,7 +18729,15 @@
 			"value": 20
 		},
 		{
+			"name": "Telemetry_Tail",
+			"value": 20
+		},
+		{
 			"name": "CacheStorage_0",
+			"value": 21
+		},
+		{
+			"name": "CacheStorage_Head",
 			"value": 21
 		},
 		{
@@ -18749,44 +18777,16 @@
 			"value": 30
 		},
 		{
+			"name": "CacheStorage_Tail",
+			"value": 30
+		},
+		{
 			"name": "OldFormat_0",
 			"value": 31
 		},
 		{
 			"name": "Max",
 			"value": 32
-		},
-		{
-			"name": "Default_Head",
-			"value": 0
-		},
-		{
-			"name": "Default_Tail",
-			"value": 9
-		},
-		{
-			"name": "Temp_Head",
-			"value": 10
-		},
-		{
-			"name": "Temp_Tail",
-			"value": 10
-		},
-		{
-			"name": "Telemetry_Head",
-			"value": 11
-		},
-		{
-			"name": "Telemetry_Tail",
-			"value": 20
-		},
-		{
-			"name": "CacheStorage_Head",
-			"value": 21
-		},
-		{
-			"name": "CacheStorage_Tail",
-			"value": 30
 		}
 	],
 	"via.physics.CastRayOption": [
@@ -19349,10 +19349,6 @@
 	],
 	"System.Reflection.FieldAttributes": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -19381,6 +19377,10 @@
 			"value": 6
 		},
 		{
+			"name": "FieldAccessMask",
+			"value": 7
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -19397,12 +19397,12 @@
 			"value": 128
 		},
 		{
-			"name": "SpecialName",
-			"value": 512
+			"name": "HasFieldRVA",
+			"value": 256
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
+			"name": "SpecialName",
+			"value": 512
 		},
 		{
 			"name": "RTSpecialName",
@@ -19413,12 +19413,12 @@
 			"value": 4096
 		},
 		{
-			"name": "HasDefault",
-			"value": 32768
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
-			"name": "HasFieldRVA",
-			"value": 256
+			"name": "HasDefault",
+			"value": 32768
 		},
 		{
 			"name": "ReservedMask",
@@ -21512,6 +21512,10 @@
 	],
 	"app.character.Character.TempStatus2": [
 		{
+			"name": "NON",
+			"value": 0
+		},
+		{
 			"name": "NoLockOnUI",
 			"value": 1
 		},
@@ -21610,10 +21614,6 @@
 		{
 			"name": "UsePuppetTransScaling",
 			"value": 16777216
-		},
-		{
-			"name": "NON",
-			"value": 0
 		}
 	],
 	"via.render.ShallowWaterRenderingPriority": [
@@ -21832,16 +21832,16 @@
 	],
 	"app.EnemyTag": [
 		{
+			"name": "Blown",
+			"value": 397505636
+		},
+		{
 			"name": "Appear",
 			"value": 604542320
 		},
 		{
 			"name": "Attack",
 			"value": 3631387043
-		},
-		{
-			"name": "Blown",
-			"value": 397505636
 		}
 	],
 	"via.effect.lensflare.AxisType": [
@@ -22202,7 +22202,15 @@
 	],
 	"via.Rect3DXZ.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -22210,44 +22218,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -22416,10 +22416,6 @@
 			"value": 0
 		},
 		{
-			"name": "TargetMachine_Mask",
-			"value": 15
-		},
-		{
 			"name": "TargetMachine_PC",
 			"value": 1
 		},
@@ -22436,8 +22432,8 @@
 			"value": 4
 		},
 		{
-			"name": "TargetMachineDetail_Mask",
-			"value": 240
+			"name": "TargetMachine_Mask",
+			"value": 15
 		},
 		{
 			"name": "TargetMachineDetail_PS4Base",
@@ -22456,8 +22452,8 @@
 			"value": 64
 		},
 		{
-			"name": "TargetOS_Mask",
-			"value": 3840
+			"name": "TargetMachineDetail_Mask",
+			"value": 240
 		},
 		{
 			"name": "TargetOS_Windows",
@@ -22472,8 +22468,8 @@
 			"value": 768
 		},
 		{
-			"name": "TargetServicePlatform_Mask",
-			"value": 61440
+			"name": "TargetOS_Mask",
+			"value": 3840
 		},
 		{
 			"name": "TargetServicePlatform_Default",
@@ -22490,6 +22486,10 @@
 		{
 			"name": "TargetServicePlatform_WeGame",
 			"value": 16384
+		},
+		{
+			"name": "TargetServicePlatform_Mask",
+			"value": 61440
 		}
 	],
 	"app.camera.RailCameraSender.State": [
@@ -22602,6 +22602,10 @@
 			"value": 0
 		},
 		{
+			"name": "WwiseProjectNo_Default",
+			"value": 0
+		},
+		{
 			"name": "WwiseProjectNo_1",
 			"value": 1
 		},
@@ -22612,10 +22616,6 @@
 		{
 			"name": "WwiseProjectNo_3",
 			"value": 3
-		},
-		{
-			"name": "WwiseProjectNo_Default",
-			"value": 0
 		}
 	],
 	"app.fsm2.character.CharacterTempStatusCondition.CheckType": [
@@ -22906,7 +22906,15 @@
 			"value": 0
 		},
 		{
+			"name": "DMGACT_SNACHRELASE",
+			"value": 1
+		},
+		{
 			"name": "SHEL_HIT",
+			"value": 2
+		},
+		{
+			"name": "DMGACT_STRIGHTBLOWN",
 			"value": 2
 		},
 		{
@@ -22914,7 +22922,15 @@
 			"value": 4
 		},
 		{
+			"name": "DMGACT_TREMOR",
+			"value": 4
+		},
+		{
 			"name": "ELEMNTDAMAGE_VALUE",
+			"value": 8
+		},
+		{
+			"name": "DMGACT_INHALE",
 			"value": 8
 		},
 		{
@@ -22922,11 +22938,23 @@
 			"value": 16
 		},
 		{
+			"name": "PARY_COUNT_WIN",
+			"value": 16
+		},
+		{
 			"name": "REACTIONDAMAGE_VALUE",
 			"value": 32
 		},
 		{
+			"name": "PARY_COUNT_DRAW",
+			"value": 32
+		},
+		{
 			"name": "ACTION_COUNT",
+			"value": 64
+		},
+		{
+			"name": "PARY_COUNT_LOSE",
 			"value": 64
 		},
 		{
@@ -23024,34 +23052,6 @@
 		{
 			"name": "DMGACT_WINDL",
 			"value": 1073741824
-		},
-		{
-			"name": "DMGACT_SNACHRELASE",
-			"value": 1
-		},
-		{
-			"name": "DMGACT_STRIGHTBLOWN",
-			"value": 2
-		},
-		{
-			"name": "DMGACT_TREMOR",
-			"value": 4
-		},
-		{
-			"name": "DMGACT_INHALE",
-			"value": 8
-		},
-		{
-			"name": "PARY_COUNT_WIN",
-			"value": 16
-		},
-		{
-			"name": "PARY_COUNT_DRAW",
-			"value": 32
-		},
-		{
-			"name": "PARY_COUNT_LOSE",
-			"value": 64
 		}
 	],
 	"app.ActionInfo.Type": [
@@ -23955,68 +23955,28 @@
 	],
 	"app.PlayerActionTag": [
 		{
-			"name": "MoveStop",
-			"value": 964801681
+			"name": "DevilTrigger",
+			"value": 223309783
 		},
 		{
-			"name": "Strafe",
-			"value": 3270412410
+			"name": "DamageWindL",
+			"value": 252190843
 		},
 		{
 			"name": "Sliding",
 			"value": 603250833
 		},
 		{
-			"name": "DevilTrigger",
-			"value": 223309783
-		},
-		{
-			"name": "ShortRangeAttack",
-			"value": 3909909426
-		},
-		{
 			"name": "LongRangeAttack",
 			"value": 724550678
-		},
-		{
-			"name": "Uppercut",
-			"value": 4222540935
-		},
-		{
-			"name": "GunAction",
-			"value": 2883669933
-		},
-		{
-			"name": "AutoAdjustPress",
-			"value": 1565521908
-		},
-		{
-			"name": "FootLock",
-			"value": 1922242059
 		},
 		{
 			"name": "Battou",
 			"value": 861255801
 		},
 		{
-			"name": "ContinuousLockOnAttack",
-			"value": 1955903832
-		},
-		{
-			"name": "LockOff",
-			"value": 3817079371
-		},
-		{
-			"name": "DisableDevilTrigger",
-			"value": 4222715506
-		},
-		{
-			"name": "NoDTCalcRate",
-			"value": 3519297162
-		},
-		{
-			"name": "ReverseLeg",
-			"value": 3179737941
+			"name": "MoveStop",
+			"value": 964801681
 		},
 		{
 			"name": "DamageIce",
@@ -24027,68 +23987,108 @@
 			"value": 1071571960
 		},
 		{
-			"name": "DamageWindL",
-			"value": 252190843
+			"name": "NetWaitInterpolation",
+			"value": 1153291399
 		},
 		{
-			"name": "DamageInhale",
-			"value": 4257684196
+			"name": "AutoAdjustPress",
+			"value": 1565521908
 		},
 		{
 			"name": "DamageInhaleAir",
 			"value": 1685695054
 		},
 		{
-			"name": "DamageTremor",
-			"value": 2641555588
+			"name": "NormalEscape",
+			"value": 1868901149
 		},
 		{
-			"name": "Event",
-			"value": 3364939013
+			"name": "FootLock",
+			"value": 1922242059
+		},
+		{
+			"name": "ContinuousLockOnAttack",
+			"value": 1955903832
 		},
 		{
 			"name": "Glide",
 			"value": 1965592311
 		},
 		{
-			"name": "MotionCharge",
-			"value": 3328431296
+			"name": "UpperBodyBlend",
+			"value": 2580579545
 		},
 		{
-			"name": "IsDelayComboEnabled",
-			"value": 3571614020
+			"name": "DamageTremor",
+			"value": 2641555588
 		},
 		{
 			"name": "IsEasyAutomaticDisabled",
 			"value": 2641922965
 		},
 		{
-			"name": "NormalEscape",
-			"value": 1868901149
-		},
-		{
-			"name": "Provoke",
-			"value": 3549399411
-		},
-		{
-			"name": "UpperBodyBlend",
-			"value": 2580579545
-		},
-		{
-			"name": "Parry",
-			"value": 3884024081
+			"name": "GunAction",
+			"value": 2883669933
 		},
 		{
 			"name": "WindDamage",
 			"value": 3050862917
 		},
 		{
-			"name": "NetWaitInterpolation",
-			"value": 1153291399
+			"name": "ReverseLeg",
+			"value": 3179737941
 		},
 		{
 			"name": "UsePadShakeHD",
 			"value": 3233264479
+		},
+		{
+			"name": "Strafe",
+			"value": 3270412410
+		},
+		{
+			"name": "MotionCharge",
+			"value": 3328431296
+		},
+		{
+			"name": "Event",
+			"value": 3364939013
+		},
+		{
+			"name": "NoDTCalcRate",
+			"value": 3519297162
+		},
+		{
+			"name": "Provoke",
+			"value": 3549399411
+		},
+		{
+			"name": "IsDelayComboEnabled",
+			"value": 3571614020
+		},
+		{
+			"name": "LockOff",
+			"value": 3817079371
+		},
+		{
+			"name": "Parry",
+			"value": 3884024081
+		},
+		{
+			"name": "ShortRangeAttack",
+			"value": 3909909426
+		},
+		{
+			"name": "Uppercut",
+			"value": 4222540935
+		},
+		{
+			"name": "DisableDevilTrigger",
+			"value": 4222715506
+		},
+		{
+			"name": "DamageInhale",
+			"value": 4257684196
 		}
 	],
 	"via.effect.script.EPVDataBase.RotateBase": [
@@ -25425,12 +25425,12 @@
 			"value": 3
 		},
 		{
-			"name": "Assert",
-			"value": 4
-		},
-		{
 			"name": "Default",
 			"value": 3
+		},
+		{
+			"name": "Assert",
+			"value": 4
 		}
 	],
 	"app.WwiseDMCTrailerBGMStateController.DMCTrailerSetState": [
@@ -25851,6 +25851,10 @@
 			"value": 64
 		},
 		{
+			"name": "PC",
+			"value": 114
+		},
+		{
 			"name": "PS5Psn",
 			"value": 128
 		},
@@ -25861,10 +25865,6 @@
 		{
 			"name": "Release",
 			"value": 508
-		},
-		{
-			"name": "PC",
-			"value": 114
 		}
 	],
 	"app.Em0500.RegionEnum": [
@@ -26785,10 +26785,6 @@
 	],
 	"via.SystemServiceSkuFlag": [
 		{
-			"name": "Unknown",
-			"value": 65535
-		},
-		{
 			"name": "Default",
 			"value": 0
 		},
@@ -26799,6 +26795,10 @@
 		{
 			"name": "Full",
 			"value": 3
+		},
+		{
+			"name": "Unknown",
+			"value": 65535
 		}
 	],
 	"app.ui2032GUI.Mode": [
@@ -26917,7 +26917,15 @@
 	],
 	"via.Rect3D.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "L_Bit",
+			"value": 1
+		},
+		{
+			"name": "Edge_L_Bit",
 			"value": 1
 		},
 		{
@@ -26925,44 +26933,36 @@
 			"value": 2
 		},
 		{
-			"name": "T_Bit",
-			"value": 4
-		},
-		{
-			"name": "B_Bit",
-			"value": 8
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "Edge_L_Bit",
-			"value": 1
-		},
-		{
 			"name": "Edge_R_Bit",
 			"value": 2
+		},
+		{
+			"name": "T_Bit",
+			"value": 4
 		},
 		{
 			"name": "Edge_T_Bit",
 			"value": 4
 		},
 		{
-			"name": "Edge_B_Bit",
-			"value": 8
-		},
-		{
 			"name": "Vertex_LT_Bit",
 			"value": 5
 		},
 		{
-			"name": "Vertex_LB_Bit",
-			"value": 9
-		},
-		{
 			"name": "Vertex_RT_Bit",
 			"value": 6
+		},
+		{
+			"name": "B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Edge_B_Bit",
+			"value": 8
+		},
+		{
+			"name": "Vertex_LB_Bit",
+			"value": 9
 		},
 		{
 			"name": "Vertex_RB_Bit",
@@ -28097,6 +28097,10 @@
 	],
 	"app.character.Character.TempStatus": [
 		{
+			"name": "NON",
+			"value": 0
+		},
+		{
 			"name": "Fall",
 			"value": 1
 		},
@@ -28339,10 +28343,6 @@
 		{
 			"name": "TerrainCorrectionFailed",
 			"value": 4611686018427387904
-		},
-		{
-			"name": "NON",
-			"value": 0
 		}
 	],
 	"via.areamap.test.BasicDistance.Condition": [
@@ -28389,56 +28389,32 @@
 	],
 	"app.player.pl0100.DanteActionTag": [
 		{
-			"name": "AirShot",
-			"value": 1414825461
-		},
-		{
-			"name": "WeaponS_Throw",
-			"value": 1428390723
-		},
-		{
-			"name": "WeaponL_Throw",
-			"value": 2986035800
-		},
-		{
-			"name": "CoyoteCombination",
-			"value": 3317948045
-		},
-		{
-			"name": "EbonyShot",
-			"value": 2709647208
-		},
-		{
-			"name": "IvoryShot",
-			"value": 3919513318
-		},
-		{
-			"name": "EI_StrafeBackTurn",
-			"value": 2226903392
-		},
-		{
-			"name": "NotMoveShot",
-			"value": 3188613787
-		},
-		{
-			"name": "StanceR",
-			"value": 2506694046
-		},
-		{
-			"name": "StanceL",
-			"value": 1947506030
-		},
-		{
 			"name": "StyleAction",
 			"value": 197106124
+		},
+		{
+			"name": "PutAway",
+			"value": 316514511
 		},
 		{
 			"name": "TrickStar",
 			"value": 497511119
 		},
 		{
-			"name": "SwordMaster",
-			"value": 3061410010
+			"name": "ComboContinue",
+			"value": 546189275
+		},
+		{
+			"name": "WeaponHandInterp",
+			"value": 634848117
+		},
+		{
+			"name": "NotOverwrite",
+			"value": 769945461
+		},
+		{
+			"name": "LockOnStart",
+			"value": 957188560
 		},
 		{
 			"name": "GunSlinger",
@@ -28449,36 +28425,60 @@
 			"value": 1203828839
 		},
 		{
-			"name": "PutAway",
-			"value": 316514511
+			"name": "AirShot",
+			"value": 1414825461
 		},
 		{
-			"name": "TheDevilWingOpenBlend",
-			"value": 1956693923
-		},
-		{
-			"name": "LockOnStart",
-			"value": 957188560
+			"name": "WeaponS_Throw",
+			"value": 1428390723
 		},
 		{
 			"name": "Holster",
 			"value": 1483224158
 		},
 		{
+			"name": "StanceL",
+			"value": 1947506030
+		},
+		{
+			"name": "TheDevilWingOpenBlend",
+			"value": 1956693923
+		},
+		{
+			"name": "EI_StrafeBackTurn",
+			"value": 2226903392
+		},
+		{
+			"name": "StanceR",
+			"value": 2506694046
+		},
+		{
+			"name": "EbonyShot",
+			"value": 2709647208
+		},
+		{
+			"name": "WeaponL_Throw",
+			"value": 2986035800
+		},
+		{
 			"name": "ShotStance",
 			"value": 3022352511
 		},
 		{
-			"name": "ComboContinue",
-			"value": 546189275
+			"name": "SwordMaster",
+			"value": 3061410010
 		},
 		{
-			"name": "NotOverwrite",
-			"value": 769945461
+			"name": "NotMoveShot",
+			"value": 3188613787
 		},
 		{
-			"name": "WeaponHandInterp",
-			"value": 634848117
+			"name": "CoyoteCombination",
+			"value": 3317948045
+		},
+		{
+			"name": "IvoryShot",
+			"value": 3919513318
 		}
 	],
 	"via.gui.LightGroupBit": [
@@ -28585,12 +28585,12 @@
 			"value": 4
 		},
 		{
-			"name": "IgnoreSameGroupCollision",
-			"value": 8
-		},
-		{
 			"name": "VirtualGroundMask",
 			"value": 6
+		},
+		{
+			"name": "IgnoreSameGroupCollision",
+			"value": 8
 		}
 	],
 	"via.gui.detail.SubFontNo": [
@@ -29575,24 +29575,24 @@
 			"value": 0
 		},
 		{
-			"name": "Always",
-			"value": 2147483647
-		},
-		{
-			"name": "OnLedTrackerProcessSuccessful",
-			"value": 4
-		},
-		{
-			"name": "OnLedTrackerProcessFailed",
-			"value": 3
-		},
-		{
 			"name": "OnVrTrackerGpuSubmitFailed",
 			"value": 1
 		},
 		{
 			"name": "OnVrTrackerGpuWaitAndCpuProcessFailed",
 			"value": 2
+		},
+		{
+			"name": "OnLedTrackerProcessFailed",
+			"value": 3
+		},
+		{
+			"name": "OnLedTrackerProcessSuccessful",
+			"value": 4
+		},
+		{
+			"name": "Always",
+			"value": 2147483647
 		}
 	],
 	"app.network.session.NetworkSession.SessionOption": [
@@ -31161,16 +31161,16 @@
 			"value": 8
 		},
 		{
+			"name": "IsDemoReplay",
+			"value": 8
+		},
+		{
 			"name": "Save",
 			"value": 16
 		},
 		{
 			"name": "IsDefaultReplay",
 			"value": 23
-		},
-		{
-			"name": "IsDemoReplay",
-			"value": 8
 		}
 	],
 	"app.ConfirmForm.Type": [
@@ -32589,10 +32589,6 @@
 	],
 	"via.storage.SaveServiceWriteMode": [
 		{
-			"name": "SaveServiceWriteMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceWriteMode_1_Byte",
 			"value": 1
 		},
@@ -32611,6 +32607,10 @@
 		{
 			"name": "SaveServiceWriteMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceWriteMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceWriteMode_128_KiloByte",
@@ -33345,12 +33345,12 @@
 			"value": 3
 		},
 		{
-			"name": "M19_Die",
-			"value": 51
-		},
-		{
 			"name": "M20_01",
 			"value": 11
+		},
+		{
+			"name": "M19_Die",
+			"value": 51
 		},
 		{
 			"name": "M20_Die",
@@ -33999,32 +33999,16 @@
 			"value": 4
 		},
 		{
-			"name": "RearSide",
-			"value": 8
-		},
-		{
-			"name": "High",
-			"value": 32
-		},
-		{
-			"name": "Lower",
-			"value": 64
-		},
-		{
-			"name": "MaskLegs",
-			"value": 15
-		},
-		{
-			"name": "MaskHeight",
-			"value": 96
-		},
-		{
 			"name": "R_Arm",
 			"value": 5
 		},
 		{
 			"name": "L_Arm",
 			"value": 6
+		},
+		{
+			"name": "RearSide",
+			"value": 8
 		},
 		{
 			"name": "R_Leg",
@@ -34035,32 +34019,44 @@
 			"value": 10
 		},
 		{
-			"name": "R_ArmHigh",
-			"value": 37
+			"name": "MaskLegs",
+			"value": 15
 		},
 		{
-			"name": "R_ArmLow",
-			"value": 69
+			"name": "High",
+			"value": 32
+		},
+		{
+			"name": "R_ArmHigh",
+			"value": 37
 		},
 		{
 			"name": "L_ArmHigh",
 			"value": 38
 		},
 		{
-			"name": "L_ArmLow",
-			"value": 70
-		},
-		{
 			"name": "R_LegHigh",
 			"value": 41
 		},
 		{
-			"name": "R_LegLow",
-			"value": 73
-		},
-		{
 			"name": "L_LegHigh",
 			"value": 42
+		},
+		{
+			"name": "Lower",
+			"value": 64
+		},
+		{
+			"name": "R_ArmLow",
+			"value": 69
+		},
+		{
+			"name": "L_ArmLow",
+			"value": 70
+		},
+		{
+			"name": "R_LegLow",
+			"value": 73
 		},
 		{
 			"name": "L_LegLow",
@@ -34069,6 +34065,10 @@
 		{
 			"name": "RegionNum",
 			"value": 75
+		},
+		{
+			"name": "MaskHeight",
+			"value": 96
 		}
 	],
 	"app.Em0601.TempProtoStatus": [
@@ -38581,52 +38581,52 @@
 	],
 	"app.DevilArm": [
 		{
-			"name": "AttackEnable",
-			"value": 3510267110
-		},
-		{
 			"name": "UniqueBuster",
 			"value": 432639664
-		},
-		{
-			"name": "Hold",
-			"value": 2835673828
-		},
-		{
-			"name": "Nagara",
-			"value": 2408530965
-		},
-		{
-			"name": "EnableCatch",
-			"value": 1770173530
 		},
 		{
 			"name": "DoubleBuster",
 			"value": 648075747
 		},
 		{
-			"name": "VergilDoubleBuster",
-			"value": 1974766595
-		},
-		{
-			"name": "NagaraCancelDisabled",
-			"value": 3654995834
-		},
-		{
 			"name": "BringerKnuckleEnabled",
 			"value": 740833117
-		},
-		{
-			"name": "DualSnatchEnabled",
-			"value": 2830958005
 		},
 		{
 			"name": "SupportAttackDisabled",
 			"value": 1663961899
 		},
 		{
+			"name": "EnableCatch",
+			"value": 1770173530
+		},
+		{
+			"name": "VergilDoubleBuster",
+			"value": 1974766595
+		},
+		{
+			"name": "Nagara",
+			"value": 2408530965
+		},
+		{
+			"name": "DualSnatchEnabled",
+			"value": 2830958005
+		},
+		{
+			"name": "Hold",
+			"value": 2835673828
+		},
+		{
 			"name": "DisableBusterArmSmoothing",
 			"value": 2941925602
+		},
+		{
+			"name": "AttackEnable",
+			"value": 3510267110
+		},
+		{
+			"name": "NagaraCancelDisabled",
+			"value": 3654995834
 		}
 	],
 	"app.NeroReplayData.IllusionSwordType": [
@@ -38827,11 +38827,19 @@
 			"value": 1
 		},
 		{
+			"name": "Coyote_ChargeStart",
+			"value": 1
+		},
+		{
 			"name": "Ebony_ChargeComplete",
 			"value": 2
 		},
 		{
 			"name": "Ivory_ChargeComplete",
+			"value": 3
+		},
+		{
+			"name": "Coyote_ChargeComplete",
 			"value": 3
 		},
 		{
@@ -38843,19 +38851,15 @@
 			"value": 5
 		},
 		{
-			"name": "Coyote_ChargeStart",
-			"value": 1
-		},
-		{
-			"name": "Coyote_ChargeComplete",
-			"value": 3
-		},
-		{
 			"name": "Coyote_ChargeRelease",
 			"value": 5
 		}
 	],
 	"app.Em5400.EnumCharacterGilgameshStatus": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
 		{
 			"name": "BusterOK",
 			"value": 1
@@ -38895,10 +38899,6 @@
 		{
 			"name": "ToBlockBodyPressRocketPunch",
 			"value": 512
-		},
-		{
-			"name": "Invalid",
-			"value": 0
 		}
 	],
 	"app.MissionSettingManager.StateExitBloodyPalace.ProcessStep": [
@@ -41591,16 +41591,16 @@
 	],
 	"app.Em2000Tag": [
 		{
-			"name": "Em2000GenerateWait",
-			"value": 3651812028
-		},
-		{
 			"name": "Em2000EmGenerate",
 			"value": 1589558156
 		},
 		{
 			"name": "Em2000StartUp",
 			"value": 3599879452
+		},
+		{
+			"name": "Em2000GenerateWait",
+			"value": 3651812028
 		}
 	],
 	"app.WwiseStylishRankStateManager.BattlePhase": [
@@ -41997,44 +41997,44 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
-			"name": "LeftBaseline",
-			"value": 12
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
-		},
-		{
-			"name": "CenterBaseline",
-			"value": 13
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
 		},
 		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
+		},
+		{
 			"name": "RightBottom",
 			"value": 10
+		},
+		{
+			"name": "LeftBaseline",
+			"value": 12
+		},
+		{
+			"name": "CenterBaseline",
+			"value": 13
 		},
 		{
 			"name": "RightBaseline",
@@ -42073,32 +42073,32 @@
 			"value": 2
 		},
 		{
-			"name": "TargetAimed",
-			"value": 16
+			"name": "MaskPlace",
+			"value": 3
 		},
 		{
-			"name": "TargetAround",
-			"value": 32
+			"name": "TargetAimed",
+			"value": 16
 		},
 		{
 			"name": "GroundTarget",
 			"value": 17
 		},
 		{
-			"name": "GroundAround",
-			"value": 33
-		},
-		{
 			"name": "CoreTarget",
 			"value": 18
 		},
 		{
-			"name": "CoreAround",
-			"value": 34
+			"name": "TargetAround",
+			"value": 32
 		},
 		{
-			"name": "MaskPlace",
-			"value": 3
+			"name": "GroundAround",
+			"value": 33
+		},
+		{
+			"name": "CoreAround",
+			"value": 34
 		},
 		{
 			"name": "MaskTarget",
@@ -43726,6 +43726,10 @@
 			"value": 0
 		},
 		{
+			"name": "NonDamage",
+			"value": 0
+		},
+		{
 			"name": "RepairArm",
 			"value": 1
 		},
@@ -43738,28 +43742,24 @@
 			"value": 3
 		},
 		{
-			"name": "AttackDamaged",
-			"value": 65539
-		},
-		{
-			"name": "AttackDamageEnd",
-			"value": 131075
-		},
-		{
 			"name": "MaskModeValue",
 			"value": 65535
-		},
-		{
-			"name": "NonDamage",
-			"value": 0
 		},
 		{
 			"name": "Damaged",
 			"value": 65536
 		},
 		{
+			"name": "AttackDamaged",
+			"value": 65539
+		},
+		{
 			"name": "DamageEnd",
 			"value": 131072
+		},
+		{
+			"name": "AttackDamageEnd",
+			"value": 131075
 		},
 		{
 			"name": "MaskDamage",
@@ -44454,6 +44454,42 @@
 	],
 	"app.ServantTag": [
 		{
+			"name": "Special",
+			"value": 80390508
+		},
+		{
+			"name": "WarpReturn",
+			"value": 284650009
+		},
+		{
+			"name": "Attack",
+			"value": 1085611024
+		},
+		{
+			"name": "BanRearCharge",
+			"value": 1244955425
+		},
+		{
+			"name": "StayMoveUpdate",
+			"value": 1476627265
+		},
+		{
+			"name": "WindRetreat",
+			"value": 1712456517
+		},
+		{
+			"name": "MotionCharge",
+			"value": 1715331427
+		},
+		{
+			"name": "StayAction",
+			"value": 2498148093
+		},
+		{
+			"name": "Retreat",
+			"value": 3073288264
+		},
+		{
 			"name": "Wait",
 			"value": 3177576127
 		},
@@ -44462,52 +44498,16 @@
 			"value": 3660216927
 		},
 		{
-			"name": "Move",
-			"value": 4127450862
-		},
-		{
-			"name": "Attack",
-			"value": 1085611024
-		},
-		{
-			"name": "Special",
-			"value": 80390508
-		},
-		{
-			"name": "Retreat",
-			"value": 3073288264
-		},
-		{
-			"name": "Support",
-			"value": 4238499426
-		},
-		{
 			"name": "Tutorial",
 			"value": 3857273264
 		},
 		{
-			"name": "MotionCharge",
-			"value": 1715331427
+			"name": "Move",
+			"value": 4127450862
 		},
 		{
-			"name": "WarpReturn",
-			"value": 284650009
-		},
-		{
-			"name": "StayAction",
-			"value": 2498148093
-		},
-		{
-			"name": "StayMoveUpdate",
-			"value": 1476627265
-		},
-		{
-			"name": "BanRearCharge",
-			"value": 1244955425
-		},
-		{
-			"name": "WindRetreat",
-			"value": 1712456517
+			"name": "Support",
+			"value": 4238499426
 		}
 	],
 	"app.GameManager.ShortCutRequest": [
@@ -46558,12 +46558,12 @@
 			"value": 1261
 		},
 		{
-			"name": "Funnel",
-			"value": 1263
-		},
-		{
 			"name": "Meteo",
 			"value": 1262
+		},
+		{
+			"name": "Funnel",
+			"value": 1263
 		}
 	],
 	"via.mixer.MixerManager.MixerConnectionState": [
@@ -46928,10 +46928,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea0to7": [
 		{
-			"name": "FreeArea0to7_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea0to7_0",
 			"value": 0
 		},
@@ -46962,6 +46958,10 @@
 		{
 			"name": "FreeArea0to7_7",
 			"value": 7
+		},
+		{
+			"name": "FreeArea0to7_None",
+			"value": 4294967295
 		}
 	],
 	"app.NetworkTotalization.State": [
@@ -47074,8 +47074,16 @@
 	],
 	"app.character.ActionTag": [
 		{
-			"name": "Wait",
-			"value": 2478944836
+			"name": "Die",
+			"value": 557561081
+		},
+		{
+			"name": "DamageBlown",
+			"value": 580701043
+		},
+		{
+			"name": "Move",
+			"value": 638349975
 		},
 		{
 			"name": "Damage",
@@ -47086,40 +47094,8 @@
 			"value": 928932554
 		},
 		{
-			"name": "Stun",
-			"value": 4124487269
-		},
-		{
-			"name": "Landing",
-			"value": 2612617134
-		},
-		{
-			"name": "Move",
-			"value": 638349975
-		},
-		{
-			"name": "Avoidance",
-			"value": 3903811957
-		},
-		{
-			"name": "Die",
-			"value": 557561081
-		},
-		{
-			"name": "DamageBlown",
-			"value": 580701043
-		},
-		{
-			"name": "DamageUpper",
-			"value": 2346028790
-		},
-		{
-			"name": "CharacterControllerNotJump",
-			"value": 3556013923
-		},
-		{
-			"name": "NoSend",
-			"value": 2286971728
+			"name": "FallStop",
+			"value": 981933069
 		},
 		{
 			"name": "NoIntegrity",
@@ -47130,8 +47106,32 @@
 			"value": 2151605108
 		},
 		{
-			"name": "FallStop",
-			"value": 981933069
+			"name": "NoSend",
+			"value": 2286971728
+		},
+		{
+			"name": "DamageUpper",
+			"value": 2346028790
+		},
+		{
+			"name": "Wait",
+			"value": 2478944836
+		},
+		{
+			"name": "Landing",
+			"value": 2612617134
+		},
+		{
+			"name": "CharacterControllerNotJump",
+			"value": 3556013923
+		},
+		{
+			"name": "Avoidance",
+			"value": 3903811957
+		},
+		{
+			"name": "Stun",
+			"value": 4124487269
 		}
 	],
 	"app.MathEx.RotationOrder": [
@@ -52172,8 +52172,12 @@
 			"value": 9
 		},
 		{
-			"name": "JumpAttackFrontInChurch",
-			"value": 102
+			"name": "SuctionLeft2Right",
+			"value": 18
+		},
+		{
+			"name": "EndSuctionLeft2Right",
+			"value": 24
 		},
 		{
 			"name": "GrabCar",
@@ -52232,10 +52236,6 @@
 			"value": 44
 		},
 		{
-			"name": "GrabPillar",
-			"value": 56
-		},
-		{
 			"name": "ThrowFront",
 			"value": 50
 		},
@@ -52256,12 +52256,8 @@
 			"value": 54
 		},
 		{
-			"name": "SuctionLeft2Right",
-			"value": 18
-		},
-		{
-			"name": "EndSuctionLeft2Right",
-			"value": 24
+			"name": "GrabPillar",
+			"value": 56
 		},
 		{
 			"name": "SuctionRight2Left",
@@ -52270,6 +52266,10 @@
 		{
 			"name": "EndSuctionRight2Left",
 			"value": 101
+		},
+		{
+			"name": "JumpAttackFrontInChurch",
+			"value": 102
 		},
 		{
 			"name": "BackStepInChurch",
@@ -52788,12 +52788,12 @@
 			"value": 4
 		},
 		{
-			"name": "EnableAlpha",
-			"value": 8
-		},
-		{
 			"name": "EnableRGB",
 			"value": 7
+		},
+		{
+			"name": "EnableAlpha",
+			"value": 8
 		},
 		{
 			"name": "EnableAll",
@@ -53478,24 +53478,36 @@
 	],
 	"app.Em0600Tag": [
 		{
-			"name": "Locomotion",
-			"value": 4079653743
+			"name": "Back",
+			"value": 73390125
 		},
 		{
-			"name": "Wait",
-			"value": 417671321
+			"name": "Right",
+			"value": 219960428
 		},
 		{
-			"name": "Walk",
-			"value": 2381404822
+			"name": "Guard",
+			"value": 299431148
 		},
 		{
 			"name": "Run",
 			"value": 304042326
 		},
 		{
+			"name": "Start",
+			"value": 364152675
+		},
+		{
 			"name": "Turn",
 			"value": 403483473
+		},
+		{
+			"name": "Wait",
+			"value": 417671321
+		},
+		{
+			"name": "LocomotionFormation",
+			"value": 1569958208
 		},
 		{
 			"name": "Front",
@@ -53506,32 +53518,20 @@
 			"value": 1895612726
 		},
 		{
-			"name": "Right",
-			"value": 219960428
-		},
-		{
-			"name": "Back",
-			"value": 73390125
-		},
-		{
-			"name": "LocomotionFormation",
-			"value": 1569958208
-		},
-		{
-			"name": "Start",
-			"value": 364152675
-		},
-		{
-			"name": "Loop",
-			"value": 3625549615
+			"name": "Walk",
+			"value": 2381404822
 		},
 		{
 			"name": "Stop",
 			"value": 2563740933
 		},
 		{
-			"name": "Guard",
-			"value": 299431148
+			"name": "Loop",
+			"value": 3625549615
+		},
+		{
+			"name": "Locomotion",
+			"value": 4079653743
 		}
 	],
 	"app.ui2052GUI.State": [
@@ -54000,6 +54000,10 @@
 			"value": 0
 		},
 		{
+			"name": "VendorUnkown",
+			"value": 0
+		},
+		{
 			"name": "HMD",
 			"value": 1
 		},
@@ -54013,6 +54017,10 @@
 		},
 		{
 			"name": "AsyncCompute",
+			"value": 8
+		},
+		{
+			"name": "UavOverlapSupported",
 			"value": 8
 		},
 		{
@@ -54032,6 +54040,10 @@
 			"value": 128
 		},
 		{
+			"name": "DefaultCBRSetting",
+			"value": 128
+		},
+		{
 			"name": "HardwareCBRIDBuffer",
 			"value": 256
 		},
@@ -54040,40 +54052,32 @@
 			"value": 512
 		},
 		{
-			"name": "LateCBRResolve",
-			"value": 1024
+			"name": "HighQualityCBRSetting",
+			"value": 640
 		},
 		{
 			"name": "UseIDBuffer",
 			"value": 768
 		},
 		{
-			"name": "UseCheckerBoard",
-			"value": 2048
+			"name": "LateCBRResolve",
+			"value": 1024
 		},
 		{
 			"name": "FastCBRSetting",
 			"value": 1152
 		},
 		{
-			"name": "DefaultCBRSetting",
-			"value": 128
-		},
-		{
-			"name": "HighQualityCBRSetting",
-			"value": 640
-		},
-		{
 			"name": "PS4ProtCBRSetting",
 			"value": 1408
 		},
 		{
-			"name": "NotSupportedPredicateRenderingOnBuffer",
-			"value": 4096
+			"name": "UseCheckerBoard",
+			"value": 2048
 		},
 		{
-			"name": "UavOverlapSupported",
-			"value": 8
+			"name": "NotSupportedPredicateRenderingOnBuffer",
+			"value": 4096
 		},
 		{
 			"name": "VendorAMD",
@@ -54088,8 +54092,8 @@
 			"value": 67108864
 		},
 		{
-			"name": "VendorUnkown",
-			"value": 0
+			"name": "GL_Family",
+			"value": 134217728
 		},
 		{
 			"name": "Gen2",
@@ -54102,10 +54106,6 @@
 		{
 			"name": "Gen4",
 			"value": 1073741824
-		},
-		{
-			"name": "GL_Family",
-			"value": 134217728
 		}
 	],
 	"via.areamap.AreaConnectionObject.ConnectionState": [
@@ -54172,10 +54172,6 @@
 			"value": 0
 		},
 		{
-			"name": "All",
-			"value": 255
-		},
-		{
 			"name": "SceneBeauty",
 			"value": 1
 		},
@@ -54190,6 +54186,10 @@
 		{
 			"name": "MaskIgnoreDepthMesh",
 			"value": 8
+		},
+		{
+			"name": "All",
+			"value": 255
 		}
 	],
 	"app.ReplayCompress.Step": [
@@ -55359,24 +55359,24 @@
 	],
 	"app.WeaponFaustHat.HatAttackIDs": [
 		{
-			"name": "HatBoomerang",
-			"value": 1264
-		},
-		{
-			"name": "HatSizer",
-			"value": 1265
-		},
-		{
 			"name": "Gatling",
 			"value": 1261
+		},
+		{
+			"name": "Meteo",
+			"value": 1262
 		},
 		{
 			"name": "Funnel",
 			"value": 1263
 		},
 		{
-			"name": "Meteo",
-			"value": 1262
+			"name": "HatBoomerang",
+			"value": 1264
+		},
+		{
+			"name": "HatSizer",
+			"value": 1265
 		},
 		{
 			"name": "DrainOrb",
@@ -58047,10 +58047,6 @@
 			"value": 1
 		},
 		{
-			"name": "End",
-			"value": 99
-		},
-		{
 			"name": "Em5501Charge",
 			"value": 2
 		},
@@ -58059,7 +58055,23 @@
 			"value": 2
 		},
 		{
+			"name": "Em5400CutSceneStart",
+			"value": 2
+		},
+		{
+			"name": "Em5802Return",
+			"value": 2
+		},
+		{
 			"name": "Em5300GroundLaserLaunch",
+			"value": 3
+		},
+		{
+			"name": "Em5400CutSceneEnd",
+			"value": 3
+		},
+		{
+			"name": "Em5802AppearSign",
 			"value": 3
 		},
 		{
@@ -58067,32 +58079,20 @@
 			"value": 4
 		},
 		{
-			"name": "Em5300GroundLaserCancel",
-			"value": 5
-		},
-		{
-			"name": "Em5400CutSceneStart",
-			"value": 2
-		},
-		{
-			"name": "Em5400CutSceneEnd",
-			"value": 3
-		},
-		{
 			"name": "Em5400Rush",
 			"value": 4
 		},
 		{
-			"name": "Em5802Return",
-			"value": 2
-		},
-		{
-			"name": "Em5802AppearSign",
-			"value": 3
-		},
-		{
 			"name": "Em5802Appear",
 			"value": 4
+		},
+		{
+			"name": "Em5300GroundLaserCancel",
+			"value": 5
+		},
+		{
+			"name": "End",
+			"value": 99
 		}
 	],
 	"app.Em5801ReplayData.ChargeState": [
@@ -63629,30 +63629,6 @@
 	],
 	"app.WwiseWeaponTriggerTracks.WeaponId": [
 		{
-			"name": "AnySword",
-			"value": 99
-		},
-		{
-			"name": "AnyGun",
-			"value": 100
-		},
-		{
-			"name": "AnyGauntlet",
-			"value": 109
-		},
-		{
-			"name": "AnyServant",
-			"value": 199
-		},
-		{
-			"name": "AnySheath",
-			"value": 1099
-		},
-		{
-			"name": "AnyYamato",
-			"value": 10099
-		},
-		{
 			"name": "BlueRose",
 			"value": 0
 		},
@@ -63691,6 +63667,22 @@
 		{
 			"name": "Gauntlet8",
 			"value": 17
+		},
+		{
+			"name": "AnySword",
+			"value": 99
+		},
+		{
+			"name": "AnyGun",
+			"value": 100
+		},
+		{
+			"name": "AnyGauntlet",
+			"value": 109
+		},
+		{
+			"name": "AnyServant",
+			"value": 199
 		},
 		{
 			"name": "Rebellion",
@@ -63739,6 +63731,10 @@
 		{
 			"name": "EmperorBike",
 			"value": 1042
+		},
+		{
+			"name": "AnySheath",
+			"value": 1099
 		},
 		{
 			"name": "Ebony",
@@ -63795,6 +63791,10 @@
 		{
 			"name": "YamatoSheath",
 			"value": 3001
+		},
+		{
+			"name": "AnyYamato",
+			"value": 10099
 		}
 	],
 	"via.clr.SystemMethod": [
@@ -67924,6 +67924,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -67948,20 +67952,8 @@
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
 			"name": "StringFormatMask",
 			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
 		},
 		{
 			"name": "HasSecurity",
@@ -67970,6 +67962,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		}
 	],
 	"app.fsm2.gamemodel.SyncParentMotionAction.SyncType": [
@@ -69026,32 +69026,32 @@
 	],
 	"app.SheathAction": [
 		{
-			"name": "Pursuit",
-			"value": 2361220204
-		},
-		{
-			"name": "Interception",
-			"value": 2357291466
-		},
-		{
 			"name": "Avoidance",
 			"value": 109694733
-		},
-		{
-			"name": "Defense",
-			"value": 3206716790
-		},
-		{
-			"name": "StyleAction",
-			"value": 3980712594
 		},
 		{
 			"name": "Block",
 			"value": 2214330880
 		},
 		{
+			"name": "Interception",
+			"value": 2357291466
+		},
+		{
+			"name": "Pursuit",
+			"value": 2361220204
+		},
+		{
+			"name": "Defense",
+			"value": 3206716790
+		},
+		{
 			"name": "Close",
 			"value": 3537297650
+		},
+		{
+			"name": "StyleAction",
+			"value": 3980712594
 		}
 	],
 	"app.MathEx.EaseType": [
@@ -69844,11 +69844,19 @@
 	],
 	"via.clr.TypeFlag": [
 		{
-			"name": "VisibilityMask",
-			"value": 7
+			"name": "NotPublic",
+			"value": 0
 		},
 		{
-			"name": "NotPublic",
+			"name": "AutoLayout",
+			"value": 0
+		},
+		{
+			"name": "Class",
+			"value": 0
+		},
+		{
+			"name": "AnsiClass",
 			"value": 0
 		},
 		{
@@ -69876,16 +69884,12 @@
 			"value": 6
 		},
 		{
-			"name": "NestedFamorAssem",
+			"name": "VisibilityMask",
 			"value": 7
 		},
 		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
+			"name": "NestedFamorAssem",
+			"value": 7
 		},
 		{
 			"name": "SequentialLayout",
@@ -69896,12 +69900,12 @@
 			"value": 16
 		},
 		{
-			"name": "ClassSemanticsMask",
-			"value": 32
+			"name": "LayoutMask",
+			"value": 24
 		},
 		{
-			"name": "Class",
-			"value": 0
+			"name": "ClassSemanticsMask",
+			"value": 32
 		},
 		{
 			"name": "Interface",
@@ -69920,6 +69924,10 @@
 			"value": 1024
 		},
 		{
+			"name": "RTSpecialName",
+			"value": 2048
+		},
+		{
 			"name": "Import",
 			"value": 4096
 		},
@@ -69932,14 +69940,6 @@
 			"value": 16384
 		},
 		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
 			"name": "UnicodeClass",
 			"value": 65536
 		},
@@ -69948,20 +69948,12 @@
 			"value": 131072
 		},
 		{
-			"name": "CustomFormatClass",
+			"name": "StringFormatMask",
 			"value": 196608
 		},
 		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
+			"name": "CustomFormatClass",
+			"value": 196608
 		},
 		{
 			"name": "HasSecurity",
@@ -69970,6 +69962,14 @@
 		{
 			"name": "ReservedMask",
 			"value": 264192
+		},
+		{
+			"name": "BeforeFieldInit",
+			"value": 1048576
+		},
+		{
+			"name": "CustomFormatMask",
+			"value": 12582912
 		},
 		{
 			"name": "LocalHeap",
@@ -71456,6 +71456,42 @@
 	],
 	"app.Player.PadShakeID": [
 		{
+			"name": "NormalLL",
+			"value": 0
+		},
+		{
+			"name": "BlownL",
+			"value": 0
+		},
+		{
+			"name": "WindL",
+			"value": 0
+		},
+		{
+			"name": "Stun",
+			"value": 0
+		},
+		{
+			"name": "Caught",
+			"value": 0
+		},
+		{
+			"name": "NormalL",
+			"value": 2
+		},
+		{
+			"name": "BlownM",
+			"value": 2
+		},
+		{
+			"name": "Slam",
+			"value": 2
+		},
+		{
+			"name": "Element",
+			"value": 2
+		},
+		{
 			"name": "JointShake",
 			"value": 4
 		},
@@ -71464,36 +71500,20 @@
 			"value": 4
 		},
 		{
-			"name": "NormalL",
-			"value": 2
-		},
-		{
-			"name": "NormalLL",
-			"value": 0
-		},
-		{
 			"name": "BlownS",
 			"value": 4
-		},
-		{
-			"name": "BlownM",
-			"value": 2
-		},
-		{
-			"name": "BlownL",
-			"value": 0
 		},
 		{
 			"name": "WindS",
 			"value": 4
 		},
 		{
-			"name": "WindL",
-			"value": 0
+			"name": "Fire",
+			"value": 10
 		},
 		{
-			"name": "Slam",
-			"value": 2
+			"name": "Die",
+			"value": 11
 		},
 		{
 			"name": "Collapse",
@@ -71506,26 +71526,6 @@
 		{
 			"name": "Inhale",
 			"value": 12
-		},
-		{
-			"name": "Die",
-			"value": 11
-		},
-		{
-			"name": "Stun",
-			"value": 0
-		},
-		{
-			"name": "Caught",
-			"value": 0
-		},
-		{
-			"name": "Element",
-			"value": 2
-		},
-		{
-			"name": "Fire",
-			"value": 10
 		}
 	],
 	"app.StaffRollParameter.SKUType": [
@@ -72442,10 +72442,6 @@
 	],
 	"via.storage.saveService.SaveServiceMode": [
 		{
-			"name": "SaveServiceMode_Default",
-			"value": 131072
-		},
-		{
 			"name": "SaveServiceMode_1_Byte",
 			"value": 1
 		},
@@ -72464,6 +72460,10 @@
 		{
 			"name": "SaveServiceMode_64_KiloByte",
 			"value": 65536
+		},
+		{
+			"name": "SaveServiceMode_Default",
+			"value": 131072
 		},
 		{
 			"name": "SaveServiceMode_128_KiloByte",
@@ -72606,7 +72606,15 @@
 	],
 	"via.AABB.VoronoiId": [
 		{
+			"name": "Internal",
+			"value": 0
+		},
+		{
 			"name": "X_MinBit",
+			"value": 1
+		},
+		{
+			"name": "P_YZX0",
 			"value": 1
 		},
 		{
@@ -72614,80 +72622,16 @@
 			"value": 2
 		},
 		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
 			"name": "P_YZX1",
 			"value": 2
 		},
 		{
-			"name": "P_ZXY0",
+			"name": "Y_MinBit",
 			"value": 4
 		},
 		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
+			"name": "P_ZXY0",
+			"value": 4
 		},
 		{
 			"name": "E_ZX0Y0",
@@ -72698,12 +72642,40 @@
 			"value": 6
 		},
 		{
+			"name": "Y_MaxBit",
+			"value": 8
+		},
+		{
+			"name": "P_ZXY1",
+			"value": 8
+		},
+		{
 			"name": "E_ZX0Y1",
 			"value": 9
 		},
 		{
 			"name": "E_ZX1Y1",
 			"value": 10
+		},
+		{
+			"name": "Z_MinBit",
+			"value": 16
+		},
+		{
+			"name": "P_XYZ0",
+			"value": 16
+		},
+		{
+			"name": "E_YZ0X0",
+			"value": 17
+		},
+		{
+			"name": "E_YZ0X1",
+			"value": 18
+		},
+		{
+			"name": "E_XY0Z0",
+			"value": 20
 		},
 		{
 			"name": "V_X0Y0Z0",
@@ -72714,6 +72686,10 @@
 			"value": 22
 		},
 		{
+			"name": "E_XY1Z0",
+			"value": 24
+		},
+		{
 			"name": "V_X0Y1Z0",
 			"value": 25
 		},
@@ -72722,12 +72698,36 @@
 			"value": 26
 		},
 		{
+			"name": "Z_MaxBit",
+			"value": 32
+		},
+		{
+			"name": "P_XYZ1",
+			"value": 32
+		},
+		{
+			"name": "E_YZ1X0",
+			"value": 33
+		},
+		{
+			"name": "E_YZ1X1",
+			"value": 34
+		},
+		{
+			"name": "E_XY0Z1",
+			"value": 36
+		},
+		{
 			"name": "V_X0Y0Z1",
 			"value": 37
 		},
 		{
 			"name": "V_X1Y0Z1",
 			"value": 38
+		},
+		{
+			"name": "E_XY1Z1",
+			"value": 40
 		},
 		{
 			"name": "V_X0Y1Z1",
@@ -75552,6 +75552,10 @@
 			"value": 0
 		},
 		{
+			"name": "Native",
+			"value": 0
+		},
+		{
 			"name": "BE",
 			"value": 1
 		},
@@ -75562,10 +75566,6 @@
 		{
 			"name": "BE_BOM",
 			"value": 3
-		},
-		{
-			"name": "Native",
-			"value": 0
 		}
 	],
 	"via.os.SemaphoreError": [
@@ -76486,6 +76486,10 @@
 			"value": 191
 		},
 		{
+			"name": "Slash",
+			"value": 191
+		},
+		{
 			"name": "OEM_3",
 			"value": 192
 		},
@@ -76495,6 +76499,10 @@
 		},
 		{
 			"name": "OEM_5",
+			"value": 220
+		},
+		{
+			"name": "BackSlash",
 			"value": 220
 		},
 		{
@@ -76512,14 +76520,6 @@
 		{
 			"name": "OEM_102",
 			"value": 226
-		},
-		{
-			"name": "Slash",
-			"value": 191
-		},
-		{
-			"name": "BackSlash",
-			"value": 220
 		}
 	],
 	"via.network.Codec.Mode": [
@@ -78621,52 +78621,52 @@
 	],
 	"app.GUIPriorityOrder": [
 		{
-			"name": "SaveIcon",
-			"value": 54
-		},
-		{
-			"name": "Warning",
-			"value": 52
-		},
-		{
-			"name": "Loading",
-			"value": 50
-		},
-		{
-			"name": "Fade",
-			"value": 48
-		},
-		{
-			"name": "GuideIcon",
-			"value": 46
-		},
-		{
-			"name": "Option",
-			"value": 44
-		},
-		{
-			"name": "Menu",
-			"value": 42
-		},
-		{
-			"name": "Pause",
-			"value": 40
-		},
-		{
-			"name": "Subtitle",
-			"value": 38
-		},
-		{
-			"name": "FadeInGame",
-			"value": 36
+			"name": "Hud",
+			"value": 32
 		},
 		{
 			"name": "Event",
 			"value": 34
 		},
 		{
-			"name": "Hud",
-			"value": 32
+			"name": "FadeInGame",
+			"value": 36
+		},
+		{
+			"name": "Subtitle",
+			"value": 38
+		},
+		{
+			"name": "Pause",
+			"value": 40
+		},
+		{
+			"name": "Menu",
+			"value": 42
+		},
+		{
+			"name": "Option",
+			"value": 44
+		},
+		{
+			"name": "GuideIcon",
+			"value": 46
+		},
+		{
+			"name": "Fade",
+			"value": 48
+		},
+		{
+			"name": "Loading",
+			"value": 50
+		},
+		{
+			"name": "Warning",
+			"value": 52
+		},
+		{
+			"name": "SaveIcon",
+			"value": 54
 		}
 	],
 	"app.menu.SkillOpenType": [
@@ -80312,16 +80312,16 @@
 	],
 	"app.player.pl0100.TrickStarActionTag": [
 		{
-			"name": "Dash",
-			"value": 3034211412
-		},
-		{
 			"name": "AirTrick",
 			"value": 650468604
 		},
 		{
 			"name": "SkyStar",
 			"value": 1459497657
+		},
+		{
+			"name": "Dash",
+			"value": 3034211412
 		}
 	],
 	"via.render.VolumeDecal.OpacityFlag": [
@@ -80338,12 +80338,12 @@
 			"value": 2
 		},
 		{
-			"name": "Emissive",
-			"value": 8
-		},
-		{
 			"name": "BaseColorAndNormal",
 			"value": 3
+		},
+		{
+			"name": "Emissive",
+			"value": 8
 		},
 		{
 			"name": "BaseColorAndEmissive",
@@ -81024,11 +81024,11 @@
 	],
 	"via.clr.MethodImplFlag": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -81038,6 +81038,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -81052,36 +81056,28 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
 		},
 		{
 			"name": "HasRetVal",
@@ -81094,6 +81090,10 @@
 		{
 			"name": "EmptyCtor",
 			"value": 2048
+		},
+		{
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "ContainsGenericParameters",
@@ -82188,11 +82188,11 @@
 	],
 	"System.Reflection.MethodImplAttributes": [
 		{
-			"name": "CodeTypeMask",
-			"value": 3
+			"name": "IL",
+			"value": 0
 		},
 		{
-			"name": "IL",
+			"name": "Managed",
 			"value": 0
 		},
 		{
@@ -82202,6 +82202,10 @@
 		{
 			"name": "OPTIL",
 			"value": 2
+		},
+		{
+			"name": "CodeTypeMask",
+			"value": 3
 		},
 		{
 			"name": "Runtime",
@@ -82216,36 +82220,32 @@
 			"value": 4
 		},
 		{
-			"name": "Managed",
-			"value": 0
+			"name": "NoInlining",
+			"value": 8
 		},
 		{
 			"name": "ForwardRef",
 			"value": 16
 		},
 		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
 			"name": "Synchronized",
 			"value": 32
 		},
 		{
-			"name": "NoInlining",
-			"value": 8
+			"name": "NoOptimization",
+			"value": 64
+		},
+		{
+			"name": "PreserveSig",
+			"value": 128
 		},
 		{
 			"name": "AggressiveInlining",
 			"value": 256
 		},
 		{
-			"name": "NoOptimization",
-			"value": 64
+			"name": "InternalCall",
+			"value": 4096
 		},
 		{
 			"name": "MaxMethodImplVal",
@@ -82450,16 +82450,16 @@
 	],
 	"app.Em0002Tag": [
 		{
+			"name": "Em0002EnableFlyWarp",
+			"value": 73839894
+		},
+		{
 			"name": "Em0002Ranbu",
 			"value": 2156298113
 		},
 		{
 			"name": "Em0002HellGateSide",
 			"value": 3025467494
-		},
-		{
-			"name": "Em0002EnableFlyWarp",
-			"value": 73839894
 		}
 	],
 	"via.physics.System.DirtyType": [
@@ -84334,10 +84334,6 @@
 	],
 	"via.clr.FieldFlag": [
 		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -84364,6 +84360,10 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "FieldAccessMask",
+			"value": 7
 		},
 		{
 			"name": "Static",
@@ -84798,6 +84798,10 @@
 			"value": 0
 		},
 		{
+			"name": "Default",
+			"value": 0
+		},
+		{
 			"name": "EdgeShort",
 			"value": 1
 		},
@@ -84824,10 +84828,6 @@
 		{
 			"name": "Assert",
 			"value": 7
-		},
-		{
-			"name": "Default",
-			"value": 0
 		}
 	],
 	"app.fsm2.player.pl0100.DanteBalrogDuckinbgCondition.InputDir": [
@@ -84984,10 +84984,6 @@
 			"value": 0
 		},
 		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
 			"name": "Covariant",
 			"value": 1
 		},
@@ -84996,8 +84992,8 @@
 			"value": 2
 		},
 		{
-			"name": "SpecialConstraintMask",
-			"value": 28
+			"name": "VarianceMask",
+			"value": 3
 		},
 		{
 			"name": "ReferenceTypeConstraint",
@@ -85010,6 +85006,10 @@
 		{
 			"name": "DefaultConstructorConstraint",
 			"value": 16
+		},
+		{
+			"name": "SpecialConstraintMask",
+			"value": 28
 		}
 	],
 	"via.os.FileAttr": [
@@ -85180,12 +85180,12 @@
 	],
 	"app.fsm2.enemy.em5500.Em5500Wait.WaitMotionType": [
 		{
-			"name": "Wait",
-			"value": 1
-		},
-		{
 			"name": "WaitA",
 			"value": 0
+		},
+		{
+			"name": "Wait",
+			"value": 1
 		},
 		{
 			"name": "WaitB",
@@ -94292,12 +94292,12 @@
 	],
 	"app.player.pl0100.weapon.FaustHatActionTag": [
 		{
-			"name": "OrbConsuming",
-			"value": 4262839048
-		},
-		{
 			"name": "Marking",
 			"value": 302110613
+		},
+		{
+			"name": "OrbConsuming",
+			"value": 4262839048
 		}
 	],
 	"via.network.NetworkEntry.TraceLevelType": [
@@ -94384,11 +94384,19 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
-			"name": "Ignore",
-			"value": 4294967295
+			"name": "AecAgcEnable",
+			"value": 0
 		},
 		{
-			"name": "AecAgcEnable",
+			"name": "ExposureGainMode0",
+			"value": 0
+		},
+		{
+			"name": "WhiteBalanceAuto",
+			"value": 0
+		},
+		{
+			"name": "GammaControlOn",
 			"value": 0
 		},
 		{
@@ -94396,28 +94404,20 @@
 			"value": 1
 		},
 		{
-			"name": "ExposureGainMode0",
-			"value": 0
-		},
-		{
 			"name": "ExposureGainMode1",
 			"value": 1
-		},
-		{
-			"name": "WhiteBalanceAuto",
-			"value": 0
 		},
 		{
 			"name": "WhiteBalanceManual",
 			"value": 1
 		},
 		{
-			"name": "GammaControlOn",
-			"value": 0
-		},
-		{
 			"name": "GammaControlOff",
 			"value": 1
+		},
+		{
+			"name": "Ignore",
+			"value": 4294967295
 		}
 	],
 	"via.hid.virtualKeyboard.nsw.InputFormMode": [
@@ -94440,7 +94440,15 @@
 			"value": 0
 		},
 		{
+			"name": "Active",
+			"value": 0
+		},
+		{
 			"name": "User1",
+			"value": 1
+		},
+		{
+			"name": "Sub",
 			"value": 1
 		},
 		{
@@ -94450,14 +94458,6 @@
 		{
 			"name": "Max",
 			"value": 3
-		},
-		{
-			"name": "Active",
-			"value": 0
-		},
-		{
-			"name": "Sub",
-			"value": 1
 		}
 	],
 	"app.Em5900Base.MpConsumptionType": [
@@ -96077,11 +96077,11 @@
 	"app.Em5200_01.CollisionID": [],
 	"System.Reflection.MethodAttributes": [
 		{
-			"name": "MemberAccessMask",
-			"value": 7
+			"name": "PrivateScope",
+			"value": 0
 		},
 		{
-			"name": "PrivateScope",
+			"name": "ReuseSlot",
 			"value": 0
 		},
 		{
@@ -96109,6 +96109,14 @@
 			"value": 6
 		},
 		{
+			"name": "MemberAccessMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExport",
+			"value": 8
+		},
+		{
 			"name": "Static",
 			"value": 16
 		},
@@ -96125,20 +96133,16 @@
 			"value": 128
 		},
 		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
 			"name": "VtableLayoutMask",
 			"value": 256
 		},
 		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
 			"name": "NewSlot",
 			"value": 256
+		},
+		{
+			"name": "CheckAccessOnOverride",
+			"value": 512
 		},
 		{
 			"name": "Abstract",
@@ -96149,16 +96153,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "HasSecurity",
@@ -101819,6 +101819,10 @@
 			"value": 1
 		},
 		{
+			"name": "CreateSST",
+			"value": 1
+		},
+		{
 			"name": "ImplicitStaticMesh",
 			"value": 2
 		},
@@ -101827,16 +101831,12 @@
 			"value": 4
 		},
 		{
-			"name": "Default",
-			"value": 7
-		},
-		{
 			"name": "UsingSST",
 			"value": 6
 		},
 		{
-			"name": "CreateSST",
-			"value": 1
+			"name": "Default",
+			"value": 7
 		}
 	],
 	"app.Em5400.MoveModeType": [
@@ -101957,48 +101957,24 @@
 	],
 	"app.player.pl0200.VActionTag": [
 		{
-			"name": "BanSummons",
-			"value": 3284971089
-		},
-		{
-			"name": "SpecialSummons",
-			"value": 3370925908
-		},
-		{
-			"name": "FinishCheck",
-			"value": 868480497
-		},
-		{
-			"name": "FinishAttack",
-			"value": 4263313826
-		},
-		{
-			"name": "ShadowDash",
-			"value": 3324565074
-		},
-		{
-			"name": "ShadowAvoid",
-			"value": 1178670326
-		},
-		{
 			"name": "GriffonAvoidance",
 			"value": 421739531
-		},
-		{
-			"name": "SummonsGriffon",
-			"value": 1737205308
 		},
 		{
 			"name": "SummonsShadow",
 			"value": 663455831
 		},
 		{
-			"name": "SummonsNightmare",
-			"value": 3547266865
+			"name": "FinishCheck",
+			"value": 868480497
 		},
 		{
-			"name": "LockOnInverseVector",
-			"value": 2924768660
+			"name": "ShadowAvoid",
+			"value": 1178670326
+		},
+		{
+			"name": "SummonsGriffon",
+			"value": 1737205308
 		},
 		{
 			"name": "Stagger",
@@ -102007,6 +101983,30 @@
 		{
 			"name": "GriffonSupport",
 			"value": 2917803908
+		},
+		{
+			"name": "LockOnInverseVector",
+			"value": 2924768660
+		},
+		{
+			"name": "BanSummons",
+			"value": 3284971089
+		},
+		{
+			"name": "ShadowDash",
+			"value": 3324565074
+		},
+		{
+			"name": "SpecialSummons",
+			"value": 3370925908
+		},
+		{
+			"name": "SummonsNightmare",
+			"value": 3547266865
+		},
+		{
+			"name": "FinishAttack",
+			"value": 4263313826
 		}
 	],
 	"app.fsm2.player.CommonJump.Routine": [
@@ -102131,6 +102131,10 @@
 			"value": 4
 		},
 		{
+			"name": "Integer",
+			"value": 7
+		},
+		{
 			"name": "AllowTrailingSign",
 			"value": 8
 		},
@@ -102147,32 +102151,20 @@
 			"value": 64
 		},
 		{
-			"name": "AllowExponent",
-			"value": 128
-		},
-		{
-			"name": "AllowCurrencySymbol",
-			"value": 256
-		},
-		{
-			"name": "AllowHexSpecifier",
-			"value": 512
-		},
-		{
-			"name": "Integer",
-			"value": 7
-		},
-		{
-			"name": "HexNumber",
-			"value": 515
-		},
-		{
 			"name": "Number",
 			"value": 111
 		},
 		{
+			"name": "AllowExponent",
+			"value": 128
+		},
+		{
 			"name": "Float",
 			"value": 167
+		},
+		{
+			"name": "AllowCurrencySymbol",
+			"value": 256
 		},
 		{
 			"name": "Currency",
@@ -102181,6 +102173,14 @@
 		{
 			"name": "Any",
 			"value": 511
+		},
+		{
+			"name": "AllowHexSpecifier",
+			"value": 512
+		},
+		{
+			"name": "HexNumber",
+			"value": 515
 		}
 	],
 	"app.fsm2.player.LStickCheckCondition.StickDir": [
@@ -102213,124 +102213,124 @@
 	],
 	"app.NeroActionTag": [
 		{
-			"name": "Reload",
-			"value": 807962652
-		},
-		{
-			"name": "BRShotAir",
-			"value": 3412795942
-		},
-		{
-			"name": "BRGround",
-			"value": 2331232139
-		},
-		{
-			"name": "GT_DMC4",
-			"value": 2085717298
+			"name": "ExceedWithNoMotion",
+			"value": 38201689
 		},
 		{
 			"name": "Exceed",
 			"value": 204763383
 		},
 		{
-			"name": "SnatchBlend",
-			"value": 588406906
-		},
-		{
-			"name": "ExActReloading",
-			"value": 1492488879
-		},
-		{
-			"name": "ExActLockOff",
-			"value": 3320877913
-		},
-		{
-			"name": "Noutou",
-			"value": 1661243432
-		},
-		{
-			"name": "GauntletAttack",
-			"value": 3612274609
-		},
-		{
-			"name": "DrillLevel2",
-			"value": 3110220298
-		},
-		{
-			"name": "DrillLevel3",
-			"value": 961774158
-		},
-		{
-			"name": "UniqueBuster",
-			"value": 3285285031
-		},
-		{
-			"name": "ExceedWithNoMotion",
-			"value": 38201689
-		},
-		{
-			"name": "ExceedAction",
-			"value": 1904029260
-		},
-		{
-			"name": "RocketPunchRide",
-			"value": 885759177
-		},
-		{
-			"name": "GauntletAction",
-			"value": 3481949354
-		},
-		{
-			"name": "BusterStart",
-			"value": 3740758856
-		},
-		{
-			"name": "DelayComboB",
-			"value": 492557998
-		},
-		{
-			"name": "DelayComboC",
-			"value": 3556747268
-		},
-		{
-			"name": "DelayComboD",
-			"value": 3332762084
-		},
-		{
-			"name": "Retrofit",
-			"value": 2179653081
+			"name": "SnakeSwordAttack",
+			"value": 444791421
 		},
 		{
 			"name": "CheckHellBound",
 			"value": 463077139
 		},
 		{
-			"name": "RPTrickEnabled",
-			"value": 2456331865
+			"name": "DelayComboB",
+			"value": 492557998
 		},
 		{
-			"name": "RPReactionAttack",
-			"value": 3271645278
+			"name": "SnatchBlend",
+			"value": 588406906
 		},
 		{
-			"name": "WireAction",
-			"value": 3404782245
+			"name": "Reload",
+			"value": 807962652
 		},
 		{
-			"name": "BusterStrike",
-			"value": 2861393707
+			"name": "RocketPunchRide",
+			"value": 885759177
 		},
 		{
-			"name": "SnakeSwordAttack",
-			"value": 444791421
+			"name": "DrillLevel3",
+			"value": 961774158
+		},
+		{
+			"name": "ExActReloading",
+			"value": 1492488879
+		},
+		{
+			"name": "Noutou",
+			"value": 1661243432
+		},
+		{
+			"name": "ExceedAction",
+			"value": 1904029260
+		},
+		{
+			"name": "GT_DMC4",
+			"value": 2085717298
 		},
 		{
 			"name": "DoubleBuster",
 			"value": 2106262990
 		},
 		{
+			"name": "Retrofit",
+			"value": 2179653081
+		},
+		{
+			"name": "BRGround",
+			"value": 2331232139
+		},
+		{
+			"name": "RPTrickEnabled",
+			"value": 2456331865
+		},
+		{
 			"name": "ForceDevilTriggerMotion",
 			"value": 2633319117
+		},
+		{
+			"name": "BusterStrike",
+			"value": 2861393707
+		},
+		{
+			"name": "DrillLevel2",
+			"value": 3110220298
+		},
+		{
+			"name": "RPReactionAttack",
+			"value": 3271645278
+		},
+		{
+			"name": "UniqueBuster",
+			"value": 3285285031
+		},
+		{
+			"name": "ExActLockOff",
+			"value": 3320877913
+		},
+		{
+			"name": "DelayComboD",
+			"value": 3332762084
+		},
+		{
+			"name": "WireAction",
+			"value": 3404782245
+		},
+		{
+			"name": "BRShotAir",
+			"value": 3412795942
+		},
+		{
+			"name": "GauntletAction",
+			"value": 3481949354
+		},
+		{
+			"name": "DelayComboC",
+			"value": 3556747268
+		},
+		{
+			"name": "GauntletAttack",
+			"value": 3612274609
+		},
+		{
+			"name": "BusterStart",
+			"value": 3740758856
 		}
 	],
 	"app.AttackUserData.AttackTypeEnum": [
@@ -102909,6 +102909,10 @@
 	],
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_AUTO",
+			"value": 0
+		},
+		{
 			"name": "SparseShadowTreeResolution_4K",
 			"value": 4
 		},
@@ -102927,10 +102931,6 @@
 		{
 			"name": "SparseShadowTreeResolution_64K",
 			"value": 64
-		},
-		{
-			"name": "SparseShadowTreeResolution_AUTO",
-			"value": 0
 		}
 	],
 	"via.motion.IkDog.FootLockMode": [
@@ -103379,12 +103379,12 @@
 			"value": 256
 		},
 		{
-			"name": "WC",
-			"value": 512
-		},
-		{
 			"name": "Default",
 			"value": 256
+		},
+		{
+			"name": "WC",
+			"value": 512
 		}
 	],
 	"app.ResourceCacheManager.MissionResourceCacheType": [
@@ -103493,12 +103493,12 @@
 			"value": 0
 		},
 		{
-			"name": "Raw",
-			"value": 1
-		},
-		{
 			"name": "Default",
 			"value": 0
+		},
+		{
+			"name": "Raw",
+			"value": 1
 		}
 	],
 	"via.gui.MaterialParamType": [
@@ -104191,16 +104191,16 @@
 	],
 	"via.render.FenceState": [
 		{
-			"name": "Invalidate",
-			"value": 4294967295
+			"name": "UAVSync",
+			"value": 4294967293
 		},
 		{
 			"name": "DoNotWait",
 			"value": 4294967294
 		},
 		{
-			"name": "UAVSync",
-			"value": 4294967293
+			"name": "Invalidate",
+			"value": 4294967295
 		}
 	],
 	"app.MenuEnvSettingManager.MenuEnvItemTypeID": [
@@ -104643,6 +104643,10 @@
 			"value": 2
 		},
 		{
+			"name": "MaskPlace",
+			"value": 3
+		},
+		{
 			"name": "Core",
 			"value": 4
 		},
@@ -104651,36 +104655,88 @@
 			"value": 16
 		},
 		{
+			"name": "OnShipCenter",
+			"value": 18
+		},
+		{
 			"name": "Head",
 			"value": 32
+		},
+		{
+			"name": "OnShipHead",
+			"value": 34
+		},
+		{
+			"name": "MaskShip",
+			"value": 50
 		},
 		{
 			"name": "Left",
 			"value": 256
 		},
 		{
+			"name": "ShipSideLeft",
+			"value": 257
+		},
+		{
 			"name": "Right",
 			"value": 512
+		},
+		{
+			"name": "ShipSideRight",
+			"value": 513
+		},
+		{
+			"name": "MaskGround",
+			"value": 769
+		},
+		{
+			"name": "MaskStage",
+			"value": 819
 		},
 		{
 			"name": "Over",
 			"value": 1024
 		},
 		{
+			"name": "OverCore",
+			"value": 1028
+		},
+		{
 			"name": "Under",
 			"value": 2048
+		},
+		{
+			"name": "UnderCore",
+			"value": 2052
 		},
 		{
 			"name": "CoreLeft",
 			"value": 4096
 		},
 		{
+			"name": "OverCoreLeft",
+			"value": 5124
+		},
+		{
 			"name": "CoreRight",
 			"value": 8192
 		},
 		{
+			"name": "OverCoreRight",
+			"value": 9220
+		},
+		{
 			"name": "CoreTail",
 			"value": 16384
+		},
+		{
+			"name": "OverCoreTail",
+			"value": 17412
+		},
+		{
+			"name": "MaskCore",
+			"value": 31748
 		},
 		{
 			"name": "BodyPress",
@@ -104715,72 +104771,16 @@
 			"value": 134217728
 		},
 		{
-			"name": "AroundShipHead",
-			"value": 268435456
-		},
-		{
-			"name": "MaskPlace",
-			"value": 3
-		},
-		{
-			"name": "MaskShip",
-			"value": 50
-		},
-		{
-			"name": "MaskGround",
-			"value": 769
-		},
-		{
-			"name": "MaskStage",
-			"value": 819
-		},
-		{
-			"name": "MaskCore",
-			"value": 31748
-		},
-		{
-			"name": "MaskSpecial",
-			"value": 300941312
-		},
-		{
 			"name": "MaskTentacle",
 			"value": 234881024
 		},
 		{
-			"name": "ShipSideLeft",
-			"value": 257
+			"name": "AroundShipHead",
+			"value": 268435456
 		},
 		{
-			"name": "ShipSideRight",
-			"value": 513
-		},
-		{
-			"name": "OnShipCenter",
-			"value": 18
-		},
-		{
-			"name": "OnShipHead",
-			"value": 34
-		},
-		{
-			"name": "UnderCore",
-			"value": 2052
-		},
-		{
-			"name": "OverCore",
-			"value": 1028
-		},
-		{
-			"name": "OverCoreLeft",
-			"value": 5124
-		},
-		{
-			"name": "OverCoreRight",
-			"value": 9220
-		},
-		{
-			"name": "OverCoreTail",
-			"value": 17412
+			"name": "MaskSpecial",
+			"value": 300941312
 		}
 	],
 	"via.behaviortree.ExecLine": [
@@ -106990,16 +106990,16 @@
 			"value": 4
 		},
 		{
+			"name": "LevelMax",
+			"value": 4
+		},
+		{
 			"name": "Level3",
 			"value": 8
 		},
 		{
 			"name": "All",
 			"value": 15
-		},
-		{
-			"name": "LevelMax",
-			"value": 4
 		}
 	],
 	"app.RecordManager.BugFixHistory": [
@@ -108098,6 +108098,186 @@
 	],
 	"app.menu.Skill": [
 		{
+			"name": "Pl03Start",
+			"value": 0
+		},
+		{
+			"name": "Pl03_Speed",
+			"value": 1
+		},
+		{
+			"name": "Pl03_EnemyStep",
+			"value": 2
+		},
+		{
+			"name": "Pl03_AirHike",
+			"value": 3
+		},
+		{
+			"name": "Pl03_MoreOrbs",
+			"value": 4
+		},
+		{
+			"name": "Pl03_TriggerHeart",
+			"value": 5
+		},
+		{
+			"name": "Pl03_ExSence",
+			"value": 6
+		},
+		{
+			"name": "Pl03_PowerUpProvocation",
+			"value": 7
+		},
+		{
+			"name": "Pl03_BPProvocation",
+			"value": 8
+		},
+		{
+			"name": "YamatoComboB",
+			"value": 9
+		},
+		{
+			"name": "YamatoComboC",
+			"value": 10
+		},
+		{
+			"name": "AerialRaveB",
+			"value": 11
+		},
+		{
+			"name": "RapidSlash",
+			"value": 12
+		},
+		{
+			"name": "RisingStar",
+			"value": 13
+		},
+		{
+			"name": "UpperSlashLv2",
+			"value": 14
+		},
+		{
+			"name": "JudgementCutEnd",
+			"value": 15
+		},
+		{
+			"name": "AerialCleave",
+			"value": 16
+		},
+		{
+			"name": "SpaceSlash",
+			"value": 17
+		},
+		{
+			"name": "BeowulfComboB",
+			"value": 18
+		},
+		{
+			"name": "StarFallLv2",
+			"value": 19
+		},
+		{
+			"name": "LunarPhaseLv2",
+			"value": 20
+		},
+		{
+			"name": "BeastUpper",
+			"value": 21
+		},
+		{
+			"name": "RisingDragon",
+			"value": 22
+		},
+		{
+			"name": "DragonBreaker",
+			"value": 23
+		},
+		{
+			"name": "Flush_Vergil",
+			"value": 24
+		},
+		{
+			"name": "Kick13",
+			"value": 25
+		},
+		{
+			"name": "HellGeyser",
+			"value": 26
+		},
+		{
+			"name": "MirageEdgeComboB",
+			"value": 27
+		},
+		{
+			"name": "RoundTrip",
+			"value": 28
+		},
+		{
+			"name": "HelmBreakerLv2",
+			"value": 29
+		},
+		{
+			"name": "StingerLv2_Vergil",
+			"value": 30
+		},
+		{
+			"name": "MillionStab_Vergil",
+			"value": 31
+		},
+		{
+			"name": "Drive_Vergil",
+			"value": 32
+		},
+		{
+			"name": "OverDrive_Vergil",
+			"value": 33
+		},
+		{
+			"name": "MirageBlade",
+			"value": 34
+		},
+		{
+			"name": "MirageBladeLv2",
+			"value": 35
+		},
+		{
+			"name": "MirageBladeLv3",
+			"value": 36
+		},
+		{
+			"name": "SpiralSwords",
+			"value": 37
+		},
+		{
+			"name": "StormSwords",
+			"value": 38
+		},
+		{
+			"name": "BlisteringSwords",
+			"value": 39
+		},
+		{
+			"name": "HeavyrainSwords",
+			"value": 40
+		},
+		{
+			"name": "TrickEscape",
+			"value": 41
+		},
+		{
+			"name": "TrickDown",
+			"value": 42
+		},
+		{
+			"name": "ConcentGuard",
+			"value": 43
+		},
+		{
+			"name": "DeepStinger",
+			"value": 44
+		},
+		{
 			"name": "Pl00Start",
 			"value": 100
 		},
@@ -108764,186 +108944,6 @@
 		{
 			"name": "Pl02End",
 			"value": 343
-		},
-		{
-			"name": "Pl03Start",
-			"value": 0
-		},
-		{
-			"name": "Pl03_Speed",
-			"value": 1
-		},
-		{
-			"name": "Pl03_EnemyStep",
-			"value": 2
-		},
-		{
-			"name": "Pl03_AirHike",
-			"value": 3
-		},
-		{
-			"name": "Pl03_MoreOrbs",
-			"value": 4
-		},
-		{
-			"name": "Pl03_TriggerHeart",
-			"value": 5
-		},
-		{
-			"name": "Pl03_ExSence",
-			"value": 6
-		},
-		{
-			"name": "Pl03_PowerUpProvocation",
-			"value": 7
-		},
-		{
-			"name": "Pl03_BPProvocation",
-			"value": 8
-		},
-		{
-			"name": "YamatoComboB",
-			"value": 9
-		},
-		{
-			"name": "YamatoComboC",
-			"value": 10
-		},
-		{
-			"name": "AerialRaveB",
-			"value": 11
-		},
-		{
-			"name": "RapidSlash",
-			"value": 12
-		},
-		{
-			"name": "RisingStar",
-			"value": 13
-		},
-		{
-			"name": "UpperSlashLv2",
-			"value": 14
-		},
-		{
-			"name": "JudgementCutEnd",
-			"value": 15
-		},
-		{
-			"name": "AerialCleave",
-			"value": 16
-		},
-		{
-			"name": "SpaceSlash",
-			"value": 17
-		},
-		{
-			"name": "BeowulfComboB",
-			"value": 18
-		},
-		{
-			"name": "StarFallLv2",
-			"value": 19
-		},
-		{
-			"name": "LunarPhaseLv2",
-			"value": 20
-		},
-		{
-			"name": "BeastUpper",
-			"value": 21
-		},
-		{
-			"name": "RisingDragon",
-			"value": 22
-		},
-		{
-			"name": "DragonBreaker",
-			"value": 23
-		},
-		{
-			"name": "Flush_Vergil",
-			"value": 24
-		},
-		{
-			"name": "Kick13",
-			"value": 25
-		},
-		{
-			"name": "HellGeyser",
-			"value": 26
-		},
-		{
-			"name": "MirageEdgeComboB",
-			"value": 27
-		},
-		{
-			"name": "RoundTrip",
-			"value": 28
-		},
-		{
-			"name": "HelmBreakerLv2",
-			"value": 29
-		},
-		{
-			"name": "StingerLv2_Vergil",
-			"value": 30
-		},
-		{
-			"name": "MillionStab_Vergil",
-			"value": 31
-		},
-		{
-			"name": "Drive_Vergil",
-			"value": 32
-		},
-		{
-			"name": "OverDrive_Vergil",
-			"value": 33
-		},
-		{
-			"name": "MirageBlade",
-			"value": 34
-		},
-		{
-			"name": "MirageBladeLv2",
-			"value": 35
-		},
-		{
-			"name": "MirageBladeLv3",
-			"value": 36
-		},
-		{
-			"name": "SpiralSwords",
-			"value": 37
-		},
-		{
-			"name": "StormSwords",
-			"value": 38
-		},
-		{
-			"name": "BlisteringSwords",
-			"value": 39
-		},
-		{
-			"name": "HeavyrainSwords",
-			"value": 40
-		},
-		{
-			"name": "TrickEscape",
-			"value": 41
-		},
-		{
-			"name": "TrickDown",
-			"value": 42
-		},
-		{
-			"name": "ConcentGuard",
-			"value": 43
-		},
-		{
-			"name": "DeepStinger",
-			"value": 44
 		}
 	],
 	"app.Shell.AttackNoticeTypeEnum": [
@@ -108994,32 +108994,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -109230,6 +109230,14 @@
 			"value": 32
 		},
 		{
+			"name": "MaskTarget",
+			"value": 37
+		},
+		{
+			"name": "MaskOrder",
+			"value": 45
+		},
+		{
 			"name": "HelpRequest",
 			"value": 64
 		},
@@ -109264,14 +109272,6 @@
 		{
 			"name": "RequestToBlockGroupAttackReactionDelay",
 			"value": 16384
-		},
-		{
-			"name": "MaskOrder",
-			"value": 45
-		},
-		{
-			"name": "MaskTarget",
-			"value": 37
 		}
 	],
 	"app.fsm2.mission.HellTreeAction.Action": [
@@ -110094,10 +110094,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea8to11": [
 		{
-			"name": "FreeArea8to11_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea8to11_8",
 			"value": 8
 		},
@@ -110112,6 +110108,10 @@
 		{
 			"name": "FreeArea8to11_11",
 			"value": 11
+		},
+		{
+			"name": "FreeArea8to11_None",
+			"value": 4294967295
 		}
 	],
 	"via.render.fluid.TextureResourceType": [
@@ -110338,8 +110338,8 @@
 	],
 	"via.render.Stamp.StampChannelMask": [
 		{
-			"name": "All",
-			"value": 15
+			"name": "None",
+			"value": 0
 		},
 		{
 			"name": "R",
@@ -110350,56 +110350,56 @@
 			"value": 2
 		},
 		{
-			"name": "B",
-			"value": 4
-		},
-		{
-			"name": "A",
-			"value": 8
-		},
-		{
 			"name": "RG",
 			"value": 3
+		},
+		{
+			"name": "B",
+			"value": 4
 		},
 		{
 			"name": "RB",
 			"value": 5
 		},
 		{
-			"name": "RA",
-			"value": 9
-		},
-		{
 			"name": "GB",
 			"value": 6
-		},
-		{
-			"name": "GA",
-			"value": 10
-		},
-		{
-			"name": "BA",
-			"value": 12
 		},
 		{
 			"name": "RGB",
 			"value": 7
 		},
 		{
-			"name": "RBA",
-			"value": 13
+			"name": "A",
+			"value": 8
+		},
+		{
+			"name": "RA",
+			"value": 9
+		},
+		{
+			"name": "GA",
+			"value": 10
 		},
 		{
 			"name": "RGA",
 			"value": 11
 		},
 		{
+			"name": "BA",
+			"value": 12
+		},
+		{
+			"name": "RBA",
+			"value": 13
+		},
+		{
 			"name": "GBA",
 			"value": 14
 		},
 		{
-			"name": "None",
-			"value": 0
+			"name": "All",
+			"value": 15
 		}
 	],
 	"app.camera.AIMapController.MoveMode": [
@@ -110598,6 +110598,10 @@
 	],
 	"app.Em5400.EnumGilgameshTempStatus": [
 		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
 			"name": "ChangeThinkShellMode",
 			"value": 1
 		},
@@ -110640,10 +110644,6 @@
 		{
 			"name": "NoReaction",
 			"value": 1024
-		},
-		{
-			"name": "Invalid",
-			"value": 0
 		}
 	],
 	"app.Em5900.Em5900StatusTmp": [
@@ -111016,10 +111016,6 @@
 	],
 	"via.clr.MethodFlag": [
 		{
-			"name": "AccessibilityMask",
-			"value": 7
-		},
-		{
 			"name": "PrivateScope",
 			"value": 0
 		},
@@ -111046,6 +111042,14 @@
 		{
 			"name": "Public",
 			"value": 6
+		},
+		{
+			"name": "AccessibilityMask",
+			"value": 7
+		},
+		{
+			"name": "UnmanagedExp",
+			"value": 8
 		},
 		{
 			"name": "Static",
@@ -111076,16 +111080,12 @@
 			"value": 2048
 		},
 		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExp",
-			"value": 8
-		},
-		{
 			"name": "RTSpecialName",
 			"value": 4096
+		},
+		{
+			"name": "PinvokeImpl",
+			"value": 8192
 		},
 		{
 			"name": "NoILAsmKeyword",
@@ -111140,10 +111140,6 @@
 	],
 	"via.wwise.FreeArea.FreeArea12to15": [
 		{
-			"name": "FreeArea12to15_None",
-			"value": 4294967295
-		},
-		{
 			"name": "FreeArea12to15_12",
 			"value": 12
 		},
@@ -111158,6 +111154,10 @@
 		{
 			"name": "FreeArea12to15_15",
 			"value": 15
+		},
+		{
+			"name": "FreeArea12to15_None",
+			"value": 4294967295
 		}
 	],
 	"app.Player.LockOnOrPad_SwitchState": [
@@ -111836,6 +111836,10 @@
 	],
 	"app.Em5501.EnumCharacterAngeloStatus": [
 		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
 			"name": "Charged",
 			"value": 1
 		},
@@ -111850,10 +111854,6 @@
 		{
 			"name": "WarpAttack",
 			"value": 8
-		},
-		{
-			"name": "Invalid",
-			"value": 0
 		}
 	],
 	"via.hid.camera.PlayStationCameraChannel": [
@@ -113976,12 +113976,12 @@
 			"value": 3
 		},
 		{
-			"name": "DELAY",
-			"value": 128
-		},
-		{
 			"name": "DELAYMASK",
 			"value": 127
+		},
+		{
+			"name": "DELAY",
+			"value": 128
 		},
 		{
 			"name": "RTV_DELAY",
@@ -115106,12 +115106,12 @@
 			"value": 2
 		},
 		{
-			"name": "Item",
-			"value": 8
-		},
-		{
 			"name": "Weapon",
 			"value": 4
+		},
+		{
+			"name": "Item",
+			"value": 8
 		},
 		{
 			"name": "Prop",
@@ -118115,6 +118115,10 @@
 	],
 	"app.ui1014GUI._EqualizerParamType_": [
 		{
+			"name": "None",
+			"value": 0
+		},
+		{
 			"name": "Hi",
 			"value": 1
 		},
@@ -118125,10 +118129,6 @@
 		{
 			"name": "Low",
 			"value": 3
-		},
-		{
-			"name": "None",
-			"value": 0
 		}
 	],
 	"app.menu.SecretAnnounce": [
@@ -118155,32 +118155,32 @@
 			"value": 0
 		},
 		{
-			"name": "LeftCenter",
-			"value": 4
-		},
-		{
-			"name": "LeftBottom",
-			"value": 8
-		},
-		{
 			"name": "CenterTop",
 			"value": 1
-		},
-		{
-			"name": "CenterCenter",
-			"value": 5
-		},
-		{
-			"name": "CenterBottom",
-			"value": 9
 		},
 		{
 			"name": "RightTop",
 			"value": 2
 		},
 		{
+			"name": "LeftCenter",
+			"value": 4
+		},
+		{
+			"name": "CenterCenter",
+			"value": 5
+		},
+		{
 			"name": "RightCenter",
 			"value": 6
+		},
+		{
+			"name": "LeftBottom",
+			"value": 8
+		},
+		{
+			"name": "CenterBottom",
+			"value": 9
 		},
 		{
 			"name": "RightBottom",
@@ -118645,20 +118645,20 @@
 	],
 	"app.player.pl0100.weapon.BalrogActionTag": [
 		{
-			"name": "RealImpactCheck",
-			"value": 1121108660
-		},
-		{
 			"name": "BurningModeReset",
 			"value": 110272647
+		},
+		{
+			"name": "Performance",
+			"value": 495265579
 		},
 		{
 			"name": "ResetPunchCount",
 			"value": 1038867864
 		},
 		{
-			"name": "Performance",
-			"value": 495265579
+			"name": "RealImpactCheck",
+			"value": 1121108660
 		}
 	],
 	"app.PlayerVergilPL.StrafeType": [
@@ -118923,22 +118923,6 @@
 	],
 	"app.WeaponBalrog.Parts": [
 		{
-			"name": "R_Shoulder",
-			"value": 9
-		},
-		{
-			"name": "L_Shoulder",
-			"value": 10
-		},
-		{
-			"name": "R_Hand",
-			"value": 5
-		},
-		{
-			"name": "L_Hand",
-			"value": 6
-		},
-		{
 			"name": "R_Hand_Power",
 			"value": 1
 		},
@@ -118955,12 +118939,28 @@
 			"value": 4
 		},
 		{
+			"name": "R_Hand",
+			"value": 5
+		},
+		{
+			"name": "L_Hand",
+			"value": 6
+		},
+		{
 			"name": "R_Foot_Power",
 			"value": 7
 		},
 		{
 			"name": "L_Foot_Power",
 			"value": 8
+		},
+		{
+			"name": "R_Shoulder",
+			"value": 9
+		},
+		{
+			"name": "L_Shoulder",
+			"value": 10
 		}
 	],
 	"app.MissionSettingManager.CommandDeactivatePlayer.State": [
@@ -120933,10 +120933,6 @@
 	],
 	"app.player.pl0100.RoyalGuardActionTag": [
 		{
-			"name": "Block",
-			"value": 1957887693
-		},
-		{
 			"name": "BlockHit",
 			"value": 1285841414
 		},
@@ -120945,12 +120941,16 @@
 			"value": 1496550956
 		},
 		{
-			"name": "Release",
-			"value": 4194918168
+			"name": "Block",
+			"value": 1957887693
 		},
 		{
 			"name": "DevilCounter",
 			"value": 2452057427
+		},
+		{
+			"name": "Release",
+			"value": 4194918168
 		}
 	],
 	"via.motion.JointGroup": [
@@ -121256,10 +121256,6 @@
 	],
 	"via.UserState": [
 		{
-			"name": "Invalid",
-			"value": 65535
-		},
-		{
 			"name": "Login",
 			"value": 0
 		},
@@ -121270,6 +121266,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": 65535
 		}
 	],
 	"via.motion.IkLeg.RayCastSkipOption": [
@@ -121656,16 +121656,16 @@
 			"value": 2
 		},
 		{
+			"name": "Default",
+			"value": 3
+		},
+		{
 			"name": "BossXZ",
 			"value": 4
 		},
 		{
 			"name": "PlayerXZ",
 			"value": 8
-		},
-		{
-			"name": "Default",
-			"value": 3
 		},
 		{
 			"name": "All",
@@ -121794,6 +121794,342 @@
 		{
 			"name": "Matrix",
 			"value": 19
+		}
+	],
+	"via.network.AutoMatchmaking.Phase": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "Host_Init",
+			"value": 1
+		},
+		{
+			"name": "Host_SetRule",
+			"value": 2
+		},
+		{
+			"name": "Host_CreateSession",
+			"value": 3
+		},
+		{
+			"name": "Host_CreateWait",
+			"value": 4
+		},
+		{
+			"name": "Host_InGame",
+			"value": 5
+		},
+		{
+			"name": "Host_Timeout",
+			"value": 6
+		},
+		{
+			"name": "Guest_Init",
+			"value": 7
+		},
+		{
+			"name": "Guest_CreateSession",
+			"value": 8
+		},
+		{
+			"name": "Guest_CreateWait",
+			"value": 9
+		},
+		{
+			"name": "Guest_SetSearchRule",
+			"value": 10
+		},
+		{
+			"name": "Guest_SearchSession",
+			"value": 11
+		},
+		{
+			"name": "Guest_SearchWait",
+			"value": 12
+		},
+		{
+			"name": "Guest_ThinkRule",
+			"value": 13
+		},
+		{
+			"name": "Guest_GiveupSession",
+			"value": 14
+		},
+		{
+			"name": "Guest_GiveupWait",
+			"value": 15
+		},
+		{
+			"name": "Guest_JoinSession",
+			"value": 16
+		},
+		{
+			"name": "Guest_JoinWait",
+			"value": 17
+		},
+		{
+			"name": "Guest_InGame",
+			"value": 18
+		},
+		{
+			"name": "Guest_SearchInterval",
+			"value": 19
+		},
+		{
+			"name": "Guest_Timeout",
+			"value": 20
+		},
+		{
+			"name": "Guest_TimeoutWait",
+			"value": 21
+		},
+		{
+			"name": "Guest_XboxSmartMatch",
+			"value": 22
+		},
+		{
+			"name": "Guest_XboxSmartMatchWait",
+			"value": 23
+		},
+		{
+			"name": "Guest_XboxSmartMatchHoge",
+			"value": 24
+		}
+	],
+	"app.Collision.CollisionSystem.Material.Effect": [
+		{
+			"name": "EmSoilA",
+			"value": 0
+		},
+		{
+			"name": "EmGravelA",
+			"value": 1
+		},
+		{
+			"name": "EmSloughA",
+			"value": 2
+		},
+		{
+			"name": "EmStoneA",
+			"value": 3
+		},
+		{
+			"name": "EmRubbleA",
+			"value": 4
+		},
+		{
+			"name": "EmWoodA",
+			"value": 5
+		},
+		{
+			"name": "EmWoodB",
+			"value": 6
+		},
+		{
+			"name": "EmIronA",
+			"value": 7
+		},
+		{
+			"name": "EmIronNetA",
+			"value": 8
+		},
+		{
+			"name": "EmGlassPieceA",
+			"value": 9
+		},
+		{
+			"name": "EmClothA",
+			"value": 10
+		},
+		{
+			"name": "EmMeatA",
+			"value": 11
+		},
+		{
+			"name": "EmPaperA",
+			"value": 12
+		},
+		{
+			"name": "EmWaterA",
+			"value": 13
+		},
+		{
+			"name": "EmWaterB",
+			"value": 14
+		},
+		{
+			"name": "EmWaterC",
+			"value": 15
+		},
+		{
+			"name": "EmWaterDeepD",
+			"value": 16
+		},
+		{
+			"name": "EmNoneA",
+			"value": 17
+		}
+	],
+	"via.render.RenderConfig.LensDistortionSetting": [
+		{
+			"name": "ON",
+			"value": 0
+		},
+		{
+			"name": "DistortionOnly",
+			"value": 1
+		},
+		{
+			"name": "OFF",
+			"value": 2
+		}
+	],
+	"via.motion.IkSpineConformGround.ROT_TYPE": [
+		{
+			"name": "SPEED",
+			"value": 0
+		},
+		{
+			"name": "DAMPING",
+			"value": 1
+		}
+	],
+	"app.Collision.MotionDecalTrackRoot.AXIS_TYPE": [
+		{
+			"name": "Y_MINUS",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "X_MINUS",
+			"value": 2
+		},
+		{
+			"name": "X",
+			"value": 3
+		},
+		{
+			"name": "Z_MINUS",
+			"value": 4
+		},
+		{
+			"name": "Z",
+			"value": 5
+		}
+	],
+	"app.assets.SectionRoot.Script.Character.Enemy.Em0000.Behavior.Em0000IntestineChainStarter.StatusType": [
+		{
+			"name": "Setup",
+			"value": 0
+		},
+		{
+			"name": "Active",
+			"value": 1
+		},
+		{
+			"name": "Sleep",
+			"value": 2
+		}
+	],
+	"app.Collision.CollisionSystem.AsyncCastRequestBase.CastType": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Ray",
+			"value": 1
+		},
+		{
+			"name": "Sphere",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVExpertHitEffectData.DIRECTIONTYPE": [
+		{
+			"name": "DefenderCollisionNomal",
+			"value": 0
+		},
+		{
+			"name": "InverseDefenderCollisionNormal",
+			"value": 1
+		},
+		{
+			"name": "AttackDirection",
+			"value": 2
+		},
+		{
+			"name": "InverseAttackDirection",
+			"value": 3
+		}
+	],
+	"app.Collision.CollisionSystem.Material.Terrain": [
+		{
+			"name": "TmDefault",
+			"value": 0
+		}
+	],
+	"app.Collision.HitManager.Direction": [
+		{
+			"name": "Front",
+			"value": 0
+		},
+		{
+			"name": "Back",
+			"value": 1
+		},
+		{
+			"name": "Left",
+			"value": 2
+		},
+		{
+			"name": "Right",
+			"value": 3
+		},
+		{
+			"name": "FrontLeft",
+			"value": 4
+		},
+		{
+			"name": "FrontRight",
+			"value": 5
+		},
+		{
+			"name": "BackLeft",
+			"value": 6
+		},
+		{
+			"name": "BackRight",
+			"value": 7
+		}
+	],
+	"app.Collision.CollisionSystem.AsyncCastHandleBase.CastType": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Ray",
+			"value": 1
+		},
+		{
+			"name": "Sphere",
+			"value": 2
+		}
+	],
+	"via.effect.script.EPVExpertHitEffectRecordData.DECALTOPDIRECTION": [
+		{
+			"name": "Random",
+			"value": 0
+		},
+		{
+			"name": "DirectionY",
+			"value": 1
 		}
 	]
 }
