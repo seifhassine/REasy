@@ -79,11 +79,13 @@ class TreeWidgetFactory:
             enum_values = EnumManager.instance().get_enum_values(enum_type)
             if enum_values:
                 is_enum = True
-                if isinstance(data_obj, U32Data):
-                    original_value = data_obj.value
-                    data_obj.__class__ = S32Data
-                    if original_value > 0x7FFFFFFF: 
-                        data_obj.value = original_value - 0x100000000 
+                enum_value_list = [val["value"] for val in enum_values]
+                if data_obj.value not in enum_value_list:
+                    if isinstance(data_obj, U32Data):
+                        original_value = data_obj.value
+                        data_obj.__class__ = S32Data
+                        if original_value > 0x7FFFFFFF:
+                            data_obj.value = original_value - 0x100000000
 
         if is_enum:
             label = QLabel(name_text)
