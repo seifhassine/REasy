@@ -1898,7 +1898,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "U32"
+				"type": "Bits"
 			}
 		],
 		"name": "via.physics.FilterInfo"
@@ -3150,7 +3150,7 @@
 				"native": true,
 				"original_type": "via.navigation.AIMapEffector.EdgeCreateType",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
