@@ -1230,5 +1230,748 @@
 			}
 		],
 		"name": "via.AnimationCurve"
+	},
+	"be980941": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "RenderOutputID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Mesh",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Material",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "StaticMesh",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SmallObjectCullingFactor",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SharedSkeleton",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "SharedSkeletonGameObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BVHRebuildFactor",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BVHCacheStrategy",
+				"native": true,
+				"original_type": "via.render.BVHCacheStrategy",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BVHCacheProtectFrame",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "PreferOpaque",
+				"native": true,
+				"original_type": "via.render.BVHOptimizeSetting",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "PreferAlphaMask",
+				"native": true,
+				"original_type": "via.render.BVHOptimizeSetting",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "PreferShadowCast",
+				"native": true,
+				"original_type": "via.render.BVHOptimizeSetting",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRebraiding",
+				"native": true,
+				"original_type": "via.render.BVHOptimizeSetting",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FrustumCulling",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OcclusionCulling",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Occluder",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OccluderByLod",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawLaterOccluder",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawVoxelize",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawnEnvmap",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDepthBlocker",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDepthOcclusion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawRaytracing",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawGlobalSparseShadow",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IgnoreDepth",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v29",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v30",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v31",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v32",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v33",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v34",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v35",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v36",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v37",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v38",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v39",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v40",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v41",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v42",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v43",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v44",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v45",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v46",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v49",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v50",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v51",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v52",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v57",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v59",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v60",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v61",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v62",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v65",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v66",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v67",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": true,
+				"name": "v68",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v69",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v70",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v71",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v72",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v73",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v74",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v75",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v76",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v77",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v78",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v79",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v80",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.render.Mesh"
 	}
 }
