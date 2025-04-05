@@ -409,5 +409,64 @@
 			}
 		],
 		"name": "via.render.Mesh"
+	},
+	"12e376e4": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaterialName",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "VariableName",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": true,
+				"original_type": "via.render.MaterialParam.MaterialParamType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Float4",
+				"native": true,
+				"original_type": "via.Float4",
+				"size": 16,
+				"type": "Float4"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Texture",
+				"native": true,
+				"original_type": "via.render.TextureResourceHandle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Float",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.render.MaterialParam"
 	}
 }
