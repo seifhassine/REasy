@@ -2796,7 +2796,7 @@
 				"array": true,
 				"name": "Colliders",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.Collider",
 				"size": 4,
 				"type": "Object"
 			}
