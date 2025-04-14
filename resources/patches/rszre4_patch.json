@@ -209,7 +209,7 @@
 				"array": true,
 				"name": "Vertex",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.geometry.Vertex",
 				"size": 4,
 				"type": "Object"
 			},
@@ -218,7 +218,7 @@
 				"array": true,
 				"name": "Face",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.geometry.Face",
 				"size": 4,
 				"type": "Object"
 			},
@@ -452,16 +452,16 @@
 				"array": true,
 				"name": "Colliders",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.Collider",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
 				"name": "ColliderPreset",
 				"native": true,
-				"original_type": "",
+				"original_type": "System.String",
 				"size": 4,
 				"type": "String"
 			},
@@ -1569,7 +1569,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "PlaySpeed(?)",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1578,7 +1578,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "SkipUpdate(?)",
+				"name": "PlayReset",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1587,38 +1587,38 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "ExecutePriority",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "S8"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "AfterParentAnimation",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "AfterParentAnimationOrder",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "ParallelAfterParent",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1713,74 +1713,74 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v18",
+				"name": "MotionBank",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.MotionBank",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v19",
+				"name": "DynamicMotionBank",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.DynamicMotionBank",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "JointMapExpressionEnabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "ExpressionLOD",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "IntervalUpdateOption",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.Motion.IntervalUpdateOption",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v23",
+				"name": "EnabledSkeletonMask",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v24",
+				"name": "JointLODGroupLevel",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.EJointLODGroupLevel",
 				"size": 1,
-				"type": "Data"
+				"type": "U8"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "JointLODGroupForceSkips",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 4,
@@ -2451,7 +2451,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "PlaySpeed(?)",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2460,7 +2460,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "SkipUpdate(?)",
+				"name": "PlayReset",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2469,38 +2469,38 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "ExecutePriority",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "S8"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "AfterParentAnimation",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "AfterParentAnimationOrder",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "ParallelAfterParent",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			}
 		],
 		"name": "via.motion.Animation"
@@ -3058,7 +3058,7 @@
 				"array": true,
 				"name": "MapNames",
 				"native": true,
-				"original_type": "",
+				"original_type": "System.String",
 				"size": 4,
 				"type": "String"
 			},
