@@ -15,6 +15,7 @@ class TreeWidgetFactory:
         "Vec3Data": Vec3Input,
         "Float2Data": Vec2Input,
         "Float3Data": Vec3Input,
+        "PositionData": Vec3Input,
         "GameObjectRefData": GuidInput,
         "GuidData": GuidInput,
         "OBBData": OBBInput,

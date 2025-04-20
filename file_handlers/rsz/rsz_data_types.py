@@ -291,6 +291,13 @@ class PointData:
         self.z = z
         self.orig_type = orig_type
 
+class PositionData:
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, orig_type: str = ""):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.orig_type = orig_type
+
 class RangeData:
     def __init__(self, min: float = 0, max: float = 0, orig_type: str = ""):
         self.min = min
@@ -362,7 +369,6 @@ class RawBytesData:
         self.field_size = field_size
         self.orig_type = orig_type
 
-#Types in re4r
 
 TYPE_MAPPING = {
     "bool": BoolData,
@@ -410,6 +416,7 @@ TYPE_MAPPING = {
     "float2": Float2Data,
     "float3": Float3Data,
     "float4": Float4Data,
+    "position": PositionData,
     "cylinder": CylinderData,
     "cone": ConeData,
     "color": ColorData,
