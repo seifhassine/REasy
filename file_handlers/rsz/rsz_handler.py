@@ -901,12 +901,12 @@ class RszViewer(QWidget):
 
     def _handle_reference_in_array(self, index, element, embedded_context, domain_id):
         """Handle object or userdata reference in an array"""
-        ref_id = element.value if isinstance(element, ObjectData) else element.index
+        ref_id = element.value if (isinstance(element, ObjectData) or isinstance(element, UserDataData)) else element.index
         return self._handle_reference(str(index), ref_id, embedded_context, element)
     
     def _handle_object_reference(self, field_name, data_obj, embedded_context, domain_id):
         """Handle object or userdata reference"""
-        ref_id = data_obj.value if isinstance(data_obj, ObjectData) else data_obj.index
+        ref_id = data_obj.value if (isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData)) else data_obj.index
         return self._handle_reference(field_name, ref_id, embedded_context, data_obj)
     
     def _handle_reference(self, label, ref_id, embedded_context, data_obj):
@@ -1277,22 +1277,13 @@ class RszViewer(QWidget):
             updated_fields = {}
             new_id = instance_id + 1 if instance_id >= index else instance_id
             for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData):
+                if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData):
                     if field_data.value >= index:
                         field_data.value += 1
-                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
-                    if field_data.index >= index:
-                        field_data.index += 1
                 elif isinstance(field_data, ArrayData):
                     for elem in field_data.values:
-                        if isinstance(elem, ObjectData) and elem.value >= index:
+                        if (isinstance(elem, ObjectData) or isinstance(elem, UserDataData)) and elem.value >= index:
                             elem.value += 1
-                        elif (
-                            isinstance(elem, UserDataData)
-                            and hasattr(elem, "index")
-                            and elem.index >= index
-                        ):
-                            elem.index += 1
                 updated_fields[field_name] = field_data
             updated_elements[new_id] = updated_fields
         self.scn.parsed_elements = updated_elements
@@ -1476,16 +1467,12 @@ class RszViewer(QWidget):
         """Update references in fields after deleting instances"""
         updated_fields = {}
         for field_name, field_data in fields.items():
-            if isinstance(field_data, ObjectData):
+            if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData):
                 self._update_reference_value(field_data, "value", deleted_ids, id_mapping)
-            elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
-                self._update_reference_value(field_data, "index", deleted_ids, id_mapping)
             elif isinstance(field_data, ArrayData):
                 for elem in field_data.values:
-                    if isinstance(elem, ObjectData):
+                    if isinstance(elem, ObjectData) or isinstance(elem, UserDataData):
                         self._update_reference_value(elem, "value", deleted_ids, id_mapping)
-                    elif isinstance(elem, UserDataData) and hasattr(elem, "index"):
-                        self._update_reference_value(elem, "index", deleted_ids, id_mapping)
             updated_fields[field_name] = field_data
         return updated_fields
         

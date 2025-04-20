@@ -7,6 +7,7 @@ from file_handlers.rsz.rsz_file import RszInstanceInfo
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
 class RszComponentClipboard:
     """Clipboard handling for copying and pasting components."""
@@ -519,6 +520,7 @@ class RszComponentClipboard:
                     new_fields = RszGameObjectClipboard._deserialize_fields_with_remapping(
                         fields_data, instance_mapping, userdata_mapping, guid_mapping
                     )
+                    RszComponentClipboard._update_userdata_references(new_fields, userdata_mapping)
                     
                     viewer.scn.parsed_elements[new_instance_id] = new_fields
                 
@@ -575,3 +577,20 @@ class RszComponentClipboard:
             print(f"Error pasting component: {str(e)}")
             traceback.print_exc()
             return None
+    
+    @staticmethod
+    def _update_userdata_references(fields, userdata_mapping):
+        """Update UserDataData references with correct userdata mapping
+        
+        Args:
+            fields: The fields dictionary to update
+            userdata_mapping: Mapping from old userdata IDs to new userdata IDs
+        """
+        for _, field_data in fields.items():
+            if isinstance(field_data, UserDataData) and field_data.value in userdata_mapping:
+                field_data.value = userdata_mapping[field_data.value]
+            
+            elif isinstance(field_data, ArrayData):
+                for i, element in enumerate(field_data.values):
+                    if isinstance(element, UserDataData) and element.value in userdata_mapping:
+                        element.value = userdata_mapping[element.value]

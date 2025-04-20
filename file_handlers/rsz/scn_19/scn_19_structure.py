@@ -621,15 +621,11 @@ def build_embedded_rsz(rui, type_registry=None):
 
 def _update_field_references(field_data, old_to_new_idx):
     """Update references in fields to match new indices"""
-    if isinstance(field_data, ObjectData) and hasattr(field_data, 'value'):
+    if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData) :
         if field_data.value in old_to_new_idx:
             field_data.value = old_to_new_idx[field_data.value]
-    elif isinstance(field_data, UserDataData) and hasattr(field_data, 'index'):
-        if field_data.index in old_to_new_idx:
-            field_data.index = old_to_new_idx[field_data.index]
-    elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
-        field_data.modified = True 
-        
+    elif isinstance(field_data, ArrayData):
+        field_data.modified = True  
         for element in field_data.values:
             _update_field_references(element, old_to_new_idx)
 

@@ -69,13 +69,3 @@ class RszClipboardUtils:
             
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
     
-    @staticmethod
-    def is_null_guid(guid_bytes, guid_str=None):
-        NULL_GUID = bytes(16)
-        NULL_GUID_STR = "00000000-0000-0000-0000-000000000000"
-        
-        if guid_bytes == NULL_GUID:
-            return True
-        if guid_str and guid_str == NULL_GUID_STR:
-            return True
-        return False

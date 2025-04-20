@@ -442,6 +442,77 @@ class S32Input(NumberInput):
         if self._data and hasattr(self._data, 'value'):
             self.line_edit.setText(str(self._data.value))
 
+
+class Int3Input(BaseValueWidget):
+    valueChanged = Signal(tuple)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        
+        self.inputs = []
+        for i, _ in enumerate(['x', 'y', 'z']):
+            line_edit = QLineEdit()
+            validator = QIntValidator()
+            line_edit.setValidator(validator)
+            line_edit.setMaxLength(12)
+            line_edit.setFixedWidth(100)
+            line_edit.setAlignment(Qt.AlignLeft)
+            self.layout.addWidget(line_edit)
+            self.inputs.append(line_edit)
+            
+        self.layout.addStretch()
+            
+        if data:
+            self.set_data(data)
+            
+        for input_field in self.inputs:
+            input_field.textEdited.connect(self._on_value_changed) 
+
+    def update_display(self):
+        if not self._data:
+            return
+        values = [self._data.x, self._data.y, self._data.z]
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(int(val))) 
+
+    def _on_value_changed(self):
+        if not self._data:
+            return
+        
+        try:
+            new_values = []
+            valid_input = True
+            
+            for i, input_field in enumerate(self.inputs):
+                text = input_field.text()
+                try:
+                    if not text or text == '-': 
+                        value = 0
+                    else:
+                        value = int(text)
+                        
+                    if value > 2147483647:
+                        raise ValueError("Out of Int32 range")
+                    input_field.setStyleSheet("")
+                        
+                except ValueError:
+                    input_field.setStyleSheet("border: 1px solid red;")
+                    valid_input = False
+                    value = 0
+                    
+                new_values.append(value)
+            
+            if valid_input:
+                self._data.x = new_values[0]
+                self._data.y = new_values[1]
+                self._data.z = new_values[2]
+                
+                self.valueChanged.emit(tuple(new_values))
+                self.mark_modified()
+
+        except Exception as e:
+            print(f"Error in Int3Input._on_value_changed: {e}")
+
 class U32Input(NumberInput):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -909,12 +980,12 @@ class UserDataInput(BaseValueWidget):
     def update_display(self):
         if not self._data:
             return
-        display_text = f"{self._data.value}"
+        display_text = f"{self._data.string}"
         self.line_edit.setText(display_text)
 
     def _on_value_changed(self, text):
         if self._data:
-            self._data.value = text
+            self._data.string = text
             self.valueChanged.emit(text)
             self.mark_modified()
 

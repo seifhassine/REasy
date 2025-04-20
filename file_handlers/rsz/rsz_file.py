@@ -782,13 +782,15 @@ class RszFile:
                     out.extend(struct.pack("<2i", element.min, element.max))
                 elif isinstance(element, Float3Data):
                     out.extend(struct.pack("<3f", element.x, element.y, element.z))
+                elif isinstance(element, Int3Data):
+                    out.extend(struct.pack("<3i", element.x, element.y, element.z))
                 elif isinstance(element, Float4Data):
                     out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
                 elif isinstance(element, QuaternionData):
                     out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
                 elif isinstance(element, ColorData):
                     out.extend(struct.pack("<4B", element.r, element.g, element.b, element.a))
-                elif isinstance(element, (ObjectData, U32Data)):
+                elif isinstance(element, (ObjectData, U32Data, UserDataData)):
                     value = int(element.value) & 0xFFFFFFFF
                     out.extend(struct.pack("<I", value))
                 elif isinstance(element, Vec3Data) or isinstance(element, Vec3ColorData):
@@ -850,9 +852,6 @@ class RszFile:
                     remaining_bytes = field_size - len(element.raw_bytes)
                     if remaining_bytes > 0:
                         out.extend(b'\x00' * remaining_bytes)
-                elif isinstance(element, UserDataData):
-                    out.extend(struct.pack("<I", element.index))
-                    #print("userdata index is ", element.index)
                 elif isinstance(element, F32Data):
                     val_bits = struct.pack("<f", element.value)
                     out.extend(val_bits)
@@ -912,13 +911,16 @@ class RszFile:
             elif isinstance(data_obj, Float3Data):
                 #print("last is float3")
                 out.extend(struct.pack("<3f", data_obj.x, data_obj.y, data_obj.z))
+            elif isinstance(data_obj, Int3Data):
+                #print("last is float3")
+                out.extend(struct.pack("<3i", data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Float4Data):
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, QuaternionData):
                 out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, ColorData):
                 out.extend(struct.pack("<4B", data_obj.r, data_obj.g, data_obj.b, data_obj.a))
-            elif isinstance(data_obj, (ObjectData, U32Data)):
+            elif isinstance(data_obj, (ObjectData, U32Data, UserDataData)):
                 value = int(data_obj.value) & 0xFFFFFFFF
                 out.extend(struct.pack("<I", value))
             elif isinstance(data_obj, Vec3Data) or isinstance(data_obj, Vec3ColorData):
@@ -985,9 +987,6 @@ class RszFile:
                 remaining_bytes = field_size - len(data_obj.raw_bytes)
                 if remaining_bytes > 0:
                     out.extend(b'\x00' * remaining_bytes)
-            elif isinstance(data_obj, UserDataData):
-                #print(f"Writing userdata with index {data_obj.index}")  # Debug print
-                out.extend(struct.pack("<I", data_obj.index))
             elif isinstance(data_obj, CapsuleData):
                 out.extend(struct.pack("<3f", data_obj.start.x, data_obj.start.y, data_obj.start.z))
                 out.extend(struct.pack("<f", 0.0)) 
@@ -1955,6 +1954,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
     unpack_3float  = struct.Struct("<3f").unpack_from
     unpack_2float  = struct.Struct("<2f").unpack_from
     unpack_2int    = struct.Struct("<2i").unpack_from
+    unpack_3int    = struct.Struct("<3i").unpack_from
     unpack_sbyte   = struct.Struct("<b").unpack_from
     unpack_ubyte   = struct.Struct("<B").unpack_from
     unpack_4ubyte  = struct.Struct("<4B").unpack_from
@@ -2111,7 +2111,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     if not found:
                         userdata_values.append(f"Empty Userdata {candidate}")
                 data_obj = ArrayData(
-                    [rsz_type(val, idx, original_type) for val, idx in zip(userdata_values, userdatas)],
+                    [rsz_type(idx, val, original_type) for val, idx in zip(userdata_values, userdatas)],
                     rsz_type,
                     original_type
                 )
@@ -2171,6 +2171,15 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     f3_objects.append(rsz_type(*vals, original_type))
                     pos += fsize
                 data_obj = ArrayData(f3_objects, rsz_type, original_type)
+
+            elif rsz_type == Int3Data:
+                int3_objects = []
+                for _ in range(count):
+                    pos = _align(pos, field_align)
+                    vals = unpack_3int(raw, pos)
+                    int3_objects.append(rsz_type(*vals, original_type))
+                    pos += fsize
+                data_obj = ArrayData(int3_objects, rsz_type, original_type)
 
             elif rsz_type == Mat4Data:
                 mat4_objects = []
@@ -2358,7 +2367,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     if rui.instance_id == instance_id:
                         value = rsz_userdata_map.get(rui, "")
                         break
-                data_obj = rsz_type(value, instance_id, original_type)
+                data_obj = rsz_type(instance_id, value, original_type)
             elif rsz_type == GameObjectRefData:
                 guid_bytes = read_aligned_bytes(fsize, align=field_align)
                 guid_str = guid_le_to_str(guid_bytes)
@@ -2382,6 +2391,10 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 data_obj = rsz_type(*vals, original_type)
             elif rsz_type == Float3Data:
                 vals = unpack_3float(raw, pos)
+                pos += fsize
+                data_obj = rsz_type(*vals, original_type)
+            elif rsz_type == Int3Data:
+                vals = unpack_3int(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(*vals, original_type)
             elif rsz_type == Float4Data:

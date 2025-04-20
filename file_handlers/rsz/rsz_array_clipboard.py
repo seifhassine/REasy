@@ -209,7 +209,7 @@ class RszArrayClipboard:
 
     @staticmethod
     def _serialize_field_with_mapping(field_data, id_mapping, nested_ids, external_refs):
-        if isinstance(field_data, ObjectData):
+        if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData):
             result = RszArrayClipboard._serialize_element(field_data)
             
             if field_data.value > 0 and field_data.value in external_refs:
@@ -223,20 +223,6 @@ class RszArrayClipboard:
                 
             return result
         
-        elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
-            result = RszArrayClipboard._serialize_element(field_data)
-            
-            if field_data.index > 0 and field_data.index in external_refs:
-                result["is_external_ref"] = True
-                return result
-                
-            if field_data.index > 0 and field_data.index in nested_ids:
-                if field_data.index in id_mapping:
-                    result["index"] = id_mapping[field_data.index]
-                    result["in_graph"] = True
-                
-            return result
-        
         elif isinstance(field_data, ArrayData):
             result = {
                 "type": "ArrayData",
@@ -246,7 +232,7 @@ class RszArrayClipboard:
             }
             
             for element in field_data.values:
-                if isinstance(element, ObjectData) and element.value > 0:
+                if (isinstance(element, ObjectData) or isinstance(element, UserDataData)) and element.value > 0:
                     if element.value in external_refs:
                         elem_result = RszArrayClipboard._serialize_element(element)
                         elem_result["is_external_ref"] = True
@@ -254,18 +240,6 @@ class RszArrayClipboard:
                     elif element.value in nested_ids and element.value in id_mapping:
                         elem_result = RszArrayClipboard._serialize_element(element)
                         elem_result["value"] = id_mapping[element.value]
-                        elem_result["in_graph"] = True
-                        result["values"].append(elem_result)
-                    else:
-                        result["values"].append(RszArrayClipboard._serialize_element(element))
-                elif isinstance(element, UserDataData) and hasattr(element, "index") and element.index > 0:
-                    if element.index in external_refs:
-                        elem_result = RszArrayClipboard._serialize_element(element)
-                        elem_result["is_external_ref"] = True
-                        result["values"].append(elem_result)
-                    elif element.index in nested_ids and element.index in id_mapping:
-                        elem_result = RszArrayClipboard._serialize_element(element)
-                        elem_result["index"] = id_mapping[element.index]
                         elem_result["in_graph"] = True
                         result["values"].append(elem_result)
                     else:
@@ -316,7 +290,7 @@ class RszArrayClipboard:
             return {
                 "type": "UserDataData",
                 "value": element.value,
-                "index": element.index,
+                "string": element.string,
                 "orig_type": getattr(element, "orig_type", "")
             }
         elif isinstance(element, F32Data):
@@ -849,14 +823,14 @@ class RszArrayClipboard:
             return ObjectData(value, orig_type)
             
         elif field_type == "UserDataData":
-            index = field_data.get("index", 0)
-            value = field_data.get("value", "")
+            value = field_data.get("value", 0)
+            string = field_data.get("string", "")
             orig_type = field_data.get("orig_type", "")
             
-            if field_data.get("in_graph", False) and index in id_mapping:
-                index = id_mapping[index]
+            if field_data.get("in_graph", False) and value in id_mapping:
+                value = id_mapping[value]
                 
-            return UserDataData(value, index, orig_type)
+            return UserDataData(value, string, orig_type)
             
         elif field_type == "GameObjectRefData":
             guid_str = field_data.get("guid_str", "")
@@ -901,15 +875,15 @@ class RszArrayClipboard:
                     else:
                         array.values.append(ObjectData(relative_value, orig_type))
                 elif value_type == "UserDataData" and value_data.get("in_graph", False):
-                    relative_index = value_data.get("index", 0)
-                    value = value_data.get("value", "")
+                    relative_index = value_data.get("value", 0)
+                    string = value_data.get("string", "")
                     orig_type = value_data.get("orig_type", "")
                     
                     if relative_index in id_mapping:
                         new_index = id_mapping[relative_index]
-                        array.values.append(UserDataData(value, new_index, orig_type))
+                        array.values.append(UserDataData(new_index, string, orig_type))
                     else:
-                        array.values.append(UserDataData(value, relative_index, orig_type))
+                        array.values.append(UserDataData(relative_index, string, orig_type))
                 elif value_type == "GameObjectRefData":
                     guid_str = value_data.get("guid_str", "")
                     guid_hex = value_data.get("raw_bytes", "")
@@ -953,7 +927,7 @@ class RszArrayClipboard:
         elif element_type == "UserDataData":
             ud = UserDataData(
                 element_data.get("value", ""),
-                element_data.get("index", 0),
+                element_data.get("string", 0),
                 orig_type
             )
             return ud

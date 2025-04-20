@@ -7,6 +7,7 @@ This file contains operations for adding and removing elements from arrays in RS
 from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.pyside.tree_model import DataTreeBuilder
+from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
 class RszArrayOperations:
     """
@@ -74,6 +75,7 @@ class RszArrayOperations:
                 self.children = []
                 self.instance_id = 0  # Will be set when instance is created
                 self.fields = {}  # Fields will be initialized later
+                self.nested_objects = set()  # To hold nested objects
                 
             def add_child(self, child):
                 self.children.append(child)
@@ -353,8 +355,8 @@ class RszArrayOperations:
         if isinstance(element, ObjectData) and element.value > 0:
             instance_id = element.value
             ref_type = "object"
-        elif isinstance(element, UserDataData) and hasattr(element, "index") and element.index > 0:
-            instance_id = element.index
+        elif isinstance(element, UserDataData) and element.value > 0:
+            instance_id = element.value
             ref_type = "userdata"
         
         # If we have a reference to delete
@@ -577,7 +579,7 @@ class RszArrayOperations:
                 if ref_type == "object" and isinstance(field_data, ObjectData) and field_data.value == instance_id:
                     print(f"  Found external reference from instance {check_id}, field {field_name}")
                     return True
-                elif ref_type == "userdata" and isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
+                elif ref_type == "userdata" and isinstance(field_data, UserDataData) and field_data.value == instance_id:
                     print(f"  Found external reference from instance {check_id}, field {field_name}")
                     return True
                     
@@ -591,8 +593,7 @@ class RszArrayOperations:
                             return True
                         elif (ref_type == "userdata" and 
                               isinstance(item, UserDataData) and 
-                              hasattr(item, "index") and 
-                              item.index == instance_id):
+                              item.value == instance_id):
                             print(f"  Found external reference from instance {check_id}, field {field_name}[{i}]")
                             return True
                                 
@@ -608,8 +609,7 @@ class RszArrayOperations:
                         return True
                     elif (ref_type == "userdata" and 
                           isinstance(item, UserDataData) and 
-                          hasattr(item, "index") and 
-                          item.index == instance_id):
+                          item.value == instance_id):
                         print(f"  Found another reference in same array at index {i}")
                         return True
         
@@ -894,88 +894,11 @@ class RszArrayOperations:
         return type_info.get("name", f"Unknown (ID: {type_id})") if type_info else f"Unknown Type (ID: {type_id})"
 
     def _update_references_before_deletion(self, deleted_ids, id_adjustments):
-        """
-        Update all references in remaining instances before deletion.
-        This ensures object references remain valid after deletion.
-        """
-        for instance_id, fields in self.scn.parsed_elements.items():
-            if instance_id in deleted_ids:
-                continue  # Skip instances that will be deleted
-                
-            # Update all field references
-            for field_name, field_data in fields.items():
-                # Update direct object reference
-                if isinstance(field_data, ObjectData):
-                    ref_id = field_data.value
-                    if ref_id > 0:
-                        if ref_id in deleted_ids:
-                            field_data.value = 0
-                        elif ref_id in id_adjustments:
-                            field_data.value = id_adjustments[ref_id]
-                
-                # Update UserData references
-                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index"):
-                    ref_id = field_data.index
-                    if ref_id > 0:
-                        if ref_id in deleted_ids:
-                            field_data.index = 0
-                        elif ref_id in id_adjustments:
-                            field_data.index = id_adjustments[ref_id]
-                
-                # Update array elements
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData):
-                            ref_id = element.value
-                            if ref_id > 0:
-                                if ref_id in deleted_ids:
-                                    element.value = 0
-                                elif ref_id in id_adjustments:
-                                    element.value = id_adjustments[ref_id]
-                        
-                        # Update UserData references in array
-                        elif isinstance(element, UserDataData) and hasattr(element, "index"):
-                            ref_id = element.index
-                            if ref_id > 0:
-                                if ref_id in deleted_ids:
-                                    element.index = 0
-                                elif ref_id in id_adjustments:
-                                    element.index = id_adjustments[ref_id]
+        RszInstanceOperations.update_references_before_deletion(
+            self.scn.parsed_elements, deleted_ids, id_adjustments
+        )
 
     def _is_exclusively_referenced_from(self, instance_id, source_id):
-        """
-        Check if an instance is exclusively referenced from the given source instance.
-        
-        Args:
-            instance_id: The instance ID to check references for
-            source_id: The source instance ID that should be the only referencer
-            
-        Returns:
-            bool: True if instance_id is only referenced from source_id, False otherwise
-        """
-        if instance_id <= 0 or instance_id >= len(self.scn.instance_infos):
-            return False
-            
-        if instance_id in self.scn.object_table:
-            return False
-            
-        for check_id, fields in self.scn.parsed_elements.items():
-            if check_id == source_id:
-                continue
-                
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                    return False 
-                    
-                elif isinstance(field_data, UserDataData) and hasattr(field_data, "index") and field_data.index == instance_id:
-                    return False
-                    
-                elif isinstance(field_data, ArrayData):
-                    for item in field_data.values:
-                        if isinstance(item, ObjectData) and item.value == instance_id:
-                            return False 
-                        
-                        elif isinstance(item, UserDataData) and hasattr(item, "index") and item.index == instance_id:
-                            return False 
-            
-        return True
+        return RszInstanceOperations.is_exclusively_referenced_from(
+            self.scn.parsed_elements, instance_id, source_id, self.scn.object_table
+        )

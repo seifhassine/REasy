@@ -38,6 +38,7 @@ class TreeWidgetFactory:
         "ColorData": ColorInput,
         "Vec3ColorData": Vec3ColorInput,
         "CapsuleData": CapsuleInput,
+        "Int3Data": Int3Input,
     }
 
     @staticmethod
@@ -83,10 +84,20 @@ class TreeWidgetFactory:
                 if data_obj.value not in enum_value_list:
                     if isinstance(data_obj, U32Data):
                         original_value = data_obj.value
-                        data_obj.__class__ = S32Data
-                        if original_value > 0x7FFFFFFF:
-                            data_obj.value = original_value - 0x100000000
-
+                        converted_value = original_value - 0x100000000 if original_value > 0x7FFFFFFF else original_value
+                        if converted_value in enum_value_list:
+                            new_data = S32Data()
+                            new_data.__dict__.update(data_obj.__dict__)
+                            new_data.value = converted_value
+                            data_obj = new_data
+                    elif isinstance(data_obj, S32Data):
+                        original_value = data_obj.value
+                        converted_value = original_value + 0x100000000 if original_value < 0 else original_value
+                        if converted_value in enum_value_list:
+                            new_data = U32Data()
+                            new_data.__dict__.update(data_obj.__dict__)
+                            new_data.value = converted_value
+                            data_obj = new_data
         if is_enum:
             label = QLabel(name_text)
             label.setMinimumWidth(min_label_width)

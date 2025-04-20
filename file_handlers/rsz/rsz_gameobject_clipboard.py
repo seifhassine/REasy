@@ -6,7 +6,8 @@ from file_handlers.rsz.rsz_data_types import *
 from file_handlers.rsz.rsz_file import RszInstanceInfo, RszPrefabInfo, RszRSZUserDataInfo, RszUserDataInfo, RszGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
-from utils.hex_util import guid_le_to_str
+from utils.hex_util import guid_le_to_str, is_null_guid
+from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
 class RszGameObjectClipboard:
     NULL_GUID = bytes(16)
@@ -274,55 +275,15 @@ class RszGameObjectClipboard:
     
     @staticmethod
     def _find_nested_objects(viewer, fields, base_instance_id):
-        nested_objects = set()
-        
-        try:
-            base_object_id = -1
-            for i, id_ in enumerate(viewer.scn.object_table):
-                if id_ == base_instance_id:
-                    base_object_id = i
-                    break
-                    
-            if base_object_id <= 0:
-                return nested_objects
-                
-            prev_instance_id = next((id_ for id_ in reversed(viewer.scn.object_table[:base_object_id]) if id_ > 0), 0)
-            
-            object_table_ids = set(viewer.scn.object_table)
-            for instance_id in range(prev_instance_id + 1, base_instance_id):
-                if (instance_id > 0 and 
-                    instance_id < len(viewer.scn.instance_infos) and 
-                    viewer.scn.instance_infos[instance_id].type_id != 0 and
-                    instance_id not in object_table_ids):
-                    nested_objects.add(instance_id)
-                    
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    ref_id = field_data.value
-                    if ref_id not in object_table_ids and ref_id < base_instance_id:
-                        nested_objects.add(ref_id)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            ref_id = element.value
-                            if ref_id not in object_table_ids and ref_id < base_instance_id:
-                                nested_objects.add(ref_id)
-                
-            return nested_objects
-            
-        except Exception as e:
-            print(f"Error finding nested objects: {str(e)}")
-            return nested_objects
+        """Find instance IDs of nested objects that aren't in the object table."""
+        return RszInstanceOperations.find_nested_objects(
+            viewer.scn.parsed_elements, base_instance_id, viewer.scn.object_table
+        )
     
     @staticmethod
     def _find_userdata_references(fields, userdata_refs):
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and hasattr(field_data, 'index') and field_data.index > 0:
-                userdata_refs.add(field_data.index)
-            elif isinstance(field_data, ArrayData):
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and hasattr(element, 'index') and element.index > 0:
-                        userdata_refs.add(element.index)
+        """Find all UserDataData references in fields"""
+        RszInstanceOperations.find_userdata_references(fields, userdata_refs)
     
     @staticmethod
     def get_clipboard_data(viewer):
@@ -736,16 +697,16 @@ class RszGameObjectClipboard:
                     new_fields[field_name] = ObjectData(new_value, orig_type)
                     
             elif field_type == "UserDataData":
-                index = field_data.get("index", 0)
-                value = field_data.get("value", "")
+                value = field_data.get("value", 0)
+                string = field_data.get("string", "")
                 orig_type = field_data.get("orig_type", "")
                 
-                if index in userdata_mapping:
-                    new_index = userdata_mapping.get(index)
-                    new_fields[field_name] = UserDataData(value, new_index, orig_type)
+                if value in userdata_mapping:
+                    new_index = userdata_mapping.get(value)
+                    new_fields[field_name] = UserDataData(new_index, string, orig_type)
                 else:
-                    new_index = instance_mapping.get(index, index)
-                    new_fields[field_name] = UserDataData(value, new_index, orig_type)
+                    new_index = instance_mapping.get(value, value)
+                    new_fields[field_name] = UserDataData(new_index, string, orig_type)
                     
             elif field_type == "GameObjectRefData":
                 guid_str = field_data.get("guid_str", "")
@@ -756,7 +717,7 @@ class RszGameObjectClipboard:
                     try:
                         guid_bytes = bytes.fromhex(guid_hex)
                         
-                        is_null_guid = RszGameObjectClipboard._is_null_guid(guid_bytes, guid_str)
+                        is_null_guid = is_null_guid(guid_bytes, guid_str)
                         
                         if is_null_guid:
                             print(f"Preserving null GameObjectRef GUID for {field_name}")
@@ -802,16 +763,16 @@ class RszGameObjectClipboard:
                             new_array.values.append(ObjectData(new_ref_id, value_orig_type))
                             
                     elif value_type == "UserDataData":
-                        index = value_data.get("index", 0)
-                        value = value_data.get("value", "")
+                        value = value_data.get("value", 0)
+                        string = value_data.get("string", "")
                         value_orig_type = value_data.get("orig_type", "")
                         
-                        if index in userdata_mapping:
-                            new_index = userdata_mapping.get(index)
-                            new_array.values.append(UserDataData(value, new_index, value_orig_type))
+                        if value in userdata_mapping:
+                            new_index = userdata_mapping.get(value)
+                            new_array.values.append(UserDataData(new_index, string, value_orig_type))
                         else:
-                            new_index = instance_mapping.get(index, index)
-                            new_array.values.append(UserDataData(value, new_index, value_orig_type))
+                            new_index = instance_mapping.get(value, value)
+                            new_array.values.append(UserDataData(new_index, string, value_orig_type))
                           
                     elif value_type == "GameObjectRefData":
                         guid_str = value_data.get("guid_str", "")
@@ -822,7 +783,7 @@ class RszGameObjectClipboard:
                             try:
                                 guid_bytes = bytes.fromhex(guid_hex)
                                 
-                                is_null_guid = RszGameObjectClipboard._is_null_guid(guid_bytes, guid_str)
+                                is_null_guid = is_null_guid(guid_bytes, guid_str)
                                 
                                 if is_null_guid:
                                     print(f"Preserving null GameObjectRef GUID in array {field_name}")
@@ -991,17 +952,13 @@ class RszGameObjectClipboard:
         return components
     
     @staticmethod
-    def _is_null_guid(guid_bytes, guid_str=None):
-        return RszClipboardUtils.is_null_guid(guid_bytes, guid_str)
-    
-    @staticmethod
     def _handle_gameobject_guid(guid_hex, guid_mapping, gameobject, is_child=False):
         if not guid_hex or not hasattr(gameobject, 'guid'):
             return None
             
         source_guid = bytes.fromhex(guid_hex)
         
-        if RszClipboardUtils.is_null_guid(source_guid):
+        if is_null_guid(source_guid):
             return source_guid
         
         if source_guid in guid_mapping:

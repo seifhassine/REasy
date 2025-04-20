@@ -38,9 +38,9 @@ class ResourceData:
         self.orig_type = orig_type
 
 class UserDataData:
-    def __init__(self, value: str = "", index: int = 0, orig_type: str = ""):
+    def __init__(self, value: int = 0, string: str = "", orig_type: str = ""):
         self.value = value
-        self.index = index
+        self.string = string
         self.orig_type = orig_type
 
 class BoolData:
@@ -394,7 +394,6 @@ TYPE_MAPPING = {
     "size": SizeData,
     "s8": S8Data,
     "s16": S16Data,
-    "s32": S32Data,
     "s64": S64Data,
     "runtimetype": RuntimeTypeData,
     "rect": RectData,
