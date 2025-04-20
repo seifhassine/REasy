@@ -13,7 +13,7 @@ def create_about_dialog(parent):
     dialog.setFixedSize(450, 250)
     layout = QVBoxLayout(dialog)
 
-    title_label = QLabel("REasy Editor v0.1.8-R2")
+    title_label = QLabel("REasy Editor v0.1.9")
     title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 
