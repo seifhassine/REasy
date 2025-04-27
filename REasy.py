@@ -120,7 +120,7 @@ def create_search_dialog(parent, search_type):
 def create_search_patterns(search_type, value):
     if search_type == 'number':
         try:
-            sbytes = struct.pack("<I", value)
+            sbytes = struct.pack("<i", value)
             return [sbytes]
         except Exception as e:
             raise ValueError(f"Could not convert number: {e}")
