@@ -4697,5 +4697,786 @@
 			}
 		],
 		"name": "via.Folder"
+	},
+	"996ea3bd": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "GravityDirection",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GroupId",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "LocalMode",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IgnoreRotation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IgnoreParentRotation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AdsorbMode",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OverwritePosition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "LocalOffsetPosition",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Height",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SlopeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "VolumeGrowth",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MovementThreshold",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SlideMovementLimit",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Jump",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IgnoreVerticalRiseAdjust",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IgnoreBackfaceTriangle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FilterResource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.CharacterController"
+	},
+	"c030cc1e": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.CollidableBase"
+	},
+	"60fae36f": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Static",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Groups",
+				"native": true,
+				"original_type": "via.physics.ColliderGroupSet.Group",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.ColliderGroupSet"
+	},
+	"a9e7ba7c": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Shape",
+				"native": true,
+				"original_type": "via.physics.Shape",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointNameA",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointNameB",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ColliderInfos",
+				"native": true,
+				"original_type": "via.physics.ColliderGroupSet.ColliderInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.ColliderGroupSet.Group"
+	},
+	"eacd0984": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CollisionFilterResource",
+				"native": true,
+				"original_type": "via.physics.CollisionFilterResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CollisionMaterialResource",
+				"native": true,
+				"original_type": "via.physics.CollisionMaterialResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UserData",
+				"native": true,
+				"original_type": "via.physics.UserData",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "via.physics.ColliderGroupSet.ColliderInfo"
+	},
+	"e80f5f70": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Static",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Resource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.ColliderSet"
+	},
+	"7c0c2e30": {
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Resource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.RequestSetCollider.RequestSetGroup"
+	},
+	"669fc998": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Verbose",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "RequestSetGroups",
+				"native": true,
+				"original_type": "via.physics.RequestSetCollider.RequestSetGroup",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BankResource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NumExecuteWorkers",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SkipIdsMask",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.physics.RequestSetCollider"
+	},
+	"a68f59b5": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ScalableMeshInfos",
+				"native": true,
+				"original_type": "via.physics.ScalableMeshColliderSet.ScalableMeshInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.ScalableMeshColliderSet"
+	},
+	"505231cc": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Update",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NumTasks",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SkinningMeshInfos",
+				"native": true,
+				"original_type": "via.physics.SkinningMeshColliderSet.SkinningMeshInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.SkinningMeshColliderSet"
+	},
+	"f2962e46": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Resource",
+				"native": true,
+				"original_type": "via.physics.TerrainResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.Terrain"
+	},
+	"6b453364": {
+		"crc": "70173445",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DeveloperDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DevelopDrawFillMode",
+				"native": true,
+				"original_type": "via.physics.FillMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "DependencyResources",
+				"native": true,
+				"original_type": "via.resource_handle",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Resource",
+				"native": true,
+				"original_type": "via.physics.Terrain2dResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.physics.Terrain2d"
 	}
 }
