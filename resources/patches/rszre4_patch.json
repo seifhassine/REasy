@@ -26972,6 +26972,76 @@
 		],
 		"name": "chainsaw.SoundManagerUpdater_30"
 	},
+	"3a28e6f4": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.SoundManagerUpdater_State"
+	},
+	"49f2905f": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.SoundManagerUpdater_Culling"
+	},
+	"8001e487": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.SoundManagerUpdater_Position"
+	},
+	"9ca4111f": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.SoundManagerUpdater_RtpcValue"
+	},
+	"b6ff50ed": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.SoundManagerUpdater_GameParameter"
+	},
 	"8c083ba8": {
 		"fields": [
 			{
@@ -26986,8 +27056,58 @@
 		],
 		"name": "chainsaw.SoundManagerUpdater_50"
 	},
+	"9c1f859a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.NpcActionUpdaterBase`1<chainsaw.NpcActionUpdaterUnit>"
+	},
+	"12863485": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.NpcLookAtUpdater"
+	},
+	"124df64d": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.FireArrowShellCh1b7z0"
+	},
 	"11848353": {
-		"crc": "1036446d",
 		"fields": [
 			{
 				"align": 1,
@@ -70046,6 +70166,1417 @@
 		],
 		"name": "chainsaw.GmDoorLockBase"
 	},
+	"31f63a94": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SpeedAccel",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SpeedBrake",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SpeedMax",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CorrectRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "InputThreshold",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "InitRot",
+				"native": false,
+				"original_type": "chainsaw.GmPuzzleCrystalBall.InitParam",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmPuzzleCrystalBall"
+	},
+	"3d0a7b10": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmDoorCardKey"
+	},
+	"4ebbaa79": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmBigDoorPadlock"
+	},
+	"518afb5c": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmBigDoorLock"
+	},
+	"56d03a54": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": true,
+				"name": "_ParentDoorMeahPartsEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": true,
+				"name": "_BroDoorMeshPartsEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Rno",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "chainsaw.GmThumbTurn"
+	},
+	"5dad179c": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BreakLevel",
+				"native": false,
+				"original_type": "chainsaw.GmWoodBoxBase.BreakLevel",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Routine",
+				"native": false,
+				"original_type": "chainsaw.GmPadlock.RoutineType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition2",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation2",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_KickOffset",
+				"native": false,
+				"original_type": "chainsaw.GimmickUtillity.Coord",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CurrentDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNpc",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxDurabilityNpc",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AddForceRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.GmPadlock"
+	},
+	"634bb0a8": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition2",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation2",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CharacterOffset",
+				"native": false,
+				"original_type": "chainsaw.GimmickUtillity.Coord",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmClosingBoardLock"
+	},
+	"68206896": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsThereNpcMot",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsThereFightMot",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_MotFsmObj",
+				"native": false,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_BarOffset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsBar",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PlOffset",
+				"native": false,
+				"original_type": "chainsaw.GimmickUtillity.Coord",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_OffsetTarget",
+				"native": false,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			}
+		],
+		"name": "chainsaw.GmDoorLock"
+	},
+	"7ac7a573": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition2",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation2",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			}
+		],
+		"name": "chainsaw.GmHandDrill"
+	},
+	"8d835ec7": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Offset",
+				"native": false,
+				"original_type": "chainsaw.GimmickUtillity.Coord",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Wallside",
+				"native": false,
+				"original_type": "chainsaw.GmLatchDoorLock.HolderInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Doorside",
+				"native": false,
+				"original_type": "chainsaw.GmLatchDoorLock.HolderInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmLatchDoorLock"
+	},
+	"9325e3ad": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MapName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ParentJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "chainsaw.GmKeyHole"
+	},
+	"a3e4b2cc": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MapName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": true,
+				"name": "_DoorObjects",
+				"native": false,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "offsetPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "offsetDoorPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMessage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.GmFreezerAuthenticationDevice"
+	},
+	"c46e8b09": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmDoorLockKeyboard"
+	},
+	"f0b2414": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttachSide",
+				"native": false,
+				"original_type": "chainsaw.GmGateBase.DoorSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OffsetJoint",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseAutoWalk",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Routine",
+				"native": false,
+				"original_type": "chainsaw.GmDoorBar.RoutineType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Rno",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsHitDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CurrentDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPosition2",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetRotation2",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "EnemyOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "EnemyOffsetRotation",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AccessPointOffset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "chainsaw.GmDoorBar"
+	},
 	"f452a05": {
 		"fields": [
 			{
@@ -82291,6 +83822,2086 @@
 			}
 		],
 		"name": "chainsaw.Ch1f6z0BulletShellGenerator"
+	},
+	"1b39a1e0": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_UserData",
+				"native": false,
+				"original_type": "chainsaw.EmShellGeneratorUserData",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackKeyName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "chainsaw.EmShellGeneratorCh1f0z0ThrowGannard"
+	},
+	"2b926bca": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_UserData",
+				"native": false,
+				"original_type": "chainsaw.EmShellGeneratorUserData",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackKeyName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "chainsaw.EmShellCh1f5z1ThrowingStickGenerator"
+	},
+	"2e090089": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ManagedGroup",
+				"native": false,
+				"original_type": "chainsaw.ShellDefine.ShellDummyManagedGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LifeTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_InsideCameraMarginRange",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CameraCheckIntervalTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.EmShellLegHoldTrapDummy"
+	},
+	"2f8f2087": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitGrappleHit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.EmShellCh1d4z0"
+	},
+	"3efd9b98": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_UserData",
+				"native": false,
+				"original_type": "chainsaw.EmShellGeneratorUserData",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackKeyName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "chainsaw.EmShellGeneratorCh1d4z0"
+	},
+	"530309dd": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PermitStingTerrainAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsViolentDropByBlockTerrain",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDummyStingAxisBlur",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitStingEnemy",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDropOnPlayerDown",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CheckActionSignRangeOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAjustParryTarget",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_IsAjustParryTargetAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "HitEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OnEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitGrappleHit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c0z0CrossbowBolt"
+	},
+	"5e96d5fe": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_UserData",
+				"native": false,
+				"original_type": "chainsaw.EmShellCh1c0z0ThrowingExtraGeneratorUserData",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_WeaponID",
+				"native": false,
+				"original_type": "chainsaw.WeaponID",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PartsUserData",
+				"native": false,
+				"original_type": "chainsaw.Ch1c0z0WoodShieldPartsUserData",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c0z0WoodShieldGenerator_CP11"
+	},
+	"735f05e0": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PermitStingTerrainAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsViolentDropByBlockTerrain",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDummyStingAxisBlur",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitStingEnemy",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDropOnPlayerDown",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CheckActionSignRangeOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAjustParryTarget",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_IsAjustParryTargetAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "HitEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OnEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitGrappleHit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c8z0CrossbowBolt"
+	},
+	"8c774d5a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.EmShellCh1f0z0ThrowGannard"
+	},
+	"b06257f4": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PermitStingTerrainAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__BlockStingTerrainPercent__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsViolentDropByBlockTerrain",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDummyStingAxisBlur",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitStingEnemy",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDropOnPlayerDown",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CheckActionSignRangeOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAjustParryTarget",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_IsAjustParryTargetAngleDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "HitEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OnEffectUse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPermitGrappleHit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c0z0ThrowingExtra"
+	},
+	"b3814670": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ManagedGroup",
+				"native": false,
+				"original_type": "chainsaw.ShellDefine.ShellDummyManagedGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LifeTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_InsideCameraMarginRange",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CameraCheckIntervalTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__DummyEffectLifeTimeRange__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__DummyEffectLifeTimeRange__Value",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DropWeaponUserdata",
+				"native": false,
+				"original_type": "chainsaw.Ch1c0DropWeaponUserdata",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DropPositionOffset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_WaterContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_WaterElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "ResetRot",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c0z0ShellDummy"
+	},
+	"b385f5c4": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LifeTimeHitTerrainRange",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			}
+		],
+		"name": "chainsaw.EmShellCh1f5z1ThrowingStick"
+	},
+	"c7e1465a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitProbability",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FixBlur",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectContainerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitEffectElementID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionSignInfo",
+				"native": false,
+				"original_type": "chainsaw.EnemyActionSignTrack.EnemyActionSignInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.EmShellCh1c0z0Throwing"
+	},
+	"4fa75af": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0FlagArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0FlagArea"
+	},
+	"917bc24a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0CharacterControllerArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0CharacterControllerArea"
+	},
+	"ce3aa6ba": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0GimmickArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0GimmickArea"
+	},
+	"df4ed5e9": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TriggerArea",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseRunningTriggerArea",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RunningTriggerArea",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__TriggerTime__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__TriggerTime__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ForceTriggerArea",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PrepareArea",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnabledCameraCondition",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CameraCondition",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.CameraConditionData",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActionInfo",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.ActionData",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UserEnemyArea",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EnemyArea",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ActionArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Precondition",
+				"native": false,
+				"original_type": "chainsaw.FlagCondition",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_Once",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_ChangeActionMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_ConditionActionMode",
+				"native": false,
+				"original_type": "chainsaw.character.ch1f2z0.ActionMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_ConditionDoneActions",
+				"native": false,
+				"original_type": "chainsaw.NameHash",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TargetActionMode",
+				"native": false,
+				"original_type": "chainsaw.character.ch1f2z0.ActionMode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DoneFlagKeyName",
+				"native": false,
+				"original_type": "chainsaw.NameHash",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GimmickContextID",
+				"native": false,
+				"original_type": "chainsaw.ContextID",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GimmickGroundHeight",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_CancelHideMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0ActionArea"
+	},
+	"e4aa4c99": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0FrozenArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0FrozenArea"
+	},
+	"ef2630b3": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0WarpArea.Area",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_HighPriority",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0WarpArea"
+	},
+	"f13ddf99": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0AttackArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0AttackArea"
+	},
+	"f199c47d": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.TimelineEventSetLightBase`1<via.render.SpotLight>"
+	},
+	"27a21dc8": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.TimelineEventSetLightBase`1<via.render.IESLight>"
+	},
+	"b9325841": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.TimelineEventSetLightBase`1<via.effect.lensflare.LensflarePlayer>"
+	},
+	"cd572ee9": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.TimelineEventSetLightBase`1<via.render.LightProbes>"
+	},
+	"554c3bdb": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MedalOffsetZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleDown",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleStand",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleCoverA",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleCoverB",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_SlideOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_SlideSpan",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_SlideSpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CoverToughness",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CoverShakeTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CoverShakeSize",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CoverShakeSpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.ShootingGallery2TargetBehaviorArmor"
+	},
+	"786f2a44": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MedalOffsetZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleDown",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleStand",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HeightOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.ShootingGallery2TargetBehaviorFly"
+	},
+	"b2c0163b": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MedalOffsetZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.ShootingGallery2TargetBehaviorCommon"
+	},
+	"b793e597": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_HasDropItem",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Item",
+				"native": false,
+				"original_type": "chainsaw.ItemID",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_OffsetPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_KeyHoldSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_IconOffsetPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AutoWalkData_Battle",
+				"native": false,
+				"original_type": "chainsaw.MotionJackSupplierAutoWalk",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.GmBarricadeShelf"
+	},
+	"15672551": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxDurability",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAbleToRevive",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceHide",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.GmWindowBoard"
+	},
+	"db4525a8": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MedalOffsetZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleDown",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleStand",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RotateSpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.ShootingGallery2TargetBehaviorRotate"
+	},
+	"21442f3": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_StaticCollider",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "soundlib.SoundZoneObsOcl"
+	},
+	"43c13e74": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_StaticCollider",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "soundlib.SoundZoneMaterial"
+	},
+	"cd19ecc3": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_StaticCollider",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "soundlib.SoundZoneSpace"
+	},
+	"f23df2f3": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_StaticCollider",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "soundlib.SoundZoneGenerator"
+	},
+	"f23d4b5a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MedalOffsetZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleDown",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleStand",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.ShootingGallery2TargetBehaviorStand"
+	},
+	"e1eea99a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.TimelineEventSetLightBase`1<via.render.PointLight>"
+	},
+	"f39b2fe3": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_Areas",
+				"native": false,
+				"original_type": "chainsaw.Ch1f2z0ForbidArea.Area",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1f2z0ForbidArea"
+	},
+	"f13b42cf": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseActTiming",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActTimingDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.Ch1f6z0BulletShell"
 	},
 	"c34eb449": {
 		"fields": [
@@ -108449,6 +112060,372 @@
 		],
 		"name": "chainsaw.DangerHudBaseGuiControlBehavior"
 	},
+	"ad384e6a": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiType",
+				"native": false,
+				"original_type": "chainsaw.GuiType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiAttribute",
+				"native": false,
+				"original_type": "chainsaw.GuiAttribute",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RequestHandleType",
+				"native": false,
+				"original_type": "chainsaw.GuiRequestHandleType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_ApplyStopUpdateMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseOpen",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_OpenClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSingleton",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolLimitOperationType",
+				"native": false,
+				"original_type": "chainsaw.GuiControllerBehavior.PoolLimitOperationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolCount",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Prefab",
+				"native": false,
+				"original_type": "via.Prefab",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiDrawOffFlag",
+				"native": false,
+				"original_type": "chainsaw.GuiDrawFlagDefinition.DrawOffAttribute",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.DamageHudGuiControlBehavior"
+	},
+	"80289119": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiType",
+				"native": false,
+				"original_type": "chainsaw.GuiType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiAttribute",
+				"native": false,
+				"original_type": "chainsaw.GuiAttribute",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RequestHandleType",
+				"native": false,
+				"original_type": "chainsaw.GuiRequestHandleType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_ApplyStopUpdateMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseOpen",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_OpenClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSingleton",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolLimitOperationType",
+				"native": false,
+				"original_type": "chainsaw.GuiControllerBehavior.PoolLimitOperationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolCount",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Prefab",
+				"native": false,
+				"original_type": "via.Prefab",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiDrawOffFlag",
+				"native": false,
+				"original_type": "chainsaw.GuiDrawFlagDefinition.DrawOffAttribute",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.DangerContinuousGuiControlBehavior"
+	},
+	"5dda0c83": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiType",
+				"native": false,
+				"original_type": "chainsaw.GuiType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiAttribute",
+				"native": false,
+				"original_type": "chainsaw.GuiAttribute",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RequestHandleType",
+				"native": false,
+				"original_type": "chainsaw.GuiRequestHandleType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_ApplyStopUpdateMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseOpen",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_CloseClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableOverwrite_OpenClose",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSingleton",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolLimitOperationType",
+				"native": false,
+				"original_type": "chainsaw.GuiControllerBehavior.PoolLimitOperationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PoolCount",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Prefab",
+				"native": false,
+				"original_type": "via.Prefab",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuiDrawOffFlag",
+				"native": false,
+				"original_type": "chainsaw.GuiDrawFlagDefinition.DrawOffAttribute",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.DangerEffectGuiControlBehavior"
+	},
 	"1cfde81e": {
 		"fields": [
 			{
@@ -133739,6 +137716,20 @@
 		],
 		"name": "via.audiorender.DistortionParameters"
 	},
+	"7f99bfad": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.GmMiniDemoSupplierHelper"
+	},
 	"4a56cd6d": {
 		"fields": [
 			{
@@ -152344,6 +156335,45 @@
 		],
 		"name": "chainsaw.Ch1d6z0HeadUpdater"
 	},
+	"7a5f51b2": {
+		"crc": "2a7c6d03",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.KeyTreasureItemModelRotationController"
+	},
+	"7a24f00b": {
+		"crc": "4deee23f",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EnemyActionDriver",
+				"native": false,
+				"original_type": "chainsaw.EnemyHeadActionDriver",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch1d6z0HeadUpdater_CP11"
+	},
 	"24d80c09": {
 		"fields": [
 			{
@@ -152357,6 +156387,84 @@
 			}
 		],
 		"name": "chainsaw.Cp1021HudTotalScoreGuiBehavior"
+	},
+	"700b41b": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_IdleParam",
+				"native": false,
+				"original_type": "chainsaw.OilLampController.OilLampBlendParam",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AimParam",
+				"native": false,
+				"original_type": "chainsaw.OilLampController.OilLampBlendParam",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.OilLampController"
+	},
+	"7aad5877": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Flashlight"
+	},
+	"a23159b1": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_PosOffSetFromCamera",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_RotOffSetFromCamera",
+				"native": false,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			}
+		],
+		"name": "chainsaw.AssistLightController"
 	},
 	"31ec8a5c": {
 		"fields": [
@@ -185280,5 +189388,858 @@
 			}
 		],
 		"name": "chainsaw.GimmickActorChf8Updater"
+	},
+	"225a1269": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_MovePathDataList",
+				"native": false,
+				"original_type": "chainsaw.SplineUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GimmickActorChfcActionController"
+	},
+	"9910fcde": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_MovePathDataList",
+				"native": false,
+				"original_type": "chainsaw.SplineUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GimmickActorChfdActionController"
+	},
+	"9c42bb57": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_MovePathDataList",
+				"native": false,
+				"original_type": "chainsaw.SplineUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GimmickActorChf8ActionController"
+	},
+	"cd518826": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_MovePathDataList",
+				"native": false,
+				"original_type": "chainsaw.SplineUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GimmickActorCha3ActionController"
+	},
+	"eefc5e58": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_MovePathDataList",
+				"native": false,
+				"original_type": "chainsaw.SplineUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GimmickActorCha0ActionController"
+	},
+	"807c43a9": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.Ch6CommonHeadUpdater"
+	},
+	"8b6a50c7": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch0zzzzHeadUpdater"
+	},
+	"8facbfcd": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShootingFieldCheersType",
+				"native": false,
+				"original_type": "chainsaw.Npc.Cheers",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShootingFieldWaitZone",
+				"native": false,
+				"original_type": "chainsaw.ShootingFieldWaitZone",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsShootingFieldGateOpen",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.PartnerHeadUpdater"
+	},
+	"94c0a32b": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch0a1z0HeadUpdater"
+	},
+	"efef43f2": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch0a0z0HeadUpdater"
+	},
+	"7ef76752": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Bypass",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.audiorender.EffectParametersBase"
+	},
+	"7ebebc1e": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_ParamArray",
+				"native": false,
+				"original_type": "app.facial.Module.Parameter",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VolumeBlendRateCurve",
+				"native": false,
+				"original_type": "via.AnimationCurve",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BlinkTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_AutoBlink",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BlinkIntervalRange",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PhonemeSequenceTableUserData",
+				"native": false,
+				"original_type": "chainsaw.PhonemeSequenceTableUserData",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LipSyncAdvanceTime",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "chainsaw.Facial"
+	},
+	"7e77159b": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DoSearchLightInChildren",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LookAwayCheck",
+				"native": false,
+				"original_type": "chainsaw.LookAwayCheck",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DistanceCheck",
+				"native": false,
+				"original_type": "chainsaw.DistanceCheck",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.DistanceAndLookAwayLightController"
+	},
+	"1764f147": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowHookShotMelee",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowHookShotShieldBreak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowFatalKick",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowFatalRoundKick",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch3a8z0HeadUpdater"
+	},
+	"17bb8568": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.Ch6i1z0HeadUpdater"
+	},
+	"422a32d1": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.Ch6i0z0HeadUpdater"
+	},
+	"4494d966": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "chainsaw.Ch6i3z0HeadUpdater"
+	},
+	"45d7a925": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushNormalAdaptiveFeedBackParam",
+				"native": false,
+				"original_type": "chainsaw.WeaponAdaptiveFeedBackParam",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushHoldAdaptiveFeedBackParam",
+				"native": false,
+				"original_type": "chainsaw.WeaponAdaptiveFeedBackParam",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "chainsaw.Ch6i2z0HeadUpdater"
+	},
+	"cff7fbe0": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_Flag",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_FlagEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_CanteraFlag",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_CanteraFlagEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.AshleyPartLightFlagApplier"
+	},
+	"af69484c": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ComponentName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Target",
+				"native": false,
+				"original_type": "chainsaw.SleepComponents.TargetType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SleepConditions",
+				"native": false,
+				"original_type": "chainsaw.SleepComponentsInChapter.ChapterParam",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Logic",
+				"native": false,
+				"original_type": "share.LogicalOperationAndOr",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "chainsaw.SleepComponentsInChapter"
+	},
+	"ae08a304": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ModelCommonData",
+				"native": false,
+				"original_type": "chainsaw.DetailSearchModelCommonData",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LightParamHolder",
+				"native": false,
+				"original_type": "chainsaw.DetailSearchLightParamHolder",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Userdata",
+				"native": false,
+				"original_type": "chainsaw.DetailSearchFileUserdata",
+				"size": 4,
+				"type": "UserData"
+			}
+		],
+		"name": "chainsaw.GmDetailSearchFile"
+	},
+	"adc48f39": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowHookShotMelee",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowHookShotShieldBreak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowFatalKick",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NowFatalRoundKick",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch6i4z0HeadUpdater"
+	},
+	"b944a23f": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_MercenariesPrefab",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushTriggerID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BulletRushRAdaptiveFeedBackParam",
+				"native": false,
+				"original_type": "chainsaw.WeaponAdaptiveFeedBackParam",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FatalDistanceRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_WarpMoveAnimSpeedRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAtemiPlay",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "chainsaw.Ch6i5z0HeadUpdater"
 	}
 }
