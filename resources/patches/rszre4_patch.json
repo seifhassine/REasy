@@ -2030,6 +2030,47 @@
 		],
 		"name": "via.Transform"
 	},
+	"403d7ed5": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WorldNameHash",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DevelopDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Static",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.dynamics.ComponentBase"
+	},
 	"d7781be2": {
 		"fields": [
 			{
@@ -2039,21 +2080,21 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "CalculateTypes(?)",
+				"name": "WorldNameHash",
 				"native": true,
-				"original_type": "via.dynamics.RigidBodyMeshSet.CalculateType",
+				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "DisableRigidBodies(?)",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2062,7 +2103,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "Static(?)",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -28161,7 +28202,6 @@
 		"name": "chainsaw.TemporalWindDirectional"
 	},
 	"4e572f96": {
-		"crc": "3b3b6d97",
 		"fields": [
 			{
 				"align": 1,
@@ -28636,7 +28676,6 @@
 		"name": "chainsaw.DropItemBasementBase"
 	},
 	"4bbaa951": {
-		"crc": "bae64876",
 		"fields": [
 			{
 				"align": 1,
@@ -32009,7 +32048,6 @@
 		"name": "chainsaw.SoundManagerUpdater_Queue"
 	},
 	"11879770": {
-		"crc": "d4512561",
 		"fields": [
 			{
 				"align": 1,
@@ -37142,7 +37180,6 @@
 		"name": "chainsaw.GmBoatRope"
 	},
 	"93cbae41": {
-		"crc": "3c1220e4",
 		"fields": [
 			{
 				"align": 1,
@@ -37871,7 +37908,6 @@
 		"name": "chainsaw.StaffrollSimpleGuiBehavior_CP11"
 	},
 	"629964d9": {
-		"crc": "f8631078",
 		"fields": [
 			{
 				"align": 1,
@@ -40923,7 +40959,6 @@
 		"name": "chainsaw.GmPowerUnitLever"
 	},
 	"3b61dfa1": {
-		"crc": "fb0a9152",
 		"fields": [
 			{
 				"align": 1,
@@ -49215,7 +49250,6 @@
 		"name": "chainsaw.Cp1021GeneralDialogGuiBehavior"
 	},
 	"93c23483": {
-		"crc": "8a134c5c",
 		"fields": [
 			{
 				"align": 1,
@@ -56544,7 +56578,6 @@
 		"name": "chainsaw.GlCrestDoorManager.JudgeWork"
 	},
 	"9502dd4c": {
-		"crc": "be747873",
 		"fields": [
 			{
 				"align": 1,
@@ -58387,7 +58420,6 @@
 		"name": "chainsaw.Equipment"
 	},
 	"1bcb06cf": {
-		"crc": "af1ee942",
 		"fields": [
 			{
 				"align": 1,
@@ -60935,6 +60967,2001 @@
 		],
 		"name": "chainsaw.AC3300Controller_cp11"
 	},
+	"ffc9414c": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "TraceProfileLog",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Speed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Float"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledAgentOffsetPosition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AgentOffsetPosition",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "TargetPos",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "TargetObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputQueryNodeWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindFailedWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindDetailInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputObstacleAvoidanceInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisplayCaption",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDetectRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawAgentPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawTargetPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawNavigationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawPortalLine",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawSubRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDestinationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "FilterGroups",
+				"native": true,
+				"original_type": "via.navigation.FilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterTarget",
+				"native": true,
+				"original_type": "via.navigation.FilterTarget",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CostValueType",
+				"native": true,
+				"original_type": "via.navigation.CostValueType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollow",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollowOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoModify",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOut",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOutOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoMapAction",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoMapAction",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoStartNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StartNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoEndNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "TryPossibleNearNavigation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ApplySmoothing",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CheckAroundTargetBack",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PortalThroughSizeRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledObstacleAvoidance",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsObstacle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMaxAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMinAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ObstacleFilterGroups",
+				"native": true,
+				"original_type": "via.navigation.ObstacleFilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationObstacleFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SubRegions",
+				"native": true,
+				"original_type": "via.navigation.NavigationObstacle.ObstacleRegion",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseFindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnFindingNavigationType",
+				"native": true,
+				"original_type": "via.navigation.Navigation.OnFindingNavigationVectorType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v52",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v57",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v59",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v60",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v61",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v62",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v65",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.navigation.NavigationVolumeSpace"
+	},
+	"41718093": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "TraceProfileLog",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Speed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Float"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledAgentOffsetPosition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AgentOffsetPosition",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "TargetPos",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "TargetObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputQueryNodeWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindFailedWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindDetailInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputObstacleAvoidanceInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisplayCaption",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDetectRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawAgentPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawTargetPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawNavigationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawPortalLine",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawSubRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDestinationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "FilterGroups",
+				"native": true,
+				"original_type": "via.navigation.FilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterTarget",
+				"native": true,
+				"original_type": "via.navigation.FilterTarget",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CostValueType",
+				"native": true,
+				"original_type": "via.navigation.CostValueType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollow",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollowOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoModify",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOut",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOutOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoMapAction",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoMapAction",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoStartNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StartNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoEndNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "TryPossibleNearNavigation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ApplySmoothing",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CheckAroundTargetBack",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PortalThroughSizeRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledObstacleAvoidance",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsObstacle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMaxAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMinAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ObstacleFilterGroups",
+				"native": true,
+				"original_type": "via.navigation.ObstacleFilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationObstacleFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SubRegions",
+				"native": true,
+				"original_type": "via.navigation.NavigationObstacle.ObstacleRegion",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseFindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnFindingNavigationType",
+				"native": true,
+				"original_type": "via.navigation.Navigation.OnFindingNavigationVectorType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v52",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v57",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v59",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v60",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v61",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v62",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v65",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v66",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.navigation.NavigationWaypoint"
+	},
+	"e23a44c6": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "TraceProfileLog",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Speed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Float"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledAgentOffsetPosition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AgentOffsetPosition",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "TargetPos",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "TargetObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputQueryNodeWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindFailedWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindDetailInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputObstacleAvoidanceInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisplayCaption",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDetectRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawAgentPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawTargetPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawNavigationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawPortalLine",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawSubRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDestinationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "FilterGroups",
+				"native": true,
+				"original_type": "via.navigation.FilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterTarget",
+				"native": true,
+				"original_type": "via.navigation.FilterTarget",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CostValueType",
+				"native": true,
+				"original_type": "via.navigation.CostValueType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollow",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollowOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoModify",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOut",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOutOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoMapAction",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoMapAction",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoStartNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StartNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoEndNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "TryPossibleNearNavigation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ApplySmoothing",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CheckAroundTargetBack",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PortalThroughSizeRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledObstacleAvoidance",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsObstacle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMaxAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMinAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ObstacleFilterGroups",
+				"native": true,
+				"original_type": "via.navigation.ObstacleFilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationObstacleFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SubRegions",
+				"native": true,
+				"original_type": "via.navigation.NavigationObstacle.ObstacleRegion",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseFindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnFindingNavigationType",
+				"native": true,
+				"original_type": "via.navigation.Navigation.OnFindingNavigationVectorType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v52",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v57",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v59",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v60",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v61",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v62",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v65",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v66",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v67",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v68",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v69",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v70",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v71",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v72",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v73",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v74",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v75",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v76",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v77",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v78",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v79",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v80",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v81",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v82",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v83",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v84",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v85",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v86",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.navigation.NavigationSurface"
+	},
 	"ea8147f2": {
 		"fields": [
 			{
@@ -62190,7 +64217,6 @@
 		"name": "chainsaw.GmWaveMeshLight"
 	},
 	"4faa8e79": {
-		"crc": "e1dee8a3",
 		"fields": [
 			{
 				"align": 1,
@@ -64622,7 +66648,6 @@
 		"name": "chainsaw.SoundGimmickContainer"
 	},
 	"5bd9f343": {
-		"crc": "7bbf3d9e",
 		"fields": [
 			{
 				"align": 1,
@@ -64646,7 +66671,6 @@
 		"name": "chainsaw.Ch4faz0HeadUpdater"
 	},
 	"f9810bbe": {
-		"crc": "ba5a150d",
 		"fields": [
 			{
 				"align": 1,
@@ -65546,7 +67570,6 @@
 		"name": "chainsaw.HudShaderBaseGuiBehavior"
 	},
 	"f1eaf7b2": {
-		"crc": "3a9be816",
 		"fields": [
 			{
 				"align": 1,
@@ -65693,7 +67716,6 @@
 		"name": "chainsaw.Ch1c0z2BodyUpdater"
 	},
 	"f8ad2f97": {
-		"crc": "d8226c74",
 		"fields": [
 			{
 				"align": 1,
@@ -81844,7 +83866,6 @@
 		"name": "chainsaw.EmShellCh1c8z0ThrowingDynamiteBomb"
 	},
 	"5078667f": {
-		"crc": "229fd51d",
 		"fields": [
 			{
 				"align": 1,
@@ -90707,29 +92728,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -90793,29 +92814,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -91446,29 +93467,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -91649,29 +93670,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -91744,29 +93765,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -91866,29 +93887,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -92051,29 +94072,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -92191,29 +94212,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -92421,29 +94442,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -92588,29 +94609,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -92674,29 +94695,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -93219,7 +95240,512 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpdateTiming",
+				"native": true,
+				"original_type": "via.motion.ExpressionUpdate",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.motion.MotionRootInterpolator"
+	},
+	"88f2626": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DebugDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpdateTiming",
+				"native": true,
+				"original_type": "via.motion.ExpressionUpdate",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.motion.RetargetBodySize"
+	},
+	"b67ee163": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DebugDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpdateTiming",
+				"native": true,
+				"original_type": "via.motion.ExpressionUpdate",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v26",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v27",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v28",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v29",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v30",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v31",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v32",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v33",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v34",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v35",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v36",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v37",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v38",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v39",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v40",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v41",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v42",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -93228,7 +95754,129 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "v43",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v44",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v45",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v46",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v49",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v50",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v51",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			}
+		],
+		"name": "via.motion.RetargetFourLegRig"
+	},
+	"cfdc7ca9": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DebugDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpdateTiming",
+				"native": true,
+				"original_type": "via.motion.ExpressionUpdate",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -93237,14 +95885,707 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v26",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v27",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v28",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v29",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v30",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v31",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v32",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v33",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v34",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v35",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v36",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v37",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v38",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "v39",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "v40",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v41",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v42",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v43",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v44",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v45",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v46",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "v49",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "v50",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v51",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v52",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v57",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v59",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v60",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v61",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v62",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v65",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v66",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v67",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v68",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v69",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v70",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v71",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v72",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v73",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v74",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v75",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v76",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v77",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v78",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v79",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v80",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v81",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v82",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "Data"
 			}
 		],
-		"name": "via.motion.MotionRootInterpolator"
+		"name": "via.motion.RetargetRig"
 	},
 	"5f6c9922": {
 		"fields": [
@@ -93260,29 +96601,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -93400,29 +96741,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -93684,29 +97025,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -93788,29 +97129,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -94441,65 +97782,65 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "MotionStartFrameMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ActorMotion.StartFrameMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "AutoPlayMotionState",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v6",
+				"name": "Layer",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ActorLayer",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "MotionBank",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.MotionBankResourceHandle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.motion.ActorMotion"
@@ -94518,29 +97859,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -94712,29 +98053,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -94780,29 +98121,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -94920,29 +98261,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -95060,29 +98401,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			}
 		],
 		"name": "via.motion.SecondaryAnimation"
@@ -95101,29 +98442,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -95232,29 +98573,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -95543,29 +98884,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
@@ -96052,29 +99393,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -96309,29 +99650,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -96863,29 +100204,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
@@ -96922,29 +100263,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -97008,29 +100349,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			}
 		],
 		"name": "via.motion.SecondaryEventListener"
@@ -97049,29 +100390,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DebugDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UpdateTiming",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ExpressionUpdate",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -100711,7 +104052,6 @@
 		"name": "chainsaw.GimmickActorArms"
 	},
 	"ab25b409": {
-		"crc": "ef02884b",
 		"fields": [
 			{
 				"align": 1,
@@ -153837,7 +157177,6 @@
 		"name": "chainsaw.Ch2b400BodyUpdater"
 	},
 	"fc666d8b": {
-		"crc": "92c7f08c",
 		"fields": [
 			{
 				"align": 1,
@@ -154048,7 +157387,6 @@
 		"name": "via.audiorender.MTEqualizerParameters"
 	},
 	"e215138": {
-		"crc": "5e6c87d2",
 		"fields": [
 			{
 				"align": 1,
@@ -155270,7 +158608,6 @@
 		"name": "via.audiorender.SimpleFdnReverbParameters"
 	},
 	"74fd6067": {
-		"crc": "3904b48f",
 		"fields": [
 			{
 				"align": 1,
@@ -155521,7 +158858,6 @@
 		"name": "via.audiorender.PicolaPitchShiftParameters"
 	},
 	"415891a9": {
-		"crc": "4fa121d4",
 		"fields": [
 			{
 				"align": 1,
@@ -156843,34 +160179,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			}
 		],
 		"name": "via.dynamics.WaterSurface"
@@ -156884,34 +160220,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -156970,34 +160306,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -157020,34 +160356,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -157070,34 +160406,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			}
 		],
 		"name": "via.dynamics.Buoyancy"
@@ -157111,34 +160447,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -157170,34 +160506,34 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "Data"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "WorldNameHash",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -158182,6 +161518,263 @@
 			}
 		],
 		"name": "chainsaw.GmMirageMoveObject"
+	},
+	"9082c452": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WorldNameHash",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DevelopDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Static",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v26",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v27",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.dynamics.Ragdoll"
 	},
 	"1c38cc6e": {
 		"fields": [
@@ -163111,7 +166704,6 @@
 		"name": "chainsaw.Ch2bd00SpawnParam"
 	},
 	"8c510420": {
-		"crc": "564cce93",
 		"fields": [
 			{
 				"align": 1,
@@ -164828,7 +168420,6 @@
 		"name": "chainsaw.GmAutoDoor"
 	},
 	"6dc8105f": {
-		"crc": "613065d8",
 		"fields": [
 			{
 				"align": 1,
@@ -173691,6 +177282,935 @@
 		],
 		"name": "chainsaw.VehicleGuiControlBehavior"
 	},
+	"8d8f9b0b": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlayState",
+				"native": true,
+				"original_type": "via.motion.PlayState",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "PlayReset",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ExecutePriority",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AfterParentAnimation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AfterParentAnimationOrder",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ParallelAfterParent",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.motion.ChildSecondary"
+	},
+	"1c84556c": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlayState",
+				"native": true,
+				"original_type": "via.motion.PlayState",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "PlayReset",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ExecutePriority",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "S8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "AfterParentAnimation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AfterParentAnimationOrder",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ParallelAfterParent",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.motion.MotionCamera"
+	},
+	"9dfb16f2": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "TraceProfileLog",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Speed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Float"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledAgentOffsetPosition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AgentOffsetPosition",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "TargetPos",
+				"native": true,
+				"original_type": "via.Vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "TargetObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputQueryNodeWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindFailedWarning",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputPathfindDetailInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "OutputObstacleAvoidanceInfo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisplayCaption",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDetectRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawAgentPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawTargetPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawNavigationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawPortalLine",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawSubRegion",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawDestinationVector",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "FilterGroups",
+				"native": true,
+				"original_type": "via.navigation.FilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterTarget",
+				"native": true,
+				"original_type": "via.navigation.FilterTarget",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CostValueType",
+				"native": true,
+				"original_type": "via.navigation.CostValueType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollow",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoFollowOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableAutoModify",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOut",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableRecalcPathOutOnPathAdjustment",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoMapAction",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoMapAction",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoStartNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StartNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NoEndNodeSearch",
+				"native": true,
+				"original_type": "via.navigation.Navigation.NoNodeSearch",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndNodeSearchRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "TryPossibleNearNavigation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ApplySmoothing",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CheckAroundTargetBack",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PortalThroughSizeRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnabledObstacleAvoidance",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsObstacle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMaxAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ObstacleAvoidanceMinAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ObstacleFilterGroups",
+				"native": true,
+				"original_type": "via.navigation.ObstacleFilterSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NavigationObstacleFilterGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "SubRegions",
+				"native": true,
+				"original_type": "via.navigation.NavigationObstacle.ObstacleRegion",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v47",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v48",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseFindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FindTimeLimit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OnFindingNavigationType",
+				"native": true,
+				"original_type": "via.navigation.Navigation.OnFindingNavigationVectorType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.navigation.Navigation"
+	},
+	"b476ff2": {
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WorldNameHash",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DevelopDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Static",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.dynamics.Vehicle"
+	},
 	"77b3ae9c": {
 		"fields": [
 			{
@@ -176587,7 +181107,6 @@
 		"name": "chainsaw.CommunicationPanelAttachGui"
 	},
 	"b0ec763b": {
-		"crc": "37dfa618",
 		"fields": [
 			{
 				"align": 1,
@@ -177832,7 +182351,6 @@
 		"name": "chainsaw.Ch1c0z0SpawnParamMercenaries"
 	},
 	"928c21d6": {
-		"crc": "f7df91a3",
 		"fields": [
 			{
 				"align": 1,
@@ -178101,7 +182619,6 @@
 		"name": "chainsaw.EPVExpertDamageEffectData"
 	},
 	"8ef1a938": {
-		"crc": "7bc0b092",
 		"fields": [
 			{
 				"align": 1,
@@ -194975,7 +199492,6 @@
 		"name": "chainsaw.EventSceneCollection"
 	},
 	"b4e56831": {
-		"crc": "62382472",
 		"fields": [
 			{
 				"align": 1,
@@ -196550,7 +201066,6 @@
 		"name": "chainsaw.GmActorShotgunShellGenerator"
 	},
 	"76c9bc21": {
-		"crc": "52d7d505",
 		"fields": [
 			{
 				"align": 1,
@@ -204846,11 +209361,11 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v1",
+				"name": "FadeTextureList",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.ImageSlideObject",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			}
 		],
 		"name": "via.gui.ImageSlide"
@@ -206184,56 +210699,56 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v1",
+				"name": "Trees",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.BehaviorTree.CoreHandle",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "UserVariables",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ExecLine",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.ExecLine",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "ExecGroup",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.ExecGroup",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "PuppetMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "PuppetKeepActivation",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -207356,7 +211871,6 @@
 		"name": "via.landscape.layer.SplineLayer"
 	},
 	"53cd5f68": {
-		"crc": "222820cb",
 		"fields": [
 			{
 				"align": 1,
@@ -210589,7 +215103,6 @@
 		"name": "via.effect.script.EPVExpertExplosionData.ExplosionElement"
 	},
 	"42237bf3": {
-		"crc": "bca6904f",
 		"fields": [
 			{
 				"align": 1,
@@ -210613,7 +215126,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertPhysicsData.PhysicsElement>"
 	},
 	"520a0c28": {
-		"crc": "aae87383",
 		"fields": [
 			{
 				"align": 1,
@@ -210637,7 +215149,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertMuzzleFlashCustomData.Element>"
 	},
 	"52585d0e": {
-		"crc": "9c99c757",
 		"fields": [
 			{
 				"align": 1,
@@ -210661,7 +215172,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertExplosionData.ExplosionElement>"
 	},
 	"551b5c7f": {
-		"crc": "53e8b6a4",
 		"fields": [
 			{
 				"align": 1,
@@ -210685,7 +215195,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertAutoFootStepData.FootStepDataElement>"
 	},
 	"7268606": {
-		"crc": "4b068b84",
 		"fields": [
 			{
 				"align": 1,
@@ -210709,7 +215218,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EventEffectDataElement>"
 	},
 	"8eca830c": {
-		"crc": "2d7d0d59",
 		"fields": [
 			{
 				"align": 1,
@@ -210733,7 +215241,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertObjectLandingData.ObjectLandingElement>"
 	},
 	"8ee8204e": {
-		"crc": "7700cca6",
 		"fields": [
 			{
 				"align": 1,
@@ -210757,7 +215264,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertAttackLandingCustomData.Element>"
 	},
 	"8f30d47a": {
-		"crc": "5258a25f",
 		"fields": [
 			{
 				"align": 1,
@@ -210781,7 +215287,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertAutoIsLandingData.AutoIsLandingElement>"
 	},
 	"938141bc": {
-		"crc": "27a40e0f",
 		"fields": [
 			{
 				"align": 1,
@@ -210805,7 +215310,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertMuzzleFlashData.MuzzleFlashElement>"
 	},
 	"980793c4": {
-		"crc": "cf1ae2cf",
 		"fields": [
 			{
 				"align": 1,
@@ -210829,7 +215333,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVStandardData.Element>"
 	},
 	"982defb8": {
-		"crc": "a943dac",
 		"fields": [
 			{
 				"align": 1,
@@ -210853,7 +215356,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertStandWaveData.EPVExpertStandWaveElement>"
 	},
 	"c3a562dc": {
-		"crc": "1b864874",
 		"fields": [
 			{
 				"align": 1,
@@ -210877,7 +215379,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertFootLandingData.FootStepElement>"
 	},
 	"c7acf41c": {
-		"crc": "ec56ca7c",
 		"fields": [
 			{
 				"align": 1,
@@ -210901,7 +215402,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertDestructionData.DestructionElement>"
 	},
 	"feb07494": {
-		"crc": "38eaf727",
 		"fields": [
 			{
 				"align": 1,
@@ -210925,7 +215425,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertAutoData.AutoDataElement>"
 	},
 	"fec4f5b9": {
-		"crc": "c078e74d",
 		"fields": [
 			{
 				"align": 1,
@@ -210949,7 +215448,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertObjectLandingCustomData.Element>"
 	},
 	"131fe5e6": {
-		"crc": "139b76af",
 		"fields": [
 			{
 				"align": 1,
@@ -210973,7 +215471,6 @@
 		"name": "via.effect.script.EPVData`1<via.effect.script.EPVExpertGunSmokeData.GunSmokeElement>"
 	},
 	"210f805d": {
-		"crc": "edb94dac",
 		"fields": [
 			{
 				"align": 1,
@@ -210997,7 +215494,6 @@
 		"name": "via.effect.script.EPVData`1<chainsaw.EPVExpertDamageEffectElement>"
 	},
 	"99903b3f": {
-		"crc": "8c872df5",
 		"fields": [
 			{
 				"align": 1,
@@ -211030,7 +215526,6 @@
 		"name": "chainsaw.GlFlyRigid"
 	},
 	"f7ac6613": {
-		"crc": "bf4c8aea",
 		"fields": [
 			{
 				"align": 1,
@@ -211081,7 +215576,6 @@
 		"name": "chainsaw.GlStone"
 	},
 	"529a3a23": {
-		"crc": "215867db",
 		"fields": [
 			{
 				"align": 1,
@@ -214086,7 +218580,6 @@
 		"name": "chainsaw.SoundBigDoorPortal"
 	},
 	"29d7f90d": {
-		"crc": "8adc883b",
 		"fields": [
 			{
 				"align": 1,
@@ -214327,7 +218820,6 @@
 		"name": "chainsaw.SoundEnemyKickOpenDoorPortal"
 	},
 	"9e5dac1f": {
-		"crc": "b496e952",
 		"fields": [
 			{
 				"align": 1,
@@ -214528,7 +219020,6 @@
 		"name": "chainsaw.SoundMaintenanceShutterPortal"
 	},
 	"a194e81b": {
-		"crc": "64c93224",
 		"fields": [
 			{
 				"align": 1,
@@ -214790,7 +219281,6 @@
 		"name": "chainsaw.GimmickActorPlayerUpdater"
 	},
 	"969ac890": {
-		"crc": "ae38f330",
 		"fields": [
 			{
 				"align": 1,
@@ -214814,7 +219304,6 @@
 		"name": "chainsaw.GimmickActorChfdUpdater"
 	},
 	"834a332d": {
-		"crc": "68d52c73",
 		"fields": [
 			{
 				"align": 1,
