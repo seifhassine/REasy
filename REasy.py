@@ -105,7 +105,8 @@ def create_search_dialog(parent, search_type):
     prompts = {
         'number': ('Number Search', 'Enter number to search for (32-bit integer):', -2147483648, 2147483647),
         'text': ('Text Search', 'Enter text to search (UTF-16LE):', None, None),
-        'guid': ('GUID Search', 'Enter GUID (standard format):', None, None)
+        'guid': ('GUID Search', 'Enter GUID (standard format):', None, None),
+        'hex': ('Hex Search', 'Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):', None, None)
     }
     
     title, msg, min_val, max_val = prompts[search_type]
@@ -134,6 +135,22 @@ def create_search_patterns(search_type, value):
             return [gobj.bytes_le, gobj.bytes, gobj.bytes_le.hex().encode('utf-8')]
         except Exception as e:
             raise ValueError(f"Invalid GUID: {value}\n{e}")
+    elif search_type == 'hex':
+        try:
+            from ui.directory_search import validate_hex_string, hex_string_to_bytes
+            if isinstance(value, tuple) and len(value) == 2:
+                hex_text, reverse_bytes = value
+                hex_str = validate_hex_string(hex_text)
+                
+                pattern = hex_string_to_bytes(hex_str, reverse_bytes)
+                print(f"Searching for hex pattern: {pattern.hex().upper()} (reversed={reverse_bytes})")
+                return [pattern]
+            else:
+                hex_str = validate_hex_string(value)
+                return [hex_string_to_bytes(hex_str)]
+                
+        except Exception as e:
+            raise ValueError(f"Invalid hex value: {str(e)}")
 
 
 class CustomNotebook(QTabWidget):
@@ -908,6 +925,12 @@ class REasyEditorApp(QMainWindow):
         num_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_number", "Ctrl+N")))
         num_act.triggered.connect(self.search_directory_for_number)
         find_menu.addAction(num_act)
+        
+        hex_act = QAction("Search Directory for Hex", self)
+        hex_act.setObjectName("find_search_hex")
+        hex_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_hex", "Ctrl+H")))
+        hex_act.triggered.connect(self.search_directory_for_hex)
+        find_menu.addAction(hex_act)
 
         view_menu = menubar.addMenu("View")
 
@@ -1350,6 +1373,9 @@ class REasyEditorApp(QMainWindow):
 
     def search_directory_for_guid(self):
         search_directory_for_type(self, 'guid', create_search_dialog, create_search_patterns)
+
+    def search_directory_for_hex(self):
+        search_directory_for_type(self, 'hex', create_search_dialog, create_search_patterns)
 
     def open_find_dialog(self):
         active = self.get_active_tab()
