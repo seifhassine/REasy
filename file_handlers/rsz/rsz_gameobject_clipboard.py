@@ -717,9 +717,9 @@ class RszGameObjectClipboard:
                     try:
                         guid_bytes = bytes.fromhex(guid_hex)
                         
-                        is_null_guid = is_null_guid(guid_bytes, guid_str)
+                        _is_null_guid = is_null_guid(guid_bytes, guid_str)
                         
-                        if is_null_guid:
+                        if _is_null_guid:
                             print(f"Preserving null GameObjectRef GUID for {field_name}")
                             new_fields[field_name] = GameObjectRefData(guid_str, guid_bytes, orig_type)
                         else:
@@ -783,9 +783,9 @@ class RszGameObjectClipboard:
                             try:
                                 guid_bytes = bytes.fromhex(guid_hex)
                                 
-                                is_null_guid = is_null_guid(guid_bytes, guid_str)
+                                _is_null_guid = is_null_guid(guid_bytes, guid_str)
                                 
-                                if is_null_guid:
+                                if _is_null_guid:
                                     print(f"Preserving null GameObjectRef GUID in array {field_name}")
                                     new_array.values.append(GameObjectRefData(guid_str, guid_bytes, value_orig_type))
                                 else:

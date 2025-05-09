@@ -901,12 +901,16 @@ class RszViewer(QWidget):
 
     def _handle_reference_in_array(self, index, element, embedded_context, domain_id):
         """Handle object or userdata reference in an array"""
-        ref_id = element.value if (isinstance(element, ObjectData) or isinstance(element, UserDataData)) else element.index
+        if not (isinstance(element, ObjectData) or isinstance(element, UserDataData)):
+            raise ValueError("Invalid data object type for reference handling")
+        ref_id = element.value
         return self._handle_reference(str(index), ref_id, embedded_context, element)
     
     def _handle_object_reference(self, field_name, data_obj, embedded_context, domain_id):
         """Handle object or userdata reference"""
-        ref_id = data_obj.value if (isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData)) else data_obj.index
+        if not (isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData)):
+            raise ValueError("Invalid data object type for reference handling")
+        ref_id = data_obj.value
         return self._handle_reference(field_name, ref_id, embedded_context, data_obj)
     
     def _handle_reference(self, label, ref_id, embedded_context, data_obj):
