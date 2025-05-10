@@ -722,8 +722,8 @@ class RszFile:
             while len(out) % 4:
                 out.extend(b'\x00') 
             count = len(data_obj.values)
+            out.extend(struct.pack("<I", count))
             if data_obj.values:
-                out.extend(struct.pack("<I", count))
                 for struct_value in data_obj.values:
                     original_type = data_obj.orig_type if hasattr(data_obj, 'orig_type') else None
                     
