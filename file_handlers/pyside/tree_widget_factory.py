@@ -19,6 +19,7 @@ class TreeWidgetFactory:
         "GameObjectRefData": GuidInput,
         "GuidData": GuidInput,
         "OBBData": OBBInput,
+        "AreaData": AreaInput,
         "Mat4Data": Mat4Input,
         "RawBytesData": HexBytesInput,
         "StringData": StringInput,

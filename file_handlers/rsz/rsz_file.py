@@ -866,6 +866,21 @@ class RszFile:
                             out.extend(guid.bytes_le)
                         except ValueError:
                             out.extend(b'\x00' * 16) 
+                elif isinstance(element, CapsuleData):
+                    out.extend(struct.pack("<3f", element.start.x, element.start.y, element.start.z))
+                    out.extend(struct.pack("<f", 0.0)) 
+                    out.extend(struct.pack("<3f", element.end.x, element.end.y, element.end.z))
+                    out.extend(struct.pack("<f", 0.0))
+                    out.extend(struct.pack("<f", element.radius))
+                    out.extend(b'\x00' * 12)
+                elif isinstance(element, AreaData):
+                    out.extend(struct.pack("<2f", element.p0.x, element.p0.y))
+                    out.extend(struct.pack("<2f", element.p1.x, element.p1.y))
+                    out.extend(struct.pack("<2f", element.p2.x, element.p2.y))
+                    out.extend(struct.pack("<2f", element.p3.x, element.p3.y))
+                    out.extend(struct.pack("<f", element.height))
+                    out.extend(struct.pack("<f", element.bottom))
+                    out.extend(b'\x00' * 8)
                 else:
                     val = getattr(element, 'value', 0)
                     raw_bytes = val.to_bytes(field_size, byteorder='little')
@@ -981,6 +996,16 @@ class RszFile:
                 out.extend(struct.pack("<f", 0.0))
                 out.extend(struct.pack("<f", data_obj.radius))
                 out.extend(b'\x00' * 12)
+            elif isinstance(data_obj, AreaData):
+                out.extend(struct.pack("<2f", data_obj.p0.x, data_obj.p0.y))
+                out.extend(struct.pack("<2f", data_obj.p1.x, data_obj.p1.y))
+                out.extend(struct.pack("<2f", data_obj.p2.x, data_obj.p2.y))
+                out.extend(struct.pack("<2f", data_obj.p3.x, data_obj.p3.y))
+                out.extend(struct.pack("<f", data_obj.height))
+                out.extend(struct.pack("<f", data_obj.bottom))
+                out.extend(b'\x00' * 8)
+
+                
             else:
                 #print("last is else")
                 val = getattr(data_obj, 'value', 0)
@@ -2214,6 +2239,33 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     pos += fsize
                 data_obj = ArrayData(obb_objects, rsz_type, original_type)
 
+            elif rsz_type == AreaData:
+            
+                area_objects = []
+                for _ in range(count):
+                    pos = _align(pos, field_align)
+                        
+                    p0_vals = unpack_2float(raw, pos)
+                    pos += 8
+                    p1_vals = unpack_2float(raw, pos)
+                    pos += 8
+                    p2_vals = unpack_2float(raw, pos)
+                    pos += 8
+                    p3_vals = unpack_2float(raw, pos)
+                    pos += 8
+                    height, = struct.unpack_from("<f", raw, pos)
+                    pos += 4
+                    bottom, = struct.unpack_from("<f", raw, pos)
+                    pos += 12
+                    p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
+                    p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
+                    p2 = Float2Data(p2_vals[0], p2_vals[1], "Float2")
+                    p3 = Float2Data(p3_vals[0], p3_vals[1], "Float2")
+                    
+                    area_objects.append(rsz_type(p0, p1, p2, p3, height, bottom, original_type))
+
+                data_obj = ArrayData(area_objects, rsz_type, original_type)
+
             elif rsz_type in (StringData, ResourceData):
                 children = []
                 for _ in range(count):
@@ -2479,6 +2531,24 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
                 end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
                 data_obj = rsz_type(start_vec, end_vec, radius, original_type)
+            elif rsz_type == AreaData:
+                p0_vals = unpack_2float(raw, pos)
+                pos += 8
+                p1_vals = unpack_2float(raw, pos)
+                pos += 8
+                p2_vals = unpack_2float(raw, pos)
+                pos += 8
+                p3_vals = unpack_2float(raw, pos)
+                pos += 8
+                height, *_ = struct.unpack_from("<f", raw, pos)
+                pos += 4
+                bottom, *_ = struct.unpack_from("<f", raw, pos)
+                pos += 12
+                p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
+                p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
+                p2 = Float2Data(p2_vals[0], p2_vals[1], "Float2")
+                p3 = Float2Data(p3_vals[0], p3_vals[1], "Float2")
+                data_obj = rsz_type(p0, p1, p2, p3, height, bottom, original_type)
             else:
                 raw_bytes = read_aligned_bytes(fsize, align=field_align)
                 data_obj = RawBytesData(raw_bytes, fsize, original_type)

@@ -1376,7 +1376,7 @@ class Mat4Input(BaseValueWidget):
         """Set all input values at once"""
         if len(values) != 16:
             return
-            
+
         for row in range(4):
             for col in range(4):
                 idx = row * 4 + col
@@ -1963,3 +1963,104 @@ class CapsuleInput(BaseValueWidget):
             return (*start_values, *end_values, radius)
         except ValueError:
             return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+class AreaInput(BaseValueWidget):
+    valueChanged = Signal(list)
+    
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+        grid = QGridLayout()
+        grid.setSpacing(2)
+        grid.setAlignment(Qt.AlignLeft)
+        self.inputs = []
+
+        grid.addWidget(QLabel("p0.x"), 0, 0, alignment=Qt.AlignRight)
+        p0x_edit = QLineEdit()
+        p0x_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p0x_edit, 0, 1)
+        grid.addWidget(QLabel("p0.y"), 0, 2, alignment=Qt.AlignRight)
+        p0y_edit = QLineEdit()
+        p0y_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p0y_edit, 0, 3)
+
+        grid.addWidget(QLabel("p1.x"), 1, 0, alignment=Qt.AlignRight)
+        p1x_edit = QLineEdit()
+        p1x_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p1x_edit, 1, 1)
+        grid.addWidget(QLabel("p1.y"), 1, 2, alignment=Qt.AlignRight)
+        p1y_edit = QLineEdit()
+        p1y_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p1y_edit, 1, 3)
+
+        grid.addWidget(QLabel("p2.x"), 2, 0, alignment=Qt.AlignRight)
+        p2x_edit = QLineEdit()
+        p2x_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p2x_edit, 2, 1)
+        grid.addWidget(QLabel("p2.y"), 2, 2, alignment=Qt.AlignRight)
+        p2y_edit = QLineEdit()
+        p2y_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p2y_edit, 2, 3)
+
+        grid.addWidget(QLabel("p3.x"), 3, 0, alignment=Qt.AlignRight)
+        p3x_edit = QLineEdit()
+        p3x_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p3x_edit, 3, 1)
+        grid.addWidget(QLabel("p3.y"), 3, 2, alignment=Qt.AlignRight)
+        p3y_edit = QLineEdit()
+        p3y_edit.setValidator(QDoubleValidator())
+        grid.addWidget(p3y_edit, 3, 3)
+
+        grid.addWidget(QLabel("height"), 4, 0, alignment=Qt.AlignRight)
+        height_edit = QLineEdit()
+        height_edit.setValidator(QDoubleValidator())
+        grid.addWidget(height_edit, 4, 1)
+
+        grid.addWidget(QLabel("bottom"), 5, 0, alignment=Qt.AlignRight)
+        bottom_edit = QLineEdit()
+        bottom_edit.setValidator(QDoubleValidator())
+        grid.addWidget(bottom_edit, 5, 1)
+
+        self.inputs = [
+            p0x_edit, p0y_edit,
+            p1x_edit, p1y_edit,
+            p2x_edit, p2y_edit,
+            p3x_edit, p3y_edit,
+            height_edit, bottom_edit
+        ]
+        self.layout.addLayout(grid)
+        self.layout.addStretch()
+        
+        if data:
+            self.set_data(data)
+
+    def update_display(self):
+        if not self._data:
+            return
+        vals = [
+            self._data.p0.x, self._data.p0.y,
+            self._data.p1.x, self._data.p1.y,
+            self._data.p2.x, self._data.p2.y,
+            self._data.p3.x, self._data.p3.y,
+            self._data.height, self._data.bottom
+        ]
+        for inp, v in zip(self.inputs, vals):
+            inp.setText(f"{v:.8g}")
+
+    def _on_value_changed(self):
+        if not self._data:
+            return
+        try:
+            vals = []
+            for i, inp in enumerate(self.inputs):
+                t = inp.text()
+                vals.append(float(t) if t else 0.0)
+
+            self._data.p0.x, self._data.p0.y = vals[0], vals[1]
+            self._data.p1.x, self._data.p1.y = vals[2], vals[3]
+            self._data.p2.x, self._data.p2.y = vals[4], vals[5]
+            self._data.p3.x, self._data.p3.y = vals[6], vals[7]
+            self._data.height, self._data.bottom = vals[8], vals[9]
+            self.valueChanged.emit(vals)
+            self.mark_modified()
+        except ValueError:
+            pass

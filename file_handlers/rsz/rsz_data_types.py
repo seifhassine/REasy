@@ -247,6 +247,16 @@ class CapsuleData:
         self.end = end
         self.radius = radius
         self.orig_type = orig_type
+        
+class AreaData:
+    def __init__(self, p0: Float2Data = Float2Data(0,0, ""), p1: Float2Data = Float2Data(0,0, ""), p2: Float2Data = Float2Data(0,0, ""), p3: Float2Data = Float2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
+        self.p0 = p0
+        self.p1 = p1
+        self.p2 = p2
+        self.p3 = p3
+        self.height = height
+        self.bottom = bottom
+        self.orig_type = orig_type
 
 class ConeData:
     def __init__(self, position: Vec3Data = Vec3Data(0,0,0, ""), direction: Vec3Data = Vec3Data(0,0,0, ""), angle: float = 0, distance: float = 0, orig_type: str = ""):
@@ -327,12 +337,6 @@ class CylinderData:
         self.center = center
         self.radius = radius
         self.height = height
-        self.orig_type = orig_type
-
-class AreaData:
-    def __init__(self, min: Vec2Data = 0, max: Vec2Data = 0, orig_type: str = ""):
-        self.min = min
-        self.max = max
         self.orig_type = orig_type
 
 class RectData:
