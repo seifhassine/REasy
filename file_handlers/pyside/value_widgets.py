@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QDialog, QVBoxLayout, QTreeView, QApplication,  QToolButton)
-from PySide6.QtCore import Signal, Qt, QTimer, QSize
-from PySide6.QtGui import QDoubleValidator, QIntValidator, QColor, QPalette, QFontMetrics
+                              QTreeView, QApplication, QSlider, QToolButton)
+from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
+from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntValidator, QColor, QPalette, QFontMetrics
 import uuid
 
 from file_handlers.rsz.rsz_data_types import RawBytesData
@@ -1533,57 +1533,76 @@ class ColorInput(BaseValueWidget):
         )
     
     def _show_color_dialog(self):
-        """Open color picker dialog and update values if user selects a color"""
         if not self._data:
             return
-            
-        r = int(self._data.r)
-        g = int(self._data.g)
-        b = int(self._data.b)
-        a = int(self._data.a)
-        
-        initial_color = QColor(r, g, b, a)
-        
-        dialog = QColorDialog(initial_color, self)
-        dialog.setWindowTitle("Select Color")
-        dialog.setOption(QColorDialog.ShowAlphaChannel)
-        
-        timer = QTimer(dialog)
-        
-        def update_html_with_alpha():
-            current_color = dialog.currentColor()
-            if not current_color.isValid():
+
+        init = QColor(self._data.r, self._data.g, self._data.b, self._data.a)
+
+        dlg = QColorDialog(init, self)
+        dlg.setOption(QColorDialog.DontUseNativeDialog, True)
+        dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
+
+        hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
+        if not hex_edit:
+            for w in dlg.findChildren(QLineEdit):
+                if w.placeholderText().startswith("#") or w.text().startswith("#"):
+                    hex_edit = w
+                    break
+
+        if hex_edit:
+            hex_edit.setInputMask("")             
+            hex_edit.setMaxLength(9)              
+            hex_edit.setPlaceholderText("#RRGGBBAA")
+            rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
+            hex_edit.setValidator(QRegularExpressionValidator(rx))
+
+        def write_html(c: QColor):
+            if not hex_edit:
                 return
-                
-            html_inputs = [w for w in dialog.findChildren(QLineEdit) 
-                          if w.isVisible() and len(w.text()) >= 7 and w.text()[0] == '#']
-            
-            if html_inputs:
-                current_text = html_inputs[0].text()
-                html_code = f"#{current_color.red():02X}{current_color.green():02X}{current_color.blue():02X}{current_color.alpha():02X}"
-                
-                if len(current_text) < 9 or current_text != html_code:
-                    html_inputs[0].setText(html_code)
+            text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
+
+            QTimer.singleShot(0, lambda t=text: (
+                hex_edit.blockSignals(True),
+                hex_edit.setText(t),
+                hex_edit.blockSignals(False))
+            )
+
+        write_html(init)
+        dlg.currentColorChanged.connect(write_html)  
+
+        for sld in dlg.findChildren(QSlider):
+            if sld.minimum() == 0 and sld.maximum() == 255:
+                sld.valueChanged.connect(
+                    lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
+                )
+                break
         
-        timer.timeout.connect(update_html_with_alpha)
-        timer.start(10)
-        
-        dialog.currentColorChanged.connect(update_html_with_alpha)
-        
-        update_html_with_alpha()
-        
-        if dialog.exec_():
-            color = dialog.currentColor()
-            self._data.r = color.red()
-            self._data.g = color.green()
-            self._data.b = color.blue()
-            self._data.a = color.alpha()
-            
+          
+        if hex_edit:
+            def on_hex(text: str):
+                if len(text) == 7:  
+                    r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
+                    a     = int(text[7:9],16)
+                elif len(text) == 9:   
+                    r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
+                    a     = int(text[7:9],16)
+                else:
+                    return
+                dlg.setCurrentColor(QColor(r,g,b,a))
+            hex_edit.textChanged.connect(on_hex)
+
+        if dlg.exec_():
+            final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
+            if final:
+                r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
+            else:
+                c = dlg.currentColor()
+                r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
+
+            self._data.r, self._data.g, self._data.b, self._data.a = r, g, b, a
             self.update_display()
-            
-            self.valueChanged.emit((self._data.r, self._data.g, self._data.b, self._data.a))
+            self.valueChanged.emit((r,g,b,a))
             self.mark_modified()
-    
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
