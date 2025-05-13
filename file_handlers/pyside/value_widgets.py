@@ -1533,76 +1533,79 @@ class ColorInput(BaseValueWidget):
         )
     
     def _show_color_dialog(self):
-        if not self._data:
-            return
-
-        init = QColor(self._data.r, self._data.g, self._data.b, self._data.a)
-
-        dlg = QColorDialog(init, self)
-        dlg.setOption(QColorDialog.DontUseNativeDialog, True)
-        dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
-
-        hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
-        if not hex_edit:
-            for w in dlg.findChildren(QLineEdit):
-                if w.placeholderText().startswith("#") or w.text().startswith("#"):
-                    hex_edit = w
-                    break
-
-        if hex_edit:
-            hex_edit.setInputMask("")             
-            hex_edit.setMaxLength(9)              
-            hex_edit.setPlaceholderText("#RRGGBBAA")
-            rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
-            hex_edit.setValidator(QRegularExpressionValidator(rx))
-
-        def write_html(c: QColor):
-            if not hex_edit:
+            if not self._data:
                 return
-            text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
 
-            QTimer.singleShot(0, lambda t=text: (
-                hex_edit.blockSignals(True),
-                hex_edit.setText(t),
-                hex_edit.blockSignals(False))
-            )
+            init = QColor(self._data.r, self._data.g, self._data.b, self._data.a)
 
-        write_html(init)
-        dlg.currentColorChanged.connect(write_html)  
+            dlg = QColorDialog(init, self)
+            dlg.setOption(QColorDialog.DontUseNativeDialog, True)
+            dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
 
-        for sld in dlg.findChildren(QSlider):
-            if sld.minimum() == 0 and sld.maximum() == 255:
-                sld.valueChanged.connect(
-                    lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
-                )
-                break
-        
-          
-        if hex_edit:
-            def on_hex(text: str):
-                if len(text) == 7:  
-                    r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                    a     = int(text[7:9],16)
-                elif len(text) == 9:   
-                    r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                    a     = int(text[7:9],16)
-                else:
+            hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
+            if not hex_edit:
+                for w in dlg.findChildren(QLineEdit):
+                    if w.placeholderText().startswith("#") or w.text().startswith("#"):
+                        hex_edit = w
+                        break
+
+            if hex_edit:
+                hex_edit.setInputMask("")             
+                hex_edit.setMaxLength(9)              
+                hex_edit.setPlaceholderText("#RRGGBBAA")
+                rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
+                hex_edit.setValidator(QRegularExpressionValidator(rx))
+
+            def write_html(c: QColor):
+                if not hex_edit:
                     return
-                dlg.setCurrentColor(QColor(r,g,b,a))
-            hex_edit.textChanged.connect(on_hex)
+                text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
 
-        if dlg.exec_():
-            final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
-            if final:
-                r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
-            else:
-                c = dlg.currentColor()
-                r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
+                QTimer.singleShot(0, lambda t=text: (
+                    hex_edit.blockSignals(True),
+                    hex_edit.setText(t),
+                    hex_edit.blockSignals(False))
+                )
 
-            self._data.r, self._data.g, self._data.b, self._data.a = r, g, b, a
-            self.update_display()
-            self.valueChanged.emit((r,g,b,a))
-            self.mark_modified()
+            write_html(init)
+            dlg.currentColorChanged.connect(write_html)  
+
+            for sld in dlg.findChildren(QSlider):
+                if sld.minimum() == 0 and sld.maximum() == 255:
+                    sld.valueChanged.connect(
+                        lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
+                    )
+                    break
+            
+            excepted = False
+            if hex_edit:
+                    def on_hex(text: str):
+                        try:
+                            if len(text) == 7:  
+                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
+                                a     = int(text[7:9],16)
+                            elif len(text) == 9:   
+                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
+                                a     = int(text[7:9],16)
+                            else:
+                                return
+                            dlg.setCurrentColor(QColor(r,g,b,a))
+                        except Exception:
+                            excepted = True
+                    hex_edit.textChanged.connect(on_hex)
+
+            if dlg.exec_() and not excepted:
+                    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
+                    if final:
+                        r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
+                    else:
+                        c = dlg.currentColor()
+                        r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
+
+                    self._data.r, self._data.g, self._data.b, self._data.a = r, g, b, a
+                    self.update_display()
+                    self.valueChanged.emit((r,g,b,a))
+                    self.mark_modified()
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
