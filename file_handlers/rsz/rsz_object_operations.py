@@ -371,17 +371,73 @@ class RszObjectOperations:
             if instance_id not in self.scn.instance_hierarchy[parent_instance_id]["children"]:
                 self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
 
+    def _analyze_instance_fields_for_nested_objects(self, temp_elements, type_info, nested_objects, parent_id, visited_types=None):
+        if visited_types is None:
+            visited_types = set()
+        
+        if not type_info or "fields" not in type_info:
+            return {}
+            
+        type_name = type_info.get("name", "")
+        if not type_name:
+            return {}
+            
+        visited_types.add(type_name)
+        
+        fields_dict = {}
+        for field_def in type_info.get("fields", []):
+            field_name = field_def.get("name", "")
+            if not field_name:
+                continue
+                
+            field_type = field_def.get("type", "unknown").lower()
+            field_size = field_def.get("size", 4)
+            field_native = field_def.get("native", False)
+            field_array = field_def.get("array", False)
+            field_align = field_def.get("align", 4)
+            field_orig_type = field_def.get("original_type", "")
+            
+            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
+            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
+            
+            if field_obj:
+                temp_elements[field_name] = field_obj
+                fields_dict[field_name] = field_obj
+                
+                if not field_array and isinstance(field_obj, ObjectData) and field_orig_type:
+                    if field_orig_type in visited_types:
+                        continue
+                        
+                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
+                    
+                    if not nested_type_info or not nested_type_id or nested_type_id == 0:
+                        continue
+                        
+                    nested_objects.append((nested_type_info, nested_type_id))
+                    
+                    nested_temp = {}
+                    self._analyze_instance_fields_for_nested_objects(
+                        nested_temp,
+                        nested_type_info,
+                        nested_objects,
+                        parent_id,
+                        visited_types.copy()
+                    )
+        
+        return fields_dict
+
     def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
         offset_start = main_instance_index - len(nested_objects)
         
         if offset_start < 0:
             return
         
-        type_to_index = {
-            nested_type_info.get("name", ""): i
-            for i, (nested_type_info, _) in enumerate(nested_objects)
-            if nested_type_info.get("name", "")
-        }
+        type_to_indices = {}
+        for i, (nested_type_info, _) in enumerate(nested_objects):
+            type_name = nested_type_info.get("name", "")
+            if type_name not in type_to_indices:
+                type_to_indices[type_name] = []
+            type_to_indices[type_name].append(i)
         
         for field_name, field_data in temp_fields.items():
             if field_name not in target_fields:
@@ -389,8 +445,10 @@ class RszObjectOperations:
                 
             if isinstance(field_data, ObjectData) and field_data.value == 0:
                 type_name = field_data.orig_type
-                if type_name in type_to_index:
-                    target_fields[field_name].value = offset_start + type_to_index[type_name]
+                if type_name in type_to_indices and type_to_indices[type_name]:
+                    # Pop the first available index for this type
+                    nested_index = type_to_indices[type_name].pop(0)
+                    target_fields[field_name].value = offset_start + nested_index
                     
             elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
                 array_data = target_fields[field_name]
@@ -402,8 +460,9 @@ class RszObjectOperations:
                         
                         if element.value == 0 and element.orig_type:
                             type_name = element.orig_type
-                            if type_name in type_to_index:
-                                new_obj.value = offset_start + type_to_index[type_name]
+                            if type_name in type_to_indices and type_to_indices[type_name]:
+                                nested_index = type_to_indices[type_name].pop(0)
+                                new_obj.value = offset_start + nested_index
                         array_data.values.append(new_obj)
                     else:
                         array_data.values.append(element)
@@ -658,7 +717,12 @@ class RszObjectOperations:
         )
         
         valid_nested_objects = []
-        for nested_type_info, nested_type_id in nested_objects:
+        for nested_obj in nested_objects:
+            
+            nested_type_info, nested_type_id = nested_obj[0], nested_obj[1]
+            
+            field_name = nested_obj[2] if len(nested_obj) >= 3 else None
+            
             nested_instance = self.viewer._initialize_new_instance(nested_type_id, nested_type_info)
             if not nested_instance or nested_instance.type_id == 0:
                 continue
@@ -667,7 +731,12 @@ class RszObjectOperations:
             nested_object_fields = {}
             self.viewer._initialize_fields_from_type_info(nested_object_fields, nested_type_info)
             self.scn.parsed_elements[instance_insertion_index] = nested_object_fields
-            valid_nested_objects.append((nested_type_info, nested_type_id))
+            
+            if field_name:
+                valid_nested_objects.append((nested_type_info, nested_type_id, field_name))
+            else:
+                valid_nested_objects.append((nested_type_info, nested_type_id))
+                
             instance_insertion_index += 1
             self.viewer.handler.id_manager.register_instance(instance_insertion_index)
             
@@ -854,62 +923,7 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         
         return True
-       
-    def _analyze_instance_fields_for_nested_objects(self, temp_elements, type_info, nested_objects, parent_id, visited_types=None):
-        if visited_types is None:
-            visited_types = set()
-        
-        if not type_info or "fields" not in type_info:
-            return {}
-            
-        type_name = type_info.get("name", "")
-        if not type_name:
-            return {}
-            
-        visited_types.add(type_name)
-        
-        fields_dict = {}
-        for field_def in type_info.get("fields", []):
-            field_name = field_def.get("name", "")
-            if not field_name:
-                continue
-                
-            field_type = field_def.get("type", "unknown").lower()
-            field_size = field_def.get("size", 4)
-            field_native = field_def.get("native", False)
-            field_array = field_def.get("array", False)
-            field_align = field_def.get("align", 4)
-            field_orig_type = field_def.get("original_type", "")
-            
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
-            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
-            
-            if field_obj:
-                temp_elements[field_name] = field_obj
-                fields_dict[field_name] = field_obj
-                
-                if not field_array and isinstance(field_obj, ObjectData) and field_orig_type:
-                    if not field_orig_type or field_orig_type in visited_types:
-                        continue
-                        
-                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
-                    
-                    if not nested_type_info or not nested_type_id or nested_type_id == 0:
-                        continue
-                        
-                    nested_objects.append((nested_type_info, nested_type_id))
-                    
-                    nested_temp = {}
-                    self._analyze_instance_fields_for_nested_objects(
-                        nested_temp,
-                        nested_type_info,
-                        nested_objects,
-                        parent_id,
-                        visited_types.copy()
-                    )
-        
-        return fields_dict
-
+    
     def manage_gameobject_prefab(self, gameobject_id, new_prefab_path):
         """Create or modify a prefab association for a GameObject
         
