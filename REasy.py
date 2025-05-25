@@ -59,6 +59,7 @@ from PySide6.QtWidgets import (
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
+from tools.hash_calculator import HashCalculator  # Import the hash calculator
 
 # Remove the direct EnumManager import
 # from utils.enum_manager import EnumManager
@@ -828,7 +829,7 @@ class REasyEditorApp(QMainWindow):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb")):
+            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb", ".msg")):
                 event.acceptProposedAction()
 
     def dropEvent(self, event):
@@ -966,6 +967,10 @@ class REasyEditorApp(QMainWindow):
         guid_conv_act = QAction("GUID Converter", self)
         guid_conv_act.triggered.connect(self.open_guid_converter)
         tools_menu.addAction(guid_conv_act)
+
+        hash_calc_act = QAction("Hash Calculator", self)
+        hash_calc_act.triggered.connect(self.open_hash_calculator)
+        tools_menu.addAction(hash_calc_act)
 
         help_menu = menubar.addMenu("Help")
         about_act = QAction("About", self)
@@ -1365,6 +1370,10 @@ class REasyEditorApp(QMainWindow):
     def open_guid_converter(self):
         create_guid_converter_dialog(self)
 
+    def open_hash_calculator(self):
+        self.hash_calculator = HashCalculator()
+        self.hash_calculator.show()
+
     def search_directory_for_number(self):
         search_directory_for_type(self, 'number', create_search_dialog, create_search_patterns)
 
@@ -1457,7 +1466,7 @@ class REasyEditorApp(QMainWindow):
             self,
             "Open File",
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;All Files (*.*)",
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;All Files (*.*)",
         )
         if not fn:
             return
