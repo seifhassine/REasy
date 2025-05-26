@@ -685,6 +685,10 @@ class RszFile:
         
         # Process all instances
         for idx, inst in enumerate(self.instance_infos):
+
+            if inst.type_id == 0:
+                continue
+
             if idx == 0:
                 self.parsed_elements[idx] = {}  # Initialize empty dict for NULL entry
                 continue
@@ -713,7 +717,7 @@ class RszFile:
                 rsz_file=self
             )
             current_offset = new_offset
-
+            
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
