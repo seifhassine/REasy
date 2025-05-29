@@ -829,7 +829,7 @@ class REasyEditorApp(QMainWindow):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             urls = event.mimeData().urls()
-            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb", ".msg")):
+            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb", ".msg", ".efx", ".efxpreset")):
                 event.acceptProposedAction()
 
     def dropEvent(self, event):
@@ -1215,6 +1215,7 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.addItem("MHWS") 
         game_version_combo.addItem("DMC5") 
         game_version_combo.addItem("SF6") 
+        game_version_combo.addItem("O2") 
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)
@@ -1466,7 +1467,7 @@ class REasyEditorApp(QMainWindow):
             self,
             "Open File",
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;All Files (*.*)",
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;All Files (*.*)",
         )
         if not fn:
             return
