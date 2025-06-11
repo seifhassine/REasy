@@ -1212,6 +1212,7 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.addItem("RE8") 
         game_version_combo.addItem("RE3") 
         game_version_combo.addItem("RE7") 
+        game_version_combo.addItem("RE7RT") 
         game_version_combo.addItem("MHWS") 
         game_version_combo.addItem("DMC5") 
         game_version_combo.addItem("SF6") 
