@@ -1217,6 +1217,7 @@ class REasyEditorApp(QMainWindow):
         game_version_combo.addItem("DMC5") 
         game_version_combo.addItem("SF6") 
         game_version_combo.addItem("O2") 
+        game_version_combo.addItem("DD2") 
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)

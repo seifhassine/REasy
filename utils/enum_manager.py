@@ -28,6 +28,7 @@ class EnumManager:
             "DMC5": "resources/data/enums/dmc5_enums.json",
             "SF6": "resources/data/enums/sf6_enums.json",
             "O2": "resources/data/enums/o2_enums.json",
+            "DD2": "resources/data/enums/dd2_enums.json",
         }
         
     @property
