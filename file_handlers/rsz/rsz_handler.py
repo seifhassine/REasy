@@ -380,6 +380,19 @@ class RszViewer(QWidget):
                     ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
                 ]
             '''
+        elif self.scn.filepath.lower().endswith('.18'):
+            header_fields = [
+                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
+                ("Info Count", lambda h: str(h.info_count)),
+                ("Resource Count", lambda h: str(h.resource_count)),
+                ("Folder Count", lambda h: str(h.folder_count)),
+                ("Prefab Count", lambda h: str(h.prefab_count)),
+                ("UserData Count", lambda h: str(h.userdata_count)),
+                ("Folder Tbl", lambda h: f"0x{h.folder_tbl:X}"),
+                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
+                ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
+                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+            ]
         else:
             header_fields = [
                 ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
@@ -423,10 +436,10 @@ class RszViewer(QWidget):
                 
                 if i < len(direct_strings):
                     res_string = direct_strings[i]
-                    print(f"PFB.16 resource {i}: Using direct string: '{res_string}'")
+                    #print(f"PFB.16 resource {i}: Using direct string: '{res_string}'")
                 else:
                     res_string = self.scn.get_resource_string(res) or ""
-                    print(f"PFB.16 resource {i}: Using get_resource_string: '{res_string}'")
+                    #print(f"PFB.16 resource {i}: Using get_resource_string: '{res_string}'")
                     
                 res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
                 res_node["type"] = "resource"
@@ -583,6 +596,8 @@ class RszViewer(QWidget):
         node = DataTreeBuilder.create_data_node(
             "RSZUserData Infos", f"{len(self.scn.rsz_userdata_infos)} items"
         )
+        if self.scn.filepath.lower().endswith('.18'):
+            return node
         
         is_scn19 = self.scn.filepath.lower().endswith('.19')
         

@@ -377,6 +377,7 @@ class RawBytesData:
 TYPE_MAPPING = {
     "bool": BoolData,
     "s32": S32Data,
+    "enum": S32Data,
     "int": S32Data,
     "uint": U32Data,
     "f32": F32Data,

@@ -3,6 +3,7 @@ import uuid
 from file_handlers.rsz.rsz_data_types import *
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
+from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
 
@@ -286,30 +287,38 @@ class RszRSZUserDataInfo:
         return offset + self.SIZE
 
 class RszRSZHeader:
-    SIZE = 48
-    def __init__(self):
-        self.magic = 0
-        self.version = 0
-        self.object_count = 0
-        self.instance_count = 0
-        self.userdata_count = 0
-        self.reserved = 0  # 4 bytes reserved after userdata_count
-        self.instance_offset = 0
-        self.data_offset = 0
-        self.userdata_offset = 0
     def parse(self, data: bytes, offset: int) -> int:
-        fmt = "<5I I Q Q Q"  # Changed to group the 5 uint32s together, followed by reserved uint32
-        (self.magic,
-         self.version,
-         self.object_count,
-         self.instance_count,
-         self.userdata_count,
-         self.reserved,      # Parse reserved as uint32
-         self.instance_offset,
-         self.data_offset,
-         self.userdata_offset) = struct.unpack_from(fmt, data, offset)
-        return offset + self.SIZE
+        self.magic, self.version = struct.unpack_from("<II", data, offset)
+        offset += 8
+        if self.version < 4:
+            # v3 has no userdata_count field
+            # next: object_count, instance_count, reserved (3×4 bytes)
+            self.object_count, self.instance_count = struct.unpack_from("<II", data, offset)
+            offset += 8
+        else:
+            # v4+ has object_count, instance_count, userdata_count, reserved (4×4 bytes)
+            (self.object_count,
+             self.instance_count,
+             self.userdata_count,
+             self.reserved) = struct.unpack_from("<IIII", data, offset)
+            offset += 16
+        
+        self.instance_offset, self.data_offset = struct.unpack_from("<QQ", data, offset)
+        offset += 16
 
+        if self.version > 3:
+            # only v4+ has this
+            self.userdata_offset, = struct.unpack_from("<Q", data, offset)
+            offset += 8
+        else:
+            self.userdata_offset = 0
+
+        return offset
+
+    @property
+    def SIZE(self):
+        return 32 if self.version < 4 else 48
+    
 class RszInstanceInfo:
     SIZE = 8
     def __init__(self):
@@ -386,7 +395,7 @@ class RszFile:
         elif data[:4] == b'PFB\x00':
             self.is_pfb = True
             
-            if self.filepath.lower().endswith('.pfb.16'):
+            if self.filepath.lower().endswith('.16'):
                 self.header = Pfb16Header()
                 self.is_pfb16 = True 
             else:
@@ -400,6 +409,8 @@ class RszFile:
             
             if self.filepath.lower().endswith('.19'):
                 self.header = Scn19Header()
+            elif self.filepath.lower().endswith('.18'):
+                self.header = Scn18Header()
             else:
                 self.header = ScnHeader()
             
@@ -429,7 +440,7 @@ class RszFile:
         self._parse_gameobjects(data)
         self._parse_gameobject_ref_infos(data)
         
-        if self.filepath.lower().endswith('.pfb.16'):
+        if self.filepath.lower().endswith('.16'):
             from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
             self._current_offset = parse_pfb16_resources(self, data, self._current_offset)
         else:
@@ -471,13 +482,15 @@ class RszFile:
         """Parse standard SCN file structure"""
         self._parse_gameobjects(data)
         self._parse_folder_infos(data)
-        self._parse_resource_infos(data)
-        self._parse_prefab_infos(data)
+        if self.filepath.lower().endswith('.18'):
+            _parse_scn_18_resource_infos(self, data)
+        else:
+            self._parse_resource_infos(data)
         
+        self._parse_prefab_infos(data)
         # SCN.19 format doesn't have userdata_infos
-        if not self.filepath.lower().endswith('.19'):
+        if not (self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')):
             self._parse_userdata_infos(data)
-            
         self._parse_blocks(data)
         self._parse_rsz_section(data)
         self._parse_instances(data)        
@@ -505,7 +518,7 @@ class RszFile:
                 self.gameobjects.append(go)
         else:
             # Regular SCN files use the 32-byte GameObject structure
-            is_scn19 = self.filepath.lower().endswith('.19')
+            is_scn19 = self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')
             for i in range(self.header.info_count):
                 go = RszGameObject()
                 self._current_offset = go.parse(data, self._current_offset, is_scn19)
@@ -523,7 +536,8 @@ class RszFile:
             fi = RszFolderInfo()
             self._current_offset = fi.parse(data, self._current_offset)
             self.folder_infos.append(fi)
-        self._current_offset = _align(self._current_offset, 16)
+        if not self.filepath.lower().endswith('.18'): self._current_offset = _align(self._current_offset, 16)
+        else: self._current_offset += 16
 
     def _parse_resource_infos(self, data):
         for i in range(self.header.resource_count):
@@ -548,16 +562,17 @@ class RszFile:
 
     def _parse_blocks(self, data):
 
-        self._resource_str_map.clear()
         self._prefab_str_map.clear()
         self._userdata_str_map.clear()
         self._rsz_userdata_str_map.clear()
         
         # Batch process all strings instead of one-by-one
-        for ri in self.resource_infos:
-            if (ri.string_offset != 0):
-                s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
-                self.set_resource_string(ri, s)
+        if not self.filepath.lower().endswith('.18'):
+            self._resource_str_map.clear()
+            for ri in self.resource_infos:
+                if (ri.string_offset != 0):
+                    s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
+                    self.set_resource_string(ri, s)
                 
         for pi in self.prefab_infos:
             if (pi.string_offset != 0):
@@ -604,27 +619,27 @@ class RszFile:
         for i in range(self.rsz_header.instance_count):
             ii = RszInstanceInfo()
             self._current_offset = ii.parse(data, self._current_offset)
+            if self.rsz_header.version < 4:
+                self._current_offset += 8
             self.instance_infos.append(ii)
-            
-        self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
 
-        # Special handling for SCN.19 format which has different RSZ userdata structure
-        if self.filepath.lower().endswith('.19'):
-            self._parse_scn19_rsz_userdata(data)
-        # Special handling for PFB.16 format which might have embedded RSZ
-        elif self.filepath.lower().endswith('.16'):
-            self._current_offset = parse_pfb16_rsz_userdata(self, data)
-        # AIWAYP format has no embedded RSZ userdata
-        #elif self.is_aiwayp:
-        #    self._parse_aiwayp_rsz_userdata(data)
-        else:
-            # Standard RSZ userdata parsing
-            self._parse_standard_rsz_userdata(data)
+        # Only parse userdata if v>3
+        if self.rsz_header.version > 3:
+            self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
+            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18'):
+                self._parse_scn19_rsz_userdata(data)
+            elif self.filepath.lower().endswith('.16'):
+                self._current_offset = parse_pfb16_rsz_userdata(self, data)
+            else:
+                self._parse_standard_rsz_userdata(data)
         
         self.data = data[self._current_offset:]
         
         self._rsz_userdata_dict = {rui.instance_id: rui for rui in self.rsz_userdata_infos}
         self._rsz_userdata_set = set(self._rsz_userdata_dict.keys())
+
+        file_offset_of_data = self._current_offset
+        self._instance_base_mod = file_offset_of_data % 16
 
     def _parse_standard_rsz_userdata(self, data):
         """Parse standard RSZ userdata entries (16 bytes each)"""
@@ -719,11 +734,13 @@ class RszFile:
             current_offset = new_offset
             
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
+        
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
+        base_mod = getattr(self, "_write_base_mod", 0)
         
         if isinstance(data_obj, StructData):
-            while len(out) % 4:
+            while (len(out) - base_mod) % 4:
                 out.extend(b'\x00') 
             count = len(data_obj.values)
             out.extend(struct.pack("<I", count))
@@ -748,16 +765,16 @@ class RszFile:
 
         elif field_def.get("array", False):
 
-            while len(out) % 4:
+            while (len(out) - base_mod) % 4:
                 out.extend(b'\x00') 
 
             count = len(data_obj.values)
             out.extend(struct.pack("<I", count))
             
             for element in data_obj.values:
-                while len(out) % field_align:
+                while (len(out) - base_mod) % field_align != 0:
                     out.extend(b'\x00')
-                
+
                 if isinstance(element, S8Data):
                     out.extend(struct.pack("<b", max(-128, min(127, element.value))))
                 elif isinstance(element, U8Data):
@@ -815,7 +832,7 @@ class RszFile:
                     guid = uuid.UUID(element.guid_str)
                     out.extend(guid.bytes_le)
                 elif isinstance(element, StringData):
-                    while len(out) % 4:
+                    while (len(out) - base_mod) % 4:
                         out.extend(b'\x00')
                     if element.value:
                         str_bytes = element.value.encode('utf-16-le')
@@ -830,7 +847,7 @@ class RszFile:
                     else:
                         out.extend(struct.pack("<I", 0))
                 elif isinstance(element, RuntimeTypeData):
-                    while len(out) % 4:
+                    while (len(out) - base_mod) % 4:
                         out.extend(b'\x00')
                     if element.value:
                         str_bytes = element.value.encode('utf-8')
@@ -890,8 +907,8 @@ class RszFile:
                     raw_bytes = val.to_bytes(field_size, byteorder='little')
                     out.extend(raw_bytes)
         else:
-            while len(out) % field_align:
-                out.extend(b'\x00') 
+            while (len(out) - base_mod) % field_align != 0:
+                out.extend(b'\x00')
 
             if isinstance(data_obj, S8Data):
                 out.extend(struct.pack("<b", max(-128, min(127, data_obj.value))))
@@ -940,7 +957,7 @@ class RszFile:
                 guid = uuid.UUID(data_obj.guid_str)
                 out.extend(guid.bytes_le)
             elif isinstance(data_obj, StringData):
-                while len(out) % 4:
+                while (len(out) - base_mod) % 4:
                     out.extend(b'\x00')
                     
                 if data_obj.value:
@@ -956,7 +973,7 @@ class RszFile:
                 else:
                     out.extend(struct.pack("<I", 0))
             elif isinstance(data_obj, (RuntimeTypeData)):
-                while len(out) % 4:
+                while (len(out) - base_mod) % 4:
                     out.extend(b'\x00')
                     
                 if data_obj.value:
@@ -1058,9 +1075,10 @@ class RszFile:
         #elif self.is_aiwayp:
         #    return self._build_aiwayp(special_align_enabled)
         
-        else:
-            if self.filepath.lower().endswith('.19'):
+        elif self.filepath.lower().endswith('.19'):
                 return build_scn_19(self, special_align_enabled)
+        elif self.filepath.lower().endswith('.18'):
+            return build_scn_18(self, special_align_enabled)
         
         self.header.info_count = len(self.gameobjects)
         self.header.folder_count = len(self.folder_infos)
@@ -1097,7 +1115,7 @@ class RszFile:
             out += struct.pack("<i", go.id)
             out += struct.pack("<i", go.parent_id)
             out += struct.pack("<H", go.component_count)
-            if self.filepath.lower().endswith('.19'):
+            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18'):
                 out += struct.pack("<h", go.prefab_id)
                 out += struct.pack("<i", go.ukn) 
             else:
@@ -1960,7 +1978,6 @@ class RszFile:
 def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                           current_instance_index=None, rsz_file=None):
     """Parse fields from raw data according to field definitions – optimized version."""
-    pos = offset
     children = []
 
     unpack_uint    = struct.Struct("<I").unpack_from
@@ -1992,19 +2009,31 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
     current_hierarchy = instance_hierarchy[current_instance_index]
     current_children  = current_hierarchy["children"]
 
+    def _align_rel(pos: int, align: int, base_mod: int) -> int:
+        rem = (pos + base_mod) % align
+        return pos if rem == 0 else pos + (align - rem)
+
+    pos = offset
+
+    # compute how the file’s data-block was aligned (0 for v4+, 8 for v3, etc.)
+    base_mod = getattr(rsz_file, "_instance_base_mod", 0)
+
+    def _align(p: int, a: int) -> int:
+        return _align_rel(p, a, base_mod)
+    
     def read_aligned_value(unpack_func, size, align=1):
         nonlocal pos
         pos = _align(pos, align)
-        value = unpack_func(raw, pos)[0]
+        v = unpack_func(raw, pos)[0]
         pos += size
-        return value
+        return v
 
     def read_aligned_bytes(length, align=1):
         nonlocal pos
         pos = _align(pos, align)
-        segment = raw[pos:pos+length]
+        seg = raw[pos:pos+length]
         pos += length
-        return segment.tobytes() if hasattr(segment, "tobytes") else segment
+        return seg.tobytes() if hasattr(seg, "tobytes") else seg
 
     def read_string_value():
         nonlocal pos

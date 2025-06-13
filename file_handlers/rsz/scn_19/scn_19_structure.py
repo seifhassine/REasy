@@ -631,29 +631,64 @@ def _update_field_references(field_data, old_to_new_idx):
 
 def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: bool, rsz_start: int):
     """Build the RSZ section specifically for SCN.19 format"""
-    rsz_header_bytes = struct.pack(
-        "<5I I Q Q Q",
-        rsz_file.rsz_header.magic,
-        rsz_file.rsz_header.version,
-        rsz_file.rsz_header.object_count,
-        len(rsz_file.instance_infos),
-        len(rsz_file.rsz_userdata_infos),
-        rsz_file.rsz_header.reserved,
-        0,  # instance_offset - will update later
-        0,  # data_offset - will update later 
-        0   # userdata_offset - will update later
-    )
-    out += rsz_header_bytes
+    
+    if rsz_file.rsz_header.version > 3:
+        rsz_header_bytes = struct.pack(
+            "<5I I Q Q Q",
+            rsz_file.rsz_header.magic,
+            rsz_file.rsz_header.version,
+            rsz_file.rsz_header.object_count,
+            len(rsz_file.instance_infos),
+            len(rsz_file.rsz_userdata_infos),
+            rsz_file.rsz_header.reserved,
+            0,  # instance_offset - will update later
+            0,  # data_offset - will update later 
+            0   # userdata_offset - will update later
+        )
+        out += rsz_header_bytes
+    else:
+        rsz_header_bytes = struct.pack(
+            "<4I Q Q",
+            rsz_file.rsz_header.magic,
+            rsz_file.rsz_header.version,
+            rsz_file.rsz_header.object_count,
+            len(rsz_file.instance_infos),
+            0, 
+            0,
+        )
+        out += rsz_header_bytes
 
     for obj_id in rsz_file.object_table:
         out += struct.pack("<i", obj_id)
 
     new_instance_offset = len(out) - rsz_start
-    for inst in rsz_file.instance_infos:
-        out += struct.pack("<II", inst.type_id, inst.crc)
+        
+    if rsz_file.rsz_header.version < 4:
+        for idx, inst in enumerate(rsz_file.instance_infos):
+            out += struct.pack("<II", inst.type_id, inst.crc)
 
-    while len(out) % 16 != 0:
-        out += b"\x00"
+            h = 0
+
+            fields = rsz_file.parsed_elements.get(idx, {})
+            if fields:
+                first_field_obj = next(iter(fields.values()))
+                if isinstance(first_field_obj, StringData):
+                    raw = first_field_obj.value or ""
+                    try:
+                        if raw.startswith("assets:/"):
+                            value_str = raw.strip("\x00")
+                            h = murmur3_hash(value_str.encode("utf-16le"))
+                    except Exception:
+                        h = 0
+
+            out += struct.pack("<I", h)
+            out += b"\x00" * 4
+    else:
+        for inst in rsz_file.instance_infos:
+            out += struct.pack("<II", inst.type_id, inst.crc)
+        while len(out) % 16 != 0:
+            out += b"\x00"
+
     new_userdata_offset = len(out) - rsz_start
 
     userdata_entries_start = len(out)
@@ -687,9 +722,10 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: boo
         
         current_data_offset += ((len(data_content) + 15) & ~15)
     
-    while len(out) < userdata_data_start:
-        out += b"\x00"
-    
+    if rsz_file.rsz_header.version > 3:
+        while len(out) < userdata_data_start:
+            out += b"\x00"
+
     for rui in rsz_file.rsz_userdata_infos:
         data_content = getattr(rui, "data", b"")
         if data_content is None:
@@ -702,22 +738,39 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: boo
 
     new_data_offset = len(out) - rsz_start
     
-    instance_data = rsz_file._write_instance_data()
-    out += instance_data
+    if rsz_file.rsz_header.version < 4:
+        while len(out) % 4 != 0:
+            out += b'\x00'
+        rsz_file._write_base_mod = (16 - (len(out) % 16)) % 16
 
-    new_rsz_header = struct.pack(
-        "<5I I Q Q Q",
-        rsz_file.rsz_header.magic,
-        rsz_file.rsz_header.version,
-        rsz_file.rsz_header.object_count,
-        len(rsz_file.instance_infos),
-        len(rsz_file.rsz_userdata_infos),
-        rsz_file.rsz_header.reserved,
-        new_instance_offset,
-        new_data_offset,
-        new_userdata_offset
-    )
-    out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
+    out += rsz_file._write_instance_data()
+
+
+    if rsz_file.rsz_header.version > 3:
+        new_rsz_header = struct.pack(
+            "<5I I Q Q Q",
+            rsz_file.rsz_header.magic,
+            rsz_file.rsz_header.version,
+            rsz_file.rsz_header.object_count,
+            len(rsz_file.instance_infos),
+            len(rsz_file.rsz_userdata_infos),
+            rsz_file.rsz_header.reserved,
+            new_instance_offset,
+            new_data_offset,
+            new_userdata_offset
+        )
+        out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
+    else:
+        new_rsz_header = struct.pack(
+            "<4I Q Q",
+            rsz_file.rsz_header.magic,
+            rsz_file.rsz_header.version,
+            rsz_file.rsz_header.object_count,
+            len(rsz_file.instance_infos),
+            new_instance_offset,
+            new_data_offset,
+        )
+        out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
 
 def parse_scn19_rsz_userdata(rsz_file, data):
     """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
