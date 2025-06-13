@@ -1,449 +1,268 @@
-from PySide6.QtCore import (
-    Qt,
-    QModelIndex,
-)
+from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QCheckBox,
-    QPushButton,
-    QPlainTextEdit,
-    QListWidget,
-    QDialog,
-    QSplitter,
-    QRadioButton,
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
+    QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
+    QSpinBox, QDoubleSpinBox, QCheckBox as QtCheckBox, QWidget
 )
 
+
 class BetterFindDialog(QDialog):
+    """Modal dialog that searches names AND values (widgets or raw data) in the active tree."""
+
+    # ------------------------------------------------------------------ #
+    # helpers
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _widget_values(widget: QWidget) -> list[str]:
+        """Grab *all* user-visible values inside a custom index-widget."""
+        vals: list[str] = []
+
+        for le in widget.findChildren(QLineEdit):
+            vals.append(le.text())
+
+        for sp in widget.findChildren(QSpinBox):
+            vals.append(str(sp.value()))
+        for sp in widget.findChildren(QDoubleSpinBox):
+            vals.append(str(sp.value()))
+
+        for chk in widget.findChildren(QtCheckBox):
+            vals.append(str(chk.isChecked()))
+
+        return [v for v in vals if v not in ("", None)]
+
+    @staticmethod
+    def _item_value(item) -> str:
+        """
+        Return a human-readable value directly from the model item
+        (without relying on a widget).  Handles the common RSZ data
+        objects your app uses (value, guid_str, x/y/z, etc.).
+        """
+        if not isinstance(item, object) or not hasattr(item, "raw"):
+            return ""
+
+        raw = item.raw
+        if isinstance(raw, dict):
+            obj = raw.get("obj")
+            if obj:
+                # numeric scalars
+                if hasattr(obj, "value"):
+                    return str(obj.value)
+
+                # strings
+                if hasattr(obj, "guid_str"):
+                    return obj.guid_str
+                if hasattr(obj, "string"):
+                    return str(obj.string)
+
+                # vectors / ranges
+                if all(hasattr(obj, attr) for attr in ("x", "y")):
+                    coords = [obj.x, obj.y]
+                    if hasattr(obj, "z"):
+                        coords.append(obj.z)
+                    if hasattr(obj, "w"):
+                        coords.append(obj.w)
+                    return "(" + ", ".join(f"{c:.6g}" for c in coords) + ")"
+
+                if hasattr(obj, "values") and isinstance(obj.values, (list, tuple)):
+                    return " ".join(str(v) for v in obj.values)
+
+        # fall-back (second column of the node’s data list))
+        if hasattr(item, "data") and isinstance(item.data, (list, tuple)) and len(item.data) > 1:
+            return str(item.data[1])
+
+        return ""
+
+    def _row_path(self, idx: QModelIndex) -> list[int]:
+        rows = []
+        cur = idx
+        while cur.isValid():
+            rows.insert(0, cur.row())
+            cur = cur.parent()
+        return rows
+
+    def _index_from_rows(self, rows: list[int]) -> QModelIndex:
+        cur = QModelIndex()
+        model = self.app.get_active_tree().model()
+        for r in rows:
+            cur = model.index(r, 0, cur)
+            if not cur.isValid():
+                return QModelIndex()
+        return cur
+
+    # ------------------------------------------------------------------ #
+    # GUI
+    # ------------------------------------------------------------------ #
     def __init__(self, file_tab, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Find in Tree")
-        self.resize(400, 300)
+        self.resize(460, 330)
 
         self.file_tab = file_tab
         self.app = file_tab.app
 
-        self.results = []  # Will store tuples of (path, name, value)
+        self.results = []
         self.current_index = -1
 
-        # Create layout
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
 
-        # Search box and options
-        search_group = QWidget()
-        search_layout = QVBoxLayout(search_group)
-
-        input_layout = QHBoxLayout()
-        self.search_entry = QLineEdit()
-        self.search_entry.setPlaceholderText("Enter search text...")
+        # search bar
+        srow = QHBoxLayout()
+        srow.addWidget(QLabel("Search:"))
+        self.search_entry = QLineEdit(placeholderText="Enter text…")
         self.search_entry.returnPressed.connect(self.find_all)
-        input_layout.addWidget(QLabel("Search:"))
-        input_layout.addWidget(self.search_entry)
-        search_layout.addLayout(input_layout)
+        srow.addWidget(self.search_entry)
+        root.addLayout(srow)
 
-        # Options row
-        options_layout = QHBoxLayout()
+        # options
+        opts = QHBoxLayout()
+        self.opt_name = QRadioButton("Name")
+        self.opt_value = QRadioButton("Value")
+        self.opt_both = QRadioButton("Both"); self.opt_both.setChecked(True)
+        opts.addWidget(self.opt_name); opts.addWidget(self.opt_value); opts.addWidget(self.opt_both)
+        self.case_box = QCheckBox("Case sensitive"); opts.addWidget(self.case_box)
+        opts.addStretch()
+        root.addLayout(opts)
 
-        # Radio buttons
-        radio_group = QWidget()
-        radio_layout = QHBoxLayout(radio_group)
-        radio_layout.setContentsMargins(0, 0, 0, 0)
-        self.search_name = QRadioButton("Name")
-        self.search_value = QRadioButton("Value")
-        self.search_both = QRadioButton("Both")
-        self.search_both.setChecked(True)
-        radio_layout.addWidget(self.search_name)
-        radio_layout.addWidget(self.search_value)
-        radio_layout.addWidget(self.search_both)
-        options_layout.addWidget(radio_group)
+        # splitter (results / preview)
+        splitter = QSplitter(Qt.Vertical)
 
-        # Case sensitivity checkbox
-        self.case_box = QCheckBox("Case sensitive")
-        options_layout.addWidget(self.case_box)
-        options_layout.addStretch()
-        search_layout.addLayout(options_layout)
-
-        layout.addWidget(search_group)
-
-        # Results area with splitter
-        results_splitter = QSplitter(Qt.Vertical)
-
-        # Results list
-        results_group = QWidget()
-        results_layout = QVBoxLayout(results_group)
-        results_layout.setContentsMargins(0, 0, 0, 0)
-        results_header = QLabel("Results:")
-        results_layout.addWidget(results_header)
+        res_col = QVBoxLayout()
+        res_col.addWidget(QLabel("Results:"))
         self.result_list = QListWidget()
-        self.result_list.itemDoubleClicked.connect(self._on_result_selected)
-        results_layout.addWidget(self.result_list)
-        results_splitter.addWidget(results_group)
+        self.result_list.itemDoubleClicked.connect(lambda _: self._select(self.result_list.currentRow()))
+        res_col.addWidget(self.result_list)
+        rwidget = QWidget(); rwidget.setLayout(res_col)
+        splitter.addWidget(rwidget)
 
-        # Preview area
-        preview_group = QWidget()
-        preview_layout = QVBoxLayout(preview_group)
-        preview_layout.setContentsMargins(0, 0, 0, 0)
-        preview_header = QLabel("Preview:")
-        preview_layout.addWidget(preview_header)
-        self.preview_text = QPlainTextEdit()
-        self.preview_text.setReadOnly(True)
-        preview_layout.addWidget(self.preview_text)
-        results_splitter.addWidget(preview_group)
+        prev_col = QVBoxLayout()
+        prev_col.addWidget(QLabel("Preview:"))
+        self.preview = QPlainTextEdit(readOnly=True)
+        prev_col.addWidget(self.preview)
+        pwidget = QWidget(); pwidget.setLayout(prev_col)
+        splitter.addWidget(pwidget)
 
-        layout.addWidget(results_splitter, 1) 
+        root.addWidget(splitter, 1)
 
-        # Button area
-        button_layout = QHBoxLayout()
-        find_all_btn = QPushButton("Find All")
-        find_prev_btn = QPushButton("Previous")
-        find_next_btn = QPushButton("Next")
-        close_btn = QPushButton("Close")
+        # nav buttons
+        nav = QHBoxLayout()
+        nav.addWidget(QPushButton("Find All", clicked=self.find_all))
+        nav.addStretch()
+        nav.addWidget(QPushButton("Previous", clicked=self.find_previous))
+        nav.addWidget(QPushButton("Next", clicked=self.find_next))
+        nav.addStretch()
+        nav.addWidget(QPushButton("Close", clicked=self.close))
+        root.addLayout(nav)
 
-        find_all_btn.clicked.connect(self.find_all)
-        find_prev_btn.clicked.connect(self.find_previous)
-        find_next_btn.clicked.connect(self.find_next)
-        close_btn.clicked.connect(self.close)
+        # status
+        self.status = QLabel("")
+        root.addWidget(self.status)
 
-        button_layout.addWidget(find_all_btn)
-        button_layout.addStretch()
-        button_layout.addWidget(find_prev_btn)
-        button_layout.addWidget(find_next_btn)
-        button_layout.addStretch()
-        button_layout.addWidget(close_btn)
-
-        layout.addLayout(button_layout)
-
-        # Status bar
-        self.status_label = QLabel("")
-        layout.addWidget(self.status_label)
-
+    # ------------------------------------------------------------------ #
+    # search
+    # ------------------------------------------------------------------ #
     def find_all(self):
-        """Find all occurrences by traversing the tree directly"""
         search_text = self.search_entry.text().strip()
         if not search_text:
-            self.status_label.setText("Please enter search text")
-            return
+            self.status.setText("Please enter search text"); return
 
-        # Get current tree and model
         tree = self.app.get_active_tree()
         if not tree:
-            self.status_label.setText("No tree view available")
-            return
-
+            self.status.setText("No tree view available"); return
         model = tree.model()
         if not model:
-            self.status_label.setText("Tree has no model")
-            return
+            self.status.setText("Tree has no model"); return
 
-        # Clear previous results
-        self.result_list.clear()
-        self.results = []
-        self.current_index = -1
+        # fetch lazy children
+        def fetch(idx):
+            if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
+                model.fetchMore(idx)
+            for r in range(model.rowCount(idx)):
+                fetch(model.index(r, 0, idx))
+        fetch(QModelIndex())
 
-        # Settings for search
-        case_sensitive = self.case_box.isChecked()
-        search_mode = "both"
-        if self.search_name.isChecked():
-            search_mode = "name"
-        elif self.search_value.isChecked():
-            search_mode = "value"
+        case  = self.case_box.isChecked()
+        mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
+        needle= search_text if case else search_text.lower()
 
-        if not case_sensitive:
-            search_text = search_text.lower()
+        self.results.clear(); self.result_list.clear(); self.current_index = -1
 
-        # Recursive search function that doesn't rely on tree triggers
-        def search_recursive(parent_index, path=""):
-            for row in range(model.rowCount(parent_index)):
-                index = model.index(row, 0, parent_index)
-                if not index.isValid():
-                    continue
+        def walk(parent_idx, path):
+            for row in range(model.rowCount(parent_idx)):
+                idx0 = model.index(row, 0, parent_idx)
+                if not idx0.isValid(): continue
 
-                # Get display name
-                name = str(index.data(Qt.DisplayRole) or "")
-                current_path = path + " > " + name if path else name
+                name = str(idx0.data(Qt.DisplayRole) or "")
+                full_path = f"{path} > {name}" if path else name
 
-                # Try to get value using tree's helper or fallback
-                try:
-                    if hasattr(tree, "get_value_at_index"):
-                        value = tree.get_value_at_index(index)
-                    else:
-                        # Get directly from model
-                        item = index.internalPointer()
-                        if (
-                            item
-                            and hasattr(item, "data")
-                            and len(item.data) > 1
-                        ):
-                            value = str(item.data[1])
-                        else:
-                            value = str(index.data(Qt.UserRole) or "")
-                except:
-                    value = ""
+                item = idx0.internalPointer()
 
-                # Apply case sensitivity
-                if not case_sensitive:
-                    name_lower = name.lower()
-                    value_lower = value.lower() if value else ""
+                # widget values (if the node has been expanded already)
+                widget_vals = []
+                w = tree.indexWidget(idx0)
+                if w:
+                    widget_vals = self._widget_values(w)
 
-                    # Check for matches
-                    found = False
-                    if search_mode == "name" and search_text in name_lower:
-                        found = True
-                    elif (
-                        search_mode == "value"
-                        and value_lower
-                        and search_text in value_lower
-                    ):
-                        found = True
-                    elif search_mode == "both" and (
-                        search_text in name_lower
-                        or (value_lower and search_text in value_lower)
-                    ):
-                        found = True
-                else:
-                    # Case sensitive search
-                    found = False
-                    if search_mode == "name" and search_text in name:
-                        found = True
-                    elif (
-                        search_mode == "value"
-                        and value
-                        and search_text in value
-                    ):
-                        found = True
-                    elif search_mode == "both" and (
-                        search_text in name or (value and search_text in value)
-                    ):
-                        found = True
+                # raw value
+                raw_val = self._item_value(item)
 
-                if found:
-                    # Store result info (path, name, value, row numbers)
-                    self.results.append(
-                        {
-                            "path": current_path,
-                            "name": name,
-                            "value": value,
-                            "row_path": self._get_row_path(index),
-                        }
-                    )
+                all_values = widget_vals + [raw_val]
+                value_blob = " ".join(v for v in all_values if v).strip()
 
-                    # Add to list display
-                    display_text = f"{name}: {value}" if value else name
-                    if len(current_path.split(" > ")) > 3:
-                        display_text = "..." + display_text
-                    self.result_list.addItem(display_text)
+                cmp_name = name if case else name.lower()
+                cmp_val  = value_blob if case else value_blob.lower()
 
-                # Go deeper
-                if model.hasChildren(index):
-                    search_recursive(index, current_path)
+                match = ((mode in ("both", "name")  and needle in cmp_name) or
+                         (mode in ("both", "value") and needle in cmp_val))
+                if match:
+                    self.results.append({
+                        "path": full_path, "name": name,
+                        "value": value_blob, "rows": self._row_path(idx0)
+                    })
+                    disp = f"{name}: {value_blob}" if value_blob else name
+                    if len(full_path.split(" > ")) > 3:
+                        disp = "…" + disp
+                    self.result_list.addItem(disp)
 
-        # Start recursive search
-        search_recursive(QModelIndex())
+                if model.hasChildren(idx0):
+                    walk(idx0, full_path)
 
-        # Show results
+        walk(QModelIndex(), "")
+
         if self.results:
-            self.status_label.setText(f"Found {len(self.results)} matches")
-            self.current_index = 0
-            self.result_list.setCurrentRow(0)
-            self._show_preview(0)
-            self._go_to_result(0)
+            self.status.setText(f"Found {len(self.results)} matches")
+            self._select(0)
         else:
-            self.status_label.setText("No matches found")
+            self.status.setText("No matches found")
 
-    def _get_row_path(self, index):
-        """Get path of row indices to reach this item"""
-        row_path = []
-        current = index
-        while current.isValid():
-            row_path.insert(0, current.row())
-            current = current.parent()
-        return row_path
+    # navigation
+    def _select(self, i):
+        if not (0 <= i < len(self.results)): return
+        self.current_index = i
+        res = self.results[i]
+        self.preview.setPlainText(
+            f"Path:  {res['path']}\nName:  {res['name']}\nValue: {res['value']}"
+        )
+        self.result_list.setCurrentRow(i)
 
-    def _find_index_by_rows(self, row_path):
-        """Find a model index by following a path of row numbers with robust error handling"""
-        try:
-            # Get current app reference first
-            if not self.app:
-                self.status_label.setText("App reference lost")
-                return QModelIndex()
+        idx = self._index_from_rows(res["rows"])
+        if idx.isValid():
+            tree = self.app.get_active_tree()
+            tree.setCurrentIndex(idx)
+            tree.scrollTo(idx)
 
-            # Try multiple methods to get a valid tree
-            tree = None
-
-            # Method 1: Direct app.get_active_tree()
-            try:
-                tree = self.app.get_active_tree()
-            except RuntimeError:
-                pass
-
-            # Method 2: Via current tab
-            if not tree:
-                try:
-                    current_tab = self.app.get_active_tab()
-                    if (
-                        current_tab
-                        and hasattr(current_tab, "viewer")
-                        and current_tab.viewer
-                    ):
-                        tree = getattr(current_tab.viewer, "tree", None)
-                    if not tree and current_tab:
-                        tree = getattr(current_tab, "tree", None)
-                except RuntimeError:
-                    pass
-
-            # Final check
-            if not tree or not hasattr(tree, "model"):
-                self.status_label.setText(
-                    "Tree reference invalid - try closing and reopening search"
-                )
-                return QModelIndex()
-
-            # Get model safely
-            try:
-                model = tree.model()
-                if not model:
-                    self.status_label.setText("Tree has no model")
-                    return QModelIndex()
-            except RuntimeError:
-                self.status_label.setText(
-                    "Tree deleted during access - try closing and reopening search"
-                )
-                return QModelIndex()
-
-            # Follow row path
-            current = QModelIndex()
-            for row in row_path:
-                try:
-                    current = model.index(row, 0, current)
-                    if not current.isValid():
-                        return QModelIndex()
-                except RuntimeError:
-                    self.status_label.setText(
-                        "Model access error - try closing and reopening search"
-                    )
-                    return QModelIndex()
-
-            return current
-
-        except Exception as e:
-            self.status_label.setText(f"Error: {str(e)}")
-            return QModelIndex()
+        self.status.setText(f"Result {i+1} of {len(self.results)}")
 
     def find_next(self):
-        """Find the next result"""
-        if not self.results:
-            self.find_all()
-            return
-
-        if self.current_index < len(self.results) - 1:
-            self.current_index += 1
-        else:
-            self.current_index = 0
-
-        self.result_list.setCurrentRow(self.current_index)
-        self._show_preview(self.current_index)
-        self._go_to_result(self.current_index)
+        if not self.results: self.find_all(); return
+        self._select((self.current_index + 1) % len(self.results))
 
     def find_previous(self):
-        """Find the previous result"""
-        if not self.results:
-            self.find_all()
-            return
+        if not self.results: self.find_all(); return
+        self._select((self.current_index - 1) % len(self.results))
 
-        if self.current_index > 0:
-            self.current_index -= 1
-        else:
-            self.current_index = len(self.results) - 1
-
-        self.result_list.setCurrentRow(self.current_index)
-        self._show_preview(self.current_index)
-        self._go_to_result(self.current_index)
-
-    def _show_preview(self, index):
-        """Show preview of the selected result"""
-        if 0 <= index < len(self.results):
-            result = self.results[index]
-            self.preview_text.setPlainText(
-                f"Path: {result['path']}\n"
-                f"Name: {result['name']}\n"
-                f"Value: {result['value']}"
-            )
-
-    def _go_to_result(self, index):
-        """Navigate to the selected result in the tree with better error handling"""
-        if 0 <= index < len(self.results):
-            try:
-                row_path = self.results[index]["row_path"]
-                found_index = self._find_index_by_rows(row_path)
-
-                if found_index.isValid():
-                    tree = None
-
-                    try:
-                        tree = self.app.get_active_tree()
-                        if tree:
-                            tree.setCurrentIndex(found_index)
-                            tree.scrollTo(found_index)
-                            self.status_label.setText(
-                                f"Result {index + 1} of {len(self.results)}"
-                            )
-                            return
-                    except RuntimeError:
-                        pass
-                    
-                    try:
-                        tab = self.app.get_active_tab()
-                        if tab:
-                            if tab.viewer and hasattr(tab.viewer, "tree"):
-                                tab.viewer.tree.setCurrentIndex(found_index)
-                                tab.viewer.tree.scrollTo(found_index)
-                                self.status_label.setText(
-                                    f"Result {index + 1} of {len(self.results)}"
-                                )
-                                return
-                            elif hasattr(tab, "tree"):
-                                tab.tree.setCurrentIndex(found_index)
-                                tab.tree.scrollTo(found_index)
-                                self.status_label.setText(
-                                    f"Result {index + 1} of {len(self.results)}"
-                                )
-                                return
-                    except RuntimeError:
-                        # Nothing worked
-                        pass
-
-                    self.status_label.setText(
-                        "Tree view not accessible - close and reopen search to refresh"
-                    )
-                else:
-                    self.status_label.setText(
-                        f"Result {index + 1} not found in tree - tree structure changed"
-                    )
-            except Exception as e:
-                self.status_label.setText(f"Navigation error: {str(e)}")
-
-    def _on_result_selected(self, item):
-        """Handle double-click on result list item"""
-        index = self.result_list.currentRow()
-        if 0 <= index < len(self.results):
-            self.current_index = index
-            self._show_preview(index)
-            self._go_to_result(index)
-
-    def showEvent(self, event):
-        """When dialog is shown, set focus to search box"""
-        super().showEvent(event)
-        self.search_entry.setFocus()
-
-    def closeEvent(self, event):
-        """Clean up when dialog closes"""
-        self.results = []
-        self.result_list.clear()
-        self.file_tab = None
-        self.app = (
-            None
-        )
-        super().closeEvent(event)
+    # Qt events
+    def showEvent(self, e): super().showEvent(e); self.search_entry.setFocus()
+    def closeEvent(self, e):
+        self.results.clear(); self.result_list.clear()
+        self.file_tab = self.app = None
+        super().closeEvent(e)
