@@ -1,0 +1,66 @@
+name: Build and Package REasy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+
+  release:
+    types: [published]
+
+permissions:
+  id-token: write     
+  attestations: write   
+  contents: write      
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run build.bat
+      shell: cmd
+      run: build.bat
+
+    - name: Attest Build Provenance
+      uses: actions/attest-build-provenance@v2.4.0
+      with:
+        subject-path: dist/REasy_x64.exe
+
+    - name: Determine version
+      id: get_version
+      run: |
+        if ($env:GITHUB_EVENT_NAME -eq "release") {
+          $version = "${{ github.event.release.tag_name }}"
+        } else {
+          $version = "${{ github.event.inputs.version }}"
+        }
+        echo "version=$version" >> $env:GITHUB_ENV
+
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path .\dist\* -DestinationPath "REasy v$env:version.zip"
+
+    - name: Upload ZIP to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "REasy v${{ env.version }}"
+        tag_name: "${{ env.version }}"
+        files: "REasy v${{ env.version }}.zip"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
