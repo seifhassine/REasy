@@ -7,8 +7,7 @@ This file contains:
 """
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
-import re
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 from utils.enum_manager import EnumManager
 from utils.registry_manager import RegistryManager
@@ -48,6 +47,7 @@ class RszHandler(BaseFileHandler):
         self.gameobject_clipboard = None
         self.component_clipboard = None
         self.type_registry = None
+        self.auto_resource_management = False
 
     @property
     def game_version(self):
@@ -79,6 +79,8 @@ class RszHandler(BaseFileHandler):
             json_path = self.app.settings.get("rcol_json_path")
             if json_path:
                 self.type_registry = RegistryManager.instance().get_registry(json_path)
+                if self.type_registry and self.type_registry.registry.get("metadata", {}).get("complete", False):
+                    self.auto_resource_management = True
 
     def read(self, data: bytes):
         """Parse the file data"""
@@ -90,6 +92,7 @@ class RszHandler(BaseFileHandler):
         self.rsz_file.filepath = self.filepath
         print(f"Reading file with game version: {self._game_version}")
         self.rsz_file.read(data)
+        self.rsz_file.auto_resource_management = self.auto_resource_management
         self.array_clipboard = RszArrayClipboard()
         self.gameobject_clipboard = RszGameObjectClipboard()
         self.component_clipboard = RszComponentClipboard()
@@ -1577,6 +1580,10 @@ class RszViewer(QWidget):
 
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""
+
+        if(self.handler.auto_resource_management):
+            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+        
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
             return False
             
@@ -1603,6 +1610,10 @@ class RszViewer(QWidget):
 
     def add_resource(self, path):
         """Add a new resource path"""
+
+        if(self.handler.auto_resource_management):
+            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+        
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
         
@@ -1625,6 +1636,10 @@ class RszViewer(QWidget):
         return resource_index
 
     def delete_resource(self, resource_index):
+        
+        if(self.handler.auto_resource_management):
+            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+        
         """Delete a resource path"""
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
             return False

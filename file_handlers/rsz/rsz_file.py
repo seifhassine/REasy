@@ -363,6 +363,7 @@ class RszFile:
         self._current_offset = 0 
         self.game_version = "RE4"
         self.filepath = ""
+        self.auto_resource_management = False
   
         self._string_cache = {}  # Cache for frequently accessed strings, will probably be removed.
         self._type_info_cache = {}
@@ -831,7 +832,7 @@ class RszFile:
                 elif isinstance(element, (GameObjectRefData, GuidData)):
                     guid = uuid.UUID(element.guid_str)
                     out.extend(guid.bytes_le)
-                elif isinstance(element, StringData):
+                elif isinstance(element, (StringData, ResourceData)):
                     while (len(out) - base_mod) % 4:
                         out.extend(b'\x00')
                     if element.value:
@@ -956,7 +957,7 @@ class RszFile:
             elif isinstance(data_obj, (GameObjectRefData, GuidData)):
                 guid = uuid.UUID(data_obj.guid_str)
                 out.extend(guid.bytes_le)
-            elif isinstance(data_obj, StringData):
+            elif isinstance(data_obj, (StringData, ResourceData)):
                 while (len(out) - base_mod) % 4:
                     out.extend(b'\x00')
                     
@@ -1063,6 +1064,34 @@ class RszFile:
                     self._write_field_value(field_def, fields[field_name], out)
                     
         return bytes(out)
+    
+    def get_resources_dynamically(self):
+        """Get resources dynamically based on resource fields"""
+        resources = []
+        for instance_id, fields in sorted(self.parsed_elements.items()):
+                
+            inst_info = self.instance_infos[instance_id]
+            type_info = self.type_registry.get_type_info(inst_info.type_id)
+            if not type_info:
+                continue
+                
+            fields_def = type_info.get("fields", [])
+            
+            for field_def in fields_def:
+                field_name = field_def["name"]
+                if field_def["type"] == "Resource":
+
+                    print(f"Processing field: {field_def['name']} of type {field_def['type']}")
+                    if field_def['array'] == False:
+                        if fields[field_name].value and fields[field_name].value not in resources:
+                            resources.append(fields[field_name].value)
+                            print(f"Found dynamic resource: {fields[field_name].value}")
+                    else:
+                        for element in fields[field_name].values:
+                            if element.value and element.value not in resources:
+                                resources.append(element.value)
+                                print(f"Found dynamic resource: {element.value}")
+        return resources
 
     def build(self, special_align_enabled = False) -> bytes:
         if self.is_usr:
@@ -1080,17 +1109,24 @@ class RszFile:
         elif self.filepath.lower().endswith('.18'):
             return build_scn_18(self, special_align_enabled)
         
+        if self.auto_resource_management:
+            dynamic_resources = self.get_resources_dynamically()
+            self.resource_infos.clear()
+            self._resource_str_map.clear()
+            
+            for resource_path in dynamic_resources:
+                ri = RszResourceInfo()
+                ri.string_offset = 0
+                ri.reserved = 0
+                self.resource_infos.append(ri)
+                self.set_resource_string(ri, resource_path)
+        
         self.header.info_count = len(self.gameobjects)
         self.header.folder_count = len(self.folder_infos)
         self.header.resource_count = len(self.resource_infos)
         self.header.prefab_count = len(self.prefab_infos)
         self.header.userdata_count = len(self.userdata_infos)
         
-        if self.rsz_header:
-            self.rsz_header.object_count = len(self.object_table)
-            self.rsz_header.instance_count = len(self.instance_infos)
-            self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
-            
         out = bytearray()
         
         # 1) Write header
@@ -2299,13 +2335,21 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
 
                 data_obj = ArrayData(area_objects, rsz_type, original_type)
 
-            elif rsz_type in (StringData, ResourceData):
+            elif rsz_type == StringData:
                 children = []
                 for _ in range(count):
                     value = read_string_value()
                     children.append(value)
 
                 data_obj = ArrayData([StringData(s) for s in children], StringData, original_type)
+
+            elif rsz_type == ResourceData:
+                children = []
+                for _ in range(count):
+                    value = read_string_value()
+                    children.append(value)
+
+                data_obj = ArrayData([ResourceData(s) for s in children], ResourceData, original_type)
 
             elif rsz_type == RuntimeTypeData:
                 children = []
@@ -2491,10 +2535,14 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 vals = unpack_2int(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(vals[0], vals[1], original_type)
-            elif rsz_type in (StringData, ResourceData):
+            elif rsz_type == StringData:
                 value = read_string_value()
                 children.append(value)
                 data_obj = StringData(value, original_type)
+            elif rsz_type == ResourceData:
+                value = read_string_value()
+                children.append(value)
+                data_obj = ResourceData(value, original_type)
             elif rsz_type == RuntimeTypeData:
                 value = read_string_value_utf8()
                 children.append(value)

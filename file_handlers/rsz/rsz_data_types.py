@@ -33,7 +33,7 @@ class ObjectData:
         self.orig_type = orig_type
 
 class ResourceData:
-    def __init__(self, value: int = 0, orig_type: str = ""):
+    def __init__(self, value: str = "", orig_type: str = ""):
         self.value = value
         self.orig_type = orig_type
 

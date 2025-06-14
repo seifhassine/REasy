@@ -341,6 +341,12 @@ class RszArrayClipboard:
                 "value": element.value,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, ResourceData):
+            return {
+                "type": "ResourceData",
+                "value": element.value,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, RuntimeTypeData):
             return {
                 "type": "RuntimeTypeData",
@@ -956,6 +962,10 @@ class RszArrayClipboard:
         elif element_type == "StringData":
             string_value = element_data.get("value", "")
             return StringData(string_value, orig_type)
+            
+        elif element_type == "ResourceData":
+            string_value = element_data.get("value", "")
+            return ResourceData(string_value, orig_type)
         
         elif element_type == "RuntimeTypeData":
             return RuntimeTypeData(element_data.get("value", ""), orig_type)

@@ -23,6 +23,7 @@ class TreeWidgetFactory:
         "Mat4Data": Mat4Input,
         "RawBytesData": HexBytesInput,
         "StringData": StringInput,
+        "ResourceData": StringInput,
         "RuntimeTypeData": StringInput,
         "BoolData": BoolInput,
         "F32Data": F32Input,
