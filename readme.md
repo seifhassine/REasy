@@ -97,6 +97,7 @@ I have currently rushed the release and the structure will be improved in the up
 
 @don on Discord for helping out with .exe debugging related stuff.
 
+@shadowcookie for consulting with misc. stuff
 
 ## Support REasy:
 
