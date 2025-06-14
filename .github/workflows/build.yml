@@ -60,7 +60,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         name: "REasy v${{ env.version }}"
-        tag_name: "${{ env.version }}"
+        tag_name: "v${{ env.version }}"
         files: "REasy v${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
