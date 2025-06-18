@@ -29,6 +29,16 @@ class MsgHandler(BaseFileHandler):
         if cls._LANGUAGE_NAMES:
             return
             
+        cls._LANGUAGE_NAMES = {
+            0: "Japanese", 1: "English", 2: "French", 3: "Italian", 4: "German",
+            5: "Spanish", 6: "Russian", 7: "Polish", 8: "Dutch", 9: "Portuguese",
+            10: "PortugueseBr", 11: "Korean", 12: "TransitionalChinese", 
+            13: "SimplifiedChinese", 14: "Finnish", 15: "Swedish", 16: "Danish",
+            17: "Norwegian", 18: "Czech", 19: "Hungarian", 20: "Slovak",
+            21: "Arabic", 22: "Turkish", 23: "Bulgarian", 24: "Greek",
+            25: "Romanian", 26: "Thai"
+        }
+            
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             json_path = os.path.join(current_dir, "..", "..", "resources", "data", "enums", "shared_sdk.json")
@@ -44,15 +54,6 @@ class MsgHandler(BaseFileHandler):
                         
         except Exception as e:
             logger.warning(f"Could not load language names from JSON: {e}")
-            cls._LANGUAGE_NAMES = {
-                0: "Japanese", 1: "English", 2: "French", 3: "Italian", 4: "German",
-                5: "Spanish", 6: "Russian", 7: "Polish", 8: "Dutch", 9: "Portuguese",
-                10: "PortugueseBr", 11: "Korean", 12: "TransitionalChinese", 
-                13: "SimplifiedChinese", 14: "Finnish", 15: "Swedish", 16: "Danish",
-                17: "Norwegian", 18: "Czech", 19: "Hungarian", 20: "Slovak",
-                21: "Arabic", 22: "Turkish", 23: "Bulgarian", 24: "Greek",
-                25: "Romanian", 26: "Thai"
-            }
 
     def __init__(self):
         super().__init__()
