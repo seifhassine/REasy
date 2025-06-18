@@ -17,16 +17,8 @@ class MsgViewer(QWidget):
         self.current_language = 0
         self.modified = False
         self.tree = None
-        self.search_timer = QTimer()
-        self.search_timer.setSingleShot(True)
-        self.search_timer.timeout.connect(self._perform_search)
         self.original_entries = []
         
-        self.content_update_timer = QTimer()
-        self.content_update_timer.setSingleShot(True)
-        self.content_update_timer.timeout.connect(self._delayed_content_update)
-        self._pending_content_update = False
-
         self._setup_ui()
         self._populate_tree()
         self._connect_signals()
@@ -263,6 +255,7 @@ class MsgViewer(QWidget):
     def _on_search_text_changed(self, text):
         self.search_timer.stop()
         self.search_timer.start(300)
+        self._perform_search()
 
     def _perform_search(self):
         search_text = self.search_edit.text().strip()
@@ -338,16 +331,6 @@ class MsgViewer(QWidget):
 
     def _on_content_text_changed(self):
         self._update_char_count()
-        
-        self.content_update_timer.stop()
-        self._pending_content_update = True
-        self.content_update_timer.start(500)
-
-    def _delayed_content_update(self):
-        if not self._pending_content_update:
-            return
-            
-        self._pending_content_update = False
         self._on_content_changed()
 
     def _update_details_panel(self):
@@ -386,9 +369,6 @@ class MsgViewer(QWidget):
         new_text = entry.get("content", [""])[self.current_language]
         
         if current_text != new_text:
-            self.content_update_timer.stop()
-            self._pending_content_update = False
-            
             self.content_edit.blockSignals(True)
             cursor_position = self.content_edit.textCursor().position()
             self.content_edit.setPlainText(new_text)
