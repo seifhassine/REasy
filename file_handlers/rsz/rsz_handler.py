@@ -79,7 +79,7 @@ class RszHandler(BaseFileHandler):
             json_path = self.app.settings.get("rcol_json_path")
             if json_path:
                 self.type_registry = RegistryManager.instance().get_registry(json_path)
-                if self.type_registry and self.type_registry.registry.get("metadata", {}).get("complete", False):
+                if self.type_registry and (self.type_registry.registry.get("metadata", {}).get("complete", False) or self.type_registry.registry.get("metadata", {}).get("resources_identified", False)):
                     self.auto_resource_management = True
 
     def read(self, data: bytes):
