@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version'
+        description: 'Version (e.g., v0.2.6 or 0.2.6)'
         required: true
 
   release:
@@ -48,19 +48,24 @@ jobs:
         if ($env:GITHUB_EVENT_NAME -eq "release") {
           $version = "${{ github.event.release.tag_name }}"
         } else {
-          $version = "${{ github.event.inputs.version }}"
+          $input_version = "${{ github.event.inputs.version }}"
+          if ($input_version -like "v*") {
+            $version = $input_version
+          } else {
+            $version = "v$input_version"
+          }
         }
         echo "version=$version" >> $env:GITHUB_ENV
 
     - name: Create ZIP archive
       run: |
-        Compress-Archive -Path .\dist\* -DestinationPath "REasy v$env:version.zip"
+        Compress-Archive -Path .\dist\* -DestinationPath "REasy $env:version.zip"
 
     - name: Upload ZIP to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: "REasy v${{ env.version }}"
-        tag_name: "v${{ env.version }}"
-        files: "REasy v${{ env.version }}.zip"
+        name: "REasy ${{ env.version }}"
+        tag_name: "${{ env.version }}"
+        files: "REasy ${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
