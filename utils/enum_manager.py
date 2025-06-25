@@ -23,6 +23,7 @@ class EnumManager:
             "RE8": "resources/data/enums/re8_enums.json",
             "RE3": "resources/data/enums/re3_enums.json",
             "RE3RT": "resources/data/enums/re3rt_enums.json",
+            "REResistance": "resources/data/enums/reresistance_enums.json",
             "RE7": "resources/data/enums/re7_enums.json",
             "RE7RT": "resources/data/enums/re7rt_enums.json",
             "MHWS": "resources/data/enums/mhws_enums.json",
