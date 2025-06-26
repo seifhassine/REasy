@@ -69,3 +69,8 @@ jobs:
         files: "REasy ${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: reasy-${{ env.version }}
+        path: "REasy ${{ env.version }}.zip"
