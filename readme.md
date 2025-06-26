@@ -1,3 +1,4 @@
+[![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
 # REasy Editor v0.2.7
 
 <p align="center">
