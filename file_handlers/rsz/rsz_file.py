@@ -895,6 +895,13 @@ class RszFile:
                     out.extend(struct.pack("<f", 0.0))
                     out.extend(struct.pack("<f", element.radius))
                     out.extend(b'\x00' * 12)
+                    
+                elif isinstance(element, AABBData):
+                    out.extend(struct.pack("<3f", element.min.x, element.min.y, element.min.z))
+                    out.extend(struct.pack("<f", 0.0)) 
+                    out.extend(struct.pack("<3f", element.max.x, element.max.y, element.max.z))
+                    out.extend(struct.pack("<f", 0.0))
+
                 elif isinstance(element, AreaData):
                     out.extend(struct.pack("<2f", element.p0.x, element.p0.y))
                     out.extend(struct.pack("<2f", element.p1.x, element.p1.y))
@@ -1018,6 +1025,13 @@ class RszFile:
                 out.extend(struct.pack("<f", 0.0))
                 out.extend(struct.pack("<f", data_obj.radius))
                 out.extend(b'\x00' * 12)
+
+            elif isinstance(data_obj, AABBData):
+                out.extend(struct.pack("<3f", data_obj.min.x, data_obj.min.y, data_obj.min.z))
+                out.extend(struct.pack("<f", 0.0)) 
+                out.extend(struct.pack("<3f", data_obj.max.x, data_obj.max.y, data_obj.max.z))
+                out.extend(struct.pack("<f", 0.0))
+                
             elif isinstance(data_obj, AreaData):
                 out.extend(struct.pack("<2f", data_obj.p0.x, data_obj.p0.y))
                 out.extend(struct.pack("<2f", data_obj.p1.x, data_obj.p1.y))
@@ -2326,6 +2340,19 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
 
                 data_obj = ArrayData(area_objects, rsz_type, original_type)
 
+            elif rsz_type == AABBData:
+                area_objects = []
+                for _ in range(count):
+                    pos = _align(pos, field_align)
+                        
+                    min_vals = unpack_4float(raw, pos)
+                    pos += 16
+                    max_vals = unpack_4float(raw, pos)
+                    pos += 16
+                    area_objects.append(rsz_type(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], original_type))
+
+                data_obj = ArrayData(area_objects, rsz_type, original_type)
+
             elif rsz_type == AreaData:
             
                 area_objects = []
@@ -2630,6 +2657,12 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
                 end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
                 data_obj = rsz_type(start_vec, end_vec, radius, original_type)
+            elif rsz_type == AABBData:
+                min_vals = unpack_4float(raw, pos)
+                pos += 16
+                max_vals = unpack_4float(raw, pos)
+                pos += 16
+                data_obj = rsz_type(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], original_type)
             elif rsz_type == AreaData:
                 p0_vals = unpack_2float(raw, pos)
                 pos += 8
