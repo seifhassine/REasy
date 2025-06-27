@@ -3,12 +3,6 @@
 
 import struct
 
-def compute_namehash(s: str) -> int:
-    h = 0
-    for ch in s:
-        h = (h * 31 + ord(ch)) & 0xFFFFFFFF
-    return h
-
 def rotl32(x: int, r: int) -> int:
     return ((x << r) | (x >> (32 - r))) & 0xffffffff
 

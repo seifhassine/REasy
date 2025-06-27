@@ -21,25 +21,51 @@ class HashCalculator(QWidget):
 
         self.hash_type_label = QLabel("Hash Type:")
         self.hash_type_combo = QComboBox()
-        self.hash_type_combo.addItems(["NameHash", "Murmur3"])
+        self.hash_type_combo.addItems(["Murmur3"])
         input_layout.addWidget(self.hash_type_label)
         input_layout.addWidget(self.hash_type_combo)
 
         self.calculate_button = QPushButton("Calculate Hash")
         self.calculate_button.clicked.connect(self.calculate_hash)
 
-        self.result_label_hex = QLabel("Hash Result (Hex):")
-        self.result_field_hex = QLineEdit()
-        self.result_field_hex.setReadOnly(True)
+        utf8_group_layout = QVBoxLayout()
+        utf8_label = QLabel("UTF-8 Results:")
+        utf8_label.setStyleSheet("font-weight: bold")
+        utf8_group_layout.addWidget(utf8_label)
 
-        self.result_label_num = QLabel("Hash Result (Number):")
-        self.result_field_num = QLineEdit()
-        self.result_field_num.setReadOnly(True)
+        self.result_label_hex_utf8 = QLabel("Hex:")
+        self.result_field_hex_utf8 = QLineEdit()
+        self.result_field_hex_utf8.setReadOnly(True)
 
-        result_layout.addWidget(self.result_label_hex)
-        result_layout.addWidget(self.result_field_hex)
-        result_layout.addWidget(self.result_label_num)
-        result_layout.addWidget(self.result_field_num)
+        self.result_label_num_utf8 = QLabel("Number:")
+        self.result_field_num_utf8 = QLineEdit()
+        self.result_field_num_utf8.setReadOnly(True)
+
+        utf8_group_layout.addWidget(self.result_label_hex_utf8)
+        utf8_group_layout.addWidget(self.result_field_hex_utf8)
+        utf8_group_layout.addWidget(self.result_label_num_utf8)
+        utf8_group_layout.addWidget(self.result_field_num_utf8)
+        
+        utf16_group_layout = QVBoxLayout()
+        utf16_label = QLabel("UTF-16 Results:")
+        utf16_label.setStyleSheet("font-weight: bold")
+        utf16_group_layout.addWidget(utf16_label)
+
+        self.result_label_hex_utf16 = QLabel("Hex:")
+        self.result_field_hex_utf16 = QLineEdit()
+        self.result_field_hex_utf16.setReadOnly(True)
+
+        self.result_label_num_utf16 = QLabel("Number:")
+        self.result_field_num_utf16 = QLineEdit()
+        self.result_field_num_utf16.setReadOnly(True)
+
+        utf16_group_layout.addWidget(self.result_label_hex_utf16)
+        utf16_group_layout.addWidget(self.result_field_hex_utf16)
+        utf16_group_layout.addWidget(self.result_label_num_utf16)
+        utf16_group_layout.addWidget(self.result_field_num_utf16)
+
+        result_layout.addLayout(utf8_group_layout)
+        result_layout.addLayout(utf16_group_layout)
 
         main_layout.addLayout(input_layout)
         main_layout.addWidget(self.calculate_button)
@@ -47,22 +73,21 @@ class HashCalculator(QWidget):
 
     def calculate_hash(self):
         input_text = self.input_field.text()
-        hash_type = self.hash_type_combo.currentText()
 
         if not input_text:
             QMessageBox.warning(self, "Input Error", "Please enter a string to hash.")
             return
 
         try:
-            if hash_type == "NameHash":
-                result = compute_namehash(input_text)
-            elif hash_type == "Murmur3":
-                result = murmur3_hash(input_text.encode("utf-16le"))
-            else:
-                raise ValueError("Unsupported hash type.")
+            result_utf8 = murmur3_hash(input_text.encode("utf-8"))
+            result_utf16 = murmur3_hash(input_text.encode("utf-16le"))
+            
+            self.result_field_hex_utf8.setText(f"0x{result_utf8:08X}")
+            self.result_field_num_utf8.setText(f"{result_utf8}")
+            
+            self.result_field_hex_utf16.setText(f"0x{result_utf16:08X}")
+            self.result_field_num_utf16.setText(f"{result_utf16}")
 
-            self.result_field_hex.setText(f"0x{result:08X}")
-            self.result_field_num.setText(str(result))
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to calculate hash: {e}")
 
