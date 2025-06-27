@@ -299,6 +299,18 @@ class RszArrayClipboard:
                 "value": element.value,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, U16Data):
+            return {
+                "type": "U16Data",
+                "value": element.value,
+                "orig_type": element.orig_type
+            }
+        elif isinstance(element, S16Data):
+            return {
+                "type": "S16Data",
+                "value": element.value,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, S32Data):
             return {
                 "type": "S32Data",
@@ -314,6 +326,12 @@ class RszArrayClipboard:
         elif isinstance(element, U64Data):
             return {
                 "type": "U64Data",
+                "value": element.value,
+                "orig_type": element.orig_type
+            }
+        elif isinstance(element, S64Data):
+            return {
+                "type": "S64Data",
                 "value": element.value,
                 "orig_type": element.orig_type
             }
@@ -514,13 +532,6 @@ class RszArrayClipboard:
                     ],
                     "orig_type": element.orig_type
                 }
-        elif isinstance(element, RawBytesData):
-            return {
-                "type": "RawBytesData",
-                "bytes": element.raw_bytes.hex() if element.raw_bytes else "",
-                "size": element.field_size,
-                "orig_type": element.orig_type
-            }
         elif isinstance(element, Int2Data):
             return {
                 "type": "Int2Data",
@@ -626,11 +637,12 @@ class RszArrayClipboard:
                         item_fields[field_key] = RszArrayClipboard._serialize_element(field_val)
                     struct_result["values"].append(item_fields)
             return struct_result
-        else:
+        else: #if isinstance(element, RawBytesData):
             return {
-                "type": element.__class__.__name__,
-                "value": str(element),
-                "orig_type": getattr(element, "orig_type", "")
+                "type": "RawBytesData",
+                "bytes": element.raw_bytes.hex() if element.raw_bytes else "",
+                "size": element.field_size,
+                "orig_type": element.orig_type
             }
             
     @staticmethod
@@ -941,6 +953,12 @@ class RszArrayClipboard:
         elif element_type == "F32Data":
             return F32Data(element_data.get("value", 0.0), orig_type)
             
+        elif element_type == "U16Data":
+            return U16Data(element_data.get("value", 0), orig_type)
+            
+        elif element_type == "S16Data":
+            return S16Data(element_data.get("value", 0), orig_type)
+            
         elif element_type == "S32Data":
             return S32Data(element_data.get("value", 0), orig_type)
             
@@ -949,6 +967,9 @@ class RszArrayClipboard:
             
         elif element_type == "U64Data":
             return U64Data(element_data.get("value", 0), orig_type)
+            
+        elif element_type == "S64Data":
+            return S64Data(element_data.get("value", 0), orig_type)
             
         elif element_type == "S8Data":
             return S8Data(element_data.get("value", 0), orig_type)
@@ -1087,13 +1108,6 @@ class RszArrayClipboard:
                 values.extend([0.0] * (16 - len(values)))
                 
             return Mat4Data(values, orig_type)
-            
-        elif element_type == "RawBytesData":
-            bytes_hex = element_data.get("bytes", "")
-            bytes_val = bytes.fromhex(bytes_hex) if bytes_hex else b''
-            size = element_data.get("size", len(bytes_val))
-            
-            return RawBytesData(bytes_val, size, orig_type)
 
         elif element_type == "Int2Data":
             return Int2Data(
@@ -1198,6 +1212,13 @@ class RszArrayClipboard:
         elif element_type == "StructData":
             values = element_data.get("values", [])
             return StructData(values, orig_type)
+            
+        else: #if element_type == "RawBytesData":
+            bytes_hex = element_data.get("bytes", "")
+            bytes_val = bytes.fromhex(bytes_hex) if bytes_hex else b''
+            size = element_data.get("size", len(bytes_val))
+            
+            return RawBytesData(bytes_val, size, orig_type)
             
         if element_class and hasattr(element_class, "__call__"):
             try:
