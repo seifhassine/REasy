@@ -2308,6 +2308,24 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     pos += fsize
                 data_obj = ArrayData(obb_objects, rsz_type, original_type)
 
+            elif rsz_type == CapsuleData:
+                area_objects = []
+                for _ in range(count):
+                    pos = _align(pos, field_align)
+                        
+                    start_vals = unpack_4float(raw, pos)
+                    pos += 16
+                    end_vals = unpack_4float(raw, pos)
+                    pos += 16
+                    radius, *_ = struct.unpack_from("<f", raw, pos)
+                    pos += 16
+                    start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
+                    end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
+                    
+                    area_objects.append(rsz_type(start_vec, end_vec, radius, original_type))
+
+                data_obj = ArrayData(area_objects, rsz_type, original_type)
+
             elif rsz_type == AreaData:
             
                 area_objects = []
