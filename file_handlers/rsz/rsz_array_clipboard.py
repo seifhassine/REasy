@@ -24,30 +24,17 @@ class RszArrayClipboard:
         
     @staticmethod
     def copy_to_clipboard(widget, element, array_type):
-        try:
-            if isinstance(element, ObjectData) and element.value > 0:
-                parent = widget.parent()
-                if parent and hasattr(parent, "array_operations"):
-                    element_data = RszArrayClipboard._serialize_object_with_graph(element, parent)
-                else:
-                    element_data = RszArrayClipboard._serialize_element(element)
-            else:
-                element_data = RszArrayClipboard._serialize_element(element)
-            
-            clipboard_data = {
-                "type": array_type,
-                "data": element_data
-            }
-            
-            clipboard_file = RszArrayClipboard.get_clipboard_file(widget)
-            with open(clipboard_file, 'w') as f:
-                json.dump(clipboard_data, f, indent=2, default=RszClipboardUtils.json_serializer)
-                
-            return True
-        except Exception as e:
-            print(f"Error copying to clipboard: {str(e)}")
-            traceback.print_exc()
-            return False
+        parent_viewer = widget.parent()
+        serialised = (RszArrayClipboard._serialize_object_with_graph(element, parent_viewer)
+                    if isinstance(element, ObjectData) and element.value > 0
+                    else RszArrayClipboard._serialize_element(element))
+
+        RszArrayClipboard._write_clipboard(
+            array_type,
+            [serialised],
+            RszArrayClipboard.get_clipboard_file(widget)
+        )
+        return True
 
     @staticmethod
     def _json_serializer(obj):
@@ -670,52 +657,149 @@ class RszArrayClipboard:
             return target_elem == source_elem
             
         return False
-        
     @staticmethod
-    def paste_from_clipboard(widget, array_operations, array_data, array_item, embedded_context=None):
-        clipboard_data = RszArrayClipboard.get_clipboard_data(widget)
-        if not clipboard_data:
+    def _write_clipboard(array_type: str, items: list, file_path: str):
+        """
+        Dump *items* (already serialised dicts) to *file_path*.
+        Creates a multi-element payload automatically when len(items) > 1.
+        """
+        with open(file_path, "w") as f:
+            json.dump(
+                {"type": array_type,
+                "data": items,
+                "is_multi": len(items) > 1},
+                f,
+                indent=2,
+                default=RszClipboardUtils.json_serializer,
+            )
+
+    @staticmethod
+    def _read_clipboard(file_path: str):
+        """
+        Return (array_type, list_of_serialised_items).  
+        Guarantees the second item is always a *list* – single-element
+        clipboards come back as a one-item list for uniform handling.
+        """
+        payload = RszClipboardUtils.load_clipboard_data(file_path)
+        if not payload:
+            return None, []
+        items = payload.get("data", [])
+        if not isinstance(items, list):
+            items = [items]
+        return payload.get("type", ""), items
+
+    @staticmethod
+    def paste_elements_from_clipboard(widget, array_operations,
+                                    array_data, array_item,
+                                    embedded_context=None):
+        """
+        Returns the element (single behaviour) or the list (group behaviour).
+        UI-update & modification flags are handled internally.
+        """
+        array_type, items_data = RszArrayClipboard._read_clipboard(
+            RszArrayClipboard.get_clipboard_file(widget)
+        )
+        if not items_data:
             return None
-            
-        try:
-            element_data = clipboard_data.get("data", {})
-            element_type = element_data.get("type", "")
-            
-            if not element_type:
-                return None
-            
-            if element_type == "ObjectData" and "object_graph" in element_data:
-                parent = widget.parent()
-                if not parent:
-                    print("Cannot paste complex ObjectData: missing parent viewer")
-                    return None
-                
-                insertion_index = RszArrayClipboard._calculate_insertion_index(array_data, array_item, parent)
-                
-                element = RszArrayClipboard._paste_object_graph(parent, element_data, array_data, insertion_index)
-                if element:
-                    RszArrayClipboard._add_element_to_ui_direct(widget, array_item, element, array_data.orig_type)
-                return element
+
+        viewer = widget.parent()
+        added = []
+
+        for elem_data in items_data:
+            if elem_data.get("type") == "ObjectData" and "object_graph" in elem_data:
+                ins_idx = RszArrayClipboard._calculate_insertion_index(
+                    array_data, array_item, viewer
+                )
+                element = RszArrayClipboard._paste_object_graph(
+                    viewer, elem_data, array_data, ins_idx
+                )
             else:
-                guid_mapping = {}
-                element = RszArrayClipboard._deserialize_element(element_data, array_data.element_class, guid_mapping)
-                
+                element = RszArrayClipboard._deserialize_element(
+                    elem_data, array_data.element_class, {}
+                )
                 if element:
                     array_data.values.append(element)
-                    
-                    parent = widget.parent()
-                    if parent and hasattr(parent, "mark_modified"):
-                        parent.mark_modified()
-                    
-                    RszArrayClipboard._add_element_to_ui_direct(widget, array_item, element, array_data.orig_type)
-                    
-                    return element
-                    
+            if element:
+                if viewer and hasattr(viewer, "mark_modified"):
+                    viewer.mark_modified()
+                RszArrayClipboard._add_element_to_ui_direct(
+                    widget, array_item, element, array_data.orig_type
+                )
+                added.append(element)
+
+        if not added:
             return None
-        except Exception as e:
-            print(f"Error pasting from clipboard: {str(e)}")
-            traceback.print_exc()
-            return None
+        return added[0] if len(added) == 1 else added   
+    @staticmethod
+    def paste_from_clipboard(widget, array_operations, array_data,
+                            array_item, embedded_context=None):
+        result = RszArrayClipboard.paste_elements_from_clipboard(
+            widget, array_operations, array_data, array_item, embedded_context
+        )
+        return result if not isinstance(result, list) else (result[0] if result else None)
+    
+    @staticmethod
+    def copy_multiple_to_clipboard(widget, elements, array_type):
+        parent_viewer = widget.parent()
+        serialised_items = [
+            (RszArrayClipboard._serialize_object_with_graph(el, parent_viewer)
+            if isinstance(el, ObjectData) and el.value > 0
+            else RszArrayClipboard._serialize_element(el))
+            for el in elements
+        ]
+
+        RszArrayClipboard._write_clipboard(
+            array_type,
+            serialised_items,
+            RszArrayClipboard.get_clipboard_file(widget)
+        )
+        return True
+
+    @staticmethod
+    def paste_multiple_from_clipboard(widget, array_operations, array_data,
+                                    array_item, embedded_context=None):
+        return RszArrayClipboard.paste_elements_from_clipboard(
+            widget, array_operations, array_data, array_item, embedded_context
+        )
+            
+    @staticmethod
+    def has_clipboard_data(widget):
+        """Check if clipboard data exists"""
+        clipboard_file = RszArrayClipboard.get_clipboard_file(widget)
+        return os.path.exists(clipboard_file)
+            
+    @staticmethod
+    def get_elements_count_from_clipboard(widget):
+        """Get number of elements in clipboard"""
+        clipboard_data = RszArrayClipboard.get_clipboard_data(widget)
+        if not clipboard_data:
+            return 0
+            
+        if clipboard_data.get("is_multi", False):
+            return len(clipboard_data.get("data", []))
+        else:
+            return 1 if "data" in clipboard_data else 0
+            
+    @staticmethod
+    def is_clipboard_compatible_with_array(widget, array_type):
+        """Check if clipboard data (either single or multi-element) is compatible with a target array type"""
+        clipboard_data = RszArrayClipboard.get_clipboard_data(widget)
+        if not clipboard_data:
+            return False
+            
+        # For single element clipboard
+        if not clipboard_data.get("is_multi", False):
+            clipboard_type = clipboard_data.get("type", "")
+            return RszArrayClipboard.is_compatible(array_type, clipboard_type)
+        
+        # For for multi-element clipboard
+        elements_data = clipboard_data.get("data", [])
+        if not elements_data:
+            return False
+        
+        # Check if all elements are compatible with target array
+        clipboard_type = clipboard_data.get("type", "")
+        return RszArrayClipboard.is_compatible(array_type, clipboard_type)
 
     @staticmethod
     def _calculate_insertion_index(array_data, array_item, viewer):
@@ -1219,17 +1303,6 @@ class RszArrayClipboard:
             size = element_data.get("size", len(bytes_val))
             
             return RawBytesData(bytes_val, size, orig_type)
-            
-        if element_class and hasattr(element_class, "__call__"):
-            try:
-                if orig_type:
-                    return element_class(orig_type=orig_type)
-                return element_class()
-            except:
-                pass
-                
-        return None
-
     @staticmethod
     def _add_element_to_ui_direct(widget, array_item, element, element_type_clean):
         """Add a new element directly to the tree using the provided array item"""

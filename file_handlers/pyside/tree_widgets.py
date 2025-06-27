@@ -2,7 +2,7 @@ import os
 import traceback
 from PySide6.QtWidgets import (QWidget, QLabel, QTreeView, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
-                               QLineEdit, QInputDialog, QApplication)
+                               QLineEdit, QInputDialog, QApplication, QDialog)
 from PySide6.QtGui import QCursor
 from PySide6.QtCore import Qt, QModelIndex, QEvent
 
@@ -54,6 +54,8 @@ class AdvancedTreeView(QTreeView):
         # Create translation manager
         self.translation_manager = TranslationManager(self)
         self.translation_manager.translation_completed.connect(self._on_translation_completed)
+        # Enable multi-selection for array elements
+        self.setSelectionMode(QTreeView.ExtendedSelection)
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
@@ -369,29 +371,55 @@ class AdvancedTreeView(QTreeView):
                 
                 # Enable paste only if compatible clipboard content exists
                 parent = self.parent()
-                clipboard_data = None
-                if parent and hasattr(parent, "handler"): 
-                    clipboard_data = parent.handler.get_clipboard_data(self)
                 
-                paste_action = None
-                if  clipboard_data and parent and hasattr(parent, "handler") and parent.handler.is_clipboard_compatible(item_info['array_type'], clipboard_data.get('type', '')):
-                    paste_action = menu.addAction("Paste Element")
-                    paste_action.triggered.connect(lambda: self.paste_array_element(index, item_info['array_type'], item_info['data_obj'], item))
-                
+                clipboard = parent.handler.get_array_clipboard()
+                if clipboard.has_clipboard_data(self) and \
+                   clipboard.is_clipboard_compatible_with_array(self, item_info['array_type']):
+    
+                    elements_count = clipboard.get_elements_count_from_clipboard(self)
+    
+                    if elements_count > 1:
+                        paste_group_action = menu.addAction(
+                            f"Paste Group ({elements_count} elements)")
+                        paste_group_action.triggered.connect(
+                            lambda: self.paste_array_elements(index, item_info['array_type'],
+                                                               item_info['data_obj'], item)
+                        )
+                    else: 
+                        paste_action = menu.addAction("Paste Element")
+                        paste_action.triggered.connect(
+                            lambda: self.paste_array_element(index, item_info['array_type'],
+                                                             item_info['data_obj'], item)
+                        )
                 menu.exec_(QCursor.pos())
                 
         elif item_info['is_array_element'] and item_info['element_index'] >= 0:
             if item_info['parent_array_item'] and hasattr(item_info['parent_array_item'], 'raw'):
                 array_data = item_info['parent_array_item'].raw.get('obj')
                 if array_data and item_info['element_index'] < len(array_data.values):
-                    copy_action = menu.addAction("Copy Element")
-                    copy_action.triggered.connect(
-                        lambda: self.copy_array_element(item_info['parent_array_item'], item_info['element_index'], index)
-                    )
-                    delete_action = menu.addAction("Delete Element")
-                    delete_action.triggered.connect(
-                        lambda: self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
-                    )
+                    # Check if multiple elements are selected
+                    selected_indices = self.get_selected_array_elements(item_info['parent_array_item'])
+                    
+                    if len(selected_indices) > 1:
+                        copy_group_action = menu.addAction(f"Copy Group ({len(selected_indices)} elements)")
+                        copy_group_action.triggered.connect(
+                            lambda: self.copy_array_elements(item_info['parent_array_item'], selected_indices, index)
+                        )
+                        
+                        delete_group_action = menu.addAction(f"Delete Group ({len(selected_indices)} elements)")
+                        delete_group_action.triggered.connect(
+                            lambda: self.delete_array_elements(item_info['parent_array_item'], selected_indices)
+                        )
+                    else:
+                        # Single element operations
+                        copy_action = menu.addAction("Copy Element")
+                        copy_action.triggered.connect(
+                            lambda: self.copy_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+                        )
+                        delete_action = menu.addAction("Delete Element")
+                        delete_action.triggered.connect(
+                            lambda: self.delete_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+                        )
                 menu.exec_(QCursor.pos())
         else:
             print(f"No special actions for this node type")
@@ -2039,15 +2067,15 @@ class AdvancedTreeView(QTreeView):
         
         return False
 
-    def copy_array_element(self, parent_array_item, element_index, index):
-        """Copy an array element to clipboard"""
+    def copy_array_elements(self, parent_array_item, element_indices, index):
+        """Copy multiple array elements to clipboard"""
         if not parent_array_item or not hasattr(parent_array_item, 'raw'):
             QMessageBox.warning(self, "Error", "Invalid array item")
             return
             
         array_data = parent_array_item.raw.get('obj')
-        if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
-            QMessageBox.warning(self, "Error", "Invalid array element")
+        if not array_data or not hasattr(array_data, 'values'):
+            QMessageBox.warning(self, "Error", "Invalid array data")
             return
 
         # Check if this array is inside an embedded context
@@ -2056,25 +2084,34 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Copying elements in embedded userdata is currently not supported.")
             return
             
-        element = array_data.values[element_index]
+        elements = []
+        for idx in element_indices:
+            if idx < len(array_data.values):
+                elements.append(array_data.values[idx])
+        
+        if not elements:
+            QMessageBox.warning(self, "Error", "No valid elements selected")
+            return
+            
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
         
         parent = self.parent()
         if parent and hasattr(parent, "handler"):
             try:
-                success = parent.handler.copy_array_element_to_clipboard(self, element, array_type)
+                clipboard = parent.handler.get_array_clipboard()
+                success = clipboard.copy_multiple_to_clipboard(self, elements, array_type)
                 if success:
-                    QMessageBox.information(self, "Success", "Element copied to clipboard")
+                    QMessageBox.information(self, "Success", f"{len(elements)} elements copied to clipboard")
                 else:
-                    QMessageBox.warning(self, "Error", "Failed to copy element")
+                    QMessageBox.warning(self, "Error", "Failed to copy elements")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Error copying element: {str(e)}")
+                QMessageBox.critical(self, "Error", f"Error copying elements: {str(e)}")
                 traceback.print_exc()
         else:
             QMessageBox.warning(self, "Error", "Cannot access handler")
 
-    def paste_array_element(self, index, array_type, data_obj, array_item):
-        """Paste an element from clipboard to an array"""
+    def paste_array_elements(self, index, array_type, data_obj, array_item):
+        """Paste multiple array elements from clipboard"""
         parent = self.parent()
         if not parent:
             QMessageBox.warning(self, "Error", "Cannot access parent viewer")
@@ -2084,11 +2121,11 @@ class AdvancedTreeView(QTreeView):
             
         try:
             if parent and hasattr(parent, "handler"):
-                new_element = parent.handler.paste_array_element_from_clipboard(
-                    self, parent.array_operations, data_obj, array_item, embedded_context
-                )
+                clipboard = parent.handler.get_array_clipboard()
+                elements = clipboard.paste_elements_from_clipboard(
+                    self, parent.array_operations, data_obj, array_item, embedded_context)
                 
-                if new_element:
+                if elements:
                     if not self.isExpanded(index):
                         self.expand(index)
                     
@@ -2110,14 +2147,14 @@ class AdvancedTreeView(QTreeView):
                                     self.setIndexWidget(last_child_idx, widget)
                             
                             self.scrollTo(last_child_idx)
-                            
-                    QMessageBox.information(self, "Success", "Element pasted successfully.")
+
+                    QMessageBox.information(self, "Success", f"{len(elements)} elements pasted successfully")
                 else:
-                    QMessageBox.warning(self, "Error", "Failed to paste element. Make sure the clipboard contains a compatible element.")
+                    QMessageBox.warning(self, "Error", "Failed to paste elements. Make sure the clipboard contains compatible elements.")
             else:
                 QMessageBox.warning(self, "Error", "Cannot access handler")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to paste elements: {str(e)}")
             traceback.print_exc()
 
     def translate_node_text(self, index):
@@ -2195,6 +2232,144 @@ class AdvancedTreeView(QTreeView):
         
         show_translation_result(self, translated_text)
 
+    def delete_array_elements(self, parent_array_item, element_indices):
+        """Delete multiple array elements with proper backend updates"""
+        if not parent_array_item or not hasattr(parent_array_item, 'raw'):
+            QMessageBox.warning(self, "Error", "Invalid array item")
+            return
+            
+        array_data = parent_array_item.raw.get('obj')
+        if not array_data or not hasattr(array_data, 'values'):
+            QMessageBox.warning(self, "Error", "Invalid array data")
+            return
+            
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText(f"Delete {len(element_indices)} elements?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        if msg_box.exec_() != QMessageBox.Yes:
+            return
+        
+        element_indices = sorted(element_indices, reverse=True)
+        
+        embedded_context = self._find_embedded_context(parent_array_item)
+        parent = self.parent()
+        
+        if embedded_context:
+            if parent and hasattr(parent, "scn") and hasattr(parent, "type_registry"):
+                print(f"Deleting array elements in embedded context")
+                try:
+                    rsz_operations = RszEmbeddedArrayOperations(parent)
+                    success = True
+                    model = self.model()
+                    parent_index = None
+                    
+                    if model:
+                        parent_index = model.getIndexFromItem(parent_array_item)
+                    
+                    for idx in element_indices:
+                        if not rsz_operations.delete_array_element(array_data, idx, embedded_context):
+                            success = False
+                            break
+                        
+                        if parent_index and parent_index.isValid():
+                            child_index = model.index(idx, 0, parent_index)
+                            if child_index.isValid():
+                                model.removeRow(child_index.row(), parent_index)
+                    
+                    if success:
+                        if model and parent_index and parent_index.isValid():
+                            self._update_array_element_indices(model, parent_index, array_data)
+                        QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
+                    else:
+                        QMessageBox.warning(self, "Error", "Failed to delete all elements in embedded context")
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Error deleting elements: {str(e)}")
+                    traceback.print_exc()
+            return
+           
+        if parent and hasattr(parent, "array_operations"):
+            try:
+                print("Deleting array elements in regular context")
+                success = True
+                model = self.model()
+                parent_index = None
+                
+                if model:
+                    parent_index = model.getIndexFromItem(parent_array_item)
+                
+                for idx in element_indices:
+                    if not parent.delete_array_element(array_data, idx):
+                        success = False
+                        break
+                    
+                    if parent_index and parent_index.isValid():
+                        child_index = model.index(idx, 0, parent_index)
+                        if child_index.isValid():
+                            model.removeRow(child_index.row(), parent_index)
+                
+                if success:
+                    if model and parent_index and parent_index.isValid():
+                        self._update_array_element_indices(model, parent_index, array_data)
+                    QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to delete all elements")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error deleting elements: {str(e)}")
+                traceback.print_exc()
+        else:
+            for idx in element_indices:
+                self._simple_delete_element(array_data, idx, parent_array_item)
+
+    def _update_array_element_indices(self, model, array_index, array_data):
+        """Update UI indices for all elements in an array"""
+        for i in range(len(array_data.values)):
+            child_idx = model.index(i, 0, array_index)
+            if child_idx.isValid():
+                child_item = child_idx.internalPointer()
+                if child_item and hasattr(child_item, 'data'):
+                    old_text = child_item.data[0]
+                    after_colon = old_text.split(':', 1)[1].strip() if ':' in old_text else ''
+                    new_text = f"{i}: {after_colon}"
+                    child_item.data[0] = new_text
+                    
+                    widget = self.indexWidget(child_idx)
+                    if widget:
+                        for child_widget in widget.findChildren(QLabel):
+                            if ':' in child_widget.text():
+                                child_widget.setText(new_text)
+                                break
+
+    def get_selected_array_elements(self, parent_array_item):
+        """Get indices of selected array elements"""
+        selected_indices = []
+        model = self.model()
+        if not model:
+            return selected_indices
+            
+        parent_index = model.getIndexFromItem(parent_array_item)
+        if not parent_index.isValid():
+            return selected_indices
+            
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return selected_indices
+            
+        selected_indexes = selection_model.selectedIndexes()
+        
+        for index in selected_indexes:
+            if not index.isValid() or index.parent() != parent_index:
+                continue
+                
+            row = index.row()
+            if row >= 0:
+                selected_indices.append(row)
+                
+        return sorted(selected_indices)
+        
     def copy_component(self, index, component_instance_id):
         """Copy a component to clipboard for pasting to another GameObject"""
         if component_instance_id <= 0:
@@ -2457,7 +2632,8 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         if parent and hasattr(parent, "handler"):
             try:
-                success = parent.handler.copy_array_element_to_clipboard(self, element, array_type)
+                clipboard = parent.handler.get_array_clipboard()
+                success = clipboard.copy_to_clipboard(self, element, array_type)
                 if success:
                     QMessageBox.information(self, "Success", "Element copied to clipboard")
                 else:
@@ -2479,9 +2655,9 @@ class AdvancedTreeView(QTreeView):
             
         try:
             if parent and hasattr(parent, "handler"):
-                new_element = parent.handler.paste_array_element_from_clipboard(
-                    self, parent.array_operations, data_obj, array_item, embedded_context
-                )
+                clipboard = parent.handler.get_array_clipboard()
+                new_element = clipboard.paste_elements_from_clipboard(
+                    self, parent.array_operations, data_obj, array_item, embedded_context)
                 
                 if new_element:
                     if not self.isExpanded(index):
