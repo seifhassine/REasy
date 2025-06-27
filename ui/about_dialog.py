@@ -13,13 +13,13 @@ def create_about_dialog(parent):
     dialog.setFixedSize(450, 250)
     layout = QVBoxLayout(dialog)
 
-    title_label = QLabel("REasy Editor v0.2.7")
+    title_label = QLabel("REasy Editor v0.2.8")
     title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 
     info_label = QLabel(
         "REasy Editor is a quality of life toolkit for modders.\n\n"
-        "It supports viewing and full editing of UVAR and RSZ files.\n"
+        "It supports viewing and full editing of UVAR, MSG and RSZ files.\n"
         "\n\n"
         "For more information, visit my GitHub page:"
     )
