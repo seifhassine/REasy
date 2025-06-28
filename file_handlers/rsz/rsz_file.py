@@ -1095,7 +1095,6 @@ class RszFile:
                 field_name = field_def["name"]
                 if field_def["type"] == "Resource":
 
-                    print(f"Processing field: {field_def['name']} of type {field_def['type']}")
                     if field_def['array'] == False:
                         if fields[field_name].value and fields[field_name].value not in resources:
                             resources.append(fields[field_name].value)
@@ -1114,6 +1113,18 @@ class RszFile:
             if self.filepath.lower().endswith('.16'):
                 return build_pfb_16(self, special_align_enabled)
             else:
+                if self.auto_resource_management:
+                    dynamic_resources = self.get_resources_dynamically()
+                    self.resource_infos.clear()
+                    self._resource_str_map.clear()
+                    
+                    for resource_path in dynamic_resources:
+                        ri = RszResourceInfo()
+                        ri.string_offset = 0
+                        ri.reserved = 0
+                        self.resource_infos.append(ri)
+                        self.set_resource_string(ri, resource_path)
+
                 return self._build_pfb(special_align_enabled)
         #elif self.is_aiwayp:
         #    return self._build_aiwayp(special_align_enabled)
@@ -1134,7 +1145,7 @@ class RszFile:
                 ri.reserved = 0
                 self.resource_infos.append(ri)
                 self.set_resource_string(ri, resource_path)
-        
+                
         self.header.info_count = len(self.gameobjects)
         self.header.folder_count = len(self.folder_infos)
         self.header.resource_count = len(self.resource_infos)
