@@ -35,6 +35,7 @@ I have currently rushed the release and the structure will be improved in the up
 | User       | ✅       | ✅       |Most titles       |
 | PFB       | ✅       | ✅       | Most titles      |
 | MSG       | ✅       | ✅       | RE4      |
+| EFX       | Coming Soon       | Coming Soon       |       |
   
 </div>
 <br>
