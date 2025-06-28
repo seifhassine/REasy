@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntValidator, QColor, QPalette, QFontMetrics
 import uuid
 
-from file_handlers.rsz.rsz_data_types import RawBytesData
+from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -1003,6 +1003,12 @@ class StringInput(BaseValueWidget):
             text_width = fm.horizontalAdvance(self._data.value) + 10
             new_width = max(text_width, self.minimum_width)
             self.line_edit.setFixedWidth(new_width)
+        
+        if isinstance(self._data, ResourceData):
+            self.resource_indicator = QLabel("Resource")
+            self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
+            self.layout.addWidget(self.resource_indicator)
+
 
     def _on_text_changed(self, text):
         """Update data when text changes and resize the line edit"""
