@@ -384,7 +384,7 @@ TYPE_MAPPING = {
     "f64": F64Data,
     "float": F32Data,
     "string": StringData,
-    "resource": StringData, # Resources are strings so far (?)
+    "resource": ResourceData, # Resources are strings so far (?)
     "gameobjectref": GameObjectRefData,
     "object": ObjectData,
     "vec3": Vec3Data,
