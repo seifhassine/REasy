@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QApplication, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QWidget, QMessageBox
 )
-from utils.hash_util import compute_namehash, murmur3_hash
+from utils.hash_util import murmur3_hash
 
 
 class HashCalculator(QWidget):
