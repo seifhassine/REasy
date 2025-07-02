@@ -76,6 +76,84 @@
 		],
 		"name": "via.effect.script.EffectCustomExternParameter"
 	},
+	"e60929a": {
+		"crc": "635987b6",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v1_Color",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Intensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_BounceIntensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_MinRoughness",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_LightGroup",
+				"native": true,
+				"original_type": "via.gui.LightGroupId",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7_IlluminanceThreshold",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.gui.GUIPointLight"
+	},
 	"c902a417": {
 		"fields": [
 			{
@@ -127,6 +205,7 @@
 		"name": "via.GameObject"
 	},
 	"645fdb44": {
+		"crc": "7af11387",
 		"fields": [
 			{
 				"align": 4,
@@ -254,6 +333,7 @@
         "name": "via.sound.SoundCurve"
     },
 	"90035a32": {
+		"crc": "4dcce2f8",
         "fields": [
             {
                 "align": 16,
@@ -340,6 +420,7 @@
         "name": "via.AnimationCurve3D"
     },
 	"e4ede06": {
+		"crc": "5c221ea6",
 		"fields": [
 			{
 				"align": 1,
@@ -363,6 +444,7 @@
 		"name": "via.render.LDRColorDeficiencySimulation"
 	},
 	"6c1b2afc": {
+		"crc": "e0f36694",
 		"fields": [
 			{
 				"align": 16,
@@ -377,6 +459,7 @@
 		"name": "via.navigation.map.InteractionShapeAABB"
 	},
 	"ab77eb0f": {
+		"crc": "704b0605",
 		"fields": [
 			{
 				"align": 4,
@@ -391,6 +474,7 @@
 		"name": "via.navigation.FilterSet"
 	},
 	"a5c38431": {
+		"crc": "7dbe647",
 		"fields": [
 			{
 				"align": 1,
@@ -459,6 +543,7 @@
 		"name": "via.render.GridFluid2DObstacle"
 	},
 	"511ae18": {
+		"crc": "391c5651",
 		"fields": [
 			{
 				"align": 1,
@@ -509,6 +594,7 @@
 		"name": "via.render.MotionBlur"
 	},
 	"d816531e": {
+		"crc": "bfac4cb9",
 		"fields": [
 			{
 				"align": 1,
@@ -550,6 +636,7 @@
 		"name": "via.render.CustomFilterBeforeTransparent"
 	},
 	"4f7d08d5": {
+		"crc": "81082794",
 		"fields": [
 			{
 				"align": 1,
@@ -600,6 +687,7 @@
 		"name": "via.render.LightShaftFilterControl"
 	},
 	"c7d8e0a": {
+		"crc": "b614d2a2",
 		"fields": [
 			{
 				"align": 1,
