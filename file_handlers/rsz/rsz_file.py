@@ -568,7 +568,7 @@ class RszFile:
         self._rsz_userdata_str_map.clear()
         
         # Batch process all strings instead of one-by-one
-        if not self.filepath.lower().endswith('.18'):
+        if not self.filepath.lower().endswith('scn.18'):
             self._resource_str_map.clear()
             for ri in self.resource_infos:
                 if (ri.string_offset != 0):
