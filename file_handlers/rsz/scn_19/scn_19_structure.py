@@ -672,7 +672,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: boo
             fields = rsz_file.parsed_elements.get(idx, {})
             if fields:
                 first_field_obj = next(iter(fields.values()))
-                if isinstance(first_field_obj, StringData):
+                if isinstance(first_field_obj, StringData) or isinstance(first_field_obj, ResourceData):
                     raw = first_field_obj.value or ""
                     try:
                         if raw.startswith("assets:/"):

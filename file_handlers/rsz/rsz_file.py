@@ -627,7 +627,7 @@ class RszFile:
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
             self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
-            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18'):
+            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('scn.18'):
                 self._parse_scn19_rsz_userdata(data)
             elif self.filepath.lower().endswith('.16'):
                 self._current_offset = parse_pfb16_rsz_userdata(self, data)
@@ -2136,7 +2136,6 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
         field_align = int(field.get("align", 1))
         rsz_type    = get_type_class(ftype, fsize, is_native, is_array,
                                      field_align, original_type, field_name)
-        
         data_obj = None
 
         if is_array:
