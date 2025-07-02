@@ -17,6 +17,7 @@ from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
 from ui.about_dialog import create_about_dialog
 from ui.keyboard_shortcuts import create_shortcuts_tab
+from ui.outdated_files_dialog import OutdatedFilesDialog
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 
 from PySide6.QtCore import (
@@ -972,6 +973,12 @@ class REasyEditorApp(QMainWindow):
         hash_calc_act.triggered.connect(self.open_hash_calculator)
         tools_menu.addAction(hash_calc_act)
 
+        outdated_files_action = QAction("Outdated RSZ Files Detector", self)
+        outdated_files_action.triggered.connect(self.open_outdated_files_detector)
+        tools_menu.addAction(outdated_files_action)
+        
+        tools_menu.addSeparator()
+
         help_menu = menubar.addMenu("Help")
         about_act = QAction("About", self)
         about_act.triggered.connect(self.show_about)
@@ -1380,6 +1387,12 @@ class REasyEditorApp(QMainWindow):
         self.hash_calculator = HashCalculator()
         self.hash_calculator.show()
 
+    def open_outdated_files_detector(self):
+        """Open the Outdated Files Detector dialog"""
+        registry_path = self.settings.get("rcol_json_path", None)
+        dialog = OutdatedFilesDialog(self, registry_path)
+        dialog.exec()
+        
     def search_directory_for_number(self):
         search_directory_for_type(self, 'number', create_search_dialog, create_search_patterns)
 
