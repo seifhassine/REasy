@@ -33,9 +33,13 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
+    
     - name: Run build.bat
       shell: cmd
       run: build.bat
+      env:
+        FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
     - name: Attest Build Provenance
       uses: actions/attest-build-provenance@v2.4.0
