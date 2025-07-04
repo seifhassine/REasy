@@ -56,13 +56,25 @@ class QStarWidget(QWidget):
         for i, btn in enumerate(self.star_buttons):
             if i < filled:
                 btn.setText("★")
-                btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
+                if self.readonly:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
+                else:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
+                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
             elif i == filled and partial >= 0.5:
                 btn.setText("⯨")            
-                btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
+                if self.readonly:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
+                else:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
+                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
             else:
                 btn.setText("☆")
-                btn.setStyleSheet("QPushButton { border: none; color: #ccc; }")
+                if self.readonly:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }")
+                else:
+                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }"
+                                     "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
 
 class CommunityTemplatesDialog(QDialog):
     """Dialog for browsing, downloading, rating, and commenting on community templates"""
@@ -952,9 +964,17 @@ class CommunityTemplatesDialog(QDialog):
             else:
                 QMessageBox.warning(self, "Rating Failed", result["message"])
         
+        old_thread = getattr(self, "rating_thread", None)
+        if isinstance(old_thread, QThread) and old_thread.isRunning():
+            try:
+                old_thread.requestInterruption()
+                old_thread.quit()
+                old_thread.wait()
+            except RuntimeError:
+                pass
+            
         self.rating_thread = RatingThread(self.current_community_id, rating)
         self.rating_thread.rating_complete.connect(on_rating_complete)
-        self.rating_thread.start()
-        self.rating_thread = RatingThread(self.current_community_id, rating)
-        self.rating_thread.rating_complete.connect(on_rating_complete)
+        self.rating_thread.finished.connect(self.rating_thread.deleteLater)
+        self.rating_thread.finished.connect(lambda: setattr(self, "rating_thread", None))
         self.rating_thread.start()
