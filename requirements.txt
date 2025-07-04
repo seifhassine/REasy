@@ -3,3 +3,4 @@ PySide6_Addons==6.8.2.1
 PySide6_Essentials==6.8.2.1
 shiboken6==6.8.2.1
 PyInstaller
+requests
