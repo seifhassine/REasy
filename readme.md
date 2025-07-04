@@ -1,5 +1,5 @@
 [![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
-# REasy Editor v0.3.0
+# REasy Editor v0.3.1
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
