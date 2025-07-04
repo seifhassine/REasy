@@ -22,7 +22,7 @@ const app = express();
 app.use(express.json());
 
 /* ─────────────── Configurable limits ─────────────── */
-const MAX_DL_PER_DAY = 3; 
+const MAX_DL_PER_DAY = 3;
 const WINDOW_MS = 24 * 60 * 60 * 1e3;
 
 /* ─────────────── Global flood control ────────────── */
@@ -292,13 +292,47 @@ app.post("/templates/:id/download", requireVerifiedUser, async (req, res) => {
     const tplSnap = await db.collection("templates").doc(tplId).get();
     if (!tplSnap.exists) return res.sendStatus(404);
 
+    const tplData = tplSnap.data();
     let fileUrl = null;
+
     try {
-      const [url] = await bucket.file(tplSnap.data().gsPath).getSignedUrl({
-        action: "read",
-        expires: Date.now() + 60 * 60 * 1e3,
-      });
-      fileUrl = url;
+      // Get the file from storage
+      const file = bucket.file(tplData.gsPath);
+      const [fileContents] = await file.download();
+
+      try {
+        const fileJson = JSON.parse(fileContents.toString("utf8"));
+
+        fileJson.registry = tplData.registry || fileJson.registry || "default.json";
+
+        const tempFilePath = `/tmp/${tplId}-${Date.now()}.json`;
+        await admin.storage().bucket().file(tempFilePath).save(
+            JSON.stringify(fileJson, null, 2),
+            {contentType: "application/json"},
+        );
+
+        const [url] = await admin.storage().bucket().file(tempFilePath).getSignedUrl({
+          action: "read",
+          expires: Date.now() + 60 * 60 * 1e3,
+        });
+
+        fileUrl = url;
+
+        setTimeout(async () => {
+          try {
+            await admin.storage().bucket().file(tempFilePath).delete();
+          } catch (e) {
+            logger.warn("Failed to delete temporary file:", e);
+          }
+        }, 60 * 60 * 1000);
+      } catch (jsonErr) {
+        logger.error("Error processing template JSON:", jsonErr);
+        const [url] = await file.getSignedUrl({
+          action: "read",
+          expires: Date.now() + 60 * 60 * 1e3,
+        });
+        fileUrl = url;
+      }
     } catch (err) {
       logger.error("signed-url error:", err);
     }
