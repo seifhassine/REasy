@@ -275,7 +275,13 @@ class RszCommunityTemplateManager:
         if not cls.is_authenticated():
             return {"success": False, "message": "Please login first."}
 
-        ALLOWED = {"RE2", "RE3", "RE4", "RE7", "RE8"}
+        ALLOWED = {
+        "RE2", "RE2 RT", "RE3", "RE3 RT",
+        "RE7", "RE7 RT", "RE8", "RE Resistance",
+        "RE4", "Onimusha 2",
+        "Street Fighter 6", "Devil May Cry 5",
+        "Monster Hunter Rise", "Monster Hunter Wilds",
+        "Dragon Dogma 2"}
         if game not in ALLOWED:
             return {"success": False, "message": "Unknown game id."}
 
