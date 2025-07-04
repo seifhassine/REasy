@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
+from ui.community_templates_dialog import CommunityTemplatesDialog
 
 class TemplateManagerDialog(QDialog):
     template_imported = Signal(dict)
@@ -57,6 +58,10 @@ class TemplateManagerDialog(QDialog):
         self.template_list = QListWidget()
         self.template_list.setContextMenuPolicy(Qt.CustomContextMenu)
         left_layout.addWidget(self.template_list, 1)
+        
+        self.community_button = QPushButton("Browse Community Templates")
+        self.community_button.clicked.connect(self._open_community_templates)
+        left_layout.addWidget(self.community_button)
         
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
@@ -132,6 +137,8 @@ class TemplateManagerDialog(QDialog):
         self.template_details.setVisible(False)
     
     def _connect_signals(self):
+        self.tag_combo.currentIndexChanged.connect(self._on_filter_changed)
+        self.search_input.textChanged.connect(self._on_search_text_changed)
         self.template_list.itemSelectionChanged.connect(self._on_template_selected)
         self.template_list.customContextMenuRequested.connect(self._show_template_context_menu)
         
@@ -477,3 +484,20 @@ class TemplateManagerDialog(QDialog):
             self._load_filters()
         else:
             QMessageBox.warning(self, "Error", "Failed to delete template")
+    
+    def _open_community_templates(self):
+        """Open the community templates browser dialog"""
+        dialog = CommunityTemplatesDialog(self)
+        dialog.template_downloaded.connect(self._on_community_template_downloaded)
+        dialog.exec_()
+    
+    def _on_community_template_downloaded(self, template_id):
+        """Handle a template downloaded from the community"""
+        self._load_templates()
+        self._load_filters()
+        
+        for i in range(self.template_list.count()):
+            item = self.template_list.item(i)
+            if item.data(Qt.UserRole) == template_id:
+                self.template_list.setCurrentItem(item)
+                break
