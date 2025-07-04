@@ -63,15 +63,13 @@ class RszHandler(BaseFileHandler):
         EnumManager.instance().game_version = value
 
     def can_handle(data: bytes) -> bool:
-        """Check if data appears to be an SCN, USR, PFB or AIWAYP file"""
+        """Check if data appears to be an SCN, USR, PFB file"""
         if len(data) < 4:
             return False
         scn_sig = b"SCN\x00"
         usr_sig = b"USR\x00"
         pfb_sig = b"PFB\x00"
         return data[:4] in [scn_sig, usr_sig, pfb_sig]
-        #aiwayp_sig = b"AIMP"
-        #return data[:4] in [scn_sig, usr_sig, pfb_sig, aiwayp_sig]
 
     def init_type_registry(self):
         """Initialize type registry using shared registry manager"""
@@ -299,7 +297,7 @@ class RszViewer(QWidget):
 
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
-        root_dict["type"] = "root"                                          '''else "AIWAYP" if self.scn.is_aiwayp'''
+        root_dict["type"] = "root"
         file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb                                              else "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
@@ -371,18 +369,6 @@ class RszViewer(QWidget):
                 ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
                 ("Reserved", lambda h: str(h.reserved)),
             ]
-            '''elif self.scn.is_aiwayp:
-                header_fields = [
-                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                    ("Version", lambda h: str(h.version)),
-                    ("Info Count", lambda h: str(h.info_count)),
-                    ("Resource Count", lambda h: str(h.resource_count)),
-                    ("UserData Count", lambda h: str(h.userdata_count)),
-                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                    ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-                ]
-            '''
         elif self.scn.filepath.lower().endswith('.18'):
             header_fields = [
                 ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
@@ -487,33 +473,6 @@ class RszViewer(QWidget):
         node = ScnTreeBuilder.create_gameobjects_node(len(self.scn.gameobjects))
         
         for i, go in enumerate(self.scn.gameobjects):
-            '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject'):
-                # For AIWAYP files, use the name and hash strings parsed from the header
-                go_name = getattr(self.scn.header, 'gameobject_name', "AIWAYP_Object") 
-                go_hash = getattr(self.scn.header, 'gameobject_type', "Unknown_Hash")
-                
-                # Make sure values are non-empty strings
-                if not go_name or go_name.strip() == "":
-                    go_name = "AIWAYP_Object"
-                if not go_hash or go_hash.strip() == "":
-                    go_hash = "Unknown_Hash"
-                    
-                print(f"AIWAYP GameObject - name: '{go_name}', hash: '{go_hash}'")
-                instance_name = f"{go_name}"
-                
-                # Display the unknown values 
-                unknown_value1 = getattr(self.scn.header, 'unknown_value1', 0)
-                unknown_value2 = getattr(self.scn.header, 'unknown_value2', 0)
-                
-                children = [
-                    DataTreeBuilder.create_data_node("GUID: " + guid_le_to_str(go.guid), ""),
-                    DataTreeBuilder.create_data_node("Unknown Value 1: " + str(unknown_value1), ""),
-                    DataTreeBuilder.create_data_node("Unknown Value 2: " + str(unknown_value2), ""),
-                    DataTreeBuilder.create_data_node("External GameObject (not in object table)", ""),
-                    DataTreeBuilder.create_data_node("Name: " + go_name, ""),
-                    DataTreeBuilder.create_data_node("Unknown Value 3 (MD5 Hash?): " + go_hash, ""),  # Changed from go_type to go_hash
-                ]
-            el'''
             if self.scn.is_pfb:
                 # Normal PFB GameObject
                 instance_index = None
@@ -656,59 +615,7 @@ class RszViewer(QWidget):
         parent_dict["children"].append(gameobjects_folder)
         parent_dict["children"].append(folders_folder)
         
-        # Special handling for AIWAYP GameObject which is not in the object table
-        '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject'):
-            go = self.scn.aiwayp_root_gameobject
-            if go.id == -1:  # Special ID we set to indicate external GameObject
-                go_name = getattr(self.scn.header, 'gameobject_name', "AIWAYP_Object")
-                go_hash = getattr(self.scn.header, 'gameobject_type', "Unknown_Hash") # Changed from gameobject_type
-                
-                # Make sure values are non-empty strings
-                if not go_name or go_name.strip() == "":
-                    go_name = "AIWAYP_Object"
-                if not go_hash or go_hash.strip() == "":
-                    go_hash = "Unknown_Hash"
-                    
-                go_dict = {
-                    "data": [f"{go_name} ({go_hash})", ""], # Changed from go_type to go_hash
-                    "type": "gameobject",
-                    "instance_id": -1,  # Special ID
-                    "reasy_id": -1,     # Special ID  
-                    "children": [],
-                }
-                settings_node = {"data": ["Settings", ""], "children": []}
-                go_dict["children"].append(settings_node)
-                
-                # Add the Components node
-                comp_node = {"data": ["Components", ""], "children": []}
-                go_dict["children"].append(comp_node)
-                
-                # All instances in the object table are considered components of this GameObject
-                for i, instance_id in enumerate(self.scn.object_table):
-                    if instance_id <= 0 or instance_id in processed:
-                        continue
-                    reasy_id = self.handler.id_manager.register_instance(instance_id)
-                    component_name = self.name_helper.get_instance_name(instance_id)
-                    comp_dict = {
-                        "data": [f"{component_name} (ID: {instance_id})", ""],
-                        "instance_id": instance_id,
-                        "reasy_id": reasy_id,
-                        "children": [],
-                    }
-                    comp_node["children"].append(comp_dict)
-                    if instance_id in self.scn.parsed_elements:
-                        fields = self.scn.parsed_elements[instance_id]
-                        for f_name, f_data in fields.items():
-                            comp_dict["children"].append(self._create_field_dict(f_name, f_data))
-                    processed.add(instance_id)
-                    
-                gameobjects_folder["children"].append(go_dict)
-        '''
         for go in self.scn.gameobjects:
-            # Skip AIWAYP root GameObject which we already processed
-            '''if self.scn.is_aiwayp and hasattr(self.scn, 'aiwayp_root_gameobject') and go is self.scn.aiwayp_root_gameobject:
-                continue
-             '''   
             if go.id >= len(self.scn.object_table):
                 continue
             go_instance_id = self.scn.object_table[go.id]
