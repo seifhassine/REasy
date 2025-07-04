@@ -295,6 +295,18 @@ class RszTemplateManager:
                 new_path = os.path.join(template_dir, new_filename)
                 
                 try:
+                    try:
+                        with open(old_path, 'r') as f:
+                            template_data = json.load(f)
+                            
+                        if isinstance(template_data, dict) and "name" in template_data:
+                            template_data["name"] = name
+                            
+                            with open(old_path, 'w') as f:
+                                json.dump(template_data, f, indent=2)
+                    except Exception as e:
+                        print(f"Error updating name in template file: {e}")
+                    
                     os.rename(old_path, new_path)
                     template_info["path"] = new_path
                     
@@ -312,6 +324,19 @@ class RszTemplateManager:
                     return False
             else:
                 template_info["name"] = name
+                
+                try:
+                    template_path = template_info["path"]
+                    with open(template_path, 'r') as f:
+                        template_data = json.load(f)
+                        
+                    if isinstance(template_data, dict) and "name" in template_data:
+                        template_data["name"] = name
+                        
+                        with open(template_path, 'w') as f:
+                            json.dump(template_data, f, indent=2)
+                except Exception as e:
+                    print(f"Error updating name in template file: {e}")
         
         if tags is not None:
             template_info["tags"] = tags
