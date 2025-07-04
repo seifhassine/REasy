@@ -34,6 +34,14 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
+    - name: Update Firebase config with secrets
+      shell: pwsh
+      run: |
+        $filePath = "firebase/config/firebase_config.py"
+        $content = Get-Content -Path $filePath -Raw
+        $content = $content -replace '"apiKey":\s+"change-me"', '"apiKey": "${{ secrets.FIREBASE_API_KEY }}"'
+        $content = $content -replace '"appId":\s+"change-me"', '"appId": "${{ secrets.FIREBASE_APP_ID }}"'
+        Set-Content -Path $filePath -Value $content
     
     - name: Run build.bat
       shell: cmd
