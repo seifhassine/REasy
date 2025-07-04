@@ -18,6 +18,7 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+    environment: REasy ENV
 
     steps:
     - name: Checkout repository
