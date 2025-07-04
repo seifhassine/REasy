@@ -1,5 +1,12 @@
-Backend for the Community Templates system.
 
-To run the linter and fix up index.js, cd into "functions", and then run "npm run lint -- --fix"
+  # Backend for the Community Templates  
+  Import your existing Readme using the import button at the bottom, 
+  or create a new Readme from scratch by typing in the editor.  
+  
+  ## Get Started 
 
-You can then deploy using "firebase deploy --only firestore:indexes,functions"
+1. ```cd functions```
+2. ```npm run lint -- --fix  ```
+  
+  ## Deploy   
+  - ```firebase deploy --only firestore:indexes,functions```
