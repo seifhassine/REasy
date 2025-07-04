@@ -21,12 +21,5 @@ class FirebaseConfig:
 
     @staticmethod
     def get_config():
-        config = dict(FirebaseConfig._FIREBASE_CONFIG)
-        
-        env_api_key = os.environ.get('FIREBASE_API_KEY')
-        env_app_id = os.environ.get('FIREBASE_APP_ID')
-        
-        config["apiKey"] = env_api_key
-        config["appId"] = env_app_id
-        
+        config = dict(FirebaseConfig._FIREBASE_CONFIG)  
         return config
