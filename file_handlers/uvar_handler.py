@@ -76,26 +76,8 @@ class UvarFile:
         self.start_pos = start_pos
         offset = start_pos
 
-        if available(data, offset, 8):
-            self.offset_version = offset
-            self.offset_magic = offset + 4
-            self.version, self.magic = struct.unpack_from("<II", data, offset)
-            offset += 8
-        else:
+        if not self._read_header(data, offset):
             return
-
-        if not available(data, offset, 32):
-            return
-        self.strings_offset, self.data_offset, self.embeds_info_offset, self.hash_info_offset = struct.unpack_from(FOUR_ULONGS, data, offset)
-        offset += 32
-
-        if self.version < 3 and available(data, offset, 8):
-            self.unkn64 = struct.unpack_from("<Q", data, offset)[0]
-            offset += 8
-
-        if available(data, offset, 8):
-            self.uvar_hash, self.variable_count, self.embed_count = struct.unpack_from("<IHH", data, offset)
-            offset += 8
 
         if self.variable_count > 0 and self.data_offset < len(data):
             self._read_variables(data, self.start_pos + self.data_offset)
@@ -109,6 +91,38 @@ class UvarFile:
         if self.embed_count > 0 and self.embeds_info_offset < len(data):
             self._read_embed_offsets(data)
 
+        self._read_embedded_uvars(data)
+
+        if self.hash_info_offset != 0 and self.variable_count > 0:
+            self._read_hash_data(data)
+
+        self._unify_variables_with_strings()
+
+    def _read_header(self, data: bytes, offset: int) -> bool:
+        if available(data, offset, 8):
+            self.offset_version = offset
+            self.offset_magic = offset + 4
+            self.version, self.magic = struct.unpack_from("<II", data, offset)
+            offset += 8
+        else:
+            return False
+
+        if not available(data, offset, 32):
+            return False
+        self.strings_offset, self.data_offset, self.embeds_info_offset, self.hash_info_offset = struct.unpack_from(FOUR_ULONGS, data, offset)
+        offset += 32
+
+        if self.version < 3 and available(data, offset, 8):
+            self.unkn64 = struct.unpack_from("<Q", data, offset)[0]
+            offset += 8
+
+        if available(data, offset, 8):
+            self.uvar_hash, self.variable_count, self.embed_count = struct.unpack_from("<IHH", data, offset)
+            offset += 8
+
+        return True
+
+    def _read_embedded_uvars(self, data: bytes):
         self.embedded_uvars = []
         for eoff in self.embed_offsets:
             if eoff < len(data):
@@ -116,11 +130,6 @@ class UvarFile:
                 child.parent = self
                 child.read(data, eoff)
                 self.embedded_uvars.append(child)
-
-        if self.hash_info_offset != 0 and self.variable_count > 0:
-            self._read_hash_data(data)
-
-        self._unify_variables_with_strings()
 
     def _read_variables(self, data: bytes, var_data_start: int):
         offset = var_data_start
@@ -682,95 +691,139 @@ class UvarHandler(FileHandler):
             QClipboard().setText(value)
 
     def handle_edit(self, meta: dict, new_val, old_val, item=None, parent_widget=None):
-        if parent_widget is None:
+        if parent_widget is None and item is not None:
             parent_widget = item.treeWidget()
 
         try:
             target = meta.get("object", self.uvar)
             typ = meta.get("type")
 
-            if typ == "value_float":
-                var_index = meta.get("var_index")
-                target.values[var_index] = float(new_val)
+            handler_map = {
+                "value_float": self._handle_edit_value_float,
+                "value_int": self._handle_edit_value_int,
+                "name_string": self._handle_edit_name_string,
+                "header_int": self._handle_edit_header_int,
+                "var_type_val": self._handle_edit_var_type_val,
+                "var_name_hash": self._handle_edit_var_name_hash,
+                "guid": self._handle_edit_guid,
+            }
 
-            elif typ == "value_int":
-                var_index = meta.get("var_index")
-                int_val = int(new_val)
-                target.values[var_index] = struct.unpack("<f", struct.pack("<I", int_val))[0]
-
-            elif typ == "name_string":
-                var_index = meta.get("var_index")
-                ok, msg = target.rename_variable_in_place(var_index, new_val)
-                if not ok:
-                    QMessageBox.critical(parent_widget, "Error", msg)
+            handler = handler_map.get(typ)
+            if handler:
+                if not handler(target, meta, new_val, parent_widget):
                     return
-                else:
-                    QMessageBox.information(parent_widget, "Success", msg)
+            else:
+                return
 
-            elif typ == "header_int":
-                ival = int(new_val)
-                field_name = meta.get("field")
-                ok, msg = target.patch_header_field_in_place(field_name, ival)
-                if not ok:
-                    QMessageBox.critical(parent_widget, "Error", msg)
-                    return
-                else:
-                    QMessageBox.information(parent_widget, "Success", msg)
-
-            elif typ == "var_type_val":
-                var_index = meta.get("var_index")
-                ival = int(new_val)
-                ok, msg = target.patch_typeval_in_place(var_index, ival)
-                if not ok:
-                    QMessageBox.critical(parent_widget, "Error", msg)
-                    return
-                else:
-                    QMessageBox.information(parent_widget, "Success", msg)
-
-            elif typ == "var_name_hash":
-                var_index = meta.get("var_index")
-                new_key = int(new_val)
-                ok, msg = target.patch_namehash_in_place(var_index, new_key)
-                if not ok:
-                    QMessageBox.critical(parent_widget, "Error", msg)
-                    return
-                canonical_index = None
-                for i, mapping in enumerate(target.name_hash_map):
-                    if mapping == var_index:
-                        canonical_index = i
-                        break
-                if canonical_index is None:
-                    QMessageBox.critical(parent_widget, "Error", "No canonical mapping found for this variable.")
-                    return
-                target.name_hashes[canonical_index] = new_key
-
-            elif typ == "guid":
-                try:
-                    new_guid = str(uuid.UUID(new_val.strip()))
-                except Exception as e:
-                    QMessageBox.critical(parent_widget, "Error", f"Invalid GUID: {new_val}\n{e}")
-                    return
-                var_index = meta.get("var_index")
-                target.variables[var_index].guid = new_guid
-
-            target.guids = [v.guid for v in target.variables]
-            target.guid_map = list(range(len(target.variables)))
-            target.name_hashes = [v.name_hash for v in target.variables]
-            target.name_hash_map = list(range(len(target.variables)))
-
-            target.update_strings()
-
-            current = target
-            while current.parent:
-                current = current.parent
-            rebuilt_data = current.rebuild()
-            current.read(rebuilt_data, 0)
-
+            self._update_target_after_edit(target)
             self.refresh_ui()
 
         except Exception as e:
             QMessageBox.critical(parent_widget, "Error", f"An exception occurred: {e}")
             return
+
+    def _handle_edit_value_float(self, target, meta, new_val, parent_widget):
+        var_index = meta.get("var_index")
+        try:
+            target.values[var_index] = float(new_val)
+            return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid float value: {e}")
+            return False
+
+    def _handle_edit_value_int(self, target, meta, new_val, parent_widget):
+        var_index = meta.get("var_index")
+        try:
+            int_val = int(new_val)
+            target.values[var_index] = struct.unpack("<f", struct.pack("<I", int_val))[0]
+            return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid int value: {e}")
+            return False
+
+    def _handle_edit_name_string(self, target, meta, new_val, parent_widget):
+        var_index = meta.get("var_index")
+        ok, msg = target.rename_variable_in_place(var_index, new_val)
+        if not ok:
+            QMessageBox.critical(parent_widget, "Error", msg)
+            return False
+        else:
+            QMessageBox.information(parent_widget, "Success", msg)
+            return True
+
+    def _handle_edit_header_int(self, target, meta, new_val, parent_widget):
+        try:
+            ival = int(new_val)
+            field_name = meta.get("field")
+            ok, msg = target.patch_header_field_in_place(field_name, ival)
+            if not ok:
+                QMessageBox.critical(parent_widget, "Error", msg)
+                return False
+            else:
+                QMessageBox.information(parent_widget, "Success", msg)
+                return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid header int: {e}")
+            return False
+
+    def _handle_edit_var_type_val(self, target, meta, new_val, parent_widget):
+        try:
+            var_index = meta.get("var_index")
+            ival = int(new_val)
+            ok, msg = target.patch_typeval_in_place(var_index, ival)
+            if not ok:
+                QMessageBox.critical(parent_widget, "Error", msg)
+                return False
+            else:
+                QMessageBox.information(parent_widget, "Success", msg)
+                return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid type value: {e}")
+            return False
+
+    def _handle_edit_var_name_hash(self, target, meta, new_val, parent_widget):
+        try:
+            var_index = meta.get("var_index")
+            new_key = int(new_val)
+            ok, msg = target.patch_namehash_in_place(var_index, new_key)
+            if not ok:
+                QMessageBox.critical(parent_widget, "Error", msg)
+                return False
+            canonical_index = None
+            for i, mapping in enumerate(target.name_hash_map):
+                if mapping == var_index:
+                    canonical_index = i
+                    break
+            if canonical_index is None:
+                QMessageBox.critical(parent_widget, "Error", "No canonical mapping found for this variable.")
+                return False
+            target.name_hashes[canonical_index] = new_key
+            return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid name hash: {e}")
+            return False
+
+    def _handle_edit_guid(self, target, meta, new_val, parent_widget):
+        try:
+            new_guid = str(uuid.UUID(new_val.strip()))
+            var_index = meta.get("var_index")
+            target.variables[var_index].guid = new_guid
+            return True
+        except Exception as e:
+            QMessageBox.critical(parent_widget, "Error", f"Invalid GUID: {new_val}\n{e}")
+            return False
+
+    def _update_target_after_edit(self, target):
+        target.guids = [v.guid for v in target.variables]
+        target.guid_map = list(range(len(target.variables)))
+        target.name_hashes = [v.name_hash for v in target.variables]
+        target.name_hash_map = list(range(len(target.variables)))
+        target.update_strings()
+        current = target
+        while current.parent:
+            current = current.parent
+        rebuilt_data = current.rebuild()
+        current.read(rebuilt_data, 0)
         
     def save_tree_state(self, tree_view: QTreeView) -> dict:
         state = {}
