@@ -1661,9 +1661,8 @@ class ColorInput(BaseValueWidget):
                             else:
                                 return
                             dlg.setCurrentColor(QColor(r,g,b,a))
-                        except Exception as e:
+                        except Exception:
                             excepted = True
-                            print(f"Error parsing hex color: {e}")
                     hex_edit.textChanged.connect(on_hex)
 
             if dlg.exec_() and not excepted:
