@@ -50,7 +50,7 @@ class RszObjectOperations:
         self.viewer._initialize_fields_from_type_info(gameobject_fields, type_info)
         
         fields = list(gameobject_fields.values())
-        first_field = fields[0] if fields else None
+        first_field = fields[0] if len(fields) else None
         
         if hasattr(first_field, "__class__") and first_field.__class__.__name__ == "StringData":
             first_field.value = name
