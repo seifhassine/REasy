@@ -85,15 +85,6 @@ class RszEmbeddedArrayOperations:
                 self._mark_parent_chain_modified(target_context)
                 return True
 
-            #is_referenced_elsewhere = self._check_embedded_instance_referenced_elsewhere(
-            #    instance_id, array_data, element_index, ref_type, target_context
-            #)
-            #if is_referenced_elsewhere:
-            #    print(f"[DEBUG] Instance {instance_id} is referenced elsewhere => just remove array element reference.")
-            #    del array_data.values[element_index]
-            #    self._mark_parent_chain_modified(target_context)
-            #    return True
-
             del array_data.values[element_index]
 
             if ref_type == "userdata":
@@ -365,7 +356,7 @@ class RszEmbeddedArrayOperations:
     def _update_embedded_references(self, deleted_ids, id_adjustments, rui):
         if not hasattr(rui, 'embedded_instances'):
             return
-        for instance_id, fields in list(rui.embedded_instances.items()):
+        for instance_id, fields in rui.embedded_instances.items():
             if instance_id in deleted_ids or not isinstance(fields, dict):
                 continue
             for field_name, field_data in fields.items():
@@ -403,7 +394,6 @@ class RszEmbeddedArrayOperations:
                 if userdata_info.instance_id in deleted_ids:
                     if hasattr(rui, '_rsz_userdata_str_map') and userdata_info in rui._rsz_userdata_str_map:
                         del rui._rsz_userdata_str_map[userdata_info]
-                    continue
                 elif userdata_info.instance_id in id_adjustments:
                     new_id = id_adjustments[userdata_info.instance_id]
                     if new_id >= 0:
@@ -438,7 +428,7 @@ class RszEmbeddedArrayOperations:
             if not isinstance(fields, dict):
                 continue
                 
-            for field_name, field_data in list(fields.items()):
+            for field_name, field_data in fields.items():
                 if isinstance(field_data, ObjectData):
                     ref_id = field_data.value
                     if ref_id > 0 and ref_id >= instance_count:
@@ -479,9 +469,8 @@ class RszEmbeddedArrayOperations:
         for i, item in enumerate(current_array.values):
             if i == current_index:
                 continue
-            if ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id:
-                reference_count += 1
-            elif ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id:
+            if ((ref_type == "object" and isinstance(item, ObjectData)) or 
+                (ref_type == "userdata" and isinstance(item, UserDataData))) and item.value == instance_id:
                 reference_count += 1
         for inst_id, fields in rui.embedded_instances.items():
             if not isinstance(fields, dict):
@@ -493,9 +482,8 @@ class RszEmbeddedArrayOperations:
                     reference_count += 1
                 elif isinstance(fdata, ArrayData):
                     for elem in fdata.values:
-                        if ref_type == "object" and isinstance(elem, ObjectData) and elem.value == instance_id:
-                            reference_count += 1
-                        elif ref_type == "userdata" and isinstance(elem, UserDataData) and elem.value == instance_id:
+                        if ((ref_type == "object" and isinstance(elem, ObjectData)) or 
+                            (ref_type == "userdata" and isinstance(elem, UserDataData))) and elem.value == instance_id:
                             reference_count += 1
         return (reference_count > 0)
     
@@ -1023,7 +1011,7 @@ class RszEmbeddedArrayOperations:
                             if element.value in id_mapping:
                                 element.value = id_mapping[element.value]
         if hasattr(rui, '_array_registry'):
-            for array_id, owner_id in list(rui._array_registry.items()):
+            for array_id, owner_id in rui._array_registry.items():
                 if owner_id in id_mapping:
                     rui._array_registry[array_id] = id_mapping[owner_id]
 
@@ -1128,7 +1116,7 @@ class RszEmbeddedArrayOperations:
             print(f"[DEBUG] Shifting existing IDs >= {parent_id} by {count_new}: {id_mapping}")
             self._update_embedded_references_for_shift(id_mapping, rui)
             new_map = {}
-            for old_i, fields in list(rui.embedded_instances.items()):
+            for old_i, fields in rui.embedded_instances.items():
                 new_i = id_mapping.get(old_i, old_i)
                 new_map[new_i] = fields
             rui.embedded_instances = new_map
@@ -1313,7 +1301,7 @@ class RszEmbeddedArrayOperations:
             embedded_context = base_embedded_context
             if hasattr(element, '_owning_context'):
                 embedded_context = element._owning_context
-            node_data = self._create_embedded_object_node_data(ref_id, element_index, element, array_item, embedded_context)
+            node_data = self._create_embedded_object_node_data(ref_id, element_index, element, embedded_context)
         elif isinstance(element, UserDataData):
             ref_id = element.value
             embedded_context = base_embedded_context
@@ -1322,7 +1310,7 @@ class RszEmbeddedArrayOperations:
             if hasattr(element, '_owning_userdata'):
                 userdata_info = element._owning_userdata
                 embedded_context = userdata_info.parent_userdata_rui
-            node_data = self._create_embedded_userdata_node_data(ref_id, element_index, element, array_item, embedded_context)
+            node_data = self._create_embedded_userdata_node_data(ref_id, element_index, element, embedded_context)
         else:
             node_data = DataTreeBuilder.create_data_node(
                 f"{element_index}: ", "", element.__class__.__name__, element
@@ -1335,7 +1323,7 @@ class RszEmbeddedArrayOperations:
             self.viewer.tree.expand(child_index)
         return True
     
-    def _create_embedded_userdata_node_data(self, ref_id, index, element, array_item, embedded_context):
+    def _create_embedded_userdata_node_data(self, ref_id, index, element, embedded_context):
         type_name = f"UserData[{ref_id}]"
         userdata_rui = None
         if hasattr(embedded_context, 'embedded_userdata_infos'):
@@ -1368,12 +1356,12 @@ class RszEmbeddedArrayOperations:
                             original_callback = getattr(field_data, '_callback', None)
                             userdata_chain = [userdata_rui] + context_chain
                             field_data.set_callback(lambda *args, **kwargs: self._track_nested_modifications(
-                                field_data, userdata_rui, userdata_chain, original_callback, *args, **kwargs))
+                                field_data, userdata_chain, original_callback, *args, **kwargs))
                         field_node = self.viewer._create_field_dict(field_name, field_data, userdata_rui)
                         node_data["children"].append(field_node)
         return node_data
 
-    def _create_embedded_object_node_data(self, ref_id, index, element, array_item, embedded_context):
+    def _create_embedded_object_node_data(self, ref_id, index, element, embedded_context):
         type_name = f"Object[{ref_id}]"
         if hasattr(embedded_context, 'embedded_instance_infos') and ref_id < len(embedded_context.embedded_instance_infos):
             instance_info = embedded_context.embedded_instance_infos[ref_id]
@@ -1417,7 +1405,7 @@ class RszEmbeddedArrayOperations:
                             if hasattr(field_data, 'set_callback'):
                                 original_callback = getattr(field_data, '_callback', None)
                                 field_data.set_callback(lambda *args, **kwargs: self._track_nested_modifications(
-                                    field_data, embedded_context, context_chain, original_callback, *args, **kwargs))
+                                    field_data, context_chain, original_callback, *args, **kwargs))
                             if isinstance(field_data, UserDataData) and field_data.value > 0:
                                 userdata_rui = self._find_userdata_info_by_id(field_data.value, embedded_context)
                                 if userdata_rui:
@@ -1509,7 +1497,7 @@ class RszEmbeddedArrayOperations:
                     if hasattr(child_field_data, 'set_callback'):
                         original_callback = getattr(child_field_data, '_callback', None)
                         child_field_data.set_callback(lambda *args, **kwargs: self._track_nested_modifications(
-                            child_field_data, userdata_rui, userdata_context_chain, original_callback, *args, **kwargs))
+                            child_field_data, userdata_context_chain, original_callback, *args, **kwargs))
                     try:
                         field_node = self.viewer._create_field_dict(child_field_name, child_field_data, userdata_rui)
                         node_data["children"].append(field_node)
@@ -1535,7 +1523,7 @@ class RszEmbeddedArrayOperations:
             current = current.parent_userdata_rui
         return chain
 
-    def _track_nested_modifications(self, field_obj, direct_context, context_chain, original_callback=None, *args, **kwargs):
+    def _track_nested_modifications(self, field_obj, context_chain, original_callback=None, *args, **kwargs):
         if original_callback:
             try:
                 original_callback(*args, **kwargs)

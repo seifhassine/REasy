@@ -3,7 +3,6 @@ import sys
 import time
 import psutil
 import argparse
-import statistics
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -37,7 +36,6 @@ def benchmark_scn(file_path):
         data = f.read()
     file_size = len(data)
     
-    times = []
     memory_before = get_memory_usage()
     
     scn = RszFile()
@@ -98,8 +96,6 @@ def benchmark_scn(file_path):
     total_reads = 50 
     real_time = (end - start) / total_reads
     
-    min_time = real_time
-    max_time = real_time
     avg_time = real_time
     std_dev = 0
     
@@ -113,10 +109,10 @@ def benchmark_scn(file_path):
     print(f"Memory usage before: {format_size(memory_before)}")
     print(f"Memory usage after: {format_size(memory_after)}")
     print(f"Memory increase: {format_size(memory_delta)}")
-    print(f"\nParsing times:")
+    print("\nParsing times:")
     print(f"Average: {avg_time*20:.2f}ms")
     print(f"Std Dev: {std_dev*20:.2f}ms")
-    print(f"\nFile processing speed:")
+    print("\nFile processing speed:")
     print(f"Average: {format_size(file_size/avg_time)}/s")
 
 if __name__ == "__main__":

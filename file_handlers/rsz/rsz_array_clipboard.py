@@ -129,7 +129,7 @@ class RszArrayClipboard:
             result["object_graph"] = {
                 "root_id": id_mapping.get(root_object_id, -1),
                 "instances": [],
-                "external_refs": sorted(list(external_refs))
+                "external_refs": sorted(external_refs)
             }
             
             for orig_id in id_list:
@@ -705,7 +705,7 @@ class RszArrayClipboard:
         Returns the element (single behaviour) or the list (group behaviour).
         UI-update & modification flags are handled internally.
         """
-        array_type, items_data = RszArrayClipboard._read_clipboard(
+        _, items_data = RszArrayClipboard._read_clipboard(
             RszArrayClipboard.get_clipboard_file(widget)
         )
         if not items_data:
@@ -731,9 +731,7 @@ class RszArrayClipboard:
             if element:
                 if viewer and hasattr(viewer, "mark_modified"):
                     viewer.mark_modified()
-                RszArrayClipboard._add_element_to_ui_direct(
-                    widget, array_item, element, array_data.orig_type
-                )
+                RszArrayClipboard._add_element_to_ui_direct(widget, array_item, element)
                 added.append(element)
 
         if not added:
@@ -1319,7 +1317,7 @@ class RszArrayClipboard:
             
             return RawBytesData(bytes_val, size, orig_type)
     @staticmethod
-    def _add_element_to_ui_direct(widget, array_item, element, element_type_clean):
+    def _add_element_to_ui_direct(widget, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
         from file_handlers.pyside.tree_model import DataTreeBuilder
         

@@ -1396,7 +1396,7 @@ class RszViewer(QWidget):
                 rui.instance_id = id_mapping[rui.instance_id]
             i += 1
         
-        for ui in list(self.scn._userdata_str_map.keys()):
+        for ui in self.scn._userdata_str_map.keys():
             if ui not in self.scn.userdata_infos:
                 del self.scn._userdata_str_map[ui]
 

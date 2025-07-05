@@ -191,7 +191,7 @@ def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = Fa
     
     rsz_file.header.data_offset = rsz_start
     
-    build_scn19_rsz_section(rsz_file, out, special_align_enabled, rsz_start)
+    build_scn19_rsz_section(rsz_file, out, rsz_start)
     
     return rsz_start
 

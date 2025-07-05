@@ -243,7 +243,7 @@ class RszTemplateManager:
         for template_info in metadata["templates"].values():
             all_tags.update(template_info.get("tags", []))
             
-        return sorted(list(all_tags))
+        return sorted(all_tags)
     
     @staticmethod
     def get_all_registries():
@@ -257,7 +257,7 @@ class RszTemplateManager:
         for template_info in metadata["templates"].values():
             registries.add(template_info.get("registry", "default"))
             
-        return sorted(list(registries))
+        return sorted(registries)
     
     @staticmethod
     def update_template_metadata(template_id, name=None, tags=None, description=None):

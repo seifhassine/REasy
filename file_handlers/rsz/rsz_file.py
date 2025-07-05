@@ -347,7 +347,7 @@ class RszFile:
         """Parse USR file structure"""
         self._parse_resource_infos(data)
         self._parse_userdata_infos(data)
-        self._parse_blocks(data)
+        self._parse_blocks()
         self._parse_rsz_section(data)
         self._parse_instances(data)
         
@@ -363,7 +363,7 @@ class RszFile:
             self._parse_resource_infos(data)
             self._parse_userdata_infos(data)
             
-        self._parse_blocks(data)
+        self._parse_blocks()
         self._parse_rsz_section(data)
         self._parse_instances(data)
         
@@ -372,7 +372,7 @@ class RszFile:
         self._parse_gameobjects(data)
         self._parse_folder_infos(data)
         if self.filepath.lower().endswith('.18'):
-            _parse_scn_18_resource_infos(self, data)
+            _parse_scn_18_resource_infos(self)
         else:
             self._parse_resource_infos(data)
         
@@ -380,7 +380,7 @@ class RszFile:
         # SCN.19 format doesn't have userdata_infos
         if not (self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')):
             self._parse_userdata_infos(data)
-        self._parse_blocks(data)
+        self._parse_blocks()
         self._parse_rsz_section(data)
         self._parse_instances(data)        
 
@@ -451,7 +451,7 @@ class RszFile:
             self.userdata_infos.append(ui)
         self._current_offset = _align(self._current_offset, 16)
 
-    def _parse_blocks(self, data):
+    def _parse_blocks(self):
 
         self._prefab_str_map.clear()
         self._userdata_str_map.clear()
@@ -1211,7 +1211,6 @@ class RszFile:
 
 
             # 9b) Write Object Table (one 4-byte integer per object)
-            object_table_size = self.rsz_header.object_count * 4
             for obj_id in self.object_table:
                 # Ensure we write object IDs as signed integers
                 out += struct.pack("<i", obj_id)
@@ -1943,7 +1942,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
 
             elif rsz_type == ObjectData:
                 child_indexes = []
-                for x in range(count):
+                for _ in range(count):
                     pos = _align(pos, field_align)
                     idx = read_aligned_value(unpack_uint, fsize, align=field_align)
                     child_indexes.append(idx)
@@ -2272,7 +2271,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(vals[0], vals[1], vals[2], original_type)
-            elif rsz_type == Vec4Data:
+            elif rsz_type in (Vec4Data, Float4Data):
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(*vals, original_type)
@@ -2290,10 +2289,6 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 data_obj = rsz_type(*vals, original_type)
             elif rsz_type == Int3Data:
                 vals = unpack_3int(raw, pos)
-                pos += fsize
-                data_obj = rsz_type(*vals, original_type)
-            elif rsz_type == Float4Data:
-                vals = unpack_4float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(*vals, original_type)
             elif rsz_type == RangeIData:

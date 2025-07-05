@@ -43,7 +43,7 @@ class RszArrayOperations:
             self.viewer.mark_modified()
             
             if direct_update and array_item:
-                self._add_element_to_ui_direct(array_item, new_element, element_type)
+                self._add_element_to_ui_direct(array_item, new_element)
             QMessageBox.information(self.viewer, "Element Added", f"New {element_type} element added successfully.")
             
         return new_element
@@ -112,12 +112,6 @@ class RszArrayOperations:
                         
                         # Recursively analyze this nested object
                         analyze_nested_objects(child_node, visited_types.copy())
-                
-                # Process object references in arrays
-                elif isinstance(field_value, ArrayData) and field_value.element_class == ObjectData:
-                    # Arrays can't contain their own nested objects directly in this format,
-                    # they just contain references to other objects
-                    pass
             
         # Start recursive analysis from root node
         analyze_nested_objects(root_node)
@@ -180,10 +174,6 @@ class RszArrayOperations:
                     if field_value.orig_type in type_instance_map:
                         field_value.value = type_instance_map[field_value.orig_type]
                     
-                # Handle array references (arrays don't contain nested objects directly)
-                elif isinstance(field_value, ArrayData) and field_value.element_class == ObjectData:
-                    pass
-        
         # Update the hierarchy in the SCN file - root node is the last node in all_nodes
         root_node_id = root_node.instance_id
         if root_node_id > 0:
@@ -197,7 +187,7 @@ class RszArrayOperations:
         return None
 
 
-    def _add_element_to_ui_direct(self, array_item, element, element_type_clean):
+    def _add_element_to_ui_direct(self, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
         model = getattr(self.viewer.tree, 'model', lambda: None)()
         if not model or not hasattr(array_item, 'raw'):
@@ -414,7 +404,7 @@ class RszArrayOperations:
             return self._delete_instance_and_children(instance_id)
         
         # For UserDataData or other simpler elements, use a streamlined approach
-        all_nested_objects = set([instance_id])
+        all_nested_objects = {instance_id}
         
         try:
             # 1. Prepare ID adjustments
@@ -531,7 +521,7 @@ class RszArrayOperations:
             # If we can't find the parent, be conservative and assume referenced elsewhere
             return True
             
-        parent_instance_id, parent_field_name = parent_data
+        parent_instance_id, _ = parent_data
         
         # Define range bounds for reference checking
         min_id = 0  # Default lower bound
@@ -576,24 +566,16 @@ class RszArrayOperations:
                 
             for field_name, field_data in fields.items():
                 # Check direct references based on reference type
-                if ref_type == "object" and isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                    print(f"  Found external reference from instance {check_id}, field {field_name}")
-                    return True
-                elif ref_type == "userdata" and isinstance(field_data, UserDataData) and field_data.value == instance_id:
+                if ((ref_type == "object" and isinstance(field_data, ObjectData) and field_data.value == instance_id) or
+                    (ref_type == "userdata" and isinstance(field_data, UserDataData) and field_data.value == instance_id)):
                     print(f"  Found external reference from instance {check_id}, field {field_name}")
                     return True
                     
                 # Check references in arrays
                 elif isinstance(field_data, ArrayData):
                     for i, item in enumerate(field_data.values):
-                        if (ref_type == "object" and 
-                            isinstance(item, ObjectData) and 
-                            item.value == instance_id):
-                            print(f"  Found external reference from instance {check_id}, field {field_name}[{i}]")
-                            return True
-                        elif (ref_type == "userdata" and 
-                              isinstance(item, UserDataData) and 
-                              item.value == instance_id):
+                        if ((ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id) or
+                            (ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id)):
                             print(f"  Found external reference from instance {check_id}, field {field_name}[{i}]")
                             return True
                                 
@@ -602,14 +584,8 @@ class RszArrayOperations:
         if current_index is not None and isinstance(current_array, ArrayData):
             for i, item in enumerate(current_array.values):
                 if i != current_index:  # Skip the item we're deleting
-                    if (ref_type == "object" and 
-                        isinstance(item, ObjectData) and 
-                        item.value == instance_id):
-                        print(f"  Found another reference in same array at index {i}")
-                        return True
-                    elif (ref_type == "userdata" and 
-                          isinstance(item, UserDataData) and 
-                          item.value == instance_id):
+                    if ((ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id) or
+                        (ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id)):
                         print(f"  Found another reference in same array at index {i}")
                         return True
         
@@ -813,7 +789,7 @@ class RszArrayOperations:
             # at a position where we can determine adjacent objects
             if object_table_index < 0:
                 # This object itself isn't in the object table - safe to use positioned-based detection
-                position_based_nested = self.viewer.object_operations._find_nested_objects(fields, instance_id)
+                position_based_nested = self.viewer.object_operations._find_nested_objects(instance_id)
             
             # Check each field for object references
             for field_name, field_data in fields.items():

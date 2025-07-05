@@ -386,7 +386,7 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         rsz_file.header.data_offset = rsz_start
 
         # Custom RSZ section build for SCN.19
-        build_scn19_rsz_section(rsz_file, out, special_align_enabled, rsz_start)
+        build_scn19_rsz_section(rsz_file, out, rsz_start)
 
     # Before rewriting header, update all table offsets:
     rsz_file.header.folder_tbl = folder_tbl_offset
@@ -626,7 +626,7 @@ def _update_field_references(field_data, old_to_new_idx):
         for element in field_data.values:
             _update_field_references(element, old_to_new_idx)
 
-def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: bool, rsz_start: int):
+def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
     """Build the RSZ section specifically for SCN.19 format"""
     
     if rsz_file.rsz_header.version > 3:
@@ -782,9 +782,6 @@ def parse_scn19_rsz_userdata(rsz_file, data):
         current_offset = rui.parse(data, current_offset)
         rsz_file.rsz_userdata_infos.append(rui)
     
-    valid_blocks = 0
-    failed_blocks = 0
-    
     for i, rui in enumerate(rsz_file.rsz_userdata_infos):
         try:
             if rui.rsz_offset <= 0 or rui.data_size <= 0:
@@ -800,7 +797,6 @@ def parse_scn19_rsz_userdata(rsz_file, data):
             if abs_data_offset < rsz_base_offset or abs_data_offset >= len(data):
                 rui.data = b""
                 rsz_file.set_rsz_userdata_string(rui, "Invalid UserData offset")
-                failed_blocks += 1
                 continue
                 
             if abs_data_offset + rui.data_size <= len(data):
@@ -819,23 +815,18 @@ def parse_scn19_rsz_userdata(rsz_file, data):
                         
                         desc = f"Embedded RSZ: {obj_count} objects, {inst_count} instances, {parsed_count} parsed"
                         rsz_file.set_rsz_userdata_string(rui, desc)
-                        valid_blocks += 1
                     else:
                         # RSZ looked valid but failed to parse
                         rsz_file.set_rsz_userdata_string(rui, f"RSZ parse error (magic: 0x{magic:08X}, ver: {version})")
-                        failed_blocks += 1
                 else:
                     # Not a valid RSZ block, too small
                     rsz_file.set_rsz_userdata_string(rui, f"Not RSZ data - too small ({rui.data_size} bytes)")
-                    failed_blocks += 1
             else:
                 rui.data = b""
                 rsz_file.set_rsz_userdata_string(rui, "Invalid UserData (out of bounds)")
-                failed_blocks += 1
         except Exception as e:
             rui.data = b""
             rsz_file.set_rsz_userdata_string(rui, f"Error: {str(e)[:50]}...")
-            failed_blocks += 1
     
     # Find the end of userdata section by finding the highest offset + size
     if rsz_file.rsz_userdata_infos:

@@ -2045,8 +2045,6 @@ class AdvancedTreeView(QTreeView):
         component_row = component_index.row()
         
         if model.removeRow(component_row, components_index):
-            if len(components_item.children) == 0:
-                pass
             return True
         
         return False
@@ -2159,9 +2157,6 @@ class AdvancedTreeView(QTreeView):
             return
         
         parent_widget = self.parent()
-        target_lang = "en"
-        
-        
         target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
             
         original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""

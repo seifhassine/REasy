@@ -67,7 +67,7 @@ class RszComponentClipboard:
             if component_instance_id in viewer.scn.parsed_elements:
                 fields = viewer.scn.parsed_elements[component_instance_id]
                 
-                nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, fields, component_instance_id)
+                nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, component_instance_id)
                 nested_instances.update(nested_objects)
                 
                 RszGameObjectClipboard._find_userdata_references(fields, userdata_refs)
@@ -104,7 +104,7 @@ class RszComponentClipboard:
                     nested_fields = {}
                     nested_fields_data = viewer.scn.parsed_elements[nested_id]
                     
-                    deeper_nested = RszGameObjectClipboard._find_nested_objects(viewer, nested_fields_data, nested_id)
+                    deeper_nested = RszGameObjectClipboard._find_nested_objects(viewer, nested_id)
                     nested_instances.update(deeper_nested)
                     
                     RszGameObjectClipboard._find_userdata_references(nested_fields_data, userdata_refs)

@@ -25,26 +25,13 @@ class BaseValueWidget(QWidget):
         if not self._modified:
             self._modified = True
             self.modified_changed.emit(True)
-        
-    def setup_ui(self):
-        pass
-        
-    def setValues(self, values):
-        pass
-        
-    def getValues(self):
-        pass
 
     def get_data(self):
         return self._data
 
     def set_data(self, data):
-        #print(f"DEBUG: BaseValueWidget.set_data called with data: {data}, type: {type(data)}, dir: {dir(data)}")
         self._data = data
         self.update_display()
-
-    def update_display(self):
-        pass
 
 class Vec2Input(BaseValueWidget):
     valueChanged = Signal(tuple)
@@ -692,9 +679,6 @@ class AABBInput(BaseValueWidget):
             le.setText(f"{val:.8g}")
             
     def setValues(self, values):
-        """
-        values = (min_x, min_y, min_z, max_x, max_y, max_z)
-        """
         if len(values) != 6:
             return
         for le, v in zip(self.min_edits + self.max_edits, values):
@@ -862,7 +846,7 @@ class HexBytesInput(BaseValueWidget):
             
             if self.max_size > 0:
                 char_width = self.text_field.fontMetrics().averageCharWidth()
-                width = ((self.max_size * 3.05)) * char_width 
+                width = (self.max_size * 3.05) * char_width 
                 self.text_field.setMinimumWidth(min(800, max(100, width))) 
                 
             if self.max_size > 0 and current_size >= self.max_size:
@@ -1671,10 +1655,7 @@ class ColorInput(BaseValueWidget):
             if hex_edit:
                     def on_hex(text: str):
                         try:
-                            if len(text) == 7:  
-                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                                a     = int(text[7:9],16)
-                            elif len(text) == 9:   
+                            if len(text) == 7 or len(text) == 9:  
                                 r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
                                 a     = int(text[7:9],16)
                             else:

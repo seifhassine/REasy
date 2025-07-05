@@ -130,7 +130,7 @@ class RszGameObjectClipboard:
                         
                     if go_instance_id in viewer.scn.parsed_elements:
                         instance_fields = viewer.scn.parsed_elements[go_instance_id]
-                        nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, instance_fields, go_instance_id)
+                        nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, go_instance_id)
                         instance_ids.update(nested_objects)
                         
                         userdata_refs = set()
@@ -140,7 +140,7 @@ class RszGameObjectClipboard:
                     for comp_id in components:
                         if comp_id in viewer.scn.parsed_elements:
                             comp_fields = viewer.scn.parsed_elements[comp_id]
-                            nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, comp_fields, comp_id)
+                            nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, comp_id)
                             instance_ids.update(nested_objects)
                             
                             userdata_refs = set()
@@ -150,7 +150,7 @@ class RszGameObjectClipboard:
                             for nested_id in nested_objects:
                                 if nested_id in viewer.scn.parsed_elements:
                                     nested_fields = viewer.scn.parsed_elements[nested_id]
-                                    nested_nested = RszGameObjectClipboard._find_nested_objects(viewer, nested_fields, nested_id)
+                                    nested_nested = RszGameObjectClipboard._find_nested_objects(viewer, nested_id)
                                     instance_ids.update(nested_nested)
                                     
                                     nested_userdata = set()
@@ -276,7 +276,7 @@ class RszGameObjectClipboard:
         }
     
     @staticmethod
-    def _find_nested_objects(viewer, fields, base_instance_id):
+    def _find_nested_objects(viewer, base_instance_id):
         """Find instance IDs of nested objects that aren't in the object table."""
         return RszInstanceOperations.find_nested_objects(
             viewer.scn.parsed_elements, base_instance_id, viewer.scn.object_table
@@ -413,9 +413,7 @@ class RszGameObjectClipboard:
             new_root_object_id = len(viewer.scn.object_table)
             viewer.scn.object_table.append(new_root_instance_id)
             
-            new_gameobject = RszGameObjectClipboard._create_gameobject_entry(
-                viewer, new_root_object_id, parent_id, new_root_instance_id
-            )
+            new_gameobject = RszGameObjectClipboard._create_gameobject_entry(viewer, new_root_object_id, parent_id)
             
             if root_go_data.get("guid"):
                 if not hasattr(new_gameobject, 'guid'):
@@ -485,9 +483,7 @@ class RszGameObjectClipboard:
                 
                 child_name = go_data.get("name", "")
                     
-                new_child_go = RszGameObjectClipboard._create_gameobject_entry(
-                    viewer, new_child_object_id, new_parent_id, new_go_instance_id
-                )
+                new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
                 
                 if go_data.get("guid"):
                     child_guid_hex = go_data.get("guid")
@@ -570,7 +566,7 @@ class RszGameObjectClipboard:
             return None
     
     @staticmethod
-    def _create_gameobject_entry(viewer, object_id, parent_id, instance_id):
+    def _create_gameobject_entry(viewer, object_id, parent_id):
         new_go = RszGameObject()
         new_go.id = object_id
         new_go.parent_id = parent_id

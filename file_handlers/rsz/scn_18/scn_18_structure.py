@@ -31,7 +31,7 @@ class Scn18Header:
          self.prefab_info_tbl,
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
-def _parse_scn_18_resource_infos(rsz_file, data):
+def _parse_scn_18_resource_infos(rsz_file):
     rsz_file._resource_str_map.clear()
     for _ in range(rsz_file.header.resource_count):
         from file_handlers.rsz.rsz_file import RszResourceInfo
@@ -142,7 +142,7 @@ def build_scn_18(rsz_file, special_align_enabled = False) -> bytes:
         rsz_file.header.data_offset = rsz_start
 
         from file_handlers.rsz.scn_19.scn_19_structure import build_scn19_rsz_section
-        build_scn19_rsz_section(rsz_file, out, special_align_enabled, rsz_start)
+        build_scn19_rsz_section(rsz_file, out, rsz_start)
 
     rsz_file.header.folder_tbl = folder_tbl_offset
     rsz_file.header.resource_info_tbl = resource_info_tbl_offset
