@@ -68,7 +68,7 @@ class RszObjectOperations:
         self.scn.object_table.append(insertion_index)
         
         new_gameobject = self._create_gameobject_entry(
-            object_table_index, parent_id, insertion_index
+            object_table_index, parent_id
         )
         
         self._update_gameobject_hierarchy(new_gameobject)
@@ -88,7 +88,7 @@ class RszObjectOperations:
         """Calculate the best insertion index for a new GameObject instance"""
         return len(self.scn.instance_infos)
 
-    def _create_gameobject_entry(self, object_id, parent_id, instance_id):
+    def _create_gameobject_entry(self, object_id, parent_id):
         """Create a new GameObject entry for the scene"""
         from file_handlers.rsz.rsz_file import RszGameObject
         new_go = RszGameObject()
@@ -217,9 +217,8 @@ class RszObjectOperations:
                     
                     if go_instance_id > 0:
                         print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
-                        
-                        instance_fields = self.scn.parsed_elements.get(go_instance_id, {})
-                        nested_objects = self._find_nested_objects(instance_fields, go_instance_id)
+                    
+                        nested_objects = self._find_nested_objects(go_instance_id)
                         nested_objects.add(go_instance_id)
                         
                         for instance_id in sorted(nested_objects, reverse=True):
@@ -545,7 +544,7 @@ class RszObjectOperations:
                 if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
                     ref_info.target_id -= 1
 
-    def _find_nested_objects(self, fields, base_instance_id):
+    def _find_nested_objects(self, base_instance_id):
         """Find instance IDs of nested objects that aren't in the object table."""
         return RszInstanceOperations.find_nested_objects(
             self.scn.parsed_elements, base_instance_id, self.scn.object_table
@@ -639,8 +638,7 @@ class RszObjectOperations:
                 folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
                 
                 if folder_instance_id > 0:
-                    instance_fields = self.scn.parsed_elements.get(folder_instance_id, {})
-                    nested_objects = self._find_nested_objects(instance_fields, folder_instance_id)
+                    nested_objects = self._find_nested_objects(folder_instance_id)
                     nested_objects.add(folder_instance_id)
                     
                     for inst_id in sorted(nested_objects, reverse=True):
@@ -665,8 +663,7 @@ class RszObjectOperations:
             folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
             
             if folder_instance_id > 0:
-                instance_fields = self.scn.parsed_elements.get(folder_instance_id, {})
-                nested_objects = self._find_nested_objects(instance_fields, folder_instance_id)
+                nested_objects = self._find_nested_objects(folder_instance_id)
                 nested_objects.add(folder_instance_id)
                 
                 for inst_id in sorted(nested_objects, reverse=True):
@@ -820,39 +817,11 @@ class RszObjectOperations:
         
         original_component_count = owner_go.component_count
         
-        instance_fields = self.scn.parsed_elements.get(component_instance_id, {})
-        nested_objects = self._find_nested_objects(instance_fields, component_instance_id)
+        nested_objects = self._find_nested_objects(component_instance_id)
         nested_objects.add(component_instance_id)
         
         to_delete_instances = sorted(nested_objects, reverse=True)
-        
-
-
-        def _userdata_index_reference_count(target_instance_id, exclusions=[]):
-            """
-            Count references to a UserData instance from outside the list of instances being deleted
-            
-            Args:
-                target_instance_id: The UserData instance ID to check
-                exclusions: List of instance IDs to exclude from the reference count
-                
-            Returns:
-                int: Number of references to the UserData instance
-            """
-            count = 0
-            for key, instance in self.scn.parsed_elements.items():
-                if key in exclusions:
-                    continue
-                    
-                for field in instance.values():
-                    if isinstance(field, UserDataData) and field.value == target_instance_id:
-                        count += 1
-                    elif isinstance(field, ArrayData):
-                        for element in field.values:
-                            if isinstance(element, UserDataData) and element.value == target_instance_id:
-                                count += 1
-            return count
-        
+           
         # Find and collect additional UserData instances referenced by the instances being deleted
         const_to_delete_instances = to_delete_instances.copy()
         for instance_id in const_to_delete_instances:
@@ -998,6 +967,7 @@ class RszObjectOperations:
                 return False
         
         self.viewer.mark_modified()
+        return True
        
     def _find_userdata_references(self, fields, userdata_refs):
         RszInstanceOperations.find_userdata_references(fields, userdata_refs)
