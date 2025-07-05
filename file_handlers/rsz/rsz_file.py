@@ -1013,6 +1013,10 @@ class RszFile:
         self.header.prefab_count = len(self.prefab_infos)
         self.header.userdata_count = len(self.userdata_infos)
         
+        self.rsz_header.object_count = len(self.object_table)
+        self.rsz_header.instance_count = len(self.instance_infos)
+        self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
+            
         out = bytearray()
         
         # 1) Write header
