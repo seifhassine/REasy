@@ -122,29 +122,19 @@ class RszObjectOperations:
                     
                     self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
     
+    def _find_gameobject_by_id(self, gameobject_id):
+        for go in self.scn.gameobjects:
+            if go.id == gameobject_id:
+                return go
+        return None
+        
     def delete_gameobject(self, gameobject_id):
         """Delete a GameObject with the given ID"""
         if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
             QMessageBox.warning(self.viewer, "Error", f"Invalid GameObject ID: {gameobject_id}")
             return False
             
-        target_go = None
-        for go in self.scn.gameobjects:
-            if go.id == gameobject_id:
-                target_go = go
-                break
-        
-        if target_go is None:
-            print(f"Warning: GameObject with exact ID {gameobject_id} not found, attempting recovery...")
-            
-            instance_id = self.scn.object_table[gameobject_id] if gameobject_id < len(self.scn.object_table) else 0
-            if instance_id > 0:
-                for go in self.scn.gameobjects:
-                    if go.id < len(self.scn.object_table) and self.scn.object_table[go.id] == instance_id:
-                        target_go = go
-                        gameobject_id = go.id
-                        print(f"  Found GameObject at adjusted ID {gameobject_id}")
-                        break
+        target_go = self._find_gameobject_by_id(gameobject_id)
         
         if target_go is None:
             QMessageBox.warning(self.viewer, "Error", f"GameObject with ID {gameobject_id} not found")
