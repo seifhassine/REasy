@@ -93,11 +93,11 @@ class AdvancedTreeView(QTreeView):
         """Track shift key release"""
         super().keyReleaseEvent(event)
 
-    def setModelData(self, rootData):
+    def setModelData(self, root_data):
         """
         Helper to build a TreeModel from the nested dict.
         """
-        model = TreeModel(rootData)
+        model = TreeModel(root_data)
         self.setModel(model)
         header = self.header()
         header.setSectionResizeMode(0, QHeaderView.Stretch) 
@@ -145,8 +145,7 @@ class AdvancedTreeView(QTreeView):
         rows = model.rowCount(parent_index)
         for row in range(rows):
             child_index = model.index(row, 0, parent_index)
-            if child_index.isValid():
-                if model.hasChildren(child_index):
+            if child_index.isValid() and model.hasChildren(child_index):
                     self.expand(child_index)
                     self.create_widgets_for_children(child_index)
                     self.expand_all_children(child_index)
@@ -549,8 +548,7 @@ class AdvancedTreeView(QTreeView):
                     item.parent.data and item.parent.data[0] == "Advanced Information"):
                     result['is_resources_section'] = True
 
-        if item.data and len(item.data) > 0:
-            if item.data[0] == "Game Objects":
+        if item.data and len(item.data) > 0 and item.data[0] == "Game Objects":
                 result['is_gameobjects_root'] = True
         
         if hasattr(item, 'raw') and isinstance(item.raw, dict):
@@ -1413,8 +1411,7 @@ class AdvancedTreeView(QTreeView):
                     self, "Add Extension?", 
                     "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
                     QMessageBox.Yes | QMessageBox.No
-                ) == QMessageBox.Yes:
-                    if not path.endswith(".pfb"):
+                ) == QMessageBox.Yes and not path.endswith(".pfb"):
                         path += ".pfb"
             
             success = parent.object_operations.manage_gameobject_prefab(go_object_id, path)
