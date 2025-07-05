@@ -2,8 +2,6 @@ import struct
 import uuid
 import re
 
-from collections import defaultdict
-
 from PySide6.QtWidgets import (
     QMenu, QInputDialog, QMessageBox, 
     QTreeWidget, QTreeWidgetItem, QTreeView  
@@ -19,21 +17,24 @@ from utils.hex_util import (
 
 from .uvar.uvar_treeview import LazyTreeModel
 
+INVALID_VAR_IDX_STR = "Invalid variable index."
+FOUR_ULONGS = "<QQQQ"
+
 class VariableEntry:
     def __init__(self):
         self.guid = None
         self.name_offset = 0
-        self.floatOffset = 0
-        self.uknOffset = 0
-        self.typeVal = 0
-        self.numBits = 0
-        self.nameHash = 0
-        self.nameString = ""
-        self.nameMaxWchars = 0
-        self.offset_typeVal = None
-        self.offset_nameHash = None
-        self.sharedStringOffset = None
-        self.sharedStringItemID = None
+        self.float_offset = 0
+        self.ukn_offset = 0
+        self.type_val = 0
+        self.num_bits = 0
+        self.name_hash = 0
+        self.name_string = ""
+        self.name_max_wchars = 0
+        self.offset_typeval = None
+        self.offset_namehash = None
+        self.shared_string_offset = None
+        self.shared_string_itemid = None
 
 class UvarFile:
     def __init__(self, raw_data=None):
@@ -41,34 +42,33 @@ class UvarFile:
         self.start_pos = 0
         self.version = 0
         self.magic = 0
-        self.stringsOffset = 0
-        self.dataOffset = 0
-        self.embedsInfoOffset = 0
-        self.hashInfoOffset = 0
-        self.UVARhash = 0
-        self.variableCount = 0
-        self.embedCount = 0
+        self.strings_offset = 0
+        self.data_offset = 0
+        self.embeds_info_offset = 0
+        self.hash_info_offset = 0
+        self.uvar_hash = 0
+        self.variable_count = 0
+        self.embed_count = 0
         self.unkn64 = 0
         self.offset_version = None
         self.offset_magic = None
         self.variables = []
         self.strings = []
-        self.stringOffsets = []
-        self.embedOffsets = []
-        self.embeddedUvars = []
-        self.hashDataOffsets = [0, 0, 0, 0]
+        self.string_offsets = []
+        self.embed_offsets = []
+        self.embedded_uvars = []
+        self.hash_data_offsets = [0, 0, 0, 0]
         self.guids = []
-        self.guidMap = []
-        self.nameHashes = []
-        self.nameHashMap = []
-        self.offsetLinks = defaultdict(list)
+        self.guid_map = []
+        self.name_hashes = []
+        self.name_hash_map = []
         self.parent = None
         self.values = []
 
     def update_strings(self):
         title = self.strings[0] if self.strings else ""
-        self.strings = [title] + [var.nameString for var in self.variables]
-        for child in self.embeddedUvars:
+        self.strings = [title] + [var.name_string for var in self.variables]
+        for child in self.embedded_uvars:
             child.update_strings()
 
     def read(self, data: bytes, start_pos=0):
@@ -86,7 +86,7 @@ class UvarFile:
 
         if not available(data, offset, 32):
             return
-        self.stringsOffset, self.dataOffset, self.embedsInfoOffset, self.hashInfoOffset = struct.unpack_from("<QQQQ", data, offset)
+        self.strings_offset, self.data_offset, self.embeds_info_offset, self.hash_info_offset = struct.unpack_from(FOUR_ULONGS, data, offset)
         offset += 32
 
         if self.version < 3 and available(data, offset, 8):
@@ -94,30 +94,30 @@ class UvarFile:
             offset += 8
 
         if available(data, offset, 8):
-            self.UVARhash, self.variableCount, self.embedCount = struct.unpack_from("<IHH", data, offset)
+            self.uvar_hash, self.variable_count, self.embed_count = struct.unpack_from("<IHH", data, offset)
             offset += 8
 
-        if self.variableCount > 0 and self.dataOffset < len(data):
-            self._read_variables(data, self.start_pos + self.dataOffset)
+        if self.variable_count > 0 and self.data_offset < len(data):
+            self._read_variables(data, self.start_pos + self.data_offset)
 
-        if self.stringsOffset != 0:
-            self._read_strings(data, self.start_pos + self.stringsOffset, self.variableCount + 1)
+        if self.strings_offset != 0:
+            self._read_strings(data, self.start_pos + self.strings_offset, self.variable_count + 1)
 
-        if self.variableCount > 0:
+        if self.variable_count > 0:
             self._read_values(data)
 
-        if self.embedCount > 0 and self.embedsInfoOffset < len(data):
+        if self.embed_count > 0 and self.embeds_info_offset < len(data):
             self._read_embed_offsets(data)
 
-        self.embeddedUvars = []
-        for eoff in self.embedOffsets:
+        self.embedded_uvars = []
+        for eoff in self.embed_offsets:
             if eoff < len(data):
                 child = UvarFile(data)
                 child.parent = self
                 child.read(data, eoff)
-                self.embeddedUvars.append(child)
+                self.embedded_uvars.append(child)
 
-        if self.hashInfoOffset != 0 and self.variableCount > 0:
+        if self.hash_info_offset != 0 and self.variable_count > 0:
             self._read_hash_data(data)
 
         self._unify_variables_with_strings()
@@ -125,7 +125,7 @@ class UvarFile:
     def _read_variables(self, data: bytes, var_data_start: int):
         offset = var_data_start
         self.variables = []
-        for i in range(self.variableCount):
+        for _ in range(self.variable_count):
             if not available(data, offset, 48):
                 break
             v = VariableEntry()
@@ -136,28 +136,28 @@ class UvarFile:
             v.name_offset = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
             if 0 < v.name_offset < len(data):
-                nm, new_off, cnt = read_null_terminated_wstring(data, self.start_pos + v.name_offset)
-                v.nameString = nm
-                v.nameMaxWchars = cnt
+                nm, _, cnt = read_null_terminated_wstring(data, self.start_pos + v.name_offset)
+                v.name_string = nm
+                v.name_max_wchars = cnt
 
-            v.floatOffset, v.uknOffset = struct.unpack_from("<QQ", data, offset)
+            v.float_offset, v.ukn_offset = struct.unpack_from("<QQ", data, offset)
             offset += 16
 
-            v.offset_typeVal = offset
+            v.offset_typeval = offset
             combined = struct.unpack_from("<I", data, offset)[0]
             offset += 4
-            v.typeVal = combined & 0xFFFFFF
-            v.numBits = (combined >> 24) & 0xFF
+            v.type_val = combined & 0xFFFFFF
+            v.num_bits = (combined >> 24) & 0xFF
 
-            v.offset_nameHash = offset
-            v.nameHash = struct.unpack_from("<I", data, offset)[0]
+            v.offset_namehash = offset
+            v.name_hash = struct.unpack_from("<I", data, offset)[0]
             offset += 4
 
             self.variables.append(v)
 
     def _read_strings(self, data: bytes, strings_start: int, count: int):
         self.strings = []
-        self.stringOffsets = []
+        self.string_offsets = []
         offset = strings_start
         for _ in range(count):
             if offset >= len(data):
@@ -165,13 +165,13 @@ class UvarFile:
             str_start = offset
             s, new_off, _ = read_null_terminated_wstring(data, offset)
             self.strings.append(s)
-            self.stringOffsets.append((str_start, s))
+            self.string_offsets.append((str_start, s))
             offset = new_off
 
     def _read_values(self, data: bytes):
         self.values = []
-        values_start = self.start_pos + self.dataOffset + self.variableCount * 48
-        for i in range(self.variableCount):
+        values_start = self.start_pos + self.data_offset + self.variable_count * 48
+        for i in range(self.variable_count):
             pos = values_start + i * 4
             if available(data, pos, 4):
                 self.values.append(struct.unpack_from("<f", data, pos)[0])
@@ -179,62 +179,62 @@ class UvarFile:
                 self.values.append(0.0)
 
     def _read_embed_offsets(self, data: bytes):
-        base = self.start_pos + self.embedsInfoOffset
+        base = self.start_pos + self.embeds_info_offset
         cur = base
-        self.embedOffsets = []
-        for _ in range(self.embedCount):
+        self.embed_offsets = []
+        for _ in range(self.embed_count):
             if available(data, cur, 8):
                 eoff = struct.unpack_from("<Q", data, cur)[0]
-                self.embedOffsets.append(eoff)
+                self.embed_offsets.append(eoff)
                 cur += 8
 
     def _read_hash_data(self, data: bytes):
-        base = self.start_pos + self.hashInfoOffset
+        base = self.start_pos + self.hash_info_offset
         if not available(data, base, 32):
             return
-        self.hashDataOffsets = list(struct.unpack_from("<QQQQ", data, base))
-        guid_array_off = self.start_pos + self.hashDataOffsets[0]
-        guid_map_off   = self.start_pos + self.hashDataOffsets[1]
-        name_hashes_off = self.start_pos + self.hashDataOffsets[2]
-        name_hashmap_off = self.start_pos + self.hashDataOffsets[3]
+        self.hash_data_offsets = list(struct.unpack_from(FOUR_ULONGS, data, base))
+        guid_array_off = self.start_pos + self.hash_data_offsets[0]
+        guid_map_off   = self.start_pos + self.hash_data_offsets[1]
+        name_hashes_off = self.start_pos + self.hash_data_offsets[2]
+        name_hashmap_off = self.start_pos + self.hash_data_offsets[3]
 
         self.guids = []
-        for i in range(self.variableCount):
+        for i in range(self.variable_count):
             pos = guid_array_off + i * 16
             if available(data, pos, 16):
                 raw_g = data[pos:pos+16]
                 self.guids.append(str(uuid.UUID(bytes=bytes(raw_g))))
 
-        self.guidMap = []
-        for i in range(self.variableCount):
+        self.guid_map = []
+        for i in range(self.variable_count):
             pos = guid_map_off + i * 4
             if available(data, pos, 4):
                 val = struct.unpack_from("<I", data, pos)[0]
-                self.guidMap.append(val)
+                self.guid_map.append(val)
 
-        self.nameHashes = []
-        for i in range(self.variableCount):
+        self.name_hashes = []
+        for i in range(self.variable_count):
             pos = name_hashes_off + i * 4
             if available(data, pos, 4):
                 val = struct.unpack_from("<I", data, pos)[0]
-                self.nameHashes.append(val)
+                self.name_hashes.append(val)
 
-        self.nameHashMap = []
-        for i in range(self.variableCount):
+        self.name_hash_map = []
+        for i in range(self.variable_count):
             pos = name_hashmap_off + i * 4
             if available(data, pos, 4):
                 val = struct.unpack_from("<I", data, pos)[0]
-                self.nameHashMap.append(val)
+                self.name_hash_map.append(val)
 
     def _unify_variables_with_strings(self):
-        if not self.stringOffsets:
+        if not self.string_offsets:
             return
-        knownOffs = {off for off, s in self.stringOffsets}
+        known_offs = {off for off, s in self.string_offsets}
         for v in self.variables:
-            if v.name_offset in knownOffs:
-                v.sharedStringOffset = v.name_offset
+            if v.name_offset in known_offs:
+                v.shared_string_offset = v.name_offset
             else:
-                v.sharedStringOffset = None
+                v.shared_string_offset = None
 
     def patch_header_field_in_place(self, fieldname, new_val):
         if fieldname == "version":
@@ -253,47 +253,47 @@ class UvarFile:
 
         return (False, "Unsupported header field")
 
-    def patch_typeVal_in_place(self, var_index, new_typeVal):
+    def patch_typeval_in_place(self, var_index, new_typeval):
         if not (0 <= var_index < len(self.variables)):
-            return (False, "Invalid variable index.")
+            return (False, INVALID_VAR_IDX_STR)
         v = self.variables[var_index]
-        off = v.offset_typeVal
+        off = v.offset_typeval
         if off is None or not available(self.raw_data, off, 4):
             return (False, "Offset out of range for typeVal.")
-        combined = (new_typeVal & 0xFFFFFF) | (v.numBits << 24)
+        combined = (new_typeval & 0xFFFFFF) | (v.num_bits << 24)
         struct.pack_into("<I", self.raw_data, off, combined)
-        v.typeVal = new_typeVal
-        return (True, f"typeVal updated to {new_typeVal}")
+        v.type_val = new_typeval
+        return (True, f"typeVal updated to {new_typeval}")
 
-    def patch_nameHash_in_place(self, var_index, new_hash):
+    def patch_namehash_in_place(self, var_index, new_hash):
         if not (0 <= var_index < len(self.variables)):
-            return (False, "Invalid variable index.")
+            return (False, INVALID_VAR_IDX_STR)
         v = self.variables[var_index]
-        off = v.offset_nameHash
+        off = v.offset_namehash
         if off is None or not available(self.raw_data, off, 4):
             return (False, "Offset out of range for nameHash.")
         struct.pack_into("<I", self.raw_data, off, new_hash)
-        v.nameHash = new_hash
+        v.name_hash = new_hash
         return (True, f"nameHash updated to {new_hash}")
 
 
     def rename_variable_in_place(self, var_index, new_name):
         if not (0 <= var_index < len(self.variables)):
-            return (False, "Invalid variable index.")
+            return (False, INVALID_VAR_IDX_STR)
         var = self.variables[var_index]
-        var.nameString = new_name
-        var.nameMaxWchars = (len(new_name.encode("utf-16le")) + 2) // 2
+        var.name_string = new_name
+        var.name_max_wchars = (len(new_name.encode("utf-16le")) + 2) // 2
 
         new_hash = murmur3_hash(new_name.encode("utf-16le"))
-        var.nameHash = new_hash
+        var.name_hash = new_hash
 
         canonical_index = None
-        for i, mapping in enumerate(self.nameHashMap):
+        for i, mapping in enumerate(self.name_hash_map):
             if mapping == var_index:
                 canonical_index = i
                 break
         if canonical_index is not None:
-            self.nameHashes[canonical_index] = new_hash
+            self.name_hashes[canonical_index] = new_hash
 
         return (True, f"Name updated to {new_name}. New hash: {new_hash}")
 
@@ -306,13 +306,13 @@ class UvarFile:
             data_block.extend(struct.pack("<Q", 0))
 
             float_offset = header_size + count * 48 + i * 4
-            var.floatOffset = float_offset
+            var.float_offset = float_offset
             data_block.extend(struct.pack("<Q", float_offset))
             data_block.extend(struct.pack("<Q", 0))
 
-            combined = (var.typeVal & 0xFFFFFF) | ((var.numBits & 0xFF) << 24)
+            combined = (var.type_val & 0xFFFFFF) | ((var.num_bits & 0xFF) << 24)
             data_block.extend(struct.pack("<I", combined))
-            data_block.extend(struct.pack("<I", var.nameHash))
+            data_block.extend(struct.pack("<I", var.name_hash))
         return data_block
 
     def _build_values_block(self):
@@ -330,16 +330,16 @@ class UvarFile:
 
         relative_string_offsets = []
         for i, var in enumerate(self.variables):
-            s = self.strings[i+1] if len(self.strings) > i+1 else var.nameString
+            s = self.strings[i+1] if len(self.strings) > i+1 else var.name_string
             relative_string_offsets.append(len(strings_block))
             s_bytes = s.encode("utf-16le") + b"\x00\x00"
             strings_block.extend(s_bytes)
-            var.nameMaxWchars = len(s_bytes) // 2
+            var.name_max_wchars = len(s_bytes) // 2
 
         return strings_block, relative_string_offsets
 
     def _build_embed_blocks(self, strings_offset, strings_block_length):
-        embed_count = len(self.embeddedUvars)
+        embed_count = len(self.embedded_uvars)
         if embed_count == 0:
             return 0, bytearray(), bytearray()
 
@@ -348,7 +348,7 @@ class UvarFile:
         embedded_block = bytearray()
 
         embed_start = embed_info_offset + embed_count * 8
-        for child in self.embeddedUvars:
+        for child in self.embedded_uvars:
             child_offset = embed_start + len(embedded_block)
             embed_info_block.extend(struct.pack("<Q", child_offset))
             child_data = child.rebuild()
@@ -368,37 +368,37 @@ class UvarFile:
             name_hashes_offset = guid_map_offset + count * 4
             name_hashmap_offset = name_hashes_offset + count * 4
 
-            hashdata_block.extend(struct.pack("<QQQQ",
+            hashdata_block.extend(struct.pack(FOUR_ULONGS,
                                             guids_offset,
                                             guid_map_offset,
                                             name_hashes_offset,
                                             name_hashmap_offset))
             sorted_guid_pairs = sorted(
-                ((self.guids[i], self.guidMap[i]) for i in range(count)),
+                ((self.guids[i], self.guid_map[i]) for i in range(count)),
                 key=lambda pair: uuid.UUID(pair[0]).bytes_le
             )
             sorted_guids = [pair[0] for pair in sorted_guid_pairs]
-            sorted_guidMap = [pair[1] for pair in sorted_guid_pairs]
+            sorted_guid_map = [pair[1] for pair in sorted_guid_pairs]
             self.guids = sorted_guids
-            self.guidMap = sorted_guidMap
+            self.guid_map = sorted_guid_map
 
             for guid_str in self.guids:
                 hashdata_block.extend(uuid.UUID(guid_str).bytes)
-            for idx in self.guidMap:
+            for idx in self.guid_map:
                 hashdata_block.extend(struct.pack("<I", idx))
 
             sorted_pairs = sorted(
-                ((self.nameHashes[i], self.nameHashMap[i]) for i in range(count)),
+                ((self.name_hashes[i], self.name_hash_map[i]) for i in range(count)),
                 key=lambda pair: pair[0]
             )
-            sorted_nameHashes = [pair[0] for pair in sorted_pairs]
-            sorted_nameHashMap = [pair[1] for pair in sorted_pairs]
-            self.nameHashes = sorted_nameHashes
-            self.nameHashMap = sorted_nameHashMap
+            sorted_name_hashes = [pair[0] for pair in sorted_pairs]
+            sorted_name_hash_map = [pair[1] for pair in sorted_pairs]
+            self.name_hashes = sorted_name_hashes
+            self.name_hash_map = sorted_name_hash_map
 
-            for nh in self.nameHashes:
+            for nh in self.name_hashes:
                 hashdata_block.extend(struct.pack("<I", nh))
-            for nhm in self.nameHashMap:
+            for nhm in self.name_hash_map:
                 hashdata_block.extend(struct.pack("<I", nhm))
         return hashdata_block
 
@@ -407,7 +407,7 @@ class UvarFile:
 
         header_size = 48
         count = len(self.variables)
-        embed_count = len(self.embeddedUvars)
+        embed_count = len(self.embedded_uvars)
 
         data_block = self._build_data_block()
         values_block = self._build_values_block()
@@ -418,12 +418,12 @@ class UvarFile:
 
         strings_block, relative_string_offsets = self._build_strings_block()
 
-        self.stringOffsets = []
-        self.stringOffsets.append((strings_offset, self.strings[0] if self.strings else ""))
+        self.string_offsets = []
+        self.string_offsets.append((strings_offset, self.strings[0] if self.strings else ""))
         for i, rel_off in enumerate(relative_string_offsets):
             abs_off = strings_offset + rel_off
             s = self.strings[i+1] if i+1 < len(self.strings) else ""
-            self.stringOffsets.append((abs_off, s))
+            self.string_offsets.append((abs_off, s))
 
         for i in range(count):
             abs_off = strings_offset + relative_string_offsets[i]
@@ -449,7 +449,7 @@ class UvarFile:
         header.extend(struct.pack("<Q", header_size))
         header.extend(struct.pack("<Q", embed_info_offset))
         header.extend(struct.pack("<Q", hash_info_offset))
-        header.extend(struct.pack("<I", self.UVARhash))
+        header.extend(struct.pack("<I", self.uvar_hash))
         header.extend(struct.pack("<H", count))
         header.extend(struct.pack("<H", embed_count))
 
@@ -531,7 +531,7 @@ class UvarHandler(FileHandler):
             "meta": {"type": "uvarFile", "object": uvar}
         }
         header = {"text": "Header", "data": ["Header", ""], "children": []}
-        for field in ["version", "magic", "stringsOffset", "dataOffset", "embedsInfoOffset", "hashInfoOffset"]:
+        for field in ["version", "magic", "strings_offset", "data_offset", "embeds_info_offset", "hash_info_offset"]:
             header["children"].append({
                 "text": field,
                 "data": [field, str(getattr(uvar, field, ""))]
@@ -541,7 +541,7 @@ class UvarHandler(FileHandler):
                 "text": "unkn64",
                 "data": ["unkn64", str(uvar.unkn64)]
             })
-        for field in ["UVARhash", "variableCount", "embedCount"]:
+        for field in ["uvar_hash", "variable_count", "embed_count"]:
             header["children"].append({
                 "text": field,
                 "data": [field, str(getattr(uvar, field, ""))]
@@ -554,16 +554,16 @@ class UvarHandler(FileHandler):
                 "text": f"Variable[{i}]",
                 "data": [f"Variable[{i}]", ""],
                 "children": [],
-                "meta": {"type": "variable", "varIndex": i, "object": uvar}
+                "meta": {"type": "variable", "var_index": i, "object": uvar}
             }
             var_node["children"].append({"text": "GUID", "data": ["GUID", var.guid]})
-            var_node["children"].append({"text": "nameOffset", "data": ["nameOffset", str(var.name_offset)]})
-            var_node["children"].append({"text": "nameString", "data": ["nameString", var.nameString]})
-            var_node["children"].append({"text": "floatOffset", "data": ["floatOffset", str(var.floatOffset)]})
-            var_node["children"].append({"text": "uknOffset", "data": ["uknOffset", str(var.uknOffset)]})
-            var_node["children"].append({"text": "typeVal", "data": ["typeVal", str(var.typeVal)]})
-            var_node["children"].append({"text": "numBits", "data": ["numBits", str(var.numBits)]})
-            var_node["children"].append({"text": "nameHash", "data": ["nameHash", str(var.nameHash)]})
+            var_node["children"].append({"text": "name_offset", "data": ["name_offset", str(var.name_offset)]})
+            var_node["children"].append({"text": "name_string", "data": ["name_string", var.name_string]})
+            var_node["children"].append({"text": "float_offset", "data": ["float_offset", str(var.float_offset)]})
+            var_node["children"].append({"text": "ukn_offset", "data": ["ukn_offset", str(var.ukn_offset)]})
+            var_node["children"].append({"text": "type_val", "data": ["type_val", str(var.type_val)]})
+            var_node["children"].append({"text": "num_bits", "data": ["num_bits", str(var.num_bits)]})
+            var_node["children"].append({"text": "name_hash", "data": ["name_hash", str(var.name_hash)]})
             if i < len(uvar.values):
                 f_val = uvar.values[i]
             else:
@@ -575,32 +575,32 @@ class UvarHandler(FileHandler):
         node["children"].append(data_node)
         
         hash_node = {"text": "HashData", "data": ["HashData", ""], "children": []}
-        hash_node["children"].append({"text": "HashDataOffsets", "data": ["HashDataOffsets", str(uvar.hashDataOffsets)]})
+        hash_node["children"].append({"text": "hash_data_offsets", "data": ["hash_data_offsets", str(uvar.hash_data_offsets)]})
         guids_node = {"text": f"Guids[{len(uvar.guids)}]", "data": [f"Guids[{len(uvar.guids)}]", ""], "children": []}
         for i, g in enumerate(uvar.guids):
             guids_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", g]})
         hash_node["children"].append(guids_node)
-        guidmap_node = {"text": f"GuidMap[{len(uvar.guidMap)}]", "data": [f"GuidMap[{len(uvar.guidMap)}]", ""], "children": []}
-        for i, gm in enumerate(uvar.guidMap):
+        guidmap_node = {"text": f"guid_map[{len(uvar.guid_map)}]", "data": [f"guid_map[{len(uvar.guid_map)}]", ""], "children": []}
+        for i, gm in enumerate(uvar.guid_map):
             guidmap_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(gm)]})
         hash_node["children"].append(guidmap_node)
-        nh_node = {"text": f"nameHashes[{len(uvar.nameHashes)}]", "data": [f"nameHashes[{len(uvar.nameHashes)}]", ""], "children": []}
-        for i, nh in enumerate(uvar.nameHashes):
+        nh_node = {"text": f"name_hashes[{len(uvar.name_hashes)}]", "data": [f"name_hashes[{len(uvar.name_hashes)}]", ""], "children": []}
+        for i, nh in enumerate(uvar.name_hashes):
             nh_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(nh)]})
         hash_node["children"].append(nh_node)
-        nhm_node = {"text": f"nameHashMap[{len(uvar.nameHashMap)}]", "data": [f"nameHashMap[{len(uvar.nameHashMap)}]", ""], "children": []}
-        for i, nhm in enumerate(uvar.nameHashMap):
+        nhm_node = {"text": f"name_hash_map[{len(uvar.name_hash_map)}]", "data": [f"name_hash_map[{len(uvar.name_hash_map)}]", ""], "children": []}
+        for i, nhm in enumerate(uvar.name_hash_map):
             nhm_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(nhm)]})
         hash_node["children"].append(nhm_node)
-        e_offsets_node = {"text": f"embedOffsets[{len(uvar.embedOffsets)}]", "data": [f"embedOffsets[{len(uvar.embedOffsets)}]", ""], "children": []}
-        for i, eoff in enumerate(uvar.embedOffsets):
+        e_offsets_node = {"text": f"embed_offsets[{len(uvar.embed_offsets)}]", "data": [f"embed_offsets[{len(uvar.embed_offsets)}]", ""], "children": []}
+        for i, eoff in enumerate(uvar.embed_offsets):
             e_offsets_node["children"].append({"text": f"[{i}]", "data": [f"[{i}]", str(eoff)]})
         hash_node["children"].append(e_offsets_node)
         node["children"].append(hash_node)
         
-        if uvar.embeddedUvars:
-            embedded_node = {"text": f"Embedded UVARs [{len(uvar.embeddedUvars)}]", "data": ["Embedded UVARs", ""], "children": []}
-            for i, child in enumerate(uvar.embeddedUvars):
+        if uvar.embedded_uvars:
+            embedded_node = {"text": f"Embedded UVARs [{len(uvar.embedded_uvars)}]", "data": ["Embedded UVARs", ""], "children": []}
+            for i, child in enumerate(uvar.embedded_uvars):
                 child_node = self.build_lazy_tree(child, f"UVAR_File[{i}]")
                 embedded_node["children"].append(child_node)
             node["children"].append(embedded_node)
@@ -612,10 +612,10 @@ class UvarHandler(FileHandler):
         if meta is None:
             return menu
 
-        if meta.get("type") == "variable" or "varIndex" in meta:
+        if meta.get("type") == "variable" or "var_index" in meta:
             delete_action = menu.addAction("Delete Variable")
             delete_action.triggered.connect(
-                lambda: self._delete_variable(meta["object"], meta["varIndex"], tree)
+                lambda: self._delete_variable(meta["object"], meta["var_index"], tree)
             )
 
         if meta.get("type") == "uvarFile":
@@ -690,16 +690,16 @@ class UvarHandler(FileHandler):
             typ = meta.get("type")
 
             if typ == "value_float":
-                var_index = meta.get("varIndex")
+                var_index = meta.get("var_index")
                 target.values[var_index] = float(new_val)
 
             elif typ == "value_int":
-                var_index = meta.get("varIndex")
+                var_index = meta.get("var_index")
                 int_val = int(new_val)
                 target.values[var_index] = struct.unpack("<f", struct.pack("<I", int_val))[0]
 
-            elif typ == "nameString":
-                var_index = meta.get("varIndex")
+            elif typ == "name_string":
+                var_index = meta.get("var_index")
                 ok, msg = target.rename_variable_in_place(var_index, new_val)
                 if not ok:
                     QMessageBox.critical(parent_widget, "Error", msg)
@@ -707,7 +707,7 @@ class UvarHandler(FileHandler):
                 else:
                     QMessageBox.information(parent_widget, "Success", msg)
 
-            elif typ == "headerInt":
+            elif typ == "header_int":
                 ival = int(new_val)
                 field_name = meta.get("field")
                 ok, msg = target.patch_header_field_in_place(field_name, ival)
@@ -717,32 +717,32 @@ class UvarHandler(FileHandler):
                 else:
                     QMessageBox.information(parent_widget, "Success", msg)
 
-            elif typ == "varTypeVal":
-                var_index = meta.get("varIndex")
+            elif typ == "var_type_val":
+                var_index = meta.get("var_index")
                 ival = int(new_val)
-                ok, msg = target.patch_typeVal_in_place(var_index, ival)
+                ok, msg = target.patch_typeval_in_place(var_index, ival)
                 if not ok:
                     QMessageBox.critical(parent_widget, "Error", msg)
                     return
                 else:
                     QMessageBox.information(parent_widget, "Success", msg)
 
-            elif typ == "varNameHash":
-                var_index = meta.get("varIndex")
+            elif typ == "var_name_hash":
+                var_index = meta.get("var_index")
                 new_key = int(new_val)
-                ok, msg = target.patch_nameHash_in_place(var_index, new_key)
+                ok, msg = target.patch_namehash_in_place(var_index, new_key)
                 if not ok:
                     QMessageBox.critical(parent_widget, "Error", msg)
                     return
                 canonical_index = None
-                for i, mapping in enumerate(target.nameHashMap):
+                for i, mapping in enumerate(target.name_hash_map):
                     if mapping == var_index:
                         canonical_index = i
                         break
                 if canonical_index is None:
                     QMessageBox.critical(parent_widget, "Error", "No canonical mapping found for this variable.")
                     return
-                target.nameHashes[canonical_index] = new_key
+                target.name_hashes[canonical_index] = new_key
 
             elif typ == "guid":
                 try:
@@ -750,13 +750,13 @@ class UvarHandler(FileHandler):
                 except Exception as e:
                     QMessageBox.critical(parent_widget, "Error", f"Invalid GUID: {new_val}\n{e}")
                     return
-                var_index = meta.get("varIndex")
+                var_index = meta.get("var_index")
                 target.variables[var_index].guid = new_guid
 
             target.guids = [v.guid for v in target.variables]
-            target.guidMap = list(range(len(target.variables)))
-            target.nameHashes = [v.nameHash for v in target.variables]
-            target.nameHashMap = list(range(len(target.variables)))
+            target.guid_map = list(range(len(target.variables)))
+            target.name_hashes = [v.name_hash for v in target.variables]
+            target.name_hash_map = list(range(len(target.variables)))
 
             target.update_strings()
 
@@ -846,19 +846,19 @@ class UvarHandler(FileHandler):
 
         try:
             del target_uvar.variables[var_index]
-            target_uvar.variableCount = len(target_uvar.variables)
+            target_uvar.variable_count = len(target_uvar.variables)
 
             title = target_uvar.strings[0] if target_uvar.strings else ""
-            target_uvar.strings = [title] + [v.nameString for v in target_uvar.variables]
+            target_uvar.strings = [title] + [v.name_string for v in target_uvar.variables]
 
             target_uvar.guids = [v.guid for v in target_uvar.variables]
-            target_uvar.guidMap = list(range(target_uvar.variableCount))
-            target_uvar.nameHashes = [v.nameHash for v in target_uvar.variables]
-            target_uvar.nameHashMap = list(range(target_uvar.variableCount))
+            target_uvar.guid_map = list(range(target_uvar.variable_count))
+            target_uvar.name_hashes = [v.name_hash for v in target_uvar.variables]
+            target_uvar.name_hash_map = list(range(target_uvar.variable_count))
 
-            if len(target_uvar.values) > target_uvar.variableCount:
-                target_uvar.values = target_uvar.values[:target_uvar.variableCount]
-            while len(target_uvar.values) < target_uvar.variableCount:
+            if len(target_uvar.values) > target_uvar.variable_count:
+                target_uvar.values = target_uvar.values[:target_uvar.variable_count]
+            while len(target_uvar.values) < target_uvar.variable_count:
                 target_uvar.values.append(0.0)
 
             current = target_uvar
@@ -873,7 +873,7 @@ class UvarHandler(FileHandler):
 
     def add_variables(self, target_uvar, prefix: str, count: int):
         MAX_VARIABLES = 65535
-        if target_uvar.variableCount + count > MAX_VARIABLES:
+        if target_uvar.variable_count + count > MAX_VARIABLES:
             raise ValueError(f"Cannot add variables: adding {count} would exceed max {MAX_VARIABLES}.")
 
         if prefix:
@@ -881,7 +881,7 @@ class UvarHandler(FileHandler):
             start = 1
             width = 0
         elif target_uvar.variables:
-            last_name = target_uvar.variables[-1].nameString.strip()
+            last_name = target_uvar.variables[-1].name_string.strip()
             m = re.search(r'(.*?)(\d+)$', last_name)
             if m:
                 base_prefix = m.group(1)
@@ -902,23 +902,23 @@ class UvarHandler(FileHandler):
             var.guid = str(uuid.uuid4())
             num_str = f"{start + i:0{width}d}" if width else str(start + i)
             new_name = f"{base_prefix}{num_str}"
-            var.nameString = new_name
-            var.nameHash = murmur3_hash(new_name.encode("utf-16le"))
-            var.typeVal = 2
-            var.numBits = 0
+            var.name_string = new_name
+            var.name_hash = murmur3_hash(new_name.encode("utf-16le"))
+            var.type_val = 2
+            var.num_bits = 0
             new_vars.append(var)
 
-        original_count = target_uvar.variableCount
+        original_count = target_uvar.variable_count
         target_uvar.variables.extend(new_vars)
-        target_uvar.variableCount += count
+        target_uvar.variable_count += count
 
         title = target_uvar.strings[0] if target_uvar.strings else ""
-        target_uvar.strings = [title] + [v.nameString for v in target_uvar.variables]
+        target_uvar.strings = [title] + [v.name_string for v in target_uvar.variables]
 
         target_uvar.guids.extend([v.guid for v in new_vars])
-        target_uvar.guidMap.extend(range(original_count, original_count + count))
-        target_uvar.nameHashes.extend([v.nameHash for v in new_vars])
-        target_uvar.nameHashMap.extend(range(original_count, original_count + count))
+        target_uvar.guid_map.extend(range(original_count, original_count + count))
+        target_uvar.name_hashes.extend([v.name_hash for v in new_vars])
+        target_uvar.name_hash_map.extend(range(original_count, original_count + count))
         target_uvar.values.extend([0.0] * count)
 
         current = target_uvar
@@ -930,33 +930,49 @@ class UvarHandler(FileHandler):
         self.uvar.update_strings()
 
     def validate_edit(self, meta: dict, new_val: str, old_val: str = None) -> bool:
-        try:
-            typ = meta.get("type")
-
-            if typ == "value_float":
-                float(new_val)
-            elif typ == "value_int":
-                int(new_val)
-            elif typ == "nameString":
-                if not new_val or len(new_val) > 255:
-                    return False
-            elif typ == "headerInt":
-                int(new_val)
-            elif typ == "varTypeVal":
-                val = int(new_val)
-                if not (0 <= val <= 0xFFFFFF):
-                    return False
-            elif typ == "varNameHash":
-                val = int(new_val)
-                if not (0 <= val <= 0xFFFFFFFF):
-                    return False
-            elif typ == "guid":
-                uuid.UUID(new_val.strip())
-            else:
-                return False
-
+        def validate_float(val):
+            float(val)
             return True
 
+        def validate_int(val):
+            int(val)
+            return True
+
+        def validate_name_string(val):
+            return bool(val) and len(val) <= 255
+
+        def validate_header_int(val):
+            int(val)
+            return True
+
+        def validate_var_type_val(val):
+            v = int(val)
+            return 0 <= v <= 0xFFFFFF
+
+        def validate_var_name_hash(val):
+            v = int(val)
+            return 0 <= v <= 0xFFFFFFFF
+
+        def validate_guid(val):
+            uuid.UUID(val.strip())
+            return True
+
+        validators = {
+            "value_float": validate_float,
+            "value_int": validate_int,
+            "nameString": validate_name_string,
+            "headerInt": validate_header_int,
+            "varTypeVal": validate_var_type_val,
+            "varNameHash": validate_var_name_hash,
+            "guid": validate_guid,
+        }
+
+        typ = meta.get("type")
+        validator = validators.get(typ)
+        try:
+            if not validator:
+                return False
+            return validator(new_val)
         except (ValueError, TypeError, uuid.UUID.Error):
             return False
 
