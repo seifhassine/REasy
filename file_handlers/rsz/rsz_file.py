@@ -1621,7 +1621,7 @@ class RszFile:
 
         return bytes(out)
     
-    def _build_rsz_section(self, out: bytearray, special_align_enabled = False) -> int:
+    def _build_rsz_section(self, out: bytearray, special_align_enabled = False):
         """Build the RSZ section that's common to all file formats.
         Returns the rsz_start position."""
         # Ensure RSZ header starts on 16-byte alignment
@@ -1696,8 +1696,6 @@ class RszFile:
             new_userdata_offset
         )
         out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
-        
-        return
 
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""
