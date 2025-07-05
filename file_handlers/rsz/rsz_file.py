@@ -1,6 +1,12 @@
 import struct
 import uuid
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import (
+    StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
+    Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
+    ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
+    GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
+    ArrayData, MaybeObject, get_type_class
+)
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
@@ -419,8 +425,10 @@ class RszFile:
             fi = RszFolderInfo()
             self._current_offset = fi.parse(data, self._current_offset)
             self.folder_infos.append(fi)
-        if not self.filepath.lower().endswith('.18'): self._current_offset = _align(self._current_offset, 16)
-        else: self._current_offset += 16
+        if not self.filepath.lower().endswith('.18'): 
+            self._current_offset = _align(self._current_offset, 16)
+        else: 
+            self._current_offset += 16
 
     def _parse_resource_infos(self, data):
         for i in range(self.header.resource_count):
@@ -625,7 +633,7 @@ class RszFile:
                         else:
                             print(f"ERROR: Could not find type info for struct type: {original_type}")
                     else:
-                        print(f"ERROR: Missing original_type for StructData or type_registry not available")
+                        print("ERROR: Missing original_type for StructData or type_registry not available")
 
         elif field_def.get("array", False):
 
@@ -951,6 +959,8 @@ class RszFile:
             type_info = self.type_registry.get_type_info(inst_info.type_id)
             if not type_info:
                 continue
+            if not fields:
+                continue
                 
             fields_def = type_info.get("fields", [])
             
@@ -958,15 +968,13 @@ class RszFile:
                 field_name = field_def["name"]
                 if field_def["type"] == "Resource":
 
-                    if field_def['array'] == False:
-                        if fields[field_name].value and fields[field_name].value not in resources:
+                    if not field_def['array']:
+                        if fields[field_name].value and fields[field_name].value not in resources and len(fields[field_name].value.rstrip('\x00')) > 0:
                             resources.append(fields[field_name].value)
-                            print(f"Found dynamic resource: {fields[field_name].value}")
                     else:
                         for element in fields[field_name].values:
-                            if element.value and element.value not in resources:
+                            if element.value and element.value not in resources and len(element.value.rstrip('\x00')) > 0:
                                 resources.append(element.value)
-                                print(f"Found dynamic resource: {element.value}")
         return resources
 
     def build(self, special_align_enabled = False) -> bytes:
@@ -1593,7 +1601,7 @@ class RszFile:
             out += string_data
 
         # 8) Build the common RSZ section
-        rsz_start = self._build_rsz_section(out, special_align_enabled)
+        self._build_rsz_section(out, special_align_enabled)
 
         # 9) Update PFB header
         header_bytes = struct.pack(
@@ -1689,7 +1697,7 @@ class RszFile:
         )
         out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
         
-        return rsz_start
+        return
 
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""
