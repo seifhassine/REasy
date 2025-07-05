@@ -604,7 +604,7 @@ class RszEmbeddedArrayOperations:
                 )
             elif element_class == UserDataData:
                 new_elem = self._create_new_embedded_userdata_for_array(
-                    type_id, type_info, element_type, array_data, parent_context, parent_instance_id
+                    type_id, type_info, element_type, array_data, parent_context
                 )
             else:
                 new_elem = self.viewer._create_default_field(element_class, array_data.orig_type)
@@ -662,7 +662,7 @@ class RszEmbeddedArrayOperations:
                     return True
         return False
         
-    def _create_new_embedded_userdata_for_array(self, type_id, type_info, element_type, array_data, rui, parent_id):
+    def _create_new_embedded_userdata_for_array(self, type_id, type_info, element_type, array_data, rui):
         if not hasattr(rui, 'embedded_userdata_infos'):
             print("Error: RSZUserDataInfo doesn't have embedded_userdata_infos")
             return None

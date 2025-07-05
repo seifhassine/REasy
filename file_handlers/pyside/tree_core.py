@@ -26,12 +26,12 @@ class TreeItem:
             self._children = None  # Lazy loading - load children on demand
         else:
             self.children = []     # Eager loading - load children immediately
-            self._loadChildren()
+            self._load_children()
 
-    def childCount(self):
+    def child_count(self):
         if self.lazy_loading:
             if self._children is None:
-                self._loadChildren()
+                self._load_children()
             return len(self._children)
         else:
             return len(self.children)
@@ -39,7 +39,7 @@ class TreeItem:
     def child(self, row):
         if self.lazy_loading:
             if self._children is None:
-                self._loadChildren()
+                self._load_children()
             return self._children[row] if 0 <= row < len(self._children) else None
         else:
             return self.children[row] if 0 <= row < len(self.children) else None
@@ -52,7 +52,7 @@ class TreeItem:
                 return self.parent.children.index(self) if self in self.parent.children else 0
         return 0
 
-    def _loadChildren(self):
+    def _load_children(self):
         """Load children from the raw data dict"""
         children_list = [] if self.lazy_loading else self.children
         
@@ -67,40 +67,40 @@ class TreeItem:
 class TreeModel(QAbstractItemModel):
     """Unified tree model implementation with optional lazy loading"""
     
-    def __init__(self, rootData, parent=None, lazy_loading=False):
+    def __init__(self, root_data, parent=None, lazy_loading=False):
         super().__init__(parent)
-        self.rootItem = TreeItem(rootData, lazy_loading=lazy_loading)
+        self.rootItem = TreeItem(root_data, lazy_loading=lazy_loading)
         self.row_height = 24 
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
         if not parent.isValid():
-            parentItem = self.rootItem
+            parent_item = self.rootItem
         else:
-            parentItem = parent.internalPointer()
-        childItem = parentItem.child(row)
-        if childItem:
-            return self.createIndex(row, column, childItem)
+            parent_item = parent.internalPointer()
+        child_item = parent_item.child(row)
+        if child_item:
+            return self.createIndex(row, column, child_item)
         return QModelIndex()
 
     def parent(self, index):
         if not index.isValid():
             return QModelIndex()
-        childItem = index.internalPointer()
-        parentItem = childItem.parent
-        if parentItem == self.rootItem or parentItem is None:
+        child_item = index.internalPointer()
+        parent_item = child_item.parent
+        if parent_item == self.rootItem or parent_item is None:
             return QModelIndex()
-        return self.createIndex(parentItem.row(), 0, parentItem)
+        return self.createIndex(parent_item.row(), 0, parent_item)
 
     def rowCount(self, parent=QModelIndex()):
         if parent.column() > 0:
             return 0
         if not parent.isValid():
-            parentItem = self.rootItem
+            parent_item = self.rootItem
         else:
-            parentItem = parent.internalPointer()
-        return parentItem.childCount()
+            parent_item = parent.internalPointer()
+        return parent_item.child_count()
 
     def columnCount(self, parent=QModelIndex()):
         return 1
@@ -158,14 +158,14 @@ class TreeModel(QAbstractItemModel):
             
         # Begin row insertion - tell views that we're adding a new item
         parent_index = self.getIndexFromItem(parent_item)
-        position = parent_item.childCount()
+        position = parent_item.child_count()
         self.beginInsertRows(parent_index, position, position)
         
         # Create the new tree item and add it as a child
         new_item = TreeItem(child_data, parent_item, lazy_loading=parent_item.lazy_loading)
         if parent_item.lazy_loading:
             if parent_item._children is None:
-                parent_item._loadChildren()
+                parent_item._load_children()
             parent_item._children.append(new_item)
         else:
             parent_item.children.append(new_item)
@@ -193,7 +193,7 @@ class TreeModel(QAbstractItemModel):
             
         self.beginRemoveRows(parent, row, row + count - 1)
         
-        for i in range(count):
+        for _ in range(count):
             del parent_item.children[row]
             
         self.endRemoveRows()

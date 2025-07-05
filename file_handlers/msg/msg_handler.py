@@ -65,8 +65,8 @@ class MsgHandler(BaseFileHandler):
         self.raw_data: bytes | bytearray = b""
         self.is_encrypted = False
 
-    @staticmethod
-    def can_handle(data: bytes) -> bool:
+    @classmethod
+    def can_handle(cls, data: bytes) -> bool:
         return len(data) >= 8 and data[4:8] == b"GMSG"
 
     def supports_editing(self) -> bool:
@@ -315,7 +315,12 @@ class MsgHandler(BaseFileHandler):
         elif ftype == "attribute":
             aidx = meta["attr_index"]
             atype = self.attribute_value_types[aidx]
-            entry["attributes"][aidx] = int(new) if atype == 0 else float(new) if atype == 1 else new
+            if atype == 0:
+                entry["attributes"][aidx] = int(new)
+            elif atype == 1:
+                entry["attributes"][aidx] = float(new)
+            else:
+                entry["attributes"][aidx] = new
 
     def _parse_header(self) -> Dict[str, Any]:
         r = self.raw_data

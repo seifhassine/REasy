@@ -3,9 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from file_handlers.base_handler import FileHandler
-from file_handlers.rcol_file import RcolFile, guid_le_to_str, parse_instance_fields
+from file_handlers.rcol_file import RcolFile, guid_le_to_str
 from utils.type_registry import TypeRegistry
-from settings import *
+from settings import ensure_json_path
 
 
 class RcolHandler(FileHandler):
@@ -16,8 +16,8 @@ class RcolHandler(FileHandler):
         self.app = None
         self.type_registry = None
     
-    @staticmethod
-    def can_handle(data: bytes) -> bool:
+    @classmethod
+    def can_handle(cls, data: bytes) -> bool:
         if len(data) < 4:
             return False
         sig = struct.unpack_from("<I", data, 0)[0]

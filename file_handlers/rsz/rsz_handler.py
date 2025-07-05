@@ -37,6 +37,7 @@ from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
 
+RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot manually manage resources."
 
 class RszHandler(BaseFileHandler):
     """Handler for SCN/PFB/USR files"""
@@ -70,7 +71,8 @@ class RszHandler(BaseFileHandler):
             
         EnumManager.instance().game_version = value
 
-    def can_handle(data: bytes) -> bool:
+    @classmethod
+    def can_handle(cls, data: bytes) -> bool:
         """Check if data appears to be an SCN, USR, PFB file"""
         if len(data) < 4:
             return False
@@ -294,10 +296,7 @@ class RszViewer(QWidget):
 
     def handle_edit(self, meta: dict, new_val, old_val, row_id):
         return self.rebuild()
-
-    def update_strings(self):
-        pass
-
+    
     def populate_tree(self):
         print("Populating tree")
         self.tree.setModelData(self._build_tree_data())
@@ -306,7 +305,12 @@ class RszViewer(QWidget):
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         root_dict["type"] = "root"
-        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb                                              else "SCN"
+        if self.scn.is_usr:
+            file_type = "USR"
+        elif self.scn.is_pfb:
+            file_type = "PFB"
+        else:
+            file_type = "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
             advanced_node = ScnTreeBuilder.create_advanced_node()
@@ -1497,7 +1501,7 @@ class RszViewer(QWidget):
         """Update an existing resource path"""
 
         if(self.handler.auto_resource_management):
-            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+            raise ValueError(RES_MGMT_MESSAGE)
         
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
             return False
@@ -1527,7 +1531,7 @@ class RszViewer(QWidget):
         """Add a new resource path"""
 
         if(self.handler.auto_resource_management):
-            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+            raise ValueError(RES_MGMT_MESSAGE)
         
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
@@ -1553,7 +1557,7 @@ class RszViewer(QWidget):
     def delete_resource(self, resource_index):
         
         if(self.handler.auto_resource_management):
-            raise ValueError("Auto resource management is enabled for this game, cannot manually manage resources.")
+            raise ValueError(RES_MGMT_MESSAGE)
         
         """Delete a resource path"""
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):

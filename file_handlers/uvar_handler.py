@@ -22,7 +22,7 @@ from .uvar.uvar_treeview import LazyTreeModel
 class VariableEntry:
     def __init__(self):
         self.guid = None
-        self.nameOffset = 0
+        self.name_offset = 0
         self.floatOffset = 0
         self.uknOffset = 0
         self.typeVal = 0
@@ -133,10 +133,10 @@ class UvarFile:
             v.guid = str(uuid.UUID(bytes=bytes(guid_bytes)))
             offset += 16
 
-            v.nameOffset = struct.unpack_from("<Q", data, offset)[0]
+            v.name_offset = struct.unpack_from("<Q", data, offset)[0]
             offset += 8
-            if 0 < v.nameOffset < len(data):
-                nm, new_off, cnt = read_null_terminated_wstring(data, self.start_pos + v.nameOffset)
+            if 0 < v.name_offset < len(data):
+                nm, new_off, cnt = read_null_terminated_wstring(data, self.start_pos + v.name_offset)
                 v.nameString = nm
                 v.nameMaxWchars = cnt
 
@@ -231,8 +231,8 @@ class UvarFile:
             return
         knownOffs = {off for off, s in self.stringOffsets}
         for v in self.variables:
-            if v.nameOffset in knownOffs:
-                v.sharedStringOffset = v.nameOffset
+            if v.name_offset in knownOffs:
+                v.sharedStringOffset = v.name_offset
             else:
                 v.sharedStringOffset = None
 
@@ -428,7 +428,7 @@ class UvarFile:
         for i in range(count):
             abs_off = strings_offset + relative_string_offsets[i]
             struct.pack_into("<Q", data_block, i * 48 + 16, abs_off)
-            self.variables[i].nameOffset = abs_off
+            self.variables[i].name_offset = abs_off
 
         if embed_count > 0:
             embed_info_offset, embed_info_block, embedded_block = self._build_embed_blocks(strings_offset, len(strings_block))
@@ -557,7 +557,7 @@ class UvarHandler(FileHandler):
                 "meta": {"type": "variable", "varIndex": i, "object": uvar}
             }
             var_node["children"].append({"text": "GUID", "data": ["GUID", var.guid]})
-            var_node["children"].append({"text": "nameOffset", "data": ["nameOffset", str(var.nameOffset)]})
+            var_node["children"].append({"text": "nameOffset", "data": ["nameOffset", str(var.name_offset)]})
             var_node["children"].append({"text": "nameString", "data": ["nameString", var.nameString]})
             var_node["children"].append({"text": "floatOffset", "data": ["floatOffset", str(var.floatOffset)]})
             var_node["children"].append({"text": "uknOffset", "data": ["uknOffset", str(var.uknOffset)]})
