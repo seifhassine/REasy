@@ -386,9 +386,6 @@ class RszGameObjectClipboard:
                         display_name = original_name if original_name else RszGameObjectClipboard.DEFAULT_GO_NAME
                         print(f"Using name '{display_name}' for child GameObject (original: '{original_name}')")
                     
-                    if not RszGameObjectClipboard._set_gameobject_name(viewer, new_instance_id, display_name):
-                        print(f"WARNING: Failed to set GameObject name to '{display_name}', UI might show incorrect name")
-                
                 RszGameObjectClipboard._update_chainsaw_context_id_group(
                     viewer, old_instance_id, new_fields, context_id_offset, instance_data
                 )
@@ -902,6 +899,7 @@ class RszGameObjectClipboard:
             name = RszGameObjectClipboard.DEFAULT_GO_NAME
             
         if instance_id <= 0 or instance_id not in viewer.scn.parsed_elements:
+            print("shit 2")
             return False
             
         fields = viewer.scn.parsed_elements[instance_id]
