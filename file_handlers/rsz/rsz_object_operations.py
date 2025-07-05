@@ -49,7 +49,9 @@ class RszObjectOperations:
         gameobject_fields = {}
         self.viewer._initialize_fields_from_type_info(gameobject_fields, type_info)
         
-        first_field = list(gameobject_fields.values())[0]
+        fields = list(gameobject_fields.values())
+        first_field = fields[0] if fields else None
+        
         if hasattr(first_field, "__class__") and first_field.__class__.__name__ == "StringData":
             first_field.value = name
             print(f"Setting GameObject name '{name}' in first field")

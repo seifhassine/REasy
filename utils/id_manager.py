@@ -9,6 +9,7 @@ class IdManager:
     """
     _instance = None
     
+    @staticmethod
     def instance():
         return IdManager()
     

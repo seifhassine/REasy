@@ -825,8 +825,8 @@ class RszArrayClipboard:
         if parent_instance_id is not None and parent_field_name is not None and hasattr(viewer, "array_operations"):
             if hasattr(viewer.array_operations, "_calculate_insertion_index"):
                 return viewer.array_operations._calculate_insertion_index(parent_instance_id, parent_field_name)
-           
-        raise("Cannot calculate insertion index for object graph paste")
+
+        raise RuntimeError("Cannot calculate insertion index for object graph paste")
 
     @staticmethod
     def _paste_object_graph(viewer, element_data, array_data, insertion_index):
