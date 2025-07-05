@@ -714,7 +714,6 @@ class CommunityTemplatesDialog(QDialog):
                     header_layout.addWidget(time_label)
                 except Exception as e:
                     print(f"Error formatting timestamp: {e}")
-                    pass
             
             header_layout.addStretch()
             comment_layout.addLayout(header_layout)
