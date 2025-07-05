@@ -3,11 +3,9 @@
 import os
 import sys
 import uuid
-import json
 import struct
 import weakref
 import datetime
-import shutil
 import re
 
 from file_handlers.factory import get_handler_for_data 
@@ -97,7 +95,7 @@ def create_standard_dialog(parent, title, geometry=None):
             if len(w_h) == 2:
                 w, h = int(w_h[0]), int(w_h[1])
                 dialog.resize(w, h)
-        except:
+        except Exception:
             pass
     bg_color = dialog.palette().color(dialog.backgroundRole()).name()
     return dialog, bg_color
@@ -716,7 +714,7 @@ class FileTab:
                     friendly_time = dt.strftime("%Y-%m-%d %H:%M:%S")
                     full_path = os.path.join(backups_dir, filename)
                     result.append((friendly_time, full_path, filename))
-                except:
+                except Exception:
                     continue
                     
         return sorted(result, reverse=True)
@@ -732,7 +730,7 @@ class FileTab:
                     if hasattr(self.viewer, "modified_changed"):
                         try:
                             self.viewer.modified_changed.disconnect()
-                        except:
+                        except Exception:
                             pass
                 
                     layout = self.notebook_widget.layout()
@@ -764,12 +762,12 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.3.1-R3")
+        self.setWindowTitle("REasy Editor v0.3.2")
         set_app_icon(self)
 
         try:
             self.settings = load_settings()
-        except:
+        except Exception:
             self.settings = DEFAULT_SETTINGS.copy()
 
         if "keyboard_shortcuts" not in self.settings:
@@ -1322,7 +1320,6 @@ class REasyEditorApp(QMainWindow):
             self.settings["backup_on_save"] = backup_box.isChecked()
             self.settings["keyboard_shortcuts"] = shortcuts
             
-            old_version = self.settings.get("game_version", "RE4")
             new_version = game_version_combo.currentText()
             self.settings["game_version"] = new_version
             
@@ -1455,7 +1452,7 @@ class REasyEditorApp(QMainWindow):
             tab = FileTab(None, filename, data, app=self)
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else "Untitled"
-            tab_index = self.notebook.addTab(tab.notebook_widget, tab_label)
+            _ = self.notebook.addTab(tab.notebook_widget, tab_label)
             self.tabs[tab.notebook_widget] = tab
             self.notebook.setCurrentWidget(tab.notebook_widget)
             
@@ -1464,7 +1461,7 @@ class REasyEditorApp(QMainWindow):
             if tab and hasattr(tab, 'notebook_widget') and tab.notebook_widget:
                 try:
                     tab.notebook_widget.deleteLater()
-                except:
+                except Exception:
                     pass
 
     def get_active_tab(self):
