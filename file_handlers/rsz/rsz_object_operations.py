@@ -10,7 +10,10 @@ This file contains utility methods for:
 
 import uuid
 from PySide6.QtWidgets import QMessageBox
-from .rsz_data_types import *
+from .rsz_data_types import (
+    get_type_class, ObjectData, ArrayData, 
+    UserDataData, S32Data
+)
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
 
@@ -186,8 +189,15 @@ class RszObjectOperations:
             if gameobject_id >= len(self.scn.object_table):
                 return False
             
+            def should_delete_prefab(gameobject):
+                for other_go in self.scn.gameobjects:
+                    if other_go != gameobject and other_go.prefab_id == gameobject.prefab_id:
+                        print(f"  Skipping prefab deletion: prefab_id {gameobject.prefab_id} is still used by other GameObjects")
+                        return False
+                return True
+            
             if not self.scn.is_pfb and not self.scn.is_usr and hasattr(gameobject, 'prefab_id'):
-                if gameobject.prefab_id >= 0:
+                if gameobject.prefab_id >= 0 and should_delete_prefab(gameobject):
                     _ = self._delete_prefab_for_object(gameobject.prefab_id)
             
             gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
@@ -197,7 +207,7 @@ class RszObjectOperations:
                 
             for go in reversed(gameobject_refs_to_delete):
                 if go != gameobject and not self.scn.is_pfb and not self.scn.is_usr and hasattr(go, 'prefab_id'):
-                    if go.prefab_id >= 0:
+                    if go.prefab_id >= 0 and should_delete_prefab(go):
                         _ = self._delete_prefab_for_object(go.prefab_id)
                 
                 self._delete_all_components_of_gameobject(go)
@@ -935,7 +945,7 @@ class RszObjectOperations:
             bool: True if the operation was successful
         """
         if self.scn.is_pfb or self.scn.is_usr:
-            print(f"Prefabs can't be modified in PFB/USR files")
+            print("Prefabs can't be modified in PFB/USR files")
             return False
             
         if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
@@ -1004,7 +1014,7 @@ class RszObjectOperations:
             return
         
         if type_info["name"] == "chainsaw.ContextID":
-            print(f"Found chainsaw.ContextID instance, updating _Group field")
+            print("Found chainsaw.ContextID instance, updating _Group field")
             
             if "_Group" in fields and isinstance(fields["_Group"], S32Data):
                 original_value = fields["_Group"].value
