@@ -285,9 +285,9 @@ class TemplateManagerDialog(QDialog):
                 if modified:
                     dt = datetime.fromisoformat(modified)
                     modified = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                pass
-                
+            except Exception as e:
+                print(f"Error formatting timestamp: {e}")
+
             self.created_label.setText(f"Created: {created}")
             self.modified_label.setText(f"Modified: {modified}")
             

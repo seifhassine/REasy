@@ -61,8 +61,8 @@ class RszCommunityTemplateManager:
         try:
             if os.path.exists(_AUTH_PATH):
                 os.remove(_AUTH_PATH)
-        except Exception:
-            pass
+        except Exception as e:
+            print("Warning: could not delete refresh token:", e)
 
     @classmethod
     def _refresh_with_token(cls, refresh_token: str, remember: bool = False) -> bool:
@@ -235,7 +235,8 @@ class RszCommunityTemplateManager:
         if r.status_code != 200:
             try:
                 msg = r.json()["error"]["message"]
-            except Exception:
+            except Exception as e:
+                print(f"Error parsing error message: {e}")
                 msg = r.text
             return {"success": False, "message": f"Storage upload failed: {msg}"}
         return {"success": True, "meta": r.json()}
@@ -256,10 +257,14 @@ class RszCommunityTemplateManager:
                                 game=None, tag=None, registry=None,
                                 search=None, limit=50):
         params = {"sortBy": sort_by, "limit": limit}
-        if game:     params["game"]     = game
-        if tag:      params["tag"]      = tag
-        if registry: params["registry"] = registry
-        if search:   params["search"]   = search
+        if game:
+            params["game"] = game
+        if tag:
+            params["tag"] = tag
+        if registry:
+            params["registry"] = registry
+        if search:
+            params["search"] = search
 
         r = cls._session().get(
             cls._url("/templates"), params=params,
@@ -366,7 +371,8 @@ class RszCommunityTemplateManager:
             path = os.path.join(dir_, f"{safe}.json")
             i = 1
             while os.path.exists(path):
-                path = os.path.join(dir_, f"{safe}_{i}.json"); i += 1
+                path = os.path.join(dir_, f"{safe}_{i}.json")
+                i += 1
 
             Path(path).write_bytes(blob)
 
@@ -418,8 +424,8 @@ class RszCommunityTemplateManager:
                     error_data = response.json()
                     if "message" in error_data:
                         error_message = error_data["message"]
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error parsing error message: {e}")
                 return {"success": False, "message": error_message}
                 
             return {"success": True, "message": f"Rating ({rating}/5) submitted"}
@@ -456,8 +462,8 @@ class RszCommunityTemplateManager:
                     error_data = response.json()
                     if "message" in error_data:
                         error_message = error_data["message"]
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error parsing error message: {e}")
                 return {"success": False, "message": error_message}
                 
             return {"success": True, "message": "Comment added successfully"}

@@ -117,9 +117,13 @@ class BetterFindDialog(QDialog):
         opts = QHBoxLayout()
         self.opt_name = QRadioButton("Name")
         self.opt_value = QRadioButton("Value")
-        self.opt_both = QRadioButton("Both"); self.opt_both.setChecked(True)
-        opts.addWidget(self.opt_name); opts.addWidget(self.opt_value); opts.addWidget(self.opt_both)
-        self.case_box = QCheckBox("Case sensitive"); opts.addWidget(self.case_box)
+        self.opt_both = QRadioButton("Both")
+        self.opt_both.setChecked(True)
+        opts.addWidget(self.opt_name)
+        opts.addWidget(self.opt_value)
+        opts.addWidget(self.opt_both)
+        self.case_box = QCheckBox("Case sensitive")
+        opts.addWidget(self.case_box)
         opts.addStretch()
         root.addLayout(opts)
 
@@ -131,14 +135,16 @@ class BetterFindDialog(QDialog):
         self.result_list = QListWidget()
         self.result_list.itemDoubleClicked.connect(lambda _: self._select(self.result_list.currentRow()))
         res_col.addWidget(self.result_list)
-        rwidget = QWidget(); rwidget.setLayout(res_col)
+        rwidget = QWidget()
+        rwidget.setLayout(res_col)
         splitter.addWidget(rwidget)
 
         prev_col = QVBoxLayout()
         prev_col.addWidget(QLabel("Preview:"))
         self.preview = QPlainTextEdit(readOnly=True)
         prev_col.addWidget(self.preview)
-        pwidget = QWidget(); pwidget.setLayout(prev_col)
+        pwidget = QWidget()
+        pwidget.setLayout(prev_col)
         splitter.addWidget(pwidget)
 
         root.addWidget(splitter, 1)
@@ -163,14 +169,17 @@ class BetterFindDialog(QDialog):
     def find_all(self):
         search_text = self.search_entry.text().strip()
         if not search_text:
-            self.status.setText("Please enter search text"); return
+            self.status.setText("Please enter search text")
+            return
 
         tree = self.app.get_active_tree()
         if not tree:
-            self.status.setText("No tree view available"); return
+            self.status.setText("No tree view available")
+            return
         model = tree.model()
         if not model:
-            self.status.setText("Tree has no model"); return
+            self.status.setText("Tree has no model")
+            return
 
         # fetch lazy children
         def fetch(idx):
@@ -184,12 +193,15 @@ class BetterFindDialog(QDialog):
         mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
         needle= search_text if case else search_text.lower()
 
-        self.results.clear(); self.result_list.clear(); self.current_index = -1
+        self.results.clear()
+        self.result_list.clear()
+        self.current_index = -1
 
         def walk(parent_idx, path):
             for row in range(model.rowCount(parent_idx)):
                 idx0 = model.index(row, 0, parent_idx)
-                if not idx0.isValid(): continue
+                if not idx0.isValid():
+                    continue
 
                 name = str(idx0.data(Qt.DisplayRole) or "")
                 full_path = f"{path} > {name}" if path else name
@@ -236,7 +248,8 @@ class BetterFindDialog(QDialog):
 
     # navigation
     def _select(self, i):
-        if not (0 <= i < len(self.results)): return
+        if not (0 <= i < len(self.results)):
+            return
         self.current_index = i
         res = self.results[i]
         self.preview.setPlainText(
@@ -253,16 +266,23 @@ class BetterFindDialog(QDialog):
         self.status.setText(f"Result {i+1} of {len(self.results)}")
 
     def find_next(self):
-        if not self.results: self.find_all(); return
+        if not self.results: 
+            self.find_all()
+            return
         self._select((self.current_index + 1) % len(self.results))
 
     def find_previous(self):
-        if not self.results: self.find_all(); return
+        if not self.results: 
+            self.find_all()
+            return
         self._select((self.current_index - 1) % len(self.results))
 
     # Qt events
-    def showEvent(self, e): super().showEvent(e); self.search_entry.setFocus()
+    def showEvent(self, e): 
+        super().showEvent(e)
+        self.search_entry.setFocus()
     def closeEvent(self, e):
-        self.results.clear(); self.result_list.clear()
+        self.results.clear()
+        self.result_list.clear()
         self.file_tab = self.app = None
         super().closeEvent(e)

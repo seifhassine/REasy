@@ -1,6 +1,12 @@
 import struct
 import traceback
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import (
+    ArrayData,
+    ObjectData,
+    UserDataData,
+    StringData,
+    ResourceData
+)
 from utils.hex_util import align
 from utils.id_manager import EmbeddedIdManager
 from utils.hash_util import murmur3_hash  # Added import for murmur3_hash
@@ -130,137 +136,132 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
     if not rui.data or len(rui.data) < EmbeddedRSZHeader.SIZE:
         return False
         
-  
-    try:
-        # Store the original data for preservation
-        rui.original_data = rui.data
-        rui.modified = False
-        
-        embedded_header = EmbeddedRSZHeader()
-        current_offset = embedded_header.parse(rui.data, 0)
-        rui.embedded_rsz_header = embedded_header
-        
-        # Create an embedded ID manager for this structure
-        rui.id_manager = EmbeddedIdManager(rui.instance_id)
-        
-        if embedded_header.object_count == 0:
-            return False
-            
-        embedded_data_len = len(rui.data)
-        if (embedded_header.instance_offset >= embedded_data_len or
-            embedded_header.data_offset >= embedded_data_len or
-            embedded_header.userdata_offset >= embedded_data_len):
-            return False
-            
-        object_table_size = embedded_header.object_count * 4
-        if current_offset + object_table_size > embedded_data_len:
-            return False
-            
-        rui.embedded_object_table = list(struct.unpack_from(f"<{embedded_header.object_count}i", rui.data, current_offset))
-        
-        instance_offset = embedded_header.instance_offset
-        
-        for i in range(embedded_header.instance_count):
-            if instance_offset + EmbeddedInstanceInfo.SIZE > embedded_data_len:
-                break
-                
-            inst_info = EmbeddedInstanceInfo()
-            instance_offset = inst_info.parse(rui.data, instance_offset)
-            rui.embedded_instance_infos.append(inst_info)
-        
-        # Parse instance data if data_offset is valid
-        if embedded_header.data_offset < embedded_data_len:
-            #A complete mini RszFile-like object with the needed fields for _parse_instances
-            from file_handlers.rsz.rsz_file import RszFile
-            mini_scn = RszFile()
-            
-            mini_scn.type_registry = type_registry
-            mini_scn.rsz_header = embedded_header
-            mini_scn.object_table = rui.embedded_object_table
-            mini_scn.instance_infos = rui.embedded_instance_infos
-            mini_scn._gameobject_instance_ids = set()
-            mini_scn._folder_instance_ids = set()
-            mini_scn._rsz_userdata_dict = {}
-            mini_scn._rsz_userdata_set = set()
-            mini_scn.parsed_elements = {}
-            mini_scn.instance_hierarchy = {} 
-            
-            # For SCN.19 format, we need to handle embedded userdata as binary blocks, not string references
-            mini_scn.rsz_userdata_infos = []
-            mini_scn._rsz_userdata_str_map = {}
-            
-            # Parse RSZ userdata if any exists in the embedded structure
-            if embedded_header.userdata_count > 0 and embedded_header.userdata_offset < embedded_data_len:
-                # For SCN.19 format, userdata entries are Scn19RSZUserDataInfo objects (24 bytes each)
-                userdata_offset = embedded_header.userdata_offset
-                
-                # Parse all embedded userdata entries
-                for ud_idx in range(embedded_header.userdata_count):
-                        
-                    embedded_rui = Scn19RSZUserDataInfo()
-                    userdata_offset = embedded_rui.parse(rui.data, userdata_offset)
-                    mini_scn.rsz_userdata_infos.append(embedded_rui)
-                    
-                    userdata_desc = f"Embedded Binary Data (ID: {embedded_rui.instance_id}, Size: {embedded_rui.data_size})"
-                    mini_scn._rsz_userdata_str_map[embedded_rui] = userdata_desc
-                    
-                    # Establish parent-child relationship for this userdata entry
-                    if embedded_rui.instance_id not in mini_scn.instance_hierarchy:
-                        mini_scn.instance_hierarchy[embedded_rui.instance_id] = {"children": [], "parent": rui.instance_id}
-                    
-                    # Calculate the absolute offset within this RSZ block
-                    abs_embedded_offset = embedded_rui.rsz_offset
-                    
-                    embedded_rui.data = rui.data[abs_embedded_offset:abs_embedded_offset + embedded_rui.data_size]
-            
-                # Initialize userdata lookup structures
-                mini_scn._rsz_userdata_dict = {rui.instance_id: rui for rui in mini_scn.rsz_userdata_infos}
-                mini_scn._rsz_userdata_set = set(mini_scn._rsz_userdata_dict.keys())
-            
-            # Use the data portion for instance parsing
-            mini_scn.data = rui.data[embedded_header.data_offset:]
-            
-            # Parse all instances at once using the proper method
-            mini_scn._parse_instances(mini_scn.data)
-            
-            # Store a reference to the parent userdata_rui for context
-            mini_scn.parent_userdata_rui = rui
-            
-            # Copy parsed elements to the current UserData object
-            rui.embedded_instances = mini_scn.parsed_elements
-            
-            # Process any embedded userdata structures found (recursive step)
-            rui.embedded_userdata_infos = mini_scn.rsz_userdata_infos
-            
-            # Register this mini_scn object in our registry
-            domain = f"emb_{rui.instance_id}"
-            
-            # Also store a reverse lookup from mini_scn to parent
-            mini_scn.domain = domain
-            
-            # Recursively parse any nested embedded RSZ userdata blocks
-            for nested_idx, embedded_rui in enumerate(rui.embedded_userdata_infos):
-                # Recursively parse this nested RSZ structure
-                nested_success = parse_embedded_rsz(
-                    embedded_rui, 
-                    type_registry, 
-                    recursion_depth + 1
-                )
-                
-                # If successfully parsed, add it to the embedded_instances
-                if nested_success:
-                    rui.embedded_instances[embedded_rui.instance_id] = {
-                        "embedded_rsz": embedded_rui
-                    }
-                    # ensure parent node in the hierarchy
-                    if rui.instance_id not in mini_scn.instance_hierarchy:
-                        mini_scn.instance_hierarchy[rui.instance_id] = {"children": []}
-                    mini_scn.instance_hierarchy[rui.instance_id]["children"].append(embedded_rui.instance_id)
-        
-        return True
-        
-    except Exception as e:
+    # Store the original data for preservation
+    rui.original_data = rui.data
+    rui.modified = False
+    
+    embedded_header = EmbeddedRSZHeader()
+    current_offset = embedded_header.parse(rui.data, 0)
+    rui.embedded_rsz_header = embedded_header
+    
+    # Create an embedded ID manager for this structure
+    rui.id_manager = EmbeddedIdManager(rui.instance_id)
+    
+    if embedded_header.object_count == 0:
         return False
+        
+    embedded_data_len = len(rui.data)
+    if (embedded_header.instance_offset >= embedded_data_len or
+        embedded_header.data_offset >= embedded_data_len or
+        embedded_header.userdata_offset >= embedded_data_len):
+        return False
+        
+    object_table_size = embedded_header.object_count * 4
+    if current_offset + object_table_size > embedded_data_len:
+        return False
+        
+    rui.embedded_object_table = list(struct.unpack_from(f"<{embedded_header.object_count}i", rui.data, current_offset))
+    
+    instance_offset = embedded_header.instance_offset
+    
+    for i in range(embedded_header.instance_count):
+        if instance_offset + EmbeddedInstanceInfo.SIZE > embedded_data_len:
+            break
+            
+        inst_info = EmbeddedInstanceInfo()
+        instance_offset = inst_info.parse(rui.data, instance_offset)
+        rui.embedded_instance_infos.append(inst_info)
+    
+    # Parse instance data if data_offset is valid
+    if embedded_header.data_offset < embedded_data_len:
+        #A complete mini RszFile-like object with the needed fields for _parse_instances
+        from file_handlers.rsz.rsz_file import RszFile
+        mini_scn = RszFile()
+        
+        mini_scn.type_registry = type_registry
+        mini_scn.rsz_header = embedded_header
+        mini_scn.object_table = rui.embedded_object_table
+        mini_scn.instance_infos = rui.embedded_instance_infos
+        mini_scn._gameobject_instance_ids = set()
+        mini_scn._folder_instance_ids = set()
+        mini_scn._rsz_userdata_dict = {}
+        mini_scn._rsz_userdata_set = set()
+        mini_scn.parsed_elements = {}
+        mini_scn.instance_hierarchy = {} 
+        
+        # For SCN.19 format, we need to handle embedded userdata as binary blocks, not string references
+        mini_scn.rsz_userdata_infos = []
+        mini_scn._rsz_userdata_str_map = {}
+        
+        # Parse RSZ userdata if any exists in the embedded structure
+        if embedded_header.userdata_count > 0 and embedded_header.userdata_offset < embedded_data_len:
+            # For SCN.19 format, userdata entries are Scn19RSZUserDataInfo objects (24 bytes each)
+            userdata_offset = embedded_header.userdata_offset
+            
+            # Parse all embedded userdata entries
+            for ud_idx in range(embedded_header.userdata_count):
+                    
+                embedded_rui = Scn19RSZUserDataInfo()
+                userdata_offset = embedded_rui.parse(rui.data, userdata_offset)
+                mini_scn.rsz_userdata_infos.append(embedded_rui)
+                
+                userdata_desc = f"Embedded Binary Data (ID: {embedded_rui.instance_id}, Size: {embedded_rui.data_size})"
+                mini_scn._rsz_userdata_str_map[embedded_rui] = userdata_desc
+                
+                # Establish parent-child relationship for this userdata entry
+                if embedded_rui.instance_id not in mini_scn.instance_hierarchy:
+                    mini_scn.instance_hierarchy[embedded_rui.instance_id] = {"children": [], "parent": rui.instance_id}
+                
+                # Calculate the absolute offset within this RSZ block
+                abs_embedded_offset = embedded_rui.rsz_offset
+                
+                embedded_rui.data = rui.data[abs_embedded_offset:abs_embedded_offset + embedded_rui.data_size]
+        
+            # Initialize userdata lookup structures
+            mini_scn._rsz_userdata_dict = {rui.instance_id: rui for rui in mini_scn.rsz_userdata_infos}
+            mini_scn._rsz_userdata_set = set(mini_scn._rsz_userdata_dict.keys())
+        
+        # Use the data portion for instance parsing
+        mini_scn.data = rui.data[embedded_header.data_offset:]
+        
+        # Parse all instances at once using the proper method
+        mini_scn._parse_instances(mini_scn.data)
+        
+        # Store a reference to the parent userdata_rui for context
+        mini_scn.parent_userdata_rui = rui
+        
+        # Copy parsed elements to the current UserData object
+        rui.embedded_instances = mini_scn.parsed_elements
+        
+        # Process any embedded userdata structures found (recursive step)
+        rui.embedded_userdata_infos = mini_scn.rsz_userdata_infos
+        
+        # Register this mini_scn object in our registry
+        domain = f"emb_{rui.instance_id}"
+        
+        # Also store a reverse lookup from mini_scn to parent
+        mini_scn.domain = domain
+        
+        # Recursively parse any nested embedded RSZ userdata blocks
+        for nested_idx, embedded_rui in enumerate(rui.embedded_userdata_infos):
+            # Recursively parse this nested RSZ structure
+            nested_success = parse_embedded_rsz(
+                embedded_rui, 
+                type_registry, 
+                recursion_depth + 1
+            )
+            
+            # If successfully parsed, add it to the embedded_instances
+            if nested_success:
+                rui.embedded_instances[embedded_rui.instance_id] = {
+                    "embedded_rsz": embedded_rui
+                }
+                # ensure parent node in the hierarchy
+                if rui.instance_id not in mini_scn.instance_hierarchy:
+                    mini_scn.instance_hierarchy[rui.instance_id] = {"children": []}
+                mini_scn.instance_hierarchy[rui.instance_id]["children"].append(embedded_rui.instance_id)
+    
+    return True
 
 def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     """Build function for SCN.19 files with modified header structure"""
@@ -315,10 +316,6 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     for ri in rsz_file.resource_infos:
         out += struct.pack("<II", 0, ri.reserved)
         
-    current_len = len(out)
-    aligned_len = ((current_len + 15) & ~15)
-    padding_added = aligned_len - current_len
-    
     while len(out) % 16 != 0:
         out += b"\x00"
         
@@ -678,7 +675,8 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, special_align_enabled: boo
                         if raw.startswith("assets:/"):
                             value_str = raw.strip("\x00")
                             h = murmur3_hash(value_str.encode("utf-16le"))
-                    except Exception:
+                    except Exception as e:
+                        print(f"Error hashing string data: {e}")
                         h = 0
 
             out += struct.pack("<I", h)
@@ -871,7 +869,6 @@ def recalculate_json_path_hash(rui):
                     if value_str:
                         rui.json_path_hash = murmur3_hash(value_str.encode("utf-16le"))
                         return
-                except Exception:
-                    print(f"Error calculating JSON path hash for field '{field_name}'")
-                    
-    
+                except Exception as e:
+                    print(f"Error calculating JSON path hash for field '{field_name}': {e}")
+

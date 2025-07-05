@@ -3,10 +3,7 @@ import uuid
 import logging
 import json
 import os
-from typing import Any, Callable, Dict, List, Optional
-
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtWidgets import QMenu
+from typing import Any, Dict, List, Optional
 
 from file_handlers.base_handler import BaseFileHandler
 from file_handlers.msg.msg_viewer import MsgViewer

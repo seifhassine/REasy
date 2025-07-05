@@ -1,8 +1,6 @@
 # RE hashing
 # Credits: https://github.com/TrikzMe/RE-Engine-Hash-tool/
 
-import struct
-
 def rotl32(x: int, r: int) -> int:
     return ((x << r) | (x >> (32 - r))) & 0xffffffff
 

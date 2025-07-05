@@ -1,13 +1,11 @@
 import os
 import json
-import uuid
 import traceback
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData
 from file_handlers.rsz.rsz_file import RszInstanceInfo
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
 class RszComponentClipboard:
     """Clipboard handling for copying and pasting components."""
@@ -261,12 +259,6 @@ class RszComponentClipboard:
             instance_mapping = {}
             guid_mapping = {}
             userdata_mapping = {}
-            
-            last_component_go_id = go_object_id + target_go.component_count
-            last_component_instance_id = 0
-            
-            if last_component_go_id < len(viewer.scn.object_table):
-                last_component_instance_id = viewer.scn.object_table[last_component_go_id]
             
             highest_nested_instance_id = 0
             

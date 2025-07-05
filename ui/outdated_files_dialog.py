@@ -1,5 +1,4 @@
 import os
-import sys
 import shutil
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -7,7 +6,6 @@ from PySide6.QtWidgets import (
     QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView,
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame
 )
-from PySide6.QtGui import QFont
 
 from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
 

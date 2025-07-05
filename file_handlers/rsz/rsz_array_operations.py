@@ -5,7 +5,7 @@ This file contains operations for adding and removing elements from arrays in RS
 """
 
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 

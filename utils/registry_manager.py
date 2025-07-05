@@ -1,5 +1,4 @@
 import os
-import time
 from .type_registry import TypeRegistry
 
 class RegistryManager:
@@ -54,8 +53,9 @@ class RegistryManager:
             if (file_path not in self._last_mod_times or 
                 current_mod_time > self._last_mod_times[file_path]):
                 return True
-        except Exception:
+        except Exception as e:
             # If we can't check the file time, assume we need to reload
+            print(f"Error checking file modification time for {file_path}: {e}")
             return True
             
         return False

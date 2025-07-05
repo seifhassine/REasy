@@ -33,6 +33,7 @@ class RszClipboardUtils:
             parent = widget.parent()
             json_path = parent.handler.type_registry.json_path
         except Exception as e:
+            print(f"Error getting JSON name from widget: {str(e)}")
             parent = widget
             json_path = parent.handler.type_registry.json_path
         finally:

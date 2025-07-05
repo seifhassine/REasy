@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 from file_handlers.rsz.rsz_community_template_manager import RszCommunityTemplateManager
+from datetime import datetime
 
 class QStarWidget(QWidget):
     """Custom star rating widget that allows setting and displaying ratings"""
@@ -628,7 +629,6 @@ class CommunityTemplatesDialog(QDialog):
             
             self.registry_label.setText(registry)
             self.tags_label.setText(tags if tags else "None")
-            from datetime import datetime
 
             uploader = (template_data.get("uploaderName")       
                         or "Unknown")
@@ -638,7 +638,6 @@ class CommunityTemplatesDialog(QDialog):
             
             created_at_str = "Unknown date"
             
-            from datetime import datetime
             timestamp = datetime.fromtimestamp(created_at["_seconds"])
             created_at_str = timestamp.strftime("%Y-%m-%d %H:%M")
             
@@ -690,7 +689,8 @@ class CommunityTemplatesDialog(QDialog):
         try:
             from datetime import datetime
             sorted_comments = sorted(comments, key=lambda c: c.get("timestamp", datetime.min), reverse=True)
-        except:
+        except Exception as e:
+            print(f"Error sorting comments: {e}")
             sorted_comments = comments
         
         for comment in sorted_comments:
@@ -712,7 +712,8 @@ class CommunityTemplatesDialog(QDialog):
                     time_label = QLabel(date_str)
                     time_label.setStyleSheet("color: #888;")
                     header_layout.addWidget(time_label)
-                except:
+                except Exception as e:
+                    print(f"Error formatting timestamp: {e}")
                     pass
             
             header_layout.addStretch()

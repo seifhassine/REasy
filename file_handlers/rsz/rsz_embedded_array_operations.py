@@ -7,7 +7,7 @@ embedded RSZ data structures found in SCN.19 files.
 
 import traceback
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.pyside.tree_model import DataTreeBuilder
 
@@ -1452,7 +1452,8 @@ class RszEmbeddedArrayOperations:
                     nested_fields = nested_context.embedded_instances[ref_id]
                     if isinstance(nested_fields, dict):
                         for field_name, field_data in nested_fields.items():
-                            if field_name == "embedded_rsz": continue
+                            if field_name == "embedded_rsz": 
+                                continue
                             try:
                                 field_node = self.viewer._create_field_dict(field_name, field_data, nested_context)
                                 node_data["children"].append(field_node)
@@ -1460,14 +1461,14 @@ class RszEmbeddedArrayOperations:
                                 print(f"[ERROR] Failed to add nested field '{field_name}': {str(e)}")
                     else:
                         node_data["children"].append(
-                            DataTreeBuilder.create_data_node(f"(Found in nested context but not a dict)", "")
+                            DataTreeBuilder.create_data_node("(Found in nested context but not a dict)", "")
                         )
                 else:
                     node_data["children"].append(
                         DataTreeBuilder.create_data_node(f"(Instance {ref_id} not found in any context)", "")
                     )
         else:
-            print(f"[DEBUG] embedded_context has no embedded_instances attribute")
+            print("[DEBUG] embedded_context has no embedded_instances attribute")
             node_data["children"].append(
                 DataTreeBuilder.create_data_node("(No embedded_instances found in context)", "")
             )
@@ -1542,7 +1543,7 @@ class RszEmbeddedArrayOperations:
                 print(f"[ERROR] Exception in original callback: {e}")
         if hasattr(field_obj, '_forbidden_parent_ids') and hasattr(field_obj, 'value'):
             if field_obj.value in field_obj._forbidden_parent_ids:
-                print(f"[WARNING] Prevented circular reference")
+                print("[WARNING] Prevented circular reference")
                 field_obj.value = 0
         for ctx in context_chain:
             if hasattr(ctx, 'modified'):

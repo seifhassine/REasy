@@ -1,6 +1,5 @@
 import struct
-from file_handlers.rsz.rsz_data_types import *
-from utils.hex_util import align as _align, read_wstring 
+from utils.hex_util import read_wstring 
 
 class Scn18Header:
     SIZE = 56

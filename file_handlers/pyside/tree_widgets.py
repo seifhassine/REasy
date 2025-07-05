@@ -1,6 +1,5 @@
-import os
 import traceback
-from PySide6.QtWidgets import (QWidget, QLabel, QTreeView, 
+from PySide6.QtWidgets import (QWidget, QLabel, QTreeView, QCheckBox, 
                                QHeaderView, QSpinBox, QMenu, QDoubleSpinBox, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog)
 from PySide6.QtGui import QCursor
@@ -12,7 +11,6 @@ from ui.template_manager_dialog import TemplateManagerDialog
 from ui.template_export_dialog import TemplateExportDialog
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
-from .value_widgets import *
 from .tree_widget_factory import TreeWidgetFactory
 
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
@@ -246,16 +244,6 @@ class AdvancedTreeView(QTreeView):
     
             
             parent_widget = self.parent()
-            has_embedded_rsz = False
-            
-            if hasattr(parent_widget, "scn") and hasattr(parent_widget.scn, "rsz_userdata_infos"):
-                # Check if any userdata has embedded RSZ
-                for rui in parent_widget.scn.rsz_userdata_infos:
-                    if (hasattr(rui, 'embedded_rsz_header') and 
-                        hasattr(rui, 'embedded_instances') and 
-                        rui.embedded_instances):
-                        has_embedded_rsz = True
-                        break
             
             translate_action = menu.addAction("Translate Name")
             
@@ -293,7 +281,7 @@ class AdvancedTreeView(QTreeView):
             
             manage_prefab_action = None
             if go_has_prefab:
-                manage_prefab_action = menu.addAction(f"Modify Prefab Path")
+                manage_prefab_action = menu.addAction("Modify Prefab Path")
             else:
                 manage_prefab_action = menu.addAction("Associate with Prefab")
             
@@ -388,8 +376,7 @@ class AdvancedTreeView(QTreeView):
                     else: 
                         paste_action = menu.addAction("Paste Element")
                         paste_action.triggered.connect(
-                            lambda: self.paste_array_element(index, item_info['array_type'],
-                                                             item_info['data_obj'], item)
+                            lambda: self.paste_array_element(index, item_info['data_obj'], item)
                         )
                 menu.exec_(QCursor.pos())
                 
@@ -414,7 +401,7 @@ class AdvancedTreeView(QTreeView):
                         # Single element operations
                         copy_action = menu.addAction("Copy Element")
                         copy_action.triggered.connect(
-                            lambda: self.copy_array_element(item_info['parent_array_item'], item_info['element_index'], index)
+                            lambda: self.copy_array_element(item_info['parent_array_item'], item_info['element_index'])
                         )
                         delete_action = menu.addAction("Delete Element")
                         delete_action.triggered.connect(
@@ -422,7 +409,7 @@ class AdvancedTreeView(QTreeView):
                         )
                 menu.exec_(QCursor.pos())
         else:
-            print(f"No special actions for this node type")
+            print("No special actions for this node type")
 
         # For embedded instances, we need to handle differently
         if item_info['is_embedded']:
@@ -757,7 +744,6 @@ class AdvancedTreeView(QTreeView):
                         QMessageBox.warning(self, "Error", "Failed to delete element in embedded context")
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Error deleting element: {str(e)}")
-                    traceback.print_exc()
             else:
                 QMessageBox.warning(self, "Error", "Missing required references in parent")
             return
@@ -812,7 +798,6 @@ class AdvancedTreeView(QTreeView):
         """Simple array element deletion used as fallback"""
         try:
             if element_index < len(array_data.values):
-                element = array_data.values[element_index]
                 
                 del array_data.values[element_index]
                 
@@ -1627,8 +1612,8 @@ class AdvancedTreeView(QTreeView):
             resource = parent.scn.resource_infos[resource_index]
             if hasattr(parent.scn, 'get_resource_string'):
                 return parent.scn.get_resource_string(resource) or "[Unknown]"
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error getting current resource path: {e}")
         return "[Unknown]"
 
     def _confirm_resource_deletion(self, resource_path):
@@ -1643,7 +1628,6 @@ class AdvancedTreeView(QTreeView):
 
     def _update_resources_ui(self, success_message):
         """Update resources UI with success message"""
-        parent = self.parent()
         QMessageBox.information(self, "Success", success_message)
 
     def _handle_resource_error(self, operation, error):
@@ -2260,7 +2244,7 @@ class AdvancedTreeView(QTreeView):
         
         if embedded_context:
             if parent and hasattr(parent, "scn") and hasattr(parent, "type_registry"):
-                print(f"Deleting array elements in embedded context")
+                print("Deleting array elements in embedded context")
                 try:
                     rsz_operations = RszEmbeddedArrayOperations(parent)
                     success = True
@@ -2610,7 +2594,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
             traceback.print_exc()
 
-    def copy_array_element(self, parent_array_item, element_index, index):
+    def copy_array_element(self, parent_array_item, element_index):
         """Copy an array element to clipboard"""
         if not parent_array_item or not hasattr(parent_array_item, 'raw'):
             QMessageBox.warning(self, "Error", "Invalid array item")
@@ -2644,7 +2628,7 @@ class AdvancedTreeView(QTreeView):
         else:
             QMessageBox.warning(self, "Error", "Cannot access handler")
 
-    def paste_array_element(self, index, array_type, data_obj, array_item):
+    def paste_array_element(self, index, data_obj, array_item):
         """Paste an element from clipboard to an array"""
         parent = self.parent()
         if not parent:
@@ -2689,256 +2673,4 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Cannot access handler")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
-            traceback.print_exc()
-
-    def translate_node_text(self, index):
-        """Translate the name of a GameObject or folder using Google Translate API"""
-        if not index.isValid():
-            return
-            
-        item = index.internalPointer()
-        if not hasattr(item, 'data') or not item.data:
-            return
-    
-        name_text = item.data[0]
-        if " (ID:" in name_text:
-            name_text = name_text.split(" (ID:")[0]
-        
-        if not name_text or name_text.strip() == "":
-            show_translation_error(self, "No text to translate")
-            return
-        
-        parent_widget = self.parent()
-        target_lang = "en"
-        
-        
-        target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
-            
-        original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""
-        
-        context = {"index": index, "original_id_part": original_id_part}
-        
-        self.setCursor(Qt.WaitCursor)
-        
-        success = self.translation_manager.translate_text(
-            text=name_text, 
-            source_lang="auto",
-            target_lang=target_lang, 
-            context=context
-        )
-        
-        if not success:
-            self.setCursor(Qt.ArrowCursor)
-            show_translation_error(self, "Failed to start translation")
-
-    def _on_translation_completed(self, original_text, translated_text, context):
-        """Handle translation completion"""
-        self.setCursor(Qt.ArrowCursor)
-        
-        if not translated_text:
-            show_translation_error(self, "Unable to translate text")
-            return
-            
-        index = context.get("index")
-        original_id_part = context.get("original_id_part", "")
-        
-        if not index or not index.isValid():
-            show_translation_error(self, "Invalid item index")
-            return
-        
-        item = index.internalPointer()
-        if not item or not hasattr(item, 'data'):
-            show_translation_error(self, "Invalid item data")
-            return
-        
-        item.data[0] = translated_text + original_id_part
-        
-        model = self.model()
-        if model:
-            model.dataChanged.emit(index, index)
-            
-            widget = self.indexWidget(index)
-            if widget:
-                labels = widget.findChildren(QLabel)
-                if len(labels) >= 2:
-                    text_label = labels[1]
-                    text_label.setText(translated_text + original_id_part)
-        
-        show_translation_result(self, translated_text)
-
-    def copy_gameobject(self, index):
-        """Copy a GameObject to clipboard"""
-        if not index.isValid():
-            return
-            
-        item = index.internalPointer()
-        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
-            return
-            
-        reasy_id = item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
-            return
-            
-        parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
-        instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
-            return
-            
-        go_object_id = -1
-        for i, obj_id in enumerate(parent.scn.object_table):
-            if obj_id == instance_id:
-                go_object_id = i
-                break
-                
-        if go_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
-            return
-            
-        try:
-            success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id)
-            if success:
-                go_name = ""
-                if hasattr(item, 'data') and item.data:
-                    go_name = item.data[0].split(' (ID:')[0]
-                    
-                msg = f"GameObject '{go_name}' copied to clipboard"
-                QMessageBox.information(self, "Success", msg)
-            else:
-                QMessageBox.warning(self, "Error", "Failed to copy GameObject to clipboard")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error copying GameObject: {str(e)}")
-            traceback.print_exc()
-
-    def paste_gameobject_in_folder(self, folder_index):
-        """Paste a GameObject from clipboard into a folder"""
-        if not folder_index.isValid():
-            return
-            
-        folder_item = folder_index.internalPointer()
-        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid folder selection")
-            return
-            
-        reasy_id = folder_item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine folder ID")
-            return
-            
-        parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
-        folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        if not folder_instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
-            return
-            
-        folder_object_id = -1
-        for i, instance_id in enumerate(parent.scn.object_table):
-            if instance_id == folder_instance_id:
-                folder_object_id = i
-                break
-                
-        if folder_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find folder in object table")
-            return
-            
-        self._paste_gameobject_common(folder_object_id, folder_index)
-
-    def paste_gameobject_at_root(self, index):
-        """Paste a GameObject from clipboard at the root level"""
-        parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
-        self._paste_gameobject_common(-1, None)
-
-    def paste_gameobject_as_child(self, parent_go_index):
-        """Paste a GameObject from clipboard as a child of another GameObject"""
-        if not parent_go_index.isValid():
-            QMessageBox.warning(self, "Error", "Invalid parent GameObject selection")
-            return
-            
-        parent_item = parent_go_index.internalPointer()
-        if not parent_item or not hasattr(parent_item, 'raw') or not isinstance(parent_item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid parent GameObject")
-            return
-            
-        reasy_id = parent_item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine parent GameObject ID")
-            return
-            
-        parent_widget = self.parent()
-        if not parent_widget or not hasattr(parent_widget, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
-        parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
-        if not parent_instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine parent GameObject instance ID")
-            return
-            
-        parent_object_id = -1
-        for i, instance_id in enumerate(parent_widget.scn.object_table):
-            if instance_id == parent_instance_id:
-                parent_object_id = i
-                break
-                
-        if parent_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find parent GameObject in object table")
-            return
-            
-        self._paste_gameobject_common(parent_object_id, parent_go_index)
-            
-    def _paste_gameobject_common(self, parent_object_id, parent_index=None):
-        """
-        Common logic for pasting a GameObject from clipboard
-        
-        Args:
-            parent_object_id: Object table index of the parent (-1 for root)
-            parent_index: QModelIndex of the parent node for UI updating (None for root)
-        """
-        parent_widget = self.parent()
-        
-        if not parent_widget.handler.has_gameobject_clipboard_data(self):
-            QMessageBox.warning(self, "Error", "No GameObject data in clipboard")
-            return
-            
-        clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
-        if not clipboard_data:
-            QMessageBox.warning(self, "Error", "Failed to load GameObject data from clipboard")
-            return
-            
-        default_name = clipboard_data.get("name", "GameObject")
-        if default_name.strip() == "":
-            default_name = "GameObject"
-            
-        new_name, ok = QInputDialog.getText(self, "Paste GameObject", 
-                                          "Enter name for the pasted GameObject:", 
-                                          QLineEdit.Normal, default_name)
-        if not ok:
-            return
-            
-        try:
-            go_data = parent_widget.handler.paste_gameobject_from_clipboard(
-                parent_widget, parent_object_id, new_name, clipboard_data
-            )
-            
-            if go_data and go_data.get('success', False):
-                self.add_gameobject_to_ui_direct(go_data, parent_index)
-                QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
-            else:
-                QMessageBox.warning(self, "Error", "Failed to paste GameObject")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
             traceback.print_exc()

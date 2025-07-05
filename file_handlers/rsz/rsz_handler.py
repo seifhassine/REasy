@@ -13,8 +13,16 @@ from utils.enum_manager import EnumManager
 from utils.registry_manager import RegistryManager
 from utils.hex_util import guid_le_to_str
 from ..base_handler import BaseFileHandler
-from file_handlers.pyside.value_widgets import *
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import (
+    StructData,
+    ArrayData,
+    ObjectData,
+    UserDataData,
+    RawBytesData,
+    MaybeObject,
+    get_type_class,
+    GuidData
+)
 from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 from .rsz_file import RszFile, RszInstanceInfo
 from utils.type_registry import TypeRegistry
@@ -255,14 +263,14 @@ class RszViewer(QWidget):
         try:
             try:
                 self.modified_changed.disconnect()
-            except:
-                pass
+            except Exception as e:
+                print(f"Error disconnecting modified_changed signal: {e}")
             if self.tree:
                 self.tree.setModel(None)
             self._created_widgets.clear()
             self._created_labels.clear()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
         self._cleanup_pending = False
 
     def closeEvent(self, event):

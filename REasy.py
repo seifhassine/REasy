@@ -58,17 +58,14 @@ from PySide6.QtWidgets import (
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
-from tools.hash_calculator import HashCalculator  # Import the hash calculator
+from tools.hash_calculator import HashCalculator
 
-# Remove the direct EnumManager import
-# from utils.enum_manager import EnumManager
+
+NO_FILE_LOADED_STR = "No file loaded"
+UNSAVED_CHANGES_STR = "Unsaved changes"
 
 def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-
+    base_path = os.path.dirname(os.path.abspath(__file__))
     full_path = os.path.join(base_path, relative_path)
     if not os.path.exists(full_path):
         full_path = os.path.join(os.getcwd(), relative_path)
@@ -95,8 +92,8 @@ def create_standard_dialog(parent, title, geometry=None):
             if len(w_h) == 2:
                 w, h = int(w_h[0]), int(w_h[1])
                 dialog.resize(w, h)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error setting dialog geometry: {e}")
     bg_color = dialog.palette().color(dialog.backgroundRole()).name()
     return dialog, bg_color
 
@@ -178,6 +175,8 @@ class CustomNotebook(QTabWidget):
 
 
 class FileTab:
+
+
     def __init__(self, parent_notebook, filename=None, data=None, app=None):
         self.parent_notebook = parent_notebook
         self.notebook_widget = QWidget()
@@ -191,7 +190,7 @@ class FileTab:
         self.viewer = None 
         self.original_data = data 
 
-        self.status_label = QLabel("No file loaded")
+        self.status_label = QLabel(NO_FILE_LOADED_STR)
 
         layout = QVBoxLayout(self.notebook_widget)
         layout.setContentsMargins(0, 0, 0, 0) 
@@ -342,7 +341,7 @@ class FileTab:
             old_handler = self.handler
             old_viewer = self.viewer
             old_data = self.original_data
-            old_status_text = self.status_label.text() if hasattr(self, "status_label") else "No file loaded"
+            old_status_text = self.status_label.text() if hasattr(self, "status_label") else NO_FILE_LOADED_STR
             
             self.filename = filename
             self.original_data = data
@@ -421,25 +420,19 @@ class FileTab:
 
             model = self.tree.model()
             if model:
-                if not hasattr(self, '_connected_model'):
-                    self._connected_model = None
-                
-                if self._connected_model is not None and self._connected_model != model:
+                if hasattr(self, '_connected_model') and self._connected_model and self._connected_model != model:
                     try:
                         self._connected_model.dataChanged.disconnect(self.on_tree_edit)
                     except (RuntimeError, TypeError):
                         pass
-                
-                if self._connected_model != model:
+                        
+                if not hasattr(self, '_connected_model') or self._connected_model != model:
                     model.dataChanged.connect(self.on_tree_edit)
                     self._connected_model = model
-
+                    
         except Exception as e:
             print(f"Tree refresh failed: {e}")
-            if old_model:
-                self.tree.setModel(old_model)
-            else:
-                self.tree.setModel(None)
+            self.tree.setModel(old_model)
             
         finally:
             self.tree.setUpdatesEnabled(True)
@@ -515,14 +508,14 @@ class FileTab:
             except Exception as e:
                 QMessageBox.critical(None, "Error", f"Failed to update value: {e}")
 
-    def on_tree_edit(self, topLeft, bottomRight, roles):
+    def on_tree_edit(self, top_left, bottom_right, roles):
         if not self.handler or not self.handler.supports_editing():
             return
 
         if Qt.UserRole not in roles:
             return
 
-        index = topLeft
+        index = top_left
         item = self.tree.model().itemFromIndex(index)
         meta = self.metadata_map.get(item)
         if not meta:
@@ -591,7 +584,7 @@ class FileTab:
     def direct_save(self):
         """Save directly to the current file without prompting"""
         if not self.handler:
-            QMessageBox.critical(None, "Error", "No file loaded")
+            QMessageBox.critical(None, "Error", NO_FILE_LOADED_STR)
             return False
         if not self.filename:
             return self.on_save()
@@ -599,7 +592,7 @@ class FileTab:
         
     def on_save(self):
         if not self.handler:
-            QMessageBox.critical(None, "Error", "No file loaded")
+            QMessageBox.critical(None, "Error", NO_FILE_LOADED_STR)
             return False
 
         file_path, _ = QFileDialog.getSaveFileName(
@@ -621,7 +614,7 @@ class FileTab:
         if self.modified:
             ans = QMessageBox.question(
                 None,
-                "Unsaved Changes",
+                UNSAVED_CHANGES_STR,
                 f"File {os.path.basename(self.filename)} has unsaved changes.\nSave before reloading?",
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
             )
@@ -714,7 +707,8 @@ class FileTab:
                     friendly_time = dt.strftime("%Y-%m-%d %H:%M:%S")
                     full_path = os.path.join(backups_dir, filename)
                     result.append((friendly_time, full_path, filename))
-                except Exception:
+                except Exception as e:
+                    print(f"Error formatting timestamp: {e}")
                     continue
                     
         return sorted(result, reverse=True)
@@ -726,25 +720,7 @@ class FileTab:
                 data = f.read()
                 
             if self.viewer:
-                try:
-                    if hasattr(self.viewer, "modified_changed"):
-                        try:
-                            self.viewer.modified_changed.disconnect()
-                        except Exception:
-                            pass
-                
-                    layout = self.notebook_widget.layout()
-                    if layout:
-                        for i in range(layout.count()):
-                            item = layout.itemAt(i)
-                            if item.widget() == self.viewer:
-                                self.viewer.setParent(None)
-                                break
-                    
-                    self.viewer.deleteLater()
-                    self.viewer = None
-                except Exception as e:
-                    print(f"Warning: Error cleaning up viewer: {e}")
+                self._cleanup_viewer()
             
             success = self.load_file(self.filename, data)
             
@@ -754,9 +730,29 @@ class FileTab:
             return success
             
         except Exception as e:
-            print(f"Failed to restore backup: {e}")
             QMessageBox.critical(None, "Error", f"Failed to restore backup: {e}")
             return False
+            
+    def _cleanup_viewer(self):
+        try:
+            if hasattr(self.viewer, "modified_changed"):
+                try:
+                    self.viewer.modified_changed.disconnect()
+                except Exception as e:
+                    print(f"Error disconnecting modified_changed signal: {e}")
+
+            layout = self.notebook_widget.layout()
+            if layout:
+                for i in range(layout.count()):
+                    item = layout.itemAt(i)
+                    if item.widget() == self.viewer:
+                        self.viewer.setParent(None)
+                        break
+            
+            self.viewer.deleteLater()
+            self.viewer = None
+        except Exception as e:
+            print(f"Warning: Error cleaning up viewer: {e}")
 
 
 class REasyEditorApp(QMainWindow):
@@ -767,8 +763,9 @@ class REasyEditorApp(QMainWindow):
 
         try:
             self.settings = load_settings()
-        except Exception:
+        except Exception as e:
             self.settings = DEFAULT_SETTINGS.copy()
+            print(f"Error loading settings: {e}")
 
         if "keyboard_shortcuts" not in self.settings:
             self.settings["keyboard_shortcuts"] = DEFAULT_SETTINGS["keyboard_shortcuts"].copy()
@@ -990,139 +987,105 @@ class REasyEditorApp(QMainWindow):
     def set_dark_mode(self, state):
         self.dark_mode = state
         self.settings["dark_mode"] = state
-
         self.save_settings()
 
         if state:
             colors = {
-                "bg": "#2b2b2b",
-                "tree_bg": "#2b2b2b",
-                "fg": "white",
-                "highlight": "rgba(255, 133, 51, 0.5)",
-                "input_bg": "#3b3b3b",
-                "disabled_bg": "#404040",
-                "border": "#555555",
+                "bg": "#2b2b2b", "tree_bg": "#2b2b2b", "fg": "white",
+                "highlight": "rgba(255, 133, 51, 0.5)", "input_bg": "#3b3b3b",
+                "disabled_bg": "#404040", "border": "#555555"
             }
         else:
             colors = {
-                "bg": "#ffffff",
-                "tree_bg": "#ffffff",
-                "fg": "#000000",
-                "highlight": "#ff851b",
-                "input_bg": "#ffffff",
-                "disabled_bg": "#f0f0f0",
-                "border": "#cccccc",
+                "bg": "#ffffff", "tree_bg": "#ffffff", "fg": "#000000",
+                "highlight": "#ff851b", "input_bg": "#ffffff",
+                "disabled_bg": "#f0f0f0", "border": "#cccccc"
             }
 
-        self.setStyleSheet(
-            f"""
+        self._apply_style(colors)
+        
+        self.notebook.set_dark_mode(state)
+        self._update_tab_viewers(state)
+
+    def _apply_style(self, colors):
+        self.setStyleSheet(f"""
             QMainWindow, QDialog, QWidget {{ 
-                background-color: {colors['bg']}; 
-                color: {colors['fg']}; 
+                background-color: {colors['bg']}; color: {colors['fg']}; 
             }}
             QTreeView {{
-                background-color: {colors['tree_bg']};
-                color: {colors['fg']};
+                background-color: {colors['tree_bg']}; color: {colors['fg']};
                 border: 1px solid {colors['border']};
             }}
-            QTreeView::item:selected {{
-                background-color: {colors['highlight']};
-            }}
+            QTreeView::item:selected {{ background-color: {colors['highlight']}; }}
             QLineEdit, QPlainTextEdit {{
-                background-color: {colors['input_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                padding: 2px;
+                background-color: {colors['input_bg']}; color: {colors['fg']};
+                border: 1px solid {colors['border']}; padding: 2px;
             }}
             QPushButton {{
-                background-color: {colors['input_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                padding: 5px;
-                min-width: 80px;
+                background-color: {colors['input_bg']}; color: {colors['fg']};
+                border: 1px solid {colors['border']}; padding: 5px; min-width: 80px;
             }}
-            QPushButton:disabled {{
-                background-color: {colors['disabled_bg']};
-            }}
-            QLabel, QCheckBox {{
-                color: {colors['fg']};
-            }}
+            QPushButton:disabled {{ background-color: {colors['disabled_bg']}; }}
+            QLabel, QCheckBox {{ color: {colors['fg']}; }}
             QCheckBox::indicator {{
-                width: 15px;
-                height: 15px;
-                background-color: {colors['input_bg']};
-                border: 1px solid {colors['border']};
-                border-radius: 2px;
+                width: 15px; height: 15px; background-color: {colors['input_bg']};
+                border: 1px solid {colors['border']}; border-radius: 2px;
             }}
             QCheckBox::indicator:checked {{
-                background-color: {colors['highlight']};
-                border-color: {colors['highlight']};
+                background-color: {colors['highlight']}; border-color: {colors['highlight']};
             }}
             QMenuBar, QMenu, QTabWidget::pane, QStatusBar, QProgressDialog, QListWidget {{
-                background-color: {colors['bg']};
-                color: {colors['fg']};
+                background-color: {colors['bg']}; color: {colors['fg']};
                 border: 1px solid {colors['border']};
             }}
             QMenuBar::item:selected, QMenu::item:selected, QTabBar::tab:selected, QListWidget::item:selected {{
                 background-color: {colors['highlight']};
             }}
-        """
-        )
+        """)
 
-        self.notebook.set_dark_mode(state)
-
-        new_viewers = {}
-
+    def _update_tab_viewers(self, dark_mode):
         for tab in self.tabs.values():
             if hasattr(tab, "dark_mode"):
-                tab.dark_mode = state
-
+                tab.dark_mode = dark_mode
+            
             if tab.handler:
-                tab.handler.dark_mode = state
-                if hasattr(tab.handler, "create_viewer"):
-                    try:
-                        viewer = tab.handler.create_viewer()
-                        if viewer:
-                            new_viewers[tab] = viewer
-                    except Exception as e:
-                        print(f"Error creating new viewer: {e}")
-
-        for tab, new_viewer in new_viewers.items():
-            try:
-                layout = tab.notebook_widget.layout()
-                if not layout:
-                    continue
-
+                tab.handler.dark_mode = dark_mode
+                
                 try:
-                    status_text = tab.status_label.text()
-                except (RuntimeError, AttributeError):
-                    status_text = "Ready"
+                    if hasattr(tab.handler, "create_viewer"):
+                        new_viewer = tab.handler.create_viewer()
+                        if new_viewer:
+                            self._replace_tab_viewer(tab, new_viewer)
+                except Exception as e:
+                    print(f"Error updating viewer: {e}")
 
-                new_status_label = QLabel(status_text)
+    def _replace_tab_viewer(self, tab, new_viewer):
+        layout = tab.notebook_widget.layout()
+        if not layout:
+            return
 
-                while layout.count():
-                    item = layout.takeAt(0)
-                    if item.widget():
-                        item.widget().deleteLater()
+        try:
+            status_text = tab.status_label.text()
+        except (RuntimeError, AttributeError):
+            status_text = "Ready"
 
-                layout.addWidget(new_viewer)
-                layout.addWidget(new_status_label)
-
-                tab.viewer = new_viewer
-                tab.status_label = new_status_label
-
-                if (
-                    hasattr(tab, "_find_dialog")
-                    and tab._find_dialog
-                    and tab._find_dialog.isVisible()
-                ):
-                    old_dialog = tab._find_dialog
-                    tab._find_dialog = None
-                    old_dialog.close()
-                    QTimer.singleShot(100, tab.open_find_dialog)
-
-            except Exception as e:
-                print(f"Error updating viewer: {e}")
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        
+        new_status_label = QLabel(status_text)
+        layout.addWidget(new_viewer)
+        layout.addWidget(new_status_label)
+        
+        tab.viewer = new_viewer
+        tab.status_label = new_status_label
+        
+        if hasattr(tab, "_find_dialog") and tab._find_dialog and tab._find_dialog.isVisible():
+            tab._find_dialog.close()
+            tab._find_dialog = None
+            QTimer.singleShot(100, tab.open_find_dialog)
 
     def toggle_dark_mode(self):
         self.set_dark_mode(not self.dark_mode)
@@ -1150,11 +1113,11 @@ class REasyEditorApp(QMainWindow):
         save_settings(self.settings)
 
     def closeEvent(self, event):
-        for tab in list(self.tabs.values()):
+        for tab in self.tabs.values():
             if tab.modified:
                 ans = QMessageBox.question(
                     self,
-                    "Unsaved Changes",
+                    UNSAVED_CHANGES_STR,
                     f"File {os.path.basename(tab.filename)} has unsaved changes.\nSave before closing?",
                     QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
                 )
@@ -1173,8 +1136,7 @@ class REasyEditorApp(QMainWindow):
     def update_from_app_settings(self):
         """Update handler settings from the application settings"""
         for tab in self.tabs.values():
-            if hasattr(tab, 'handler'):
-                if isinstance(tab.handler, RszHandler):
+            if hasattr(tab, 'handler') and isinstance(tab.handler, RszHandler):
                     tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
@@ -1417,7 +1379,7 @@ class REasyEditorApp(QMainWindow):
                     if tab.modified:
                         ans = QMessageBox.question(
                             self,
-                            "Unsaved Changes",
+                            UNSAVED_CHANGES_STR,
                             f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
                             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
                         )
@@ -1461,8 +1423,8 @@ class REasyEditorApp(QMainWindow):
             if tab and hasattr(tab, 'notebook_widget') and tab.notebook_widget:
                 try:
                     tab.notebook_widget.deleteLater()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Error closing tab: {e}")
 
     def get_active_tab(self):
         current_widget = self.notebook.currentWidget()
@@ -1532,7 +1494,7 @@ class REasyEditorApp(QMainWindow):
         if tab and tab.modified:
             ans = QMessageBox.question(
                 self,
-                "Unsaved Changes",
+                UNSAVED_CHANGES_STR,
                 f"The file {os.path.basename(tab.filename)} has unsaved changes.\nSave before closing?",
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
             )

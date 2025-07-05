@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QComboBox,
     QLabel, QPushButton, QLineEdit, QMessageBox, QSplitter,
-    QTextEdit, QGroupBox, QFrame, QStatusBar, QCheckBox,
-    QSpinBox, QFormLayout, QHeaderView, QProgressBar, QToolButton
+    QTextEdit, QGroupBox, QFrame, QCheckBox,
+    QSpinBox, QFormLayout, QHeaderView
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QSize
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont, QIcon, QPixmap, QPalette, QKeySequence, QShortcut
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont, QPalette, QKeySequence, QShortcut
 
 
 class MsgViewer(QWidget):
@@ -587,11 +587,11 @@ class MsgViewer(QWidget):
                 preview_item.setText(preview)
                 model.blockSignals(False)
 
-    def _on_tree_data_changed(self, topLeft, _, roles):
+    def _on_tree_data_changed(self, top_left, _, roles):
         if Qt.EditRole not in roles:
             return
-        
-        item = self.tree.model().item(topLeft.row(), topLeft.column())
+
+        item = self.tree.model().item(top_left.row(), top_left.column())
         meta = item.data(Qt.UserRole)
         if meta:
             new_value = item.text()
@@ -613,13 +613,6 @@ class MsgViewer(QWidget):
                     item.setText(preview)
 
     def _on_add_entry(self):
-        current_selection = None
-        if self.tree.selectionModel() and self.tree.selectionModel().hasSelection():
-            current_index = self.tree.selectionModel().currentIndex()
-            if current_index.isValid():
-                item = self.tree.model().item(current_index.row(), 0)
-                if item:
-                    current_selection = item.data(Qt.UserRole)
         
         self.handler.add_entry()
         self._populate_tree()

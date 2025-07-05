@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget, 
                               QDialogButtonBox, QLabel)
-from PySide6.QtCore import Qt
 
 class ComponentSelectorDialog(QDialog):
     """Dialog for selecting a component type with filtering and autocomplete"""

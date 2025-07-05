@@ -2,7 +2,9 @@ import os
 import json
 import uuid
 import traceback
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import (
+    ObjectData, UserDataData, GameObjectRefData, ArrayData, S32Data, GuidData
+)
 from file_handlers.rsz.rsz_file import RszInstanceInfo, RszPrefabInfo, RszRSZUserDataInfo, RszUserDataInfo, RszGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
@@ -732,7 +734,8 @@ class RszGameObjectClipboard:
                         try:
                             guid_bytes = bytes.fromhex(guid_hex)
                             new_fields[field_name] = GameObjectRefData(guid_str, guid_bytes, orig_type)
-                        except:
+                        except Exception as ee:
+                            print(f"Exception processing GameObjectRefData: {str(ee)}")
                             new_fields[field_name] = GameObjectRefData(guid_str, None, orig_type)
                 else:
                     new_fields[field_name] = GameObjectRefData(guid_str, None, orig_type)
@@ -803,7 +806,8 @@ class RszGameObjectClipboard:
                                 try:
                                     guid_bytes = bytes.fromhex(guid_hex)
                                     new_array.values.append(GameObjectRefData(guid_str, guid_bytes, value_orig_type))
-                                except:
+                                except Exception as ee:
+                                    print(f"Exception processing GameObjectRefData in array: {str(ee)}")
                                     new_array.values.append(GameObjectRefData(guid_str, None, value_orig_type))
                         else:
                             new_array.values.append(GameObjectRefData(guid_str, None, value_orig_type))
@@ -825,7 +829,7 @@ class RszGameObjectClipboard:
         type_name = instance_data.get("type_name", "")
         
         if type_name == "chainsaw.ContextID":
-            print(f"Found chainsaw.ContextID instance, updating _Group field")
+            print("Found chainsaw.ContextID instance, updating _Group field")
             
             if "_Group" in fields and isinstance(fields["_Group"], S32Data):
                 original_value = fields["_Group"].value

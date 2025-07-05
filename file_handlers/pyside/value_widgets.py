@@ -98,7 +98,6 @@ class Vec2Input(BaseValueWidget):
                     new_values.append(float(text))
             
             new_values = tuple(new_values)
-            old_values = (self._data.x, self._data.y)
             
             self._data.x = new_values[0]
             self._data.y = new_values[1]
@@ -224,7 +223,6 @@ class Vec4Input(BaseValueWidget):
                     new_values.append(float(text))
             
             new_values = tuple(new_values)
-            old_values = (self._data.x, self._data.y, self._data.z, self._data.w)
             
             self._data.x = new_values[0]
             self._data.y = new_values[1]
@@ -1682,8 +1680,9 @@ class ColorInput(BaseValueWidget):
                             else:
                                 return
                             dlg.setCurrentColor(QColor(r,g,b,a))
-                        except Exception:
+                        except Exception as e:
                             excepted = True
+                            print(f"Error parsing hex color: {e}")
                     hex_edit.textChanged.connect(on_hex)
 
             if dlg.exec_() and not excepted:
