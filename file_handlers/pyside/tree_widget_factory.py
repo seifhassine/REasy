@@ -7,6 +7,7 @@ from file_handlers.pyside.value_widgets import (
     RangeIInput, ColorInput, Vec3ColorInput, CapsuleInput, Int3Input, EnumInput
 )
 from utils.enum_manager import EnumManager
+from ui.styles import get_text_label_padding_stylesheet
 
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
@@ -154,7 +155,7 @@ class TreeWidgetFactory:
             icon_label.setPixmap(icon.pixmap(16, 16))
             
             text_label = QLabel(name_text)
-            text_label.setStyleSheet("padding-left: 2px;")
+            text_label.setStyleSheet(get_text_label_padding_stylesheet())
             
             layout.addWidget(icon_label)
             layout.addWidget(text_label, 1)

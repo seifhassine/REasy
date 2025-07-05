@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt
+from ui.styles import get_title_label_stylesheet
 
 def create_about_dialog(parent):
     """Creates and shows the About dialog"""
@@ -14,7 +15,7 @@ def create_about_dialog(parent):
     layout = QVBoxLayout(dialog)
 
     title_label = QLabel("REasy Editor v0.3.2")
-    title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
+    title_label.setStyleSheet(get_title_label_stylesheet())
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 
     info_label = QLabel(

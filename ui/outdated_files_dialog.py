@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView,
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame
 )
-
+from ui.styles import get_info_frame_stylesheet
 from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
 
 class OutdatedFilesDialog(QDialog):
@@ -24,7 +24,7 @@ class OutdatedFilesDialog(QDialog):
         layout = QVBoxLayout(self)
         
         info_frame = QFrame()
-        info_frame.setStyleSheet("border-radius: 5px; padding: 10px;")
+        info_frame.setStyleSheet(get_info_frame_stylesheet())
         info_layout = QVBoxLayout(info_frame)
         info_label = QLabel(
             "<b>Note:</b> This tool detects files that are incompatible with your selected RSZ template "

@@ -16,6 +16,7 @@ from ui.guid_converter import create_guid_converter_dialog
 from ui.about_dialog import create_about_dialog
 from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
+from ui.styles import get_color_scheme, get_main_stylesheet, get_filetab_tree_stylesheet, get_filetab_tree_color_stylesheet, get_main_status_bar_stylesheet, get_notebook_stylesheet
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 
 from PySide6.QtCore import (
@@ -162,10 +163,8 @@ class CustomNotebook(QTabWidget):
 
     def set_dark_mode(self, is_dark):
         self.dark_mode = is_dark
-        if is_dark:
-            self.setStyleSheet("QTabWidget { background-color: #2b2b2b; }")
-        else:
-            self.setStyleSheet("QTabWidget { background-color: white; }")
+        colors = get_color_scheme(is_dark)
+        self.setStyleSheet(get_notebook_stylesheet(colors))
 
     def on_tab_close_requested(self, index):
         if self.app_instance:
@@ -202,13 +201,7 @@ class FileTab:
         self.tree.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tree.setAlternatingRowColors(False)
         self.tree.setContentsMargins(0, 0, 0, 0) 
-        self.tree.setStyleSheet("""
-            QTreeView {
-                border: none;
-                margin: 0px;
-                padding: 0px;
-            }
-        """)
+        self.tree.setStyleSheet(get_filetab_tree_stylesheet())
         
         self.tree.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
         self.tree.setExpandsOnDoubleClick(False)
@@ -228,20 +221,10 @@ class FileTab:
 
         if data:
             self.load_file(filename, data)
-            if not self.app.dark_mode:
-                self.tree.setStyleSheet(
-                    """
-                    QTreeView {
-                        background-color: white;
-                        color: black;
-                    }
-                    QTreeView::item {
-                        background-color: white;
-                        color: black;
-                        padding: 2px;
-                    }
-                """
-                )
+            colors = get_color_scheme(self.app.dark_mode)
+            # Apply color-specific styling in addition to the base styling
+            tree_color_style = get_filetab_tree_color_stylesheet(colors)
+            self.tree.setStyleSheet(self.tree.styleSheet() + tree_color_style)
 
         self.search_state = {
             "dialog": None,
@@ -793,16 +776,7 @@ class REasyEditorApp(QMainWindow):
         self.status_bar = QStatusBar()
         self.status_bar.setContentsMargins(0, 0, 0, 0)
         self.status_bar.setMaximumHeight(20) 
-        self.status_bar.setStyleSheet("""
-            QStatusBar {
-                margin: 0;
-                padding: 0;
-                border-top: 1px solid #cccccc;
-            }
-            QStatusBar::item {
-                border: none;
-            }
-        """)
+        self.status_bar.setStyleSheet(get_main_status_bar_stylesheet())
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready")
 
@@ -989,59 +963,14 @@ class REasyEditorApp(QMainWindow):
         self.settings["dark_mode"] = state
         self.save_settings()
 
-        if state:
-            colors = {
-                "bg": "#2b2b2b", "tree_bg": "#2b2b2b", "fg": "white",
-                "highlight": "rgba(255, 133, 51, 0.5)", "input_bg": "#3b3b3b",
-                "disabled_bg": "#404040", "border": "#555555"
-            }
-        else:
-            colors = {
-                "bg": "#ffffff", "tree_bg": "#ffffff", "fg": "#000000",
-                "highlight": "#ff851b", "input_bg": "#ffffff",
-                "disabled_bg": "#f0f0f0", "border": "#cccccc"
-            }
-
+        colors = get_color_scheme(state)
         self._apply_style(colors)
         
         self.notebook.set_dark_mode(state)
         self._update_tab_viewers(state)
 
     def _apply_style(self, colors):
-        self.setStyleSheet(f"""
-            QMainWindow, QDialog, QWidget {{ 
-                background-color: {colors['bg']}; color: {colors['fg']}; 
-            }}
-            QTreeView {{
-                background-color: {colors['tree_bg']}; color: {colors['fg']};
-                border: 1px solid {colors['border']};
-            }}
-            QTreeView::item:selected {{ background-color: {colors['highlight']}; }}
-            QLineEdit, QPlainTextEdit {{
-                background-color: {colors['input_bg']}; color: {colors['fg']};
-                border: 1px solid {colors['border']}; padding: 2px;
-            }}
-            QPushButton {{
-                background-color: {colors['input_bg']}; color: {colors['fg']};
-                border: 1px solid {colors['border']}; padding: 5px; min-width: 80px;
-            }}
-            QPushButton:disabled {{ background-color: {colors['disabled_bg']}; }}
-            QLabel, QCheckBox {{ color: {colors['fg']}; }}
-            QCheckBox::indicator {{
-                width: 15px; height: 15px; background-color: {colors['input_bg']};
-                border: 1px solid {colors['border']}; border-radius: 2px;
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {colors['highlight']}; border-color: {colors['highlight']};
-            }}
-            QMenuBar, QMenu, QTabWidget::pane, QStatusBar, QProgressDialog, QListWidget {{
-                background-color: {colors['bg']}; color: {colors['fg']};
-                border: 1px solid {colors['border']};
-            }}
-            QMenuBar::item:selected, QMenu::item:selected, QTabBar::tab:selected, QListWidget::item:selected {{
-                background-color: {colors['highlight']};
-            }}
-        """)
+        self.setStyleSheet(get_main_stylesheet(colors))
 
     def _update_tab_viewers(self, dark_mode):
         for tab in self.tabs.values():

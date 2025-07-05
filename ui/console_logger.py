@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from PySide6.QtWidgets import QPlainTextEdit
 from PySide6.QtCore import Qt, Signal, QObject
+from ui.styles import get_console_stylesheet
 
 
 class TextHandler(logging.Handler):
@@ -80,21 +81,7 @@ class ConsoleWidget(QPlainTextEdit):
         self.document().setDocumentMargin(0) 
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  
         self.setContentsMargins(0, 0, 0, 0)  
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #000000;
-                color: #00FF00;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
-                margin: 0;
-                padding: 0;
-                border: none;
-            }
-            QPlainTextEdit QScrollBar:vertical {
-                width: 12px;
-                margin: 0;
-            }
-        """)
+        self.setStyleSheet(get_console_stylesheet())
 
     def write(self, text):
         """Write text to the console, ensuring each message ends with a newline"""

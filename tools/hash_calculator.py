@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QApplication, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QWidget, QMessageBox
 )
 from utils.hash_util import murmur3_hash
+from ui.styles import get_bold_label_stylesheet
 
 
 class HashCalculator(QWidget):
@@ -30,7 +31,7 @@ class HashCalculator(QWidget):
 
         utf8_group_layout = QVBoxLayout()
         utf8_label = QLabel("UTF-8 Results:")
-        utf8_label.setStyleSheet("font-weight: bold")
+        utf8_label.setStyleSheet(get_bold_label_stylesheet())
         utf8_group_layout.addWidget(utf8_label)
 
         self.result_label_hex_utf8 = QLabel("Hex:")
@@ -48,7 +49,7 @@ class HashCalculator(QWidget):
         
         utf16_group_layout = QVBoxLayout()
         utf16_label = QLabel("UTF-16 Results:")
-        utf16_label.setStyleSheet("font-weight: bold")
+        utf16_label.setStyleSheet(get_bold_label_stylesheet())
         utf16_group_layout.addWidget(utf16_label)
 
         self.result_label_hex_utf16 = QLabel("Hex:")

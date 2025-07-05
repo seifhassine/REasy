@@ -6,7 +6,11 @@ from PySide6.QtWidgets import (
     QFrame, QGridLayout, QScrollArea, QStackedWidget,
     QFormLayout, QCheckBox
 )
-
+from ui.styles import (get_star_rating_stylesheet, get_header_label_stylesheet, 
+                       get_error_label_stylesheet, get_info_label_stylesheet, 
+                       get_success_label_stylesheet, get_bold_label_stylesheet,
+                       get_muted_label_stylesheet, get_comment_frame_stylesheet,
+                       get_muted_text_stylesheet)
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 from file_handlers.rsz.rsz_community_template_manager import RszCommunityTemplateManager
 from datetime import datetime
@@ -57,25 +61,13 @@ class QStarWidget(QWidget):
         for i, btn in enumerate(self.star_buttons):
             if i < filled:
                 btn.setText("★")
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
-                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                btn.setStyleSheet(get_star_rating_stylesheet(filled=True, readonly=self.readonly))
             elif i == filled and partial >= 0.5:
                 btn.setText("⯨")            
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
-                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                btn.setStyleSheet(get_star_rating_stylesheet(filled=True, readonly=self.readonly))
             else:
                 btn.setText("☆")
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }"
-                                     "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                btn.setStyleSheet(get_star_rating_stylesheet(filled=False, readonly=self.readonly))
 
 class CommunityTemplatesDialog(QDialog):
     """Dialog for browsing, downloading, rating, and commenting on community templates"""
@@ -126,7 +118,7 @@ class CommunityTemplatesDialog(QDialog):
         
         header_layout = QHBoxLayout()
         header_label = QLabel("REasy Community Templates")
-        header_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        header_label.setStyleSheet(get_header_label_stylesheet())
         header_layout.addWidget(header_label, 0, Qt.AlignCenter)
         login_layout.addLayout(header_layout)
         
@@ -156,7 +148,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.login_status = QLabel("")
 
-        self.login_status.setStyleSheet("color: red;")
+        self.login_status.setStyleSheet(get_error_label_stylesheet())
         login_tab_layout.addRow("", self.login_status)
         
         self.auth_tabs.addTab(login_tab, "Login")
@@ -187,7 +179,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.register_status = QLabel("")
 
-        self.register_status.setStyleSheet("color: red;")
+        self.register_status.setStyleSheet(get_error_label_stylesheet())
         register_tab_layout.addRow("", self.register_status)
         
         self.auth_tabs.addTab(register_tab, "Register")
@@ -244,7 +236,7 @@ class CommunityTemplatesDialog(QDialog):
         info_layout = QVBoxLayout(self.template_info)
         
         self.template_name = QLabel()
-        self.template_name.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.template_name.setStyleSheet(get_title_label_stylesheet())
         info_layout.addWidget(self.template_name)
         
         self.template_meta = QLabel()
@@ -342,7 +334,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.no_template_label = QLabel("Select a template from the list to view details")
         self.no_template_label.setAlignment(Qt.AlignCenter)
-        self.no_template_label.setStyleSheet("color: #888; font-size: 14px;")
+        self.no_template_label.setStyleSheet(get_muted_label_stylesheet())
         details_layout.addWidget(self.no_template_label)
     
     def _on_game_changed(self):
@@ -384,7 +376,7 @@ class CommunityTemplatesDialog(QDialog):
             return
         
         self.login_status.setText("Logging in...")
-        self.login_status.setStyleSheet("color: blue;")
+        self.login_status.setStyleSheet(get_info_label_stylesheet())
         self.login_button.setEnabled(False)
         
         from PySide6.QtCore import QThread, Signal as ThreadSignal
@@ -411,7 +403,7 @@ class CommunityTemplatesDialog(QDialog):
                 self._show_main_page()
             else:
                 self.login_status.setText(result["message"])
-                self.login_status.setStyleSheet("color: red;")
+                self.login_status.setStyleSheet(get_error_label_stylesheet())
         
         self.login_thread = LoginThread(email, password, remember)
         self.login_thread.login_complete.connect(on_login_complete)
@@ -441,7 +433,7 @@ class CommunityTemplatesDialog(QDialog):
             return
         
         self.register_status.setText("Registering...")
-        self.register_status.setStyleSheet("color: blue;")
+        self.register_status.setStyleSheet(get_info_label_stylesheet())
         self.register_button.setEnabled(False)
         
         from PySide6.QtCore import QThread, Signal as ThreadSignal
@@ -466,7 +458,7 @@ class CommunityTemplatesDialog(QDialog):
             
             if result["success"]:
                 self.register_status.setText("Registration successful! You can now log in.")
-                self.register_status.setStyleSheet("color: green;")
+                self.register_status.setStyleSheet(get_success_label_stylesheet())
                 self.auth_tabs.setCurrentIndex(0)  
                 
                 self.login_email.setText(email)
@@ -474,7 +466,7 @@ class CommunityTemplatesDialog(QDialog):
 
             else:
                 self.register_status.setText(result["message"])
-                self.register_status.setStyleSheet("color: red;")
+                self.register_status.setStyleSheet(get_error_label_stylesheet())
         
         self.register_thread = RegisterThread(email, password, display_name)
         self.register_thread.register_complete.connect(on_register_complete)
@@ -696,13 +688,13 @@ class CommunityTemplatesDialog(QDialog):
         for comment in sorted_comments:
             comment_frame = QFrame()
             comment_frame.setFrameShape(QFrame.StyledPanel)
-            comment_frame.setStyleSheet("border-radius: 5px;")
+            comment_frame.setStyleSheet(get_comment_frame_stylesheet())
             
             comment_layout = QVBoxLayout(comment_frame)
             
             header_layout = QHBoxLayout()
             username = QLabel(comment.get("username", "Anonymous"))
-            username.setStyleSheet("font-weight: bold;")
+            username.setStyleSheet(get_bold_label_stylesheet())
             header_layout.addWidget(username)
             
             timestamp = comment.get("timestamp")
@@ -710,7 +702,7 @@ class CommunityTemplatesDialog(QDialog):
                 try:
                     date_str = timestamp.strftime("%Y-%m-%d %H:%M")
                     time_label = QLabel(date_str)
-                    time_label.setStyleSheet("color: #888;")
+                    time_label.setStyleSheet(get_muted_text_stylesheet())
                     header_layout.addWidget(time_label)
                 except Exception as e:
                     print(f"Error formatting timestamp: {e}")

@@ -6,6 +6,12 @@ from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntVal
 import uuid
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
+from ui.styles import (get_validation_error_stylesheet, get_resource_indicator_stylesheet, 
+                       get_label_padding_stylesheet, get_container_margin_stylesheet,
+                       get_radius_input_stylesheet, get_color_input_stylesheet, 
+                       get_color_scheme, get_color_button_stylesheet, get_color_button_rgb_stylesheet,
+                       get_checkbox_widget_stylesheet, get_margin_left_2px_stylesheet,
+                       get_margin_left_6px_stylesheet, get_colorinput_label_stylesheet)
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -311,9 +317,9 @@ class GuidInput(BaseValueWidget):
                 self.mark_modified()
                 self.line_edit.setStyleSheet("")
             except ValueError:
-                self.line_edit.setStyleSheet("border: 1px solid red;")
+                self.line_edit.setStyleSheet(get_validation_error_stylesheet())
         else:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(get_validation_error_stylesheet())
 
     def update_display(self):
         if not self._data:
@@ -394,7 +400,7 @@ class NumberInput(BaseValueWidget):
                     self.mark_modified()
                 self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(get_validation_error_stylesheet())
 
 class F32Input(NumberInput):
     def __init__(self, parent=None):
@@ -481,7 +487,7 @@ class Int3Input(BaseValueWidget):
                     input_field.setStyleSheet("")
                         
                 except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
+                    input_field.setStyleSheet(get_validation_error_stylesheet())
                     valid_input = False
                     value = 0
                     
@@ -618,7 +624,7 @@ class U8Input(NumberInput):
                     self.mark_modified()
                 self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(get_validation_error_stylesheet())
 
 class AABBInput(BaseValueWidget):
     valueChanged = Signal(tuple) 
@@ -988,7 +994,7 @@ class StringInput(BaseValueWidget):
         
         if isinstance(self._data, ResourceData):
             self.resource_indicator = QLabel("Resource")
-            self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
+            self.resource_indicator.setStyleSheet(get_resource_indicator_stylesheet())
             self.layout.addWidget(self.resource_indicator)
 
 
@@ -1071,15 +1077,7 @@ class BoolInput(BaseValueWidget):
         self.checkbox = QCheckBox()
         self.checkbox.setText("")
         self.checkbox.setFixedWidth(20)
-        self.checkbox.setStyleSheet("""
-            QCheckBox {
-                padding: 2px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-        """)
+        self.checkbox.setStyleSheet(get_checkbox_widget_stylesheet())
         self.layout.addWidget(self.checkbox)
         self.layout.addStretch()
         self.checkbox.stateChanged.connect(self._on_state_changed)
@@ -1111,7 +1109,7 @@ class RangeInput(BaseValueWidget):
             
             label = QLabel(name)
             label.setFixedWidth(33)
-            label.setStyleSheet("padding-right: 2px;")
+            label.setStyleSheet(get_label_padding_stylesheet())
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
@@ -1119,12 +1117,12 @@ class RangeInput(BaseValueWidget):
             line_edit.setFixedWidth(80)
             line_edit.setProperty("name", name.lower())
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 2px;")
+            line_edit.setStyleSheet(get_margin_left_2px_stylesheet())
             container_layout.addWidget(line_edit)
             
             if i == 0:
                 container.setFixedWidth(120)
-                container.setStyleSheet("margin-right: 6px;")
+                container.setStyleSheet(get_container_margin_stylesheet())
             
             self.layout.addWidget(container)
             self.inputs.append(line_edit)
@@ -1194,7 +1192,7 @@ class RangeIInput(BaseValueWidget):
             
             label = QLabel(name)
             label.setFixedWidth(33)
-            label.setStyleSheet("padding-right: 2px;")
+            label.setStyleSheet(get_label_padding_stylesheet())
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
@@ -1202,12 +1200,12 @@ class RangeIInput(BaseValueWidget):
             line_edit.setFixedWidth(80)
             line_edit.setProperty("name", name.lower())
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 2px;")
+            line_edit.setStyleSheet(get_margin_left_2px_stylesheet())
             container_layout.addWidget(line_edit)
             
             if i == 0:
                 container.setFixedWidth(120)
-                container.setStyleSheet("margin-right: 6px;")
+                container.setStyleSheet(get_container_margin_stylesheet())
             
             self.layout.addWidget(container)
             self.inputs.append(line_edit)
@@ -1358,7 +1356,7 @@ class EnumInput(BaseValueWidget):
                 
             self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(get_validation_error_stylesheet())
             
     def _on_combo_changed(self, index):
         """Update value when an enum option is selected"""
@@ -1487,13 +1485,7 @@ class ColorInput(BaseValueWidget):
             label = QLabel(comp)
             label.setFixedWidth(8)
             label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
+            label.setStyleSheet(get_colorinput_label_stylesheet())
             
             line_edit = QLineEdit()
             validator = QIntValidator(0, 255)
@@ -1501,19 +1493,7 @@ class ColorInput(BaseValueWidget):
             line_edit.setFixedWidth(28) 
             line_edit.setFixedHeight(20)
             line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
+            line_edit.setStyleSheet(get_color_input_stylesheet())
             
             col_offset = (i * 3) + 2
             grid.addWidget(label, 0, col_offset)
@@ -1603,7 +1583,7 @@ class ColorInput(BaseValueWidget):
         alpha_normalized = a / 255.0
         
         self.color_button.setStyleSheet(
-            f"background-color: rgba({r}, {g}, {b}, {alpha_normalized}); border: 1px solid #888888;"
+            get_color_button_stylesheet(r, g, b, alpha_normalized)
         )
     
     def _show_color_dialog(self):
@@ -1738,13 +1718,7 @@ class Vec3ColorInput(BaseValueWidget):
             label = QLabel(comp)
             label.setFixedWidth(8)
             label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
+            label.setStyleSheet(get_colorinput_label_stylesheet())
             
             line_edit = QLineEdit()
             validator = QDoubleValidator()
@@ -1753,19 +1727,7 @@ class Vec3ColorInput(BaseValueWidget):
             line_edit.setFixedWidth(60)
             line_edit.setFixedHeight(20)
             line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
+            line_edit.setStyleSheet(get_color_input_stylesheet())
             
             col_offset = (i * 3) + 2
             grid.addWidget(label, 0, col_offset)
@@ -1849,7 +1811,7 @@ class Vec3ColorInput(BaseValueWidget):
         b = max(0, min(1, float(self._data.z))) * 255
         
         self.color_button.setStyleSheet(
-            f"background-color: rgb({int(r)}, {int(g)}, {int(b)}); border: 1px solid #888888;"
+            get_color_button_rgb_stylesheet(int(r), int(g), int(b))
         )
     
     def _show_color_dialog(self):
@@ -1940,7 +1902,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(get_margin_left_6px_stylesheet()) 
             grid.addWidget(line_edit, 0, (i*2)+2)
             self.start_inputs.append(line_edit)
             
@@ -1952,7 +1914,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(get_margin_left_6px_stylesheet()) 
             grid.addWidget(line_edit, 1, (i*2)+2)
             self.end_inputs.append(line_edit)
             
@@ -1960,7 +1922,7 @@ class CapsuleInput(BaseValueWidget):
         self.radius_input.setValidator(QDoubleValidator())
         self.radius_input.setFixedWidth(80)
         self.radius_input.setAlignment(Qt.AlignLeft)
-        self.radius_input.setStyleSheet("margin-left: 6px;")
+        self.radius_input.setStyleSheet(get_margin_left_6px_stylesheet())
         grid.addWidget(self.radius_input, 2, 2)
         
         self.layout.addStretch()
