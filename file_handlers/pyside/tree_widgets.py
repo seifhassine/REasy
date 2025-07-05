@@ -1837,8 +1837,6 @@ class AdvancedTreeView(QTreeView):
         if parent_node_index.isValid():
             go_index = model.index(len(parent_node.children) - 1, 0, parent_node_index)
             if go_index.isValid():
-                self.expand(parent_node_index)
-                self.scrollTo(go_index)
                 
                 go_item = go_index.internalPointer()
                 if go_item and hasattr(go_item, 'data'):
@@ -1861,7 +1859,6 @@ class AdvancedTreeView(QTreeView):
                     break
             
             if children_node_index and children_node_index.isValid():
-                self.expand(go_index)
                 
                 for child_data in go_data['children']:
                     self.add_gameobject_to_ui_direct(child_data, children_node_index)
@@ -2576,7 +2573,6 @@ class AdvancedTreeView(QTreeView):
             go_data = parent_widget.handler.paste_gameobject_from_clipboard(
                 parent_widget, parent_object_id, new_name, clipboard_data
             )
-            
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data, parent_index)
                 QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")

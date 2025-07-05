@@ -1207,6 +1207,9 @@ class RszViewer(QWidget):
             return None
 
     def _insert_instance_and_update_references(self, index, instance):
+        if index >= len(self.scn.instance_infos):
+            self.scn.instance_infos.append(instance)
+            return
         self.scn.instance_infos.insert(index, instance)
         
         for i in range(len(self.scn.object_table)):
@@ -1218,8 +1221,7 @@ class RszViewer(QWidget):
             updated_fields = {}
             new_id = instance_id + 1 if instance_id >= index else instance_id
             for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData):
-                    if field_data.value >= index:
+                if (isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData)) and field_data.value >= index:
                         field_data.value += 1
                 elif isinstance(field_data, ArrayData):
                     for elem in field_data.values:
