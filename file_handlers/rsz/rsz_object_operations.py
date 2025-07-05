@@ -976,11 +976,11 @@ class RszObjectOperations:
             return
         
         if type_info["name"] == "chainsaw.ContextID":
-            print("Found chainsaw.ContextID instance, updating _Group field")
+            #print("Found chainsaw.ContextID instance, updating _Group field")
             
             if "_Group" in fields and isinstance(fields["_Group"], S32Data):
                 original_value = fields["_Group"].value
                 new_value = original_value + context_id_offset
                 fields["_Group"].value = new_value
-                print(f"  Updated _Group from {original_value} to {new_value}")
+                #print(f"  Updated _Group from {original_value} to {new_value}")
 

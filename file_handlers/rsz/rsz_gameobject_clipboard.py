@@ -670,7 +670,7 @@ class RszGameObjectClipboard:
         if hasattr(viewer.scn, '_prefab_str_map'):
             viewer.scn._prefab_str_map[new_prefab] = prefab_path
             
-        print(f"Created prefab (ID: {prefab_id}) for GameObject with path: {prefab_path}")
+        #print(f"Created prefab (ID: {prefab_id}) for GameObject with path: {prefab_path}")
         return True
     
     @staticmethod
@@ -715,7 +715,7 @@ class RszGameObjectClipboard:
                         _is_null_guid = is_null_guid(guid_bytes, guid_str)
                         
                         if _is_null_guid:
-                            print(f"Preserving null GameObjectRef GUID for {field_name}")
+                            #print(f"Preserving null GameObjectRef GUID for {field_name}")
                             new_fields[field_name] = GameObjectRefData(guid_str, guid_bytes, orig_type)
                         else:
                             new_guid_bytes = RszGameObjectClipboard._handle_guid_mapping(guid_bytes, guid_mapping)
@@ -822,13 +822,13 @@ class RszGameObjectClipboard:
         type_name = instance_data.get("type_name", "")
         
         if type_name == "chainsaw.ContextID":
-            print("Found chainsaw.ContextID instance, updating _Group field")
+            #print("Found chainsaw.ContextID instance, updating _Group field")
             
             if "_Group" in fields and isinstance(fields["_Group"], S32Data):
                 original_value = fields["_Group"].value
                 new_value = original_value + context_id_offset
                 fields["_Group"].value = new_value
-                print(f"  Updated _Group from {original_value} to {new_value}")
+                #print(f"  Updated _Group from {original_value} to {new_value}")
 
     @staticmethod
     def has_clipboard_data(viewer):
