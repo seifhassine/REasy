@@ -1,8 +1,13 @@
 import os
 import json
 import traceback
-import copy
-from file_handlers.rsz.rsz_data_types import *
+from file_handlers.rsz.rsz_data_types import (
+    ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
+    StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
+    ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
+    Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, RectData, LineSegmentData,
+    PointData, StructData, RawBytesData
+)
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
 
 class RszArrayClipboard:
@@ -583,8 +588,12 @@ class RszArrayClipboard:
         elif isinstance(element, AreaData):
             return {
                 "type": "AreaData",
-                "min": RszArrayClipboard._serialize_element(element.min),
-                "max": RszArrayClipboard._serialize_element(element.max),
+                "p0": RszArrayClipboard._serialize_element(element.p0),
+                "p1": RszArrayClipboard._serialize_element(element.p1),
+                "p2": RszArrayClipboard._serialize_element(element.p2),
+                "p3": RszArrayClipboard._serialize_element(element.p3),
+                "height": element.height,
+                "bottom": element.bottom,
                 "orig_type": element.orig_type
             }
         elif isinstance(element, RectData):
@@ -1259,14 +1268,20 @@ class RszArrayClipboard:
             return CylinderData(center, radius, height, orig_type)
         
         elif element_type == "AreaData":
-            min_data = element_data.get("min", {})
-            max_data = element_data.get("max", {})
+            p0 = element_data.get("p0", Float2Data())
+            p1 = element_data.get("p1", Float2Data())
+            p2 = element_data.get("p2", Float2Data())
+            p3 = element_data.get("p3", Float2Data())
+            height = element_data.get("height", 0.0)
+            bottom = element_data.get("bottom", 0.0)
             
-            min_vec = RszArrayClipboard._deserialize_element(min_data, Vec2Data) if isinstance(min_data, dict) else Vec2Data()
-            max_vec = RszArrayClipboard._deserialize_element(max_data, Vec2Data) if isinstance(max_data, dict) else Vec2Data()
+            p0_deserialized = RszArrayClipboard._deserialize_element(p0, Float2Data) if isinstance(p0, dict) else Float2Data()
+            p1_deserialized = RszArrayClipboard._deserialize_element(p1, Float2Data) if isinstance(p1, dict) else Float2Data()
+            p2_deserialized = RszArrayClipboard._deserialize_element(p2, Float2Data) if isinstance(p2, dict) else Float2Data()
+            p3_deserialized = RszArrayClipboard._deserialize_element(p3, Float2Data) if isinstance(p3, dict) else Float2Data()
             
-            return AreaData(min_vec, max_vec, orig_type)
-        
+            return AreaData(p0_deserialized, p1_deserialized, p2_deserialized, p3_deserialized, height, bottom, orig_type)
+
         elif element_type == "RectData":
             return RectData(
                 element_data.get("min_x", 0.0),
