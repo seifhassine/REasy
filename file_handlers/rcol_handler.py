@@ -34,9 +34,6 @@ class RcolHandler(FileHandler):
     def rebuild(self) -> bytes:
         return b""
 
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
     def get_context_menu(self, tree: tk.Widget, row_id, meta: dict) -> tk.Menu:
         return None
 
@@ -44,9 +41,6 @@ class RcolHandler(FileHandler):
         return False
 
     def handle_edit(self, meta: dict, new_val, old_val, row_id):
-        pass
-
-    def update_strings(self):
         pass
 
     def _populate_rsz_user_data_components(
@@ -193,64 +187,64 @@ class RcolHandler(FileHandler):
         top_id = tree.insert(parent_id, "end", text="RCOL_File", values=("",))
         hdr_id = tree.insert(top_id, "end", text="Header", values=("",))
         tree.insert(hdr_id, "end", text="signature", values=(self.rcol.signature,))
-        tree.insert(hdr_id, "end", text="numGroups", values=(self.rcol.numGroups,))
-        tree.insert(hdr_id, "end", text="numShapes", values=(self.rcol.numShapes,))
-        tree.insert(hdr_id, "end", text="numUserData", values=(self.rcol.numUserData,))
+        tree.insert(hdr_id, "end", text="num_groups", values=(self.rcol.num_groups,))
+        tree.insert(hdr_id, "end", text="num_shapes", values=(self.rcol.num_shapes,))
+        tree.insert(hdr_id, "end", text="num_userdata", values=(self.rcol.num_userdata,))
         tree.insert(
-            hdr_id, "end", text="numRequestSets", values=(self.rcol.numRequestSets,)
+            hdr_id, "end", text="num_request_sets", values=(self.rcol.num_request_sets,)
         )
         tree.insert(
-            hdr_id, "end", text="maxRequestSetId", values=(self.rcol.maxRequestSetId,)
+            hdr_id, "end", text="max_request_set_id", values=(self.rcol.max_request_set_id,)
         )
         tree.insert(
-            hdr_id, "end", text="numIgnoreTags", values=(self.rcol.numIgnoreTags,)
+            hdr_id, "end", text="num_ignore_tags", values=(self.rcol.num_ignore_tags,)
         )
         tree.insert(
             hdr_id,
             "end",
-            text="numAutoGenerateJoints",
-            values=(self.rcol.numAutoGenerateJoints,),
+            text="num_auto_generate_joints",
+            values=(self.rcol.num_auto_generate_joints,),
         )
         tree.insert(
-            hdr_id, "end", text="userDataSize", values=(self.rcol.userDataSize,)
+            hdr_id, "end", text="user_data_size", values=(self.rcol.user_data_size,)
         )
         tree.insert(hdr_id, "end", text="status", values=(self.rcol.status,))
         tree.insert(hdr_id, "end", text="ukn", values=(self.rcol.ukn,))
         tree.insert(
             hdr_id,
             "end",
-            text="groupsPtrTbl",
-            values=(f"0x{self.rcol.groupsPtrTbl:X}",),
+            text="groups_ptr_tbl",
+            values=(f"0x{self.rcol.groups_ptr_tbl:X}",),
         )
         tree.insert(
             hdr_id,
             "end",
-            text="userDataStreamPtr",
-            values=(f"0x{self.rcol.userDataStreamPtr:X}",),
+            text="user_data_stream_ptr",
+            values=(f"0x{self.rcol.user_data_stream_ptr:X}",),
         )
         tree.insert(
             hdr_id,
             "end",
-            text="requestSetTbl",
-            values=(f"0x{self.rcol.requestSetTbl:X}",),
+            text="request_set_tbl",
+            values=(f"0x{self.rcol.request_set_tbl:X}",),
         )
         tree.insert(
             hdr_id,
             "end",
-            text="ignoreTagTbl",
-            values=(f"0x{self.rcol.ignoreTagTbl:X}",),
+            text="ignore_tag_tbl",
+            values=(f"0x{self.rcol.ignore_tag_tbl:X}",),
         )
         tree.insert(
             hdr_id,
             "end",
-            text="autoGenerateJointDescTbl",
-            values=(f"0x{self.rcol.autoGenerateJointDescTbl:X}",),
+            text="auto_generate_joint_desc_tbl",
+            values=(f"0x{self.rcol.auto_generate_joint_desc_tbl:X}",),
         )
 
         # File-level Groups Section: display each group's name as its value.
         if self.rcol.groups:
             grp_node = tree.insert(
-                top_id, "end", text=f"Groups ({self.rcol.numGroups})", values=("",)
+                top_id, "end", text=f"Groups ({self.rcol.num_groups})", values=("",)
             )
             for i, grp in enumerate(self.rcol.groups):
                 # Use the group's name as the displayed value.

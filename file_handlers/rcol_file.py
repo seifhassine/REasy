@@ -1,5 +1,5 @@
 import struct
-from utils.hex_util import *
+from utils.hex_util import read_wstring, guid_le_to_str
 
 
 ########################################
@@ -13,25 +13,25 @@ class RcolUserDataRSZHeader:
     def __init__(self):
         self.magic = 0
         self.version = 0
-        self.objectCount = 0
-        self.instanceCount = 0
-        self.userDataCount = 0
+        self.object_count = 0
+        self.instance_count = 0
+        self.user_data_count = 0
         self.reserved = 0
-        self.instanceOffset = 0
-        self.dataOffset = 0
-        self.userDataOffset = 0
+        self.instance_offset = 0
+        self.data_offset = 0
+        self.user_data_offset = 0
 
     def parse(self, data: bytes):
         (
             self.magic,
             self.version,
-            self.objectCount,
-            self.instanceCount,
-            self.userDataCount,
+            self.object_count,
+            self.instance_count,
+            self.user_data_count,
             self.reserved,
-            self.instanceOffset,
-            self.dataOffset,
-            self.userDataOffset,
+            self.instance_offset,
+            self.data_offset,
+            self.user_data_offset,
         ) = struct.unpack_from("<IIIIIIQQQ", data, 0)
 
 
@@ -52,9 +52,9 @@ class RcolUserDataFull:
     """
     Parses the complete userData block:
       1) RSZHeader (48 bytes)
-      2) ObjectTable: objectCount entries (4 bytes each)
-      3) InstanceInfos: instanceCount entries (8 bytes each; first forced null)
-      4) Data: exactly userDataSize bytes.
+      2) ObjectTable: object_count entries (4 bytes each)
+      3) InstanceInfos: instance_count entries (8 bytes each; first forced null)
+      4) Data: exactly user_data_size bytes.
       Then groups InstanceInfos not referenced in ObjectTable.
     """
 
@@ -67,11 +67,11 @@ class RcolUserDataFull:
         # Reworked: data_group_bytes is now a list of 5-tuples:
         # (main_index, [child indices], [bytes consumed per child], raw_bytes, parsed_fields_per_child)
         self.data_group_bytes = []
-        self.userDataSize = 0
+        self.user_data_size = 0
         self.type_registry = None  # This is set externally by the handler.
 
-    def parse(self, data: bytes, offset: int, userDataSize: int):
-        self.userDataSize = userDataSize
+    def parse(self, data: bytes, offset: int, user_data_size: int):
+        self.user_data_size = user_data_size
         block = data[offset:]
         if len(block) < RcolUserDataRSZHeader.HEADER_SIZE:
             raise ValueError("UserData block too short for RSZHeader")
@@ -79,14 +79,14 @@ class RcolUserDataFull:
         self.header.parse(block)
         off = RcolUserDataRSZHeader.HEADER_SIZE
         # Parse ObjectTable.
-        count_obj = self.header.objectCount
+        count_obj = self.header.object_count
         need_obj = off + count_obj * 4
         if need_obj > len(block):
             raise ValueError("ObjectTable out of range in userData block")
         self.object_table = list(struct.unpack_from(f"<{count_obj}i", block, off))
         off = need_obj
         # Parse InstanceInfos.
-        count_inst = self.header.instanceCount
+        count_inst = self.header.instance_count
         need_inst = off + count_inst * RcolUserDataInstanceInfo.SIZE
         if need_inst > len(block):
             raise ValueError("InstanceInfos out of range in userData block")
@@ -99,125 +99,15 @@ class RcolUserDataFull:
                 inst.crc = 0
             self.instance_infos.append(inst)
         # Parse Data.
-        # The header.userDataSize covers the entire RSZUserData Components,
-        # so the Data field is userDataSize - header.dataOffset bytes.
-        data_start = offset + self.header.dataOffset
-        data_length = userDataSize - self.header.dataOffset
+        # The header.user_data_size covers the entire RSZUserData Components,
+        # so the Data field is user_data_size - header.data_offset bytes.
+        data_start = offset + self.header.data_offset
+        data_length = user_data_size - self.header.data_offset
         if data_start + data_length > len(data):
             raise ValueError("Not enough data for the Data field in userData block")
         self.data = data[data_start : data_start + data_length]
         # Group InstanceInfos not referenced in ObjectTable.
         self.group_data()
-
-    def group_data(self, debug=False):
-        # Build groups as before using the ObjectTable.
-        if self.type_registry is None:
-            raise ValueError("Type registry not set in RcolUserDataFull")
-        child_set = set(self.object_table)
-        main_indices = [
-            i for i in range(1, len(self.instance_infos)) if i not in child_set
-        ]
-        main_indices.sort()
-        groups = []
-        for idx, main in enumerate(main_indices):
-            group = []
-            next_main = (
-                main_indices[idx + 1]
-                if idx + 1 < len(main_indices)
-                else len(self.instance_infos)
-            )
-            for i in range(main + 1, next_main):
-                if i in child_set:
-                    group.append(i)
-            groups.append((main, group))
-        self.data_groups = groups
-        if debug:
-            print("DEBUG: Data Groups (main, children):")
-            for g in groups:
-                print("  Group:", g)
-
-        # Flatten children order.
-        all_children = []
-        for main, children in groups:
-            all_children.extend(children)
-        if debug:
-            print("DEBUG: Flat list of all children:", all_children)
-
-        # Process the Data block sequentially for each child.
-        child_consumed = {}  # child index -> bytes consumed (including alignment)
-        parsed_fields_dict = {}  # child index -> parsed fields list
-        consumed_slices = {}  # child index -> raw bytes consumed (including alignment)
-        data_off = 0
-        for child in all_children:
-            if debug:
-                print(
-                    f"DEBUG: Parsing child {child} starting at data_off {data_off:#x}"
-                )
-            inst = self.instance_infos[child]
-            try:
-                tid = int(inst.type_id)
-            except Exception:
-                tid = 0
-            info = self.type_registry.get_type_info(tid)
-            if info is None or "fields" not in info:
-                child_consumed[child] = 0
-                parsed_fields_dict[child] = []
-                consumed_slices[child] = b""
-                if debug:
-                    print(f"DEBUG: No field definitions for child {child}")
-            else:
-                start = data_off
-                parsed_fields, new_off = parse_instance_fields(
-                    self.data, data_off, info["fields"], debug=debug
-                )
-                # Determine required alignment for this element from the last field, default to 4.
-                required_align = 4
-                if info["fields"]:
-                    last_field = info["fields"][-1]
-                    if "align" in last_field:
-                        try:
-                            required_align = int(last_field["align"])
-                        except Exception:
-                            required_align = 4
-                # Align new_off to the next multiple of required_align.
-                aligned_off = align_offset(new_off, required_align)
-                if debug:
-                    print(
-                        f"DEBUG: Child {child} parsed from {start:#x} to {new_off:#x} ({new_off - start} bytes)"
-                    )
-                    if aligned_off != new_off:
-                        print(
-                            f"DEBUG: Aligning child {child} from {new_off:#x} to {aligned_off:#x} (alignment {required_align})"
-                        )
-                consumed = aligned_off - start
-                child_consumed[child] = consumed
-                parsed_fields_dict[child] = parsed_fields
-                consumed_slices[child] = self.data[start:aligned_off]
-                data_off = aligned_off
-        if debug:
-            print(
-                f"DEBUG: Finished parsing all children; total consumed data: {data_off} of {len(self.data)} bytes"
-            )
-
-        # Reassemble per group.
-        self.data_group_bytes = []
-        for main, children in groups:
-            group_raw = b"".join(consumed_slices.get(child, b"") for child in children)
-            child_sizes = [child_consumed.get(child, 0) for child in children]
-            parsed_list = [
-                (child, parsed_fields_dict.get(child, [])) for child in children
-            ]
-            self.data_group_bytes.append(
-                (main, children, child_sizes, group_raw, parsed_list)
-            )
-            if debug:
-                print(
-                    f"DEBUG: Group for main {main}: children {children}, sizes {child_sizes}"
-                )
-        if data_off != len(self.data):
-            print(
-                f"Warning: total consumed data ({data_off}) does not equal Data length ({len(self.data)})"
-            )
 
     def group_data(self, debug=False):
         # Build groups
@@ -640,8 +530,8 @@ class RcolRequestSet:
         self.group_index = 0
         self.shape_offset = 0
         self.status = 0
-        self.uknA = 0
-        self.uknB = 0
+        self.ukn_a = 0
+        self.ukn_b = 0
         self.name_offset = 0
         self.keyname_offset = 0
         self.keyhash = 0
@@ -659,8 +549,8 @@ class RcolRequestSet:
             self.group_index,
             self.shape_offset,
             self.status,
-            self.uknA,
-            self.uknB,
+            self.ukn_a,
+            self.ukn_b,
         ) = struct.unpack_from("<iiiiii", data, offset)
         offset += 24
         self.name_offset = struct.unpack_from("<Q", data, offset)[0]
@@ -685,22 +575,22 @@ class RcolFile:
 
     def __init__(self):
         self.signature = ""
-        self.numGroups = 0
-        self.numShapes = 0
-        self.numUserData = 0
-        self.numRequestSets = 0
-        self.maxRequestSetId = 0
-        self.numIgnoreTags = 0
-        self.numAutoGenerateJoints = 0
-        self.userDataSize = 0
+        self.num_groups = 0
+        self.num_shapes = 0
+        self.num_userdata = 0
+        self.num_request_sets = 0
+        self.max_request_set_id = 0
+        self.num_ignore_tags = 0
+        self.num_auto_generate_joints = 0
+        self.user_data_size = 0
         self.status = 0
         self.ukn = 0
 
-        self.groupsPtrTbl = 0
-        self.userDataStreamPtr = 0
-        self.requestSetTbl = 0
-        self.ignoreTagTbl = 0
-        self.autoGenerateJointDescTbl = 0
+        self.groups_ptr_tbl = 0
+        self.user_data_stream_ptr = 0
+        self.request_set_tbl = 0
+        self.ignore_tag_tbl = 0
+        self.auto_generate_joint_desc_tbl = 0
 
         self.groups = []
         self.request_sets = []
@@ -721,37 +611,37 @@ class RcolFile:
         sig = struct.unpack_from("<4s", data, 0)[0]
         self.signature = sig.decode("ascii", errors="replace")
         (
-            self.numGroups,
-            self.numShapes,
-            self.numUserData,
-            self.numRequestSets,
-            self.maxRequestSetId,
-            self.numIgnoreTags,
-            self.numAutoGenerateJoints,
-            self.userDataSize,
+            self.num_groups,
+            self.num_shapes,
+            self.num_userdata,
+            self.num_request_sets,
+            self.max_request_set_id,
+            self.num_ignore_tags,
+            self.num_auto_generate_joints,
+            self.user_data_size,
             self.status,
         ) = struct.unpack_from("<9I", data, 4)
         self.ukn = struct.unpack_from("<Q", data, 0x28)[0]
-        self.groupsPtrTbl = struct.unpack_from("<Q", data, 0x30)[0]
-        self.userDataStreamPtr = struct.unpack_from("<Q", data, 0x38)[0]
-        self.requestSetTbl = struct.unpack_from("<Q", data, 0x40)[0]
-        self.ignoreTagTbl = struct.unpack_from("<Q", data, 0x48)[0]
-        self.autoGenerateJointDescTbl = struct.unpack_from("<Q", data, 0x50)[0]
+        self.groups_ptr_tbl = struct.unpack_from("<Q", data, 0x30)[0]
+        self.user_data_stream_ptr = struct.unpack_from("<Q", data, 0x38)[0]
+        self.request_set_tbl = struct.unpack_from("<Q", data, 0x40)[0]
+        self.ignore_tag_tbl = struct.unpack_from("<Q", data, 0x48)[0]
+        self.auto_generate_joint_desc_tbl = struct.unpack_from("<Q", data, 0x50)[0]
 
     def _parse_groups(self, data: bytes):
-        if self.groupsPtrTbl < len(data):
-            off = self.groupsPtrTbl
+        if self.groups_ptr_tbl < len(data):
+            off = self.groups_ptr_tbl
             group_size = RcolGroup.SIZE
-            total = off + group_size * self.numGroups
+            total = off + group_size * self.num_groups
             if total > len(data):
                 raise ValueError("Groups out of file bounds")
-            for _ in range(self.numGroups):
+            for _ in range(self.num_groups):
                 grp = RcolGroup()
                 off = grp.parse(data, off)
                 self.groups.append(grp)
         else:
-            if self.numGroups > 0:
-                print(f"Warning: invalid groupsPtrTbl=0x{self.groupsPtrTbl:X}")
+            if self.num_groups > 0:
+                print(f"Warning: invalid groups_ptr_tbl=0x{self.groups_ptr_tbl:X}")
         for grp in self.groups:
             grp._parse_shapes(data)
 
@@ -771,16 +661,16 @@ class RcolFile:
                 print(f"Warning: invalid requestSetTbl=0x{self.requestSetTbl:X}")
 
     def _parse_user_data(self, data: bytes):
-        if self.userDataSize > 0:
-            if self.userDataStreamPtr < len(data):
+        if self.user_data_size > 0:
+            if self.user_data_stream_ptr < len(data):
                 self.user_data_full = RcolUserDataFull()
                 self.user_data_full.type_registry = self.type_registry
                 self.user_data_full.parse(
-                    data, self.userDataStreamPtr, self.userDataSize
+                    data, self.user_data_stream_ptr, self.user_data_size
                 )
             else:
                 print(
-                    f"Warning: userDataStreamPtr=0x{self.userDataStreamPtr:X} invalid"
+                    f"Warning: user_data_stream_ptr=0x{self.user_data_stream_ptr:X} invalid"
                 )
 
     def _parse_tags(self, data: bytes):
@@ -793,8 +683,8 @@ class RcolFile:
         if self.ignoreTagTbl < len(data):
             off = self.ignoreTagTbl
             self.ignore_tags = []
-            for i in range(self.numIgnoreTags):
-                tag, off = read_wstring(data, off, 100)  # TODO
+            for _ in range(self.numIgnoreTags):
+                tag, off = read_wstring(data, off, 100)
                 self.ignore_tags.append(tag)
         else:
             self.ignore_tags = []
