@@ -358,7 +358,7 @@ class RszFile:
         
         if self.filepath.lower().endswith('.16'):
             from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
-            self._current_offset = parse_pfb16_resources(self, data, self._current_offset)
+            self._current_offset = parse_pfb16_resources(self, data)
         else:
             self._parse_resource_infos(data)
             self._parse_userdata_infos(data)
@@ -401,27 +401,27 @@ class RszFile:
     def _parse_gameobjects(self, data):
         if self.is_pfb:
             # PFB files use a different GameObject structure (12 bytes)
-            for i in range(self.header.info_count):
+            for _ in range(self.header.info_count):
                 go = PfbGameObject()
                 self._current_offset = go.parse(data, self._current_offset)
                 self.gameobjects.append(go)
         else:
             # Regular SCN files use the 32-byte GameObject structure
             is_scn19 = self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')
-            for i in range(self.header.info_count):
+            for _ in range(self.header.info_count):
                 go = RszGameObject()
                 self._current_offset = go.parse(data, self._current_offset, is_scn19)
                 self.gameobjects.append(go)
 
     def _parse_gameobject_ref_infos(self, data):
-        for i in range(self.header.gameobject_ref_info_count):
+        for _ in range(self.header.gameobject_ref_info_count):
             gori = GameObjectRefInfo()
             self._current_offset = gori.parse(data, self._current_offset)
             self.gameobject_ref_infos.append(gori)
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_folder_infos(self, data):
-        for i in range(self.header.folder_count):
+        for _ in range(self.header.folder_count):
             fi = RszFolderInfo()
             self._current_offset = fi.parse(data, self._current_offset)
             self.folder_infos.append(fi)
@@ -431,21 +431,21 @@ class RszFile:
             self._current_offset += 16
 
     def _parse_resource_infos(self, data):
-        for i in range(self.header.resource_count):
+        for _ in range(self.header.resource_count):
             ri = RszResourceInfo()
             self._current_offset = ri.parse(data, self._current_offset)
             self.resource_infos.append(ri)
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_prefab_infos(self, data):
-        for i in range(self.header.prefab_count):
+        for _ in range(self.header.prefab_count):
             pi = RszPrefabInfo()
             self._current_offset = pi.parse(data, self._current_offset)
             self.prefab_infos.append(pi)
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_userdata_infos(self, data):
-        for i in range(self.header.userdata_count):
+        for _ in range(self.header.userdata_count):
             ui = RszUserDataInfo()
             self._current_offset = ui.parse(data, self._current_offset)
             self.userdata_infos.append(ui)
@@ -502,7 +502,7 @@ class RszFile:
         self._current_offset = self.header.data_offset + self.rsz_header.instance_offset
 
         # Parse Instance Infos –that has instance_count entries (8 bytes each)
-        for i in range(self.rsz_header.instance_count):
+        for _ in range(self.rsz_header.instance_count):
             ii = RszInstanceInfo()
             self._current_offset = ii.parse(data, self._current_offset)
             if self.rsz_header.version < 4:
@@ -530,7 +530,7 @@ class RszFile:
     def _parse_standard_rsz_userdata(self, data):
         """Parse standard RSZ userdata entries (16 bytes each)"""
         self.rsz_userdata_infos = []
-        for i in range(self.rsz_header.userdata_count):
+        for _ in range(self.rsz_header.userdata_count):
             rui = RszRSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
             if rui.string_offset != 0:
@@ -1770,7 +1770,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
     unpack_20float = struct.Struct("<20f").unpack_from
     unpack_16float = struct.Struct("<16f").unpack_from
 
-    rsz_userdataInfos = rsz_file.rsz_userdata_infos
+    rsz_userdata_infos = rsz_file.rsz_userdata_infos
     parsed_elements   = rsz_file.parsed_elements.setdefault(current_instance_index, {})
     instance_hierarchy = rsz_file.instance_hierarchy
     gameobject_ids    = rsz_file._gameobject_instance_ids
@@ -1865,7 +1865,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                             'instance_hierarchy': instance_hierarchy,
                             '_gameobject_instance_ids': gameobject_ids,
                             '_folder_instance_ids': folder_ids,
-                            'rsz_userdata_infos': rsz_userdataInfos,
+                            'rsz_userdata_infos': rsz_userdata_infos,
                             '_rsz_userdata_str_map': rsz_userdata_map,
                             'type_registry': rsz_file.type_registry
                         })()
@@ -1887,15 +1887,15 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
             elif rsz_type == MaybeObject:
                 child_indexes = []
                 all_values = []
-                alreadyRef = False
+                already_ref = False
                 for i in range(count):
                     pos = _align(pos, field_align)
                     value = unpack_uint(raw, pos)[0]
                     raw_value = (raw[pos:pos+fsize].tobytes() if hasattr(raw[pos:pos+fsize], "tobytes")
                                  else raw[pos:pos+fsize])
                     if is_valid_ref(value) and i == 0:
-                        alreadyRef = True
-                    if alreadyRef:
+                        already_ref = True
+                    if already_ref:
                         child_indexes.append(value)
                         current_children.append(value)
                         set_parent(value, current_instance_index)
@@ -1904,9 +1904,9 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                         all_values.append(raw_value)
                     pos += fsize
                 data_obj = ArrayData(
-                    [ObjectData(x, original_type) for x in child_indexes] if alreadyRef else 
+                    [ObjectData(x, original_type) for x in child_indexes] if already_ref else 
                     [RawBytesData(x, fsize, original_type) for x in all_values],
-                    ObjectData if alreadyRef else RawBytesData,
+                    ObjectData if already_ref else RawBytesData,
                     original_type
                 )
 
@@ -1918,7 +1918,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     candidate = read_aligned_value(unpack_uint, 4, align=field_align)
                     userdatas.append(candidate)
                     found = None
-                    for rui in rsz_userdataInfos:
+                    for rui in rsz_userdata_infos:
                         if rui.instance_id == candidate:
                             found = rui
                             userdata_values.append(rsz_userdata_map.get(rui, f"Empty Userdata {candidate}"))
@@ -2253,15 +2253,11 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
             elif rsz_type == UserDataData:
                 instance_id = read_aligned_value(unpack_uint, 4, align=field_align)
                 value = ""
-                for rui in rsz_userdataInfos:
+                for rui in rsz_userdata_infos:
                     if rui.instance_id == instance_id:
                         value = rsz_userdata_map.get(rui, "")
                         break
                 data_obj = rsz_type(instance_id, value, original_type)
-            elif rsz_type == GameObjectRefData:
-                guid_bytes = read_aligned_bytes(fsize, align=field_align)
-                guid_str = guid_le_to_str(guid_bytes)
-                data_obj = rsz_type(guid_str, guid_bytes, original_type)
             elif rsz_type == ObjectData:
                 child_idx = read_aligned_value(unpack_uint, fsize, align=field_align)
                 data_obj = rsz_type(child_idx, original_type)
@@ -2271,10 +2267,14 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(vals[0], vals[1], vals[2], original_type)
-            elif rsz_type in (Vec4Data, Float4Data):
+            elif rsz_type in (Vec4Data, Float4Data, QuaternionData):
                 vals = unpack_4float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(*vals, original_type)
+            elif rsz_type == OBBData:
+                vals = unpack_20float(raw, pos)
+                pos += fsize
+                data_obj = rsz_type(vals, original_type)
             elif rsz_type in (Vec2Data, Float2Data):
                 vals = unpack_2float(raw, pos)
                 pos += fsize
@@ -2344,14 +2344,6 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 data_obj = rsz_type(guid_str, guid_bytes, original_type)
             elif rsz_type == Mat4Data:
                 vals = unpack_16float(raw, pos)
-                pos += fsize
-                data_obj = rsz_type(vals, original_type)
-            elif rsz_type == QuaternionData:
-                vals = unpack_4float(raw, pos)
-                pos += fsize
-                data_obj = rsz_type(*vals, original_type)
-            elif rsz_type == OBBData:
-                vals = unpack_20float(raw, pos)
                 pos += fsize
                 data_obj = rsz_type(vals, original_type)
             elif rsz_type == RangeData:

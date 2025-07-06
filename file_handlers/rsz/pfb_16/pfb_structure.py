@@ -42,7 +42,7 @@ class Pfb16ResourceInfo:
         """Accept setting string_offset for compatibility but don't use the value"""
         pass 
 
-def parse_pfb16_resources(rsz_file, data: bytes, offset: int) -> int:
+def parse_pfb16_resources(rsz_file, data: bytes) -> int:
     """Parse resources for PFB.16 format where strings are stored directly
     
     This implementation uses a robust byte-by-byte scan to properly locate
@@ -63,7 +63,7 @@ def parse_pfb16_resources(rsz_file, data: bytes, offset: int) -> int:
         string_bytes = bytearray()
         
         found_terminator = False
-        while current_offset + 1 < len(data) and not found_terminator:
+        while current_offset + 1 < len(data):
             byte_pair = data[current_offset:current_offset+2]
             if byte_pair == b'\x00\x00':
                 found_terminator = True
@@ -71,10 +71,6 @@ def parse_pfb16_resources(rsz_file, data: bytes, offset: int) -> int:
                 
             string_bytes.extend(byte_pair)
             current_offset += 2
-            
-            if len(string_bytes) > 2048:
-                print(f"Warning: String {i} too long, truncating at 2048 bytes")
-                break
         
         try:
             string_value = string_bytes.decode('utf-16-le')
