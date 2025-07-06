@@ -29,21 +29,12 @@ class RszClipboardUtils:
     
     @staticmethod
     def get_json_name(widget):
-        return_name = None
-        try:
-            parent = widget.parent()
-            json_path = parent.handler.type_registry.json_path
-        except Exception as e:
-            print(f"Error getting JSON name from widget: {str(e)}")
-            parent = widget
-            json_path = parent.handler.type_registry.json_path
-        finally:
-            if json_path:
-                json_name = os.path.basename(json_path)
-                return_name = json_name.split(".")[0]
-            else:
-                print("No JSON path found for the widget.")
-        return return_name
+        parent = widget.parent()
+        if hasattr(parent, 'handler') and hasattr(parent.handler, 'type_registry') and hasattr(parent.handler.type_registry, 'json_path'):
+            return os.path.basename(parent.handler.type_registry.json_path).split(".")[0]
+        elif hasattr(widget, 'handler') and hasattr(widget.handler, 'type_registry') and hasattr(widget.handler.type_registry, 'json_path'):
+            return os.path.basename(widget.handler.type_registry.json_path).split(".")[0]
+        return None
 
     @staticmethod
     def load_clipboard_data(clipboard_file):
