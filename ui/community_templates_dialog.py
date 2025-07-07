@@ -708,10 +708,19 @@ class CommunityTemplatesDialog(QDialog):
             timestamp = comment.get("timestamp")
             if timestamp:
                 try:
-                    date_str = timestamp.strftime("%Y-%m-%d %H:%M")
-                    time_label = QLabel(date_str)
-                    time_label.setStyleSheet("color: #888;")
-                    header_layout.addWidget(time_label)
+                    if isinstance(timestamp, dict) and "_seconds" in timestamp:
+                        dt = datetime.fromtimestamp(timestamp["_seconds"])
+                    elif isinstance(timestamp, (int, float)):
+                        dt = datetime.fromtimestamp(timestamp)
+                    elif hasattr(timestamp, "strftime"):
+                        dt = timestamp
+                    else:
+                        dt = None
+                    if dt:
+                        date_str = dt.strftime("%Y-%m-%d %H:%M")
+                        time_label = QLabel(date_str)
+                        time_label.setStyleSheet("color: #888;")
+                        header_layout.addWidget(time_label)
                 except Exception as e:
                     print(f"Error formatting timestamp: {e}")
             
