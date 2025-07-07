@@ -613,9 +613,9 @@ class RszGameObjectClipboard:
                 
         if viewer.scn.is_pfb:
             for ref_info in viewer.scn.gameobject_ref_infos:
-                if hasattr(ref_info, "object_id") and ref_info.object_id >= object_table_index:
+                if ref_info.object_id >= object_table_index:
                     ref_info.object_id += 1
-                if hasattr(ref_info, "target_id") and ref_info.target_id >= object_table_index:
+                if ref_info.target_id >= object_table_index:
                     ref_info.target_id += 1
     
     @staticmethod

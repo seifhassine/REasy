@@ -78,9 +78,8 @@ class RszInstanceOperations:
             if instance_id in deleted_ids:
                 continue
                 
-            for field_name, field_data in fields.items():
-                
-                if hasattr(field_data, '__class__') and (field_data.__class__.__name__ == 'ObjectData' or field_data.__class__.__name__ == 'UserDataData'):
+            for _, field_data in fields.items():
+                if (field_data.__class__.__name__ == 'ObjectData' or field_data.__class__.__name__ == 'UserDataData'):
                     ref_id = field_data.value
                     if ref_id > 0:
                         if ref_id in deleted_ids:
@@ -88,9 +87,9 @@ class RszInstanceOperations:
                         elif ref_id in id_adjustments:
                             field_data.value = id_adjustments[ref_id]
                 
-                elif hasattr(field_data, '__class__') and field_data.__class__.__name__ == 'ArrayData':
+                elif field_data.__class__.__name__ == 'ArrayData':
                     for element in field_data.values:
-                        if hasattr(element, '__class__') and (element.__class__.__name__ == 'ObjectData' or element.__class__.__name__ == 'UserDataData'):
+                        if (element.__class__.__name__ == 'ObjectData' or element.__class__.__name__ == 'UserDataData'):
                             ref_id = element.value
                             if ref_id > 0:
                                 if ref_id in deleted_ids:
@@ -122,20 +121,16 @@ class RszInstanceOperations:
             if check_id == source_id:
                 continue 
                 
-            for field_name, field_data in fields.items():
-                if hasattr(field_data, '__class__'):
-                    class_name = field_data.__class__.__name__
-                    
-                    if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
-                        return False
+            for _, field_data in fields.items():
+                class_name = field_data.__class__.__name__
+                if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
+                    return False
+                elif class_name == 'ArrayData':
+                    for item in field_data.values:
+                        item_class = item.__class__.__name__
                         
-                    elif class_name == 'ArrayData':
-                        for item in field_data.values:
-                            if hasattr(item, '__class__'):
-                                item_class = item.__class__.__name__
-                                
-                                if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
-                                    return False
+                        if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
+                            return False
             
         return True 
         
@@ -155,24 +150,22 @@ class RszInstanceOperations:
         
         for ref_id, fields in parsed_elements.items():
             for field_name, field_data in fields.items():
-                if hasattr(field_data, '__class__'):
-                    class_name = field_data.__class__.__name__
-                    
-                    if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
-                        if ref_id not in references:
-                            references[ref_id] = []
-                        references[ref_id].append((field_name, "direct"))
-                    
-                    elif class_name == 'ArrayData':
-                        for i, item in enumerate(field_data.values):
-                            if hasattr(item, '__class__'):
-                                item_class = item.__class__.__name__
-                                
-                                if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
-                                    if ref_id not in references:
-                                        references[ref_id] = []
-                                    references[ref_id].append((f"{field_name}[{i}]", "array_object"))
-        
+                class_name = field_data.__class__.__name__
+                
+                if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
+                    if ref_id not in references:
+                        references[ref_id] = []
+                    references[ref_id].append((field_name, "direct"))
+                
+                elif class_name == 'ArrayData':
+                    for i, item in enumerate(field_data.values):
+                        item_class = item.__class__.__name__
+                        
+                        if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
+                            if ref_id not in references:
+                                references[ref_id] = []
+                            references[ref_id].append((f"{field_name}[{i}]", "array_object"))
+    
         return references
         
     @staticmethod
@@ -210,7 +203,7 @@ class RszInstanceOperations:
                 parsed_elements, instance_id, object_table
             )
             
-            for field_name, field_data in fields.items():
+            for _, field_data in fields.items():
                 if field_data.__class__.__name__ == 'ObjectData' and field_data.value > 0:
                     ref_id = field_data.value
                     
@@ -269,16 +262,15 @@ class RszInstanceOperations:
         """
         references = set()
         
-        for field_name, field_data in fields.items():
-            if hasattr(field_data, '__class__'):
-                class_name = field_data.__class__.__name__
-                
-                if class_name == 'ObjectData' and field_data.value > 0:
-                    references.add(field_data.value)
-                
-                elif class_name == 'ArrayData':
-                    for element in field_data.values:
-                        if hasattr(element, '__class__') and element.__class__.__name__ == 'ObjectData' and element.value > 0:
-                            references.add(element.value)
+        for _, field_data in fields.items():
+            class_name = field_data.__class__.__name__
+            
+            if class_name == 'ObjectData' and field_data.value > 0:
+                references.add(field_data.value)
+            
+            elif class_name == 'ArrayData':
+                for element in field_data.values:
+                    if element.__class__.__name__ == 'ObjectData' and element.value > 0:
+                        references.add(element.value)
         
         return references

@@ -41,25 +41,9 @@ class ComponentSelectorDialog(QDialog):
         """Extract all component types from the type registry"""
         self.all_component_types = []
         
-        if not self.type_registry:
-            self.status_label.setText("Error: Type registry not available")
-            return
-            
-        registry_type = type(self.type_registry).__name__
-        has_registry_attr = hasattr(self.type_registry, "registry")
-        
-        if hasattr(self.type_registry, "registry"):
-            registry_dict = self.type_registry.registry
-        else:
-            self.status_label.setText(f"Registry type: {registry_type}, has 'registry' attr: {has_registry_attr}")
-            return
-            
-        if not registry_dict:
-            self.status_label.setText("Registry dictionary is empty")
-            return
-            
+        registry_dict = self.type_registry.registry
         count = 0
-        for type_key, type_info in registry_dict.items():
+        for _, type_info in registry_dict.items():
             if isinstance(type_info, dict) and "name" in type_info:
                 type_name = type_info["name"]
                 if not isinstance(type_name, str) or not type_name:
@@ -72,7 +56,7 @@ class ComponentSelectorDialog(QDialog):
                     continue
                     
                 # Only add types with fields (likely to be valid components)
-                if "fields" in type_info and type_info["fields"]:
+                if type_info["fields"]:
                     self.all_component_types.append(type_name)
                     count += 1
         

@@ -261,81 +261,64 @@ class RszTemplateManager:
     
     @staticmethod
     def update_template_metadata(template_id, name=None, tags=None, description=None):
-        """
-        Update a template's metadata
-        
-        Args:
-            template_id: ID of the template to update
-            name: New name for the template (optional)
-            tags: New tags for the template (optional)
-            description: New description for the template (optional)
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         metadata = RszTemplateManager.load_metadata()
-        
-        if "templates" not in metadata or template_id not in metadata["templates"]:
+        templates = metadata.get("templates", {})
+        info = templates.get(template_id)
+        if not info:
             return False
-            
-        template_info = metadata["templates"][template_id]
-        
+
+        new_id = template_id
         if name is not None:
-            if name != template_info["name"]:
-                old_path = template_info["path"]
-                
-                safe_name = ''.join(c if c.isalnum() or c in ' -_' else '_' for c in name)
-                safe_name = safe_name.strip()
-                
-                if not safe_name:
-                    return False
-                    
-                template_dir = os.path.dirname(old_path)
-                new_filename = f"{safe_name}.json"
-                new_path = os.path.join(template_dir, new_filename)
-        
-                with open(old_path, 'r') as f:
-                    template_data = json.load(f)
-                    
-                if isinstance(template_data, dict) and "name" in template_data:
-                    template_data["name"] = name
-                    
-                    with open(old_path, 'w') as f:
-                        json.dump(template_data, f, indent=2)
-            
-                os.rename(old_path, new_path)
-                template_info["path"] = new_path
-                
-                registry = template_info["registry"]
-                new_template_id = f"{registry}/{safe_name}"
-                
-                metadata["templates"][new_template_id] = template_info
-                del metadata["templates"][template_id]
-                
-                template_info["name"] = name
-                    
-            else:
-                template_info["name"] = name
-            
-                template_path = template_info["path"]
-                with open(template_path, 'r') as f:
-                    template_data = json.load(f)
-                    
-                if isinstance(template_data, dict) and "name" in template_data:
-                    template_data["name"] = name
-                    
-                    with open(template_path, 'w') as f:
-                        json.dump(template_data, f, indent=2)
+            new_id = RszTemplateManager._apply_name_change(info, template_id, name)
+            if not new_id:
+                return False
+
         if tags is not None:
-            template_info["tags"] = tags
-            
+            info["tags"] = tags
         if description is not None:
-            template_info["description"] = description
-            
-        template_info["modified"] = datetime.now().isoformat()
-        
+            info["description"] = description
+
+        info["modified"] = datetime.now().isoformat()
+        if new_id != template_id:
+            templates[new_id] = templates.pop(template_id)
+
         return RszTemplateManager.save_metadata(metadata)
-    
+
+    @staticmethod
+    def _apply_name_change(info, old_id, new_name):
+        old_path = info.get("path")
+        if info.get("name") == new_name:
+            return old_id
+
+        safe = RszTemplateManager._sanitize(new_name)
+        if not safe:
+            return None
+
+        dirpath = os.path.dirname(old_path)
+        new_file = os.path.join(dirpath, f"{safe}.json")
+        
+        try:
+            with open(old_path) as f:
+                data = json.load(f)
+            data["name"] = new_name
+            with open(old_path, 'w') as f:
+                json.dump(data, f, indent=2)
+
+            os.rename(old_path, new_file)
+        except Exception:
+            return None
+
+        info["path"] = new_file
+        info["name"] = new_name
+
+        registry = info.get("registry", "")
+        return f"{registry}/{safe}"
+
+    @staticmethod
+    def _sanitize(name):
+        safe = ''.join(c if c.isalnum() or c in ' -_' else '_' for c in name).strip()
+        return safe if safe else None
+
     @staticmethod
     def delete_template(template_id):
         """

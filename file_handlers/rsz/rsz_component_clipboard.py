@@ -44,10 +44,8 @@ class RszComponentClipboard:
             print(f"Copying component with instance ID: {component_instance_id}")
             
             component_type_name = ""
-            if hasattr(viewer, "type_registry") and viewer.type_registry:
-                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-                if type_info and "name" in type_info:
-                    component_type_name = type_info["name"]
+            type_info = viewer.type_registry.get_type_info(instance_info.type_id)
+            component_type_name = type_info["name"]
             
             nested_instances = set()
             userdata_refs = set()
@@ -84,10 +82,9 @@ class RszComponentClipboard:
                     nested_instance_info = viewer.scn.instance_infos[nested_id]
                     nested_type_name = ""
                     
-                    if hasattr(viewer, "type_registry") and viewer.type_registry:
-                        nested_type_info = viewer.type_registry.get_type_info(nested_instance_info.type_id)
-                        if nested_type_info and "name" in nested_type_info:
-                            nested_type_name = nested_type_info["name"]
+                    nested_type_info = viewer.type_registry.get_type_info(nested_instance_info.type_id)
+                    if nested_type_info and "name" in nested_type_info:
+                        nested_type_name = nested_type_info["name"]
                     
                     nested_fields = {}
                     nested_fields_data = viewer.scn.parsed_elements[nested_id]
@@ -110,7 +107,7 @@ class RszComponentClipboard:
             
             for userdata_id in userdata_refs:
                 if userdata_id > 0 and userdata_id < len(viewer.scn.instance_infos):
-                    if hasattr(viewer.scn, '_rsz_userdata_set') and userdata_id in viewer.scn._rsz_userdata_set:
+                    if userdata_id in viewer.scn._rsz_userdata_set:
                         userdata_instance_info = viewer.scn.instance_infos[userdata_id]
                         userdata_hash = 0
                         userdata_string = ""
@@ -119,7 +116,7 @@ class RszComponentClipboard:
                             if rui.instance_id == userdata_id:
                                 userdata_hash = rui.hash
                                 
-                                if hasattr(viewer.scn, '_rsz_userdata_str_map') and rui in viewer.scn._rsz_userdata_str_map:
+                                if rui in viewer.scn._rsz_userdata_str_map:
                                     userdata_string = viewer.scn._rsz_userdata_str_map[rui]
                                 break
                         

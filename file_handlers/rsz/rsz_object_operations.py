@@ -170,71 +170,46 @@ class RszObjectOperations:
         collect_recursive(root_go)
         return gameobjects
     
+    def should_delete_prefab(self, prefab_id, gameobjects):
+        for other_go in self.scn.gameobjects:
+            if other_go not in gameobjects and other_go.prefab_id == prefab_id:
+                print(f"  Skipping prefab deletion: prefab_id {prefab_id} is still used by other GameObjects")
+                return False
+        return True
+    
     def _delete_gameobject_directly(self, gameobject):
         """Delete a GameObject and its hierarchy directly"""
-        try:
-            if gameobject not in self.scn.gameobjects:
-                return False
-            
-            gameobject_id = gameobject.id
-            
-            if gameobject_id >= len(self.scn.object_table):
-                return False
-            
+        prefabs_to_delete = set()
+        gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
 
-            prefabs_to_delete = set()
-            def should_delete_prefab(prefab_id, gameobjects):
-                for other_go in self.scn.gameobjects:
-                    if other_go not in gameobjects and other_go.prefab_id == prefab_id:
-                        print(f"  Skipping prefab deletion: prefab_id {prefab_id} is still used by other GameObjects")
-                        return False
-                return True
+        for go in reversed(gameobject_refs_to_delete):
+            if self.scn.is_scn:
+                if go.prefab_id >= 0 and self.should_delete_prefab(go.prefab_id, gameobject_refs_to_delete):
+                    prefabs_to_delete.add(go.prefab_id)
             
+            self._delete_all_components_of_gameobject(go)
             
-            gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
+            go_instance_id = self.scn.object_table[go.id]
+            
+            #print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
+        
+            nested_objects = self._find_nested_objects(go_instance_id)
+            nested_objects.add(go_instance_id)
+            
+            for instance_id in sorted(nested_objects, reverse=True):
+                self.viewer._remove_instance_references(instance_id)
+            
+            id_mapping = self.viewer._update_instance_references_after_deletion(go_instance_id, nested_objects)
+            
+            if id_mapping:
+                self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
+        
+            self._remove_from_object_table(go.id)
+            self.scn.gameobjects.remove(go)
 
-            if not gameobject_refs_to_delete:
-                return False
-                
-            for go in reversed(gameobject_refs_to_delete):
-                if self.scn.is_scn:
-                    if go.prefab_id >= 0 and should_delete_prefab(go.prefab_id, gameobject_refs_to_delete):
-                        prefabs_to_delete.add(go.prefab_id)
-                
-                self._delete_all_components_of_gameobject(go)
-                
-                if go.id < len(self.scn.object_table):
-                    go_instance_id = self.scn.object_table[go.id]
-                    
-                    if go_instance_id > 0:
-                        #print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
-                    
-                        nested_objects = self._find_nested_objects(go_instance_id)
-                        nested_objects.add(go_instance_id)
-                        
-                        for instance_id in sorted(nested_objects, reverse=True):
-                            self.viewer._remove_instance_references(instance_id)
-                        
-                        id_mapping = self.viewer._update_instance_references_after_deletion(go_instance_id, nested_objects)
-                        
-                        if id_mapping:
-                            self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
-                
-                if go.id < len(self.scn.object_table):
-                    self._remove_from_object_table(go.id)
-                
-                if go in self.scn.gameobjects:
-                    self.scn.gameobjects.remove(go)
-
-            for prefab_id in sorted(prefabs_to_delete, reverse=True):
-                self._delete_prefab_for_object(prefab_id)
-            return True
-            
-        except Exception as e:
-            print(f"Error deleting GameObject: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return False
+        for prefab_id in sorted(prefabs_to_delete, reverse=True):
+            self._delete_prefab_for_object(prefab_id)
+        return True
     
     def _delete_all_components_of_gameobject(self, gameobject):
         """Delete all components attached to a GameObject"""
@@ -470,9 +445,9 @@ class RszObjectOperations:
                 folder.parent_id += 1
         if self.scn.is_pfb:
             for ref_info in self.scn.gameobject_ref_infos:
-                if hasattr(ref_info, "object_id") and ref_info.object_id >= object_table_index:
+                if ref_info.object_id >= object_table_index:
                     ref_info.object_id += 1
-                if hasattr(ref_info, "target_id") and ref_info.target_id >= object_table_index:
+                if ref_info.target_id >= object_table_index:
                     ref_info.target_id += 1
 
     def _calculate_component_insertion_index(self, gameobject):
@@ -491,10 +466,6 @@ class RszObjectOperations:
         return insertion_index
     
     def _remove_from_object_table(self, object_table_index):
-        if object_table_index < 0 or object_table_index >= len(self.scn.object_table):
-            print(f"Warning: Invalid object table index {object_table_index}")
-            return
-            
         _ = self.scn.object_table[object_table_index]
             
         self.scn.object_table.pop(object_table_index)
@@ -513,9 +484,9 @@ class RszObjectOperations:
                 
         if self.scn.is_pfb:
             for ref_info in self.scn.gameobject_ref_infos:
-                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
+                if ref_info.object_id > object_table_index:
                     ref_info.object_id -= 1
-                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
+                if ref_info.target_id > object_table_index:
                     ref_info.target_id -= 1
 
     def _find_nested_objects(self, base_instance_id):
@@ -526,34 +497,11 @@ class RszObjectOperations:
 
     def delete_folder(self, folder_id):
         """Delete a folder with the given ID and all its contents"""
-        if folder_id < 0 or folder_id >= len(self.scn.object_table):
-            QMessageBox.warning(self.viewer, "Error", f"Invalid Folder ID: {folder_id}")
-            return False
-
         target_folder = None
         for folder in self.scn.folder_infos:
             if folder.id == folder_id:
                 target_folder = folder
                 break
-
-        if target_folder is None:
-            print(f"Warning: Folder with exact ID {folder_id} not found, attempting recovery...")
-            
-            instance_id = self.scn.object_table[folder_id] if folder_id < len(self.scn.object_table) else 0
-            if instance_id > 0:
-                for folder in self.scn.folder_infos:
-                    if folder.id < len(self.scn.object_table) and self.scn.object_table[folder.id] == instance_id:
-                        target_folder = folder
-                        folder_id = folder.id
-                        print(f"  Found Folder at adjusted ID {folder_id}")
-                        break
-
-        if target_folder is None:
-            QMessageBox.warning(self.viewer, "Error", f"Folder with ID {folder_id} not found")
-            return False
-
-        folder_instance_id = self.scn.object_table[folder_id] if folder_id < len(self.scn.object_table) else 0
-        #print(f"Deleting folder ID={folder_id} (instance_id={folder_instance_id})")
 
         folder_objects = {f.id: f for f in self.scn.folder_infos}
         
@@ -586,50 +534,15 @@ class RszObjectOperations:
         
         #print(f"Found {len(gameobjects_to_delete)} GameObjects to delete")
         
-        deletion_errors = 0
-        
         for go in reversed(gameobjects_to_delete):
-            try:
-                success = self._delete_gameobject_directly(go)
-                if not success:
-                    print(f"  Warning: Failed to delete GameObject with ID {go.id}")
-                    deletion_errors += 1
-            except Exception as e:
-                print(f"  Error deleting GameObject with ID {go.id}: {str(e)}")
-                deletion_errors += 1
+            self._delete_gameobject_directly(go)
 
         for folder in reversed(folders_to_delete):
-            try:
-                if folder is target_folder:
-                    continue
-                    
-                print(f"  Deleting subfolder with ID {folder.id}")
-                folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
+            if folder is target_folder:
+                continue
                 
-                if folder_instance_id > 0:
-                    nested_objects = self._find_nested_objects(folder_instance_id)
-                    nested_objects.add(folder_instance_id)
-                    
-                    for inst_id in sorted(nested_objects, reverse=True):
-                        self.viewer._remove_instance_references(inst_id)
-                    
-                    id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
-                    
-                    if id_mapping:
-                        self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
-                
-                if folder.id < len(self.scn.object_table):
-                    self._remove_from_object_table(folder.id)
-                
-                if folder in self.scn.folder_infos:
-                    self.scn.folder_infos.remove(folder)
-            except Exception as e:
-                print(f"  Error deleting subfolder with ID {folder.id}: {str(e)}")
-                deletion_errors += 1
-
-        try:
-            print(f"  Deleting target folder with ID {target_folder.id}")
-            folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
+            print(f"  Deleting subfolder with ID {folder.id}")
+            folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
             
             if folder_instance_id > 0:
                 nested_objects = self._find_nested_objects(folder_instance_id)
@@ -643,103 +556,106 @@ class RszObjectOperations:
                 if id_mapping:
                     self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
             
-            if target_folder.id < len(self.scn.object_table):
-                self._remove_from_object_table(target_folder.id)
+            if folder.id < len(self.scn.object_table):
+                self._remove_from_object_table(folder.id)
             
-            if target_folder in self.scn.folder_infos:
-                self.scn.folder_infos.remove(target_folder)
-        except Exception as e:
-            print(f"  Error deleting target folder: {str(e)}")
-            deletion_errors += 1
+            if folder in self.scn.folder_infos:
+                self.scn.folder_infos.remove(folder)
+
+        print(f"  Deleting target folder with ID {target_folder.id}")
+        folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
         
-        if deletion_errors > 0:
-            print(f"Warning: Encountered {deletion_errors} errors during folder deletion")
+        if folder_instance_id > 0:
+            nested_objects = self._find_nested_objects(folder_instance_id)
+            nested_objects.add(folder_instance_id)
+            
+            for inst_id in sorted(nested_objects, reverse=True):
+                self.viewer._remove_instance_references(inst_id)
+            
+            id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
+            
+            if id_mapping:
+                self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
+        
+        if target_folder.id < len(self.scn.object_table):
+            self._remove_from_object_table(target_folder.id)
+        
+        if target_folder in self.scn.folder_infos:
+            self.scn.folder_infos.remove(target_folder)
         
         self.viewer.mark_modified()
         return True
 
     def create_component_for_gameobject(self, gameobject_instance_id, component_type):
         """Create a new component on the specified GameObject"""
-        if gameobject_instance_id <= 0 or gameobject_instance_id >= len(self.scn.instance_infos):
-            raise ValueError(f"Invalid GameObject instance ID: {gameobject_instance_id}")
-            
-        target_go = None
-        for i, go in enumerate(self.scn.gameobjects):
-            if (
-                go.id < len(self.scn.object_table)
-                and self.scn.object_table[go.id] == gameobject_instance_id
-            ):
-                target_go = go
-                break
-                
+        # Find the target GameObject
+        target_go = next(
+            (go for go in self.scn.gameobjects
+             if self.scn.object_table[go.id] == gameobject_instance_id),
+            None
+        )
         if not target_go:
-            raise ValueError(f"GameObject with instance ID {gameobject_instance_id} not found")
-            
+            return {"success": False, "error": "GameObject not found"}
+
         type_info, type_id = self.type_registry.find_type_by_name(component_type)
-        if not type_info:
-            raise ValueError(f"Component type '{component_type}' not found in registry")
-            
+        if not type_info or not type_id:
+            return {"success": False, "error": "Component type not found"}
+
         object_table_insertion_index = target_go.id + target_go.component_count + 1
         new_instance = self.viewer._initialize_new_instance(type_id, type_info)
         if not new_instance:
-            raise ValueError(f"Failed to create instance of type {component_type}")
-            
+            return {"success": False, "error": "Failed to initialize component instance"}
+
         instance_insertion_index = self._calculate_component_insertion_index(target_go)
         temp_parsed_elements = {}
         nested_objects = []
-        
+
         self._analyze_instance_fields_for_nested_objects(
             temp_parsed_elements, type_info, nested_objects, instance_insertion_index
         )
-        
+
         valid_nested_objects = []
-        for nested_obj in nested_objects:
-            
-            nested_type_info, nested_type_id = nested_obj[0], nested_obj[1]
-            
-            field_name = nested_obj[2] if len(nested_obj) >= 3 else None
-            
+        for nested_type_info, nested_type_id, *rest in nested_objects:
+            field_name = rest[0] if rest else None
             nested_instance = self.viewer._initialize_new_instance(nested_type_id, nested_type_info)
             if not nested_instance or nested_instance.type_id == 0:
                 continue
-                
+
             self.viewer._insert_instance_and_update_references(instance_insertion_index, nested_instance)
             nested_object_fields = {}
             self.viewer._initialize_fields_from_type_info(nested_object_fields, nested_type_info)
             self.scn.parsed_elements[instance_insertion_index] = nested_object_fields
-            
+
             if field_name:
                 valid_nested_objects.append((nested_type_info, nested_type_id, field_name))
             else:
                 valid_nested_objects.append((nested_type_info, nested_type_id))
-                
+
             instance_insertion_index += 1
             self.viewer.handler.id_manager.register_instance(instance_insertion_index)
-            
+
         self.viewer._insert_instance_and_update_references(instance_insertion_index, new_instance)
         component_reasy_id = self.viewer.handler.id_manager.register_instance(instance_insertion_index)
-        
+
         component_fields = {}
         self.viewer._initialize_fields_from_type_info(component_fields, type_info)
-        
+
         self._update_object_references(
             component_fields,
             temp_parsed_elements,
             instance_insertion_index,
             valid_nested_objects,
         )
-        
-        if "parent" in component_fields:
-            parent_obj = component_fields["parent"]
-            if hasattr(parent_obj, "value"):
-                parent_obj.value = gameobject_instance_id
-                
+
+        if "parent" in component_fields and hasattr(component_fields["parent"], "value"):
+            component_fields["parent"].value = gameobject_instance_id
+
         self.scn.parsed_elements[instance_insertion_index] = component_fields
         target_go.component_count += 1
-        
+
         self._insert_into_object_table(object_table_insertion_index, instance_insertion_index)
         self.viewer.mark_modified()
-        
+
         return {
             "success": True,
             "instance_id": instance_insertion_index,
@@ -882,14 +798,6 @@ class RszObjectOperations:
         Returns:
             bool: True if the operation was successful
         """
-        if not self.scn.is_scn:
-            print("Prefabs can't be modified in PFB/USR files")
-            return False
-
-        if gameobject.id < 0 or gameobject.id >= len(self.scn.object_table):
-            print(f"Invalid GameObject ID {gameobject.id}")
-            return False
-            
         used_elsewhere = False
         for go in self.scn.gameobjects:
             if go.prefab_id == gameobject.prefab_id:

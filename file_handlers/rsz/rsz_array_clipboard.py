@@ -1,6 +1,5 @@
 import os
 import json
-import traceback
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
@@ -743,7 +742,10 @@ class RszArrayClipboard:
         result = RszArrayClipboard.paste_elements_from_clipboard(
             widget, array_operations, array_data, array_item, embedded_context
         )
-        return result if not isinstance(result, list) else (result[0] if result else None)
+        if not isinstance(result, list):
+            return result
+        else:
+            return result[0] if result else None
     
     @staticmethod
     def copy_multiple_to_clipboard(widget, elements, array_type):
@@ -840,73 +842,65 @@ class RszArrayClipboard:
             
         print(f"Pasting object graph with {len(instances)} instances")
         
-        try:
-            from file_handlers.rsz.rsz_file import RszInstanceInfo
+        from file_handlers.rsz.rsz_file import RszInstanceInfo
+        
+        relative_to_new_id = {}
+        guid_mapping = {}
+        
+        current_index = insertion_index
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            type_id = instance_data.get("type_id", 0)
+            crc = instance_data.get("crc", 0)
             
-            relative_to_new_id = {}
-            guid_mapping = {}
+            if relative_id < 0 or type_id <= 0 or crc <= 0:
+                print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
+                continue
+                
+            new_instance = RszInstanceInfo()
+            new_instance.type_id = type_id
+            new_instance.crc = crc
             
-            current_index = insertion_index
-            for instance_data in instances:
-                relative_id = instance_data.get("id", -1)
-                type_id = instance_data.get("type_id", 0)
-                crc = instance_data.get("crc", 0)
+            viewer._insert_instance_and_update_references(current_index, new_instance)
                 
-                if relative_id < 0 or type_id <= 0 or crc <= 0:
-                    print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
-                    continue
-                    
-                new_instance = RszInstanceInfo()
-                new_instance.type_id = type_id
-                new_instance.crc = crc
-                
-                if hasattr(viewer, "_insert_instance_and_update_references"):
-                    viewer._insert_instance_and_update_references(current_index, new_instance)
-                else:
-                    viewer.scn.instance_infos.insert(current_index, new_instance)
-                    
-                viewer.handler.id_manager.register_instance(current_index)
-                
-                relative_to_new_id[relative_id] = current_index
-                
-                viewer.scn.parsed_elements[current_index] = {}
-                
-                current_index += 1
+            viewer.handler.id_manager.register_instance(current_index)
             
-            for instance_data in instances:
-                relative_id = instance_data.get("id", -1)
-                if relative_id < 0 or relative_id not in relative_to_new_id:
-                    continue
-                
-                new_id = relative_to_new_id[relative_id]
-                fields_data = instance_data.get("fields", {})
-                
-                for field_name, field_data in fields_data.items():
-                    field_obj = RszArrayClipboard._deserialize_field_with_relative_mapping(
-                        field_data, relative_to_new_id, guid_mapping
-                    )
-                    if field_obj:
-                        viewer.scn.parsed_elements[new_id][field_name] = field_obj
+            relative_to_new_id[relative_id] = current_index
             
-            if root_relative_id in relative_to_new_id:
-                new_root_id = relative_to_new_id[root_relative_id]
-                
-                element = ObjectData(new_root_id, element_data.get("orig_type", ""))
-                
-                array_data.values.append(element)
-                
-                viewer.mark_modified()
-                
-                print(f"Successfully created object graph with root at ID {new_root_id}")
-                return element
-            else:
-                print(f"Failed to create root instance (ID: {root_relative_id})")
-                return None
-                
-        except Exception as e:
-            print(f"Error pasting object graph: {str(e)}")
-            traceback.print_exc()
+            viewer.scn.parsed_elements[current_index] = {}
+            
+            current_index += 1
+        
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            if relative_id < 0 or relative_id not in relative_to_new_id:
+                continue
+            
+            new_id = relative_to_new_id[relative_id]
+            fields_data = instance_data.get("fields", {})
+            
+            for field_name, field_data in fields_data.items():
+                field_obj = RszArrayClipboard._deserialize_field_with_relative_mapping(
+                    field_data, relative_to_new_id, guid_mapping
+                )
+                if field_obj:
+                    viewer.scn.parsed_elements[new_id][field_name] = field_obj
+        
+        if root_relative_id in relative_to_new_id:
+            new_root_id = relative_to_new_id[root_relative_id]
+            
+            element = ObjectData(new_root_id, element_data.get("orig_type", ""))
+            
+            array_data.values.append(element)
+            
+            viewer.mark_modified()
+            
+            print(f"Successfully created object graph with root at ID {new_root_id}")
+            return element
+        else:
+            print(f"Failed to create root instance (ID: {root_relative_id})")
             return None
+            
     
     @staticmethod
     def _deserialize_field_with_relative_mapping(field_data, id_mapping, guid_mapping=None):

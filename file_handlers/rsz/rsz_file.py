@@ -1700,28 +1700,20 @@ class RszFile:
 
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""
-        try:
-            if self.is_pfb16:
-                if hasattr(ri, 'string_value') and ri.string_value:
-                    return ri.string_value
+        if self.is_pfb16:
+            if ri.string_value:
+                return ri.string_value
+                
+            if ri in self._resource_str_map:
+                return self._resource_str_map[ri]
+                
+            idx = self.resource_infos.index(ri)
+            if 0 <= idx < len(self._pfb16_direct_strings):
+                return self._pfb16_direct_strings[idx]
                     
-                if ri in self._resource_str_map:
-                    return self._resource_str_map[ri]
-                    
-                if hasattr(self, '_pfb16_direct_strings'):
-                    try:
-                        idx = self.resource_infos.index(ri)
-                        if 0 <= idx < len(self._pfb16_direct_strings):
-                            return self._pfb16_direct_strings[idx]
-                    except (ValueError, IndexError):
-                        pass
-                        
-                return f"[Resource {self.resource_infos.index(ri) if ri in self.resource_infos else '?'}]"
-            
-            return self._resource_str_map.get(ri, "")
-        except Exception as e:
-            print(f"Error getting resource string: {e}")
-            return f"[Error: {str(e)[:30]}...]"
+            return f"[Resource {self.resource_infos.index(ri) if ri in self.resource_infos else '?'}]"
+        
+        return self._resource_str_map.get(ri, "")
     
     def get_prefab_string(self, pi):
         return self._prefab_str_map.get(pi, "")

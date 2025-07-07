@@ -1495,23 +1495,6 @@ class RszViewer(QWidget):
                 field_obj._container_parent_id = instance_id
                 field_obj._container_field = field_name
                 
-                if hasattr(field_obj, 'values') and isinstance(field_obj.values, list):
-                    for i, elem in enumerate(field_obj.values):
-                        if isinstance(elem, ArrayData):
-                            elem._owning_context = rui
-                            elem._owning_instance_id = instance_id
-                            elem._owning_field = f"{field_name}[{i}]"
-                            
-                            elem._container_array = field_obj
-                            elem._container_context = rui
-                            elem._container_parent_id = instance_id
-                            elem._container_index = i
-                        
-                        elif isinstance(elem, (ObjectData, UserDataData)):
-                            elem._container_array = field_obj
-                            elem._container_context = rui
-                            elem._container_index = i
-
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""
 

@@ -204,13 +204,13 @@ class RszEmbeddedArrayOperations:
             if userdata_id in rui.embedded_instances:
                 del rui.embedded_instances[userdata_id]
                 
-            for instance_id, fields in rui.embedded_instances.items():
+            for _, fields in rui.embedded_instances.items():
                 if isinstance(fields, dict):
-                    for field_name, field_data in fields.items():
+                    for _, field_data in fields.items():
                         if isinstance(field_data, UserDataData) and field_data.value == userdata_id:
                             field_data.value = 0  
                             
-                        elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
+                        elif isinstance(field_data, ArrayData):
                             for element in field_data.values:
                                 if isinstance(element, UserDataData) and element.value == userdata_id:
                                     element.value = 0  
@@ -543,7 +543,7 @@ class RszEmbeddedArrayOperations:
         for check_id, fields in rui.embedded_instances.items():
             if check_id == source_id or not isinstance(fields, dict):
                 continue
-            for field_name, field_data in fields.items():
+            for _, field_data in fields.items():
                 if isinstance(field_data, ObjectData) and field_data.value == instance_id:
                     return False
                 elif isinstance(field_data, ArrayData):
