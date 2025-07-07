@@ -25,7 +25,56 @@ class RszObjectOperations:
         self.viewer = viewer
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
-    
+
+    def create_folder(self, name: str, parent_id: int):
+        """
+        Create a FolderInfo (SCN-18/19) entry and a backing RSZ instance.
+        """
+        if not self.scn:
+            return {"success": False, "error": "Scene missing"}
+
+        type_info, type_id = self.type_registry.find_type_by_name("via.Folder")
+        if not type_info or not type_id:
+            return {"success": False, "error": "via.Folder not in registry"}
+
+        insertion_index = len(self.scn.instance_infos)
+        new_instance = self.viewer._initialize_new_instance(type_id, type_info)
+        if not new_instance:
+            return {"success": False, "error": "Could not init folder instance"}
+
+        self.viewer._insert_instance_and_update_references(insertion_index, new_instance)
+        reasy_id = self.viewer.handler.id_manager.register_instance(insertion_index)
+
+        folder_fields = {}
+        self.viewer._initialize_fields_from_type_info(folder_fields, type_info)
+        first_field = next(iter(folder_fields.values()), None)
+        if hasattr(first_field, "value"):
+            first_field.value = name
+
+        self.scn.parsed_elements[insertion_index] = folder_fields
+
+        obj_table_idx = len(self.scn.object_table)
+        self.scn.object_table.append(insertion_index)
+
+        from file_handlers.rsz.rsz_file import RszFolderInfo
+        fi = RszFolderInfo()
+        fi.id = obj_table_idx
+        fi.parent_id = parent_id
+        self.scn.folder_infos.append(fi)
+
+        self._update_instance_hierarchy(insertion_index,
+                                        None if parent_id < 0 else self.scn.object_table[parent_id])
+
+        self.viewer.mark_modified()
+
+        return {
+            "success": True,
+            "instance_id": insertion_index,
+            "reasy_id": reasy_id,
+            "name": name,
+            "folder_id": obj_table_idx,
+            "parent_id": parent_id
+        }
     def create_gameobject(self, name, parent_id):
         """Create a new GameObject with the given name and parent ID"""
         if not self.scn:

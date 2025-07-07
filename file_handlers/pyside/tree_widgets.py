@@ -197,6 +197,7 @@ class AdvancedTreeView(QTreeView):
             'is_gameobject': lambda: self._handle_gameobject_menu(menu, index, item_info, has_go_clipboard, has_component_clipboard, item),
             'is_folder': lambda: self._handle_folder_menu(menu, index, has_go_clipboard),
             'is_gameobjects_root': lambda: self._handle_root_menu(menu, index, has_go_clipboard),
+            'is_folders_root': lambda: self._handle_root_folders_menu(menu, index, has_go_clipboard),
             'is_array': lambda: self._handle_array_menu(menu, index, item_info, item),
             'is_array_element': lambda: self._handle_array_element_menu(menu, index, item_info)
         }
@@ -276,9 +277,26 @@ class AdvancedTreeView(QTreeView):
             menu.addAction("Paste GameObject")
         menu.addAction("Template Manager")
         action = menu.exec_(QCursor.pos())
-        if(action): 
+        if action:
             self._process_root_action(action, index)
 
+    def _handle_root_folders_menu(self, menu, index, has_go_clipboard):
+        menu.addAction("Create Folder")          
+        action = menu.exec_(QCursor.pos())
+        if action:
+            self._process_root_action(action, index)
+
+    def _handle_folder_menu(self, menu, index, has_go_clipboard):
+        menu.addAction("Create GameObject")
+        menu.addAction("Create Sub-Folder")         
+        if has_go_clipboard:
+            menu.addAction("Paste GameObject")
+        menu.addAction("Delete Folder")
+        menu.addAction("Translate Name")
+        action = menu.exec_(QCursor.pos())
+        if action:
+            self._process_folder_action(action, index)
+            
     def _handle_array_menu(self, menu, index, item_info, item):
         if not item_info.get('data_obj'):
             return
@@ -386,8 +404,8 @@ class AdvancedTreeView(QTreeView):
     def _process_folder_action(self, action, index):
         action_handlers = {
             "Create GameObject": self.create_gameobject_in_folder,
+            "Create Sub-Folder": self.create_subfolder,
             "Paste GameObject": self.paste_gameobject_in_folder,
-            "Template Manager": self.open_template_manager,
             "Delete Folder": self.delete_folder,
             "Translate Name": self.translate_node_text
         }
@@ -398,6 +416,7 @@ class AdvancedTreeView(QTreeView):
     def _process_root_action(self, action, index):
         action_handlers = {
             "Create GameObject": self.create_root_gameobject,
+            "Create Folder": self.create_root_folder,     
             "Paste GameObject": self.paste_gameobject_at_root,
             "Template Manager": self.open_template_manager
         }
@@ -534,7 +553,9 @@ class AdvancedTreeView(QTreeView):
             result['is_resources_section'] = True
         elif item.data and item.data[0] == "Game Objects":
             result['is_gameobjects_root'] = True
-        
+        elif item.data and item.data[0] == "Folders":
+            result['is_folders_root'] = True
+
         if not result['is_array'] and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict) and item.parent.raw.get("type") == "array":
             result.update({
                 'parent_array_item': item.parent,
@@ -841,6 +862,90 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to create child GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error creating child GameObject: {str(e)}")
+
+    def create_root_folder(self, _):
+        self._create_folder_ui(name_default="New Folder", parent_id=-1, parent_index=None)
+
+    def create_subfolder(self, parent_folder_index):
+        folder_item = parent_folder_index.internalPointer()
+        reasy_id = folder_item.raw.get("reasy_id")
+        parent_widget = self.parent()
+        parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
+
+        parent_object_id = next((i for i, x in enumerate(parent_widget.scn.object_table)
+                                if x == parent_instance_id), -1)
+        if parent_object_id < 0:
+            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            return
+
+        self._create_folder_ui("New Folder", parent_object_id, parent_folder_index)
+
+    def _create_folder_ui(self, name_default: str, parent_id: int, parent_index):
+        parent_widget = self.parent()
+        name, ok = QInputDialog.getText(self, "New Folder", "Folder Name:",
+                                        QLineEdit.Normal, name_default)
+        if not ok or not name:
+            return
+
+        folder_data = parent_widget.object_operations.create_folder(name, parent_id)
+        if not (folder_data and folder_data.get("success")):
+            QMessageBox.warning(self, "Error", "Failed to create folder")
+            return
+
+        self.add_folder_to_ui_direct(folder_data, parent_index)
+        QMessageBox.information(self, "Success", f"Folder '{name}' created successfully")
+    
+    def _populate_folder_nodes(self, folder_dict, folder_data, viewer):
+        """
+        Fill the folder’s Settings node with its parsed RSZ fields,
+        just like we already do for GameObjects.
+        """
+        settings_node = next((c for c in folder_dict["children"]
+                            if c["data"][0] == "Settings"), None)
+        if not settings_node:
+            return
+
+        instance_id = folder_data["instance_id"]
+        fields      = viewer.scn.parsed_elements.get(instance_id, {})
+        first = True
+        for fname, fdata in fields.items():
+            field_node = viewer._create_field_dict(fname, fdata)
+            if first: 
+                fdata.is_gameobject_or_folder_name = folder_dict
+                first = False
+            settings_node["children"].append(field_node)
+
+    def add_folder_to_ui_direct(self, folder_data, parent_index=None):
+        parent_widget = self.parent()
+        model = self.model()
+
+        parent_node = self._resolve_parent_node(parent_index, model)
+        if not parent_node:
+            parent_node = self._find_root_node_child("Data Block", "Folders")
+            if not parent_node:
+                print("Failed to find Folders node")
+                return None
+
+        folder_dict = {
+            "data": [f"{folder_data['name']} (ID: {folder_data['instance_id']})", ""],
+            "type": "folder",
+            "instance_id": folder_data['instance_id'],
+            "reasy_id": folder_data['reasy_id'],
+            "children": [{"data": ["Settings", ""], "children": []},
+                        {"data": ["Children", ""], "children": []}]
+        }
+        self._populate_folder_nodes(folder_dict, folder_data, parent_widget)
+        model.addChild(parent_node, folder_dict)
+
+        folder_index = self._get_new_node_index(parent_node, model)
+        widget = TreeWidgetFactory.create_widget("folder", None,
+                                                folder_dict["data"][0],
+                                                self, self.parent_modified_callback)
+        if widget:
+            self.setIndexWidget(folder_index, widget)
+        self.expand(model.getIndexFromItem(parent_node))
+        self.scrollTo(folder_index)
+        return folder_index
 
     def create_root_gameobject(self, index):
         """Create a new GameObject at the root level"""
