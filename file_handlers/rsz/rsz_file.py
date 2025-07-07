@@ -264,6 +264,7 @@ class RszFile:
         self.header = None
         self.is_usr = False
         self.is_pfb = False
+        self.is_scn = False
         self.is_pfb16 = False
         self.gameobjects = []
         self.folder_infos = []
@@ -324,6 +325,7 @@ class RszFile:
         else:
             self.is_usr = False
             self.is_pfb = False
+            self.is_scn = True
             
             if self.filepath.lower().endswith('.19'):
                 self.header = Scn19Header()

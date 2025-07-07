@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QMessageBox
 class TranslationManager(QObject):
     """Utility class for translating text using Google Translate API"""
     
-    translation_completed = Signal(str, str, object) 
+    translation_completed = Signal(str, object) 
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -51,7 +51,7 @@ class TranslationManager(QObject):
     def _handle_translation_response(self, reply):
         """Handle the response from the translation API"""
         if reply.error() != QNetworkReply.NoError:
-            self.translation_completed.emit(self.current_text, "", self.current_context)
+            self.translation_completed.emit("", self.current_context)
             reply.deleteLater()
             return
         
@@ -62,14 +62,14 @@ class TranslationManager(QObject):
             # The response format is a nested array where the translation is in json_data[0][0][0]
             if json_data and isinstance(json_data, list) and len(json_data) > 0 and isinstance(json_data[0], list) and len(json_data[0]) > 0:
                 translation = json_data[0][0][0]
-                self.translation_completed.emit(self.current_text, translation, self.current_context)
+                self.translation_completed.emit( translation, self.current_context)
             else:
-                self.translation_completed.emit(self.current_text, "", self.current_context)
-                
+                self.translation_completed.emit("", self.current_context)
+
         except Exception as e:
             print(f"Error processing translation: {str(e)}")
-            self.translation_completed.emit(self.current_text, "", self.current_context)
-        
+            self.translation_completed.emit("", self.current_context)
+
         reply.deleteLater()
 
 def show_translation_error(parent, message):

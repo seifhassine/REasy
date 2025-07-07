@@ -59,7 +59,7 @@ class RszGameObjectClipboard:
             print(f"Copying GameObject '{source_name}' (ID: {gameobject_id})")
             
             prefab_path = None
-            if not viewer.scn.is_pfb and not viewer.scn.is_usr and hasattr(source_go, 'prefab_id'):
+            if viewer.scn.is_scn:
                 if source_go.prefab_id >= 0 and source_go.prefab_id < len(viewer.scn.prefab_infos):
                     source_prefab = viewer.scn.prefab_infos[source_go.prefab_id]
                     if hasattr(viewer.scn, '_prefab_str_map') and source_prefab in viewer.scn._prefab_str_map:
@@ -258,7 +258,7 @@ class RszGameObjectClipboard:
         go_name = RszGameObjectClipboard._get_gameobject_name(viewer, instance_id)
         
         prefab_path = None
-        if not viewer.scn.is_pfb and not viewer.scn.is_usr and hasattr(go, 'prefab_id'):
+        if viewer.scn.is_scn:
             if go.prefab_id >= 0 and go.prefab_id < len(viewer.scn.prefab_infos):
                 prefab = viewer.scn.prefab_infos[go.prefab_id]
                 if hasattr(viewer.scn, '_prefab_str_map') and prefab in viewer.scn._prefab_str_map:
@@ -440,7 +440,7 @@ class RszGameObjectClipboard:
             
             new_gameobject.component_count = len(mapped_component_instances)
             
-            if prefab_path and not viewer.scn.is_pfb and not viewer.scn.is_usr:
+            if prefab_path and viewer.scn.is_scn:
                 RszGameObjectClipboard._create_prefab_for_gameobject(
                     viewer, new_gameobject, prefab_path
                 )
@@ -508,7 +508,7 @@ class RszGameObjectClipboard:
                 new_child_go.component_count = len(mapped_child_component_instances)
                 
                 child_prefab_path = go_data.get("prefab_path")
-                if child_prefab_path and not viewer.scn.is_pfb and not viewer.scn.is_usr:
+                if child_prefab_path and viewer.scn.is_scn:
                     RszGameObjectClipboard._create_prefab_for_gameobject(
                         viewer, new_child_go, child_prefab_path
                     )
@@ -569,7 +569,7 @@ class RszGameObjectClipboard:
         new_go.parent_id = parent_id
         new_go.component_count = 0
         
-        if not viewer.scn.is_pfb and not viewer.scn.is_usr:
+        if viewer.scn.is_scn:
             guid_bytes = uuid.uuid4().bytes_le
             new_go.guid = guid_bytes
             new_go.prefab_id = -1 
@@ -657,7 +657,7 @@ class RszGameObjectClipboard:
     
     @staticmethod
     def _create_prefab_for_gameobject(viewer, gameobject, prefab_path):
-        if viewer.scn.is_pfb or viewer.scn.is_usr or not hasattr(viewer.scn, 'prefab_infos') or not prefab_path:
+        if (not viewer.scn.is_scn) or not hasattr(viewer.scn, 'prefab_infos') or not prefab_path:
             return False
             
         new_prefab = RszPrefabInfo()
