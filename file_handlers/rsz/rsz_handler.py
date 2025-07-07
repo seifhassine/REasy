@@ -323,6 +323,7 @@ class RszViewer(QWidget):
             )
             if not self.scn.is_pfb and not self.scn.is_usr:
                 advanced_node["children"].append(self._create_folders_info())
+                advanced_node["children"].append(self._create_prefabs_info())
             if self.scn.is_pfb:
                 advanced_node["children"].append(self._create_gameobject_ref_infos())
             advanced_node["children"].extend(
@@ -535,6 +536,20 @@ class RszViewer(QWidget):
                     DataTreeBuilder.create_data_node(f"Parent ID: {folder.parent_id}", ""),
                 ]
                 node["children"].append(folder_node)
+        return node
+
+
+    def _create_prefabs_info(self):
+        node = DataTreeBuilder.create_data_node(
+            "Prefab Infos", f"{len(self.scn.prefab_infos)} items"
+        )
+        for i, prefab in enumerate(self.scn.prefab_infos):
+            prefab_node = DataTreeBuilder.create_data_node(f"{i}: {self.scn.get_prefab_string(prefab)}", "")
+            prefab_node["children"] = [
+                DataTreeBuilder.create_data_node(f"string_offset: {prefab.string_offset}", ""),
+                DataTreeBuilder.create_data_node(f"Parent ID: {prefab.parent_id}", ""),
+            ]
+            node["children"].append(prefab_node)
         return node
 
     def _create_object_table_info(self):
