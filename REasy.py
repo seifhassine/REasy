@@ -21,6 +21,7 @@ from settings import DEFAULT_SETTINGS, load_settings, save_settings
 from PySide6.QtCore import (
     Qt,
     QTimer,
+    QUrl,
 )
 from PySide6.QtGui import (
     QIcon,
@@ -29,6 +30,7 @@ from PySide6.QtGui import (
     QStandardItemModel,
     QStandardItem,
     QKeySequence,
+    QDesktopServices,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -978,6 +980,7 @@ class REasyEditorApp(QMainWindow):
         help_menu = menubar.addMenu("Help")
         about_act = QAction("About", self)
         about_act.triggered.connect(self.show_about)
+        wiki_act.triggered.connect(self.show_wiki)
         help_menu.addAction(about_act)
         
         donate_menu = menubar.addMenu("Donate")
@@ -1530,6 +1533,9 @@ class REasyEditorApp(QMainWindow):
 
     def show_about(self):
         create_about_dialog(self)
+
+    def show_wiki(self):
+        QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy-Wiki"))
 
     def show_donate_dialog(self):
         dialog = QDialog(self)
