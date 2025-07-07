@@ -721,8 +721,9 @@ class AdvancedTreeView(QTreeView):
                 return chain[0]
         return None
     
-    @staticmethod
-    def _display_confirmation(message):
+    def _display_confirmation(self, message):
+        if(not self.parent().handler.confirmation_prompt):
+            return True
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setText(message)
@@ -910,26 +911,17 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
             return
         
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Confirm GameObject Deletion")
         
         go_name = item.data[0].split(' (ID:')[0]
         
-        msg.setText(f"Delete GameObject \"{go_name}\"?")
+        details = f"Delete GameObject \"{go_name}\"?"
         
-        details = "This will delete the GameObject"
+        details += "\nThis will delete the GameObject"
         
         go = next((g for g in parent.scn.gameobjects if g.id == go_object_id), None)
         details += f", {go.component_count} component(s) and all child GameObjects"
-        
-            
-        details += ".\nThis action cannot be undone."
-        msg.setInformativeText(details)
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg.setDefaultButton(QMessageBox.No)
-        
-        if msg.exec_() != QMessageBox.Yes:
+
+        if not self._display_confirmation(details):
             return
         
         success = parent.delete_gameobject(go_object_id)
@@ -985,23 +977,15 @@ class AdvancedTreeView(QTreeView):
                 folder_object_id = i
                 break
                 
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Confirm Folder Deletion")
         
         folder_name = ""
         folder_name = folder_item.data[0].split(' (ID:')[0]
             
-        msg.setText(f"Delete folder \"{folder_name}\"?")
-        
-        details = "This will delete the folder and all sub-folder(s) and GameObject(s) within it"
-        msg.setInformativeText(details)
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg.setDefaultButton(QMessageBox.No)
-        
-        if msg.exec_() != QMessageBox.Yes:
+        details = f"Delete folder \"{folder_name}\"?"
+        details += "\nThis will delete the folder and all sub-folder(s) and GameObject(s) within it"
+
+        if not self._display_confirmation(details):
             return
-        
         success = parent.delete_folder(folder_object_id)
         
         if success:

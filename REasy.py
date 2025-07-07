@@ -321,6 +321,7 @@ class FileTab:
             if isinstance(handler, RszHandler):
                 handler.set_game_version(self.app.settings.get("game_version", "RE4"))
                 handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
+                handler.confirmation_prompt = self.app.settings.get("confirmation_prompt", True)
                 handler.filepath = self.filename or ""
             
             handler.refresh_tree_callback = self.refresh_tree
@@ -1138,6 +1139,7 @@ class REasyEditorApp(QMainWindow):
         for tab in self.tabs.values():
             if hasattr(tab, 'handler') and isinstance(tab.handler, RszHandler):
                     tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
+                    tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
     def open_settings_dialog(self):
@@ -1242,6 +1244,10 @@ class REasyEditorApp(QMainWindow):
         backup_box.setChecked(self.settings.get("backup_on_save", True))
         general_layout.addWidget(backup_box)
 
+        confirmation_prompt_box = QCheckBox("Show confirmation prompts for RSZ actions")
+        confirmation_prompt_box.setChecked(self.settings.get("confirmation_prompt", True))
+        general_layout.addWidget(confirmation_prompt_box)
+
         general_layout.addStretch()
         
         shortcuts_tab = create_shortcuts_tab()
@@ -1280,6 +1286,7 @@ class REasyEditorApp(QMainWindow):
             self.settings["show_debug_console"] = debug_box.isChecked()
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
             self.settings["backup_on_save"] = backup_box.isChecked()
+            self.settings["confirmation_prompt"] = confirmation_prompt_box.isChecked()
             self.settings["keyboard_shortcuts"] = shortcuts
             
             new_version = game_version_combo.currentText()

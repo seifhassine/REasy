@@ -132,6 +132,12 @@ class RszHandler(BaseFileHandler):
         if self._viewer:
             self._viewer.show_advanced = show_advanced
     
+    def set_confirmation_prompts(self, confirmation_prompt):
+        """Set whether to show confirmation prompts"""
+        self.confirmation_prompt = confirmation_prompt
+        if self._viewer:
+            self._viewer.confirmation_prompt = confirmation_prompt
+    
     def set_game_version(self, version):
         """Set game version and update all related objects"""
         self.game_version = version  
@@ -227,6 +233,7 @@ class RszViewer(QWidget):
         self.type_registry = None
         self.dark_mode = False
         self.show_advanced = False
+        self.confirmation_prompt = False
         self._cleanup_pending = False
         self._created_widgets = []
         self._created_labels = []

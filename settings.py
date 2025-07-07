@@ -25,7 +25,8 @@ DEFAULT_SETTINGS = {
         "view_prev_tab": "PgDown",
         "view_next_tab": "PgUp",
         "view_debug_console": "Ctrl+Shift+D"
-    }
+    },
+    "confirmation_prompt": True
 }
 
 
