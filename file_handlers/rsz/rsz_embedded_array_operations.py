@@ -105,9 +105,6 @@ class RszEmbeddedArrayOperations:
             return True
 
     def _delete_embedded_userdata(self, userdata_id, rui):
-        if not hasattr(rui, 'embedded_userdata_infos'):
-            return False
-        
         target_ud = None
         target_index = -1
         for i, ud_info in enumerate(rui.embedded_userdata_infos):
@@ -138,21 +135,18 @@ class RszEmbeddedArrayOperations:
 
             # Special handling for instance_count if userData's instance_id < len(rui.embedded_instance_infos).
             # We do NOT unify this logic because of the special "None" usage.
-            if hasattr(rui, 'embedded_rsz_header'):
-                if hasattr(rui, 'embedded_userdata_infos'):
-                    rui.embedded_rsz_header.userdata_count = len(rui.embedded_userdata_infos)
-                if hasattr(rui, 'embedded_instance_infos') and userdata_id < len(rui.embedded_instance_infos):
-                    rui.embedded_instance_infos[userdata_id] = None
-                    rui.embedded_rsz_header.instance_count = len(
-                        [x for x in rui.embedded_instance_infos if x is not None]
-                    )
+            if hasattr(rui, 'embedded_userdata_infos'):
+                rui.embedded_rsz_header.userdata_count = len(rui.embedded_userdata_infos)
+            if hasattr(rui, 'embedded_instance_infos') and userdata_id < len(rui.embedded_instance_infos):
+                rui.embedded_instance_infos[userdata_id] = None
+                rui.embedded_rsz_header.instance_count = len(
+                    [x for x in rui.embedded_instance_infos if x is not None]
+                )
 
-                # Just update object_count and userData again normally:
-                if hasattr(rui, 'embedded_object_table'):
-                    rui.embedded_rsz_header.object_count = len(rui.embedded_object_table)
+            # Just update object_count and userData again normally:
+            rui.embedded_rsz_header.object_count = len(rui.embedded_object_table)
 
-            if hasattr(rui, 'id_manager') and hasattr(rui.id_manager, 'unregister_instance'):
-                rui.id_manager.unregister_instance(userdata_id)
+            #rui.id_manager.unregister_instance(userdata_id)
             
             self._validate_userdata_removal(userdata_id, rui)
 
@@ -875,7 +869,7 @@ class RszEmbeddedArrayOperations:
             if hasattr(rui, 'id_manager'):
                 rui.id_manager.register_instance(next_id)
             
-            userdata = UserDataData(element_type, next_id, element_type)
+            userdata = UserDataData(next_id, "", element_type)
             userdata._container_context = rui
             userdata._container_array = array_data
             userdata._container_parent_id = parent_id
