@@ -315,12 +315,10 @@ class RszObjectOperations:
         self.scn.prefab_infos = [e for e in self.scn.prefab_infos if e != prefab_to_delete]
         #print(f"  Prefab {prefab_id} removed from prefab_infos array")
         
-        updated_count = 0
         print("deleting prefab number:", prefab_id)
         for go in self.scn.gameobjects:
             if go.prefab_id > prefab_id:
                 go.prefab_id -= 1
-                updated_count += 1
     
         #print(f"  Updated {updated_count} objects referencing prefabs")
 
@@ -874,7 +872,7 @@ class RszObjectOperations:
         
         return True
     
-    def manage_gameobject_prefab(self, gameobject_id, new_prefab_path):
+    def manage_gameobject_prefab(self, gameobject, new_prefab_path):
         """Create or modify a prefab association for a GameObject
         
         Args:
@@ -887,22 +885,18 @@ class RszObjectOperations:
         if not self.scn.is_scn:
             print("Prefabs can't be modified in PFB/USR files")
             return False
-            
-        if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
-            print(f"Invalid GameObject ID {gameobject_id}")
+
+        if gameobject.id < 0 or gameobject.id >= len(self.scn.object_table):
+            print(f"Invalid GameObject ID {gameobject.id}")
             return False
             
-        target_go = None
+        used_elsewhere = False
         for go in self.scn.gameobjects:
-            if go.id == gameobject_id:
-                target_go = go
-                break
+            if go.prefab_id == gameobject.prefab_id:
+                used_elsewhere = True
                 
-        if not target_go:
-            print(f"GameObject with ID {gameobject_id} not found")
-            return False
         
-        if target_go.prefab_id < 0:
+        if gameobject.prefab_id < 0 or used_elsewhere:
             if not hasattr(self.scn, 'prefab_infos'):
                 print("No prefab_infos array in scene")
                 return False
@@ -914,15 +908,15 @@ class RszObjectOperations:
             
             new_prefab.string_offset = 0
             self.scn.prefab_infos.append(new_prefab)
-            target_go.prefab_id = prefab_id
+            gameobject.prefab_id = prefab_id
             
             if hasattr(self.scn, '_prefab_str_map'):
                 self.scn._prefab_str_map[new_prefab] = new_prefab_path
                 
-            print(f"Created new prefab (ID: {prefab_id}) for GameObject {gameobject_id} with path: {new_prefab_path}")
+            print(f"Created new prefab (ID: {prefab_id}) for GameObject {gameobject.id} with path: {new_prefab_path}")
             
         else:
-            prefab_id = target_go.prefab_id
+            prefab_id = gameobject.prefab_id
             
             if prefab_id >= len(self.scn.prefab_infos):
                 print(f"Invalid prefab ID {prefab_id}")

@@ -927,30 +927,19 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
             return
         
-        has_children = False
-        for go in parent.scn.gameobjects:
-            if go.parent_id == go_object_id:
-                has_children = True
-                break
-        
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Confirm GameObject Deletion")
         
-        go_name = ""
-        if hasattr(item, 'data') and item.data:
-            go_name = item.data[0].split(' (ID:')[0]
+        go_name = item.data[0].split(' (ID:')[0]
         
         msg.setText(f"Delete GameObject \"{go_name}\"?")
         
         details = "This will delete the GameObject"
         
         go = next((g for g in parent.scn.gameobjects if g.id == go_object_id), None)
-        if go and go.component_count > 0:
-            details += f" and its {go.component_count} component(s)"
-            
-        if has_children:
-            details += " and ALL child GameObjects"
+        details += f", {go.component_count} component(s) and all child GameObjects"
+        
             
         details += ".\nThis action cannot be undone."
         msg.setInformativeText(details)
@@ -968,11 +957,10 @@ class AdvancedTreeView(QTreeView):
 
             row = -1
             parent_item = parent_index.internalPointer()
-            if parent_item and hasattr(parent_item, 'children'):
-                for i, child in enumerate(parent_item.children):
-                    if child is item:
-                        row = i
-                        break
+            for i, child in enumerate(parent_item.children):
+                if child is item:
+                    row = i
+                    break
             
             if row != -1:
                 model.removeRow(row, parent_index)
@@ -1014,34 +1002,16 @@ class AdvancedTreeView(QTreeView):
                 folder_object_id = i
                 break
                 
-        if folder_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find folder in object table")
-            return
-            
-        gameobjects_in_folder = []
-        for go in parent.scn.gameobjects:
-            if go.parent_id == folder_object_id:
-                gameobjects_in_folder.append(go.id)
-        
-        child_folders = []
-        for folder in parent.scn.folder_infos:
-            if folder.id != folder_object_id and folder.parent_id == folder_object_id:
-                child_folders.append(folder.id)
-                
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Confirm Folder Deletion")
         
         folder_name = ""
-        if hasattr(folder_item, 'data') and folder_item.data:
-            folder_name = folder_item.data[0].split(' (ID:')[0]
+        folder_name = folder_item.data[0].split(' (ID:')[0]
             
         msg.setText(f"Delete folder \"{folder_name}\"?")
         
-        details = f"This will delete the folder and all {len(gameobjects_in_folder)} GameObject(s)"
-        if child_folders:
-            details += f" and {len(child_folders)} sub-folder(s)"
-        details += " within it.\nThis action cannot be undone."
+        details = "This will delete the folder and all sub-folder(s) and GameObject(s) within it"
         msg.setInformativeText(details)
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         msg.setDefaultButton(QMessageBox.No)
@@ -1054,34 +1024,17 @@ class AdvancedTreeView(QTreeView):
         if success:
             model = self.model()
             parent_index = index.parent()
-            
-            if not parent_index.isValid():
-                root_index = model.index(0, 0, QModelIndex())
-                row_count = model.rowCount(root_index)
-                for row in range(row_count):
-                    child_idx = model.index(row, 0, root_index)
-                    child = child_idx.internalPointer()
-                    if child and hasattr(child, 'data') and child.data and child.data[0] == "Folders":
-                        parent_index = child_idx
-                        break
-            
-            if parent_index.isValid():
-                row = -1
-                parent_item = parent_index.internalPointer()
-                if parent_item and hasattr(parent_item, 'children'):
-                    for i, child in enumerate(parent_item.children):
-                        if child is folder_item:
-                            row = i
-                            break
-                
-                if row >= 0:
-                    model.removeRow(row, parent_index)
+            parent_item = parent_index.internalPointer()
+            for i, child in enumerate(parent_item.children):
+                if child is folder_item:
+                    model.removeRow(i, parent_index)
                     QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
                     return
-        
+                
             QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully, but failed to refresh UI directly.")
-        else:
-            QMessageBox.warning(self, "Error", "Failed to delete folder")
+            return
+        
+        QMessageBox.warning(self, "Error", "Failed to delete folder")
                 
 
     def manage_gameobject_prefab(self, index, has_prefab, current_path=""):
@@ -1095,22 +1048,31 @@ class AdvancedTreeView(QTreeView):
         for i, obj_id in enumerate(parent.scn.object_table):
             if obj_id == instance_id:
                 go_object_id = i
-                
-                for go in parent.handler.rsz_file.gameobjects:
-                    if go.id == go_object_id and go.prefab_id >= 0:
-                            current_path = parent.handler.rsz_file._prefab_str_map[parent.handler.rsz_file.prefab_infos[go.prefab_id]] 
-                            break
+        target_go = None
+        for go in parent.handler.rsz_file.gameobjects:
+            if go.id == go_object_id and go.prefab_id >= 0:
+                target_go = go
+                current_path = parent.handler.rsz_file._prefab_str_map[parent.handler.rsz_file.prefab_infos[go.prefab_id]]
+                break
         
         
-
-        if(has_prefab):
-            dialog_title = "Modify Prefab Path"
-            prompt_text = "Enter new prefab path:"
-            action_type = "modified"
-        else:
-            dialog_title = "Associate with Prefab"
-            prompt_text = "Enter prefab path:"
-            action_type = "created"
+        
+        prefab_actions = {
+            True: {
+            "dialog_title": "Modify Prefab Path",
+            "prompt_text": "Enter new prefab path:",
+            "action_type": "modified"
+            },
+            False: {
+            "dialog_title": "Associate with Prefab",
+            "prompt_text": "Enter prefab path:",
+            "action_type": "created"
+            }
+        }
+        action_info = prefab_actions[has_prefab]
+        dialog_title = action_info["dialog_title"]
+        prompt_text = action_info["prompt_text"]
+        action_type = action_info["action_type"]
 
         while True:
             dialog = QInputDialog(self)
@@ -1123,23 +1085,20 @@ class AdvancedTreeView(QTreeView):
             path = dialog.textValue()
             if not ok:
                 return
-            if (path and path.strip() != ""):
+            if (path.strip() != ""):
                 break
             QMessageBox.warning(self, "Invalid Input", "Prefab path cannot be empty. Please enter a valid path.")
 
-        try:
-            if not path.endswith(".pfb") and QMessageBox.question(
-                    self, "Add Extension?", 
-                    "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
-                    QMessageBox.Yes | QMessageBox.No
-                ) == QMessageBox.Yes:
-                        path += ".pfb"
-            
-            if(parent.object_operations.manage_gameobject_prefab(go_object_id, path)):
-                QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
-                return
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error managing prefab: {str(e)}")
+        if not path.endswith(".pfb") and QMessageBox.question(
+                self, "Add Extension?", 
+                "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
+                QMessageBox.Yes | QMessageBox.No
+            ) == QMessageBox.Yes:
+                    path += ".pfb"
+        
+        if(parent.object_operations.manage_gameobject_prefab(target_go, path)):
+            QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
+            return
 
         QMessageBox.warning(self, "Error", "Failed to manage prefab")
 
