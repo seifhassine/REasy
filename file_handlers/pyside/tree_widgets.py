@@ -1363,7 +1363,7 @@ class AdvancedTreeView(QTreeView):
             return parent_item
         
         if self._is_folder_node(parent_item):
-            return parent_item
+           return self._find_or_create_children_node(parent_item, model)
         
         if self._is_gameobject_node(parent_item):
             return self._find_or_create_children_node(parent_item, model)
