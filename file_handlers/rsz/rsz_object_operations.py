@@ -98,7 +98,7 @@ class RszObjectOperations:
         new_go.parent_id = parent_id
         new_go.component_count = 0
         
-        if not self.scn.is_pfb and not self.scn.is_usr:
+        if self.scn.is_scn:
             guid_bytes = uuid.uuid4().bytes_le
             new_go.guid = guid_bytes
             new_go.prefab_id = -1 
@@ -181,26 +181,25 @@ class RszObjectOperations:
             if gameobject_id >= len(self.scn.object_table):
                 return False
             
-            def should_delete_prefab(gameobject):
+
+            prefabs_to_delete = set()
+            def should_delete_prefab(prefab_id, gameobjects):
                 for other_go in self.scn.gameobjects:
-                    if other_go != gameobject and other_go.prefab_id == gameobject.prefab_id:
-                        print(f"  Skipping prefab deletion: prefab_id {gameobject.prefab_id} is still used by other GameObjects")
+                    if other_go not in gameobjects and other_go.prefab_id == prefab_id:
+                        print(f"  Skipping prefab deletion: prefab_id {prefab_id} is still used by other GameObjects")
                         return False
                 return True
             
-            if not self.scn.is_pfb and not self.scn.is_usr and hasattr(gameobject, 'prefab_id'):
-                if gameobject.prefab_id >= 0 and should_delete_prefab(gameobject):
-                    _ = self._delete_prefab_for_object(gameobject.prefab_id)
             
             gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
-            
+
             if not gameobject_refs_to_delete:
                 return False
                 
             for go in reversed(gameobject_refs_to_delete):
-                if go != gameobject and not self.scn.is_pfb and not self.scn.is_usr and hasattr(go, 'prefab_id'):
-                    if go.prefab_id >= 0 and should_delete_prefab(go):
-                        _ = self._delete_prefab_for_object(go.prefab_id)
+                if self.scn.is_scn:
+                    if go.prefab_id >= 0 and should_delete_prefab(go.prefab_id, gameobject_refs_to_delete):
+                        prefabs_to_delete.add(go.prefab_id)
                 
                 self._delete_all_components_of_gameobject(go)
                 
@@ -208,7 +207,7 @@ class RszObjectOperations:
                     go_instance_id = self.scn.object_table[go.id]
                     
                     if go_instance_id > 0:
-                        print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
+                        #print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
                     
                         nested_objects = self._find_nested_objects(go_instance_id)
                         nested_objects.add(go_instance_id)
@@ -226,7 +225,9 @@ class RszObjectOperations:
                 
                 if go in self.scn.gameobjects:
                     self.scn.gameobjects.remove(go)
-            
+
+            for prefab_id in sorted(prefabs_to_delete, reverse=True):
+                self._delete_prefab_for_object(prefab_id)
             return True
             
         except Exception as e:
@@ -240,7 +241,7 @@ class RszObjectOperations:
         if gameobject.component_count <= 0:
             return
             
-        print(f"GameObject {gameobject.id} has {gameobject.component_count} components")
+        #print(f"GameObject {gameobject.id} has {gameobject.component_count} components")
         
         if gameobject.id >= len(self.scn.object_table):
             print(f"Warning: GameObject ID {gameobject.id} is out of bounds, cannot delete components")
@@ -285,7 +286,7 @@ class RszObjectOperations:
             print("  No prefab to delete (prefab_id is -1)")
             return False
             
-        if prefab_id < 0 or not hasattr(self.scn, 'prefab_infos') or self.scn.is_pfb or self.scn.is_usr:
+        if prefab_id < 0 or not hasattr(self.scn, 'prefab_infos') or not self.scn.is_scn:
             print(f"  Cannot delete prefab: invalid conditions (prefab_id={prefab_id})")
             return False
         
@@ -295,50 +296,33 @@ class RszObjectOperations:
             
         prefab_to_delete = self.scn.prefab_infos[prefab_id]
         
-        path_str = ""
-        if hasattr(self.scn, 'get_prefab_string'):
-            path_str = self.scn.get_prefab_string(prefab_to_delete)
+        #print(f"  Removing prefab {prefab_id} with path: {path_str}")
         
-        print(f"  Removing prefab {prefab_id} with path: {path_str}")
+        if prefab_to_delete in self.scn._prefab_str_map:
+            del self.scn._prefab_str_map[prefab_to_delete]
+            #print(f"  Removed string map entry for prefab {prefab_id}")
+        else:
+            print(f"  Warning: Prefab {prefab_id} not found in string map")
         
-        if hasattr(self.scn, '_prefab_str_map'):
-            if prefab_to_delete in self.scn._prefab_str_map:
-                del self.scn._prefab_str_map[prefab_to_delete]
-                print(f"  Removed string map entry for prefab {prefab_id}")
-            else:
-                print(f"  Warning: Prefab {prefab_id} not found in string map")
-            
-            for i, prefab in enumerate(self.scn.prefab_infos):
-                if (i != prefab_id and 
-                    prefab.string_offset == prefab_to_delete.string_offset and
-                    prefab.string_offset != 0 and 
-                    prefab in self.scn._prefab_str_map):
-                    print(f"  Cleaning up duplicate prefab string reference at index {i}")
-                    del self.scn._prefab_str_map[prefab]
-        
-        self.scn.prefab_infos.pop(prefab_id)
-        print(f"  Prefab {prefab_id} removed from prefab_infos array")
+        for i, prefab in enumerate(self.scn.prefab_infos):
+            if (i != prefab_id and 
+                prefab.string_offset == prefab_to_delete.string_offset and
+                prefab.string_offset != 0 and 
+                prefab in self.scn._prefab_str_map):
+                print(f"  Cleaning up duplicate prefab string reference at index {i}")
+                del self.scn._prefab_str_map[prefab]
+
+        self.scn.prefab_infos = [e for e in self.scn.prefab_infos if e != prefab_to_delete]
+        #print(f"  Prefab {prefab_id} removed from prefab_infos array")
         
         updated_count = 0
+        print("deleting prefab number:", prefab_id)
         for go in self.scn.gameobjects:
-            if hasattr(go, 'prefab_id'):
-                if go.prefab_id == prefab_id:
-                    go.prefab_id = -1
-                    updated_count += 1
-                elif go.prefab_id > prefab_id:
-                    go.prefab_id -= 1
-                    updated_count += 1
-        
-        for folder in self.scn.folder_infos:
-            if hasattr(folder, 'prefab_id'):
-                if folder.prefab_id == prefab_id:
-                    folder.prefab_id = -1
-                    updated_count += 1
-                elif folder.prefab_id > prefab_id:
-                    folder.prefab_id -= 1
-                    updated_count += 1
-        
-        print(f"  Updated {updated_count} objects referencing prefabs")
+            if go.prefab_id > prefab_id:
+                go.prefab_id -= 1
+                updated_count += 1
+    
+        #print(f"  Updated {updated_count} objects referencing prefabs")
 
         return True
 
@@ -571,7 +555,7 @@ class RszObjectOperations:
             return False
 
         folder_instance_id = self.scn.object_table[folder_id] if folder_id < len(self.scn.object_table) else 0
-        print(f"Deleting folder ID={folder_id} (instance_id={folder_instance_id})")
+        #print(f"Deleting folder ID={folder_id} (instance_id={folder_instance_id})")
 
         folder_objects = {f.id: f for f in self.scn.folder_infos}
         
@@ -593,7 +577,7 @@ class RszObjectOperations:
         
         collect_folders_recursive(target_folder)
         
-        print(f"Found {len(folders_to_delete)} folders to delete")
+        #print(f"Found {len(folders_to_delete)} folders to delete")
         
         folder_ids = {f.id for f in folders_to_delete}
         
@@ -602,7 +586,7 @@ class RszObjectOperations:
             if go.parent_id in folder_ids:
                 gameobjects_to_delete.append(go)
         
-        print(f"Found {len(gameobjects_to_delete)} GameObjects to delete")
+        #print(f"Found {len(gameobjects_to_delete)} GameObjects to delete")
         
         deletion_errors = 0
         
@@ -621,11 +605,6 @@ class RszObjectOperations:
                 if folder is target_folder:
                     continue
                     
-                if not self.scn.is_pfb and not self.scn.is_usr and hasattr(folder, 'prefab_id') and folder.prefab_id > 0:
-                    prefab_deleted = self._delete_prefab_for_object(folder.prefab_id)
-                    if prefab_deleted:
-                        print(f"  Deleted prefab {folder.prefab_id} associated with folder {folder.id}")
-                
                 print(f"  Deleting subfolder with ID {folder.id}")
                 folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
                 
@@ -846,7 +825,7 @@ class RszObjectOperations:
         to_delete_instances = []
         for instance_id in const_to_delete_instances:
             if instance_id in userdata_reference_map and userdata_reference_map[instance_id] > 0:
-                print(f"  Excluding UserData instance {instance_id} from deletion as it's referenced {userdata_reference_map[instance_id]} times elsewhere")
+                #print(f"  Excluding UserData instance {instance_id} from deletion as it's referenced {userdata_reference_map[instance_id]} times elsewhere")
                 continue
             to_delete_instances.append(instance_id)
 
@@ -905,7 +884,7 @@ class RszObjectOperations:
         Returns:
             bool: True if the operation was successful
         """
-        if self.scn.is_pfb or self.scn.is_usr:
+        if not self.scn.is_scn:
             print("Prefabs can't be modified in PFB/USR files")
             return False
             
