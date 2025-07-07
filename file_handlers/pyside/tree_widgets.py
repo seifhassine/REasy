@@ -73,8 +73,13 @@ class AdvancedTreeView(QTreeView):
                 self.delete_folder(index)
             elif item_info['is_component'] and item_info['component_instance_id'] > 0:
                 self.delete_component(index, item_info['component_instance_id'])
-            elif item_info['is_resource'] and item_info['resource_index'] >= 0:
-                self.delete_resource(item_info['resource_index'])
+            elif item_info['is_resource']:
+                resources_node = self._find_resources_node()
+                selected = self.get_selected_resources(resources_node)
+                if len(selected) > 1:
+                    self.delete_resources(selected)
+                else:
+                    self.delete_resource(item_info['resource_index'])
             elif item_info['is_array_element'] and item_info['element_index'] >= 0:
                 self.delete_array_element(item_info['parent_array_item'], item_info['element_index'])
                 
@@ -204,12 +209,14 @@ class AdvancedTreeView(QTreeView):
 
     def _handle_resource_menu(self, menu, index, item_info):
         edit_action = menu.addAction("Edit Resource Path")
-        delete_action = menu.addAction("Delete Resource")
+        delete_sel    = menu.addAction("Delete Selected Resources…")
         action = menu.exec_(QCursor.pos())
         if action == edit_action:
             self.edit_resource(index, item_info['resource_index'])
-        elif action == delete_action:
-            self.delete_resource(item_info['resource_index'])
+        elif action == delete_sel:
+            resources_node = self._find_resources_node()
+            sel = self.get_selected_resources(resources_node)
+            self.delete_resources(sel)
 
     def _handle_resources_section_menu(self, menu):
         add_action = menu.addAction("Add New Resource")
@@ -1177,47 +1184,86 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
         except Exception as e:
             self._handle_resource_error("edit", e)
+            
+    def get_selected_resources(self, resources_node):
+            """Return sorted list of resource_index values for all selected resource items."""
+            selected = []
+            model = self.model()
+            if not model or not resources_node:
+                return selected
+
+            resources_index = model.getIndexFromItem(resources_node)
+            if not resources_index.isValid():
+                return selected
+
+            sel = self.selectionModel().selectedIndexes()
+            for idx in sel:
+                if idx.parent() != resources_index:
+                    continue
+                item = idx.internalPointer()
+                raw = getattr(item, 'raw', {})
+                if raw.get('type') == 'resource':
+                    ri = raw.get('resource_index', -1)
+                    if ri >= 0:
+                        selected.append(ri)
+            return sorted(set(selected))
+            
+    def _remove_resource_ui(self, resource_index):
+        """
+        Remove the given resource row from the tree and
+        update sibling indices and header count.
+        Returns True on success.
+        """
+        model = self.model()
+        resources_node = self._find_resources_node()
+        if not (model and resources_node):
+            return False
+
+        resources_index = model.getIndexFromItem(resources_node)
+        if not resources_index.isValid():
+            return False
+
+        row = next(
+            (i for i, c in enumerate(resources_node.children)
+             if getattr(c, 'raw', {}).get('resource_index') == resource_index),
+            None
+        )
+        if row is None:
+            return False
+
+        model.removeRow(row, resources_index)
+        parent = self.parent()
+        resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
+        self._update_remaining_resource_indices(resources_node, resource_index)
+        return True
+    
+    def delete_resources(self, resource_indices):
+        """Bulk‐delete resources and reuse the same UI helper for each."""
+        if not resource_indices:
+            return
+        if not self._display_confirmation(f"Delete {len(resource_indices)} resources?"):
+            return
+
+        parent = self.parent()
+        for ri in sorted(resource_indices, reverse=True):
+            if not parent.delete_resource(ri):
+                QMessageBox.warning(self, "Error", f"Failed to delete resource #{ri}")
+                return
+
+        for ri in sorted(resource_indices, reverse=True):
+            self._remove_resource_ui(ri)
+
+        QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
 
     def delete_resource(self, resource_index):
         """Delete a resource path directly from the tree view"""
-        if resource_index < 0:
-            QMessageBox.warning(self, "Error", "Invalid resource index")
-            return
-        
         parent = self.parent()
-        if resource_index >= len(parent.scn.resource_infos):
-            QMessageBox.warning(self, "Error", "Resource deletion not supported or invalid index")
-            return
-        
         resource_path = self._get_current_resource_path(resource_index)
         
         if not self._confirm_resource_deletion(resource_path):
             return
         
-        try:
-            success = parent.delete_resource(resource_index)
-            if not success:
-                QMessageBox.warning(self, "Error", "Failed to delete resource")
-                return
-            
-            model = self.model()
-            resources_node = self._find_resources_node()
-            
-            if resources_node and model:
-                resources_index = model.getIndexFromItem(resources_node)
-                if resources_index.isValid():
-                    resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
-                    
-                    row_to_remove = self._find_resource_row(resources_node.children, resource_index)
-                    if row_to_remove >= 0:
-                        model.removeRow(row_to_remove, resources_index)
-                        self._update_remaining_resource_indices(resources_node, resource_index)
-                        QMessageBox.information(self, "Success", f"Deleted resource '{resource_path}'")
-                        return
-                        
-            self._update_resources_ui(f"Deleted resource '{resource_path}'")
-        except Exception as e:
-            self._handle_resource_error("delete", e)
+        parent.delete_resource(resource_index)
 
     def _get_resource_path_from_dialog(self, title, label, default_text=""):
         """Show dialog to get resource path from user"""
