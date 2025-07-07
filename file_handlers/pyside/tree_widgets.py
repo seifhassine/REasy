@@ -81,9 +81,13 @@ class AdvancedTreeView(QTreeView):
                 else:
                     self.delete_resource(item_info['resource_index'])
             elif item_info['is_array_element'] and item_info['element_index'] >= 0:
-                self.delete_array_element(item_info['parent_array_item'], item_info['element_index'])
+                parent_array = item_info['parent_array_item']
+                sel_idxs = self.get_selected_array_elements(parent_array)
+                if len(sel_idxs) > 1:
+                    self.delete_array_elements(parent_array, sel_idxs)
+                else:
+                    self.delete_array_element(parent_array, item_info['element_index'])
                 
-        # Call the parent's keyPressEvent for default behavior
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
