@@ -37,10 +37,6 @@ class RszGameObjectClipboard:
     @staticmethod
     def copy_gameobject_to_clipboard(viewer, gameobject_id):
         try:
-            if not hasattr(viewer, "scn") or not hasattr(viewer, "type_registry"):
-                print("Viewer is missing required attributes")
-                return False
-                
             if gameobject_id < 0 or gameobject_id >= len(viewer.scn.object_table):
                 print(f"Invalid GameObject ID: {gameobject_id}")
                 return False

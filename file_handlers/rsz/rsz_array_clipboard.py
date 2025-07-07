@@ -840,10 +840,6 @@ class RszArrayClipboard:
             
         print(f"Pasting object graph with {len(instances)} instances")
         
-        if not hasattr(viewer, "scn") or not hasattr(viewer, "type_registry"):
-            print("Missing required viewer components")
-            return None
-        
         try:
             from file_handlers.rsz.rsz_file import RszInstanceInfo
             

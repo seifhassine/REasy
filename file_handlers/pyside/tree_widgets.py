@@ -398,22 +398,9 @@ class AdvancedTreeView(QTreeView):
         """Export a GameObject as a template"""
             
         item = index.internalPointer()
-        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
-            return
-            
         reasy_id = item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
-            return
-            
         parent_widget = self.parent()
-            
         instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
-        if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
-            return
-            
         go_object_id = -1
         for i, obj_id in enumerate(parent_widget.scn.object_table):
             if obj_id == instance_id:
@@ -687,41 +674,40 @@ class AdvancedTreeView(QTreeView):
                         break
 
     def _find_embedded_context(self, item):
-        """
-        Find the embedded RSZ context (RSZUserDataInfo) for a tree item
-        
-        This traverses up the tree hierarchy to find an embedded context
-        """
         current = item
         while current:
-            if hasattr(current, 'raw') and isinstance(current.raw, dict):
-                if 'embedded_context' in current.raw:
-                    context = current.raw['embedded_context']
-                    return context
-                
-                obj = current.raw.get('obj')
-                if obj:
-                    if hasattr(obj, '_owning_context') and obj._owning_context:
-                        return obj._owning_context
-                    
-                    if hasattr(obj, '_container_context') and obj._container_context:
-                        return obj._container_context
-                
-                # Check for domain_id which indicates embedded data
-                if 'domain_id' in current.raw and 'embedded' in current.raw and current.raw['embedded']:
-                    # Look for context_chain which contains the full chain of contexts
-                    if 'context_chain' in current.raw and current.raw['context_chain']:
-                        context_chain = current.raw['context_chain']
-                        if context_chain and len(context_chain) > 0:
-                            context = context_chain[0]  # Use the first (deepest) context
-                            return context
-                    
-                    if 'embedded_context' in current.raw:
-                        context = current.raw['embedded_context']
-                        return context
-            
-            current = current.parent
-            
+            ctx = self._get_direct_context(current) \
+            or self._get_obj_context(current) \
+            or self._get_domain_context(current)
+            if ctx:
+                return ctx
+            current = getattr(current, 'parent', None)
+        return None
+    
+    def _get_direct_context(self, node):
+        raw = getattr(node, 'raw', None)
+        if isinstance(raw, dict):
+            return raw.get('embedded_context')
+        return None
+
+    def _get_obj_context(self, node):
+        raw = getattr(node, 'raw', None)
+        if not isinstance(raw, dict):
+            return None
+        obj = raw.get('obj')
+        if not obj:
+            return None
+        return getattr(obj, '_owning_context', None) \
+            or getattr(obj, '_container_context', None)
+
+    def _get_domain_context(self, node):
+        raw = getattr(node, 'raw', None)
+        if not isinstance(raw, dict):
+            return None
+        if raw.get('embedded') and 'domain_id' in raw:
+            chain = raw.get('context_chain')
+            if chain:
+                return chain[0]
         return None
     
     @staticmethod
@@ -750,11 +736,6 @@ class AdvancedTreeView(QTreeView):
         
         if not self._display_confirmation("Delete Component"):
             return
-        
-        if not hasattr(parent, "delete_component_from_gameobject"):
-            QMessageBox.warning(self, "Error", "Component deletion not supported")
-            return
-        
         try:
             go_node = None
             components_node = index.parent()
@@ -786,11 +767,6 @@ class AdvancedTreeView(QTreeView):
         if not folder_instance_id:
             QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
             return
-        
-        if not hasattr(parent, "create_gameobject"):
-            QMessageBox.warning(self, "Error", "GameObject creation not supported")
-            return
-            
         # Get folder's object table index
         folder_object_id = -1
         for i, instance_id in enumerate(parent.scn.object_table):
@@ -858,10 +834,6 @@ class AdvancedTreeView(QTreeView):
         """Create a new GameObject at the root level"""
         # Get the parent widget/handler for GameObject creation
         parent = self.parent()
-        if not hasattr(parent, "create_gameobject"):
-            QMessageBox.warning(self, "Error", "GameObject creation not supported")
-            return
-            
         # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(self, "New Root GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
         if not ok or not name:
@@ -1674,13 +1646,7 @@ class AdvancedTreeView(QTreeView):
 
     def translate_node_text(self, index):
         """Translate the name of a GameObject or folder using Google Translate API"""
-        if not index.isValid():
-            return
-            
         item = index.internalPointer()
-        if not hasattr(item, 'data') or not item.data:
-            return
-    
         name_text = item.data[0]
         if " (ID:" in name_text:
             name_text = name_text.split(" (ID:")[0]
@@ -1725,10 +1691,6 @@ class AdvancedTreeView(QTreeView):
             return
         
         item = index.internalPointer()
-        if not item or not hasattr(item, 'data'):
-            show_translation_error(self, "Invalid item data")
-            return
-        
         item.data[0] = translated_text + original_id_part
         
         model = self.model()
@@ -1834,10 +1796,6 @@ class AdvancedTreeView(QTreeView):
             return
         
         parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
         try:
             success = parent.handler.copy_component_to_clipboard(parent, component_instance_id)
             if success:
@@ -1853,25 +1811,9 @@ class AdvancedTreeView(QTreeView):
             return
             
         item = index.internalPointer()
-        if not item or not hasattr(item, 'raw') or not isinstance(item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid GameObject selection")
-            return
-            
         reasy_id = item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
-            return
-            
         parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
-            return
-            
         clipboard_data = parent.handler.get_component_clipboard_data(self)
         if not clipboard_data:
             QMessageBox.warning(self, "Error", "No component data in clipboard")
@@ -1927,29 +1869,10 @@ class AdvancedTreeView(QTreeView):
 
     def paste_gameobject_in_folder(self, folder_index):
         """Paste a GameObject from clipboard into a folder"""
-        if not folder_index.isValid():
-            return
-            
         folder_item = folder_index.internalPointer()
-        if not folder_item or not hasattr(folder_item, 'raw') or not isinstance(folder_item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid folder selection")
-            return
-            
         reasy_id = folder_item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine folder ID")
-            return
-            
         parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
         folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        if not folder_instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
-            return
-            
         folder_object_id = -1
         for i, instance_id in enumerate(parent.scn.object_table):
             if instance_id == folder_instance_id:
@@ -1964,40 +1887,15 @@ class AdvancedTreeView(QTreeView):
 
     def paste_gameobject_at_root(self, _):
         """Paste a GameObject from clipboard at the root level"""
-        parent = self.parent()
-        if not parent or not hasattr(parent, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
         self._paste_gameobject_common(-1, None)
 
     def paste_gameobject_as_child(self, parent_go_index):
         """Paste a GameObject from clipboard as a child of another GameObject"""
-        if not parent_go_index.isValid():
-            QMessageBox.warning(self, "Error", "Invalid parent GameObject selection")
-            return
-            
         parent_item = parent_go_index.internalPointer()
-        if not parent_item or not hasattr(parent_item, 'raw') or not isinstance(parent_item.raw, dict):
-            QMessageBox.warning(self, "Error", "Invalid parent GameObject")
-            return
-            
         # Get parent GameObject ID using reasy_id for stable reference
         reasy_id = parent_item.raw.get("reasy_id")
-        if not reasy_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject ID")
-            return
-        
         parent_widget = self.parent()
-        if not parent_widget or not hasattr(parent_widget, "handler"):
-            QMessageBox.warning(self, "Error", "Handler not available")
-            return
-            
         parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
-        if not parent_instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
-            return
-            
         parent_object_id = -1
         for i, instance_id in enumerate(parent_widget.scn.object_table):
             if instance_id == parent_instance_id:

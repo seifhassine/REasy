@@ -293,51 +293,39 @@ class RszTemplateManager:
                 template_dir = os.path.dirname(old_path)
                 new_filename = f"{safe_name}.json"
                 new_path = os.path.join(template_dir, new_filename)
+        
+                with open(old_path, 'r') as f:
+                    template_data = json.load(f)
+                    
+                if isinstance(template_data, dict) and "name" in template_data:
+                    template_data["name"] = name
+                    
+                    with open(old_path, 'w') as f:
+                        json.dump(template_data, f, indent=2)
+            
+                os.rename(old_path, new_path)
+                template_info["path"] = new_path
                 
-                try:
-                    try:
-                        with open(old_path, 'r') as f:
-                            template_data = json.load(f)
-                            
-                        if isinstance(template_data, dict) and "name" in template_data:
-                            template_data["name"] = name
-                            
-                            with open(old_path, 'w') as f:
-                                json.dump(template_data, f, indent=2)
-                    except Exception as e:
-                        print(f"Error updating name in template file: {e}")
+                registry = template_info["registry"]
+                new_template_id = f"{registry}/{safe_name}"
+                
+                metadata["templates"][new_template_id] = template_info
+                del metadata["templates"][template_id]
+                
+                template_info["name"] = name
                     
-                    os.rename(old_path, new_path)
-                    template_info["path"] = new_path
-                    
-                    registry = template_info["registry"]
-                    new_template_id = f"{registry}/{safe_name}"
-                    
-                    metadata["templates"][new_template_id] = template_info
-                    del metadata["templates"][template_id]
-                    
-                    template_info["name"] = name
-                    template_id = new_template_id
-                    
-                except Exception as e:
-                    print(f"Error renaming template file: {e}")
-                    return False
             else:
                 template_info["name"] = name
-                
-                try:
-                    template_path = template_info["path"]
-                    with open(template_path, 'r') as f:
-                        template_data = json.load(f)
-                        
-                    if isinstance(template_data, dict) and "name" in template_data:
-                        template_data["name"] = name
-                        
-                        with open(template_path, 'w') as f:
-                            json.dump(template_data, f, indent=2)
-                except Exception as e:
-                    print(f"Error updating name in template file: {e}")
-        
+            
+                template_path = template_info["path"]
+                with open(template_path, 'r') as f:
+                    template_data = json.load(f)
+                    
+                if isinstance(template_data, dict) and "name" in template_data:
+                    template_data["name"] = name
+                    
+                    with open(template_path, 'w') as f:
+                        json.dump(template_data, f, indent=2)
         if tags is not None:
             template_info["tags"] = tags
             

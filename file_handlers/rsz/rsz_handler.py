@@ -430,7 +430,7 @@ class RszViewer(QWidget):
             "Resources", f"{len(self.scn.resource_infos)} items"
         )
         
-        if hasattr(self.scn, 'is_pfb16') and self.scn.is_pfb16 and hasattr(self.scn, '_pfb16_direct_strings'):
+        if hasattr(self.scn, '_pfb16_direct_strings'):
             direct_strings = self.scn._pfb16_direct_strings
             
             for i, res in enumerate(self.scn.resource_infos):
@@ -1484,35 +1484,33 @@ class RszViewer(QWidget):
             field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
             field_obj = self._create_default_field(field_class, field_orig_type, field_array, field_size)
             
-            if field_obj:
-                fields_dict[field_name] = field_obj
-                if hasattr(field_obj, 'orig_type') and field_orig_type:
-                    field_obj.orig_type = field_orig_type
-                if isinstance(field_obj, ArrayData):
-                    field_obj._owning_context = rui
-                    field_obj._owning_instance_id = instance_id
-                    field_obj._owning_field = field_name
-                    
-                    field_obj._container_context = rui
-                    field_obj._container_parent_id = instance_id
-                    field_obj._container_field = field_name
-                    
-                    if hasattr(field_obj, 'values') and isinstance(field_obj.values, list):
-                        for i, elem in enumerate(field_obj.values):
-                            if isinstance(elem, ArrayData):
-                                elem._owning_context = rui
-                                elem._owning_instance_id = instance_id
-                                elem._owning_field = f"{field_name}[{i}]"
-                                
-                                elem._container_array = field_obj
-                                elem._container_context = rui
-                                elem._container_parent_id = instance_id
-                                elem._container_index = i
+            fields_dict[field_name] = field_obj
+            field_obj.orig_type = field_orig_type
+            if isinstance(field_obj, ArrayData):
+                field_obj._owning_context = rui
+                field_obj._owning_instance_id = instance_id
+                field_obj._owning_field = field_name
+                
+                field_obj._container_context = rui
+                field_obj._container_parent_id = instance_id
+                field_obj._container_field = field_name
+                
+                if hasattr(field_obj, 'values') and isinstance(field_obj.values, list):
+                    for i, elem in enumerate(field_obj.values):
+                        if isinstance(elem, ArrayData):
+                            elem._owning_context = rui
+                            elem._owning_instance_id = instance_id
+                            elem._owning_field = f"{field_name}[{i}]"
                             
-                            elif isinstance(elem, (ObjectData, UserDataData)):
-                                elem._container_array = field_obj
-                                elem._container_context = rui
-                                elem._container_index = i
+                            elem._container_array = field_obj
+                            elem._container_context = rui
+                            elem._container_parent_id = instance_id
+                            elem._container_index = i
+                        
+                        elif isinstance(elem, (ObjectData, UserDataData)):
+                            elem._container_array = field_obj
+                            elem._container_context = rui
+                            elem._container_index = i
 
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""

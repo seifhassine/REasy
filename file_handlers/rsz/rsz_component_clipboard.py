@@ -40,19 +40,7 @@ class RszComponentClipboard:
             bool: True if successful, False otherwise
         """
         try:
-            if not hasattr(viewer, "scn") or not hasattr(viewer, "type_registry"):
-                print("Viewer is missing required attributes")
-                return False
-            
-            if component_instance_id <= 0 or component_instance_id >= len(viewer.scn.instance_infos):
-                print(f"Invalid component instance ID: {component_instance_id}")
-                return False
-            
             instance_info = viewer.scn.instance_infos[component_instance_id]
-            if instance_info.type_id <= 0:
-                print(f"Invalid type ID for component instance {component_instance_id}")
-                return False
-            
             print(f"Copying component with instance ID: {component_instance_id}")
             
             component_type_name = ""
