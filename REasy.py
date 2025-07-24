@@ -62,7 +62,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-CURRENT_VERSION = "0.3.4"
+CURRENT_VERSION = "0.3.5"
 
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
@@ -952,7 +952,11 @@ class REasyEditorApp(QMainWindow):
         outdated_files_action = QAction("Outdated RSZ Files Detector", self)
         outdated_files_action.triggered.connect(self.open_outdated_files_detector)
         tools_menu.addAction(outdated_files_action)
-        
+
+        script_creator_act = QAction("REF Script Creator", self)
+        script_creator_act.triggered.connect(self.open_script_creator)
+        tools_menu.addAction(script_creator_act)
+
         tools_menu.addSeparator()
 
         help_menu = menubar.addMenu("Help")
@@ -967,6 +971,18 @@ class REasyEditorApp(QMainWindow):
         donate_act = QAction("Support REasy", self)
         donate_act.triggered.connect(self.show_donate_dialog)
         donate_menu.addAction(donate_act)
+        
+    def open_script_creator(self):
+        """
+        Opens (or focuses) the standalone REF Script Creator window.
+        We keep a single instance around so multiple clicks just raise it.
+        """
+        if not hasattr(self, "_script_creator") or self._script_creator is None:
+            from tools.ref_script_creator import ScriptCreatorWindow
+            self._script_creator = ScriptCreatorWindow(self)
+        self._script_creator.show()
+        self._script_creator.raise_()
+        self._script_creator.activateWindow()
 
     def set_dark_mode(self, state):
         self.dark_mode = state
