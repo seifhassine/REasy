@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+
 def create_about_dialog(parent):
     """Creates and shows the About dialog"""
     dialog = QDialog(parent)
@@ -13,7 +14,8 @@ def create_about_dialog(parent):
     dialog.setFixedSize(450, 250)
     layout = QVBoxLayout(dialog)
 
-    title_label = QLabel("REasy Editor v0.3.4")
+    from REasy import CURRENT_VERSION
+    title_label = QLabel(f"REasy Editor v{CURRENT_VERSION}")
     title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 

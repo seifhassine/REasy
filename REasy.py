@@ -16,6 +16,7 @@ from ui.guid_converter import create_guid_converter_dialog
 from ui.about_dialog import create_about_dialog
 from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
+from ui.update_notification import UpdateNotificationManager
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 
 from PySide6.QtCore import (
@@ -39,7 +40,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QTabWidget,
     QTreeView, 
-    QMenu,
     QMessageBox,
     QFileDialog,
     QInputDialog,
@@ -62,6 +62,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
+CURRENT_VERSION = "0.3.4"
 
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
@@ -222,7 +223,6 @@ class FileTab:
             self.on_double_click
         )
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.tree.customContextMenuRequested.connect(self.show_context_menu)
 
         self.dark_mode = self.app.dark_mode if self.app else False
         self.search_dialog = None
@@ -456,31 +456,6 @@ class FileTab:
                 self.tree.setModel(model)
             except Exception as e:
                 print(f"Error populating tree: {e}")
-
-    def show_context_menu(self, pos):
-        if not self.tree:
-            return
-        index = self.tree.indexAt(pos)
-        if not index.isValid():
-            return
-
-        item = index.internalPointer()
-        if not item:
-            return
-
-        meta = item.raw.get("meta") if isinstance(item.raw, dict) else None
-        if meta is None:
-            return
-
-        if self.handler and hasattr(self.handler, "get_context_menu"):
-            menu = self.handler.get_context_menu(self.tree, None, meta)
-            if menu:
-                menu.exec(self.tree.mapToGlobal(pos))
-        else:
-            menu = QMenu(self.tree)
-            copy_action = menu.addAction("Copy")
-            copy_action.triggered.connect(lambda: self.copy_to_clipboard())
-            menu.exec(self.tree.mapToGlobal(pos))
 
     def on_double_click(self, index):
         if not self.tree:
@@ -761,7 +736,7 @@ class FileTab:
 class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("REasy Editor v0.3.4")
+        self.setWindowTitle(f"REasy Editor v{CURRENT_VERSION}")
         set_app_icon(self)
 
         try:
@@ -791,6 +766,8 @@ class REasyEditorApp(QMainWindow):
 
         self.tabs = weakref.WeakValueDictionary()
 
+        self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
+        self._update_menu = None
         self._create_menus()
 
         self.status_bar = QStatusBar()
@@ -846,6 +823,7 @@ class REasyEditorApp(QMainWindow):
 
     def _create_menus(self):
         menubar = self.menuBar()
+        self.update_notification.update_update_menu(force=True, menubar=menubar)
 
         file_menu = menubar.addMenu("File")
 
