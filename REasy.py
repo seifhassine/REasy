@@ -979,9 +979,11 @@ class REasyEditorApp(QMainWindow):
 
         help_menu = menubar.addMenu("Help")
         about_act = QAction("About", self)
+        wiki_act = QAction("REasy Wiki", self)
         about_act.triggered.connect(self.show_about)
         wiki_act.triggered.connect(self.show_wiki)
         help_menu.addAction(about_act)
+        help_menu.addAction(wiki_act)
         
         donate_menu = menubar.addMenu("Donate")
         donate_act = QAction("Support REasy", self)
