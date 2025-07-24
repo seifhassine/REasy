@@ -980,41 +980,30 @@ class RszFile:
         return resources
 
     def build(self, special_align_enabled = False) -> bytes:
+        
+        if self.auto_resource_management:
+            dynamic_resources = self.get_resources_dynamically()
+            self.resource_infos.clear()
+            self._resource_str_map.clear()
+            
+            for resource_path in dynamic_resources:
+                ri = RszResourceInfo()
+                ri.string_offset = 0
+                ri.reserved = 0
+                self.resource_infos.append(ri)
+                self.set_resource_string(ri, resource_path)
+
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
             if self.filepath.lower().endswith('.16'):
                 return build_pfb_16(self, special_align_enabled)
             else:
-                if self.auto_resource_management:
-                    dynamic_resources = self.get_resources_dynamically()
-                    self.resource_infos.clear()
-                    self._resource_str_map.clear()
-                    
-                    for resource_path in dynamic_resources:
-                        ri = RszResourceInfo()
-                        ri.string_offset = 0
-                        ri.reserved = 0
-                        self.resource_infos.append(ri)
-                        self.set_resource_string(ri, resource_path)
-
                 return self._build_pfb(special_align_enabled)
-        else:
-            if self.auto_resource_management:
-                dynamic_resources = self.get_resources_dynamically()
-                self.resource_infos.clear()
-                self._resource_str_map.clear()
-                
-                for resource_path in dynamic_resources:
-                    ri = RszResourceInfo()
-                    ri.string_offset = 0
-                    ri.reserved = 0
-                    self.resource_infos.append(ri)
-                    self.set_resource_string(ri, resource_path)     
-            if self.filepath.lower().endswith('.19'):
+        elif self.filepath.lower().endswith('.19'):
                     return build_scn_19(self, special_align_enabled)
-            elif self.filepath.lower().endswith('.18'):
-                return build_scn_18(self, special_align_enabled)
+        elif self.filepath.lower().endswith('.18'):
+            return build_scn_18(self, special_align_enabled)
                 
         self.header.info_count = len(self.gameobjects)
         self.header.folder_count = len(self.folder_infos)
