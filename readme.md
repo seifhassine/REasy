@@ -79,9 +79,9 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 - UVAR: No complex operations involved.
 - RSZ Files: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game as well as all .user.2 files. All files with valid data passed the tests.
 
-## TODO List:
+## RSZ Dumps:
 
-- The entire project needs to be ported into [.NET](https://github.com/seifhassine/REasy.NET) 
+- Under [/resources/data/dumps](https://github.com/seifhassine/REasy/tree/master/resources/data/dumps) you will find a list of updated RSZ templates for all games. 
 
 ## Installation
 
