@@ -76,8 +76,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 ## Correctness
 
-- UVAR: No complex operations involved.
-- RSZ Files: RSZ parsing and tree populating tested on all 25k .scn.20 files of the game as well as all .user.2 files. All files with valid data passed the tests.
+- All RSZ (.user, .pfb, .scn) files from most games have been fully tested (read then re-written, producing the same data as original file).
 
 ## RSZ Dumps:
 
