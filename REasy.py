@@ -62,7 +62,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-CURRENT_VERSION = "0.3.5"
+CURRENT_VERSION = "0.3.6"
 
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
