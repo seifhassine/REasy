@@ -450,7 +450,7 @@ class RszViewer(QWidget):
                     res_string = self.scn.get_resource_string(res) or ""
                     #print(f"PFB.16 resource {i}: Using get_resource_string: '{res_string}'")
                     
-                res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+                res_node = DataTreeBuilder.create_data_node(f"{res_string.rstrip('\0')}", "")
                 res_node["type"] = "resource"
                 res_node["resource_index"] = i
                 
@@ -464,7 +464,7 @@ class RszViewer(QWidget):
                     print(f"Error reading resource {i}: {e}")
                     res_string = "[Error reading]"
                     
-                res_node = DataTreeBuilder.create_data_node(f"{res_string}", "")
+                res_node = DataTreeBuilder.create_data_node(f"{res_string.rstrip('\0')}", "")
                 res_node["type"] = "resource"
                 res_node["resource_index"] = i
                 

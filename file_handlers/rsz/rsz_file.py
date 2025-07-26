@@ -979,19 +979,20 @@ class RszFile:
                                 resources.append(element.value)
         return resources
 
+    def rebuild_resources(self):
+        dynamic_resources = self.get_resources_dynamically()
+        self.resource_infos.clear()
+        self._resource_str_map.clear()
+        for resource_path in dynamic_resources:
+            ri = RszResourceInfo()
+            ri.string_offset = 0
+            ri.reserved = 0
+            self.resource_infos.append(ri)
+            self.set_resource_string(ri, resource_path)
+
     def build(self, special_align_enabled = False) -> bytes:
-        
         if self.auto_resource_management:
-            dynamic_resources = self.get_resources_dynamically()
-            self.resource_infos.clear()
-            self._resource_str_map.clear()
-            
-            for resource_path in dynamic_resources:
-                ri = RszResourceInfo()
-                ri.string_offset = 0
-                ri.reserved = 0
-                self.resource_infos.append(ri)
-                self.set_resource_string(ri, resource_path)
+            self.rebuild_resources()
 
         if self.is_usr:
             return self._build_usr(special_align_enabled)

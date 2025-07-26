@@ -3,13 +3,17 @@ from PySide6.QtWidgets import (QLabel, QTreeView,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog)
 from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QWidget, QHBoxLayout
 from PySide6.QtCore import Qt, QModelIndex, QEvent
+
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
 from ui.template_manager_dialog import TemplateManagerDialog
 from ui.template_export_dialog import TemplateExportDialog
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
+
+import file_handlers.rsz.rsz_array_clipboard as _rsz_array_cb
 
 from .tree_widget_factory import TreeWidgetFactory
 
@@ -47,6 +51,8 @@ class AdvancedTreeView(QTreeView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
+        self.resources_outdated = False
+        _rsz_array_cb.RszArrayClipboard.on_resource_data_deserialized = self._mark_resources_outdated
         self.shift_pressed = False
         self.label_width = 150
         self.translation_manager = TranslationManager(self)
@@ -116,6 +122,8 @@ class AdvancedTreeView(QTreeView):
             
             if self.shift_pressed:
                 self.expand_all_children(parent_index)
+            if self.resources_outdated:
+                self._apply_outdated_marker()
 
         # Only connect the signal
         self.expanded.connect(embed_children_on_expand)
@@ -173,6 +181,37 @@ class AdvancedTreeView(QTreeView):
             )
             if widget:
                 self.setIndexWidget(index0, widget)
+                if self.parent().handler.auto_resource_management and node_type == "ResourceData":
+                    from file_handlers.pyside.value_widgets import StringInput
+                    widget.findChild(StringInput).valueChanged.connect(
+                        lambda _=index0: self._on_resource_name_changed()
+                    )
+
+    def _on_resource_name_changed(self):
+        self.resources_outdated = True
+        self._apply_outdated_marker()
+
+    def _apply_outdated_marker(self):
+        model = self.model()
+        resources_node = self._find_resources_node()
+        idx = model.getIndexFromItem(resources_node)
+        self.setIndexWidget(idx, None)
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(2, 0, 2, 0)
+        layout.setSpacing(5)
+        marker = QLabel("[OUTDATED]", container)
+        marker.setStyleSheet("color: red;")
+        layout.addWidget(marker)
+        header = QLabel(resources_node.data[0], container)
+        layout.addWidget(header)
+        layout.addStretch()
+        self.setIndexWidget(idx, container)
+
+    def _mark_resources_outdated(self, _):
+        if self.parent().handler.auto_resource_management: 
+            self.resources_outdated = True
+            self._apply_outdated_marker()
 
     def show_context_menu(self, position):
         """Show context menu for tree items"""
@@ -222,9 +261,14 @@ class AdvancedTreeView(QTreeView):
 
     def _handle_resources_section_menu(self, menu):
         add_action = menu.addAction("Add New Resource")
+        rebuild_action = None
+        if(self.parent().handler.auto_resource_management):
+            rebuild_action = menu.addAction("Refresh Resources List")
         action = menu.exec_(QCursor.pos())
         if action == add_action:
             self.add_resource()
+        elif action == rebuild_action:
+            self._rebuild_resources_list()
 
     def _handle_component_menu(self, menu, index, item_info):
         copy_action = menu.addAction("Copy Component")
@@ -1170,6 +1214,32 @@ class AdvancedTreeView(QTreeView):
             return
 
         QMessageBox.warning(self, "Error", "Failed to manage prefab")
+
+    def _rebuild_resources_list(self):
+        viewer  = self.parent()
+        viewer.handler.rsz_file.rebuild_resources()
+        model    = self.model()
+        res_node = self._find_resources_node()
+        res_idx  = model.getIndexFromItem(res_node)
+
+        new_section = viewer._create_resources_info()
+        self.setIndexWidget(res_idx, None)
+
+        while model.rowCount(res_idx) > 0:
+            model.removeRow(0, res_idx)
+
+        self.resources_outdated = False
+
+        for child_dict in new_section.get("children", []):
+            model.addChild(res_node, child_dict)
+
+        self.create_widgets_for_children(res_idx)
+
+        QMessageBox.information(
+            self,
+            "Rebuilt",
+            f"Refreshed {len(new_section['children'])} resources.\n\nNote that this step is not necessary, as resources are automatically rebuilt on save."
+        )
 
     def add_resource(self):
         """Add a new resource path directly in the tree view"""
