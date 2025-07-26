@@ -209,7 +209,7 @@ class AdvancedTreeView(QTreeView):
         self.setIndexWidget(idx, container)
 
     def _mark_resources_outdated(self, _):
-        if self.parent().handler.auto_resource_management: 
+        if self.parent().handler.auto_resource_management and self.parent().handler.show_advanced: 
             self.resources_outdated = True
             self._apply_outdated_marker()
 
