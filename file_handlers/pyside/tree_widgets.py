@@ -76,10 +76,7 @@ class AdvancedTreeView(QTreeView):
             elif item_info['is_resource']:
                 resources_node = self._find_resources_node()
                 selected = self.get_selected_resources(resources_node)
-                if len(selected) > 1:
-                    self.delete_resources(selected)
-                else:
-                    self.delete_resource(item_info['resource_index'])
+                self.delete_resources(selected)
             elif item_info['is_array_element'] and item_info['element_index'] >= 0:
                 parent_array = item_info['parent_array_item']
                 sel_idxs = self.get_selected_array_elements(parent_array)
@@ -1212,9 +1209,6 @@ class AdvancedTreeView(QTreeView):
         model = self.model()
         resources_node = self._find_resources_node()
         
-        if not model or not resources_node:
-            return False
-        
         res_node = {
             "data": [path, ""],
             "type": "resource",
@@ -1225,8 +1219,6 @@ class AdvancedTreeView(QTreeView):
         if not resources_index.isValid():
             return False
         
-        parent = self.parent()
-        resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
         
         model.addChild(resources_node, res_node)
         
@@ -1325,8 +1317,6 @@ class AdvancedTreeView(QTreeView):
             return False
 
         model.removeRow(row, resources_index)
-        parent = self.parent()
-        resources_node.data[0] = f"Resources {len(parent.scn.resource_infos)} items"
         self._update_remaining_resource_indices(resources_node, resource_index)
         return True
     
@@ -1349,16 +1339,6 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
         except Exception as e:
             self._handle_resource_error("delete", e)
-
-    def delete_resource(self, resource_index):
-        """Delete a resource path directly from the tree view"""
-        parent = self.parent()
-        resource_path = self._get_current_resource_path(resource_index)
-        
-        if not self._confirm_resource_deletion(resource_path):
-            return
-        
-        parent.delete_resource(resource_index)
 
     def _get_resource_path_from_dialog(self, title, label, default_text=""):
         """Show dialog to get resource path from user"""
