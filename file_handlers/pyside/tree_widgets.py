@@ -1336,17 +1336,19 @@ class AdvancedTreeView(QTreeView):
             return
         if not self._display_confirmation(f"Delete {len(resource_indices)} resources?"):
             return
+        try:
+            parent = self.parent()
+            for ri in sorted(resource_indices, reverse=True):
+                if not parent.delete_resource(ri):
+                    QMessageBox.warning(self, "Error", f"Failed to delete resource #{ri}")
+                    return
 
-        parent = self.parent()
-        for ri in sorted(resource_indices, reverse=True):
-            if not parent.delete_resource(ri):
-                QMessageBox.warning(self, "Error", f"Failed to delete resource #{ri}")
-                return
+            for ri in sorted(resource_indices, reverse=True):
+                self._remove_resource_ui(ri)
 
-        for ri in sorted(resource_indices, reverse=True):
-            self._remove_resource_ui(ri)
-
-        QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
+            QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
+        except Exception as e:
+            self._handle_resource_error("delete", e)
 
     def delete_resource(self, resource_index):
         """Delete a resource path directly from the tree view"""
