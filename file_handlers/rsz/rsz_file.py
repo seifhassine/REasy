@@ -286,9 +286,6 @@ class RszFile:
         self.game_version = "RE4"
         self.filepath = ""
         self.auto_resource_management = False
-  
-        self._string_cache = {}  # Cache for frequently accessed strings, will probably be removed.
-        self._type_info_cache = {}
         
         self._rsz_userdata_dict = {}
         self._rsz_userdata_set = set()
@@ -585,12 +582,8 @@ class RszFile:
             if idx in self._rsz_userdata_set or idx in self._processed_instances:
                 self.parsed_elements[idx] = {}
                 continue
-                
-            # Get type info from registry - cache type info per instance type
-            if inst.type_id not in self._type_info_cache:
-                self._type_info_cache[inst.type_id] = type_registry.get_type_info(inst.type_id) if type_registry else {}
             
-            type_info = self._type_info_cache[inst.type_id]
+            type_info = type_registry.get_type_info(inst.type_id)
             fields_def = type_info.get("fields", [])
             
             if not fields_def:
