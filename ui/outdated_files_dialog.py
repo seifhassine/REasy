@@ -41,7 +41,7 @@ class OutdatedFilesDialog(QDialog):
         config_layout = QVBoxLayout(config_group)
         
         registry_layout = QHBoxLayout()
-        self.registry_label = QLabel("Registry Path: Not set")
+        self.registry_label = QLabel("RSZ JSON Path: Not set")
         self.browse_registry_btn = QPushButton("Browse...")
         self.browse_registry_btn.clicked.connect(self._browse_registry)
         registry_layout.addWidget(self.registry_label, 1)
@@ -112,7 +112,7 @@ class OutdatedFilesDialog(QDialog):
         layout.addLayout(bottom_layout)
         
         if self.detector.type_registry:
-            self.registry_label.setText(f"Registry Path: {self.detector.type_registry_path}")
+            self.registry_label.setText(f"RSZ JSON Path: {self.detector.type_registry_path}")
         
     def _browse_registry(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -122,7 +122,7 @@ class OutdatedFilesDialog(QDialog):
         if file_path:
             self.detector.set_type_registry_path(file_path)
             if self.detector.type_registry:
-                self.registry_label.setText(f"Registry Path: {file_path}")
+                self.registry_label.setText(f"RSZ JSON Path: {file_path}")
                 if self.dir_label.text() != "Directory: Not selected":
                     self.scan_btn.setEnabled(True)
             else:
