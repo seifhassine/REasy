@@ -28655,6 +28655,57 @@
 		],
 		"name": "via.geometry.GeometryBrush"
 	},
+	"ec7e5a11": {
+		"crc": "2faf415d",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "MotionList",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Kind",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorMotionKind",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.ropeway.SurvivorMotionBank"
+	},
 	"bfd8dc26": {
 		"crc": "1d15932c",
 		"fields": [
@@ -56063,6 +56114,57 @@
 		],
 		"name": "via.wwise.WwiseContainer"
 	},
+	"b31a3b51": {
+		"crc": "21f9b7d8",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ContainableAsset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 2,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 2,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "SaveGUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "app.ropeway.WwiseContainerApp"
+	},
 	"35c71a8f": {
 		"crc": "aa094161",
 		"fields": [
@@ -73747,5 +73849,6458 @@
 			}
 		],
 		"name": "RE_MAIMT.Autoplay.Script.CombatAction"
+	},
+	"fc22b433": {
+		"crc": "f6348977",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StateName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Resource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.dynamics.RigidBodySet"
+	},
+	"153b6690": {
+		"crc": "36e66314",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.SoundColliderUserData.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.SoundColliderUserData.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.SoundColliderUserData"
+	},
+	"19bd91c": {
+		"crc": "81f1f4cc",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.SoundAttentionUserData"
+	},
+	"1b8712bb": {
+		"crc": "c9fc6e07",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EyeType",
+				"native": false,
+				"original_type": "app.ropeway.enemy.em7300.Em7300Think.WeakEyeEnum",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em7300DamageUserData"
+	},
+	"27c37ade": {
+		"crc": "248abd1a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.SoundAppealUserData.AppealPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpperHate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.ropeway.SoundAppealUserData"
+	},
+	"343c4af": {
+		"crc": "e2de282b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "app.ropeway.EnemyAttackSensor.SensorType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.AttackSensorUserData"
+	},
+	"3b01f285": {
+		"crc": "b98a3f24",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "app.ropeway.SparkGimmickAttackUserDataToEnemy.SparkGimmickType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.SparkGimmickAttackUserDataToEnemy"
+	},
+	"41309b5a": {
+		"crc": "fb677e4b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GrapplePriority",
+				"native": false,
+				"original_type": "app.ropeway.grapple.GrapplePriority",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.EnemyGrappleUserData"
+	},
+	"45434d2e": {
+		"crc": "5e90fbad",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AvoidMarkerType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.AvoidMarkerUserData"
+	},
+	"4601b55a": {
+		"crc": "dd3778b7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.AttackUserDataToPlayer"
+	},
+	"462e3d55": {
+		"crc": "edf11c18",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.TouchAttentionUserData"
+	},
+	"4cbc1512": {
+		"crc": "3b478061",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackPattern",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em4000AttackUserData.AttackPatternType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em4000AttackUserData"
+	},
+	"5232b520": {
+		"crc": "adf54ce6",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "app.ropeway.BlastBoilerAttackUserDataToEnemy.BlastBoilerType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.BlastBoilerAttackUserDataToEnemy"
+	},
+	"58fa0c25": {
+		"crc": "c0bf53e8",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PiellerAtkType",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em7100PillerAttackUserData.PillerAttackType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em7100PillerAttackUserData"
+	},
+	"5af385e7": {
+		"crc": "de1c1669",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackPattern",
+				"native": false,
+				"original_type": "app.ropeway.enemy.em0000.userdata.Em0000AttackUserDataToPlayer.ATTACK_PATTERN",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackKind",
+				"native": false,
+				"original_type": "app.ropeway.enemy.em0000.AttackKind",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.em0000.userdata.Em0000AttackUserDataToPlayer"
+	},
+	"6108528f": {
+		"crc": "dff501d5",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsArrogance",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em6000AttackUserData"
+	},
+	"71cb544f": {
+		"crc": "834be1a9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.AimTargetUserData"
+	},
+	"7e6508fc": {
+		"crc": "e37e2c9c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.AimUserDataBase"
+	},
+	"823f9d56": {
+		"crc": "9ea4636b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GrapplePriority",
+				"native": false,
+				"original_type": "app.ropeway.grapple.GrapplePriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackPattern",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em6200AttackUserData.AttackPatternType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em6200AttackUserData"
+	},
+	"863bddb8": {
+		"crc": "2cbbe0ac",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "app.ropeway.AttackUserDataToEnemy"
+	},
+	"87b1e21a": {
+		"crc": "b0fdd9a4",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Region",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em7000DamageUserData.RegionType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em7000DamageUserData"
+	},
+	"911908d9": {
+		"crc": "7a621f63",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "app.ropeway.SteamPipeAttackUserDataToEnemy.SteamPipeType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.SteamPipeAttackUserDataToEnemy"
+	},
+	"9960f32a": {
+		"crc": "7c01382c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.TouchAppealUserData"
+	},
+	"9cb32c3a": {
+		"crc": "8d2edceb",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.DamageUserData"
+	},
+	"9d82a7bd": {
+		"crc": "869fee67",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.HitUserDataRoot"
+	},
+	"9e984459": {
+		"crc": "a0617db5",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.PlayerDamageUserData"
+	},
+	"a8b34c3a": {
+		"crc": "b89671ba",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlayerFindAtkType",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em9000PlayerFindUserData.PlayerFindType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em9000PlayerFindUserData"
+	},
+	"aa3fd81c": {
+		"crc": "fb6371ec",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "app.ropeway.RopewayRSCUserDataRoot"
+	},
+	"bef78ac4": {
+		"crc": "1db3695b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WeakPartsID",
+				"native": false,
+				"original_type": "app.ropeway.enemy.em5000.WeakPartsID",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em5000DamageUserData"
+	},
+	"c170b045": {
+		"crc": "321cf60d",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "app.ropeway.AttackUserData"
+	},
+	"c769f2dd": {
+		"crc": "7f1ebb7a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "MirrorMotionEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MirrorLayerNo",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MirrorAction",
+				"native": false,
+				"original_type": "app.ropeway.MirroredColliderUserData.MirrorActionType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.MirroredColliderUserData"
+	},
+	"dc2c6423": {
+		"crc": "63902454",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Region",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em4000DamageUserData.RegionType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em4000DamageUserData"
+	},
+	"e0b08f1c": {
+		"crc": "e773224e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "app.ropeway.ReactionMarkerUserData"
+	},
+	"e29a7d04": {
+		"crc": "16d96d8b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Parts",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyParts",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PartsSide",
+				"native": false,
+				"original_type": "app.ropeway.EnemyDefine.BodyPartsSide",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.EnemyDamageUserData"
+	},
+	"e7c8958d": {
+		"crc": "c7ae6cea",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Volume",
+				"native": false,
+				"original_type": "app.ropeway.AimForbidUserData.VolumeKind",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.AimForbidUserData"
+	},
+	"ec1fed4c": {
+		"crc": "391f2eb3",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Priority",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitPriority",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.GimmickDamageUserData"
+	},
+	"f3561e24": {
+		"crc": "78c6b83b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GroupID",
+				"native": false,
+				"original_type": "app.ropeway.PressGroupID",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.PressUserData"
+	},
+	"fd0bbc42": {
+		"crc": "fd367b25",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "app.ropeway.GimmickAttackUserData"
+	},
+	"ffe33ee": {
+		"crc": "32456bf6",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "HitGroup",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.HitGroup",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSortType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackSortType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackTypes",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackEnchantAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackAttributeValue",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackDirType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackDirType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OffsetAttackDir",
+				"native": false,
+				"original_type": "app.ropeway.AttackUserData.OffsetDirection",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackSeType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionSeDefine.HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FriendlyFire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Damage",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EnableBackFacingTriangleHits",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBombAttackShielding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackShieldingType",
+				"native": false,
+				"original_type": "app.ropeway.CollisionDefine.AttackShieldingType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AttackShieldingOffsetPosition",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageType",
+				"native": false,
+				"original_type": "app.ropeway.SurvivorDefine.Damage.Type",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ForceAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShellType",
+				"native": false,
+				"original_type": "app.ropeway.weapon.shell.ShellManager.WeaponShellTypeKind",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GrapplePriority",
+				"native": false,
+				"original_type": "app.ropeway.grapple.GrapplePriority",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackPattern",
+				"native": false,
+				"original_type": "app.ropeway.enemy.userdata.Em0000AttackUserData.AttackPatternType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.enemy.userdata.Em0000AttackUserData"
+	},
+	"12a051d2": {
+		"crc": "409921b0",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TriggerType",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertPhysicsData.TriggerTypeEnum",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Volume",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertPhysicsData.PhysicsElement.VolumeThreshold",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "IntervalFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.effect.script.EPVExpertPhysicsData.PhysicsElement"
+	},
+	"1eb29845": {
+		"crc": "9b7d36d7",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TriggerName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitStampCount",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsEmitStampFirstTime",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StampOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertStandWaveData.EPVExpertStandWaveElement"
+	},
+	"26289f8c": {
+		"crc": "155612fa",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.EffectRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RotationOrder",
+				"native": false,
+				"original_type": "via.math.RotationOrder",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BaseRotation",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.RotateBase",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVExpertDestructionData.DestructionElement"
+	},
+	"2cc746e5": {
+		"crc": "72447c62",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ScarOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertObjectLandingCustomData.EPVExpertObjectLandingCustomElement"
+	},
+	"37c8ebda": {
+		"crc": "e6483517",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.EffectRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVExpertMuzzleFlashData.MuzzleFlashElement"
+	},
+	"3baab648": {
+		"crc": "3075e790",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageHitType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsEmitFromAttacker",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ZDirectionType",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertHitEffectData.DIRECTIONTYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsFollowJoint",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.effect.script.EPVExpertHitEffectData.HitEffectElement"
+	},
+	"49c5a434": {
+		"crc": "f19f2cc6",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.EffectRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentDegree",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationChildId",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UnparentFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RotationOrder",
+				"native": false,
+				"original_type": "via.math.RotationOrder",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BaseRotation",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.RotateBase",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LifeFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndType",
+				"native": false,
+				"original_type": "via.effect.script.EffectManager.EffectEndType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionOnProviderDestroy",
+				"native": false,
+				"original_type": "via.effect.script.EffectCommonDefine.EffectActionOnProviderDestroy",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionOnParentDisappear",
+				"native": false,
+				"original_type": "via.effect.script.EffectCommonDefine.EffectActionOnParentDisappear",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsCameraDirection",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsLanding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsUseTerrainNormal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SearchTerrainDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CamNodeBillbardSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Scale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SeparateParentScale",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DelayFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopFrame",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopDispersionFrame",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "RelationMotionSpeed",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ColorEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Color",
+				"native": false,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "MaskEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaskBit",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CustomLOD",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "LODLevels",
+				"native": false,
+				"original_type": "via.effect.script.EffectManager.LODInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "GroupNameParameters",
+				"native": false,
+				"original_type": "via.effect.script.GroupNameParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVStandardData.Element"
+	},
+	"4c7696d5": {
+		"crc": "c11f3b7e",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageHitType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsArmored",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsEmitFromAttacker",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ZDirectionType",
+				"native": false,
+				"original_type": "app.ropeway.effect.script.EPVExpertDamageEffectData.DIRECTIONTYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsFollowJoint",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SeparateParentScale",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Scale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BloodOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BloodStampRandConeAngle",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ScarOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BloodDecalOrderIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BloodDecalDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WallBloodDecalOrderIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "WallBloodDecalDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsEmitWarterArea",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ColorParamEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorParam",
+				"native": false,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertDamageEffectData.EPVExpertDamageEffectElement"
+	},
+	"2f0768d8": {
+		"crc": "a5fc82a9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ResourceIndex",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.effect.script.EffectCustomExternParameter"
+	},
+	"4d3bdaf2": {
+		"crc": "50cce7c6",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.effect.script.EPVExpertDataElement"
+	},
+	"51b5a667": {
+		"crc": "e9ac70d9",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BloodOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OrderIndexNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitIntervalLength",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CheckRayLength",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RandRot",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.ropeway.EPVExpertDragBloodEffectData.EPVExpertDragBloodEffectDataElement"
+	},
+	"5f948c78": {
+		"crc": "3502deb9",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDefine.AttackTypeEnum",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ZDirection",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertObjectLandingData.ZDirectionType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsRepeat",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RepeatIntervalFrame",
+				"native": false,
+				"original_type": "via.Range",
+				"size": 8,
+				"type": "Range"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MarkSystemkAssetID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MarkOrderDataID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MarkOrderDataIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.effect.script.EPVExpertObjectLandingData.ObjectLandingElement"
+	},
+	"66d5c6a": {
+		"crc": "e556d407",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DamageHitType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsEmitFromAttacker",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ZDirectionType",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertHitEffectData.DIRECTIONTYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitOffset",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsFollowJoint",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackerRecordOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DefenderRecordOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RecordOrderType",
+				"native": false,
+				"original_type": "via.effect.script.RecordOrderContainer.Type",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StampType",
+				"native": false,
+				"original_type": "via.effect.script.StampController.Type",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalType",
+				"native": false,
+				"original_type": "via.effect.script.VolumeDecalContainer.Type",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalTopDirection",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertHitEffectRecordData.DECALTOPDIRECTION",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.effect.script.EPVExpertHitEffectRecordData.HitEffectRecordElement"
+	},
+	"826011b4": {
+		"crc": "bd44576",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.effect.script.EPVDataElement"
+	},
+	"8cf682f3": {
+		"crc": "f0c43be8",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVExpertGunSmokeData.GunSmokeElement"
+	},
+	"92373934": {
+		"crc": "64aca55d",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertCleanHitEffectData.EPVExpertCleanHitEffectDataElement"
+	},
+	"ca64393b": {
+		"crc": "f23b65cb",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TargetID",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AttackType",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.EffectRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertMuzzleFlashCustomData.MuzzleFlashElement"
+	},
+	"d41ac6c9": {
+		"crc": "582f1049",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertFootLandingData.FootStepType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RotationOrder",
+				"native": false,
+				"original_type": "via.math.RotationOrder",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BaseRotation",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.RotateBase",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVExpertFootLandingData.FootLandingRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsLanding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsUseTerrainNormal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SearchTerrainDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Scale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SeparateParentScale",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DelayFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "GroupNameParameters",
+				"native": false,
+				"original_type": "via.effect.script.GroupNameParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVExpertFootLandingData.FootStepElement"
+	},
+	"e6de11ea": {
+		"crc": "ac80a8fc",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentJointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Direction",
+				"native": false,
+				"original_type": "app.ropeway.effect.script.EPVExpertBiteData.EPVExpertBiteElement.EMIT_DIRECTION",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "EffectEmitOffsetPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "EffectEmitOffsetRot",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "EffectEmitOffsetScale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ScarOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "StampEmitOffsetPos",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "StampEmitOffsetRot",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "StampEmitOffsetScale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StampRoll",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsDual",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DualAngle",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UnderScarOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertBiteData.EPVExpertBiteElement"
+	},
+	"e714246b": {
+		"crc": "70288214",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RecordScarID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RecordSearchTerrainRadius",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.effect.script.EPVExpertExplosionData.ExplosionElement"
+	},
+	"eccce1ee": {
+		"crc": "c6de9fc4",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ID",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationType",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.EffectRelationType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentDegree",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RelationChildId",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UnparentFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RotationOrder",
+				"native": false,
+				"original_type": "via.math.RotationOrder",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BaseRotation",
+				"native": false,
+				"original_type": "via.effect.script.EPVDataBase.RotateBase",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LifeFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EndType",
+				"native": false,
+				"original_type": "via.effect.script.EffectManager.EffectEndType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionOnProviderDestroy",
+				"native": false,
+				"original_type": "via.effect.script.EffectCommonDefine.EffectActionOnProviderDestroy",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ActionOnParentDisappear",
+				"native": false,
+				"original_type": "via.effect.script.EffectCommonDefine.EffectActionOnParentDisappear",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsCameraDirection",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsLanding",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsUseTerrainNormal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SearchTerrainDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CamNodeBillbardSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Scale",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "SeparateParentScale",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DelayFrame",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopFrame",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopDispersionFrame",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PlaySpeed",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "RelationMotionSpeed",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ColorEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Color",
+				"native": false,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "MaskEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaskBit",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CustomLOD",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "LODLevels",
+				"native": false,
+				"original_type": "via.effect.script.EffectManager.LODInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ExternParameters",
+				"native": false,
+				"original_type": "via.effect.script.EffectCustomExternParameter",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "GroupNameParameters",
+				"native": false,
+				"original_type": "via.effect.script.GroupNameParameter",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.script.EPVExpertAutoData.AutoDataElement"
+	},
+	"f7170766": {
+		"crc": "3fa0986d",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RecordOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RecordOrderIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StampOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StampOrderIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalDicetance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EmitPart",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsBreakDelay",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertDestructedBodyEffectData.EPVExpertDestructedBodyEffectDataElement"
+	},
+	"f946efde": {
+		"crc": "e2798c1b",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "Resources",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "GUID",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Comment",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Desctiption",
+				"native": false,
+				"original_type": "System.String",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Offset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalOrderID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DecalDistance",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.ropeway.effect.script.EPVExpertTExplosionData.ExplosionElement"
+	},
+	"574b3af7": {
+		"crc": "a078fb07",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "TimelineResource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.timeline.GameObjectClipPlayerBase"
 	}
 }
