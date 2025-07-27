@@ -8,7 +8,7 @@ from file_handlers.rsz.rsz_data_types import (
     ArrayData, MaybeObject, get_type_class
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
+from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata, Scn19RSZUserDataInfo
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
@@ -955,53 +955,72 @@ class RszFile:
     def get_resources_dynamically(self):
         """Get resources dynamically based on resource fields"""
         resources = []
-        for instance_id, fields in sorted(self.parsed_elements.items()):
-                
-            inst_info = self.instance_infos[instance_id]
-            type_info = self.type_registry.get_type_info(inst_info.type_id)
-            if not type_info:
-                continue
-            if not fields:
-                continue
-                
-            fields_def = type_info.get("fields", [])
-            
-            if(type_info.get("name", []) == "via.Prefab"):
-                first_field_name = fields_def[0]["name"]
-                second_field_name = fields_def[1]["name"]
-                if(fields[first_field_name].value):
-                    val = fields[second_field_name].value.rstrip('\x00')
-                    if val and val not in resources and len(val) > 0:
-                        resources.append(val)
-            elif(type_info.get("name", []) == "via.Folder"):
-                fifth_field_name = fields_def[4]["name"]
-                sixth_field_name = fields_def[5]["name"]
-                if(fields[fifth_field_name].value):
-                    val = fields[sixth_field_name].value.rstrip('\x00')
-                    if val and val not in resources and len(val) > 0:
-                        resources.append(val)
-            else:
-                for field_def in fields_def:
-                    field_name = field_def["name"]
-                    if field_def["type"] == "Resource":
 
-                        if not field_def['array']:
-                            val = fields[field_name].value.rstrip('\x00')
-                            if val and val not in resources and len(val) > 0:
-                                resources.append(val)
-                        else:
-                            for element in fields[field_name].values:
-                                val = element.value.rstrip('\x00')
-                                if val and val not in resources and len(val) > 0:
+        def _collect(parsed_elements, instance_infos):
+            for instance_id, fields in sorted(parsed_elements.items()):
+                
+                inst_info = instance_infos[instance_id]
+                type_info = self.type_registry.get_type_info(inst_info.type_id)
+                name = type_info.get("name", [])
+                fields_def = type_info.get("fields", [])
+
+                if name == "via.Prefab":
+                    f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
+                    if fields[f0].value:
+                        val = fields[f1].value.rstrip("\0")
+                        if val and val not in resources:
+                            resources.append(val)
+
+                elif name == "via.Folder":
+                    f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
+                    if fields[f4].value:
+                        val = fields[f5].value.rstrip("\0")
+                        if val and val not in resources:
+                            resources.append(val)
+
+                else:
+                    for fd in fields_def:
+                        if fd["type"] == "Resource":
+                            fn = fd["name"]
+                            data_obj = fields.get(fn)
+                            if not data_obj:
+                                continue
+
+                            if not fd.get("array", False):
+                                val = data_obj.value.rstrip("\0")
+                                if val and val not in resources:
                                     resources.append(val)
+                            else:
+                                for elem in data_obj.values:
+                                    val = elem.value.rstrip("\0")
+                                    if val and val not in resources:
+                                        resources.append(val)
+
+        _collect(self.parsed_elements, self.instance_infos)
+
+        if getattr(self, "is_scn", False) and self.filepath.lower().endswith(".19"):
+            def _recurse_rui(rui: Scn19RSZUserDataInfo):
+                _collect(rui.embedded_instances, rui.embedded_instance_infos)
+                for nested in getattr(rui, "embedded_userdata_infos", []):
+                    if isinstance(nested, Scn19RSZUserDataInfo):
+                        _recurse_rui(nested)
+
+            for rui in self.rsz_userdata_infos:
+                if isinstance(rui, Scn19RSZUserDataInfo):
+                    _recurse_rui(rui)
+
         return resources
 
     def rebuild_resources(self):
+        from file_handlers.rsz.pfb_16.pfb_structure import Pfb16ResourceInfo
         dynamic_resources = self.get_resources_dynamically()
         self.resource_infos.clear()
         self._resource_str_map.clear()
         for resource_path in dynamic_resources:
-            ri = RszResourceInfo()
+            if getattr(self, "is_pfb16", False):
+                ri = Pfb16ResourceInfo(resource_path)
+            else:
+                ri = RszResourceInfo()
             ri.string_offset = 0
             ri.reserved = 0
             self.resource_infos.append(ri)
