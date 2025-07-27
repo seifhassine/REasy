@@ -709,13 +709,11 @@ class RszFile:
                     while (len(out) - base_mod) % 4:
                         out.extend(b'\x00')
                     if element.value:
-                        str_bytes = element.value.encode('utf-16-le')
-                        char_count = len(element.value)
-                        if element.value[-1] == '\x00':
-                            char_count = len(element.value) 
-                        else:
-                            char_count = len(element.value) + 1  
-                            str_bytes += b'\x00\x00' 
+                        value = element.value
+                        if not value or value[-1] != '\x00':
+                            value += '\x00'
+                        str_bytes = value.encode('utf-16-le')
+                        char_count = len(str_bytes) // 2
                         out.extend(struct.pack("<I", char_count))
                         out.extend(str_bytes)
                     else:
@@ -842,13 +840,11 @@ class RszFile:
                     out.extend(b'\x00')
                     
                 if data_obj.value:
-                    str_bytes = data_obj.value.encode('utf-16-le')
-                    char_count = len(data_obj.value)
-                    if data_obj.value[-1] == '\x00':
-                        char_count = len(data_obj.value)  
-                    else:
-                        char_count = len(data_obj.value) + 1  
-                        str_bytes += b'\x00\x00' 
+                    value = data_obj.value
+                    if not value or value[-1] != '\x00':
+                        value += '\x00'
+                    str_bytes = value.encode('utf-16-le')
+                    char_count = len(str_bytes) // 2
                     out.extend(struct.pack("<I", char_count))
                     out.extend(str_bytes)
                 else:
