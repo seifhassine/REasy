@@ -1,6 +1,6 @@
 {
-	"comments": {
-		"note": "This is a partial copy of RE3RT patch, some fields do not exist"
+	"metadata": {
+		"comment": "This is a partial copy of RE3RT patch, some fields do not exist"
 	},
 	"175cf5fd": {
 		"crc": "a9eb5379",
