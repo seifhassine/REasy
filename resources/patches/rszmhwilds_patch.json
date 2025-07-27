@@ -2061,5 +2061,48 @@
 			}
 		],
 		"name": "via.render.Mesh"
+	},
+	"f11bc71": {
+		"crc": "cc160a4b",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "_ShakeEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "State(?)",
+				"native": true,
+				"original_type": "app.TentCameraController.STATE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "CameraLayer",
+				"native": true,
+				"original_type": "via.motion.ActorCameraLayer",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ukn",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+
+		],
+		"name": "app.TentCameraController"
 	}
 }
