@@ -460,7 +460,7 @@ class RszFile:
         self._rsz_userdata_str_map.clear()
         
         # Batch process all strings instead of one-by-one
-        if not self.filepath.lower().endswith('scn.18'):
+        if not (self.filepath.lower().endswith('.18') and self.is_scn):
             self._resource_str_map.clear()
             for ri in self.resource_infos:
                 if (ri.string_offset != 0):
@@ -514,7 +514,7 @@ class RszFile:
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
             self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
-            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('scn.18'):
+            if self.filepath.lower().endswith('.19') or (self.filepath.lower().endswith('.18') and self.is_scn):
                 self._parse_scn19_rsz_userdata(data)
             elif self.filepath.lower().endswith('.16'):
                 self._current_offset = parse_pfb16_rsz_userdata(self, data)
