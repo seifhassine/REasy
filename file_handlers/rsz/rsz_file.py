@@ -994,7 +994,7 @@ class RszFile:
 
         _collect(self.parsed_elements, self.instance_infos)
 
-        if getattr(self, "is_scn", False) and self.filepath.lower().endswith(".19"):
+        if getattr(self, "is_scn", False) and (self.filepath.lower().endswith(".19") or self.filepath.lower().endswith('.18')):
             def _recurse_rui(rui: Scn19RSZUserDataInfo):
                 _collect(rui.embedded_instances, rui.embedded_instance_infos)
                 for nested in getattr(rui, "embedded_userdata_infos", []):
