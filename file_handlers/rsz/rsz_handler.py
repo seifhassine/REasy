@@ -353,7 +353,7 @@ class RszViewer(QWidget):
         """Create Header info section for self.scn.header"""
         children = []
         if self.scn.is_pfb:
-            if self.scn.filepath.lower().endswith('.pfb.16'):
+            if self.scn.filepath.lower().endswith('.16'):
                 # PFB.16 has a different header structure without userdata fields
                 header_fields = [
                     ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
@@ -1541,7 +1541,7 @@ class RszViewer(QWidget):
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
         
-        if self.scn.filepath.lower().endswith('.pfb.16'):
+        if self.scn.filepath.lower().endswith('.16') and self.scn.is_pfb:
             new_res = create_pfb16_resource(path)
             
             if hasattr(self.scn, '_pfb16_direct_strings'):
