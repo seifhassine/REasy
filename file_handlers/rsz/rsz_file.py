@@ -966,17 +966,34 @@ class RszFile:
                 
             fields_def = type_info.get("fields", [])
             
-            for field_def in fields_def:
-                field_name = field_def["name"]
-                if field_def["type"] == "Resource":
+            if(type_info.get("name", []) == "via.Prefab"):
+                first_field_name = fields_def[0]["name"]
+                second_field_name = fields_def[1]["name"]
+                if(fields[first_field_name].value):
+                    val = fields[second_field_name].value.rstrip('\x00')
+                    if val and val not in resources and len(val) > 0:
+                        resources.append(val)
+            elif(type_info.get("name", []) == "via.Folder"):
+                fifth_field_name = fields_def[4]["name"]
+                sixth_field_name = fields_def[5]["name"]
+                if(fields[fifth_field_name].value):
+                    val = fields[sixth_field_name].value.rstrip('\x00')
+                    if val and val not in resources and len(val) > 0:
+                        resources.append(val)
+            else:
+                for field_def in fields_def:
+                    field_name = field_def["name"]
+                    if field_def["type"] == "Resource":
 
-                    if not field_def['array']:
-                        if fields[field_name].value and fields[field_name].value not in resources and len(fields[field_name].value.rstrip('\x00')) > 0:
-                            resources.append(fields[field_name].value)
-                    else:
-                        for element in fields[field_name].values:
-                            if element.value and element.value not in resources and len(element.value.rstrip('\x00')) > 0:
-                                resources.append(element.value)
+                        if not field_def['array']:
+                            val = fields[field_name].value.rstrip('\x00')
+                            if val and val not in resources and len(val) > 0:
+                                resources.append(val)
+                        else:
+                            for element in fields[field_name].values:
+                                val = element.value.rstrip('\x00')
+                                if val and val not in resources and len(val) > 0:
+                                    resources.append(val)
         return resources
 
     def rebuild_resources(self):
