@@ -267,7 +267,7 @@ class AdvancedTreeView(QTreeView):
         action = menu.exec_(QCursor.pos())
         if action == add_action:
             self.add_resource()
-        elif action == rebuild_action:
+        elif action == rebuild_action and action is not None:
             self._rebuild_resources_list()
 
     def _handle_component_menu(self, menu, index, item_info):
