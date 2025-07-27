@@ -608,27 +608,22 @@ class RszFile:
         
         if isinstance(data_obj, StructData):
             while (len(out) - base_mod) % 4:
-                out.extend(b'\x00') 
+                out.extend(b'\x00')
             count = len(data_obj.values)
             out.extend(struct.pack("<I", count))
-            if data_obj.values:
-                for struct_value in data_obj.values:
-                    original_type = data_obj.orig_type if hasattr(data_obj, 'orig_type') else None
-                    
-                    if original_type and self.type_registry:
-                        struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
-                        if struct_type_info:
-                            struct_fields = struct_type_info.get("fields", [])
-                            
-                            for struct_field in struct_fields:
-                                field_name = struct_field.get("name")
-                                if field_name and field_name in struct_value:
-                                    field_data = struct_value[field_name]
-                                    self._write_field_value(struct_field, field_data, out)
-                        else:
-                            print(f"ERROR: Could not find type info for struct type: {original_type}")
-                    else:
-                        print("ERROR: Missing original_type for StructData or type_registry not available")
+            if count:
+                original_type = getattr(data_obj, "orig_type", None)
+                if original_type and self.type_registry:
+                    struct_info, _ = self.type_registry.find_type_by_name(original_type)
+                    if struct_info:
+                        struct_fields = struct_info.get("fields", [])
+                        for struct_val in data_obj.values:
+                            for sub_fd in struct_fields:
+                                self._write_field_value(
+                                    sub_fd, struct_val[sub_fd["name"]], out
+                                )
+            return
+
 
         elif field_def.get("array", False):
 
