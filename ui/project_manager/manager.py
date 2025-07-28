@@ -5,8 +5,9 @@ from PySide6.QtCore    import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
-    QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox
+    QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox, QTextEdit, QProgressBar
 )
+from tools.pak_exporter import packer_status, EXE_PATH, _ensure_packer, run_packer
 
 from .constants  import EXPECTED_NATIVE
 from .delegate   import _ActionsDelegate
@@ -68,6 +69,10 @@ class ProjectManager(QDockWidget):
         toggles.addWidget(self.btn_sys)
         toggles.addWidget(self.btn_proj)
         toggles.addStretch(1)
+
+        self.btn_export = QPushButton("Export Mod as .PAK")
+        self.btn_export.clicked.connect(self._export_mod)
+        lay.addWidget(self.btn_export)
 
         # models + views -----------------------------------------------------
         self.model_sys,  self.tree_sys  = QFileSystemModel(), _DndTree()
@@ -211,6 +216,7 @@ class ProjectManager(QDockWidget):
 
     def set_project(self, proj_dir):
         self.project_dir = proj_dir
+        self.btn_export.setEnabled(bool(proj_dir))
         if proj_dir:
             self.project_label.setText(f"<b>Project: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
@@ -421,3 +427,66 @@ class ProjectManager(QDockWidget):
                     delegate.set_column_width(max(newSize, min_width))
                 tree.viewport().update() 
                 break
+
+    def _export_mod(self):
+        if not self.project_dir:
+            QMessageBox.information(self, "Export Mod", "Open a project first.")
+            return
+
+        need, latest = packer_status()
+        if need:
+            tag_txt = latest or "latest"
+            msg = (f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n"
+                if not EXE_PATH.exists()
+                else f"A newer packer release ({tag_txt}) is available\n")
+            msg += "Do you want to download it now?"
+            if QMessageBox.question(self, "Download packer?", msg,
+                                    QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
+                return
+            try:
+                _ensure_packer(auto_download=True)
+            except Exception as e:
+                QMessageBox.critical(self, "Download failed", str(e))
+                return
+
+        pak_path, _ = QFileDialog.getSaveFileName(
+            self, "Save .PAK file",
+            str(self.project_dir)+".pak", "PAK archives (*.pak)")
+        if not pak_path:
+            return
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("REE.Packer output")
+        v   = QVBoxLayout(dlg)
+        log = QTextEdit(readOnly=True, lineWrapMode=QTextEdit.NoWrap)
+        v.addWidget(log)
+        bar = QProgressBar()
+        bar.setRange(0,0)
+        v.addWidget(bar)
+        dlg.resize(600,400)
+        dlg.show()
+
+        from concurrent.futures import ThreadPoolExecutor
+        exec_ = ThreadPoolExecutor(max_workers=1)
+
+        def _work():
+            try:
+                return run_packer(self.project_dir, pak_path)
+            except Exception as e:
+                return (-1, str(e))
+
+        fut = exec_.submit(_work)
+
+        def _poll():
+            if fut.done():
+                code, out = fut.result()
+                bar.hide()
+                log.append(out)
+                title = "Done" if code == 0 else "Error"
+                QMessageBox.information(self, title,
+                                        "Export completed" if code==0
+                                        else "PAK packer returned an error")
+            else:
+                QTimer.singleShot(150, _poll)
+
+        QTimer.singleShot(100, _poll)

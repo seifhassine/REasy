@@ -19,6 +19,8 @@ backups/
 .clipboard
 src
 templates
+downloads
+projects
 
 # VS Code settings (if you don't want to share them)
 .vscode/
