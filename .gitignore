@@ -31,4 +31,5 @@ Thumbs.db
 *.log
 
 # Local Tests
-tests/
+/tests/**
+!/tests/test_scn_parser.py
