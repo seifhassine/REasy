@@ -65,22 +65,25 @@ jobs:
 
         shopt -s nullglob
         for z in "$ZIP_DIR/${GAME}.zip" "$ZIP_DIR/${GAME}-"*.zip; do
+          [[ -f $z ]] || continue
+
           echo "⤵️  extracting $(basename "$z") → $DEST_DIR/$GAME"
           tmpdir=$(mktemp -d)
           unzip -oq "$z" -d "$tmpdir"
 
-          # If zip contains a single top‑folder, lift its contents
           roots=("$tmpdir"/*)
           if [[ ${#roots[@]} -eq 1 && -d "${roots[0]}" && -z "$(find "$tmpdir" -mindepth 1 -maxdepth 1 -type f)" ]]; then
-            rsync -a "${roots[0]}/" "$DEST_DIR/$GAME/"
+            src="${roots[0]}"
           else
-            rsync -a "$tmpdir"/ "$DEST_DIR/$GAME/"
+            src="$tmpdir"
           fi
+
+          rsync -a "$src"/ "$DEST_DIR/$GAME"/
           rm -rf "$tmpdir"
         done
 
-        command -v tree >/dev/null && tree -L 2 "$DEST_DIR/$GAME" || ls -R "$DEST_DIR/$GAME"
-
+        echo "📂  Final layout for $GAME:"
+        tree -L 2 "$DEST_DIR/$GAME" || true
 
     - uses: actions/setup-python@v5
       if: ${{ env.SKIP_TESTS != 'true' }}
