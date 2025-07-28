@@ -18,6 +18,7 @@ from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
+from ui.project_manager import ProjectManager, EXPECTED_NATIVE, PROJECTS_ROOT, ensure_projects_root
 
 from PySide6.QtCore import (
     Qt,
@@ -38,6 +39,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QComboBox,
+    QSizePolicy,
     QTabWidget,
     QTreeView, 
     QMessageBox,
@@ -63,7 +65,10 @@ from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
 CURRENT_VERSION = "0.3.7"
-
+GAMES = [
+    "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
+    "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"
+]
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
 
@@ -735,7 +740,8 @@ class FileTab:
 
 class REasyEditorApp(QMainWindow):
     def __init__(self):
-        super().__init__()
+        super().__init__()       
+        self.current_game = None   
         self.setWindowTitle(f"REasy Editor v{CURRENT_VERSION}")
         set_app_icon(self)
 
@@ -752,6 +758,13 @@ class REasyEditorApp(QMainWindow):
                 if key not in self.settings["keyboard_shortcuts"]:
                     self.settings["keyboard_shortcuts"][key] = value
 
+        ensure_projects_root()
+        self.current_project = None
+        self.unpacked_root = self.settings.get("unpacked_path", "INVALID PATH")
+        self.proj_dock = ProjectManager(self, self.unpacked_root)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.proj_dock)
+        self.proj_dock.hide()
+
         self.dark_mode = self.settings.get("dark_mode", False)
 
         central_widget = QWidget()
@@ -761,6 +774,8 @@ class REasyEditorApp(QMainWindow):
         main_layout.setSpacing(0) 
 
         self.notebook = CustomNotebook()
+        self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.notebook.setMinimumSize(50, 50)    
         self.notebook.app_instance = self
         main_layout.addWidget(self.notebook)
 
@@ -801,36 +816,63 @@ class REasyEditorApp(QMainWindow):
         self.resize(1160, 920)
 
         self.setAcceptDrops(True)
+  
+    def _internal_drag(self, event):
+        return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
 
     def dragEnterEvent(self, event):
+        if self._internal_drag(event):
+            event.ignore()
+            return
+
         if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if any(ext in url.toLocalFile().lower() for url in urls for ext in (".uvar", ".scn", ".user", ".pfb", ".msg", ".efx", ".efxpreset")):
-                event.acceptProposedAction()
+            event.acceptProposedAction()
 
     def dropEvent(self, event):
-        for url in event.mimeData().urls():
-            file_path = url.toLocalFile()
-            if os.path.isfile(file_path):
-                try:
-                    with open(file_path, "rb") as f:
-                        data = f.read()
-                    self.add_tab(file_path, data)
-                except Exception as e:
-                    QMessageBox.critical(
-                        self, "Error", f"Failed to load {file_path}: {str(e)}"
-                    )
+        if self._internal_drag(event):
+            event.ignore()
+            return
 
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                self._open_path(url.toLocalFile())
+            event.acceptProposedAction()
+
+    def _open_path(self, path: str):
+        file_path = path
+        if os.path.isfile(file_path):
+            try:
+                with open(file_path, "rb") as f:
+                    data = f.read()
+                self.add_tab(file_path, data)
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to load {file_path}: {str(e)}"
+                )
     def _create_menus(self):
         menubar = self.menuBar()
         self.update_notification.update_update_menu(force=True, menubar=menubar)
 
         file_menu = menubar.addMenu("File")
 
-        open_act = QAction("Open...", self)
+        open_act = QAction("Open File...", self)
         open_act.setObjectName("file_open")
         open_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_open", "Ctrl+O")))
         open_act.triggered.connect(self.on_open)
+
+        new_proj_act = QAction("New Project (Create Mod)...", self)
+        open_proj_act = QAction("Open Project...", self)
+        close_proj_act = QAction("Close Project", self)
+        new_proj_act.triggered.connect(self.new_project)
+        open_proj_act.triggered.connect(self.open_project)
+        close_proj_act.triggered.connect(self.close_project)
+        file_menu.insertSeparator(open_act)  
+        file_menu.insertAction(open_act, new_proj_act)
+        file_menu.insertAction(open_act, open_proj_act)
+        file_menu.insertAction(open_act, close_proj_act)
+
+        file_menu.addSeparator()
+
         file_menu.addAction(open_act)
 
         save_act = QAction("Save", self)
@@ -971,7 +1013,106 @@ class REasyEditorApp(QMainWindow):
         donate_act = QAction("Support REasy", self)
         donate_act.triggered.connect(self.show_donate_dialog)
         donate_menu.addAction(donate_act)
-        
+
+    def new_project(self):
+        name, ok = QInputDialog.getText(self, "New Project", "Project name:")
+        if not ok or not name.strip():
+            return
+
+        game = self.proj_dock._choose_game()
+        if not game:
+            return
+
+        folder = QFileDialog.getExistingDirectory(
+            self, f"Locate unpacked files for {game}",
+            self.settings.get("unpacked_path", ""), QFileDialog.ShowDirsOnly)
+        if not folder:
+            return
+
+        expected = EXPECTED_NATIVE.get(game, ())
+        if expected:
+            test = os.path.join(folder, *expected)
+            if not os.path.isdir(test):
+                QMessageBox.warning(
+                    self, "Invalid unpacked folder",
+                    f"The folder you selected doesn’t contain:\n"
+                    f"  {os.path.join(*expected)}\n"
+                    f"Please select the correct unpacked game directory.")
+                return
+
+        self.settings["unpacked_path"] = folder
+        self.save_settings()
+
+        mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
+        os.makedirs(mod_dir, exist_ok=True)
+
+        self.current_game = game
+        self.proj_dock._apply_unpacked_root(folder)
+        self._activate_project(mod_dir)
+
+    def open_project(self):
+        dir_ = QFileDialog.getExistingDirectory(
+            self, "Open REasy Project", PROJECTS_ROOT, QFileDialog.ShowDirsOnly)
+        if not dir_:
+            return
+
+        rel   = os.path.relpath(dir_, PROJECTS_ROOT)
+        parts = rel.split(os.sep)
+
+        if len(parts) != 2 or parts[0] not in GAMES:
+            QMessageBox.warning(
+                self, "Invalid selection",
+                "Please pick a mod folder *directly* inside one of the game "
+                "directories (e.g. projects/RE4/YourMod).")
+            return
+
+        game = parts[0]
+
+        self.current_game            = game
+        self.proj_dock.current_game  = game
+
+        need_unpack = (
+            game != self.settings.get("last_game") or   
+            not self.settings.get("unpacked_path") or     
+            not self.proj_dock._check_folder(                   
+                self.settings.get("unpacked_path", ""))
+        )
+
+        if need_unpack:
+            folder = QFileDialog.getExistingDirectory(
+                self,
+                f"Locate unpacked files for {game}",
+                self.settings.get("unpacked_path", ""),
+                QFileDialog.ShowDirsOnly)
+            if not folder:   
+                return
+            
+            self.settings["unpacked_path"] = folder
+            self.save_settings()
+            self.proj_dock._apply_unpacked_root(folder)
+
+        self.settings["last_game"] = game
+        self.save_settings()
+
+        self._activate_project(dir_)
+
+    def close_project(self):
+        if not self.current_project: 
+            return
+        self.current_project = None
+        self.proj_dock.set_project(None)
+        self.proj_dock.hide()
+        self.status_bar.showMessage("Project closed", 3000)
+
+    def _activate_project(self, path: str):
+        """Make <path> the current project and show the dock."""
+        self.current_project = path
+        self.proj_dock.current_game = self.current_game
+        self.proj_dock.set_project(path)
+        self.proj_dock.show()     
+        self.status_bar.showMessage(
+            f"Project: {os.path.basename(path)}", 3000)
+
     def open_script_creator(self):
         """
         Opens (or focuses) the standalone REF Script Creator window.
@@ -1174,21 +1315,8 @@ class REasyEditorApp(QMainWindow):
         game_version_layout.addWidget(game_version_label)
         
         game_version_combo = QComboBox()
-        game_version_combo.addItem("RE4") 
-        game_version_combo.addItem("RE2") 
-        game_version_combo.addItem("RE2RT") 
-        game_version_combo.addItem("RE8") 
-        game_version_combo.addItem("RE3") 
-        game_version_combo.addItem("RE3RT") 
-        game_version_combo.addItem("REResistance") 
-        game_version_combo.addItem("RE7") 
-        game_version_combo.addItem("RE7RT") 
-        game_version_combo.addItem("MHWilds") 
-        game_version_combo.addItem("MHRise")
-        game_version_combo.addItem("DMC5") 
-        game_version_combo.addItem("SF6") 
-        game_version_combo.addItem("O2") 
-        game_version_combo.addItem("DD2") 
+        for g in GAMES:
+            game_version_combo.addItem(g)
         current_version = self.settings.get("game_version", "RE4")
         game_version_combo.setCurrentText(current_version)
         game_version_layout.addWidget(game_version_combo)
