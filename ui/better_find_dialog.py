@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
-    QSpinBox, QDoubleSpinBox, QCheckBox as QtCheckBox, QWidget
+    QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView
 )
 
 
@@ -25,7 +25,7 @@ class BetterFindDialog(QDialog):
         for sp in widget.findChildren(QDoubleSpinBox):
             vals.append(str(sp.value()))
 
-        for chk in widget.findChildren(QtCheckBox):
+        for chk in widget.findChildren(QCheckBox):
             vals.append(str(chk.isChecked()))
 
         return [v for v in vals if v not in ("", None)]
@@ -261,7 +261,7 @@ class BetterFindDialog(QDialog):
         if idx.isValid():
             tree = self.app.get_active_tree()
             tree.setCurrentIndex(idx)
-            tree.scrollTo(idx)
+            tree.scrollTo(idx, QAbstractItemView.PositionAtCenter)
 
         self.status.setText(f"Result {i+1} of {len(self.results)}")
 
