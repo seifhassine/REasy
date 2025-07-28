@@ -1,11 +1,15 @@
-name: Build and Package REasy
+name: Test, Build and Package REasy
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version'
+        description: 'Version (preferably starts with "v")'
         required: true
+      skip_tests:               
+        description: 'Skip RSZ functional tests'
+        type: boolean
+        default: false
 
   release:
     types: [published]
@@ -16,7 +20,113 @@ permissions:
   contents: write      
 
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    env:
+      SKIP_TESTS: ${{ github.event.inputs.skip_tests }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        game: [re4, mhwilds, re2, re7,
+               re3, re3rt, re2rt, re7rt,
+               re8, mhr]
+
+    steps:
+
+    - name: ⏭️  Tests skipped by user
+      if: ${{ env.SKIP_TESTS == 'true' }}
+      run: echo "RSZ tests skipped via input; job marked as success."
+
+
+    - uses: actions/checkout@v4
+      if: ${{ env.SKIP_TESTS != 'true' }}
+
+    - name: Checkout sample zips
+      if: ${{ env.SKIP_TESTS != 'true' }}
+      uses: actions/checkout@v4
+      with:
+        repository: seifhassine/RSZ-File-Samples
+        token: ${{ secrets.SAMPLES_TOKEN }}
+        path: samples
+
+
+    - name: Extract zips for ${{ matrix.game }}
+      if: ${{ env.SKIP_TESTS != 'true' }}
+      shell: bash
+      env:
+        GAME:     ${{ matrix.game }}
+        ZIP_DIR:  ${{ github.workspace }}/samples
+        DEST_DIR: ${{ github.workspace }}/tests
+      run: |
+        set -euo pipefail
+        mkdir -p "$DEST_DIR/$GAME"
+
+        shopt -s nullglob
+        for z in "$ZIP_DIR/${GAME}.zip" "$ZIP_DIR/${GAME}-"*.zip; do
+          echo "⤵️  extracting $(basename "$z") → $DEST_DIR/$GAME"
+          tmpdir=$(mktemp -d)
+          unzip -oq "$z" -d "$tmpdir"
+
+          # If zip contains a single top‑folder, lift its contents
+          roots=("$tmpdir"/*)
+          if [[ ${#roots[@]} -eq 1 && -d "${roots[0]}" && -z "$(find "$tmpdir" -mindepth 1 -maxdepth 1 -type f)" ]]; then
+            rsync -a "${roots[0]}/" "$DEST_DIR/$GAME/"
+          else
+            rsync -a "$tmpdir"/ "$DEST_DIR/$GAME/"
+          fi
+          rm -rf "$tmpdir"
+        done
+
+        command -v tree >/dev/null && tree -L 2 "$DEST_DIR/$GAME" || ls -R "$DEST_DIR/$GAME"
+
+
+    - uses: actions/setup-python@v5
+      if: ${{ env.SKIP_TESTS != 'true' }}
+      with:
+        python-version: '3.13'
+
+    - name: Install deps
+      if: ${{ env.SKIP_TESTS != 'true' }}
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+
+    - name: Run RSZ tests for ${{ matrix.game }}
+      if: ${{ env.SKIP_TESTS != 'true' }}
+      env:
+        TEST_GAME: ${{ matrix.game }}
+      run: python -m unittest -v tests.test_scn_parser
+
+
+    - name: Dump failure logs
+      if: ${{ failure() && env.SKIP_TESTS != 'true' }}
+      shell: bash
+      env:
+        GAME: ${{ matrix.game }}
+      run: |
+        echo "===== Failure logs for $GAME ====="
+        shopt -s nullglob
+        for f in tests/logs/$GAME/*.log; do
+          echo "::group::${f}"
+          cat "$f"
+          echo "::endgroup::"
+        done
+
+    - name: Upload test logs
+      if: ${{ always() && env.SKIP_TESTS != 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: rsz-test-logs-${{ matrix.game }}
+        path: tests/logs/${{ matrix.game }}/*.log
+        retention-days: 14
+        if-no-files-found: warn
+
+
   build-windows:
+    needs: tests                 
     runs-on: windows-latest
     environment: REasy ENV
 
