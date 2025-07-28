@@ -602,7 +602,7 @@ class AdvancedTreeView(QTreeView):
                 'parent_array_item': item.parent,
                 'array_type': item.parent.raw['obj'].orig_type,
                 'is_array_element': True,
-                'element_index': next((i for i, child in enumerate(item.parent.children) if child == item), -1)
+                'element_index': item.row(),
             })
         
         return result
