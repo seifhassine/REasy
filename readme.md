@@ -1,4 +1,3 @@
-[![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
 # REasy Editor v0.3.7
 
 <p align="center">
@@ -76,7 +75,10 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 ## Correctness
 
-- All RSZ (.user, .pfb, .scn) files from most games have been fully tested (read then re-written, producing the same data as original file).
+- All RSZ (.user, .pfb, .scn) files from most games are tested before release:
+  
+ [![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
+
 
 ## RSZ Dumps:
 
