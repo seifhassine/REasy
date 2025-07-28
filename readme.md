@@ -76,8 +76,8 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 ## Correctness
 
 - All RSZ (.user, .pfb, .scn) files from most games are tested before release:
-  
- [![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
+ 
+    [![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
 
 
 ## RSZ Dumps:
