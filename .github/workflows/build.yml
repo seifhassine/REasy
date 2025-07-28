@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   tests:
+    name: tests (${{ matrix.game }})
     runs-on: ubuntu-latest
 
     env:
