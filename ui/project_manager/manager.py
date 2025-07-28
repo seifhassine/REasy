@@ -1,33 +1,54 @@
-# ui/project_manager/manager.py
-
+from __future__ import annotations
 import os
 import shutil
-from PySide6.QtCore    import QModelIndex
+from PySide6.QtCore    import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
-    QHeaderView, QMenu
+    QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox
 )
-from .proxy    import ActionsProxyModel
-from .delegate import _ActionsDelegate
-from .trees    import _DndTree, _DropTree
-from .constants import EXPECTED_NATIVE
+
+from .constants  import EXPECTED_NATIVE
+from .delegate   import _ActionsDelegate
+from .trees      import _DndTree, _DropTree
+
+from PySide6.QtCore import qInstallMessageHandler
+
+_prev_handler = qInstallMessageHandler(
+    lambda mode, ctx, msg:
+        None if "QFileSystemWatcher: FindNextChangeNotification failed" in msg
+        else (_prev_handler(mode, ctx, msg) if _prev_handler else None)
+)
+
+__all__ = ["ProjectManager"]  
 
 class ProjectManager(QDockWidget):
+    """
+      • constants.py   – paths & icons
+      • trees.py       – drag / drop QTreeView subclasses
+      • delegate.py    – icon handling
+    """
+    def _expected_native(self):        
+        return EXPECTED_NATIVE.get(self.current_game or "", ())
+    
     def __init__(self, app_window, unpacked_root: str | None = None):
         super().__init__("Project Browser", app_window)
-        self.app_win      = app_window
-        self.current_game = getattr(app_window, "current_game", None)
-        self.unpacked_dir = os.path.abspath(unpacked_root) if unpacked_root else None
-        self.project_dir  = None
+        self.app_win       = app_window
+        self.current_game  = getattr(app_window, "current_game", None)
+        self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
+        self.project_dir   = None
 
-        # — UI scaffold —
+        self._resize_timer = QTimer()
+        self._resize_timer.setSingleShot(True)
+        self._resize_timer.timeout.connect(self._delayed_column_resize)
+
+        # -- UI scaffold -----------------------------------------------------
         c = QWidget(self)
         self.setWidget(c)
         lay = QVBoxLayout(c)
         lay.setContentsMargins(2,2,2,2)
 
-        # path bar
+        # top: unpacked‑path display + browse
         bar = QHBoxLayout()
         lay.addLayout(bar)
         self.path_label = QLabel()
@@ -39,7 +60,7 @@ class ProjectManager(QDockWidget):
         self.project_label = QLabel("<i>No project open</i>")
         lay.addWidget(self.project_label)
 
-        # toggle buttons
+        # view toggles
         toggles = QHBoxLayout()
         lay.addLayout(toggles)
         self.btn_sys  = QToolButton(text="System Files",  checkable=True, checked=True)
@@ -48,176 +69,210 @@ class ProjectManager(QDockWidget):
         toggles.addWidget(self.btn_proj)
         toggles.addStretch(1)
 
-        # — System‑pane models/views —
-        self.source_model_sys = QFileSystemModel(self)
-        self.model_sys        = ActionsProxyModel(self)
-        self.model_sys.setSourceModel(self.source_model_sys)
-        self.tree_sys = _DndTree()
-        self.tree_sys.setModel(self.model_sys)
-
-        # hide unwanted columns (Size/Type)
-        for col in (2,3,4):
-            self.tree_sys.hideColumn(col)
-
-        hdr = self.tree_sys.header()
-        hdr.setSectionResizeMode(0, QHeaderView.Fixed)
-        hdr.resizeSection(0, 40)    # actions column
-        hdr.setSectionResizeMode(1, QHeaderView.Interactive)
-
-        # — Project‑pane models/views —
-        self.source_model_proj = QFileSystemModel(self)
-        self.model_proj        = ActionsProxyModel(self)
-        self.model_proj.setSourceModel(self.source_model_proj)
-        self.tree_proj = _DropTree(self)
-        self.tree_proj.setModel(self.model_proj)
+        # models + views -----------------------------------------------------
+        self.model_sys,  self.tree_sys  = QFileSystemModel(), _DndTree()
+        self.model_proj, self.tree_proj = QFileSystemModel(), _DropTree(self)
         self.tree_proj.hide()
 
-        for col in (2,3,4):
-            self.tree_proj.hideColumn(col)
+        for tree, model in ((self.tree_sys, self.model_sys), (self.tree_proj, self.model_proj)):
+            tree.setModel(model)
+            tree.setContextMenuPolicy(Qt.CustomContextMenu)
+            tree.hideColumn(1) 
+            tree.hideColumn(2)
+            
+            model.directoryLoaded.connect(lambda: self._schedule_column_resize())
+            model.rowsInserted.connect(lambda: self._schedule_column_resize())
+            model.rowsRemoved.connect(lambda: self._schedule_column_resize())
+            
+            hdr = tree.header()
+            hdr.setSectionResizeMode(0, QHeaderView.Interactive)
+            hdr.setMinimumSectionSize(160) 
+            hdr.sectionResized.connect(self._on_section_resized)
 
-        hdr2 = self.tree_proj.header()
-        hdr2.setSectionResizeMode(0, QHeaderView.Fixed)
-        hdr2.resizeSection(0, 40)
-        hdr2.setSectionResizeMode(1, QHeaderView.Interactive)
-
-        # install delegates
+        # icon delegate
         self.tree_sys .setItemDelegateForColumn(0, _ActionsDelegate(self, False))
         self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
 
-        # double‑click → open
-        self.tree_sys .doubleClicked.connect(lambda idx: self._on_double(idx, False))
+        # double‑click open
+        self.tree_sys.doubleClicked .connect(lambda idx: self._on_double(idx, False))
         self.tree_proj.doubleClicked.connect(lambda idx: self._on_double(idx, True))
 
         lay.addWidget(self.tree_sys)
         lay.addWidget(self.tree_proj)
 
-        # hook up signals
+        # toggle buttons
         self.btn_sys .clicked.connect(lambda: self._switch(True))
         self.btn_proj.clicked.connect(lambda: self._switch(False))
+
+        # context menus
         self.tree_sys .customContextMenuRequested.connect(self._sys_menu)
         self.tree_proj.customContextMenuRequested.connect(self._proj_menu)
 
-        # if we already had an unpacked path saved
+        # pre‑load unpacked root
         if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
             self._apply_unpacked_root(self.unpacked_dir)
 
-    def _expected_native(self):
-        return EXPECTED_NATIVE.get(self.current_game or "", ())
+    def _schedule_column_resize(self):
+        """Schedule a delayed column resize to avoid excessive updates."""
+        self._resize_timer.start(100) 
+
+    def _delayed_column_resize(self):
+        """Perform the actual column resize after delay."""
+        if self.btn_sys.isChecked():
+            self._adjust_column_widths(self.tree_sys)
+        else:
+            self._adjust_column_widths(self.tree_proj)
+    
+    def force_column_resize(self):
+        """Force an immediate column resize - useful for very long filenames."""
+        active_tree = self.tree_sys if self.btn_sys.isChecked() else self.tree_proj
+        self._adjust_column_widths_aggressive(active_tree)
+    
+    def _adjust_column_widths_aggressive(self, tree):
+        """More aggressive column width calculation for edge cases."""
+        if tree.model() is None:
+            return
+        
+        fm = tree.fontMetrics()
+        min_width = 160
+        max_width = 800
+        
+        root_idx = tree.rootIndex()
+        if not root_idx.isValid():
+            root_idx = tree.model().index(tree.model().rootPath())
+        
+        def check_all_items(parent_idx, depth=0):
+            if depth > 5:
+                return min_width
+            
+            current_max = min_width
+            row_count = tree.model().rowCount(parent_idx)
+            
+            for i in range(row_count):
+                idx = tree.model().index(i, 0, parent_idx)
+                text = tree.model().data(idx, Qt.DisplayRole) or ""
+                
+                base_ui_space = 50 + 25 + 25 + 40 
+                indentation_space = depth * 30    
+                text_width = fm.horizontalAdvance(text)
+                
+                total_width = text_width + base_ui_space + indentation_space
+                current_max = max(current_max, total_width)
+                
+                if tree.model().hasChildren(idx):
+                    child_max = check_all_items(idx, depth + 1)
+                    current_max = max(current_max, child_max)
+            
+            return min(current_max, max_width)
+        
+        optimal_width = check_all_items(root_idx)
+        
+        optimal_width = min(optimal_width + 60, max_width)
+        
+        tree.header().setMinimumSectionSize(min_width)
+        tree.header().resizeSection(0, optimal_width)
+        tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
 
     def _update_path_label(self):
-        text = self.unpacked_dir or "<i>not set</i>"
-        self.path_label.setText(f"Unpacked Game folder: {text}")
+        self.path_label.setText(f"Unpacked Game folder: {self.unpacked_dir or '<i>not set</i>'}")
 
     def _browse(self):
-        d = QFileDialog.getExistingDirectory(
-            self, "Select unpacked Game folder", self.unpacked_dir or ""
-        )
+        d = QFileDialog.getExistingDirectory(self, "Select unpacked Game folder", self.unpacked_dir or "")
         if d:
             self._apply_unpacked_root(d)
 
-    def _apply_unpacked_root(self, path: str):
+    def _apply_unpacked_root(self, path):
         self.unpacked_dir = os.path.abspath(path)
         ok = self._check_folder(path)
-        tick, color = ("✓","green") if ok else ("✗","red")
-        self.path_label.setText(
-            f"Unpacked Game folder: <span style='color:{color}'>{tick}</span> {self.unpacked_dir}"
-        )
+        tick,color = ("✓","green") if ok else ("✗","red")
+        self.path_label.setText(f"Unpacked Game folder: <span style='color:{color}'>{tick}</span> {self.unpacked_dir}")
 
-        if not ok:
-            QMessageBox.warning(
-                self, "Invalid folder",
-                f"Expected sub‑folder “{'/'.join(self._expected_native())}”."
-            )
-            return
+        if ok:
+            self.model_sys.setRootPath(self.unpacked_dir)
+            self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+            self._schedule_column_resize()
+            if hasattr(self.app_win, "settings"):
+                self.app_win.settings["unpacked_path"] = self.unpacked_dir
+                self.app_win.save_settings()
+        else:
+            QMessageBox.warning(self, "Invalid folder",
+                                f"Expected sub‑folder \"{'/'.join(self._expected_native())}\".")
 
-        # set and map through the proxy
-        src_idx   = self.source_model_sys.index(self.unpacked_dir)
-        proxy_idx = self.model_sys.mapFromSource(src_idx)
-        self.tree_sys.setRootIndex(proxy_idx)
-        self.tree_sys.resizeColumnToContents(1)
-
-        if hasattr(self.app_win, "settings"):
-            self.app_win.settings["unpacked_path"] = self.unpacked_dir
-            self.app_win.save_settings()
-
-    def _check_folder(self, root: str) -> bool:
+    def _check_folder(self, root):  
         exp = self._expected_native()
-        return not exp or os.path.isdir(os.path.join(root, *exp))
+        return not exp or os.path.isdir(os.path.join(root,*exp))
 
-    def _switch(self, to_system: bool):
-        self.btn_sys .setChecked(to_system)
+    def _switch(self, to_system):
+        self.btn_sys.setChecked(to_system)
         self.btn_proj.setChecked(not to_system)
-        self.tree_sys .setVisible(to_system)
+        self.tree_sys.setVisible(to_system)
         self.tree_proj.setVisible(not to_system)
+        self._schedule_column_resize()
 
-    def set_project(self, proj_dir: str | None):
+    def set_project(self, proj_dir):
         self.project_dir = proj_dir
-        if not proj_dir:
+        if proj_dir:
+            self.project_label.setText(f"<b>Project: {os.path.basename(proj_dir)}</b>")
+            self.model_proj.setRootPath(proj_dir)
+            self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
+            self._schedule_column_resize()
+        else:
             self.project_label.setText("<i>No project open</i>")
-            self.tree_proj.setRootIndex(QModelIndex())
-            return
-
-        self.project_label.setText(f"<b>Project: {os.path.basename(proj_dir)}</b>")
-
-        src_idx   = self.source_model_proj.index(proj_dir)
-        proxy_idx = self.model_proj.mapFromSource(src_idx)
-        self.tree_proj.setRootIndex(proxy_idx)
-        self.tree_proj.resizeColumnToContents(1)
-        self.tree_proj.show()
+            self.tree_proj .setRootIndex(QModelIndex())
 
     def _sys_menu(self, pos):
         idx = self.tree_sys.indexAt(pos)
         if not idx.isValid() or self.model_sys.isDir(idx):
             return
-        if QMenu(self).addAction("Add to project")\
-                   .exec(self.tree_sys.viewport().mapToGlobal(pos)):
-            self._copy_to_project(self.model_sys.mapToSource(idx).filePath())
+        if QMenu(self).addAction("Add to project").exec(self.tree_sys.viewport().mapToGlobal(pos)):
+            self._copy_to_project(self.model_sys.filePath(idx))
 
     def _proj_menu(self, pos):
         idx = self.tree_proj.indexAt(pos)
         if not idx.isValid() or self.model_proj.isDir(idx):
             return
-        if QMenu(self).addAction("Remove")\
-                   .exec(self.tree_proj.viewport().mapToGlobal(pos)):
-            src = self.model_proj.mapToSource(idx).filePath()
-            self._remove_from_project(src)
+        if QMenu(self).addAction("Remove").exec(self.tree_proj.viewport().mapToGlobal(pos)):
+            self._remove_from_project(self.model_proj.filePath(idx))
 
-    def _copy_to_project(self, src: str):
+    def _copy_to_project(self, src):
         if not self.project_dir or not self._check_folder(self.unpacked_dir):
             return
-
         rel = os.path.relpath(src, self.unpacked_dir)
         dst = os.path.join(self.project_dir, rel)
 
-        if os.path.isdir(src):
-            ans = QMessageBox.question(
-                self, "Confirm Add",
-                f"Add entire folder “{os.path.basename(src)}” and all its contents?",
-                QMessageBox.Yes|QMessageBox.No
-            )
-            if ans != QMessageBox.Yes:
-                return
+        if os.path.isdir(src) and QMessageBox.question(
+                self, "Confirm Add", f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?",
+                QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
+            return
 
-        if os.path.exists(dst):
-            ans = QMessageBox.question(
-                self, "Confirm Overwrite",
-                f"“{rel}” already exists — overwrite?",
-                QMessageBox.Yes|QMessageBox.No
-            )
-            if ans != QMessageBox.Yes:
-                return
+        if os.path.exists(dst) and QMessageBox.question(
+                self, "Confirm Overwrite", f"""{rel}" already exists — overwrite?""",
+                QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
+            return
 
         try:
-            if os.path.isdir(src):
+            if os.path.isdir(src): 
                 shutil.copytree(src, dst, dirs_exist_ok=True)
-            else:
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                shutil.copy2(src, dst)
-                
-            self.set_project(self.project_dir)
+            else:                   
+                (os.makedirs(os.path.dirname(dst), exist_ok=True), shutil.copy2(src, dst))
+            self._refresh_proj()
             QMessageBox.information(self, "Added", f"{rel}\nwas copied successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Copy failed", str(e))
+
+    def _prune_empty_dirs(self, start_path: str) -> bool:
+        removed = False
+        p = start_path
+        while (p and p.startswith(self.project_dir)
+            and p != self.project_dir
+            and os.path.isdir(p) and not os.listdir(p)):
+            try:
+                os.rmdir(p)
+                removed = True
+            except OSError:
+                break       
+            p = os.path.dirname(p)
+        return removed
 
     def _remove_from_project(self, path: str):
         try:
@@ -225,23 +280,42 @@ class ProjectManager(QDockWidget):
                 shutil.rmtree(path)
             else:
                 os.remove(path)
+                self._prune_empty_dirs(os.path.dirname(path))
         except Exception as e:
             QMessageBox.critical(self, "Remove failed", str(e))
             return
 
-        # collapse any now-empty parents
         parent = os.path.dirname(path)
         while parent and parent.startswith(self.project_dir):
-            src_idx   = self.source_model_proj.index(parent)
-            if self.source_model_proj.rowCount(src_idx) == 0:
-                proxy_idx = self.model_proj.mapFromSource(src_idx)
-                self.tree_proj.collapse(proxy_idx)
+            idx = self.model_proj.index(parent)
+            if idx.isValid() and self.model_proj.rowCount(idx) == 0:
+                self.tree_proj.collapse(idx)
             parent = os.path.dirname(parent)
+        self.tree_proj.setModel(self.model_proj)
+        self.model_proj.setRootPath(self.project_dir or "")
+        if self.project_dir:
+            self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
+            self._schedule_column_resize()
 
-        # re‑show current project root
-        self.set_project(self.project_dir)
+    def _refresh_proj(self):
+        self.model_proj = QFileSystemModel()
+        self.model_proj.setRootPath(self.project_dir or "")
+        
+        self.model_proj.directoryLoaded.connect(lambda: self._schedule_column_resize())
+        self.model_proj.rowsInserted.connect(lambda: self._schedule_column_resize())
+        self.model_proj.rowsRemoved.connect(lambda: self._schedule_column_resize())
+        
+        self.tree_proj.setModel(self.model_proj)
+        self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
+        self.tree_proj.hideColumn(1)
+        self.tree_proj.hideColumn(2)
+        self.tree_proj.header().setSectionResizeMode(0, QHeaderView.Interactive)
+        self.tree_proj.header().setMinimumSectionSize(160)
+        if self.project_dir:
+            self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
+            self._schedule_column_resize()
 
-    def _open_in_editor(self, path: str):
+    def _open_in_editor(self, path):
         if os.path.isfile(path):
             try:
                 with open(path, "rb") as f:
@@ -250,9 +324,100 @@ class ProjectManager(QDockWidget):
             except Exception as e:
                 QMessageBox.critical(self, "Open failed", str(e))
 
-    def _on_double(self, idx: QModelIndex, in_project: bool):
-        model = self.model_proj if in_project else self.model_sys
-        src_idx = model.mapToSource(idx)
-        filepath = src_idx.model().filePath(src_idx)
-        if os.path.isfile(filepath):
-            self._open_in_editor(filepath)
+    def _on_double(self, idx, in_project):
+        path = (self.model_proj if in_project else self.model_sys).filePath(idx)
+        if os.path.isfile(path):
+            self._open_in_editor(path)
+
+    def _choose_game(self) -> str | None:
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Select Game")
+        lay = QVBoxLayout(dlg)
+
+        info_lbl = QLabel()                  
+        info_lbl.setStyleSheet("font-weight:bold;")
+        lay.addWidget(info_lbl)
+
+        combo = QComboBox()
+        from REasy import GAMES
+        combo.addItems(GAMES)
+        lay.addWidget(combo)
+
+        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        lay.addWidget(btns)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+
+        def _upd(idx: int):
+            g = combo.itemText(idx)
+            hint = "/".join(EXPECTED_NATIVE.get(g, ()))
+            info_lbl.setText(f"Expected sub‑folder for <b>{g}</b>: "
+                             f"<code>{hint or '‑‑ any ‑‑'}</code>"
+                             f"<br>Note: Make sure your directory contains that folder.")
+        _upd(0)
+        combo.currentIndexChanged.connect(_upd)
+
+        return combo.currentText() if dlg.exec() == QDialog.Accepted else None
+    
+    def _adjust_column_widths(self, tree):
+        """Adjust column widths to fit content with minimum constraints."""
+        if tree.model() is None:
+            return
+        
+        fm = tree.fontMetrics()
+        min_width = 160 
+        max_width = 600 
+        
+        root_idx = tree.rootIndex()
+        if not root_idx.isValid():
+            root_idx = tree.model().index(tree.model().rootPath())
+        
+        def check_items(parent_idx, depth=0):
+            if depth > 3:
+                return min_width
+            
+            current_max = min_width
+            for i in range(min(tree.model().rowCount(parent_idx), 50)): 
+                idx = tree.model().index(i, 0, parent_idx)
+                text = tree.model().data(idx, Qt.DisplayRole) or ""
+                
+                base_ui_space = 40 + 20 + 20 + 30 
+                indentation_space = depth * 25
+                text_width = fm.horizontalAdvance(text)
+                
+                total_width = text_width + base_ui_space + indentation_space
+                current_max = max(current_max, total_width)
+                
+                if tree.isExpanded(idx):
+                    child_max = check_items(idx, depth + 1)
+                    current_max = max(current_max, child_max)
+            
+            return min(current_max, max_width)
+        
+        optimal_width = check_items(root_idx)
+        
+        if optimal_width > 300:
+            optimal_width = min(optimal_width + 50, max_width)
+        
+        tree.header().setMinimumSectionSize(min_width)
+        tree.header().resizeSection(0, optimal_width)
+        tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
+
+    def _on_section_resized(self, logicalIndex: int, oldSize: int, newSize: int):
+        """Handle manual column resizing with minimum width enforcement."""
+        if logicalIndex != 0:
+            return
+        
+        sender_header = self.sender()
+        min_width = sender_header.minimumSectionSize()
+        
+        if newSize < min_width:
+            sender_header.resizeSection(0, min_width)
+        
+        for tree in (self.tree_sys, self.tree_proj):
+            if tree.header() == sender_header:
+                delegate = tree.itemDelegateForColumn(0)
+                if hasattr(delegate, 'set_column_width'):
+                    delegate.set_column_width(max(newSize, min_width))
+                tree.viewport().update() 
+                break
