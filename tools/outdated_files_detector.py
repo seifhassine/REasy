@@ -1,5 +1,4 @@
 import os
-import sys
 import traceback
 from file_handlers.rsz.rsz_file import RszFile
 from utils.registry_manager import RegistryManager
@@ -58,8 +57,8 @@ class OutdatedFilesDetector:
             rsz_file.filepath = file_path
             try:
                 rsz_file.read(data)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error reading RSZ file {file_path}: {e}")
                 
             for i, instance_info in enumerate(rsz_file.instance_infos):
                 if i == 0:
