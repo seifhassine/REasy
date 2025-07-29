@@ -40,17 +40,17 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 <br>
 <br>
 
-- **UVAR File Editing:**  
-  - View and fully modify UVAR files. Hashing and mapping are taken care of automatically.
-  - Add new variables with automatic naming that preserves numeric formatting (e.g. "Location47_031" followed by "Location47_032").
-  This allows you to add new flags to RE4R for example (which was not possible with existing tools).
-  - Deletion of variables is also supported.
-  
+- **UVAR File Editing**  
 - **RSZ File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.
-  - GameObjects and Array Elements are fully serializaible into JSON.
-  - You can export and import GameObjects in RSZ files through REasy using the Template Manager. Exported GameObjects can be found in the "templates" directory in plaintext (JSON).  
-
+  - Template Manager to export your favorite GameObjects and import them in different files (Exported GameObjects can be found in the "templates" directory in plaintext (JSON)).
+  - Clipboard system allowing to copy paste array elements, components and GameObjects across different files (JSON serialized).
+  - Community Templates browser where you can download templates from other people, rate them and upload your own for different games (accessible in Template Manager).
+  - Project Manager: Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
+  - Up-to-date improved RSZ dumps for all games.
+  - Obsolete RSZ file detector (available in >Tools)
+  - Support for all versions of RSZ files dating from RE7.
+  - And much more..
 - **Search Functionality:**  
   Search all files across directories for:
   - Specific text (UTF-16LE encoded)
@@ -60,8 +60,9 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 - **GUID Converter Tool:**  
   Convert between memory (hyphenated hex) and standard (hyphenated) GUID formats.
 
-- **Dark Mode:**  
-  Toggle a dark mode theme that applies to all dialogs and windows.
+- **Backup System for Files**
+
+- **Dark Mode**  
 
 
 
