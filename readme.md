@@ -68,6 +68,9 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 ## Guides:
 
+- **Wiki:**
+  Accessible [here](https://github.com/seifhassine/REasy-Wiki/blob/main/README.md). Work in progress.
+  
 - **Adding New Flags to RE4R:**  
   I tested adding 22000 new flags (file size went from 2mb to ~16mb), and tried some of them randomly. Game was stable. At 50k added flags, it crashes when a gamesave is triggered. To determine the exact threshold, your testing and feedback are needed. But 20k should be more than enough. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
   
