@@ -1000,6 +1000,8 @@ class RszFile:
         dynamic_resources = self.get_resources_dynamically()
         self.resource_infos.clear()
         self._resource_str_map.clear()
+        if hasattr(self, '_pfb16_direct_strings'):
+            self._pfb16_direct_strings = dynamic_resources
         for resource_path in dynamic_resources:
             if getattr(self, "is_pfb16", False):
                 ri = Pfb16ResourceInfo(resource_path)
@@ -1009,6 +1011,7 @@ class RszFile:
             ri.reserved = 0
             self.resource_infos.append(ri)
             self.set_resource_string(ri, resource_path)
+            print("Rebuilt resource:", resource_path)
 
     def build(self, special_align_enabled = False) -> bytes:
         if self.auto_resource_management:
@@ -1716,9 +1719,6 @@ class RszFile:
             if ri in self._resource_str_map:
                 return self._resource_str_map[ri]
                 
-            idx = self.resource_infos.index(ri)
-            if 0 <= idx < len(self._pfb16_direct_strings):
-                return self._pfb16_direct_strings[idx]
                     
             return f"[Resource {self.resource_infos.index(ri) if ri in self.resource_infos else '?'}]"
         
