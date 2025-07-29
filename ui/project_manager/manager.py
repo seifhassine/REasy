@@ -1,17 +1,22 @@
 from __future__ import annotations
 import os
 import shutil
+from pathlib import Path
+import json
 from PySide6.QtCore    import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
     QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox, QTextEdit, QProgressBar
 )
-from tools.pak_exporter import packer_status, EXE_PATH, _ensure_packer, run_packer
+from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
 
 from .constants  import EXPECTED_NATIVE
 from .delegate   import _ActionsDelegate
 from .trees      import _DndTree, _DropTree
+
+from ui.project_manager.project_settings_dialog import ProjectSettingsDialog
+from tools.fluffy_exporter import create_fluffy_zip
 
 from PySide6.QtCore import qInstallMessageHandler
 
@@ -54,6 +59,7 @@ class ProjectManager(QDockWidget):
         lay.addLayout(bar)
         self.path_label = QLabel()
         bar.addWidget(self.path_label, 1)
+        self.path_label.setMinimumSize(20, 20)
         bar.addWidget(QPushButton("Browse…", clicked=self._browse))
         self._update_path_label()
 
@@ -61,19 +67,30 @@ class ProjectManager(QDockWidget):
         self.project_label = QLabel("<i>No project open</i>")
         lay.addWidget(self.project_label)
 
-        # view toggles
+        actions = QHBoxLayout()
+        lay.addLayout(actions)    
+
+        self.btn_conf = QPushButton("Fluffy Settings…", clicked=self._proj_settings)
+        self.btn_zip  = QPushButton("Export Fluffy ZIP", clicked=self._export_zip)
+        self.btn_pak  = QPushButton("Export .PAK",       clicked=self._export_mod)
+
+        actions.addWidget(self.btn_conf)
+        actions.addWidget(self.btn_zip)
+        actions.addWidget(self.btn_pak)
+
         toggles = QHBoxLayout()
         lay.addLayout(toggles)
+
         self.btn_sys  = QToolButton(text="System Files",  checkable=True, checked=True)
         self.btn_proj = QToolButton(text="Project Files", checkable=True)
+
         toggles.addWidget(self.btn_sys)
         toggles.addWidget(self.btn_proj)
         toggles.addStretch(1)
 
-        self.btn_export = QPushButton("Export Mod as .PAK")
-        self.btn_export.clicked.connect(self._export_mod)
-        lay.addWidget(self.btn_export)
-
+        for b in (self.btn_conf, self.btn_zip, self.btn_pak):
+            b.setEnabled(False)
+            
         # models + views -----------------------------------------------------
         self.model_sys,  self.tree_sys  = QFileSystemModel(), _DndTree()
         self.model_proj, self.tree_proj = QFileSystemModel(), _DropTree(self)
@@ -216,7 +233,8 @@ class ProjectManager(QDockWidget):
 
     def set_project(self, proj_dir):
         self.project_dir = proj_dir
-        self.btn_export.setEnabled(bool(proj_dir))
+        for b in (self.btn_conf, self.btn_zip, self.btn_pak):
+            b.setEnabled(bool(proj_dir))
         if proj_dir:
             self.project_label.setText(f"<b>Project: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
@@ -428,6 +446,44 @@ class ProjectManager(QDockWidget):
                 tree.viewport().update() 
                 break
 
+    def _proj_settings(self):
+        if not self.project_dir:
+            return
+        dlg = ProjectSettingsDialog(Path(self.project_dir), self)
+        dlg.exec()
+
+    def _export_zip(self):
+        if not self.project_dir:
+            return
+
+        proj_dir = Path(self.project_dir)
+        cfg = proj_dir / ".reasy_project.json"
+        if not cfg.exists():
+            if QMessageBox.question(
+                self, "Missing info",
+                "Project settings not configured yet.\nOpen the settings dialog now?",
+                QMessageBox.Yes | QMessageBox.No
+            ) == QMessageBox.Yes:
+                self._proj_settings()
+            if not cfg.exists():
+                return
+
+        default = str(proj_dir / f"{proj_dir.name}.zip")
+        zip_fn, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Fluffy Mod zip",
+            default,
+            "ZIP archive (*.zip)"
+        )
+        if not zip_fn:
+            return
+
+        try:
+            create_fluffy_zip(proj_dir, Path(zip_fn))
+            QMessageBox.information(self, "Done", "Fluffy mod ZIP created.")
+        except Exception as e:
+            QMessageBox.critical(self, "ZIP failed", str(e))
+
     def _export_mod(self):
         if not self.project_dir:
             QMessageBox.information(self, "Export Mod", "Open a project first.")
@@ -437,7 +493,7 @@ class ProjectManager(QDockWidget):
         if need:
             tag_txt = latest or "latest"
             msg = (f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n"
-                if not EXE_PATH.exists()
+                if not _EXE_PATH.exists()
                 else f"A newer packer release ({tag_txt}) is available\n")
             msg += "Do you want to download it now?"
             if QMessageBox.question(self, "Download packer?", msg,
@@ -490,3 +546,10 @@ class ProjectManager(QDockWidget):
                 QTimer.singleShot(150, _poll)
 
         QTimer.singleShot(100, _poll)
+        
+def quitely_get_pak_name(project_dir: Path) -> str | None:
+    try:
+        cfg = json.loads((project_dir/".reasy_project.json").read_text())
+        return cfg.get("pak_name")
+    except Exception:
+        return None
