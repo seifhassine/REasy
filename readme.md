@@ -69,7 +69,6 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 ## Guides:
 
 - **Wiki:**
-  
   Accessible [here](https://github.com/seifhassine/REasy-Wiki/blob/main/README.md). Work in progress.
   
 - **Adding New Flags to RE4R:**  
