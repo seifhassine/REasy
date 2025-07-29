@@ -66,13 +66,11 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 
 
-## Unique Use-Cases:
+## Guides:
 
 - **Adding New Flags to RE4R:**  
   I tested adding 22000 new flags (file size went from 2mb to ~16mb), and tried some of them randomly. Game was stable. At 50k added flags, it crashes when a gamesave is triggered. To determine the exact threshold, your testing and feedback are needed. But 20k should be more than enough. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
   
-- **Finding all files where some data is referenced:**
-  Ever encountered a flag but don't know in which file it is set? This tool allows you to find all locations where that flag is checked/set.
 
 ## Correctness
 
