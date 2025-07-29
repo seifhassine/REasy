@@ -36307,5 +36307,440 @@
 			}
 		],
 		"name": "via.motion.Chain"
+	},
+	"8d6f0e8": {
+		"crc": "c45cbc8b",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Intensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Color",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "BlackBodyRadiation",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Temperature",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BounceIntensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinRoughness",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AOEfficiency",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ImportantLevel",
+				"native": true,
+				"original_type": "via.render.LightImportantLevel",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9_Unit",
+				"native": true,
+				"original_type": "via.render.LightPowerUnitType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10_Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11_ReferenceEffectiveRange",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12_IlluminanceThreshold",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v13_Cone",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v14_Spread",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15_Falloff",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v16_ShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v17_BackGroundShadowEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v18_ForceShadowCacheEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19_ShadowCastFlag",
+				"native": true,
+				"original_type": "via.render.ShadowCastFlag",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v20_ShadowLodBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v21_UniformShadowEnbale",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22_ShadowNearPlane",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v23_ShadowVariance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v24_ShadowBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v25_ShadowDepthBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v26_ShadowSlopeBias",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v27_DetailShadow",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v28_DetailFocusTarget",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			}
+		],
+		"name": "via.render.SpotLight"
+	},
+	"57754bdf": {
+		"crc": "f722ecdd",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "TimelineOverwrite",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TimelineBlendRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_Enabled__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_Enabled__Value",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_ColorCubeBlendRate__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT_ColorCubeBlendRate__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorCube0",
+				"native": false,
+				"original_type": "via.render.TextureResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorCube1",
+				"native": false,
+				"original_type": "via.render.TextureResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_ColorCube2BlendRate__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT_ColorCube2BlendRate__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorCube2",
+				"native": false,
+				"original_type": "via.render.TextureResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "ColorCubeElement",
+				"native": false,
+				"original_type": "via.render.TextureResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_BlendRate__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT_BlendRate__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT_BlendTargetIndex__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT_BlendTargetIndex__Value",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "LinearParamsAt",
+				"native": false,
+				"original_type": "via.render.ColorCorrectLinearParams",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": true,
+				"name": "TakeOverPrevLayerLinearParams",
+				"native": false,
+				"original_type": "System.Nullable`1[[System.Boolean, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]][]",
+				"size": 1,
+				"type": "Struct"
+			}
+		],
+		"name": "offline.posteffect.param.nullable.ColorCorrect"
 	}
 }
