@@ -93,7 +93,7 @@ class BetterFindDialog(QDialog):
     # GUI
     # ------------------------------------------------------------------ #
     def __init__(self, file_tab, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, Qt.Window | Qt.WindowStaysOnTopHint)
         self.setWindowTitle("Find in Tree")
         self.resize(460, 330)
 
