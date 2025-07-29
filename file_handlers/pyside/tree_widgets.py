@@ -822,7 +822,8 @@ class AdvancedTreeView(QTreeView):
             if result:
                 if go_node and go_node.isValid():
                     self.remove_component_from_ui_direct(go_node, index)
-                    QMessageBox.information(self, "Success", "Component deleted successfully")
+                    QApplication.beep()
+                    #QMessageBox.information(self, "Success", "Component deleted successfully")
                 else:
                     QMessageBox.information(self, "Success", "Component deleted successfully, but failed to refresh UI. Please save and reload")
             else:
@@ -863,7 +864,8 @@ class AdvancedTreeView(QTreeView):
             
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data, folder_index)
-                QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to create GameObject")
         except Exception as e:
@@ -898,7 +900,8 @@ class AdvancedTreeView(QTreeView):
             if go_data and go_data.get('success', False):
                 # Use the new direct UI update method
                 self.add_gameobject_to_ui_direct(go_data, parent_go_index)
-                QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to create child GameObject")
         except Exception as e:
@@ -934,7 +937,8 @@ class AdvancedTreeView(QTreeView):
             return
 
         self.add_folder_to_ui_direct(folder_data, parent_index)
-        QMessageBox.information(self, "Success", f"Folder '{name}' created successfully")
+        QApplication.beep()
+        #QMessageBox.information(self, "Success", f"Folder '{name}' created successfully")
     
     def _populate_folder_nodes(self, folder_dict, folder_data, viewer):
         """
@@ -1002,7 +1006,8 @@ class AdvancedTreeView(QTreeView):
             
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data)
-                QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to create GameObject")
         except Exception as e:
@@ -1031,7 +1036,8 @@ class AdvancedTreeView(QTreeView):
             result = parent.create_component_for_gameobject(instance_id, component_type)
             if isinstance(result, dict) and result.get('success', False):
                 self.add_component_to_ui_direct(index, result)
-                QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
             elif result:
                 QMessageBox.information(self, "Success", f"Added {component_type} to GameObject, but failed to refresh UI. Please save and reload")
             else:
@@ -1085,7 +1091,8 @@ class AdvancedTreeView(QTreeView):
             
             if row != -1:
                 model.removeRow(row, parent_index)
-                QMessageBox.information(self, "Success", "GameObject deleted successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", "GameObject deleted successfully")
                 return
         
             QMessageBox.information(self, "Success", "GameObject deleted successfully, but failed to refresh UI. Please save and reload")
@@ -1141,7 +1148,8 @@ class AdvancedTreeView(QTreeView):
             for i, child in enumerate(parent_item.children):
                 if child is folder_item:
                     model.removeRow(i, parent_index)
-                    QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
+                    QApplication.beep()
+                    #QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
                     return
                 
             QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully, but failed to refresh UI directly.")
@@ -1210,7 +1218,8 @@ class AdvancedTreeView(QTreeView):
                     path += ".pfb"
         
         if(parent.object_operations.manage_gameobject_prefab(target_go, path)):
-            QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
+            QApplication.beep()
+            #QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
             return
 
         QMessageBox.warning(self, "Error", "Failed to manage prefab")
@@ -1259,7 +1268,8 @@ class AdvancedTreeView(QTreeView):
                 return
                 
             if self.add_resource_to_ui_direct(path, resource_index):
-                QMessageBox.information(self, "Success", f"Added resource '{path}'")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"Added resource '{path}'")
             else:
                 QMessageBox.information(self, "Success", f"Added resource '{path}', but failed to refresh UI. Please save and reload")
         except Exception as e:
@@ -1335,8 +1345,8 @@ class AdvancedTreeView(QTreeView):
             widget = self.indexWidget(index)
             for label in widget.findChildren(QLabel):
                 label.setText(path)
-            
-            QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
+            QApplication.beep()
+            #QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
         except Exception as e:
             self._handle_resource_error("edit", e)
             
@@ -1405,8 +1415,8 @@ class AdvancedTreeView(QTreeView):
 
             for ri in sorted(resource_indices, reverse=True):
                 self._remove_resource_ui(ri)
-
-            QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
+            QApplication.beep()
+            #QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
         except Exception as e:
             self._handle_resource_error("delete", e)
 
@@ -1828,7 +1838,8 @@ class AdvancedTreeView(QTreeView):
                 
                     self.scrollTo(last_child_idx)
 
-                QMessageBox.information(self, "Success", f"{len(elements)} elements pasted successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"{len(elements)} elements pasted successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to paste elements. Make sure the clipboard contains compatible elements.")
         except Exception as e:
@@ -1931,8 +1942,9 @@ class AdvancedTreeView(QTreeView):
                 child_index = model.index(idx, 0, parent_index)
                 model.removeRow(child_index.row(), parent_index) 
         if success:
-            self._update_array_element_indices(model, parent_index, array_data)
-            QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
+            self._update_array_element_indices(model, parent_index, array_data)  
+            QApplication.beep()
+            #QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
         else:
             QMessageBox.warning(self, "Error", "Failed to delete all elements")
 
@@ -2017,7 +2029,8 @@ class AdvancedTreeView(QTreeView):
             
             if result and result.get("success", False):
                 self.add_component_to_ui_direct(index, result)
-                QMessageBox.information(self, "Success", f"Pasted {type_name} to GameObject")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"Pasted {type_name} to GameObject")
             else:
                 QMessageBox.warning(self, "Error", f"Failed to paste {type_name}")
         except Exception as e:
@@ -2130,7 +2143,8 @@ class AdvancedTreeView(QTreeView):
             )
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data, parent_index)
-                QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
+                QApplication.beep()
+                #QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to paste GameObject")
         except Exception as e:
@@ -2189,7 +2203,7 @@ class AdvancedTreeView(QTreeView):
                     self.setIndexWidget(last_child_idx, widget)
             
             self.scrollTo(last_child_idx)
-                
-            QMessageBox.information(self, "Success", "Element pasted successfully.")
+            QApplication.beep()
+            #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
