@@ -6,6 +6,7 @@ This file contains:
 - RszViewer: Qt widget for displaying and editing RSZ file contents
 """
 
+import functools
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 
@@ -928,16 +929,37 @@ class RszViewer(QWidget):
         
         return obj_node
     
+    def cycle_guard(func):
+        """
+        Decorator to prevent infinite recursion: if ref_id is already
+        on the current stack, returns a stub leaf immediately.
+        """
+        @functools.wraps(func)
+        def wrapper(self, field_name, ref_id, *args, **kwargs):
+
+            if not hasattr(self, '_ref_stack'):
+                self._ref_stack = []
+            if ref_id in self._ref_stack:
+                print(f"[WARNING] Cycle to ID {ref_id} in field '{field_name}', your object is probably corrupted.")
+                return DataTreeBuilder.create_data_node(
+                    f"{field_name}: (<cycle to ID {ref_id}>)",
+                    "", None, None, []
+                )
+            self._ref_stack.append(ref_id)
+            try:
+                return func(self, field_name, ref_id, *args, **kwargs)
+            finally:
+                self._ref_stack.pop()
+        return wrapper
+    
+    @cycle_guard
     def _handle_standard_reference(self, field_name, ref_id):
-        """Handle reference in standard (non-embedded) context"""
         scn = self.scn
         
         # UserData reference
         if ref_id in scn._rsz_userdata_set:
             rui = scn._rsz_userdata_dict.get(ref_id)
-            # Check if this is embedded RSZ data with parsed instances
             if rui and hasattr(rui, 'embedded_instances') and rui.embedded_instances:
-                # Direct representation: display as root .user object
                 return self._create_direct_embedded_usr_node(field_name, rui)
             else:
                 display_value = self.name_helper.get_userdata_display_value(ref_id)
