@@ -42,6 +42,9 @@ class ProjectSettingsDialog(QDialog):
 
         self.ver_edit  = QLineEdit(self.cfg.get("version", "v1.0"))
         form.addRow("Version:", self.ver_edit)
+
+        self.pak_edit = QLineEdit(self.cfg.get("pak_name", project_dir.name))
+        form.addRow("PAK File Name:", self.pak_edit)
                 
         self.bundle_chk = QCheckBox("Build PAK instead of loose folders in Fluffy ZIP")
         self.bundle_chk.setChecked(self.cfg.get("bundle_pak", False))
@@ -101,6 +104,7 @@ class ProjectSettingsDialog(QDialog):
             "author":      self.auth_edit.text().strip(),
             "version":     self.ver_edit.text().strip(),
             "screenshot":  self.pic_edit.text().strip(),
+            "pak_name":    self.pak_edit.text().strip(),
         })
 
         try:

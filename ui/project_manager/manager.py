@@ -454,33 +454,34 @@ class ProjectManager(QDockWidget):
 
     def _export_zip(self):
         if not self.project_dir:
+            QMessageBox.information(self, "Export Fluffy ZIP", "Open a project first.")
             return
 
-        proj_dir = Path(self.project_dir)
-        cfg = proj_dir / ".reasy_project.json"
-        if not cfg.exists():
+        proj     = Path(self.project_dir)
+        cfg_path = proj / ".reasy_project.json"
+        if not cfg_path.exists():
             if QMessageBox.question(
                 self, "Missing info",
                 "Project settings not configured yet.\nOpen the settings dialog now?",
                 QMessageBox.Yes | QMessageBox.No
             ) == QMessageBox.Yes:
                 self._proj_settings()
-            if not cfg.exists():
+            if not cfg_path.exists():
                 return
 
-        default = str(proj_dir / f"{proj_dir.name}.zip")
-        zip_fn, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Fluffy Mod zip",
-            default,
-            "ZIP archive (*.zip)"
-        )
-        if not zip_fn:
-            return
+        base_dir    = Path(__file__).resolve().parents[2]
+        mods_folder = base_dir / "Mods"
+        mods_folder.mkdir(parents=True, exist_ok=True)
+        cfg  = json.loads(cfg_path.read_text())
+        name = cfg.get("name", proj.name)
+        zip_path = mods_folder / f"{name}.zip"
 
         try:
-            create_fluffy_zip(proj_dir, Path(zip_fn))
-            QMessageBox.information(self, "Done", "Fluffy mod ZIP created.")
+            create_fluffy_zip(proj, zip_path)
+            QMessageBox.information(
+                self, "Done",
+                f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}"
+            )
         except Exception as e:
             QMessageBox.critical(self, "ZIP failed", str(e))
 
@@ -492,12 +493,13 @@ class ProjectManager(QDockWidget):
         need, latest = packer_status()
         if need:
             tag_txt = latest or "latest"
-            msg = (f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n"
+            msg = (
+                f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n"
                 if not _EXE_PATH.exists()
-                else f"A newer packer release ({tag_txt}) is available\n")
-            msg += "Do you want to download it now?"
+                else f"A newer packer release ({tag_txt}) is available\n"
+            ) + "Do you want to download it now?"
             if QMessageBox.question(self, "Download packer?", msg,
-                                    QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
+                                    QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
                 return
             try:
                 _ensure_packer(auto_download=True)
@@ -505,31 +507,32 @@ class ProjectManager(QDockWidget):
                 QMessageBox.critical(self, "Download failed", str(e))
                 return
 
-        pak_path, _ = QFileDialog.getSaveFileName(
-            self, "Save .PAK file",
-            str(self.project_dir)+".pak", "PAK archives (*.pak)")
-        if not pak_path:
-            return
+        base_dir   = Path(__file__).resolve().parents[2]
+        mods_folder = base_dir  / "Mods"
+        mods_folder.mkdir(parents=True, exist_ok=True)
+
+        from ui.project_manager.manager import quitely_get_pak_name
+        pak_name = quitely_get_pak_name(Path(self.project_dir)) or Path(self.project_dir).name
+        if not pak_name.lower().endswith(".pak"):
+            pak_name += ".pak"
+        dest_path = mods_folder / pak_name
 
         dlg = QDialog(self)
         dlg.setWindowTitle("REE.Packer output")
-        v   = QVBoxLayout(dlg)
+        v = QVBoxLayout(dlg)
         log = QTextEdit(readOnly=True, lineWrapMode=QTextEdit.NoWrap)
         v.addWidget(log)
         bar = QProgressBar()
-        bar.setRange(0,0)
+        bar.setRange(0, 0)
         v.addWidget(bar)
-        dlg.resize(600,400)
+        dlg.resize(600, 400)
         dlg.show()
 
         from concurrent.futures import ThreadPoolExecutor
         exec_ = ThreadPoolExecutor(max_workers=1)
 
         def _work():
-            try:
-                return run_packer(self.project_dir, pak_path)
-            except Exception as e:
-                return (-1, str(e))
+            return run_packer(self.project_dir, str(dest_path))
 
         fut = exec_.submit(_work)
 
@@ -538,10 +541,14 @@ class ProjectManager(QDockWidget):
                 code, out = fut.result()
                 bar.hide()
                 log.append(out)
-                title = "Done" if code == 0 else "Error"
-                QMessageBox.information(self, title,
-                                        "Export completed" if code==0
-                                        else "PAK packer returned an error")
+                if code == 0:
+                    QMessageBox.information(
+                        self, "Done",
+                        f"Export completed.\nPAK file saved to:\n{dest_path}"
+                    )
+                else:
+                    QMessageBox.critical(self, "Error",
+                                         "PAK packer returned an error.")
             else:
                 QTimer.singleShot(150, _poll)
 

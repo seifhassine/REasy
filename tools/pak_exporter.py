@@ -10,148 +10,126 @@ packer_status()          →  (needs_download: bool, latest_tag: str | None)
 ensure_packer()          →  Path to REE.Packer.exe (downloads if missing/out‑dated)
 run_packer(src_dir, dst) →  (exit_code: int, full_console_output: str)
 """
-
 from __future__ import annotations
-
-import io
 import json
+import io
 import shutil
 import subprocess
+import sys
 import urllib.request
 import zipfile
+import requests
 from pathlib import Path
 from typing import Tuple, Optional
 
-import requests
-from ui.project_manager.pak_status_dialog import run_with_progress
-
-_OWNER_REPO   = "seifhassine/REE.PAK.Tool"
-_API_LATEST   = f"https://api.github.com/repos/{_OWNER_REPO}/releases/latest"
-_ZIP_TEMPLATE = (
-    "https://github.com/{repo}/releases/download/{tag}/REE.Packer.zip"
-)
-
-_EXE_NAME     = "REE.Packer.exe"
+_OWNER_REPO = "seifhassine/REE.PAK.Tool"
+_API_LATEST = f"https://api.github.com/repos/{_OWNER_REPO}/releases/latest"
+_EXE_NAME   = "REE.Packer.exe"
 
 CACHE_DIR     = Path.cwd() / "downloads" / "pak_packer"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+_EXE_PATH     = CACHE_DIR / _EXE_NAME
+_VERSION_FILE = CACHE_DIR / "VERSION"  
 
-EXE_PATH      = CACHE_DIR / _EXE_NAME     
-META_JSON     = CACHE_DIR / "_version.json" 
-
-def _http_json(url: str, timeout: int = 20) -> dict:
-    with urllib.request.urlopen(url, timeout=timeout) as resp:
-        return json.load(resp)
-
-
-def _download_release(tag: str, *, parent_window=None) -> None:
-    """
-    Download & extract the REE.Packer.zip for *tag* into `CACHE_DIR`.
-    Shows a modal progress dialog via run_with_progress().
-    """
-    zip_url = _ZIP_TEMPLATE.format(repo=_OWNER_REPO, tag=tag)
-
-    def _worker(bridge):
-        bridge.text.emit(f"Connecting to GitHub ({tag}) …")
-
-        with requests.get(zip_url, stream=True, timeout=60) as r:
-            r.raise_for_status()
-            total = int(r.headers.get("content-length", 0))
-            received = 0
-            data = io.BytesIO()
-
-            for chunk in r.iter_content(chunk_size=8192):
-                data.write(chunk)
-                received += len(chunk)
-                if total:
-                    pct = int(received * 100 / total)
-                    bridge.prog.emit(pct)
-                    bridge.text.emit(f"Downloading… {pct}%")
-
-        bridge.text.emit("Extracting …")
-        data.seek(0)
-
-        if CACHE_DIR.exists():
-            shutil.rmtree(CACHE_DIR)
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-        with zipfile.ZipFile(data) as zf:
-            zf.extractall(CACHE_DIR)
-
-        META_JSON.write_text(json.dumps({"tag": tag}, indent=2))
-
-    run_with_progress(parent_window, "Download REE.Packer", _worker)
+_TAG_FETCHED   = False
+_CACHED_LATEST : Optional[str] = None
 
 
 def packer_status() -> Tuple[bool, Optional[str]]:
-    try:
-        latest_tag = _http_json(_API_LATEST)["tag_name"]
-    except Exception:                         
-        latest_tag = None
+    global _TAG_FETCHED, _CACHED_LATEST
 
-    try:
-        current_tag = json.loads(META_JSON.read_text())["tag"]
-    except Exception:
-        current_tag = None
+    if not _TAG_FETCHED:
+        try:
+            data = _http_json(_API_LATEST)
+            _CACHED_LATEST = data.get("tag_name")
+        except Exception:
+            _CACHED_LATEST = None
+        _TAG_FETCHED = True
 
-    packer_present = EXE_PATH.exists()
+    latest = _CACHED_LATEST
+    if not _EXE_PATH.exists() or not _VERSION_FILE.exists():
+        return True, latest
 
-    print("latest_tag:", latest_tag)
-    if latest_tag is None:                    
-        return (not packer_present), current_tag
+    on_disk = _VERSION_FILE.read_text().strip()
+    if latest and latest != on_disk:
+        return True, latest
 
-    needs = (not packer_present) or (current_tag != latest_tag)
-    return needs, latest_tag
+    return False, latest
 
 
-def _ensure_packer(*, auto_download: bool = True, parent_window=None) -> Path:
+def _http_json(url: str, timeout: int = 20) -> dict:
+    with urllib.request.urlopen(url, timeout=timeout) as r:
+        return json.load(r)
+
+
+def _download_release(tag: Optional[str], *, parent_window=None) -> Path:
+    if tag:
+        zip_url = f"https://github.com/{_OWNER_REPO}/releases/download/{tag}/REE.Packer.zip"
+    else:
+        zip_url = f"https://github.com/{_OWNER_REPO}/releases/latest/download/REE.Packer.zip"
+
+    from ui.project_manager.pak_status_dialog import run_with_progress
+
+    def _do_download(br):
+        br.text.emit(f"Connecting to GitHub release {tag or 'latest'}…")
+        with requests.get(zip_url, stream=True, timeout=60) as r:
+            r.raise_for_status()
+            total = int(r.headers.get("content-length", 0))
+            got   = 0
+            buf   = io.BytesIO()
+            for chunk in r.iter_content(chunk_size=8192):
+                buf.write(chunk)
+                got += len(chunk)
+                if total:
+                    pct = int(got * 100 / total)
+                    br.prog.emit(pct)
+                    br.text.emit(f"Downloading {pct}%")
+        br.text.emit("Extracting…")
+        buf.seek(0)
+        if CACHE_DIR.exists():
+            shutil.rmtree(CACHE_DIR)
+        with zipfile.ZipFile(buf) as zf:
+            zf.extractall(CACHE_DIR)
+
+        _VERSION_FILE.write_text(tag or "latest")
+
+    run_with_progress(parent_window, f"Download REE.Packer {tag or 'latest'}", _do_download)
+    return _EXE_PATH
+def _ensure_packer(*, auto_download=True, parent_window=None) -> Path:
     """
-    Return a Path to **REE.Packer.exe**.
-    Will download/update automatically if *auto_download* is True.
+    Ensure the packer exe is present and up‑to‑date.
+    If auto_download is False and we’re out‑of‑date, raises RuntimeError.
     """
-    needs, latest = packer_status()
-
-    if needs:
+    need, latest = packer_status()
+    if need:
         if not auto_download:
-            raise RuntimeError("REE.Packer is missing or out‑of‑date.")
-        tag_to_get = latest or "latest"
-        _download_release(tag_to_get, parent_window=parent_window)
-
-    if not EXE_PATH.exists():
-        raise RuntimeError("REE.Packer.exe not found after download!")
-    return EXE_PATH
+            raise RuntimeError("Packer not present or outdated")
+        _download_release(latest, parent_window=parent_window)
+    return _EXE_PATH
 
 
 def run_packer(
-    src_dir: str | Path,
-    dest_pak: str | Path,
-    *,
-    parent=None,
-    auto_download: bool = True,
-) -> tuple[int, str]:
+    src_dir: str | Path, dest_pak: str | Path,
+    *, parent=None, auto_download=True
+) -> Tuple[int, str]:
     exe = _ensure_packer(auto_download=auto_download, parent_window=parent)
-
-    cmd = f'"{exe}" "{Path(src_dir)}" "{Path(dest_pak)}"'
+    cmd = [str(exe), str(src_dir), str(dest_pak)]
     proc = subprocess.Popen(
         cmd,
-        shell=True,
-        cwd=CACHE_DIR,
+        cwd=exe.parent,          
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        encoding="utf-8",
         bufsize=1,
     )
-    output = proc.communicate()[0]
-    return proc.returncode, output
+    out, _ = proc.communicate()
+    return proc.returncode, out
+
 
 if __name__ == "__main__":
-    import sys
-
     if len(sys.argv) != 3:
         print("usage: python -m tools.pak_exporter <src_dir> <dest.pak>")
         sys.exit(1)
-
-    rc, out = run_packer(sys.argv[1], sys.argv[2])
+    code, out = run_packer(sys.argv[1], sys.argv[2])
     print(out)
-    print("---- finished with", rc, "----")
+    sys.exit(code)
