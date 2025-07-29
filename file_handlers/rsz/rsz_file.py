@@ -1011,7 +1011,6 @@ class RszFile:
             ri.reserved = 0
             self.resource_infos.append(ri)
             self.set_resource_string(ri, resource_path)
-            print("Rebuilt resource:", resource_path)
 
     def build(self, special_align_enabled = False) -> bytes:
         if self.auto_resource_management:
