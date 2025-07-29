@@ -3,6 +3,7 @@ import os
 import shutil
 from pathlib import Path
 import json
+import sys
 from PySide6.QtCore    import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
@@ -26,6 +27,12 @@ _prev_handler = qInstallMessageHandler(
         else (_prev_handler(mode, ctx, msg) if _prev_handler else None)
 )
 
+def _get_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.argv[0]).resolve().parent
+    else:
+        return Path(__file__).resolve().parent.parent.parent
+    
 __all__ = ["ProjectManager"]  
 
 class ProjectManager(QDockWidget):
@@ -248,14 +255,24 @@ class ProjectManager(QDockWidget):
         idx = self.tree_sys.indexAt(pos)
         if not idx.isValid() or self.model_sys.isDir(idx):
             return
-        if QMenu(self).addAction("Add to project").exec(self.tree_sys.viewport().mapToGlobal(pos)):
+
+        menu = QMenu(self)
+        add_act = menu.addAction("Add to project")
+
+        chosen = menu.exec(self.tree_sys.viewport().mapToGlobal(pos))
+        if chosen is add_act:
             self._copy_to_project(self.model_sys.filePath(idx))
 
     def _proj_menu(self, pos):
         idx = self.tree_proj.indexAt(pos)
         if not idx.isValid() or self.model_proj.isDir(idx):
             return
-        if QMenu(self).addAction("Remove").exec(self.tree_proj.viewport().mapToGlobal(pos)):
+
+        menu = QMenu(self)
+        remove_act = menu.addAction("Remove")
+
+        chosen = menu.exec(self.tree_proj.viewport().mapToGlobal(pos))
+        if chosen is remove_act:
             self._remove_from_project(self.model_proj.filePath(idx))
 
     def _copy_to_project(self, src):
@@ -469,7 +486,7 @@ class ProjectManager(QDockWidget):
             if not cfg_path.exists():
                 return
 
-        base_dir    = Path(__file__).resolve().parents[2]
+        base_dir    = _get_base_dir()
         mods_folder = base_dir / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
         cfg  = json.loads(cfg_path.read_text())
@@ -507,7 +524,7 @@ class ProjectManager(QDockWidget):
                 QMessageBox.critical(self, "Download failed", str(e))
                 return
 
-        base_dir   = Path(__file__).resolve().parents[2]
+        base_dir    = _get_base_dir()
         mods_folder = base_dir  / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
 

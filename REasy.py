@@ -1023,9 +1023,13 @@ class REasyEditorApp(QMainWindow):
         if not game:
             return
 
+        start_dir = str(self.settings.get("unpacked_path", ""))
         folder = QFileDialog.getExistingDirectory(
-            self, f"Locate unpacked files for {game}",
-            self.settings.get("unpacked_path", ""), QFileDialog.ShowDirsOnly)
+            self,
+            f"Locate unpacked files for {game}",
+            start_dir,
+            QFileDialog.ShowDirsOnly
+        )
         if not folder:
             return
 
@@ -1051,8 +1055,13 @@ class REasyEditorApp(QMainWindow):
         self._activate_project(mod_dir)
 
     def open_project(self):
+        start_root = str(PROJECTS_ROOT)
         dir_ = QFileDialog.getExistingDirectory(
-            self, "Open REasy Project", PROJECTS_ROOT, QFileDialog.ShowDirsOnly)
+            self,
+            "Open REasy Project",
+            start_root,
+            QFileDialog.ShowDirsOnly
+        )
         if not dir_:
             return
 
@@ -1072,21 +1081,20 @@ class REasyEditorApp(QMainWindow):
         self.proj_dock.current_game  = game
 
         need_unpack = (
-            game != self.settings.get("last_game") or   
-            not self.settings.get("unpacked_path") or     
-            not self.proj_dock._check_folder(                   
-                self.settings.get("unpacked_path", ""))
+            game != self.settings.get("last_game")
+            or not self.settings.get("unpacked_path")
+            or not self.proj_dock._check_folder(self.settings.get("unpacked_path", ""))
         )
-
         if need_unpack:
+            unpack_start = str(self.settings.get("unpacked_path", ""))
             folder = QFileDialog.getExistingDirectory(
                 self,
                 f"Locate unpacked files for {game}",
-                self.settings.get("unpacked_path", ""),
-                QFileDialog.ShowDirsOnly)
-            if not folder:   
+                unpack_start,
+                QFileDialog.ShowDirsOnly
+            )
+            if not folder:
                 return
-            
             self.settings["unpacked_path"] = folder
             self.save_settings()
             self.proj_dock._apply_unpacked_root(folder)

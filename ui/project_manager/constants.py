@@ -1,11 +1,23 @@
 from __future__ import annotations
 import os
 import re
+from pathlib import Path
+import sys
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui  import QPainter, QColor, QPixmap
 
-THIS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROJECTS_ROOT  = os.path.join(os.path.dirname(THIS_DIR), "projects")
+
+def _get_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.argv[0]).resolve().parent
+    else:
+        return Path(__file__).resolve().parents[2]
+
+BASE_DIR = _get_base_dir()
+
+PROJECTS_ROOT = BASE_DIR / "projects"
+PROJECTS_ROOT.mkdir(parents=True, exist_ok=True)
+
 
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)

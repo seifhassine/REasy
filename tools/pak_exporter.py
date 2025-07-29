@@ -26,7 +26,13 @@ _OWNER_REPO = "seifhassine/REE.PAK.Tool"
 _API_LATEST = f"https://api.github.com/repos/{_OWNER_REPO}/releases/latest"
 _EXE_NAME   = "REE.Packer.exe"
 
-CACHE_DIR     = Path.cwd() / "downloads" / "pak_packer"
+def _get_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.argv[0]).resolve().parent
+    else:
+        return Path(__file__).resolve().parent.parent
+    
+CACHE_DIR     = _get_base_dir() / "downloads" / "pak_packer"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _EXE_PATH     = CACHE_DIR / _EXE_NAME
 _VERSION_FILE = CACHE_DIR / "VERSION"  
