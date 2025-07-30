@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-# tests/test_scn_parser.py
-# -------------------------------------------------------------
+
 # Functional tests for REasy – parses / rebuilds RSZ files.
-# -------------------------------------------------------------
 
 import os
 import sys
@@ -10,7 +7,6 @@ import time
 import unittest
 from pathlib import Path
 
-# ───────────────────────── locate project‑root ─────────────────────────
 script_dir = Path(__file__).resolve().parent
 project_root = next(
     (p for p in script_dir.parents
@@ -42,6 +38,9 @@ GAME_CONFIGS = {
     "re2":    {"registry_json": "rszre2.json",       "scn_exts": [".19"], "usr_exts": [".-1"], "pfb_exts": [".16"],
         "scn_file_exceptions": ["gimmick.scn (39).scn.19", "gimmick.scn (21).scn.19", "gimmick.scn (40).scn.19", "gimmick.scn (10).scn.19"]
     },
+    "dmc5":    {"registry_json": "rszdmc5.json",       "scn_exts": [".19"], "usr_exts": [".-1"], "pfb_exts": [".16"],
+        "scn_file_exceptions": ["em0100_viewer.scn.19", "m04_200.scn.19", "m04_200_lightweight.scn.19", "m04_300.scn.19", "m04_300_lightweight.scn.19"]
+    },
     
 
     "re2rt":  {"registry_json": "rszre2rt.json",     "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
@@ -59,17 +58,15 @@ GAME_CONFIGS = {
     },
 }
 
-# accept game key as CLI token (and strip it so unittest ignores it)
 _cli_game = None
 if len(sys.argv) > 1 and sys.argv[-1].lower() in GAME_CONFIGS:
     _cli_game = sys.argv.pop().lower()
 
-# ───────────────────────── test‑case ─────────────────────────
 class TestSCNParser(unittest.TestCase):
-    # ----- class‑level -----
+    
     @classmethod
     def setUpClass(cls):
-        cls.sample_root  = script_dir                    # tests/<game>/<scn|pfb|user>
+        cls.sample_root  = script_dir         
         cls.project_root = project_root
         cls.json_dir     = project_root / "resources" / "data" / "dumps"
 
@@ -91,7 +88,6 @@ class TestSCNParser(unittest.TestCase):
         print(f"[Test] registry JSONs = {cls.json_dir}")
         print(f"[Test] Running tests for game: {cls.game_key}")
 
-    # ----- per‑test setup -----
     def setUp(self):
         reg_path = self.json_dir / self.cfg["registry_json"]
         if not reg_path.is_file():
@@ -101,14 +97,7 @@ class TestSCNParser(unittest.TestCase):
         self.logs_dir = self.project_root / "tests" / "logs" / self.game_key
         self.logs_dir.mkdir(parents=True, exist_ok=True)
 
-    # ----- helpers -----
     def _run_dir_tests(self, test_dir: Path, exts, ftype):
-        """
-        Run tests for one category.
-
-        •  If the directory is missing → skip the whole test.
-        •  If the directory exists but has zero matching files → skip.
-        """
         if not test_dir.is_dir():
             self.skipTest(f"No {ftype} directory for {self.game_key}")
             return
@@ -137,7 +126,7 @@ class TestSCNParser(unittest.TestCase):
 
         print(f"[Result] {ftype}: {ok}/{ok+bad} passed, {bad} failed.")
         self.assertEqual(bad, 0, f"{bad} {ftype} files failed")
-    # ----- full verify logic (resource‑comparison preserved) -----
+        
     def _verify_file(self, filepath: Path, file_type: str) -> bool:
         log_file = self.logs_dir / f"{file_type.lower()}_test_failures.log"
 
@@ -146,14 +135,12 @@ class TestSCNParser(unittest.TestCase):
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"[{ts}] {errtype} - {filepath.name}: {msg}\n")
 
-        # 1) read
         try:
             input_bytes = filepath.read_bytes()
         except Exception as e:
             log_error(f"Failed to read: {e}", "READ_ERROR")
             return False
 
-        # 2) parse
         scn = RszFile()
         scn.filepath = str(filepath)
         scn.type_registry = self.type_registry
@@ -165,7 +152,6 @@ class TestSCNParser(unittest.TestCase):
 
         original_resources = [scn.get_resource_string(ri) for ri in scn.resource_infos]
 
-        # 3) round‑trip build (both alignment flavours)
         built_ok = False
         for align in (True, False):
             try:
@@ -179,7 +165,6 @@ class TestSCNParser(unittest.TestCase):
             log_error("Round‑trip mismatch", "MISMATCH")
             return False
 
-        # 4) auto‑resource check (unchanged logic)
         md = self.type_registry.registry.get("metadata", {})
         if md.get("complete") or md.get("resources_identified"):
             scn.auto_resource_management = True
@@ -207,7 +192,6 @@ class TestSCNParser(unittest.TestCase):
                     return False
         return True
 
-    # ----- individual tests -----
     def test_usr_files(self):
         if not self.cfg["usr_exts"]:
             self.skipTest(f"{self.game_key} has no USER files")
@@ -223,6 +207,5 @@ class TestSCNParser(unittest.TestCase):
                             self.cfg["scn_exts"], "SCN")
 
 
-# ───────────────────────── runner ─────────────────────────
 if __name__ == "__main__":
     unittest.main(verbosity=2)
