@@ -40,29 +40,34 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 <br>
 <br>
 
-- **UVAR File Editing**  
+- **UVAR File Editing**
+ 
+- **MSG File Editing**
+  
 - **RSZ File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.
   - Template Manager to export your favorite GameObjects and import them in different files (Exported GameObjects can be found in the "templates" directory in plaintext (JSON)).
   - Clipboard system allowing to copy paste array elements, components and GameObjects across different files (JSON serialized).
   - Community Templates browser where you can download templates from other people, rate them and upload your own for different games (accessible in Template Manager).
-  - Project Manager: Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
   - Up-to-date improved RSZ dumps for all games.
   - Obsolete RSZ file detector (available in >Tools)
   - Support for all versions of RSZ files dating from RE7.
   - And much more..
+   
 - **Search Functionality:**  
   Search all files across directories for:
   - Specific text (UTF-16LE encoded)
   - 32-bit numbers (with hexadecimal display)
   - GUIDs (with conversion from standard format)
-
+- **Project Manager:**
+ 
+  Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
 - **GUID Converter Tool:**  
   Convert between memory (hyphenated hex) and standard (hyphenated) GUID formats.
 
-- **Backup System for Files**
+-  **Backup System for Files**
 
-- **Dark Mode**  
+-  **Dark Mode**  
 
 
 
