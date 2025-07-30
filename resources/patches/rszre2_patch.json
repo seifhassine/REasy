@@ -21386,7 +21386,7 @@
 				"native": true,
 				"original_type": "via.motion.PlayState",
 				"size": 4,
-				"type": "Bool"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -52356,7 +52356,7 @@
 				"native": true,
 				"original_type": "via.motion.PlayState",
 				"size": 4,
-				"type": "Bool"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -108325,7 +108325,7 @@
 				"native": true,
 				"original_type": "via.motion.PlayState",
 				"size": 4,
-				"type": "Bool"
+				"type": "S32"
 			},
 			{
 				"align": 4,
