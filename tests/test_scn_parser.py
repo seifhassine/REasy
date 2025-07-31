@@ -31,7 +31,7 @@ GAME_CONFIGS = {
     "re8":    {"registry_json": "rszre8.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "mhr":    {"registry_json": "rszmhrise.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "sf6":    {"registry_json": "rszsf6.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
-        "scn_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"]},
+        "usr_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"]},
     
     "re4":    {"registry_json": "rszre4_reasy.json", "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
         "usr_file_exceptions": ["ch4fez0actionpropertyuserdata.user.2", "tabledefine.user.2"],
