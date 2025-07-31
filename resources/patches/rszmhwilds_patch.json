@@ -20629,5 +20629,6593 @@
 			}
 		],
 		"name": "via.render.CustomFilterBeforeTonemap"
+	},
+	"212001b0": {
+		"crc": "479a7b28",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.HunterDef.SLIP_DAMAGE_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageInterval",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ElementDamageValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ConditionValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageExRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ElementDamageExRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.SensorParamPlSlipDamage"
+	},
+	"2c8b46a9": {
+		"crc": "9c3ee98c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsDisableScar",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EnchantParts",
+				"native": false,
+				"original_type": "app.Em0156Def.ENCHANT_PARTS",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamEm0156"
+	},
+	"2a8f748c": {
+		"crc": "dea45345",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.SensorParamMudGround"
+	},
+	"237205c6": {
+		"crc": "2acbbb0b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.CameraParam"
+	},
+	"15d3b4ec": {
+		"crc": "d3ef349d",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.physics.Collider"
+	},
+	"41042315": {
+		"crc": "21df020b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.GimmickDef.DAMAGE_COLLIDER_TYPE",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.DamageParamGm"
+	},
+	"431384df": {
+		"crc": "128ba821",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsEnterCombatMode",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__EmBlowVec__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "STRUCT__EmBlowVec__Value",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmRateAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmZakoRateAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmMinAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__OtomoFixAttack__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__OtomoFixAttack__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsKillableEnemy",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsKillableEnemyZako",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmAttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmAttackAttrRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmAttackSleepRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.AttackParamGimmick"
+	},
+	"4d55fc44": {
+		"crc": "881e87bd",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActionTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.ACTION_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PartsBreakRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ParryDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RideDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BattleRidingAttackType",
+				"native": false,
+				"original_type": "app.HitDef.BATTLE_RIDING_ATTACK_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamageRawScar",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSkillHien",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPointAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPrePointHitReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarCreateRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RawScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OldScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsScarForceChange",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarForce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWeakPointLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NoDamageReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmParts",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmPartsMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmWeak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmWeakMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsLaserGuardCounter",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWpPhysicalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoUseKireaji",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceUseKireajiAttackRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttackPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttrPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusAttrRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusConditionRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillAdditionalDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillContinuousAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitStatusRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoCritical",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsGestureAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableAnimalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsExFieldWpAttackFinal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.HIT_EFFECT_TYPE_PL_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DisableHitEffect",
+				"native": false,
+				"original_type": "ace.Bitset`1<app.HitDef.HIT_EFFECT_DISABLE_TYPE>",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleX",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectOverwriteConnectID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GeneralValue",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParamPlBase.cGeneralValue",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FriendDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSensor",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_CameraShakeGuid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsEnableMotSeqCameraShake",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.AttackParamPlBase"
+	},
+	"669fc998": {
+		"crc": "1be418e8",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.physics.RequestSetCollider"
+	},
+	"6d43f6ed": {
+		"crc": "7d20c5e9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Category",
+				"native": false,
+				"original_type": "app.ZoneDef.CATEGORY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.ZoneParam"
+	},
+	"7a42d4bf": {
+		"crc": "460cb594",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsDisableScar",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsVeil",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ShapeIndex",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamEm0157"
+	},
+	"7c429a1a": {
+		"crc": "b9ab032a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.DamageParamEmShell"
+	},
+	"8442880e": {
+		"crc": "2c652bc0",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAttackDetector",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.DamageParamNpc"
+	},
+	"8fb7d005": {
+		"crc": "c5667492",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.AttackParam"
+	},
+	"90a923bc": {
+		"crc": "e6710e5f",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageLevel",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "_ExtraGuardDamageAngles",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ToEmDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_BadConditionPresetGuid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FrenzyOutbreakPoint",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackFilterType",
+				"native": false,
+				"original_type": "app.EnemyDef.ATTACK_FILTER_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsParryFix",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsParryStockOnly",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsParryBreak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsTechGuardBreak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsBlockEnable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoWakeUpPl",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDropDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsAffectScarVital",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsTearScarForce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCoercionEnemyDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsKillable",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondValueEm",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValueEm",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCondEm",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseStunDamageEm",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamageEm",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceStunEm",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EmRateAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LaserContinueDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FriendHitType",
+				"native": false,
+				"original_type": "app.EnemyDef.Damage.FRIEND_HIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_EnemyDamageType",
+				"native": false,
+				"original_type": "app.EnemyDef.Damage.ENEMY_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsEnergyAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsExFieldContsCancel",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.HIT_EFFECT_TYPE_EM_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DisableHitEffect",
+				"native": false,
+				"original_type": "ace.Bitset`1<app.HitDef.HIT_EFFECT_DISABLE_TYPE>",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleX",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.AttackParamEm"
+	},
+	"996c08f": {
+		"crc": "e48f4b94",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.OtomoDef.SLIP_DAMAGE_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageInterval",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.SensorParamOtSlipDamage"
+	},
+	"996ea3bd": {
+		"crc": "a486b0f7",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.physics.CharacterController"
+	},
+	"9b99755f": {
+		"crc": "c4c17a19",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActionTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.ACTION_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PartsBreakRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ParryDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RideDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BattleRidingAttackType",
+				"native": false,
+				"original_type": "app.HitDef.BATTLE_RIDING_ATTACK_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamageRawScar",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSkillHien",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPointAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPrePointHitReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarCreateRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RawScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OldScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsScarForceChange",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarForce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWeakPointLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NoDamageReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmParts",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmPartsMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmWeak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmWeakMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsLaserGuardCounter",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWpPhysicalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoUseKireaji",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceUseKireajiAttackRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttackPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttrPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusAttrRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusConditionRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillAdditionalDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillContinuousAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitStatusRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoCritical",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsGestureAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableAnimalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsExFieldWpAttackFinal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.HIT_EFFECT_TYPE_PL_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DisableHitEffect",
+				"native": false,
+				"original_type": "ace.Bitset`1<app.HitDef.HIT_EFFECT_DISABLE_TYPE>",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleX",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectOverwriteConnectID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GeneralValue",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParamPlBase.cGeneralValue",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FriendDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSensor",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_CameraShakeGuid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsEnableMotSeqCameraShake",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CaptureDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ShellReflectionFlag",
+				"native": false,
+				"original_type": "ace.Bitset`1<app.HunterDef.SHELL_REFLECTION_FLAG>",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_SlingerCatchDamageType",
+				"native": false,
+				"original_type": "app.EnemyDef.SLINGER_CATCH_DAMAGE_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_SpecialType",
+				"native": false,
+				"original_type": "app.HunterDef.SHELL_SPECIAL_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.AttackParamPlShell"
+	},
+	"a3b7219b": {
+		"crc": "6589c508",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsDisableScar",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamEmBase"
+	},
+	"af1c0496": {
+		"crc": "78741717",
+		"fields": [
+			{
+				"align": 16,
+				"array": true,
+				"name": "Keys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinValue",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxValue",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinTime",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxTime",
+				"native": true,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopCount",
+				"native": true,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopWrapNo",
+				"native": true,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.AppAnimationCurve"
+	},
+	"b0b5f237": {
+		"crc": "498ce2b7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Resource",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_PlaySpeed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15_LayerName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16_MaskName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v26",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v27_QualitySettings",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v28_DirectionalWindSettings",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v29_RadialWindSettings",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v30_MirrorX",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v31_PointCloudEmitterSettings",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v32_FluidParticleEmitterSettings",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.effect.EffectPlayer"
+	},
+	"b2a26b14": {
+		"crc": "e45d684",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.GimmickDef.SENSOR_COLLIDER_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LookAtType",
+				"native": false,
+				"original_type": "app.GimmickDef.LOOK_AT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_LookAtOffset",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_LookAtSecond",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCharacterAvoid",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableBomb",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableTrap",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableTrapMeat",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableBonfire",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.SensorParamGm"
+	},
+	"b4307027": {
+		"crc": "6da02f89",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsHitMortarShell",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.DamageParamPlShell"
+	},
+	"b92865d": {
+		"crc": "23afbf1c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PressLevel",
+				"native": false,
+				"original_type": "app.PressDef.PRESS_LEVEL",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.PressParam"
+	},
+	"bae1c3f6": {
+		"crc": "21bc111c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageTypeCustom",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_ANGLE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DamageAngleOffsetDeg",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Attack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FixAttack",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GuardType",
+				"native": false,
+				"original_type": "app.Hit.GUARD_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_VersusGuardPower",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StageDamageExIDFixed",
+				"native": false,
+				"original_type": "app.HitDef.STAGE_DAMAGE_EX_ID_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackAttrFixed",
+				"native": false,
+				"original_type": "app.HitDef.ATTR_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrLevel",
+				"native": false,
+				"original_type": "System.UInt32",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttrValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AttackCond",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceCond",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsUseCondDefaultSec",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CondCustomSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StunDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FlagBit",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParam.FLAG_BIT",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitTimer",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HealValue",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityTypeFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_DisableContactPointAdjust",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsContactPointAdjustIgnoreDamageAngle",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PorterDodgeFixed",
+				"native": false,
+				"original_type": "app.HitDef.PORTER_DODGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ActionTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.ACTION_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PartsBreakRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_ParryDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RideDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_BattleRidingAttackType",
+				"native": false,
+				"original_type": "app.HitDef.BATTLE_RIDING_ATTACK_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__RidingScarDamage__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamage",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RidingSuccessDamageRawScar",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSkillHien",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPointAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsPrePointHitReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarCreateRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TearScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_RawScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OldScarDamageRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsScarForceChange",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarForce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsRawScarLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWeakPointLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_NoDamageReaction",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmParts",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmPartsMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsMultiHitEmWeak",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitEmWeakMaxNum",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsLaserGuardCounter",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsWpPhysicalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoUseKireaji",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsForceUseKireajiAttackRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomKireajiReduce",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttackPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseStatusAttrPower",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusAttrRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_StatusConditionRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillAdditionalDamage",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_UseSkillContinuousAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MultiHitStatusRateCurve",
+				"native": false,
+				"original_type": "app.user_data.MultiHitRateCurve",
+				"size": 4,
+				"type": "UserData"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsNoCritical",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_CustomShockAbsorberRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsGestureAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsDisableAnimalAttack",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsExFieldWpAttackFinal",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.HIT_EFFECT_TYPE_PL_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DisableHitEffect",
+				"native": false,
+				"original_type": "ace.Bitset`1<app.HitDef.HIT_EFFECT_DISABLE_TYPE>",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleZ",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectAngleX",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitEffectOverwriteConnectID",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GeneralValue",
+				"native": false,
+				"original_type": "app.col_user_data.AttackParamPlBase.cGeneralValue",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FriendDamageTypeFixed",
+				"native": false,
+				"original_type": "app.HitDef.DAMAGE_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSensor",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "_CameraShakeGuid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsEnableMotSeqCameraShake",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IgnoreRecoil",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitStopType",
+				"native": false,
+				"original_type": "app.PlayerDef.HIT_STOP_TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_HitStopIgnoreResponse",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "app.col_user_data.AttackParamPl"
+	},
+	"c0ed059b": {
+		"crc": "9d87610e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsDisableScar",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_GalianType",
+				"native": false,
+				"original_type": "app.Em0160Def.GALIAN_TYPE",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamEm0160"
+	},
+	"c4d42a22": {
+		"crc": "3f5d6e1d",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.EnemyDef.SENSOR_COLLIDER_TYPE",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.SensorParamEm"
+	},
+	"c56aa2ad": {
+		"crc": "6d205fd2",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsFlexible",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_MinShape",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_MaxShape",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_MaxShapeKph",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DampingSpring",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DampingDamp",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.SensorParamPlRide"
+	},
+	"d7162806": {
+		"crc": "a6444b71",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsSensorCollision",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsArrowFlipCollision",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Parts",
+				"native": false,
+				"original_type": "app.col_user_data.DamageParamEm.cParts",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.DamageParamEm"
+	},
+	"dfac3046": {
+		"crc": "4fededa7",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "LocalPosition",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Vec4"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "LocalRotation",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Vec4"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "LocalScale",
+				"native": true,
+				"original_type": "",
+				"size": 16,
+				"type": "Vec4"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentJoint",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.Transform"
+	},
+	"e56de1d9": {
+		"crc": "8995bfda",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v10",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v11",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v13",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v15",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v17",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v18",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v20",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v21",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v24",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v25",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v26",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			}
+		],
+		"name": "via.motion.TreeLayer"
+	},
+	"e80f5f70": {
+		"crc": "3863d8d4",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.physics.ColliderSet"
+	},
+	"e842447b": {
+		"crc": "38c95569",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_HitType",
+				"native": false,
+				"original_type": "app.ActBtnHitType.TYPE_Serializable",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_OwnRangeDegree",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "STRUCT__OwnRangeDegreeRiding__HasValue",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "STRUCT__OwnRangeDegreeRiding__Value",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_TargetRangeDegree",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_UniqueIndex",
+				"native": false,
+				"original_type": "app.col_user_data.ActBtnParam.UNIQUE_INDEX",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FreeInt",
+				"native": false,
+				"original_type": "System.Int32",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_FreeFloat",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.ActBtnParam"
+	},
+	"fd1e333c": {
+		"crc": "6ded049b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamBase"
+	},
+	"faea5d07": {
+		"crc": "85f302e6",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.DamageParamOt"
+	},
+	"f06b29e9": {
+		"crc": "4957f2b7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.SensorParamDisableManualTerrainAdjuster"
+	},
+	"eb8e30a0": {
+		"crc": "ffff4002",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.SensorParamFish"
+	},
+	"e1148874": {
+		"crc": "82f93b20",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_PriorityFixed",
+				"native": false,
+				"original_type": "app.CollisionDef.PRIORITY_Serializable",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.DamageParam"
+	},
+	"b36b5c1f": {
+		"crc": "7b34542e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "app.col_user_data.SensorParamWave"
+	},
+	"9ab154c4": {
+		"crc": "78e9a853",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			}
+		],
+		"name": "via.physics.Colliders"
+	},
+	"73b4fb63": {
+		"crc": "ab8583a5",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_Type",
+				"native": false,
+				"original_type": "app.HunterDef.SENSOR_COLLIDER_TYPE_Fixed",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "app.col_user_data.SensorParamPl"
+	},
+	"5f71738": {
+		"crc": "197bef1e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ParentUserData",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_IsCylinder",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AdjustRate",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableDynamicShape",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicSphere",
+				"native": false,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicCapsule",
+				"native": false,
+				"original_type": "via.Capsule",
+				"size": 48,
+				"type": "Capsule"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_DynamicBox",
+				"native": false,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicShapeType",
+				"native": false,
+				"original_type": "via.physics.ShapeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_DynamicInterpolationSec",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "_EnableAngleLimit",
+				"native": false,
+				"original_type": "System.Boolean",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimitType",
+				"native": false,
+				"original_type": "app.col_user_data.ShapeParamBase.ANGLE_LIMIT_TYPE",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "_AngleLimitJointRotation",
+				"native": false,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "_AngleLimit",
+				"native": false,
+				"original_type": "System.Single",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "app.col_user_data.ShapeParamDisableScar"
 	}
 }
