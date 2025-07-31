@@ -118,7 +118,7 @@ class EmbeddedInstanceInfo:
         self.type_id, self.crc = struct.unpack_from("<II", data, offset)
         return offset + self.SIZE
 
-def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_depth=0) -> bool:
+def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_depth=0, skip_data = False) -> bool:
     """Parse an embedded RSZ block within SCN.19 userdata, with support for recursive embedded structures
     
     Args:
@@ -225,7 +225,7 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         mini_scn.data = rui.data[embedded_header.data_offset:]
         
         # Parse all instances at once using the proper method
-        mini_scn._parse_instances(mini_scn.data)
+        mini_scn._parse_instances(mini_scn.data, skip_data)
         
         # Store a reference to the parent userdata_rui for context
         mini_scn.parent_userdata_rui = rui
@@ -248,7 +248,8 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
             nested_success = parse_embedded_rsz(
                 embedded_rui, 
                 type_registry, 
-                recursion_depth + 1
+                recursion_depth + 1,
+                skip_data
             )
             
             # If successfully parsed, add it to the embedded_instances
@@ -770,7 +771,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         )
         out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
 
-def parse_scn19_rsz_userdata(rsz_file, data):
+def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
     """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
     
     rsz_file.rsz_userdata_infos = []
@@ -806,7 +807,7 @@ def parse_scn19_rsz_userdata(rsz_file, data):
                     magic, version = struct.unpack_from("<II", rui.data, 0)
                 
                 if len(rui.data) >= 48:
-                    success = parse_embedded_rsz(rui, rsz_file.type_registry)
+                    success = parse_embedded_rsz(rui, rsz_file.type_registry, skip_data)
                     
                     if success:
                         obj_count = len(rui.embedded_object_table)

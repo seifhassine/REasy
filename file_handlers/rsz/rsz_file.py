@@ -299,7 +299,7 @@ class RszFile:
         self._gameobject_instance_ids = set()  # Set of gameobject instance IDs 
         self._folder_instance_ids = set()      # Set of folder instance IDs
 
-    def read(self, data: bytes):
+    def read(self, data: bytes, skip_data: bool = False):
         # Use memoryview for efficient slicing operations
         self.full_data = memoryview(data)
         self._current_offset = 0
@@ -336,21 +336,21 @@ class RszFile:
 
         # Call appropriate parsing function based on file type
         if self.is_usr:
-            self._parse_usr_file(data)
+            self._parse_usr_file(data, skip_data)
         elif self.is_pfb:
-            self._parse_pfb_file(data)
+            self._parse_pfb_file(data, skip_data)
         else:
-            self._parse_scn_file(data)
+            self._parse_scn_file(data, skip_data)
 
-    def _parse_usr_file(self, data: bytes):
+    def _parse_usr_file(self, data: bytes, skip_data: bool = False  ):
         """Parse USR file structure"""
         self._parse_resource_infos(data)
         self._parse_userdata_infos(data)
         self._parse_blocks()
         self._parse_rsz_section(data)
-        self._parse_instances(data)
+        self._parse_instances(data, skip_data)
         
-    def _parse_pfb_file(self, data: bytes):
+    def _parse_pfb_file(self, data: bytes, skip_data: bool = False):
         """Parse PFB file structure with game version considerations"""
         self._parse_gameobjects(data)
         self._parse_gameobject_ref_infos(data)
@@ -364,9 +364,9 @@ class RszFile:
             
         self._parse_blocks()
         self._parse_rsz_section(data)
-        self._parse_instances(data)
+        self._parse_instances(data, skip_data)
         
-    def _parse_scn_file(self, data: bytes):
+    def _parse_scn_file(self, data: bytes, skip_data: bool = False):
         """Parse standard SCN file structure"""
         self._parse_gameobjects(data)
         self._parse_folder_infos(data)
@@ -380,8 +380,8 @@ class RszFile:
         if not (self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')):
             self._parse_userdata_infos(data)
         self._parse_blocks()
-        self._parse_rsz_section(data)
-        self._parse_instances(data)        
+        self._parse_rsz_section(data, skip_data)
+        self._parse_instances(data, skip_data)        
 
     def _parse_header(self, data):
         if self.is_pfb:
@@ -474,7 +474,7 @@ class RszFile:
                 s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
                 self.set_userdata_string(ui, s)
 
-    def _parse_rsz_section(self, data):
+    def _parse_rsz_section(self, data, skip_data = False):
         self._current_offset = self.header.data_offset
 
         self.rsz_header = RszRSZHeader()
@@ -512,9 +512,9 @@ class RszFile:
         if self.rsz_header.version > 3:
             self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
             if self.filepath.lower().endswith('.19') or (self.filepath.lower().endswith('.18') and self.is_scn):
-                self._parse_scn19_rsz_userdata(data)
+                self._parse_scn19_rsz_userdata(data, skip_data)
             elif self.filepath.lower().endswith('.16'):
-                self._current_offset = parse_pfb16_rsz_userdata(self, data)
+                self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data)
             else:
                 self._parse_standard_rsz_userdata(data)
         
@@ -546,15 +546,17 @@ class RszFile:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 
-    def _parse_scn19_rsz_userdata(self, data):
+    def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
-        self._current_offset = parse_scn19_rsz_userdata(self, data)
+        self._current_offset = parse_scn19_rsz_userdata(self, data, skip_data)
 
     def get_rsz_userdata_string(self, rui):
         return self._rsz_userdata_str_map.get(rui, "")
 
-    def _parse_instances(self, data):
+    def _parse_instances(self, data, skip = False):
         """Parse instance data with optimizations"""
+        if(skip):
+            return
         self.parsed_instances = []
         current_offset = 0
         # Reset processed instances tracking
@@ -622,9 +624,6 @@ class RszFile:
                                 self._write_field_value(
                                     sub_fd, struct_val[sub_fd["name"]], out
                                 )
-            return
-
-
         elif field_def.get("array", False):
 
             while (len(out) - base_mod) % 4:
