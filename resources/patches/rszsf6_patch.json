@@ -47756,7 +47756,7 @@
 				"native": true,
 				"original_type": "via.resource_handle",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.dynamics.MeshShape",
