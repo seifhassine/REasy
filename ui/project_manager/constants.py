@@ -36,25 +36,6 @@ EXPECTED_NATIVE: dict[str, tuple[str, ...]] = {
     **{g: ("natives", "x64") for g in ("RE2", "RE7", "DMC5")},
 }
 
-GAME_HINT = {
-    "RE4":  r"...\re_chunk_000\natives\STM",
-    "RE8":  r"...\re_chunk_000\natives\STM",
-    "RE2":  r"...\re_chunk_000\natives",
-    "RE2RT":r"...\re_chunk_000\natives",
-    "RE3":  r"...\re_chunk_000\natives",
-    "RE3RT":r"...\re_chunk_000\natives",
-    "REResistance": r"...\re_chunk_000\natives",
-    "RE7":  r"...\re_chunk_000\natives\Win64",
-    "RE7RT":r"...\re_chunk_000\natives\Win64",
-    "MHWilds": r"...\natives\STM",
-    "MHRise":  r"...\re_chunk_000\natives",
-    "DMC5":    r"...\re_chunk_000\natives",
-    "SF6":     r"...\re_chunk_000\natives",
-    "O2":      r"...\re_chunk_000\natives",
-    "DD2":     r"...\re_chunk_000\natives",
-}
-
-
 def make_plus_pixmap(sz: QSize = QSize(14, 14)):
     pm = QPixmap(sz)
     pm.fill(Qt.transparent)
