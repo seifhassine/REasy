@@ -32,7 +32,7 @@ jobs:
       matrix:
         game: [re4, mhwilds, re2, re7,
                re3, re3rt, re2rt, re7rt,
-               re8, mhr, dmc5]
+               re8, mhr, dmc5, sf6]
 
     steps:
 
