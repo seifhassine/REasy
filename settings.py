@@ -16,7 +16,6 @@ DEFAULT_SETTINGS = {
         "file_save_as": "Ctrl+Shift+S",
         "file_reload": "Ctrl+R",
         "file_close_tab": "Ctrl+W",
-        "edit_copy": "Ctrl+C",
         "find_search": "Ctrl+F",
         "find_search_guid": "Ctrl+G",
         "find_search_text": "Ctrl+T",

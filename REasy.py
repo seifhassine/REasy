@@ -635,29 +635,6 @@ class FileTab:
 
             traceback.print_exc()
 
-    def _get_current_tree(self):
-        if self.viewer and hasattr(self.viewer, "tree"):
-            return self.viewer.tree
-        return self.tree
-
-    def copy_to_clipboard(self):
-        tree = self.app.get_active_tree()
-        if not tree:
-            return
-
-        index = tree.currentIndex()
-        if not index.isValid():
-            return
-
-        value = index.data(Qt.UserRole)
-        item = index.internalPointer()
-        if item and hasattr(item, "data") and len(item.data) > 1:
-            value = item.data[1]
-
-        if value:
-            QGuiApplication.clipboard().setText(str(value))
-            QMessageBox.information(None, "Copied", f"Copied: {value}")
-
     def open_find_dialog(self):
         if hasattr(self, "_find_dialog") and self._find_dialog:
             try:
@@ -912,13 +889,6 @@ class REasyEditorApp(QMainWindow):
         exit_act = QAction("Exit", self)
         exit_act.triggered.connect(self.close)
         file_menu.addAction(exit_act)
-
-        edit_menu = menubar.addMenu("Edit")
-        copy_act = QAction("Copy", self)
-        copy_act.setObjectName("edit_copy")
-        copy_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("edit_copy", "Ctrl+C")))
-        copy_act.triggered.connect(self.copy_to_clipboard)
-        edit_menu.addAction(copy_act)
 
         find_menu = menubar.addMenu("Find")
 
@@ -1655,13 +1625,6 @@ class REasyEditorApp(QMainWindow):
             tab.tree = None
             
         self.notebook.removeTab(index)
-
-    def copy_to_clipboard(self):
-        active = self.get_active_tab()
-        if active:
-            active.copy_to_clipboard()
-        else:
-            QMessageBox.critical(self, "Error", "No active tab.")
 
     def show_about(self):
         create_about_dialog(self)
