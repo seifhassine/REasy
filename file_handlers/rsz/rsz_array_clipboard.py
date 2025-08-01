@@ -6,7 +6,7 @@ from file_handlers.rsz.rsz_data_types import (
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
     ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
     Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, RectData, LineSegmentData,
-    PointData, StructData, RawBytesData
+    PointData, StructData, RawBytesData, PositionData
 )
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
 
@@ -622,6 +622,14 @@ class RszArrayClipboard:
                 "z": element.z,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, PositionData):
+            return {
+                "type": "PositionData",
+                "x": element.x,
+                "y": element.y,
+                "z": element.z,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, StructData):
             struct_result = {
                 "type": "StructData",
@@ -635,13 +643,15 @@ class RszArrayClipboard:
                         item_fields[field_key] = RszArrayClipboard._serialize_element(field_val)
                     struct_result["values"].append(item_fields)
             return struct_result
-        else: #if isinstance(element, RawBytesData):
+        elif isinstance(element, RawBytesData):
             return {
                 "type": "RawBytesData",
                 "bytes": element.raw_bytes.hex() if element.raw_bytes else "",
                 "size": element.field_size,
                 "orig_type": element.orig_type
             }
+        else:
+            raise ValueError(f"Unsupported element type: {element.__class__.__name__}. Please open a github issue to add support for it.")
             
     @staticmethod
     def get_clipboard_data(widget):
@@ -1301,16 +1311,27 @@ class RszArrayClipboard:
                 orig_type
             )
         
+        elif element_type == "PositionData":
+            return PositionData(
+                element_data.get("x", 0.0),
+                element_data.get("y", 0.0),
+                element_data.get("z", 0.0),
+                orig_type
+            )
+        
         elif element_type == "StructData":
             values = element_data.get("values", [])
             return StructData(values, orig_type)
             
-        else: #if element_type == "RawBytesData":
+        elif element_type == "RawBytesData":
             bytes_hex = element_data.get("bytes", "")
             bytes_val = bytes.fromhex(bytes_hex) if bytes_hex else b''
             size = element_data.get("size", len(bytes_val))
             
             return RawBytesData(bytes_val, size, orig_type)
+        else:
+            raise ValueError(f"Unsupported element type: {element_type}. Please open a github issue to add support for it.")
+        
     @staticmethod
     def _add_element_to_ui_direct(widget, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
