@@ -32,9 +32,12 @@ class RszArrayClipboard:
     @staticmethod
     def copy_to_clipboard(widget, element, array_type):
         parent_viewer = widget.parent()
-        serialised = (RszArrayClipboard._serialize_object_with_graph(element, parent_viewer)
-                    if isinstance(element, ObjectData) and element.value > 0
-                    else RszArrayClipboard._serialize_element(element))
+        if isinstance(element, ObjectData) and element.value > 0:
+            serialised = RszArrayClipboard._serialize_object_with_graph(element, parent_viewer)
+        elif isinstance(element, UserDataData) and element.value > 0:
+            serialised = RszArrayClipboard._serialize_userdata_with_graph(element, parent_viewer)
+        else:
+            serialised = RszArrayClipboard._serialize_element(element)
 
         RszArrayClipboard._write_clipboard(
             array_type,
@@ -43,9 +46,59 @@ class RszArrayClipboard:
         )
         return True
 
+
+    
     @staticmethod
-    def _json_serializer(obj):
-        return RszClipboardUtils.json_serializer(obj)
+    def _serialize_userdata_with_graph(element, viewer):
+        """Serialize UserDataData with its nested object graph"""
+        result = {
+            "type": "UserDataData",
+            "value": element.value,
+            "string": element.string,
+            "orig_type": getattr(element, "orig_type", "")
+        }
+        
+        if element.value <= 0 or not viewer or not hasattr(viewer, "array_operations"):
+            return result
+            
+        root_userdata_id = element.value
+        
+        if hasattr(viewer.array_operations, "_collect_all_nested_objects"):
+            try:
+                all_ids = viewer.array_operations._collect_all_nested_objects(root_userdata_id)
+                all_ids.add(root_userdata_id)
+                
+                from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+                for instance_id in list(all_ids):
+                    if instance_id in viewer.scn.parsed_elements:
+                        instance_fields = viewer.scn.parsed_elements[instance_id]
+                        userdata_refs = set()
+                        RszInstanceOperations.find_userdata_references(instance_fields, userdata_refs)
+                        all_ids.update(userdata_refs)
+                
+                object_table_ids = set(viewer.scn.object_table)
+                filtered_ids = {id for id in all_ids if id not in object_table_ids or id == root_userdata_id}
+                
+                if len(filtered_ids) >= 1: 
+                    
+                    instances = []
+                    relative_id_mapping = {old_id: idx for idx, old_id in enumerate(sorted(filtered_ids))}
+                    
+                    for instance_id in sorted(filtered_ids):
+                        instance_info = RszArrayClipboard._serialize_instance_info(viewer, instance_id, relative_id_mapping)
+                        if instance_info:
+                            instances.append(instance_info)
+                    
+                    if instances:
+                        result["object_graph"] = {
+                            "instances": instances,
+                            "root_id": relative_id_mapping[root_userdata_id]
+                        }
+                
+            except Exception as e:
+                print(f"Warning: Failed to serialize UserDataData graph: {e}")
+        
+        return result
 
     @staticmethod
     def _serialize_object_with_graph(element, viewer):
@@ -88,6 +141,14 @@ class RszArrayClipboard:
             
             all_ids = viewer.array_operations._collect_all_nested_objects(root_object_id)
             all_ids.add(root_object_id)
+            
+            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+            for instance_id in list(all_ids):
+                if instance_id in viewer.scn.parsed_elements:
+                    instance_fields = viewer.scn.parsed_elements[instance_id]
+                    userdata_refs = set()
+                    RszInstanceOperations.find_userdata_references(instance_fields, userdata_refs)
+                    all_ids.update(userdata_refs)
             
             filtered_ids = set()
             for id in all_ids:
@@ -152,6 +213,17 @@ class RszArrayClipboard:
                     if type_info and "name" in type_info:
                         instance_data["type_name"] = type_info["name"]
                 
+                if hasattr(viewer.scn, '_rsz_userdata_set') and orig_id in viewer.scn._rsz_userdata_set:
+                    instance_data["is_userdata"] = True
+                    
+                    for rui in viewer.scn.rsz_userdata_infos:
+                        if rui.instance_id == orig_id:
+                            instance_data["userdata_hash"] = rui.hash
+                            
+                            if hasattr(viewer.scn, '_rsz_userdata_str_map') and rui in viewer.scn._rsz_userdata_str_map:
+                                instance_data["userdata_string"] = viewer.scn._rsz_userdata_str_map[rui]
+                            break
+                
                 if orig_id in viewer.scn.parsed_elements:
                     fields = viewer.scn.parsed_elements[orig_id]
                     for field_name, field_data in fields.items():
@@ -162,44 +234,57 @@ class RszArrayClipboard:
                 result["object_graph"]["instances"].append(instance_data)
         
         return result
+    
+    @staticmethod
+    def _serialize_instance_info(viewer, instance_id, relative_id_mapping):
+        """Serialize instance info with relative ID mapping - delegates to base class unified method"""
+        from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+        
+        temp_instance = type('TempClipboard', (RszClipboardBase,), {
+            'get_clipboard_type': lambda self: 'temp'
+        })()
+        
+        return temp_instance.serialize_instance_data(viewer, instance_id, relative_id_mapping)
+    
+    @staticmethod
+    def _paste_single_element(viewer, elem_data, array_data, array_item):
+        """
+        Paste a single element with proper object graph handling.
+        Returns the created element or None if failed.
+        """
+        element_type = elem_data.get("type")
+        has_graph = "object_graph" in elem_data
+        
+        if element_type == "ObjectData" and has_graph:
+            ins_idx = RszArrayClipboard._calculate_insertion_index(
+                array_data, array_item, viewer
+            )
+            element = RszArrayClipboard._paste_object_graph(
+                viewer, elem_data, array_data, ins_idx
+            )
+        elif element_type == "UserDataData" and has_graph:
+            ins_idx = RszArrayClipboard._calculate_insertion_index(
+                array_data, array_item, viewer
+            )
+            element = RszArrayClipboard._paste_userdata_graph(
+                viewer, elem_data, array_data, ins_idx
+            )
+        else:
+            guid_mapping = {}
+            element = RszArrayClipboard._deserialize_field_with_relative_mapping(
+                elem_data, {}, guid_mapping, randomize_guids=False
+            )
+            if element:
+                array_data.values.append(element)
+        
+        return element
 
     @staticmethod
     def _collect_nested_objects(viewer, root_id):
-        all_ids = set()
-        processed = set()
-        to_process = [root_id]
-        
-        while to_process:
-            current_id = to_process.pop(0)
-            
-            if current_id in processed:
-                continue
-                
-            processed.add(current_id)
-            
-            if current_id <= 0 or current_id >= len(viewer.scn.instance_infos):
-                continue
-                
-            if current_id not in viewer.scn.parsed_elements:
-                continue
-                
-            fields = viewer.scn.parsed_elements[current_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    ref_id = field_data.value
-                    if ref_id not in processed:
-                        all_ids.add(ref_id)
-                        to_process.append(ref_id)
-                        
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            ref_id = element.value
-                            if ref_id not in processed:
-                                all_ids.add(ref_id)
-                                to_process.append(ref_id)
-        
-        return all_ids
+        from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+        return RszInstanceOperations.collect_all_nested_objects(
+            viewer.scn.parsed_elements, root_id, viewer.scn.object_table
+        )
 
     @staticmethod
     def _serialize_field_with_mapping(field_data, id_mapping, nested_ids, external_refs):
@@ -727,19 +812,7 @@ class RszArrayClipboard:
         added = []
 
         for elem_data in items_data:
-            if elem_data.get("type") == "ObjectData" and "object_graph" in elem_data:
-                ins_idx = RszArrayClipboard._calculate_insertion_index(
-                    array_data, array_item, viewer
-                )
-                element = RszArrayClipboard._paste_object_graph(
-                    viewer, elem_data, array_data, ins_idx
-                )
-            else:
-                element = RszArrayClipboard._deserialize_element(
-                    elem_data, array_data.element_class, {}
-                )
-                if element:
-                    array_data.values.append(element)
+            element = RszArrayClipboard._paste_single_element(viewer, elem_data, array_data, array_item)
             if element:
                 if viewer and hasattr(viewer, "mark_modified"):
                     viewer.mark_modified()
@@ -763,12 +836,16 @@ class RszArrayClipboard:
     @staticmethod
     def copy_multiple_to_clipboard(widget, elements, array_type):
         parent_viewer = widget.parent()
-        serialised_items = [
-            (RszArrayClipboard._serialize_object_with_graph(el, parent_viewer)
-            if isinstance(el, ObjectData) and el.value > 0
-            else RszArrayClipboard._serialize_element(el))
-            for el in elements
-        ]
+        serialised_items = []
+        
+        for el in elements:
+            if isinstance(el, ObjectData) and el.value > 0:
+                serialised = RszArrayClipboard._serialize_object_with_graph(el, parent_viewer)
+            elif isinstance(el, UserDataData) and el.value > 0:
+                serialised = RszArrayClipboard._serialize_userdata_with_graph(el, parent_viewer)
+            else:
+                serialised = RszArrayClipboard._serialize_element(el)
+            serialised_items.append(serialised)
 
         RszArrayClipboard._write_clipboard(
             array_type,
@@ -880,6 +957,19 @@ class RszArrayClipboard:
             
             relative_to_new_id[relative_id] = current_index
             
+            if instance_data.get("is_userdata", False):
+                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+                base_clipboard = type('TempClipboard', (RszClipboardBase,), {
+                    'get_clipboard_type': lambda self: 'temp'
+                })()
+                
+                base_clipboard.setup_userdata_for_pasted_instance(
+                    viewer,
+                    current_index,
+                    instance_data.get("userdata_hash", 0),
+                    instance_data.get("userdata_string", "")
+                )
+            
             viewer.scn.parsed_elements[current_index] = {}
             
             current_index += 1
@@ -894,7 +984,7 @@ class RszArrayClipboard:
             
             for field_name, field_data in fields_data.items():
                 field_obj = RszArrayClipboard._deserialize_field_with_relative_mapping(
-                    field_data, relative_to_new_id, guid_mapping
+                    field_data, relative_to_new_id, guid_mapping, randomize_guids=True
                 )
                 if field_obj:
                     viewer.scn.parsed_elements[new_id][field_name] = field_obj
@@ -910,13 +1000,100 @@ class RszArrayClipboard:
             
             print(f"Successfully created object graph with root at ID {new_root_id}")
             return element
-        else:
-            print(f"Failed to create root instance (ID: {root_relative_id})")
+    
+    @staticmethod
+    def _paste_userdata_graph(viewer, element_data, array_data, insertion_index):
+        """Paste UserDataData with its nested object graph"""
+        object_graph = element_data.get("object_graph", {})
+        instances = object_graph.get("instances", [])
+        root_relative_id = object_graph.get("root_id", -1)
+        
+        if not instances or root_relative_id < 0:
+            print("Invalid UserDataData graph data")
             return None
+            
+        print(f"Pasting UserDataData graph with {len(instances)} instances")
+        
+        from file_handlers.rsz.rsz_file import RszInstanceInfo
+        
+        relative_to_new_id = {}
+        guid_mapping = {}
+        
+        current_index = insertion_index
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            type_id = instance_data.get("type_id", 0)
+            crc = instance_data.get("crc", 0)
+            
+            if relative_id < 0 or type_id <= 0 or crc <= 0:
+                print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
+                continue
+                
+            new_instance = RszInstanceInfo()
+            new_instance.type_id = type_id
+            new_instance.crc = crc
+            
+            viewer._insert_instance_and_update_references(current_index, new_instance)
+                
+            viewer.handler.id_manager.register_instance(current_index)
+            
+            relative_to_new_id[relative_id] = current_index
+            
+            if instance_data.get("is_userdata", False):
+                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+                base_clipboard = type('TempClipboard', (RszClipboardBase,), {
+                    'get_clipboard_type': lambda self: 'temp'
+                })()
+                
+                base_clipboard.setup_userdata_for_pasted_instance(
+                    viewer,
+                    current_index,
+                    instance_data.get("userdata_hash", 0),
+                    instance_data.get("userdata_string", "")
+                )
+            
+            current_index += 1
+        
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            if relative_id not in relative_to_new_id:
+                continue
+                
+            new_instance_id = relative_to_new_id[relative_id]
+            instance_fields = instance_data.get("fields", {})
+            
+            if instance_fields and new_instance_id in viewer.scn.parsed_elements:
+                for field_name, field_data in instance_fields.items():
+                    if field_name in viewer.scn.parsed_elements[new_instance_id]:
+                        try:
+                            from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+                            base_clipboard = type('TempClipboard', (RszClipboardBase,), {
+                                'get_clipboard_type': lambda self: 'temp'
+                            })()
+                            
+                            deserialized = base_clipboard.deserialize_fields_with_remapping(
+                                field_data, relative_to_new_id, guid_mapping, randomize_guids=False
+                            )
+                            viewer.scn.parsed_elements[new_instance_id][field_name] = deserialized
+                            
+                        except Exception as e:
+                            print(f"Warning: Failed to deserialize field {field_name}: {e}")
+        
+        root_new_id = relative_to_new_id.get(root_relative_id)
+        if root_new_id is not None:
+            element = UserDataData(
+                root_new_id,
+                element_data.get("string", ""),
+                element_data.get("orig_type", "")
+            )
+            array_data.values.append(element)
+            return element
+        
+        return None
             
     
     @staticmethod
-    def _deserialize_field_with_relative_mapping(field_data, id_mapping, guid_mapping=None):
+    def _deserialize_field_with_relative_mapping(field_data, id_mapping, guid_mapping=None, randomize_guids=True):
         if guid_mapping is None:
             guid_mapping = {}
             
@@ -947,21 +1124,34 @@ class RszArrayClipboard:
         elif field_type == "GameObjectRefData":
             guid_str = field_data.get("guid_str", "")
             guid_hex = field_data.get("raw_bytes", "")
+            orig_type = field_data.get("orig_type", "")
             
-            is_null_ref = not guid_hex or guid_hex == "00000000000000000000000000000000"
-            
-            if is_null_ref:
-                return GameObjectRefData("", None, field_data.get("orig_type", ""))
-            else:
-                if guid_hex in guid_mapping:
-                    return guid_mapping[guid_hex].copy()
+            if guid_hex:
+                try:
+                    guid_bytes = bytes.fromhex(guid_hex)
                     
-                print(f"Creating new GameObjectRefData for GUID: {guid_hex}")
-                guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
-                ref = GameObjectRefData(guid_str, guid_bytes, field_data.get("orig_type", ""))
-                
-                guid_mapping[guid_hex] = ref
-                return ref
+                    from utils.hex_util import is_null_guid
+                    if is_null_guid(guid_bytes, guid_str):
+                        return GameObjectRefData(guid_str, guid_bytes, orig_type)
+                    else:
+                        if guid_bytes in guid_mapping:
+                            new_guid_bytes = guid_mapping[guid_bytes]
+                        else:
+                            if randomize_guids:
+                                import uuid
+                                new_guid_bytes = uuid.uuid4().bytes_le
+                            else:
+                                new_guid_bytes = guid_bytes
+                            guid_mapping[guid_bytes] = new_guid_bytes
+                            
+                        from utils.hex_util import guid_le_to_str
+                        new_guid_str = guid_le_to_str(new_guid_bytes)
+                        return GameObjectRefData(new_guid_str, new_guid_bytes, orig_type)
+                except Exception as e:
+                    print(f"Error processing GameObjectRefData: {str(e)}")
+                    return GameObjectRefData(guid_str, None, orig_type)
+            else:
+                return GameObjectRefData(guid_str, None, orig_type)
             
         elif field_type == "ArrayData":
             values = field_data.get("values", [])
@@ -999,31 +1189,45 @@ class RszArrayClipboard:
                 elif value_type == "GameObjectRefData":
                     guid_str = value_data.get("guid_str", "")
                     guid_hex = value_data.get("raw_bytes", "")
+                    orig_type = value_data.get("orig_type", "")
                     
-                    print(f"Creating new GameObjectRefData for GUID: {guid_hex}")
-                    is_null_ref = not guid_hex or guid_hex == "00000000000000000000000000000000"
-                    
-                    if is_null_ref:
-                        array.values.append(GameObjectRefData("", None, value_data.get("orig_type", "")))
+                    if guid_hex:
+                        try:
+                            guid_bytes = bytes.fromhex(guid_hex)
+                            
+                            from file_handlers.rsz.rsz_clipboard_utils import is_null_guid
+                            if is_null_guid(guid_bytes, guid_str):
+                                array.values.append(GameObjectRefData(guid_str, guid_bytes, orig_type))
+                            else:
+                                if guid_bytes in guid_mapping:
+                                    new_guid_bytes = guid_mapping[guid_bytes]
+                                else:
+                                    if randomize_guids:
+                                        import uuid
+                                        new_guid_bytes = uuid.uuid4().bytes_le
+                                    else:
+                                        new_guid_bytes = guid_bytes
+                                    guid_mapping[guid_bytes] = new_guid_bytes
+                                    
+                                from utils.hex_util import guid_le_to_str
+                                new_guid_str = guid_le_to_str(new_guid_bytes)
+                                array.values.append(GameObjectRefData(new_guid_str, new_guid_bytes, orig_type))
+                        except Exception as e:
+                            print(f"Error processing GameObjectRefData: {str(e)}")
+                            array.values.append(GameObjectRefData(guid_str, None, orig_type))
                     else:
-                        if guid_hex in guid_mapping:
-                            array.values.append(guid_mapping[guid_hex])
-                        else:
-                            guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
-                            ref = GameObjectRefData(guid_str, guid_bytes, value_data.get("orig_type", ""))
-                            guid_mapping[guid_hex] = ref
-                            array.values.append(ref)
+                        array.values.append(GameObjectRefData(guid_str, None, orig_type))
                 else:
-                    element = RszArrayClipboard._deserialize_element(value_data, element_class, guid_mapping)
+                    element = RszArrayClipboard._deserialize_element(value_data, element_class, guid_mapping, randomize_guids)
                     if element:
                         array.values.append(element)
                     
             return array
             
-        return RszArrayClipboard._deserialize_element(field_data, None, guid_mapping)
+        return RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
     
     @staticmethod
-    def _deserialize_element(element_data, element_class, guid_mapping=None):
+    def _deserialize_element(element_data, element_class, guid_mapping=None, randomize_guids=True):
         if guid_mapping is None:
             guid_mapping = {}
             
@@ -1161,7 +1365,7 @@ class RszArrayClipboard:
             array = ArrayData([], nested_element_class, orig_type)
             
             for value_data in values:
-                element = RszArrayClipboard._deserialize_element(value_data, nested_element_class, guid_mapping)
+                element = RszArrayClipboard._deserialize_element(value_data, nested_element_class, guid_mapping, randomize_guids)
                 if element:
                     array.values.append(element)
                     

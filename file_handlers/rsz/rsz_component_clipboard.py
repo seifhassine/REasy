@@ -1,35 +1,17 @@
-import os
-import json
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData
+from file_handlers.rsz.rsz_data_types import ObjectData
 from file_handlers.rsz.rsz_file import RszInstanceInfo
-from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
 
-class RszComponentClipboard:
+class RszComponentClipboard(RszClipboardBase):
     """Clipboard handling for copying and pasting components."""
     
-    @staticmethod
-    def get_clipboard_directory():
-        return RszClipboardUtils.get_type_clipboard_directory("component")
+    def get_clipboard_type(self) -> str:
+        """Return the clipboard type identifier"""
+        return "component"
     
-    @staticmethod
-    def get_json_name(viewer):
-        return RszClipboardUtils.get_json_name(viewer)
-    
-    @staticmethod
-    def get_clipboard_file(viewer):
-        json_name = RszComponentClipboard.get_json_name(viewer)
-        base_name = os.path.splitext(json_name)[0]
-        
-        return os.path.join(
-            RszComponentClipboard.get_clipboard_directory(),
-            f"{base_name}-component-clipboard.json"
-        )
-    
-    @staticmethod
-    def copy_component_to_clipboard(viewer, component_instance_id):
+    def copy_component_to_clipboard(self, viewer, component_instance_id):
         """Copy a component to clipboard
         
         Args:
@@ -40,23 +22,20 @@ class RszComponentClipboard:
             bool: True if successful, False otherwise
         """
         try:
+            if component_instance_id <= 0 or component_instance_id >= len(viewer.scn.instance_infos):
+                print(f"Invalid component instance ID: {component_instance_id}")
+                return False
+                
             instance_info = viewer.scn.instance_infos[component_instance_id]
             print(f"Copying component with instance ID: {component_instance_id}")
             
             component_type_name = ""
-            type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-            component_type_name = type_info["name"]
+            if hasattr(viewer, "type_registry") and viewer.type_registry:
+                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
+                if type_info and "name" in type_info:
+                    component_type_name = type_info["name"]
             
-            nested_instances = set()
-            userdata_refs = set()
-            
-            if component_instance_id in viewer.scn.parsed_elements:
-                fields = viewer.scn.parsed_elements[component_instance_id]
-                
-                nested_objects = RszGameObjectClipboard._find_nested_objects(viewer, component_instance_id)
-                nested_instances.update(nested_objects)
-                
-                RszGameObjectClipboard._find_userdata_references(fields, userdata_refs)
+            nested_instances, userdata_refs = self.collect_all_references(viewer, component_instance_id)
             
             hierarchy = {
                 "instances": {},
@@ -64,71 +43,19 @@ class RszComponentClipboard:
                 "root_id": None
             }
             
-            hierarchy["instances"][str(component_instance_id)] = {
-                "id": component_instance_id,
-                "type_id": instance_info.type_id,
-                "crc": instance_info.crc,
-                "type_name": component_type_name,
-                "fields": {}
-            }
-            
-            if component_instance_id in viewer.scn.parsed_elements:
-                fields = viewer.scn.parsed_elements[component_instance_id]
-                for field_name, field_data in fields.items():
-                    hierarchy["instances"][str(component_instance_id)]["fields"][field_name] = RszArrayClipboard._serialize_element(field_data)
+            main_data = self.serialize_instance_data(viewer, component_instance_id)
+            if main_data:
+                hierarchy["instances"][str(component_instance_id)] = main_data
             
             for nested_id in nested_instances:
-                if nested_id in viewer.scn.parsed_elements:
-                    nested_instance_info = viewer.scn.instance_infos[nested_id]
-                    nested_type_name = ""
-                    
-                    nested_type_info = viewer.type_registry.get_type_info(nested_instance_info.type_id)
-                    if nested_type_info and "name" in nested_type_info:
-                        nested_type_name = nested_type_info["name"]
-                    
-                    nested_fields = {}
-                    nested_fields_data = viewer.scn.parsed_elements[nested_id]
-                    
-                    deeper_nested = RszGameObjectClipboard._find_nested_objects(viewer, nested_id)
-                    nested_instances.update(deeper_nested)
-                    
-                    RszGameObjectClipboard._find_userdata_references(nested_fields_data, userdata_refs)
-                    
-                    for field_name, field_data in nested_fields_data.items():
-                        nested_fields[field_name] = RszArrayClipboard._serialize_element(field_data)
-                    
-                    hierarchy["instances"][str(nested_id)] = {
-                        "id": nested_id,
-                        "type_id": nested_instance_info.type_id,
-                        "crc": nested_instance_info.crc,
-                        "type_name": nested_type_name,
-                        "fields": nested_fields
-                    }
+                nested_data = self.serialize_instance_data(viewer, nested_id)
+                if nested_data:
+                    hierarchy["instances"][str(nested_id)] = nested_data
             
             for userdata_id in userdata_refs:
-                if userdata_id > 0 and userdata_id < len(viewer.scn.instance_infos):
-                    if userdata_id in viewer.scn._rsz_userdata_set:
-                        userdata_instance_info = viewer.scn.instance_infos[userdata_id]
-                        userdata_hash = 0
-                        userdata_string = ""
-                        
-                        for rui in viewer.scn.rsz_userdata_infos:
-                            if rui.instance_id == userdata_id:
-                                userdata_hash = rui.hash
-                                
-                                if rui in viewer.scn._rsz_userdata_str_map:
-                                    userdata_string = viewer.scn._rsz_userdata_str_map[rui]
-                                break
-                        
-                        hierarchy["instances"][str(userdata_id)] = {
-                            "id": userdata_id,
-                            "type_id": userdata_instance_info.type_id,
-                            "crc": userdata_instance_info.crc,
-                            "fields": {},  
-                            "is_userdata": True,
-                            "userdata_hash": userdata_hash,
-                            "userdata_string": userdata_string
-                        }
+                userdata_data = self.serialize_instance_data(viewer, userdata_id)
+                if userdata_data:
+                    hierarchy["instances"][str(userdata_id)] = userdata_data
             
             component_data = {
                 "instance_id": component_instance_id,
@@ -140,57 +67,19 @@ class RszComponentClipboard:
                 "hierarchy": hierarchy
             }
             
-            clipboard_file = RszComponentClipboard.get_clipboard_file(viewer)
-            with open(clipboard_file, 'w') as f:
-                json.dump(component_data, f, indent=2, default=RszArrayClipboard._json_serializer)
+            success = self.save_clipboard_data(viewer, component_data)
+            if success:
+                print(f"Component '{component_type_name}' copied to clipboard with {len(nested_instances)} nested objects and {len(userdata_refs)} userdata references")
             
-            print(f"Component '{component_type_name}' copied to clipboard with {len(nested_instances)} nested objects and {len(userdata_refs)} userdata references")
-            return True
+            return success
             
         except Exception as e:
             print(f"Error copying component to clipboard: {str(e)}")
             traceback.print_exc()
             return False
     
-    @staticmethod
-    def _json_serializer(obj):
-        """Custom JSON serializer for handling non-serializable objects"""
-        return RszArrayClipboard._json_serializer(obj)
-    
-    @staticmethod
-    def get_clipboard_data(viewer):
-        """Get component data from clipboard
-        
-        Args:
-            viewer: The viewer instance
-            
-        Returns:
-            dict: The component data from clipboard or None if not available
-        """
-        clipboard_file = RszComponentClipboard.get_clipboard_file(viewer)
-        return RszClipboardUtils.load_clipboard_data(clipboard_file)
-    
-    @staticmethod
-    def has_clipboard_data(viewer):
-        """Check if component clipboard data exists
-        
-        Args:
-            viewer: The viewer instance
-            
-        Returns:
-            bool: True if clipboard data exists, False otherwise
-        """
-        clipboard_file = RszComponentClipboard.get_clipboard_file(viewer)
-        return os.path.exists(clipboard_file)
-    
-    @staticmethod
-    def _deserialize_element(element_data, element_class=None):
-        """Convert serialized data back to appropriate data object"""
-        return RszArrayClipboard._deserialize_element(element_data, element_class)
-    
-    @staticmethod
-    def paste_component_from_clipboard(viewer, go_instance_id, clipboard_data=None):
-        """Paste a component from clipboard to a GameObject with full support for nested objects
+    def paste_component_from_clipboard(self, viewer, go_instance_id, clipboard_data=None):
+        """Paste a component from clipboard to a GameObject with ffull support for nested objects
 
         Args:
             viewer: The viewer instance
@@ -203,7 +92,7 @@ class RszComponentClipboard:
         try:
             if not clipboard_data:
                 print("No clipboard data provided, loading from file")
-                clipboard_data = RszComponentClipboard.get_clipboard_data(viewer)
+                clipboard_data = self.get_clipboard_data(viewer)
                 
             if not clipboard_data:
                 print("No component clipboard data available")
@@ -258,21 +147,15 @@ class RszComponentClipboard:
                         highest_nested_instance_id = max(highest_nested_instance_id, comp_instance_id)
                         
                         if comp_instance_id in viewer.scn.parsed_elements:
-                            def find_nested_instances(fields, nested_ids):
-                                for field_name, field_data in fields.items():
-                                    if isinstance(field_data, ObjectData) and field_data.value > 0:
-                                        nested_ids.add(field_data.value)
-                                        if field_data.value in viewer.scn.parsed_elements:
-                                            find_nested_instances(viewer.scn.parsed_elements[field_data.value], nested_ids)
-                                    elif isinstance(field_data, ArrayData):
-                                        for element in field_data.values:
-                                            if isinstance(element, ObjectData) and element.value > 0:
-                                                nested_ids.add(element.value)
-                                                if element.value in viewer.scn.parsed_elements:
-                                                    find_nested_instances(viewer.scn.parsed_elements[element.value], nested_ids)
+                            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
                             
-                            component_nested_ids = set()
-                            find_nested_instances(viewer.scn.parsed_elements[comp_instance_id], component_nested_ids)
+                            component_nested_ids = RszInstanceOperations.find_nested_objects(
+                                viewer.scn.parsed_elements, comp_instance_id, viewer.scn.object_table
+                            )
+                            
+                            component_fields = viewer.scn.parsed_elements[comp_instance_id]
+                            object_refs = RszInstanceOperations.find_object_references(component_fields)
+                            component_nested_ids.update(object_refs)
                             
                             if component_nested_ids:
                                 highest_nested_instance_id = max(highest_nested_instance_id, max(component_nested_ids))
@@ -349,33 +232,8 @@ class RszComponentClipboard:
                     if not instance_data.get("is_userdata", False) and instance_id != main_component_id:
                         nested_ids.append(instance_id)
                 
-                def topological_sort(graph): #Experimenting with this currently, will probably apply it to the rest of the project
-                    visited = set()
-                    temp = set()
-                    order = []
-                    
-                    def visit(node):
-                        if node in temp:
-                            print(f"Cyclic dependency detected at node {node}")
-                            return
-                        if node in visited:
-                            return
-                        
-                        temp.add(node)
-                        for neighbor in graph.get(node, set()):
-                            visit(neighbor)
-                        temp.remove(node)
-                        visited.add(node)
-                        order.append(node)
-                    
-                    for node in graph:
-                        if node not in visited:
-                            visit(node)
-                            
-                    return order
-                
                 # Get topologically sorted instances (dependencies first)
-                sorted_nested_ids = topological_sort(dependency_graph)
+                sorted_nested_ids = RszInstanceOperations.topological_sort(dependency_graph)
                 
                 if main_component_id in sorted_nested_ids:
                     sorted_nested_ids.remove(main_component_id)
@@ -457,14 +315,14 @@ class RszComponentClipboard:
                         reasy_id = viewer.handler.id_manager.register_instance(new_instance_id)
                         print(f"Created instance {new_instance_id} with reasy_id {reasy_id}")
                     
-                    if instance_data.get("is_userdata", False):
-                        RszGameObjectClipboard._setup_userdata_for_pasted_instance(
-                            viewer, 
-                            new_instance_id, 
-                            instance_data.get("userdata_hash", 0),
-                            instance_data.get("userdata_string", "")
-                        )
-                        userdata_mapping[old_instance_id] = new_instance_id
+                        if instance_data.get("is_userdata", False):
+                            self.setup_userdata_for_pasted_instance(
+                                viewer, 
+                                new_instance_id, 
+                                instance_data.get("userdata_hash", 0),
+                                instance_data.get("userdata_string", "")
+                            )
+                            userdata_mapping[old_instance_id] = new_instance_id
                     
                     all_created_instances.append(new_instance_id)
                     current_insertion_index += 1
@@ -494,10 +352,11 @@ class RszComponentClipboard:
                     
                     fields_data = instance_data.get("fields", {})
                     
-                    new_fields = RszGameObjectClipboard._deserialize_fields_with_remapping(
-                        fields_data, instance_mapping, userdata_mapping, guid_mapping
+                    # For single component paste, preserve original GUIDs (no randomization)
+                    new_fields = self.deserialize_fields_with_remapping(
+                        fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=False
                     )
-                    RszComponentClipboard._update_userdata_references(new_fields, userdata_mapping)
+                    self.update_userdata_references(new_fields, userdata_mapping)
                     
                     viewer.scn.parsed_elements[new_instance_id] = new_fields
                 
@@ -533,8 +392,12 @@ class RszComponentClipboard:
                         if mapped_instance != instance_id:
                             print(f"WARNING: reasy_id {reasy_id} points to instance {mapped_instance}, not {instance_id}")
                 
+                id_adjustment_map = RszGameObjectClipboard._cleanup_duplicate_userdata_after_paste(
+                    viewer, set(all_created_instances)
+                )
+                if id_adjustment_map and main_component_new_id in id_adjustment_map:
+                    main_component_new_id = id_adjustment_map[main_component_new_id]
                 viewer.mark_modified()
-                
                 final_reasy_id = viewer.handler.id_manager.get_reasy_id_for_instance(main_component_new_id)
                 print(f"Final check: main component {main_component_new_id} has reasy_id {final_reasy_id}")
                 
@@ -554,20 +417,4 @@ class RszComponentClipboard:
             print(f"Error pasting component: {str(e)}")
             traceback.print_exc()
             return None
-    
-    @staticmethod
-    def _update_userdata_references(fields, userdata_mapping):
-        """Update UserDataData references with correct userdata mapping
-        
-        Args:
-            fields: The fields dictionary to update
-            userdata_mapping: Mapping from old userdata IDs to new userdata IDs
-        """
-        for _, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value in userdata_mapping:
-                field_data.value = userdata_mapping[field_data.value]
-            
-            elif isinstance(field_data, ArrayData):
-                for i, element in enumerate(field_data.values):
-                    if isinstance(element, UserDataData) and element.value in userdata_mapping:
-                        element.value = userdata_mapping[element.value]
+

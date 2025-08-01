@@ -160,7 +160,7 @@ class RszHandler(BaseFileHandler):
     def get_gameobject_clipboard(self):
         """Get the GameObject clipboard instance"""
         if not self.gameobject_clipboard:
-            self.gameobject_clipboard = RszGameObjectClipboard.load_from_clipboard(self)
+            self.gameobject_clipboard = RszGameObjectClipboard()
         return self.gameobject_clipboard
         
     def copy_array_element_to_clipboard(self, widget, element, array_type):
@@ -169,7 +169,7 @@ class RszHandler(BaseFileHandler):
     
     def copy_gameobject_to_clipboard(self, widget, gameobject_id):
         """Copy a GameObject to clipboard through the handler"""
-        return self.get_gameobject_clipboard().copy_gameobject_to_clipboard(widget, gameobject_id)
+        return RszGameObjectClipboard.copy_gameobject_to_clipboard(widget, gameobject_id)
         
     def paste_array_element_from_clipboard(self, widget, array_operations, array_data, array_item, embedded_context=None):
         """Paste an array element from clipboard through the handler"""
@@ -179,7 +179,7 @@ class RszHandler(BaseFileHandler):
         """Paste a GameObject from clipboard through the handler"""
         actual_viewer = viewer if viewer is not None else self
         
-        return self.get_gameobject_clipboard().paste_gameobject_from_clipboard(
+        return RszGameObjectClipboard.paste_gameobject_from_clipboard(
             actual_viewer, parent_id, new_name, clipboard_data
         )
         
@@ -189,7 +189,7 @@ class RszHandler(BaseFileHandler):
     
     def get_gameobject_clipboard_data(self, widget):
         """Get GameObject clipboard data through the handler"""
-        return self.get_gameobject_clipboard().get_clipboard_data(widget)
+        return RszGameObjectClipboard.get_clipboard_data(widget)
         
     def is_clipboard_compatible(self, target_type, source_type):
         """Check if clipboard data is compatible with target type through the handler"""
@@ -219,7 +219,9 @@ class RszHandler(BaseFileHandler):
         
     def has_component_clipboard_data(self, widget):
         """Check if component clipboard data exists without loading it"""
-        return RszComponentClipboard.has_clipboard_data(widget)
+        if not self.component_clipboard:
+            self.component_clipboard = RszComponentClipboard()
+        return self.component_clipboard.has_clipboard_data(widget)
 
 class RszViewer(QWidget):
     INSTANCE_ID_ROLE = Qt.UserRole + 1
@@ -621,7 +623,25 @@ class RszViewer(QWidget):
                 )
         
         return node
-
+    
+    def _create_id_adjustment_map(self, deleted_instance_ids):
+        """Create a mapping of old instance IDs to new instance IDs after deletion"""
+        deleted_sorted = sorted(deleted_instance_ids)
+        id_adjustment_map = {}
+        
+        for old_id in range(len(self.scn.instance_infos) + len(deleted_instance_ids)):
+            if old_id not in deleted_instance_ids:
+                new_id = old_id
+                for deleted_id in deleted_sorted:
+                    if deleted_id < old_id:
+                        new_id -= 1
+                    else:
+                        break
+                if new_id != old_id:
+                    id_adjustment_map[old_id] = new_id
+        
+        return id_adjustment_map
+    
     def _add_data_block(self, parent_dict):
         if self.handler.rsz_file.is_usr:
             if len(self.scn.object_table) > 0:

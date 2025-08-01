@@ -226,6 +226,18 @@ class AdvancedTreeView(QTreeView):
         has_go_clipboard = parent_widget.handler.has_gameobject_clipboard_data(self)
         has_component_clipboard = parent_widget.handler.has_component_clipboard_data(self)
 
+
+        if item.data and item.data[0] == "Data Block":
+            exp_act = menu.addAction("Export Data Block")
+            imp_act = menu.addAction("Import Data from Exports folder")
+            action = menu.exec_(QCursor.pos())
+            if action == exp_act:
+                from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+                RszGameObjectClipboard.export_datablock(self.parent())
+            elif action == imp_act:
+                self._show_import_randomization_dialog(index)
+            return
+
         handlers = {
             'is_resource': lambda: self._handle_resource_menu(menu, index, item_info),
             'is_resources_section': lambda: self._handle_resources_section_menu(menu),
@@ -1193,7 +1205,6 @@ class AdvancedTreeView(QTreeView):
         action_info = prefab_actions[has_prefab]
         dialog_title = action_info["dialog_title"]
         prompt_text = action_info["prompt_text"]
-        action_type = action_info["action_type"]
 
         while True:
             dialog = QInputDialog(self)
@@ -1683,6 +1694,37 @@ class AdvancedTreeView(QTreeView):
         print(f"Could not find {node_name} node under {root_node_name}")
         return None
     
+    def find_user_file_array_node(self):
+        """Find the target array node in user file: Data Block → first child → first child"""
+        model = self.model()
+        if not model:
+            return None
+        
+        try:
+            from PySide6.QtCore import QModelIndex
+            
+            # Find Data Block node
+            data_block_item = None
+            for row in range(model.rowCount(QModelIndex())):
+                index = model.index(row, 0, QModelIndex())
+                item = index.internalPointer()
+                if item and hasattr(item, 'data') and item.data and item.data[0].startswith("Data Block"):
+                    data_block_item = item
+                    break
+            
+            if not data_block_item or not data_block_item.children:
+                return None
+            
+            first_child = data_block_item.children[0]
+            if not first_child or not hasattr(first_child, 'children') or not first_child.children:
+                return None
+            
+            target_array_node = first_child.children[0]
+            return target_array_node
+        except Exception as e:
+            print(f"Error finding user file array node: {e}")
+            return None
+    
     def add_component_to_ui_direct(self, go_index, component_data):
         """
         Add a component directly to the UI tree without refreshing
@@ -1779,6 +1821,24 @@ class AdvancedTreeView(QTreeView):
             return True
         
         return False
+    
+    def copy_data_block(self):
+        from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+        parent_widget = self.parent()
+        ok = RszGameObjectClipboard.copy_datablock_to_clipboard(parent_widget)
+        if ok:
+            QMessageBox.information(self, "Success", "Copied Data Block to clipboard folder")
+        else:
+            QMessageBox.warning(self, "Error", "Failed to copy Data Block")
+
+    def paste_data_block(self, parent_index):
+        from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+        parent_widget = self.parent()
+        pasted_nodes = RszGameObjectClipboard.paste_datablock_from_clipboard(parent_widget, parent_folder_id=-1, parent_index=parent_index, no_parent_folder=True)
+        if pasted_nodes:
+            QApplication.beep()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to paste Data Block")
 
     def copy_array_elements(self, parent_array_item, element_indices, index):
         """Copy multiple array elements to clipboard"""
@@ -2207,3 +2267,56 @@ class AdvancedTreeView(QTreeView):
             #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
+
+    def _show_import_randomization_dialog(self, parent_index):
+        """Show dialog for import randomization options"""
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QCheckBox, QPushButton, QLabel
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Import Options")
+        dialog.setModal(True)
+        dialog.resize(400, 200)
+        
+        layout = QVBoxLayout(dialog)
+        
+        desc_label = QLabel("Choose whether to randomize IDs during import:")
+        desc_label.setWordWrap(True)
+        layout.addWidget(desc_label)
+        
+        randomize_ids = QCheckBox("Randomize GUIDs, Context IDs..")
+        randomize_ids.setChecked(True)
+        randomize_ids.setToolTip("Generate new IDs for GameObjects, instances, and userdata instead of preserving original ones")
+        layout.addWidget(randomize_ids)
+        
+        note_label = QLabel("Note: Internal references and relationships will be preserved regardless of ID randomization.")
+        note_label.setWordWrap(True)
+        note_label.setStyleSheet("color: gray; font-size: 10px;")
+        layout.addWidget(note_label)
+        
+        button_layout = QHBoxLayout()
+        cancel_button = QPushButton("Cancel")
+        import_button = QPushButton("Import")
+        import_button.setDefault(True)
+        
+        button_layout.addWidget(cancel_button)
+        button_layout.addStretch()
+        button_layout.addWidget(import_button)
+        layout.addLayout(button_layout)
+        
+        cancel_button.clicked.connect(dialog.reject)
+        import_button.clicked.connect(dialog.accept)
+        
+        if dialog.exec_() == QDialog.Accepted:
+            from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+            result = RszGameObjectClipboard.import_datablock(
+                self.parent(),
+                parent_folder_id=-1,
+                parent_index=parent_index,
+                randomize_ids=randomize_ids.isChecked()
+            )
+            
+            if result:
+                QApplication.beep()
+                QMessageBox.information(self, "Success", f"Successfully imported {len(result)} items")
+            else:
+                QMessageBox.warning(self, "Import Failed", "No items were imported or import was cancelled.")

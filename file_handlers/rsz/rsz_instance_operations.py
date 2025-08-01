@@ -274,3 +274,38 @@ class RszInstanceOperations:
                         references.add(element.value)
         
         return references
+    
+    @staticmethod
+    def topological_sort(dependency_graph):
+        """
+        Perform topological sort on a dependency graph.
+        
+        Args:
+            dependency_graph: Dictionary mapping node -> set of dependent nodes
+            
+        Returns:
+            list: Nodes in topological order (dependencies first)
+        """
+        visited = set()
+        temp = set()
+        order = []
+        
+        def visit(node):
+            if node in temp:
+                print(f"Cyclic dependency detected at node {node}")
+                return
+            if node in visited:
+                return
+            
+            temp.add(node)
+            for neighbor in dependency_graph.get(node, set()):
+                visit(neighbor)
+            temp.remove(node)
+            visited.add(node)
+            order.append(node)
+        
+        for node in dependency_graph:
+            if node not in visited:
+                visit(node)
+                
+        return order

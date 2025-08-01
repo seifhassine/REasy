@@ -242,7 +242,9 @@ class RszObjectOperations:
             
             #print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
         
-            nested_objects = self._find_nested_objects(go_instance_id)
+            nested_objects = RszInstanceOperations.find_nested_objects(
+                self.scn.parsed_elements, go_instance_id, self.scn.object_table
+            )
             nested_objects.add(go_instance_id)
             
             for instance_id in sorted(nested_objects, reverse=True):
@@ -538,11 +540,6 @@ class RszObjectOperations:
                 if ref_info.target_id > object_table_index:
                     ref_info.target_id -= 1
 
-    def _find_nested_objects(self, base_instance_id):
-        """Find instance IDs of nested objects that aren't in the object table."""
-        return RszInstanceOperations.find_nested_objects(
-            self.scn.parsed_elements, base_instance_id, self.scn.object_table
-        )
 
     def delete_folder(self, folder_id):
         """Delete a folder with the given ID and all its contents"""
@@ -594,7 +591,9 @@ class RszObjectOperations:
             folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
             
             if folder_instance_id > 0:
-                nested_objects = self._find_nested_objects(folder_instance_id)
+                nested_objects = RszInstanceOperations.find_nested_objects(
+                    self.scn.parsed_elements, folder_instance_id, self.scn.object_table
+                )
                 nested_objects.add(folder_instance_id)
                 
                 for inst_id in sorted(nested_objects, reverse=True):
@@ -615,7 +614,9 @@ class RszObjectOperations:
         folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
         
         if folder_instance_id > 0:
-            nested_objects = self._find_nested_objects(folder_instance_id)
+            nested_objects = RszInstanceOperations.find_nested_objects(
+                self.scn.parsed_elements, folder_instance_id, self.scn.object_table
+            )
             nested_objects.add(folder_instance_id)
             
             for inst_id in sorted(nested_objects, reverse=True):
@@ -751,7 +752,9 @@ class RszObjectOperations:
         
         original_component_count = owner_go.component_count
         
-        nested_objects = self._find_nested_objects(component_instance_id)
+        nested_objects = RszInstanceOperations.find_nested_objects(
+            self.scn.parsed_elements, component_instance_id, self.scn.object_table
+        )
         nested_objects.add(component_instance_id)
         
         to_delete_instances = sorted(nested_objects, reverse=True)
@@ -891,8 +894,6 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         return True
        
-    def _find_userdata_references(self, fields, userdata_refs):
-        RszInstanceOperations.find_userdata_references(fields, userdata_refs)
    
     def _update_chainsaw_context_id_group(self, instance_id, fields, context_id_offset):
         """Update the _Group field for chainsaw.ContextID instances"""

@@ -789,7 +789,10 @@ class RszArrayOperations:
             # at a position where we can determine adjacent objects
             if object_table_index < 0:
                 # This object itself isn't in the object table - safe to use positioned-based detection
-                position_based_nested = self.viewer.object_operations._find_nested_objects(instance_id)
+                from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+                position_based_nested = RszInstanceOperations.find_nested_objects(
+                    self.scn.parsed_elements, instance_id, self.scn.object_table
+                )
             
             # Check each field for object references
             for field_name, field_data in fields.items():

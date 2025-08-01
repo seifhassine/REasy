@@ -61,3 +61,31 @@ class RszClipboardUtils:
             
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
     
+    @staticmethod
+    def get_type_info_name(viewer, type_id):
+        if hasattr(viewer, "type_registry") and viewer.type_registry:
+            type_info = viewer.type_registry.get_type_info(type_id)
+            if type_info and "name" in type_info:
+                return type_info["name"]
+        return None
+    
+    @staticmethod
+    def check_userdata_info(viewer, instance_id):
+        """Check if an instance is userdata and get its info"""
+        if not (hasattr(viewer.scn, '_rsz_userdata_set') and instance_id in viewer.scn._rsz_userdata_set):
+            return None
+            
+        for rui in viewer.scn.rsz_userdata_infos:
+            if rui.instance_id == instance_id:
+                userdata_info = {
+                    "userdata_hash": rui.hash,
+                    "userdata_string": None
+                }
+                
+                if hasattr(viewer.scn, '_rsz_userdata_str_map') and rui in viewer.scn._rsz_userdata_str_map:
+                    userdata_info["userdata_string"] = viewer.scn._rsz_userdata_str_map[rui]
+                
+                return userdata_info
+        
+        return None
+    
