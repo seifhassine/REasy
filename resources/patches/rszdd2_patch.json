@@ -33559,5 +33559,221 @@
 		],
 		"name": "via.audiorender.EffectParametersBase",
 		"crc": "57422518"
+	},
+	"95776c66": {
+		"crc": "cb65250f",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "Guid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisuseShowError(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EventEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Fatal(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Verbose",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Reusable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": true,
+				"original_type": "via.os.http_client.Type",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "ReceiveDataMaxSize",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.network.HttpClient"
+	},
+	"ffd9eaab": {
+		"crc": "6b8cf0ee",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "Guid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisuseShowError(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EventEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Fatal(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v4_DisconnectionDetectionTime",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "S64"
+			}
+		],
+		"name": "via.network.ContextSteam"
+	},
+	"32867957": {
+		"crc": "2c3ab4f2",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "Guid",
+				"native": false,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DisuseShowError(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "EventEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Fatal(?)",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DevVerifyEnable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Type",
+				"native": true,
+				"original_type": "via.os.websocket_client.Type",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "MaxSendOnceSize",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "MaxReceiveOnceSize",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "MaxPayloadSize",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.network.WebSocketClient"
 	}
 }
