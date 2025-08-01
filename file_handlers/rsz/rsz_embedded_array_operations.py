@@ -7,7 +7,7 @@ embedded RSZ data structures found in SCN.19 files.
 
 import traceback
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData
+from file_handlers.rsz.rsz_data_types import ObjectData, ResourceData, UserDataData, ArrayData
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.pyside.tree_model import DataTreeBuilder
 
@@ -586,7 +586,7 @@ class RszEmbeddedArrayOperations:
             return None
 
         type_info, type_id = self.viewer.type_registry.find_type_by_name(element_type)
-        if not type_info:
+        if not type_info and array_data.element_class != ResourceData:
             QMessageBox.warning(self.viewer, "Error", f"Type not found: {element_type}")
             return None
 

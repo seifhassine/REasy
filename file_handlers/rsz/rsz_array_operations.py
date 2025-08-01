@@ -5,7 +5,7 @@ This file contains operations for adding and removing elements from arrays in RS
 """
 
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData
+from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
@@ -30,7 +30,7 @@ class RszArrayOperations:
             return None
             
         type_info, type_id = self.type_registry.find_type_by_name(element_type)
-        if not type_info:
+        if not type_info and array_data.element_class != ResourceData:
             QMessageBox.warning(self.viewer, "Error", f"Type not found in registry: {element_type}")
             return None
         
