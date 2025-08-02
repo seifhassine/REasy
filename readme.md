@@ -101,7 +101,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 - Python 3.13 is required.
 
-If you want to run REasy on Linux and encounter the error "Aborted" on launch, try running installing libxcb-cursor0 using apt-get. 
+If you want to run REasy on Linux and encounter the error "Aborted" on launch, try installing libxcb-cursor0 using apt-get. 
 
 ## Credits:
 
