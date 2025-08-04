@@ -530,13 +530,15 @@ def build_embedded_rsz(rui, type_registry=None):
         
         # Calculate userdata offsets
         userdata_entries_start = len(out)
-        userdata_data_start = userdata_entries_start + len(mini_scn.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
+        
+        sorted_rsz_userdata_infos = sorted(mini_scn.rsz_userdata_infos, key=lambda rui: rui.instance_id)
+        userdata_data_start = userdata_entries_start + len(sorted_rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
         
         userdata_data_start = ((userdata_data_start + 15) & ~15)
         current_data_offset = userdata_data_start
         
         # Write userdata table entries
-        for nested_rui in mini_scn.rsz_userdata_infos:
+        for nested_rui in sorted_rsz_userdata_infos:
             data_content = getattr(nested_rui, "data", b"")
             if data_content is None:
                 data_content = b""
@@ -559,7 +561,7 @@ def build_embedded_rsz(rui, type_registry=None):
             out += b"\x00"
         
         # Write userdata content
-        for nested_rui in mini_scn.rsz_userdata_infos:
+        for nested_rui in sorted_rsz_userdata_infos:
             data_content = getattr(nested_rui, "data", b"")
             if data_content is None:
                 data_content = b""
@@ -691,12 +693,14 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
     new_userdata_offset = len(out) - rsz_start
 
     userdata_entries_start = len(out)
-    userdata_data_start = userdata_entries_start + len(rsz_file.rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
+    
+    sorted_rsz_userdata_infos = sorted(rsz_file.rsz_userdata_infos, key=lambda rui: rui.instance_id)
+    userdata_data_start = userdata_entries_start + len(sorted_rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
     
     userdata_data_start = ((userdata_data_start + 15) & ~15)
     current_data_offset = userdata_data_start
-    
-    for rui in rsz_file.rsz_userdata_infos:
+
+    for rui in sorted_rsz_userdata_infos:
         # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
@@ -725,7 +729,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         while len(out) < userdata_data_start:
             out += b"\x00"
 
-    for rui in rsz_file.rsz_userdata_infos:
+    for rui in sorted_rsz_userdata_infos:
         data_content = getattr(rui, "data", b"")
         if data_content is None:
             data_content = b""
