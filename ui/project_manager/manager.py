@@ -21,11 +21,14 @@ from tools.fluffy_exporter import create_fluffy_zip
 
 from PySide6.QtCore import qInstallMessageHandler
 
-_prev_handler = qInstallMessageHandler(
-    lambda mode, ctx, msg:
-        None if "QFileSystemWatcher: FindNextChangeNotification failed" in msg
-        else (_prev_handler(mode, ctx, msg) if _prev_handler else None)
-)
+def _custom_message_handler(mode, ctx, msg):
+    if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
+        return None
+    if _prev_handler:
+        return _prev_handler(mode, ctx, msg)
+    return None
+
+_prev_handler = qInstallMessageHandler(_custom_message_handler)
 
 def _get_base_dir() -> Path:
     if getattr(sys, "frozen", False):
@@ -444,22 +447,22 @@ class ProjectManager(QDockWidget):
         tree.header().resizeSection(0, optimal_width)
         tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
 
-    def _on_section_resized(self, logicalIndex: int, oldSize: int, newSize: int):
+    def _on_section_resized(self, logical_index: int, old_size: int, new_size: int):
         """Handle manual column resizing with minimum width enforcement."""
-        if logicalIndex != 0:
+        if logical_index != 0:
             return
         
         sender_header = self.sender()
         min_width = sender_header.minimumSectionSize()
         
-        if newSize < min_width:
+        if new_size < min_width:
             sender_header.resizeSection(0, min_width)
         
         for tree in (self.tree_sys, self.tree_proj):
             if tree.header() == sender_header:
                 delegate = tree.itemDelegateForColumn(0)
                 if hasattr(delegate, 'set_column_width'):
-                    delegate.set_column_width(max(newSize, min_width))
+                    delegate.set_column_width(max(new_size, min_width))
                 tree.viewport().update() 
                 break
 
@@ -503,9 +506,6 @@ class ProjectManager(QDockWidget):
             QMessageBox.critical(self, "ZIP failed", str(e))
 
     def _export_mod(self):
-        if not self.project_dir:
-            QMessageBox.information(self, "Export Mod", "Open a project first.")
-            return
 
         need, latest = packer_status()
         if need:
