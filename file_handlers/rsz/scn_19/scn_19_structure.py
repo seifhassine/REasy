@@ -500,18 +500,31 @@ def build_embedded_rsz(rui, type_registry=None):
         mini_scn.rsz_header.instance_count = len(mini_scn.instance_infos)
         mini_scn.rsz_header.userdata_count = len(mini_scn.rsz_userdata_infos)
         
-        rsz_header_bytes = struct.pack(
-            "<5I I Q Q Q",
-            mini_scn.rsz_header.magic,
-            mini_scn.rsz_header.version,
-            mini_scn.rsz_header.object_count,
-            mini_scn.rsz_header.instance_count,
-            mini_scn.rsz_header.userdata_count,
-            mini_scn.rsz_header.reserved,
-            0,  # instance_offset - will update later
-            0,  # data_offset - will update later 
-            0   # userdata_offset - will update later
-        )
+        # Build header based on version
+        if mini_scn.rsz_header.version >= 4:
+            # Version 4+ has userdata_count and reserved
+            rsz_header_bytes = struct.pack(
+                "<5I I Q Q Q",
+                mini_scn.rsz_header.magic,
+                mini_scn.rsz_header.version,
+                mini_scn.rsz_header.object_count,
+                mini_scn.rsz_header.instance_count,
+                mini_scn.rsz_header.userdata_count,
+                getattr(mini_scn.rsz_header, 'reserved', 0),
+                0,  # instance_offset - will update later
+                0,  # data_offset - will update later 
+                0   # userdata_offset - will update later
+            )
+        else:
+            rsz_header_bytes = struct.pack(
+                "<4I Q Q",
+                mini_scn.rsz_header.magic,
+                mini_scn.rsz_header.version,
+                mini_scn.rsz_header.object_count,
+                mini_scn.rsz_header.instance_count,
+                0,
+                0
+            )
         out += rsz_header_bytes
         
         # Write object table
@@ -598,19 +611,32 @@ def build_embedded_rsz(rui, type_registry=None):
             return b''
         
         # Update RSZ header with correct offsets
-        new_rsz_header = struct.pack(
-            "<5I I Q Q Q",
-            mini_scn.rsz_header.magic,
-            mini_scn.rsz_header.version,
-            mini_scn.rsz_header.object_count,
-            mini_scn.rsz_header.instance_count,
-            mini_scn.rsz_header.userdata_count,
-            mini_scn.rsz_header.reserved,
-            instance_offset,
-            data_offset,
-            userdata_offset
-        )
-        out[0:mini_scn.rsz_header.SIZE] = new_rsz_header
+        if mini_scn.rsz_header.version >= 4:
+            new_rsz_header = struct.pack(
+                "<5I I Q Q Q",
+                mini_scn.rsz_header.magic,
+                mini_scn.rsz_header.version,
+                mini_scn.rsz_header.object_count,
+                mini_scn.rsz_header.instance_count,
+                mini_scn.rsz_header.userdata_count,
+                getattr(mini_scn.rsz_header, 'reserved', 0),
+                instance_offset,
+                data_offset,
+                userdata_offset
+            )
+            header_size = 48 
+        else:
+            new_rsz_header = struct.pack(
+                "<4I Q Q",
+                mini_scn.rsz_header.magic,
+                mini_scn.rsz_header.version,
+                mini_scn.rsz_header.object_count,
+                mini_scn.rsz_header.instance_count,
+                instance_offset,
+                data_offset
+            )
+            header_size = 32 
+        out[0:header_size] = new_rsz_header
         
         rui.modified = False
         
@@ -729,7 +755,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         while len(out) < userdata_data_start:
             out += b"\x00"
 
-    for rui in sorted_rsz_userdata_infos:
+    for rui in sorted(rsz_file.rsz_userdata_infos, key=lambda r: r.instance_id):
         data_content = getattr(rui, "data", b"")
         if data_content is None:
             data_content = b""
