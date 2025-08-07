@@ -31,7 +31,11 @@ GAME_CONFIGS = {
     "re8":    {"registry_json": "rszre8.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "mhr":    {"registry_json": "rszmhrise.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "sf6":    {"registry_json": "rszsf6.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
-        "usr_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"]},
+        "usr_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"],
+        "scn_file_exceptions": ["set001101221.scn.20", "set001101808.scn.20", "set001103004.scn.20",
+            "set001900120.scn.20", "set001900121.scn.20", "set001900158.scn.20", "set001900186.scn.20", "set001900194.scn.20",
+            "wtc0101_08.scn (5).20", "wtc0101_10.scn (5).20", "wtc0400_12_Props_Manual.scn.20", "wtc0400_14_Props_Manual.scn.20",
+            "wtc0400_17_Props_Manual.scn.20", "wtc0400_24_Props_Manual.scn.20", "wtc0400_27_Props_Manual.scn.20", "wtc0400_36_Props_Manual.scn.20"]},
     
     "re4":    {"registry_json": "rszre4_reasy.json", "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
         "usr_file_exceptions": ["ch4fez0actionpropertyuserdata.user.2", "tabledefine.user.2"],
