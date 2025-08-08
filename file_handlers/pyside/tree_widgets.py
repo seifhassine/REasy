@@ -777,7 +777,7 @@ class AdvancedTreeView(QTreeView):
                                 break
 
     def _find_embedded_context(self, item):
-        from file_handlers.rsz.rsz_embedded_utils import find_embedded_context
+        from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
         return find_embedded_context(item)
 
     def _display_confirmation(self, message):

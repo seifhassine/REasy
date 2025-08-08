@@ -3,14 +3,14 @@ import json
 import traceback
 from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
 from file_handlers.rsz.rsz_data_types import (
-    S32Data, is_reference_type, is_array_type
+    is_reference_type, is_array_type
 )
 from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.rsz_guid_utils import create_new_guid, create_guid_data, handle_guid_mapping
-from file_handlers.rsz.rsz_field_utils import shift_references_above_threshold
+from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+from file_handlers.rsz.utils.rsz_guid_utils import create_new_guid, create_guid_data, handle_guid_mapping
+from file_handlers.rsz.utils.rsz_field_utils import shift_references_above_threshold
 
 
 class _ReferenceUpdater:

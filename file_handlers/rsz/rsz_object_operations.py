@@ -15,7 +15,7 @@ from .rsz_data_types import (
 )
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from utils.id_manager import EmbeddedIdManager
-from file_handlers.rsz.rsz_embedded_utils import copy_embedded_rsz_header
+from file_handlers.rsz.utils.rsz_embedded_utils import copy_embedded_rsz_header
 
 
 class RszObjectOperations:
@@ -148,7 +148,7 @@ class RszObjectOperations:
         new_go.component_count = 0
         
         if self.scn.is_scn:
-            from .rsz_guid_utils import create_new_guid
+            from .utils.rsz_guid_utils import create_new_guid
             guid_bytes = create_new_guid()
             new_go.guid = guid_bytes
             new_go.prefab_id = -1 
@@ -1366,7 +1366,7 @@ class RszObjectOperations:
                 if hasattr(parent_rui, 'embedded_instance_infos'):
                     max_new_id = max(id_shift.values())
                     while len(parent_rui.embedded_instance_infos) <= max_new_id:
-                        from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+                        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
                         parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
                     
                     for old_id, new_id in sorted(id_shift.items(), reverse=True):
@@ -1374,7 +1374,7 @@ class RszObjectOperations:
                             parent_rui.embedded_instance_infos[new_id] = parent_rui.embedded_instance_infos[old_id]
                             parent_rui.embedded_instance_infos[old_id] = None
                 
-                from file_handlers.rsz.rsz_embedded_utils import update_embedded_references_for_shift
+                from file_handlers.rsz.utils.rsz_embedded_utils import update_embedded_references_for_shift
                 update_embedded_references_for_shift(id_shift, parent_rui)
                 
                 if hasattr(parent_rui, 'embedded_userdata_infos'):
@@ -1448,11 +1448,11 @@ class RszObjectOperations:
             parent_rui.embedded_instance_infos = []
         
         while len(parent_rui.embedded_instance_infos) <= next_id:
-            from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+            from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
             null_info = create_embedded_instance_info(0, self.type_registry)
             parent_rui.embedded_instance_infos.append(null_info)
         
-        from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
         instance_info = create_embedded_instance_info(type_id, self.type_registry)
         parent_rui.embedded_instance_infos[next_id] = instance_info
         

@@ -9,7 +9,7 @@ import traceback
 from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type, is_array_type
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.pyside.tree_model import DataTreeBuilder
-from file_handlers.rsz.rsz_embedded_utils import (
+from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info,
     copy_embedded_rsz_header,
@@ -19,7 +19,7 @@ from file_handlers.rsz.rsz_embedded_utils import (
     build_context_chain,
     update_embedded_references_for_shift
 )
-from file_handlers.rsz.rsz_field_utils import update_references_with_mapping
+from file_handlers.rsz.utils.rsz_field_utils import update_references_with_mapping
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
 from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
 
@@ -566,7 +566,7 @@ class RszEmbeddedArrayOperations:
             if hasattr(parent_rui, 'embedded_instance_infos'):
                 max_new_id = max(id_shift.values()) if id_shift else insertion_index
                 while len(parent_rui.embedded_instance_infos) <= max_new_id:
-                    from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+                    from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
                     parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
                 
                 for old_id, new_id in sorted(id_shift.items(), reverse=True):
@@ -574,7 +574,7 @@ class RszEmbeddedArrayOperations:
                         parent_rui.embedded_instance_infos[new_id] = parent_rui.embedded_instance_infos[old_id]
                         parent_rui.embedded_instance_infos[old_id] = None
             
-            from file_handlers.rsz.rsz_embedded_utils import update_embedded_references_for_shift
+            from file_handlers.rsz.utils.rsz_embedded_utils import update_embedded_references_for_shift
             update_embedded_references_for_shift(id_shift, parent_rui)
             
             if hasattr(parent_rui, 'embedded_userdata_infos'):
@@ -632,10 +632,10 @@ class RszEmbeddedArrayOperations:
             parent_rui.embedded_instance_infos = []
         
         while len(parent_rui.embedded_instance_infos) <= insertion_index:
-            from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+            from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
             parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
         
-        from file_handlers.rsz.rsz_embedded_utils import create_embedded_instance_info
+        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
         instance_info = create_embedded_instance_info(type_id, self.type_registry)
         parent_rui.embedded_instance_infos[insertion_index] = instance_info
         

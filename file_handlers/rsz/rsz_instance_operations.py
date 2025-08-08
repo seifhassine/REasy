@@ -56,7 +56,7 @@ class RszInstanceOperations:
             fields: Dictionary of fields to search
             userdata_refs: Set to collect UserDataData references
         """
-        from file_handlers.rsz.rsz_field_utils import collect_field_references
+        from file_handlers.rsz.utils.rsz_field_utils import collect_field_references
         
         def collector(ref_obj):
             if ref_obj.__class__.__name__ == 'UserDataData' and ref_obj.value > 0:
@@ -75,7 +75,7 @@ class RszInstanceOperations:
             deleted_ids: Set of instance IDs to be deleted
             id_adjustments: Dict mapping old_instance_id -> new_instance_id
         """
-        from file_handlers.rsz.rsz_field_utils import update_references_with_mapping
+        from file_handlers.rsz.utils.rsz_field_utils import update_references_with_mapping
         
         for instance_id, fields in parsed_elements.items():
             if instance_id in deleted_ids:
@@ -243,7 +243,7 @@ class RszInstanceOperations:
         Returns:
             set: Set of referenced object IDs
         """
-        from file_handlers.rsz.rsz_field_utils import collect_field_references
+        from file_handlers.rsz.utils.rsz_field_utils import collect_field_references
         
         references = set()
         

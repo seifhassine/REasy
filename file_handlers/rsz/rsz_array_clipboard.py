@@ -8,8 +8,8 @@ from file_handlers.rsz.rsz_data_types import (
     Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, RectData, LineSegmentData,
     PointData, StructData, RawBytesData, PositionData, is_reference_type
 )
-from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.rsz_embedded_utils import (
+from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info
 )
@@ -2330,7 +2330,7 @@ class RszArrayClipboard:
                 try:
                     guid_bytes = bytes.fromhex(guid_hex)
                     
-                    from file_handlers.rsz.rsz_guid_utils import process_gameobject_ref_data
+                    from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
                     return process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping, randomize_guids)
                 except Exception as e:
                     print(f"Error processing GameObjectRefData: {str(e)}")
@@ -2379,7 +2379,7 @@ class RszArrayClipboard:
                     if guid_hex:
                         try:
                             
-                            from file_handlers.rsz.rsz_guid_utils import process_gameobject_ref_data
+                            from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
                             ref_data = process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping, randomize_guids)
                             if ref_data:
                                 array.values.append(ref_data)

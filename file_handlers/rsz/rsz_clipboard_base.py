@@ -4,12 +4,12 @@ import json
 import traceback
 from abc import ABC, abstractmethod
 from typing import Dict, Set, Any, Tuple, List
-from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
+from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, ArrayData
 )
 from file_handlers.rsz.rsz_file import RszRSZUserDataInfo, RszUserDataInfo, RszInstanceInfo
-from file_handlers.rsz.rsz_guid_utils import process_gameobject_ref_data
+from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
 
 
 class RszClipboardBase(ABC):
