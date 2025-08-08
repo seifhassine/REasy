@@ -1,3 +1,4 @@
+from file_handlers.rsz.rsz_data_types import is_reference_type
 class RszInstanceOperations:
     """
     Utility class for RSZ instance operations that are common across multiple components.
@@ -55,13 +56,13 @@ class RszInstanceOperations:
             fields: Dictionary of fields to search
             userdata_refs: Set to collect UserDataData references
         """
-        for field_name, field_data in fields.items():
-            if hasattr(field_data, '__class__') and field_data.__class__.__name__ == 'UserDataData' and field_data.value > 0:
-                userdata_refs.add(field_data.value)
-            elif hasattr(field_data, '__class__') and field_data.__class__.__name__ == 'ArrayData':
-                for element in field_data.values:
-                    if hasattr(element, '__class__') and element.__class__.__name__ == 'UserDataData' and element.value > 0:
-                        userdata_refs.add(element.value)
+        from file_handlers.rsz.rsz_field_utils import collect_field_references
+        
+        def collector(ref_obj):
+            if ref_obj.__class__.__name__ == 'UserDataData' and ref_obj.value > 0:
+                userdata_refs.add(ref_obj.value)
+        
+        collect_field_references(fields, collector)
                         
     @staticmethod
     def update_references_before_deletion(parsed_elements, deleted_ids, id_adjustments):
@@ -74,28 +75,13 @@ class RszInstanceOperations:
             deleted_ids: Set of instance IDs to be deleted
             id_adjustments: Dict mapping old_instance_id -> new_instance_id
         """
+        from file_handlers.rsz.rsz_field_utils import update_references_with_mapping
+        
         for instance_id, fields in parsed_elements.items():
             if instance_id in deleted_ids:
                 continue
-                
-            for _, field_data in fields.items():
-                if (field_data.__class__.__name__ == 'ObjectData' or field_data.__class__.__name__ == 'UserDataData'):
-                    ref_id = field_data.value
-                    if ref_id > 0:
-                        if ref_id in deleted_ids:
-                            field_data.value = 0
-                        elif ref_id in id_adjustments:
-                            field_data.value = id_adjustments[ref_id]
-                
-                elif field_data.__class__.__name__ == 'ArrayData':
-                    for element in field_data.values:
-                        if (element.__class__.__name__ == 'ObjectData' or element.__class__.__name__ == 'UserDataData'):
-                            ref_id = element.value
-                            if ref_id > 0:
-                                if ref_id in deleted_ids:
-                                    element.value = 0
-                                elif ref_id in id_adjustments:
-                                    element.value = id_adjustments[ref_id]
+            
+            update_references_with_mapping(fields, id_adjustments, deleted_ids)
     
     @staticmethod
     def is_exclusively_referenced_from(parsed_elements, instance_id, source_id, object_table=None):
@@ -123,13 +109,11 @@ class RszInstanceOperations:
                 
             for _, field_data in fields.items():
                 class_name = field_data.__class__.__name__
-                if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
+                if class_name in ('ObjectData', 'UserDataData') and field_data.value == instance_id:
                     return False
                 elif class_name == 'ArrayData':
                     for item in field_data.values:
-                        item_class = item.__class__.__name__
-                        
-                        if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
+                        if is_reference_type(item) and item.value == instance_id:
                             return False
             
         return True 
@@ -152,16 +136,15 @@ class RszInstanceOperations:
             for field_name, field_data in fields.items():
                 class_name = field_data.__class__.__name__
                 
-                if (class_name == 'ObjectData' or class_name == 'UserDataData') and field_data.value == instance_id:
+                if class_name in ('ObjectData', 'UserDataData') and field_data.value == instance_id:
                     if ref_id not in references:
                         references[ref_id] = []
                     references[ref_id].append((field_name, "direct"))
                 
                 elif class_name == 'ArrayData':
                     for i, item in enumerate(field_data.values):
-                        item_class = item.__class__.__name__
                         
-                        if (item_class == 'ObjectData' or item_class == 'UserDataData') and item.value == instance_id:
+                        if is_reference_type(item) and item.value == instance_id:
                             if ref_id not in references:
                                 references[ref_id] = []
                             references[ref_id].append((f"{field_name}[{i}]", "array_object"))
@@ -260,18 +243,15 @@ class RszInstanceOperations:
         Returns:
             set: Set of referenced object IDs
         """
+        from file_handlers.rsz.rsz_field_utils import collect_field_references
+        
         references = set()
         
-        for _, field_data in fields.items():
-            class_name = field_data.__class__.__name__
-            
-            if class_name == 'ObjectData' and field_data.value > 0:
-                references.add(field_data.value)
-            
-            elif class_name == 'ArrayData':
-                for element in field_data.values:
-                    if element.__class__.__name__ == 'ObjectData' and element.value > 0:
-                        references.add(element.value)
+        def collector(ref_obj):
+            if ref_obj.__class__.__name__ == 'ObjectData' and ref_obj.value > 0:
+                references.add(ref_obj.value)
+        
+        collect_field_references(fields, collector)
         
         return references
     

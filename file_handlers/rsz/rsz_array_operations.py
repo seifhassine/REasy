@@ -5,7 +5,7 @@ This file contains operations for adding and removing elements from arrays in RS
 """
 
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData
+from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, get_type_class, is_reference_type
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 
@@ -34,9 +34,12 @@ class RszArrayOperations:
             QMessageBox.warning(self.viewer, "Error", f"Type not found in registry: {element_type}")
             return None
         
-        new_element = (self._create_new_object_instance_for_array(type_id, type_info, element_type, array_data)  # If the element we're creating is an object
-                      if element_class == ObjectData 
-                      else self.viewer._create_default_field(element_class, array_data.orig_type)) # If the element we're creating is a simple type
+        if element_class == ObjectData:
+            new_element = self._create_new_object_instance_for_array(type_id, type_info, element_type, array_data)
+        elif element_class == UserDataData:
+            new_element = self._create_new_userdata_instance_for_array(type_id, type_info, element_type, array_data)
+        else:
+            new_element = self.viewer._create_default_field(element_class, array_data.orig_type)
         
         if new_element:
             array_data.values.append(new_element)
@@ -49,6 +52,36 @@ class RszArrayOperations:
         return new_element
 
 
+    def _create_new_userdata_instance_for_array(self, type_id, type_info, element_type, array_data):
+        """Create a new UserDataData instance with associated RSZUserDataInfo for an array element"""
+        from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+        
+        object_ops = RszObjectOperations(self.viewer)
+        
+        parent_data = self._find_array_parent_data(array_data)
+        if not parent_data:
+            raise RuntimeError("Warning: Could not find parent data for array, using fallback insertion")
+        else:
+            parent_instance_id, parent_field_name = parent_data
+            next_instance_id = self._calculate_array_element_insertion_index(parent_instance_id, parent_field_name)
+
+        # Ensure we never use 0 as instance_id
+        if next_instance_id == 0:
+            next_instance_id = 1
+            
+        instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id)
+        
+        if instance_id is not None and instance_id >= 0:
+            userdata = UserDataData(instance_id, "", element_type)
+            userdata._container_array = array_data
+            if hasattr(userdata, '_container_array') and userdata._container_array:
+                userdata._container_array.modified = True
+            return userdata
+        else:
+            print("Failed to create UserDataData, returning empty")
+            return UserDataData(0, "", element_type)
+                
+
     def _create_new_object_instance_for_array(self, type_id, type_info, element_type, array_data):
         """Create a new object instance for an array element"""
         parent_data = self._find_array_parent_data(array_data) 
@@ -57,7 +90,7 @@ class RszArrayOperations:
         parent_instance_id, parent_field_name = parent_data
         
         # Calculate insertion index for the new instance, considering parent location
-        insertion_index = self._calculate_insertion_index(parent_instance_id, parent_field_name)
+        insertion_index = self._calculate_array_element_insertion_index(parent_instance_id, parent_field_name)
         
         # Create and initialize the instance
         new_instance = self.viewer._initialize_new_instance(type_id, type_info)
@@ -76,6 +109,7 @@ class RszArrayOperations:
                 self.instance_id = 0  # Will be set when instance is created
                 self.fields = {}  # Fields will be initialized later
                 self.nested_objects = set()  # To hold nested objects
+                self.field_order = []  # Track field order for proper instance creation
                 
             def add_child(self, child):
                 self.children.append(child)
@@ -97,82 +131,120 @@ class RszArrayOperations:
             
             # Initialize temporary fields for analysis
             node.fields = {}
-            self.viewer._initialize_fields_from_type_info(node.fields, node.type_info)
             
-            # Find object references in fields
-            for field_name, field_value in node.fields.items():
-                # Process direct object references
-                if isinstance(field_value, ObjectData) and field_value.orig_type:
-                    # Find the nested type
-                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_value.orig_type)
-                    if nested_type_info and nested_type_id:
-                        # Create a child node for this nested object
-                        child_node = NestedObjectNode(nested_type_info, nested_type_id, field_name, node)
-                        node.add_child(child_node)
-                        
-                        # Recursively analyze this nested object
-                        analyze_nested_objects(child_node, visited_types.copy())
+            for field_def in node.type_info.get("fields", []):
+                field_name = field_def.get("name", "")
+                if not field_name:
+                    continue
+                    
+                field_type = field_def.get("type", "unknown").lower()
+                field_size = field_def.get("size", 4)
+                field_native = field_def.get("native", False)
+                field_array = field_def.get("array", False)
+                field_align = field_def.get("align", 4)
+                field_orig_type = field_def.get("original_type", "")
+                
+                field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
+                field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
+                
+                if field_obj:
+                    node.fields[field_name] = field_obj
+                    
+                    if is_reference_type(field_obj) and field_orig_type and not field_array:
+                        node.field_order.append((field_name, field_type, field_orig_type, field_obj))
+                    
+                    # Process direct object references
+                    if isinstance(field_obj, ObjectData) and field_orig_type and not field_array:
+                        # Find the nested type
+                        nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
+                        if nested_type_info and nested_type_id:
+                            # Create a child node for this nested object
+                            child_node = NestedObjectNode(nested_type_info, nested_type_id, field_name, node)
+                            node.add_child(child_node)
+                            
+                            # Recursively analyze this nested object
+                            analyze_nested_objects(child_node, visited_types.copy())
             
         # Start recursive analysis from root node
         analyze_nested_objects(root_node)
         
-        # Moving on to step 2: Create a flat list of all nodes in creation order (deepest first)
-        all_nodes = []
+        # Step 2: Create instances respecting field order
         
-        def flatten_hierarchy(node):
-            """Flatten the hierarchy for creation (depth-first)"""
-            for child in node.children:
-                flatten_hierarchy(child)
-            all_nodes.append(node)
-            
-        flatten_hierarchy(root_node)
-        
-        # DO NOT REVERSE - the flattening already put deepest nodes first, root node last
-        # This ensures nested objects come before their parent objects in the instance list
-        
-        # Calculate the insertion indices - deepest nodes get earliest slots
-        insertion_indices = {}
-        for i, node in enumerate(all_nodes):
-            # Keep the order as-is: deepest nodes (first in list) get earliest positions
-            insertion_indices[node] = insertion_index + i
-            
-        # Create a dictionary to map from type name to instance ID for reference updates
-        type_instance_map = {}
-            
-        # Create all instances in order (deepest first, root last)
-        for node in all_nodes:
-            # Create the instance
-            instance = self.viewer._initialize_new_instance(node.type_id, node.type_info)
-            if not instance or instance.type_id == 0:
-                continue  # Skip invalid instances
-                
-            # Insert at the reserved index for this node
-            node_index = insertion_indices[node]
-            
-            # Insert the instance
-            self.viewer._insert_instance_and_update_references(node_index, instance)
-            
-            # Register with ID manager
-            self.viewer.handler.id_manager.register_instance(node_index)
-            
-            # Store the instance ID
-            node.instance_id = node_index
-            
-            # Store type name mapping for reference updates
+        # First, create a mapping of all nodes by their type name for quick lookup
+        node_by_type = {}
+        def map_nodes(node):
             type_name = node.type_info.get("name", "")
             if type_name:
-                type_instance_map[type_name] = node_index
-            
-            # Store the fields in parsed_elements
-            self.scn.parsed_elements[node_index] = node.fields
+                node_by_type[type_name] = node
+            for child in node.children:
+                map_nodes(child)
+        map_nodes(root_node)
         
+        # Track which nodes have been created
+        created_nodes = set()
+        instance_map = {}  # Maps node to instance ID
+        current_insertion_index = insertion_index
+        
+        def create_node_instances(node):
+            """Create instances for a node and its dependencies in field order"""
+            if node in created_nodes:
+                return
+                
+            for field_name, field_type, field_orig_type, field_obj in node.field_order:
+                if isinstance(field_obj, ObjectData):
+                    child_node = None
+                    for child in node.children:
+                        if child.field_name == field_name:
+                            child_node = child
+                            break
+                    
+                    if child_node and child_node not in created_nodes:
+                        create_node_instances(child_node)
+                        
+                elif isinstance(field_obj, UserDataData) and hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
+                    nonlocal current_insertion_index
+                    userdata_id = self.viewer.object_operations._create_userdata_instance_for_field(
+                        field_orig_type, current_insertion_index
+                    )
+                    if userdata_id is not None:
+                        field_obj.value = userdata_id
+                        field_obj.string = field_orig_type
+                        current_insertion_index += 1
+            
+            instance = self.viewer._initialize_new_instance(node.type_id, node.type_info)
+            if instance and instance.type_id != 0:
+                # Insert the instance
+                self.viewer._insert_instance_and_update_references(current_insertion_index, instance)
+                
+                # Register with ID manager
+                self.viewer.handler.id_manager.register_instance(current_insertion_index)
+                
+                # Store the instance ID
+                node.instance_id = current_insertion_index
+                instance_map[node] = current_insertion_index
+                
+                # Store the fields in parsed_elements
+                self.scn.parsed_elements[current_insertion_index] = node.fields
+                
+                current_insertion_index += 1
+            
+            created_nodes.add(node)
+        
+        create_node_instances(root_node)
+            
         # Now update all object references to point to the correct instances
-        for node in all_nodes:
-            for _, field_value in node.fields.items():
+        def update_references(node):
+            for field_name, field_value in node.fields.items():
                 if isinstance(field_value, ObjectData) and field_value.orig_type:
-                    # Find the referenced type in our map
-                    if field_value.orig_type in type_instance_map:
-                        field_value.value = type_instance_map[field_value.orig_type]
+                    # Find the child node for this field
+                    for child in node.children:
+                        if child.field_name == field_name and child in instance_map:
+                            field_value.value = instance_map[child]
+                            break
+            for child in node.children:
+                update_references(child)
+        
+        update_references(root_node)
                     
         # Update the hierarchy in the SCN file - root node is the last node in all_nodes
         root_node_id = root_node.instance_id
@@ -301,6 +373,12 @@ class RszArrayOperations:
                         # Recursively process this object's fields too
                         collect_references(ref_id)
                         
+                elif isinstance(field_data, UserDataData):
+                    ref_id = field_data.value
+                    if ref_id > 0: 
+                        min_later_ref = min(min_later_ref, ref_id)
+                        collect_references(ref_id)
+                        
                 # Check array elements
                 elif isinstance(field_data, ArrayData):
                     for elem in field_data.values:
@@ -309,6 +387,11 @@ class RszArrayOperations:
                             if ref_id > 0:  # valid reference
                                 min_later_ref = min(min_later_ref, ref_id)
                                 # Recursively process this object's fields too
+                                collect_references(ref_id)
+                        elif isinstance(elem, UserDataData):
+                            ref_id = elem.value
+                            if ref_id > 0:
+                                min_later_ref = min(min_later_ref, ref_id)
                                 collect_references(ref_id)
         
         # Start collection from parent instance
@@ -320,12 +403,67 @@ class RszArrayOperations:
         
         return insertion_index
 
+    def _calculate_array_element_insertion_index(self, parent_instance_id, parent_field_name):
+        """
+        Calculate the correct insertion index for new array element instances.
+        This ensures instances are created in the proper position relative to the parent's field order.
+        
+        For arrays that come between other fields in the type definition, this method ensures
+        that array element instances are inserted at the correct position to maintain field ordering.
+        """
+        base_insertion_index = self._calculate_insertion_index(parent_instance_id, parent_field_name)
+        
+        array_data = None
+        if parent_instance_id in self.scn.parsed_elements:
+            array_data = self.scn.parsed_elements[parent_instance_id].get(parent_field_name)
+            
+        if not array_data or not isinstance(array_data, ArrayData):
+            return base_insertion_index
+            
+        if array_data.values:
+            max_instance_id = 0
+            
+            for elem in array_data.values:
+                if is_reference_type(elem) and elem.value > 0:
+                    max_instance_id = max(max_instance_id, elem.value)
+                    
+                    nested_ids = self._collect_all_nested_objects(elem.value)
+                    if nested_ids:
+                        max_instance_id = max(max_instance_id, max(nested_ids))
+            
+            if max_instance_id > 0:
+                return max_instance_id + 1
+                
+        return base_insertion_index
+
     def _find_array_parent_data(self, array_data):
         """Find parent instance and field for an array"""
         for instance_id, fields in self.scn.parsed_elements.items():
             for field_name, field_data in fields.items():
                 if field_data is array_data:
                     return instance_id, field_name
+        
+        if hasattr(array_data, '_owning_instance_id') and hasattr(array_data, '_owning_field'):
+            return array_data._owning_instance_id, array_data._owning_field
+        
+        if hasattr(self.viewer, 'embedded_contexts'):
+            for context in self.viewer.embedded_contexts:
+                if hasattr(context, 'embedded_instances'):
+                    for instance_id, fields in context.embedded_instances.items():
+                        if isinstance(fields, dict):
+                            for field_name, field_data in fields.items():
+                                if field_data is array_data:
+                                    return instance_id, field_name
+        
+        for instance_id, fields in self.scn.parsed_elements.items():
+            if isinstance(fields, dict):
+                for field_name, field_data in fields.items():
+                    if hasattr(field_data, 'embedded_instances'):
+                        for emb_id, emb_fields in field_data.embedded_instances.items():
+                            if isinstance(emb_fields, dict):
+                                for emb_field_name, emb_field_data in emb_fields.items():
+                                    if emb_field_data is array_data:
+                                        return emb_id, emb_field_name
         
         QMessageBox.warning(self.viewer, "Error", "Could not find array's parent instance")
         return None
@@ -501,6 +639,14 @@ class RszArrayOperations:
             traceback.print_exc()
             return False
     
+    def _is_reference_match(self, ref_obj, instance_id, ref_type):
+        """Helper to check if a reference object matches the criteria"""
+        if ref_type == "object":
+            return isinstance(ref_obj, ObjectData) and ref_obj.value == instance_id
+        elif ref_type == "userdata":
+            return isinstance(ref_obj, UserDataData) and ref_obj.value == instance_id
+        return False
+    
     def _check_instance_referenced_elsewhere(self, instance_id, current_array, current_index=None, ref_type="object"):
         """
         Unified method to check if an instance is referenced from places outside current context.
@@ -566,26 +712,36 @@ class RszArrayOperations:
                 
             for field_name, field_data in fields.items():
                 # Check direct references based on reference type
-                if ((ref_type == "object" and isinstance(field_data, ObjectData) and field_data.value == instance_id) or
-                    (ref_type == "userdata" and isinstance(field_data, UserDataData) and field_data.value == instance_id)):
+                if self._is_reference_match(field_data, instance_id, ref_type):
                     print(f"  Found external reference from instance {check_id}, field {field_name}")
                     return True
                     
                 # Check references in arrays
                 elif isinstance(field_data, ArrayData):
                     for i, item in enumerate(field_data.values):
-                        if ((ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id) or
-                            (ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id)):
+                        if self._is_reference_match(item, instance_id, ref_type):
                             print(f"  Found external reference from instance {check_id}, field {field_name}[{i}]")
                             return True
-                                
+                            
+                # Check embedded instances within UserData
+                if hasattr(field_data, 'embedded_instances'):
+                    for emb_id, emb_fields in field_data.embedded_instances.items():
+                        if isinstance(emb_fields, dict):
+                            for emb_field_name, emb_field_data in emb_fields.items():
+                                if self._is_reference_match(emb_field_data, instance_id, ref_type):
+                                    return True
+                                    
+                                elif isinstance(emb_field_data, ArrayData):
+                                    for i, item in enumerate(emb_field_data.values):
+                                        if self._is_reference_match(item, instance_id, ref_type):
+                                            return True
+        
         # Special additional check for arrays: 
         # If this is the array we're modifying, check other indices for references
         if current_index is not None and isinstance(current_array, ArrayData):
             for i, item in enumerate(current_array.values):
                 if i != current_index:  # Skip the item we're deleting
-                    if ((ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id) or
-                        (ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id)):
+                    if self._is_reference_match(item, instance_id, ref_type):
                         print(f"  Found another reference in same array at index {i}")
                         return True
         

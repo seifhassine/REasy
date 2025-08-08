@@ -2,10 +2,10 @@ import struct
 import traceback
 from file_handlers.rsz.rsz_data_types import (
     ArrayData,
-    ObjectData,
-    UserDataData,
     StringData,
-    ResourceData
+    ResourceData,
+    is_reference_type,
+    is_array_type
 )
 from utils.hex_util import align
 from utils.id_manager import EmbeddedIdManager
@@ -647,10 +647,10 @@ def build_embedded_rsz(rui, type_registry=None):
 
 def _update_field_references(field_data, old_to_new_idx):
     """Update references in fields to match new indices"""
-    if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData) :
+    if is_reference_type(field_data):
         if field_data.value in old_to_new_idx:
             field_data.value = old_to_new_idx[field_data.value]
-    elif isinstance(field_data, ArrayData):
+    elif is_array_type(field_data):
         field_data.modified = True  
         for element in field_data.values:
             _update_field_references(element, old_to_new_idx)

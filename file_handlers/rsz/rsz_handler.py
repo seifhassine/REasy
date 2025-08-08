@@ -20,9 +20,9 @@ from file_handlers.rsz.rsz_data_types import (
     ObjectData,
     UserDataData,
     RawBytesData,
-    MaybeObject,
     get_type_class,
-    GuidData
+    is_reference_type,
+    is_array_type,
 )
 from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 from .rsz_file import RszFile, RszInstanceInfo
@@ -37,6 +37,8 @@ from .rsz_object_operations import RszObjectOperations
 from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
+from .rsz_field_utils import update_references_with_mapping, shift_references_above_threshold
+from .rsz_guid_utils import create_guid_data
 
 RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot manually manage resources."
 
@@ -53,7 +55,7 @@ class RszHandler(BaseFileHandler):
         self._viewer = None
         self._game_version = "RE4"
         self.filepath = ""
-        self.array_clipboard = None
+        # RszArrayClipboard is a static class, no instance needed
         self.gameobject_clipboard = None
         self.component_clipboard = None
         self.type_registry = None
@@ -102,7 +104,6 @@ class RszHandler(BaseFileHandler):
         print(f"Reading file with game version: {self._game_version}")
         self.rsz_file.read(data)
         self.rsz_file.auto_resource_management = self.auto_resource_management
-        self.array_clipboard = RszArrayClipboard()
         self.gameobject_clipboard = RszGameObjectClipboard()
         self.component_clipboard = RszComponentClipboard()
         
@@ -153,9 +154,7 @@ class RszHandler(BaseFileHandler):
         
     def get_array_clipboard(self):
         """Get the array clipboard instance"""
-        if not self.array_clipboard:
-            self.array_clipboard = RszArrayClipboard()
-        return self.array_clipboard
+        return RszArrayClipboard
     
     def get_gameobject_clipboard(self):
         """Get the GameObject clipboard instance"""
@@ -163,13 +162,13 @@ class RszHandler(BaseFileHandler):
             self.gameobject_clipboard = RszGameObjectClipboard()
         return self.gameobject_clipboard
         
-    def copy_array_element_to_clipboard(self, widget, element, array_type):
+    def copy_array_element_to_clipboard(self, widget, element, array_type, embedded_context=None):
         """Copy an array element to clipboard through the handler"""
-        return self.get_array_clipboard().copy_to_clipboard(widget, element, array_type)
+        return self.get_array_clipboard().copy_to_clipboard(widget, element, array_type, embedded_context)
     
-    def copy_gameobject_to_clipboard(self, widget, gameobject_id):
+    def copy_gameobject_to_clipboard(self, widget, gameobject_id, embedded_context=None):
         """Copy a GameObject to clipboard through the handler"""
-        return RszGameObjectClipboard.copy_gameobject_to_clipboard(widget, gameobject_id)
+        return RszGameObjectClipboard.copy_gameobject_to_clipboard(widget, gameobject_id, embedded_context)
         
     def paste_array_element_from_clipboard(self, widget, array_operations, array_data, array_item, embedded_context=None):
         """Paste an array element from clipboard through the handler"""
@@ -690,7 +689,7 @@ class RszViewer(QWidget):
             settings_node = {"data": ["Settings", ""], "children": []}
             go_dict["children"].append(settings_node)
             if not self.scn.is_pfb:
-                guid_data = GuidData(guid_le_to_str(go.guid), go.guid)
+                guid_data = create_guid_data(go.guid)
                 guid_data.gameobject = go
                 guid_field = self._create_field_dict("GUID", guid_data)
                 settings_node["children"].insert(0, guid_field)
@@ -698,7 +697,7 @@ class RszViewer(QWidget):
             if go_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[go_instance_id]
                 for field_name, field_data in fields.items():
-                    field_node = self._create_field_dict(field_name, field_data)
+                    field_node = self._create_field_dict(field_name, field_data, embedded_context=None)
                     if len(settings_node["children"]) == 1:
                         field_data.is_gameobject_or_folder_name = go_dict
                     settings_node["children"].append(field_node)
@@ -834,7 +833,7 @@ class RszViewer(QWidget):
             
             return struct_node
             
-        elif isinstance(data_obj, ArrayData):
+        elif is_array_type(data_obj):
             children = []
             original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
             
@@ -856,7 +855,7 @@ class RszViewer(QWidget):
                         if not hasattr(element, '_container_context') or element._container_context is None:
                             element._container_context = embedded_context
                 
-                if isinstance(element, ObjectData) or isinstance(element, UserDataData):
+                if is_reference_type(element):
                     child_node = self._handle_reference_in_array(i, element, embedded_context, domain_id)
                     if child_node:
                         children.append(child_node)
@@ -867,11 +866,17 @@ class RszViewer(QWidget):
                         DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
                     )
                     
-            return DataTreeBuilder.create_data_node(
+            array_node = DataTreeBuilder.create_data_node(
                 f"{field_name}: {original_type}", "", "array", data_obj, children
             )
             
-        elif isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData):
+            if is_embedded and embedded_context:
+                array_node["embedded_context"] = embedded_context
+                array_node["domain_id"] = domain_id
+            
+            return array_node
+            
+        elif is_reference_type(data_obj):
             return self._handle_object_reference(field_name, data_obj, embedded_context, domain_id)
         else:
             # All other data types are handled the same way regardless of context
@@ -881,14 +886,14 @@ class RszViewer(QWidget):
 
     def _handle_reference_in_array(self, index, element, embedded_context, domain_id):
         """Handle object or userdata reference in an array"""
-        if not (isinstance(element, ObjectData) or isinstance(element, UserDataData)):
+        if not is_reference_type(element):
             raise ValueError("Invalid data object type for reference handling")
         ref_id = element.value
         return self._handle_reference(str(index), ref_id, embedded_context, element)
     
     def _handle_object_reference(self, field_name, data_obj, embedded_context, domain_id):
         """Handle object or userdata reference"""
-        if not (isinstance(data_obj, ObjectData) or isinstance(data_obj, UserDataData)):
+        if not is_reference_type(data_obj):
             raise ValueError("Invalid data object type for reference handling")
         ref_id = data_obj.value
         return self._handle_reference(field_name, ref_id, embedded_context, data_obj)
@@ -902,21 +907,30 @@ class RszViewer(QWidget):
 
     def _handle_embedded_reference(self, field_name, ref_id, embedded_context, data_obj):
         """Handle reference in embedded context"""
-        # For embedded fields, look in embedded_instances
+        if isinstance(data_obj, UserDataData):
+            if hasattr(embedded_context, 'embedded_userdata_infos'):
+                for embedded_rui in embedded_context.embedded_userdata_infos:
+                    if embedded_rui.instance_id == ref_id:
+                        if hasattr(embedded_rui, 'embedded_instances') and embedded_rui.embedded_instances:
+                            # This is a nested embedded RSZ container
+                            embedded_rui.parent_userdata_rui = embedded_context
+                            return self._create_direct_embedded_usr_node(field_name, embedded_rui)
+                        return DataTreeBuilder.create_data_node(
+                            f"{field_name}: Embedded UserData (ID: {ref_id})", "", None, None
+                        )
+            
+            if hasattr(self.scn, '_rsz_userdata_set') and ref_id in self.scn._rsz_userdata_set:
+                rui = self.scn._rsz_userdata_dict.get(ref_id)
+                if rui and hasattr(rui, 'embedded_instances') and rui.embedded_instances:
+                    return self._create_direct_embedded_usr_node(field_name, rui)
+                else:
+                    display_value = self.name_helper.get_userdata_display_value(ref_id)
+                    return DataTreeBuilder.create_data_node(
+                        f"{field_name}: {display_value}", "", None, None
+                    )
+        
         if hasattr(embedded_context, 'embedded_instances') and ref_id in embedded_context.embedded_instances:
             return self._create_embedded_instance_node(field_name, ref_id, embedded_context)
-            
-        # Handle reference to embedded UserData
-        elif hasattr(embedded_context, 'embedded_userdata_infos'):
-            for embedded_rui in embedded_context.embedded_userdata_infos:
-                if embedded_rui.instance_id == ref_id:
-                    if hasattr(embedded_rui, 'embedded_instances') and embedded_rui.embedded_instances:
-                        # Set parent reference to track modification chain
-                        embedded_rui.parent_userdata_rui = embedded_context
-                        return self._create_direct_embedded_usr_node(field_name, embedded_rui)
-                    return DataTreeBuilder.create_data_node(
-                        f"{field_name}: Embedded UserData (ID: {ref_id})", "", None, None
-                    )
         
         # Generic reference representation
         type_label = "UserData" if isinstance(data_obj, UserDataData) else "Object"
@@ -1013,7 +1027,12 @@ class RszViewer(QWidget):
         root_instance_id = self._get_root_embedded_instance_id(rui)
         type_name = self._get_embedded_type_name(root_instance_id, rui) if root_instance_id else "UserData"
 
-        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name} <span style='color: #FFFF00;'>(embedded RSZ)</span>", "")
+        reference_count = self._count_embedded_rsz_references(rui)
+        multi_ref_indicator = ""
+        if reference_count > 1:
+            multi_ref_indicator = f" <span style='color: #FF00FF;'>(multi-reference: {reference_count})</span>"
+            rui.reference_count = reference_count
+        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name} <span style='color: #FFFF00;'>(embedded RSZ)</span>{multi_ref_indicator}", "")
         
         # Build hierarchy if needed
         hierarchy = getattr(rui, 'embedded_instance_hierarchy', None)
@@ -1032,10 +1051,36 @@ class RszViewer(QWidget):
             self._add_root_instance_fields(root_node, root_instance_id, rui, domain_id)
         
         # Build the hierarchy relationships between nodes
-        self._build_embedded_node_hierarchy(nodes, hierarchy, root_node, root_instance_id)
+        self._build_embedded_node_hierarchy(nodes, hierarchy, root_node, root_instance_id, rui)
         
         return root_node
 
+    def _count_embedded_rsz_references(self, rui):
+        """Count how many times an embedded RSZ structure is referenced across the file"""
+        if hasattr(rui, 'reference_count'):
+            return rui.reference_count
+            
+        rui_id = None
+        for id_val, ref_rui in self.scn._rsz_userdata_dict.items():
+            if ref_rui is rui:
+                rui_id = id_val
+                break
+        
+        if rui_id is None:
+            return 0
+        
+        reference_count = 0
+        
+        def count_userdata_refs(ref_obj):
+            nonlocal reference_count
+            if isinstance(ref_obj, UserDataData) and ref_obj.value == rui_id:
+                reference_count += 1
+        
+        for instance_id, fields in self.scn.parsed_elements.items():
+            from .rsz_field_utils import collect_field_references
+            collect_field_references(fields, count_userdata_refs)
+        
+        return reference_count        
     def _create_embedded_instance_nodes(self, rui, domain_id):
         """Create nodes for all instances in an embedded RSZ structure"""
         nodes = {}
@@ -1065,6 +1110,13 @@ class RszViewer(QWidget):
             
             # Add fields to the node
             for field_name, field_data in instance_data.items():
+                if isinstance(field_data, ArrayData):
+                    field_data._owning_context = rui
+                    field_data._owning_instance_id = instance_id
+                    field_data._owning_field = field_name
+                    field_data._container_context = rui
+                    field_data._container_parent_id = instance_id
+                    field_data._container_field = field_name
                 field_node = self._create_field_dict(field_name, field_data, rui)
                 node_dict["children"].append(field_node)
             
@@ -1079,6 +1131,9 @@ class RszViewer(QWidget):
     
     def _add_root_instance_fields(self, root_node, root_instance_id, rui, domain_id):
         """Add fields from the root instance to the root node"""
+        if not hasattr(rui, 'embedded_instances'):
+            return
+            
         root_data = rui.embedded_instances[root_instance_id]
         if isinstance(root_data, dict):
             # Register the root instance with the embedded ID manager
@@ -1095,7 +1150,7 @@ class RszViewer(QWidget):
                 field_node = self._create_field_dict(field_name, field_data, rui)
                 root_node["children"].append(field_node)
 
-    def _build_embedded_node_hierarchy(self, nodes, hierarchy, root_node, root_instance_id):
+    def _build_embedded_node_hierarchy(self, nodes, hierarchy, root_node, root_instance_id, rui):
         """Build parent-child relationships between nodes"""
         # Track which nodes have been attached to the tree
         attached = set()
@@ -1112,11 +1167,6 @@ class RszViewer(QWidget):
                 if parent_id is not None and parent_id in nodes:
                     nodes[parent_id]["children"].append(node_dict)
                     attached.add(instance_id)
-        
-        # Phase 2: Attach any remaining nodes to root
-        for instance_id, node_dict in nodes.items():
-            if instance_id != root_instance_id and instance_id not in attached:
-                root_node["children"].append(node_dict)
     
     def _get_embedded_type_name(self, instance_id, rui):
         """Get the type name for an instance in embedded RSZ"""
@@ -1176,21 +1226,17 @@ class RszViewer(QWidget):
 
     def _process_reference_for_hierarchy(self, instance_id, field_data, hierarchy):
         """Process a field for parent-child relationships in hierarchy"""
-        # Handle direct object references
-        if isinstance(field_data, ObjectData) and field_data.value in hierarchy:
-            child_id = field_data.value
-            if child_id != instance_id:  # Avoid self-references
-                hierarchy[instance_id]["children"].append(child_id)
-                hierarchy[child_id]["parent"] = instance_id
-                
-        # Handle array of object references
-        elif isinstance(field_data, ArrayData):
-            for element in field_data.values:
-                if isinstance(element, ObjectData) and element.value in hierarchy:
-                    child_id = element.value
-                    if child_id != instance_id:  # Avoid self-references
-                        hierarchy[instance_id]["children"].append(child_id)
-                        hierarchy[child_id]["parent"] = instance_id
+        from .rsz_field_utils import collect_field_references
+        
+        def process_object_ref(ref_obj):
+            if isinstance(ref_obj, ObjectData) and ref_obj.value in hierarchy:
+                child_id = ref_obj.value
+                if child_id != instance_id:
+                    hierarchy[instance_id]["children"].append(child_id)
+                    hierarchy[child_id]["parent"] = instance_id
+        
+        # This will handle both direct references and array elements
+        collect_field_references({field_data: field_data}, process_object_ref)
     
     def _count_all_children(self, node_id, hierarchy, visited=None):
         """Count all children (direct and indirect) of a node"""
@@ -1222,6 +1268,14 @@ class RszViewer(QWidget):
             raise RuntimeError(f"Failed to rebuild SCN file: {str(e)}")
 
     def create_array_element(self, element_type, array_data, direct_update=False, array_item=None):
+        if hasattr(array_data, '_owning_context') and array_data._owning_context:
+            from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+            embedded_ops = RszEmbeddedArrayOperations(self)
+            return embedded_ops.create_array_element(
+                element_type, array_data, array_data._owning_context,
+                direct_update=direct_update, array_item=array_item
+            )
+        
         if not self.array_operations:
             self.array_operations = RszArrayOperations(self)
         return self.array_operations.create_array_element(
@@ -1229,6 +1283,13 @@ class RszViewer(QWidget):
         )
 
     def delete_array_element(self, array_data, element_index):
+        if hasattr(array_data, '_owning_context') and array_data._owning_context:
+            from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+            embedded_ops = RszEmbeddedArrayOperations(self)
+            return embedded_ops.delete_array_element(
+                array_data, element_index, array_data._owning_context
+            )
+        
         if not self.array_operations:
             self.array_operations = RszArrayOperations(self)
         return self.array_operations.delete_array_element(array_data, element_index)
@@ -1257,13 +1318,24 @@ class RszViewer(QWidget):
         """Delete a folder with the given ID"""
         return self.object_operations.delete_folder(folder_id)
 
+    def create_scn_folder_object(self):
+        """Create a new RszFolderInfo object for SCN files"""
+        from .rsz_file import RszFolderInfo
+        return RszFolderInfo()
+
     def _create_default_field(self, data_class, original_type, is_array=False, field_size=1):
         try:
             if is_array:
                 return ArrayData([], data_class, original_type)
             if data_class == ObjectData:
                 return ObjectData(0, original_type)
-            if data_class == RawBytesData or data_class == MaybeObject:
+            if data_class == UserDataData:
+                if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
+                    userdata = UserDataData(0, "", original_type)
+                    userdata._needs_embedded_rsz = True
+                    return userdata
+                return UserDataData(0, "", original_type)
+            if data_class == RawBytesData:
                 return RawBytesData(bytes(field_size), field_size, original_type)
             return data_class()
         except Exception as e:
@@ -1282,17 +1354,9 @@ class RszViewer(QWidget):
                 
         updated_elements = {}
         for instance_id, fields in self.scn.parsed_elements.items():
-            updated_fields = {}
             new_id = instance_id + 1 if instance_id >= index else instance_id
-            for field_name, field_data in fields.items():
-                if (isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData)) and field_data.value >= index:
-                        field_data.value += 1
-                elif isinstance(field_data, ArrayData):
-                    for elem in field_data.values:
-                        if (isinstance(elem, ObjectData) or isinstance(elem, UserDataData)) and elem.value >= index:
-                            elem.value += 1
-                updated_fields[field_name] = field_data
-            updated_elements[new_id] = updated_fields
+            shift_references_above_threshold(fields, index, 1)
+            updated_elements[new_id] = fields
         self.scn.parsed_elements = updated_elements
         
         updated_hierarchy = {}
@@ -1472,25 +1536,10 @@ class RszViewer(QWidget):
 
     def _update_fields_after_deletion(self, fields, deleted_ids, id_mapping):
         """Update references in fields after deleting instances"""
-        updated_fields = {}
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, ObjectData) or isinstance(field_data, UserDataData):
-                self._update_reference_value(field_data, "value", deleted_ids, id_mapping)
-            elif isinstance(field_data, ArrayData):
-                for elem in field_data.values:
-                    if isinstance(elem, ObjectData) or isinstance(elem, UserDataData):
-                        self._update_reference_value(elem, "value", deleted_ids, id_mapping)
-            updated_fields[field_name] = field_data
-        return updated_fields
+        update_references_with_mapping(fields, id_mapping, deleted_ids)
+        return fields
         
-    def _update_reference_value(self, obj, attr_name, deleted_ids, id_mapping):
-        """Update a reference attribute value after deletion"""
-        ref_id = getattr(obj, attr_name)
-        if ref_id > 0:
-            if ref_id in deleted_ids:
-                setattr(obj, attr_name, 0)
-            else:
-                setattr(obj, attr_name, id_mapping.get(ref_id, ref_id))
+
 
     def _initialize_new_instance(self, type_id, type_info):
         """Create a new instance from type info with proper CRC"""

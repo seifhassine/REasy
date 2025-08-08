@@ -8,7 +8,7 @@ from file_handlers.rsz.rsz_data_types import (
     ArrayData, MaybeObject, get_type_class
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata, Scn19RSZUserDataInfo
+from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
@@ -266,6 +266,7 @@ class RszFile:
         self.is_pfb = False
         self.is_scn = False
         self.is_pfb16 = False
+        self.has_embedded_rsz = False
         self.gameobjects = []
         self.folder_infos = []
         self.resource_infos = []
@@ -548,6 +549,7 @@ class RszFile:
 
     def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
+        self.has_embedded_rsz = True
         self._current_offset = parse_scn19_rsz_userdata(self, data, skip_data)
 
     def get_rsz_userdata_string(self, rui):
@@ -939,58 +941,61 @@ class RszFile:
         """Get resources dynamically based on resource fields"""
         resources = []
 
-        def _collect(parsed_elements, instance_infos):
-            for instance_id, fields in sorted(parsed_elements.items()):
-                
-                inst_info = instance_infos[instance_id]
-                type_info = self.type_registry.get_type_info(inst_info.type_id)
-                name = type_info.get("name", [])
-                fields_def = type_info.get("fields", [])
+        def _collect_segment(parsed_elements, instance_infos, userdata_infos):
+            by_instance = {}
+            for rui in userdata_infos or []:
+                by_instance.setdefault(rui.instance_id, []).append(rui)
 
-                if name == "via.Prefab":
-                    f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
-                    if fields[f0].value:
-                        val = fields[f1].value.rstrip("\0")
-                        if val and val not in resources:
-                            resources.append(val)
+            for instance_id in range(len(instance_infos)):
+                fields = parsed_elements.get(instance_id)
+                if fields is not None:
+                    inst_info = instance_infos[instance_id]
+                    type_info = self.type_registry.get_type_info(inst_info.type_id)
+                    name = type_info.get("name", [])
+                    fields_def = type_info.get("fields", [])
 
-                elif name == "via.Folder":
-                    f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
-                    if fields[f4].value:
-                        val = fields[f5].value.rstrip("\0")
-                        if val and val not in resources:
-                            resources.append(val)
+                    if name == "via.Prefab":
+                        f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
+                        if fields[f0].value:
+                            val = fields[f1].value.rstrip("\0")
+                            if val and val not in resources:
+                                resources.append(val)
 
-                else:
-                    for fd in fields_def:
-                        if fd["type"] == "Resource":
-                            fn = fd["name"]
-                            data_obj = fields.get(fn)
-                            if not data_obj:
-                                continue
+                    elif name == "via.Folder":
+                        f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
+                        if fields[f4].value:
+                            val = fields[f5].value.rstrip("\0")
+                            if val and val not in resources:
+                                resources.append(val)
 
-                            if not fd.get("array", False):
-                                val = data_obj.value.rstrip("\0")
-                                if val and val not in resources:
-                                    resources.append(val)
-                            else:
-                                for elem in data_obj.values:
-                                    val = elem.value.rstrip("\0")
+                    else:
+                        for fd in fields_def:
+                            if fd["type"] == "Resource":
+                                fn = fd["name"]
+                                data_obj = fields.get(fn)
+                                if not data_obj:
+                                    continue
+                                if not fd.get("array", False):
+                                    val = data_obj.value.rstrip("\0")
                                     if val and val not in resources:
                                         resources.append(val)
+                                else:
+                                    for elem in data_obj.values:
+                                        val = elem.value.rstrip("\0")
+                                        if val and val not in resources:
+                                            resources.append(val)
 
-        _collect(self.parsed_elements, self.instance_infos)
+                for rui in by_instance.get(instance_id, []):
+                    _collect_segment(
+                        rui.embedded_instances,
+                        rui.embedded_instance_infos,
+                        getattr(rui, "embedded_userdata_infos", None),
+                    )
 
         if getattr(self, "is_scn", False) and (self.filepath.lower().endswith(".19") or self.filepath.lower().endswith('.18')):
-            def _recurse_rui(rui: Scn19RSZUserDataInfo):
-                _collect(rui.embedded_instances, rui.embedded_instance_infos)
-                for nested in getattr(rui, "embedded_userdata_infos", []):
-                    if isinstance(nested, Scn19RSZUserDataInfo):
-                        _recurse_rui(nested)
-
-            for rui in self.rsz_userdata_infos:
-                if isinstance(rui, Scn19RSZUserDataInfo):
-                    _recurse_rui(rui)
+            _collect_segment(self.parsed_elements, self.instance_infos, self.rsz_userdata_infos)
+        else:
+            _collect_segment(self.parsed_elements, self.instance_infos, None)
 
         return resources
 
@@ -1061,12 +1066,8 @@ class RszFile:
             out += struct.pack("<i", go.id)
             out += struct.pack("<i", go.parent_id)
             out += struct.pack("<H", go.component_count)
-            if self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18'):
-                out += struct.pack("<h", go.prefab_id)
-                out += struct.pack("<i", go.ukn) 
-            else:
-                out += struct.pack("<h", go.ukn)
-                out += struct.pack("<i", go.prefab_id) 
+            out += struct.pack("<h", go.ukn)
+            out += struct.pack("<i", go.prefab_id) 
 
         # 3) Align and write folder infos, recording folder_tbl offset
         while len(out) % 16 != 0:
@@ -1246,8 +1247,9 @@ class RszFile:
             new_userdata_offset = len(out) - rsz_start 
 
             # 9d) Write RSZUserDataInfos entries with placeholder for string offsets.
+            sorted_rsz_userdata_infos = sorted(self.rsz_userdata_infos, key=lambda rui: rui.instance_id)
             userdata_entries = []
-            for rui in self.rsz_userdata_infos:
+            for rui in sorted_rsz_userdata_infos:
                 entry_offset = len(out) - rsz_start
                 out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
                 userdata_entries.append((entry_offset, rui))

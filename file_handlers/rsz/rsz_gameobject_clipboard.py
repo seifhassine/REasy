@@ -1,20 +1,151 @@
 import os
 import json
-import uuid
 import traceback
 from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
 from file_handlers.rsz.rsz_data_types import (
-    ObjectData, UserDataData, ArrayData, S32Data, GuidData
+    S32Data, is_reference_type, is_array_type
 )
-from file_handlers.rsz.rsz_file import RszInstanceInfo, RszPrefabInfo, RszRSZUserDataInfo, RszUserDataInfo, RszGameObject
+from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-from utils.hex_util import guid_le_to_str, is_null_guid
 from file_handlers.rsz.rsz_clipboard_utils import RszClipboardUtils
+from file_handlers.rsz.rsz_guid_utils import create_new_guid, create_guid_data, handle_guid_mapping
+from file_handlers.rsz.rsz_field_utils import shift_references_above_threshold
+
+
+class _ReferenceUpdater:
+    """Helper class to centralize reference updating logic"""
+    
+    @staticmethod
+    def update_field_reference(field_data, instance_remapping, context_match_required=False, 
+                              instance_context_id=None, viewer=None):
+        """Update a single field reference if it's in the remapping"""
+        if not field_data or field_data.value <= 0:
+            return False
+            
+        if field_data.value not in instance_remapping:
+            return False
+            
+        # Handle context matching for embedded RSZ
+        if context_match_required and viewer:
+            target_context_id = _ReferenceUpdater._get_instance_context(
+                viewer, instance_remapping[field_data.value]
+            )
+            if target_context_id != instance_context_id:
+                return False
+        
+        old_value = field_data.value
+        new_value = instance_remapping[old_value]
+        field_data.value = new_value
+   
+        return True
+    
+    @staticmethod
+    def _get_instance_context(viewer, instance_id):
+        """Get the context ID for an instance (0 for main file, otherwise embedded container ID)"""
+        if not viewer.scn.has_embedded_rsz:
+            return 0
+            
+        for rui in viewer.scn.rsz_userdata_infos:
+            if rui.instance_id == instance_id:
+                if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
+                    return rui.instance_id
+                elif hasattr(rui, 'parent_userdata_rui') and rui.parent_userdata_rui:
+                    return rui.parent_userdata_rui.instance_id
+                else:
+                    return 0
+                    
+            if hasattr(rui, 'embedded_instances') and instance_id in rui.embedded_instances:
+                return rui.instance_id
+                
+        return 0
+    
+    @staticmethod
+    def update_instance_references(viewer, instance_remapping, handle_embedded_contexts=True):
+        """Update all references to remapped instances throughout the file"""
+        update_count = 0
+        has_embedded_rsz = hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz
+        
+        for instance_id, fields in viewer.scn.parsed_elements.items():
+            instance_context_id = None
+            if has_embedded_rsz and handle_embedded_contexts:
+                instance_context_id = _ReferenceUpdater._get_instance_context(viewer, instance_id)
+            
+            for field_name, field_data in fields.items():
+                if is_reference_type(field_data):
+                    if _ReferenceUpdater.update_field_reference(
+                        field_data, instance_remapping, 
+                        has_embedded_rsz and handle_embedded_contexts,
+                        instance_context_id, viewer
+                    ):
+                        update_count += 1
+                        
+                elif is_array_type(field_data):
+                    for element in field_data.values:
+                        if is_reference_type(element):
+                            if _ReferenceUpdater.update_field_reference(
+                                element, instance_remapping,
+                                has_embedded_rsz and handle_embedded_contexts,
+                                instance_context_id, viewer
+                            ):
+                                update_count += 1
+        
+        return update_count
+
+
+class _GameObjectHelper:
+    """Helper class to centralize GameObject and component operations"""
+    
+    @staticmethod
+    def create_and_map_components(viewer, gameobject, component_instances, instance_mapping):
+        """Create component entries in object table and return mapped instances"""
+        mapped_component_instances = []
+        
+        for i, comp_instance_id in enumerate(component_instances):
+            if comp_instance_id in instance_mapping:
+                new_comp_instance_id = instance_mapping[comp_instance_id]
+                mapped_component_instances.append(new_comp_instance_id)
+                
+                new_component_object_id = gameobject.id + i + 1
+                RszGameObjectClipboard._insert_into_object_table(
+                    viewer, new_component_object_id, new_comp_instance_id
+                )
+        
+        gameobject.component_count = len(mapped_component_instances)
+        return mapped_component_instances
+    
+    @staticmethod
+    def setup_gameobject_guid(viewer, gameobject, guid_hex, instance_id, guid_mapping, randomize=True):
+        """Setup GUID for GameObject if provided"""
+        if guid_hex and hasattr(gameobject, 'guid'):
+            new_guid = handle_guid_mapping(
+                bytes.fromhex(guid_hex),
+                guid_mapping,
+                randomize=randomize
+            )
+            if new_guid:
+                gameobject.guid = new_guid
+                RszGameObjectClipboard._add_guid_to_settings(
+                    viewer, instance_id, new_guid
+                )
+                return True
+        return False
+    
+    @staticmethod
+    def create_gameobject_result(gameobject, instance_id, name, parent_id, viewer):
+        """Create a standardized result dictionary for a GameObject"""
+        return {
+            "go_id": gameobject.id,
+            "instance_id": instance_id,
+            "name": name,
+            "parent_id": parent_id,
+            "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(instance_id),
+            "component_count": gameobject.component_count,
+            "children": []
+        }
+
 
 class RszGameObjectClipboard(RszClipboardBase):
-    NULL_GUID = bytes(16)
-    NULL_GUID_STR = "00000000-0000-0000-0000-000000000000"
     DEFAULT_GO_NAME = "GameObject"
     _instance = None
     
@@ -53,7 +184,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         return RszClipboardBase.get_json_name(instance, viewer)
     
     @staticmethod
-    def copy_gameobject_to_clipboard(viewer, gameobject_id):
+    def copy_gameobject_to_clipboard(viewer, gameobject_id, embedded_context=None, include_children=True):
         try:
             if gameobject_id < 0 or gameobject_id >= len(viewer.scn.object_table):
                 print(f"Invalid GameObject ID: {gameobject_id}")
@@ -69,7 +200,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 print(f"Invalid instance ID for GameObject {gameobject_id}")
                 return False
                 
-            source_name = RszGameObjectClipboard._get_gameobject_name(viewer, source_instance_id)
+            source_name = RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(source_instance_id, {}))
             print(f"Copying GameObject '{source_name}' (ID: {gameobject_id})")
             
             prefab_path = None
@@ -81,7 +212,38 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             component_instances = RszGameObjectClipboard._get_components_for_gameobject(viewer, source_go)
             
-            child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, gameobject_id)
+            if include_children:
+                child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, gameobject_id)
+            else:
+                child_gameobjects = []
+            
+            instance = RszGameObjectClipboard.get_instance()
+            
+            all_instances = [source_instance_id] + component_instances
+            for child in child_gameobjects:
+                child_instance_id = RszGameObjectClipboard._get_instance_id(viewer, child.id)
+                if child_instance_id > 0:
+                    all_instances.append(child_instance_id)
+                child_components = RszGameObjectClipboard._get_components_for_gameobject(viewer, child)
+                all_instances.extend(child_components)
+            
+            hierarchy = instance.serialize_hierarchy(viewer, all_instances, None, embedded_context)
+            
+            hierarchy["gameobjects"] = {}
+            hierarchy["root_id"] = gameobject_id
+            
+            go_data = RszGameObjectClipboard._serialize_gameobject_data(viewer, gameobject_id)
+            if go_data:
+                direct_children = [child.id for child in child_gameobjects if child.parent_id == gameobject_id]
+                go_data["direct_children"] = direct_children
+                hierarchy["gameobjects"][str(gameobject_id)] = go_data
+            
+            for child in child_gameobjects:
+                child_data = RszGameObjectClipboard._serialize_gameobject_data(viewer, child.id)
+                if child_data:
+                    direct_children = [go.id for go in child_gameobjects if go.parent_id == child.id]
+                    child_data["direct_children"] = direct_children
+                    hierarchy["gameobjects"][str(child.id)] = child_data
             
             gameobject_data = {
                 "name": source_name,
@@ -89,15 +251,13 @@ class RszGameObjectClipboard(RszClipboardBase):
                 "instance_id": source_instance_id,
                 "guid": source_go.guid.hex() if hasattr(source_go, 'guid') and source_go.guid else None,
                 "prefab_path": prefab_path,
+                "ukn": source_go.ukn,
                 "component_count": source_go.component_count,
                 "components": component_instances,
                 "children": [child.id for child in child_gameobjects],
-                "hierarchy": RszGameObjectClipboard._serialize_gameobject_hierarchy(
-                    viewer, gameobject_id, component_instances, child_gameobjects
-                )
+                "hierarchy": hierarchy
             }
             
-            instance = RszGameObjectClipboard.get_instance()
             instance.save_clipboard_data(viewer, gameobject_data)
                 
             print(f"Copied GameObject '{source_name}' (ID: {gameobject_id}) to clipboard with {len(component_instances)} components and {len(child_gameobjects)} children")
@@ -113,11 +273,20 @@ class RszGameObjectClipboard(RszClipboardBase):
         children = []
         
         direct_children = []
-        for go in viewer.scn.gameobjects:
-            if go.parent_id == parent_id:
-                direct_children.append(go)
-                children.append(go)
+        direct_children_ids = set()
         
+        go_with_indices = []
+        for go in viewer.scn.gameobjects:
+            if go.parent_id == parent_id and go.id < len(viewer.scn.object_table):
+                go_with_indices.append((go.id, go))
+        
+        go_with_indices.sort(key=lambda x: x[0])
+        
+        for _, go in go_with_indices:
+            direct_children.append(go)
+            children.append(go)
+            direct_children_ids.add(go.id)
+    
         for child in direct_children:
             nested_children = RszGameObjectClipboard._collect_child_gameobjects(viewer, child.id)
             for nested in nested_children:
@@ -127,72 +296,240 @@ class RszGameObjectClipboard(RszClipboardBase):
         return children
     
     @staticmethod
-    def _serialize_gameobject_hierarchy(viewer, root_id, component_instances, child_gameobjects):
+    def _paste_hierarchy_from_clipboard(viewer, parent_id=-1, new_name=None, 
+                                                        cached_clipboard_data=None, 
+                                                        is_folder=False, create_prefab=True, 
+                                                        randomize_ids=True,
+                                                        shared_userdata_keys=None,
+                                                        global_shared_mapping=None):
+        """
+        Modified paste that preserves shared UserData references across Data Block.
+        
+        Args:
+            shared_userdata_keys: Set of (instance_id, context_id) tuples that should be shared
+            global_shared_mapping: Dict mapping (old_instance_id, context_id) -> new_instance_id
+        """
+        if not cached_clipboard_data:
+            print("No clipboard data found")
+            return None
+        
+        source_name = cached_clipboard_data.get("name", "")
+        hierarchy_data = cached_clipboard_data.get("hierarchy", {})
+        prefab_path = cached_clipboard_data.get("prefab_path") if not is_folder else None
+        
+        if not hierarchy_data:
+            print("No hierarchy data found in clipboard")
+            return None
+            
+        object_type = "Folder" if is_folder else "GameObject"
+        default_name = "Folder_Copy" if is_folder else "GameObject_Copy"
+        
+        if new_name is None or new_name.strip() == "":
+            new_name = f"{source_name}" if source_name and source_name.strip() != "" else default_name
+        
+        root_name = new_name
+        
+        print(f"Pasting {object_type} '{source_name}' -> '{root_name}' with parent ID {parent_id}")
+        
+        instance_mapping = {}
+        guid_mapping = {}
+        userdata_mapping = {}
+        
+        instance = RszGameObjectClipboard.get_instance()
+        
+        if randomize_ids:
+            import random
+            context_id_offset = random.randint(20000, 20000000)
+        else:
+            context_id_offset = 0
+        
+        created_instances = instance.paste_instances_from_hierarchy(
+            viewer, hierarchy_data, instance_mapping, userdata_mapping, 
+            guid_mapping, randomize_ids, shared_userdata_keys, global_shared_mapping
+        )
+        
+        if not created_instances:
+            print("No instances were created")
+            return None
+        
+        gameobjects_data = hierarchy_data.get("gameobjects", {})
+        root_id = hierarchy_data.get("root_id", -1)
+        
+        root_go_data = gameobjects_data.get(str(root_id), {})
+        if not root_go_data:
+            print(f"Root {object_type} data not found for ID {root_id}")
+            return None
+            
+        root_instance_id = root_go_data.get("instance_id", -1)
+        if root_instance_id <= 0 or root_instance_id not in instance_mapping:
+            print(f"Root instance ID {root_instance_id} is invalid or not mapped")
+            return None
+            
+        new_root_instance_id = instance_mapping[root_instance_id]
+        
+        new_root_object_id = len(viewer.scn.object_table)
+        viewer.scn.object_table.append(new_root_instance_id)
+        
+        new_root_object = RszGameObjectClipboard._create_gameobject_entry(viewer, new_root_object_id, parent_id)
+        
+        new_root_object.ukn = root_go_data["ukn"]
+        _GameObjectHelper.setup_gameobject_guid(
+            viewer, new_root_object, root_go_data.get("guid"), 
+            new_root_instance_id, guid_mapping, randomize_ids
+        )
+        
+        if not is_folder:
+            component_instances = root_go_data.get("components", [])
+            _GameObjectHelper.create_and_map_components(
+                viewer, new_root_object, component_instances, instance_mapping
+            )
+            
+            if create_prefab and prefab_path and viewer.scn.is_scn:
+                RszGameObjectClipboard._create_prefab_for_gameobject(
+                    viewer, new_root_object, prefab_path
+                )
+        else:
+            new_root_object.component_count = 0
+        
+        RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_root_object)
+        viewer.scn.gameobjects.append(new_root_object)
+        
+        pasted_children = []
+        go_ids = sorted([int(id_str) for id_str in gameobjects_data.keys()])
+        
+        go_id_mapping = {}
+        
+        for go_id in go_ids:
+            if go_id == root_id:
+                go_id_mapping[go_id] = new_root_object_id
+                continue
+                
+            go_data = gameobjects_data.get(str(go_id), {})
+            go_instance_id = go_data.get("instance_id", -1)
+            
+            if go_instance_id <= 0 or go_instance_id not in instance_mapping:
+                continue
+            
+            new_go_instance_id = instance_mapping[go_instance_id]
+            
+            original_parent_id = go_data.get("parent_id", -1)
+            
+            if original_parent_id in go_id_mapping:
+                new_parent_id = go_id_mapping[original_parent_id]
+            else:
+                new_parent_id = new_root_object_id
+            
+            new_child_object_id = len(viewer.scn.object_table)
+            viewer.scn.object_table.append(new_go_instance_id)
+            
+            go_id_mapping[go_id] = new_child_object_id
+            
+            child_name = go_data.get("name", "")
+                
+            new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
+            
+            new_child_go.ukn = go_data["ukn"]
+
+            _GameObjectHelper.setup_gameobject_guid(
+                viewer, new_child_go, go_data.get("guid"),
+                new_go_instance_id, guid_mapping, randomize_ids
+            )
+            
+            if not is_folder:
+                child_component_instances = go_data.get("components", [])
+                _GameObjectHelper.create_and_map_components(
+                    viewer, new_child_go, child_component_instances, instance_mapping
+                )
+                
+                if create_prefab and viewer.scn.is_scn:
+                    child_prefab_path = go_data.get("prefab_path")
+                    if child_prefab_path:
+                        RszGameObjectClipboard._create_prefab_for_gameobject(
+                            viewer, new_child_go, child_prefab_path
+                        )
+            else:
+                new_child_go.component_count = 0
+            
+            RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_child_go)
+            viewer.scn.gameobjects.append(new_child_go)
+            
+            child_result = {
+                "go_id": new_child_go.id,
+                "instance_id": new_go_instance_id,
+                "name": RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(new_go_instance_id, {}), child_name),
+                "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_go_instance_id),
+                "component_count": new_child_go.component_count,
+                "parent_id": new_parent_id,
+                "children": []
+            }
+            pasted_children.append(child_result)
+        
+        children_by_parent = {}
+        for child in pasted_children:
+            parent_go_id = child.pop("parent_id")
+            if parent_go_id not in children_by_parent:
+                children_by_parent[parent_go_id] = []
+            children_by_parent[parent_go_id].append(child)
+        
+        root_result = {
+            "success": True,
+            "go_id": new_root_object.id,
+            "instance_id": new_root_instance_id,
+            "name": RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(new_root_instance_id, {}), root_name),
+            "parent_id": parent_id,
+            "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_root_instance_id),
+            "component_count": new_root_object.component_count,
+            "children": children_by_parent.get(new_root_object.id, [])
+        }
+        
+        def add_children_recursive(parent_obj):
+            if parent_obj["go_id"] in children_by_parent:
+                parent_obj["children"] = children_by_parent[parent_obj["go_id"]]
+                for child in parent_obj["children"]:
+                    add_children_recursive(child)
+        
+        for child in root_result["children"]:
+            add_children_recursive(child)
+        
+        id_adjustment_map = RszGameObjectClipboard._cleanup_duplicate_userdata_after_paste(viewer, set(instance_mapping.values()))
+        if id_adjustment_map:
+            RszGameObjectClipboard._update_result_with_id_adjustments(root_result, id_adjustment_map)
+            
+        viewer.mark_modified()
+        return root_result
+            
+    @staticmethod
+    def _serialize_folder_hierarchy_without_root(viewer, folder_id, child_gameobjects):
+        """
+        Serialize folder hierarchy without including the folder's own instance
+        """
         hierarchy = {}
         
-        def collect_all_instance_ids(go_id, components):
+        def collect_child_instance_ids(go_id, components):
             instance_ids = set()
             
             if go_id < len(viewer.scn.object_table):
                 go_instance_id = viewer.scn.object_table[go_id]
                 if go_instance_id > 0:
-                    instance_ids.add(go_instance_id)
+                    instance = RszGameObjectClipboard.get_instance()
+                    instance_ids.update(instance.collect_instance_tree(viewer, go_instance_id))
                     
                     for comp_id in components:
-                        instance_ids.add(comp_id)
-                        
-                    if go_instance_id in viewer.scn.parsed_elements:
-                        instance_fields = viewer.scn.parsed_elements[go_instance_id]
-                        from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-                        nested_objects = RszInstanceOperations.find_nested_objects(
-                            viewer.scn.parsed_elements, go_instance_id, viewer.scn.object_table
-                        )
-                        instance_ids.update(nested_objects)
-                        
-                        userdata_refs = set()
-                        RszInstanceOperations.find_userdata_references(instance_fields, userdata_refs)
-                        instance_ids.update(userdata_refs)
-                    
-                    for comp_id in components:
-                        if comp_id in viewer.scn.parsed_elements:
-                            comp_fields = viewer.scn.parsed_elements[comp_id]
-                            nested_objects = RszInstanceOperations.find_nested_objects(
-                                viewer.scn.parsed_elements, comp_id, viewer.scn.object_table
-                            )
-                            instance_ids.update(nested_objects)
-                            
-                            userdata_refs = set()
-                            RszInstanceOperations.find_userdata_references(comp_fields, userdata_refs)
-                            instance_ids.update(userdata_refs)
-                            
-                            for nested_id in nested_objects:
-                                if nested_id in viewer.scn.parsed_elements:
-                                    nested_fields = viewer.scn.parsed_elements[nested_id]
-                                    nested_nested = RszInstanceOperations.find_nested_objects(
-                                        viewer.scn.parsed_elements, nested_id, viewer.scn.object_table
-                                    )
-                                    instance_ids.update(nested_nested)
-                                    
-                                    nested_userdata = set()
-                                    RszInstanceOperations.find_userdata_references(nested_fields, nested_userdata)
-                                    instance_ids.update(nested_userdata)
+                        instance_ids.update(instance.collect_instance_tree(viewer, comp_id))
             
             return instance_ids
         
-        root_instance_ids = collect_all_instance_ids(root_id, component_instances)
-        
-        child_instance_ids = set()
+        all_child_instance_ids = set()
         for child in child_gameobjects:
             child_components = RszGameObjectClipboard._get_components_for_gameobject(viewer, child)
-            
-            child_ids = collect_all_instance_ids(child.id, child_components)
-            child_instance_ids.update(child_ids)
+            child_ids = collect_child_instance_ids(child.id, child_components)
+            all_child_instance_ids.update(child_ids)
         
-        all_instance_ids = root_instance_ids.union(child_instance_ids)
-        
-        ordered_instance_ids = sorted(all_instance_ids)
+        ordered_instance_ids = sorted(all_child_instance_ids)
         
         instances = {}
+        actual_serialized_instance_ids = []
+        
         for instance_id in ordered_instance_ids:
             if instance_id <= 0 or instance_id >= len(viewer.scn.instance_infos):
                 continue
@@ -201,47 +538,13 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             if instance_info.type_id <= 0:
                 continue
-                
-            instance_data = {
-                "id": instance_id,
-                "type_id": instance_info.type_id,
-                "crc": instance_info.crc,
-                "fields": {}
-            }
             
-            if hasattr(viewer, "type_registry") and viewer.type_registry:
-                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-                if type_info and "name" in type_info:
-                    instance_data["type_name"] = type_info["name"]
-            
-            if instance_id in viewer.scn.parsed_elements:
-                fields = viewer.scn.parsed_elements[instance_id]
-                for field_name, field_data in fields.items():
-                    instance_data["fields"][field_name] = RszArrayClipboard._serialize_element(field_data)
-            
-            if hasattr(viewer.scn, '_rsz_userdata_set') and instance_id in viewer.scn._rsz_userdata_set:
-                instance_data["is_userdata"] = True
-                
-                for rui in viewer.scn.rsz_userdata_infos:
-                    if rui.instance_id == instance_id:
-                        instance_data["userdata_hash"] = rui.hash
-                        
-                        if hasattr(viewer.scn, '_rsz_userdata_str_map') and rui in viewer.scn._rsz_userdata_str_map:
-                            instance_data["userdata_string"] = viewer.scn._rsz_userdata_str_map[rui]
-                        break
-            
+            instance = RszGameObjectClipboard.get_instance()
+            instance_data = instance.serialize_instance_with_metadata(viewer, instance_id, instance_info)
             instances[str(instance_id)] = instance_data
+            actual_serialized_instance_ids.append(instance_id)
         
         gameobjects = {}
-        
-        go_data = RszGameObjectClipboard._serialize_gameobject_data(viewer, root_id)
-        if go_data:
-            direct_children = []
-            for child in child_gameobjects:
-                if child.parent_id == root_id:
-                    direct_children.append(child.id)
-            go_data["direct_children"] = direct_children
-            gameobjects[str(root_id)] = go_data
         
         for child in child_gameobjects:
             child_data = RszGameObjectClipboard._serialize_gameobject_data(viewer, child.id)
@@ -255,19 +558,16 @@ class RszGameObjectClipboard(RszClipboardBase):
         
         hierarchy["instances"] = instances
         hierarchy["gameobjects"] = gameobjects
-        hierarchy["root_id"] = root_id
-        hierarchy["instance_order"] = ordered_instance_ids  # Preserve original ordering
+        hierarchy["root_id"] = folder_id  # Keep the folder ID as root for reference
+        hierarchy["instance_order"] = actual_serialized_instance_ids
         
-        if hasattr(viewer, '_temp_child_map'):
-            delattr(viewer, '_temp_child_map')
+
         
         return hierarchy
-    
+
     @staticmethod
     def _serialize_gameobject_data(viewer, gameobject_id):
-        if gameobject_id < 0 or gameobject_id >= len(viewer.scn.object_table):
-            return None
-            
+        """Serialize GameObject-specific data (not instance data)"""
         go = RszGameObjectClipboard._find_gameobject_by_id(viewer, gameobject_id)
         if not go:
             return None
@@ -276,64 +576,99 @@ class RszGameObjectClipboard(RszClipboardBase):
         if instance_id <= 0:
             return None
             
-        components = RszGameObjectClipboard._get_components_for_gameobject(viewer, go)
+        name = RszGameObjectClipboard._get_instance_name_from_fields(
+            viewer.scn.parsed_elements.get(instance_id, {})
+        )
         
-        go_name = RszGameObjectClipboard._get_gameobject_name(viewer, instance_id)
-        
-        prefab_path = None
-        if viewer.scn.is_scn:
-            if go.prefab_id >= 0 and go.prefab_id < len(viewer.scn.prefab_infos):
-                prefab = viewer.scn.prefab_infos[go.prefab_id]
-                if hasattr(viewer.scn, '_prefab_str_map') and prefab in viewer.scn._prefab_str_map:
-                    prefab_path = viewer.scn._prefab_str_map[prefab]
-        
-        return {
-            "id": go.id,
+        go_data = {
+            "id": gameobject_id,
             "instance_id": instance_id,
-            "name": go_name,
+            "name": name,
             "parent_id": go.parent_id,
-            "components": components,
+            "ukn": go.ukn,
             "component_count": go.component_count,
-            "prefab_path": prefab_path,
-            "guid": go.guid.hex() if hasattr(go, 'guid') and go.guid else None
+            "components": RszGameObjectClipboard._get_components_for_gameobject(viewer, go)
         }
+        
+        if hasattr(go, 'guid') and go.guid:
+            go_data["guid"] = go.guid.hex()
+            go_data["guid_bytes"] = go.guid
+        
+        if viewer.scn.is_scn and go.prefab_id >= 0 and go.prefab_id < len(viewer.scn.prefab_infos):
+            source_prefab = viewer.scn.prefab_infos[go.prefab_id]
+            if hasattr(viewer.scn, '_prefab_str_map') and source_prefab in viewer.scn._prefab_str_map:
+                go_data["prefab_path"] = viewer.scn._prefab_str_map[source_prefab]
+                
+        return go_data
     
 
     
     @staticmethod
-    def _serialize_folder_data(viewer, folder_id):
-        """Serialize a folder's data for clipboard"""
-        try:
-            folder = next((f for f in getattr(viewer.scn, "folder_infos", []) if f.id == folder_id), None)
-            if not folder:
-                return None
-                
-            instance_id = viewer.scn.object_table[folder_id] if folder_id < len(viewer.scn.object_table) else -1
-            folder_name = f"Folder_{folder_id}" 
-            fields_data = {}
-            
-            if instance_id > 0 and instance_id in viewer.scn.parsed_elements:
-                fields = viewer.scn.parsed_elements[instance_id]
-                folder_name = RszGameObjectClipboard._get_instance_name_from_fields(fields, f"Folder_{folder_id}")
-                
-                from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
-                for field_name, field_data in fields.items():
-                    try:
-                        fields_data[field_name] = RszArrayClipboard._serialize_element(field_data)
-                    except Exception as e:
-                        print(f"Warning: Could not serialize field '{field_name}' for folder {folder_id}: {e}")
-                        
-            return {
-                "id": folder.id,
-                "instance_id": instance_id,
-                "name": folder_name,
-                "parent_id": folder.parent_id,
-                "fields": fields_data
-            }
-        except Exception as e:
-            print(f"Error serializing folder {folder_id}: {e}")
+    def _serialize_folder_data(viewer, folder_id, include_children_in_hierarchy=True):
+        folder = next(
+            (f for f in getattr(viewer.scn, "folder_infos", []) if f.id == folder_id),
+            None,
+        )
+        if not folder:
             return None
-        
+
+        instance_id = (
+            viewer.scn.object_table[folder_id]
+            if folder_id < len(viewer.scn.object_table)
+            else -1
+        )
+
+        child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
+
+        if instance_id <= 0 or instance_id not in viewer.scn.parsed_elements:
+            return {
+                "id":          folder.id,
+                "instance_id": instance_id,
+                "name":        f"Folder_{folder_id}",
+                "parent_id":   folder.parent_id,
+                "fields":      {}, 
+                "children":    [child.id for child in child_gameobjects],
+                "hierarchy":   RszGameObjectClipboard._serialize_gameobject_hierarchy(
+                    viewer, folder_id, [], child_gameobjects
+                )
+            }
+
+        fields      = viewer.scn.parsed_elements[instance_id]
+        folder_name = RszGameObjectClipboard._get_instance_name_from_fields(
+            fields, f"Folder_{folder_id}"
+        )
+
+        fields_data = {
+            fname: RszArrayClipboard._serialize_element(fdata)
+            for fname, fdata in fields.items()
+        }
+
+        if include_children_in_hierarchy and child_gameobjects:
+            hierarchy = RszGameObjectClipboard._serialize_folder_hierarchy_without_root(
+                viewer, folder_id, child_gameobjects
+            )
+        elif include_children_in_hierarchy and not child_gameobjects:
+            hierarchy = RszGameObjectClipboard._serialize_gameobject_hierarchy(
+                viewer, folder_id, [], child_gameobjects
+            )
+        else:
+            hierarchy = {
+                "instances": {},
+                "gameobjects": {},
+                "root_id": folder_id,
+                "instance_order": []
+            }
+
+        return {
+            "id":          folder.id,
+            "instance_id": instance_id,
+            "name":        folder_name,
+            "parent_id":   folder.parent_id,
+            "fields":      fields_data,
+            "children":    [child.id for child in child_gameobjects],
+            "hierarchy":   hierarchy
+        }
+
     @staticmethod
     def _paste_folder_from_json(viewer, folder_json, parent_index):
         """Paste a folder from JSON data as a child of parent_index"""
@@ -351,44 +686,181 @@ class RszGameObjectClipboard(RszClipboardBase):
 
     @staticmethod
     def _paste_folder_with_fields(viewer, folder_data, parent_id, randomize_ids=True):
-        """Paste a folder with full field data restoration"""
-        try:
-            name = folder_data.get("name", "Folder")
-            
-            new_folder = viewer.object_operations.create_folder(name, parent_id)
-            if not (new_folder and new_folder.get("success")):
-                return None
-            
-            new_folder_id = new_folder.get("folder_id", new_folder.get("id"))
-            if new_folder_id is None:
-                return None
-                
-            fields_data = folder_data.get("fields", {})
-            if fields_data:
-                instance_id = viewer.scn.object_table[new_folder_id] if new_folder_id < len(viewer.scn.object_table) else -1
-                
-                if instance_id > 0:
-                    instance = RszGameObjectClipboard.get_instance()
-                    
-                    instance_mapping = {}
-                    userdata_mapping = {}  
-                    guid_mapping = {}
-                    
-                    restored_fields = instance.deserialize_fields_with_remapping(
-                        fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids
-                    )
-                    
-                    if restored_fields:
-                        viewer.scn.parsed_elements[instance_id] = restored_fields
-                        viewer.mark_modified()
-            
-            return new_folder
-            
-        except Exception as e:
-            print(f"Error pasting folder with fields: {e}")
-            import traceback
-            traceback.print_exc()
+        """
+        Paste a folder with full field data restoration and child gameobjects.
+        """
+        name = folder_data.get("name", "Folder")
+        hierarchy_data = folder_data.get("hierarchy", {})
+        
+        new_folder = viewer.object_operations.create_folder(name, parent_id)
+        if not new_folder or not new_folder.get("success"):
+            print(f"Failed to create folder '{name}'")
             return None
+        
+        new_folder_id = new_folder.get("folder_id", new_folder.get("id"))
+        if new_folder_id is None:
+            print("Failed to get new folder ID")
+            return None
+        
+        fields_data = folder_data.get("fields", {})
+        if fields_data:
+            instance_id = viewer.scn.object_table[new_folder_id] if new_folder_id < len(viewer.scn.object_table) else -1
+            
+            if instance_id > 0:
+                instance = RszGameObjectClipboard.get_instance()
+                
+                instance_mapping = {}
+                userdata_mapping = {}  
+                guid_mapping = {}
+                
+                restored_fields = instance.deserialize_fields_with_remapping(
+                    fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer
+                )
+                
+                if restored_fields:
+                    viewer.scn.parsed_elements[instance_id] = restored_fields
+                    viewer.mark_modified()
+        
+        if hierarchy_data and hierarchy_data.get("gameobjects"):
+            child_results = RszGameObjectClipboard._paste_folder_children(
+                viewer, hierarchy_data, new_folder_id, randomize_ids
+            )
+            
+            if child_results:
+                new_folder["children"] = child_results
+            
+        return new_folder
+
+    
+    @staticmethod
+    def _paste_folder_children(viewer, hierarchy_data, parent_folder_id, randomize_ids=True):
+        """
+        Paste child gameobjects for a folder.
+        """
+        instances_data = hierarchy_data.get("instances", {})
+        gameobjects_data = hierarchy_data.get("gameobjects", {})
+        root_id = hierarchy_data.get("root_id", -1)
+        
+        if not instances_data or not gameobjects_data:
+            print("No child data to process")
+            return []
+        
+        instance_mapping = {}
+        guid_mapping = {}
+        userdata_mapping = {}
+        
+        sorted_instance_ids = hierarchy_data.get("instance_order", sorted([int(id_str) for id_str in instances_data.keys()]))
+          
+        for old_instance_id in sorted_instance_ids:
+            if old_instance_id == root_id:
+                folder_instance_id = viewer.scn.object_table[parent_folder_id]
+                instance_mapping[old_instance_id] = folder_instance_id
+                continue
+            
+            instance_data = instances_data.get(str(old_instance_id), {})
+            
+            instance = RszGameObjectClipboard.get_instance()
+            new_instance_id = instance.create_instance(
+                viewer, instance_data, instance_mapping, userdata_mapping
+            )
+            
+            if new_instance_id is None:
+                continue
+            
+        
+        instance = RszGameObjectClipboard.get_instance()
+        for old_instance_id in sorted_instance_ids:
+            if old_instance_id == root_id:
+                continue
+                
+            instance_data = instances_data.get(str(old_instance_id), {})
+            if instance_data.get("is_embedded_rsz_userdata", False):
+                continue
+            
+            if old_instance_id not in instance_mapping:
+                continue
+                
+            new_instance_id = instance_mapping[old_instance_id]
+            
+            fields_data = instance_data.get("fields", {})
+            new_fields = instance.deserialize_fields_with_remapping(
+                fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer
+            )
+            
+            instance.process_embedded_rsz_fields(viewer, new_fields, None, userdata_mapping)
+            
+            viewer.scn.parsed_elements[new_instance_id] = new_fields
+        
+        go_id_mapping = {}
+        child_results = []
+        
+        go_id_mapping[root_id] = parent_folder_id
+        
+        go_ids = sorted([int(id_str) for id_str in gameobjects_data.keys()])
+        
+        for go_id in go_ids:
+            if go_id == root_id:
+                continue
+                
+            go_data = gameobjects_data.get(str(go_id), {})
+            go_instance_id = go_data.get("instance_id", -1)
+            
+            if go_instance_id <= 0 or go_instance_id not in instance_mapping:
+                continue
+            
+            new_go_instance_id = instance_mapping[go_instance_id]
+            
+            original_parent_id = go_data.get("parent_id", -1)
+            
+            if original_parent_id == root_id:
+                new_parent_id = parent_folder_id
+            elif original_parent_id in go_id_mapping:
+                new_parent_id = go_id_mapping[original_parent_id]
+            else:
+                new_parent_id = parent_folder_id
+            
+            new_child_object_id = len(viewer.scn.object_table)
+            viewer.scn.object_table.append(new_go_instance_id)
+            
+            go_id_mapping[go_id] = new_child_object_id
+            
+            new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
+            
+            new_child_go.ukn = go_data["ukn"]
+            _GameObjectHelper.setup_gameobject_guid(
+                viewer, new_child_go, go_data.get("guid"),
+                new_go_instance_id, guid_mapping, randomize_ids
+            )
+            
+            child_component_instances = go_data.get("components", [])
+            _GameObjectHelper.create_and_map_components(
+                viewer, new_child_go, child_component_instances, instance_mapping
+            )
+            child_prefab_path = go_data.get("prefab_path")
+            if child_prefab_path and viewer.scn.is_scn:
+                RszGameObjectClipboard._create_prefab_for_gameobject(
+                    viewer, new_child_go, child_prefab_path
+                )
+            
+            RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_child_go)
+            viewer.scn.gameobjects.append(new_child_go)
+            
+            child_name = RszGameObjectClipboard._get_instance_name_from_fields(
+                viewer.scn.parsed_elements.get(new_go_instance_id, {}), 
+                go_data.get("name", "")
+            )
+            
+            child_result = {
+                "go_id": new_child_go.id,
+                "instance_id": new_go_instance_id,
+                "name": child_name,
+                "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_go_instance_id),
+                "component_count": new_child_go.component_count,
+                "parent_id": new_parent_id
+            }
+            child_results.append(child_result)
+        
+        return child_results
 
     @staticmethod
     def _paste_gameobject_from_json(viewer, go_json, parent_index):
@@ -412,344 +884,47 @@ class RszGameObjectClipboard(RszClipboardBase):
 
     @staticmethod
     def copy_folder_to_clipboard(viewer, folder_id):
-        try:
-            if folder_id < 0 or folder_id >= len(viewer.scn.folder_infos):
-                print(f"Invalid Folder ID: {folder_id}")
-                return False
-                
-            source_folder = next((f for f in viewer.scn.folder_infos if f.id == folder_id), None)
-            if source_folder is None:
-                print(f"Folder with ID {folder_id} not found")
-                return False
-                
-            source_instance_id = RszGameObjectClipboard._get_instance_id(viewer, folder_id)
-            if source_instance_id <= 0:
-                print(f"Invalid instance ID for Folder {folder_id}")
-                return False
-                
-            source_name = RszGameObjectClipboard._get_gameobject_name(viewer, source_instance_id)
-            print(f"Copying Folder '{source_name}' (ID: {folder_id})")
-            
-            child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
-            
-            folder_data = {
-                "name": source_name,
-                "id": folder_id,
-                "instance_id": source_instance_id,
-                "children": [child.id for child in child_gameobjects],
-                "hierarchy": RszGameObjectClipboard._serialize_gameobject_hierarchy(
-                    viewer, folder_id, [], child_gameobjects
-                )
-            }
-            
-            instance = RszGameObjectClipboard.get_instance()
-            instance.save_clipboard_data(viewer, folder_data)
-                
-            print(f"Copied Folder '{source_name}' (ID: {folder_id}) to clipboard with {len(child_gameobjects)} children")
-            return True
-            
-        except Exception as e:
-            print(f"Error copying Folder to clipboard: {str(e)}")
-            traceback.print_exc()
+        if folder_id < 0 or folder_id >= len(viewer.scn.folder_infos):
+            print(f"Invalid Folder ID: {folder_id}")
             return False
-    
-    @staticmethod
-    def _paste_hierarchy_from_clipboard(viewer, parent_id=-1, new_name=None, cached_clipboard_data=None, 
-                                    is_folder=False, create_prefab=True, randomize_ids=True):
-        """
-        Unified paste logic for both GameObjects and Folders.
+            
+        source_folder = next((f for f in viewer.scn.folder_infos if f.id == folder_id), None)
+        if source_folder is None:
+            print(f"Folder with ID {folder_id} not found")
+            return False
+            
+        source_instance_id = RszGameObjectClipboard._get_instance_id(viewer, folder_id)
+        if source_instance_id <= 0:
+            print(f"Invalid instance ID for Folder {folder_id}")
+            return False
+            
+        source_name = RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(source_instance_id, {}))
         
-        Args:
-            viewer: The viewer instance
-            parent_id: Parent ID for the pasted object
-            new_name: Optional new name for the root object
-            cached_clipboard_data: The clipboard data to paste
-            is_folder: True if pasting a folder, False for GameObject
-            create_prefab: Whether to create prefab entries (only for GameObjects in .scn files)
-        """
-        try:
-            if not cached_clipboard_data:
-                print("No clipboard data found")
-                return None
+        child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
+        
+        if child_gameobjects:
+            hierarchy = RszGameObjectClipboard._serialize_folder_hierarchy_without_root(
+                viewer, folder_id, child_gameobjects
+            )
+        else:
+            hierarchy = RszGameObjectClipboard._serialize_gameobject_hierarchy(
+                viewer, folder_id, [], child_gameobjects
+            )
+        
+        folder_data = {
+            "name": source_name,
+            "id": folder_id,
+            "instance_id": source_instance_id,
+            "children": [child.id for child in child_gameobjects],
+            "hierarchy": hierarchy
+        }
+        
+        instance = RszGameObjectClipboard.get_instance()
+        instance.save_clipboard_data(viewer, folder_data)
             
-            source_name = cached_clipboard_data.get("name", "")
-            hierarchy_data = cached_clipboard_data.get("hierarchy", {})
-            prefab_path = cached_clipboard_data.get("prefab_path") if not is_folder else None
-            
-            if not hierarchy_data:
-                print("No hierarchy data found in clipboard")
-                return None
-                
-            object_type = "Folder" if is_folder else "GameObject"
-            default_name = "Folder_Copy" if is_folder else "GameObject_Copy"
-            
-            if new_name is None or new_name.strip() == "":
-                new_name = f"{source_name}" if source_name and source_name.strip() != "" else default_name
-            
-            root_name = new_name
-            
-            print(f"Pasting {object_type} '{source_name}' -> '{root_name}' with parent ID {parent_id}")
-            
-            instance_mapping = {}
-            guid_mapping = {}
-            userdata_mapping = {}
-            
-            instance = RszGameObjectClipboard.get_instance()
-            
-            if randomize_ids:
-                import random
-                context_id_offset = random.randint(20000, 20000000)
-            else:
-                context_id_offset = 0
-            
-            instances_data = hierarchy_data.get("instances", {})
-            sorted_instance_ids = hierarchy_data.get("instance_order", sorted([int(id_str) for id_str in instances_data.keys()]))
-            print(f"Using preserved instance ordering: {len(sorted_instance_ids)} instances")
-            
-            insertion_index = len(viewer.scn.instance_infos)
-            
-            # Create instances phase
-            for old_instance_id in sorted_instance_ids:
-                instance_data = instances_data.get(str(old_instance_id), {})
-                
-                type_id = instance_data.get("type_id", 0)
-                crc = instance_data.get("crc", 0)
-                
-                if type_id <= 0:
-                    print(f"Warning: Invalid type ID for instance {old_instance_id}")
-                    continue
-                
-                new_instance = RszInstanceInfo()
-                new_instance.type_id = type_id
-                new_instance.crc = crc
-                
-                viewer._insert_instance_and_update_references(insertion_index, new_instance)
-                new_instance_id = insertion_index
-                instance_mapping[old_instance_id] = new_instance_id
-                viewer.handler.id_manager.register_instance(new_instance_id)
-                
-                if instance_data.get("is_userdata", False):
-                    instance.setup_userdata_for_pasted_instance(
-                        viewer, 
-                        new_instance_id, 
-                        instance_data.get("userdata_hash", 0),
-                        instance_data.get("userdata_string", "")
-                    )
-                    userdata_mapping[old_instance_id] = new_instance_id
-                
-                insertion_index = len(viewer.scn.instance_infos)
-            
-            for old_instance_id in sorted_instance_ids:
-                if old_instance_id not in instance_mapping:
-                    continue
-                    
-                new_instance_id = instance_mapping[old_instance_id]
-                instance_data = instances_data.get(str(old_instance_id), {})
-                
-                fields_data = instance_data.get("fields", {})
-                new_fields = instance.deserialize_fields_with_remapping(
-                    fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids
-                )
-                
-                gameobjects_data = hierarchy_data.get("gameobjects", {})
-                root_id = hierarchy_data.get("root_id", -1)
-                
-                if str(old_instance_id) in gameobjects_data:
-                    go_data = gameobjects_data[str(old_instance_id)]
-                    go_id = go_data.get("id", -1)
-                    
-                    if go_id == root_id:
-                        display_name = root_name
-                        print(f"Using root name '{display_name}' for root {object_type}")
-                    else:
-                        original_name = go_data.get("name", "")
-                        display_name = original_name if original_name else RszGameObjectClipboard.DEFAULT_GO_NAME
-                        print(f"Using name '{display_name}' for child {object_type} (original: '{original_name}')")
-                    
-                RszGameObjectClipboard._update_chainsaw_context_id_group(
-                    viewer, old_instance_id, new_fields, context_id_offset, instance_data
-                )
-                
-                viewer.scn.parsed_elements[new_instance_id] = new_fields
-            
-            gameobjects_data = hierarchy_data.get("gameobjects", {})
-            root_id = hierarchy_data.get("root_id", -1)
-            
-            root_go_data = gameobjects_data.get(str(root_id), {})
-            if not root_go_data:
-                print(f"Root {object_type} data not found for ID {root_id}")
-                return None
-                
-            root_instance_id = root_go_data.get("instance_id", -1)
-            if root_instance_id <= 0 or root_instance_id not in instance_mapping:
-                print(f"Root instance ID {root_instance_id} is invalid or not mapped")
-                return None
-                
-            new_root_instance_id = instance_mapping[root_instance_id]
-            
-            new_root_object_id = len(viewer.scn.object_table)
-            viewer.scn.object_table.append(new_root_instance_id)
-            
-            new_root_object = RszGameObjectClipboard._create_gameobject_entry(viewer, new_root_object_id, parent_id)
-            
-            if root_go_data.get("guid") and hasattr(new_root_object, 'guid'):
-                source_guid_hex = root_go_data.get("guid")
-                if source_guid_hex:
-                    new_guid = RszGameObjectClipboard._handle_gameobject_guid(
-                        source_guid_hex, guid_mapping, new_root_object, randomize=randomize_ids
-                    )
-                    if new_guid:
-                        new_root_object.guid = new_guid
-                        RszGameObjectClipboard._add_guid_to_settings(viewer, new_root_instance_id, new_guid)
-            
-            if not is_folder:
-                component_instances = root_go_data.get("components", [])
-                mapped_component_instances = []
-                
-                for i, comp_instance_id in enumerate(component_instances):
-                    if comp_instance_id in instance_mapping:
-                        new_comp_instance_id = instance_mapping[comp_instance_id]
-                        mapped_component_instances.append(new_comp_instance_id)
-                        
-                        new_component_object_id = new_root_object_id + i + 1
-                        RszGameObjectClipboard._insert_into_object_table(
-                            viewer, new_component_object_id, new_comp_instance_id
-                        )
-                
-                new_root_object.component_count = len(mapped_component_instances)
-                
-                if create_prefab and prefab_path and viewer.scn.is_scn:
-                    RszGameObjectClipboard._create_prefab_for_gameobject(
-                        viewer, new_root_object, prefab_path
-                    )
-            else:
-                new_root_object.component_count = 0  # Folders have no components
-            
-            RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_root_object)
-            viewer.scn.gameobjects.append(new_root_object)
-            
-            pasted_children = []
-            go_ids = sorted([int(id_str) for id_str in gameobjects_data.keys()])
-            
-            go_id_mapping = {}
-            
-            for go_id in go_ids:
-                if go_id == root_id:
-                    go_id_mapping[go_id] = new_root_object_id
-                    continue
-                    
-                go_data = gameobjects_data.get(str(go_id), {})
-                go_instance_id = go_data.get("instance_id", -1)
-                
-                if go_instance_id <= 0 or go_instance_id not in instance_mapping:
-                    continue
-                
-                new_go_instance_id = instance_mapping[go_instance_id]
-                
-                original_parent_id = go_data.get("parent_id", -1)
-                
-                if original_parent_id in go_id_mapping:
-                    new_parent_id = go_id_mapping[original_parent_id]
-                else:
-                    new_parent_id = new_root_object_id
-                
-                new_child_object_id = len(viewer.scn.object_table)
-                viewer.scn.object_table.append(new_go_instance_id)
-                
-                go_id_mapping[go_id] = new_child_object_id
-                
-                child_name = go_data.get("name", "")
-                    
-                new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
-                
-                if go_data.get("guid") and hasattr(new_child_go, 'guid'):
-                    child_guid_hex = go_data.get("guid")
-                    if child_guid_hex:
-                        new_child_guid = RszGameObjectClipboard._handle_gameobject_guid(
-                            child_guid_hex, guid_mapping, new_child_go, True, randomize=randomize_ids
-                        )
-                        if new_child_guid:
-                            new_child_go.guid = new_child_guid
-                            RszGameObjectClipboard._add_guid_to_settings(viewer, new_go_instance_id, new_child_guid)
-                
-                if not is_folder:
-                    child_component_instances = go_data.get("components", [])
-                    mapped_child_component_instances = []
-                    
-                    for i, comp_instance_id in enumerate(child_component_instances):
-                        if comp_instance_id in instance_mapping:
-                            new_comp_instance_id = instance_mapping[comp_instance_id]
-                            mapped_child_component_instances.append(new_comp_instance_id)
-                            
-                            new_component_object_id = new_child_object_id + i + 1
-                            RszGameObjectClipboard._insert_into_object_table(
-                                viewer, new_component_object_id, new_comp_instance_id
-                            )
-                    
-                    new_child_go.component_count = len(mapped_child_component_instances)
-                    
-                    if create_prefab and viewer.scn.is_scn:
-                        child_prefab_path = go_data.get("prefab_path")
-                        if child_prefab_path:
-                            RszGameObjectClipboard._create_prefab_for_gameobject(
-                                viewer, new_child_go, child_prefab_path
-                            )
-                else:
-                    new_child_go.component_count = 0  # Folders have no components
-                
-                RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_child_go)
-                viewer.scn.gameobjects.append(new_child_go)
-                
-                child_result = {
-                    "go_id": new_child_go.id,
-                    "instance_id": new_go_instance_id,
-                    "name": RszGameObjectClipboard._get_gameobject_name(viewer, new_go_instance_id, child_name),
-                    "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_go_instance_id),
-                    "component_count": new_child_go.component_count,
-                    "parent_id": new_parent_id,
-                    "children": []
-                }
-                pasted_children.append(child_result)
-            
-            children_by_parent = {}
-            for child in pasted_children:
-                parent_go_id = child.pop("parent_id")
-                if parent_go_id not in children_by_parent:
-                    children_by_parent[parent_go_id] = []
-                children_by_parent[parent_go_id].append(child)
-            
-            root_result = {
-                "success": True,
-                "go_id": new_root_object.id,
-                "instance_id": new_root_instance_id,
-                "name": RszGameObjectClipboard._get_gameobject_name(viewer, new_root_instance_id, root_name),
-                "parent_id": parent_id,
-                "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_root_instance_id),
-                "component_count": new_root_object.component_count,
-                "children": children_by_parent.get(new_root_object.id, [])
-            }
-            
-            def add_children_recursive(parent_obj):
-                if parent_obj["go_id"] in children_by_parent:
-                    parent_obj["children"] = children_by_parent[parent_obj["go_id"]]
-                    for child in parent_obj["children"]:
-                        add_children_recursive(child)
-            
-            for child in root_result["children"]:
-                add_children_recursive(child)
-            
-            id_adjustment_map = RszGameObjectClipboard._cleanup_duplicate_userdata_after_paste(viewer, set(instance_mapping.values()))
-            if id_adjustment_map:
-                RszGameObjectClipboard._update_result_with_id_adjustments(root_result, id_adjustment_map)
-                
-            viewer.mark_modified()
-            return root_result
-                
-        except Exception as e:
-            print(f"Error pasting {object_type} from clipboard: {str(e)}")
-            traceback.print_exc()
-            return None
-
+        print(f"Copied Folder '{source_name}' (ID: {folder_id}) to clipboard with {len(child_gameobjects)} children")
+        return True
+        
     @staticmethod
     def paste_gameobject_from_clipboard(viewer, parent_id=-1, new_name=None, cached_clipboard_data=None):
         """Paste a GameObject from clipboard"""
@@ -785,7 +960,7 @@ class RszGameObjectClipboard(RszClipboardBase):
     def copy_datablock_to_clipboard(viewer):
         """
         Copy the entire Data Block (all GameObjects and Folders) to a folder.
-        Each GameObject and Folder is exported as a full template (deep copy).
+        Track shared UserData references across all objects.
         """
         try:
             dir_path = RszGameObjectClipboard.get_datablock_clipboard_directory(viewer)
@@ -798,23 +973,67 @@ class RszGameObjectClipboard(RszClipboardBase):
             if hasattr(viewer.scn, 'is_usr') and viewer.scn.is_usr:
                 return RszGameObjectClipboard._copy_userfile_using_array_clipboard(viewer, dir_path)
             
+            instance = RszGameObjectClipboard.get_instance()
+            global_userdata_refs, userdata_contexts, visited_instances = instance.track_userdata_references(
+                viewer, scan_gameobjects=True, scan_folders=True
+            )
+            
+            shared_userdata_info = {}
+            for (instance_id, context_id), count in global_userdata_refs.items():
+                if count > 1:
+                    shared_userdata_info[f"{instance_id}_{context_id}"] = {
+                        "instance_id": instance_id,
+                        "context_id": context_id,
+                        "reference_count": count,
+                        "context_info": userdata_contexts[(instance_id, context_id)]
+                    }
+            
+            print(f"Found {len(shared_userdata_info)} shared UserData instances across Data Block")
+            print(f"Total instances scanned: {len(visited_instances)}")
+            
             folders_exported = 0
-            for folder in getattr(viewer.scn, "folder_infos", []):
+            folders_to_export = []
+            
+            for i, instance_id in enumerate(viewer.scn.object_table):
+                if instance_id <= 0:
+                    continue
+                folder = next((f for f in getattr(viewer.scn, "folder_infos", []) if f.id == i), None)
+                if folder:
+                    folders_to_export.append(folder)
+            
+            for folder in folders_to_export:
                 folder_id = folder.id
-                folder_data = RszGameObjectClipboard._serialize_folder_data(viewer, folder_id)
+                folder_data = RszGameObjectClipboard._serialize_folder_data(viewer, folder_id, include_children_in_hierarchy=False)
                 if folder_data:
+                    if folder.parent_id >= 0:
+                        parent_is_folder = any(f.id == folder.parent_id for f in getattr(viewer.scn, "folder_infos", []))
+                        folder_data["parent_is_folder"] = parent_is_folder
+                    else:
+                        folder_data["parent_is_folder"] = False
                     with open(os.path.join(dir_path, f"folder_{folder_id}.json"), "w", encoding="utf-8") as f:
                         json.dump(folder_data, f, indent=2)
                     folders_exported += 1
 
             gameobjects_exported = 0
-            for go in viewer.scn.gameobjects:
+            gameobjects_to_export = []
+            
+            for i, instance_id in enumerate(viewer.scn.object_table):
+                if instance_id <= 0:
+                    continue
+                go = next((g for g in viewer.scn.gameobjects if g.id == i), None)
+                if go:
+                    gameobjects_to_export.append(go)
+            
+            for go in gameobjects_to_export:
                 go_id = go.id
-                success = RszGameObjectClipboard.copy_gameobject_to_clipboard(viewer, go_id)
+                # Don't include children since we're exporting all GameObjects separately
+                success = RszGameObjectClipboard.copy_gameobject_to_clipboard(viewer, go_id, include_children=False)
                 if success:
                     clipboard_data = RszGameObjectClipboard.get_clipboard_data(viewer)
                     if clipboard_data:
                         clipboard_data["parent_id"] = go.parent_id
+                        parent_is_folder = any(f.id == go.parent_id for f in getattr(viewer.scn, "folder_infos", [])) if go.parent_id >= 0 else False
+                        clipboard_data["parent_is_folder"] = parent_is_folder
                         with open(os.path.join(dir_path, f"go_{go_id}.json"), "w", encoding="utf-8") as f:
                             json.dump(clipboard_data, f, indent=2)
                         gameobjects_exported += 1
@@ -823,7 +1042,6 @@ class RszGameObjectClipboard(RszClipboardBase):
                 else:
                     print(f"Failed to export GameObject {go_id}")
 
-            # Create ordering list that preserves relative positions
             mixed_order = []
             for i, instance_id in enumerate(viewer.scn.object_table):
                 if instance_id <= 0:
@@ -839,7 +1057,8 @@ class RszGameObjectClipboard(RszClipboardBase):
             manifest = {
                 "mixed_order": mixed_order,
                 "exported_gameobjects": gameobjects_exported,
-                "exported_folders": folders_exported
+                "exported_folders": folders_exported,
+                "shared_userdata_references": shared_userdata_info  # Add shared reference info
             }
             with open(os.path.join(dir_path, "manifest.json"), "w", encoding="utf-8") as f:
                 json.dump(manifest, f, indent=2)
@@ -852,117 +1071,184 @@ class RszGameObjectClipboard(RszClipboardBase):
             print(f"Error copying Data Block: {e}")
             traceback.print_exc()
             return False
-
     @staticmethod
-    def paste_datablock_from_clipboard(viewer, parent_folder_id=-1, parent_index=None, no_parent_folder=False, randomize_ids=False):
+    def paste_datablock_from_clipboard(viewer, parent_folder_id=-1, parent_index=None, 
+                                    no_parent_folder=False, randomize_ids=False,
+                                    preserve_shared_userdata=True):
         """
         Paste the Data Block from clipboard folder with preserved ordering.
-        
-        Args:
-            randomize_ids: If True, randomize GUIDs and context IDs. If False, preserve original IDs.
         """
-        try:
-            dir_path = RszGameObjectClipboard.get_datablock_clipboard_directory(viewer)
-            
-            if hasattr(viewer.scn, 'is_usr') and viewer.scn.is_usr:
-                return RszGameObjectClipboard._paste_userfile_using_array_clipboard(viewer, dir_path, randomize_ids)
-            
-            manifest_path = os.path.join(dir_path, "manifest.json")
-            if not os.path.exists(manifest_path):
-                print("No Data Block clipboard manifest found")
-                return None
+        dir_path = RszGameObjectClipboard.get_datablock_clipboard_directory(viewer)
+        
+        if hasattr(viewer.scn, 'is_usr') and viewer.scn.is_usr:
+            return RszGameObjectClipboard._paste_userfile_using_array_clipboard(viewer, dir_path, randomize_ids)
+        
+        manifest_path = os.path.join(dir_path, "manifest.json")
+        if not os.path.exists(manifest_path):
+            print("No Data Block clipboard manifest found")
+            return None
 
-            with open(manifest_path, "r", encoding="utf-8") as f:
-                manifest = json.load(f)
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
 
-            tree = getattr(viewer, 'tree', None)
-            pasted_indices = []
-            mixed_order = manifest.get("mixed_order", [])
-            folder_model_map = {}
-            folder_ui_map = {}
+        shared_userdata_info = manifest.get("shared_userdata_references", {})
+        
+        global_shared_userdata_mapping = {}
+        
+        shared_userdata_keys = set()
+        if preserve_shared_userdata and shared_userdata_info:
+            for key, info in shared_userdata_info.items():
+                instance_id = info["instance_id"]
+                context_id = info["context_id"]
+                shared_userdata_keys.add((instance_id, context_id))
+                print(f"Will preserve shared UserData: instance={instance_id}, context={context_id}, refs={info['reference_count']}")
+        
+        tree = getattr(viewer, 'tree', None)
+        pasted_indices = []
+        mixed_order = manifest.get("mixed_order", [])
+        folder_model_map = {}
+        folder_ui_map = {}
+        gameobject_model_map = {}  # Maps old GameObject ID to new GameObject ID
+        gameobject_ui_map = {}     # Maps old GameObject ID to UI index
+        
+        # Load all data
+        all_data = {}
+        for item in mixed_order:
+            item_id = item["id"]
+            item_type = item["type"]
             
-            all_data = {}
+            if item_type == "folder":
+                file_path = os.path.join(dir_path, f"folder_{item_id}.json")
+            elif item_type == "gameobject":
+                file_path = os.path.join(dir_path, f"go_{item_id}.json")
+            else:
+                continue
+                
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    all_data[item_id] = json.load(f)
+        
+        processed_items = set()
+        total_items = len(mixed_order)
+        max_iterations = total_items * 2 
+        iteration_count = 0
+        
+        while len(processed_items) < total_items and iteration_count < max_iterations:
+            iteration_count += 1
+            progress_made = False
+            
             for item in mixed_order:
                 item_id = item["id"]
                 item_type = item["type"]
                 
-                if item_type == "folder":
-                    file_path = os.path.join(dir_path, f"folder_{item_id}.json")
-                elif item_type == "gameobject":
-                    file_path = os.path.join(dir_path, f"go_{item_id}.json")
-                else:
+                if item_id in processed_items:
                     continue
-                    
-                if os.path.exists(file_path):
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        all_data[item_id] = json.load(f)
-            
-            # Process items in original order and and handling dependencies
-            remaining_items = mixed_order.copy()
-            
-            while remaining_items:
-                progress_made = False
                 
-                for i, item in enumerate(remaining_items):
-                    item_id = item["id"]
-                    item_type = item["type"]
-                    
-                    if item_id not in all_data:
-                        remaining_items.pop(i)
-                        progress_made = True
-                        break
-                    
-                    data = all_data[item_id]
-                    parent_old = data.get("parent_id", -1)
-                    
-                    # Check if parent dependency is satisfied
-                    if parent_old == -1 or parent_old in folder_model_map:
-                        model_parent = parent_folder_id if parent_old == -1 else folder_model_map[parent_old]
-                        ui_parent = parent_index if parent_old == -1 else folder_ui_map.get(parent_old)
-                        
-                        if item_type == "folder":
-                            new_folder = RszGameObjectClipboard._paste_folder_with_fields(
-                                viewer, data, model_parent, randomize_ids
-                            )
-                            if new_folder and new_folder.get("success"):
-                                new_model_id = new_folder.get("folder_id", new_folder.get("id"))
-                                folder_model_map[item_id] = new_model_id
-                                
-                                if tree and hasattr(tree, 'add_folder_to_ui_direct'):
-                                    new_ui = tree.add_folder_to_ui_direct(new_folder, ui_parent)
-                                    if new_ui is not None:
-                                        folder_ui_map[item_id] = new_ui
-                                        pasted_indices.append(new_ui)
-                        
-                        elif item_type == "gameobject":
-                            result = RszGameObjectClipboard._paste_hierarchy_from_clipboard(
-                                viewer, model_parent, data.get("name"), data, 
-                                is_folder=False, create_prefab=True, randomize_ids=randomize_ids
-                            )
-                            if result and result.get("success"):
-                                if tree and hasattr(tree, 'add_gameobject_to_ui_direct'):
-                                    new_ui = tree.add_gameobject_to_ui_direct(result, ui_parent)
-                                    if new_ui is not None:
-                                        pasted_indices.append(new_ui)
-                        
-                        remaining_items.pop(i)
-                        progress_made = True
-                        break
+                if item_id not in all_data:
+                    processed_items.add(item_id)
+                    progress_made = True
+                    continue
                 
-                if not progress_made:
-                    print(f"Could not resolve dependencies for {len(remaining_items)} remaining items")
-                    break
+                data = all_data[item_id]
+                parent_old = data.get("parent_id", -1)
+                parent_is_folder = data.get("parent_is_folder", False)
+                
+                # Check if parent dependency is satisfied
+                can_process = False
+                model_parent = parent_folder_id
+                ui_parent = parent_index
+                
+                if parent_old == -1:
+                    can_process = True
+                elif parent_old >= 0:
+                    if parent_is_folder:
+                        if parent_old in folder_model_map:
+                            can_process = True
+                            model_parent = folder_model_map[parent_old]
+                            ui_parent = folder_ui_map.get(parent_old, parent_index)
+                    else:
+                        if parent_old in gameobject_model_map:
+                            can_process = True
+                            model_parent = gameobject_model_map[parent_old]
+                            ui_parent = gameobject_ui_map.get(parent_old, parent_index)
+                
+
+                
+                if can_process:
+                    
+                    if item_type == "folder":
+                        new_folder = RszGameObjectClipboard._paste_folder_with_fields(
+                            viewer, data, model_parent, randomize_ids
+                        )
+                        if new_folder and new_folder.get("success"):
+                            new_model_id = new_folder.get("folder_id", new_folder.get("id"))
+                            folder_model_map[item_id] = new_model_id
+                            
+                            if tree and hasattr(tree, 'add_folder_to_ui_direct'):
+                                new_ui = tree.add_folder_to_ui_direct(new_folder, ui_parent)
+                                if new_ui is not None:
+                                    folder_ui_map[item_id] = new_ui
+                                    pasted_indices.append(new_ui)
+                    
+                    elif item_type == "gameobject":
+                        result = RszGameObjectClipboard._paste_hierarchy_from_clipboard(
+                            viewer, model_parent, data.get("name"), data, 
+                            is_folder=False, create_prefab=True, randomize_ids=randomize_ids,
+                            shared_userdata_keys=shared_userdata_keys if preserve_shared_userdata else None,
+                            global_shared_mapping=global_shared_userdata_mapping if preserve_shared_userdata else None
+                        )
+                        if result and result.get("success"):
+                            new_go_id = result.get("go_id")
+                            if new_go_id is not None:
+                                gameobject_model_map[item_id] = new_go_id
+                            
+                            if tree and hasattr(tree, 'add_gameobject_to_ui_direct'):
+                                new_ui = tree.add_gameobject_to_ui_direct(result, ui_parent)
+                                if new_ui is not None:
+                                    gameobject_ui_map[item_id] = new_ui
+                                    pasted_indices.append(new_ui)
+                    
+                    processed_items.add(item_id)
+                    progress_made = True
             
-            randomization_mode = "with randomized IDs" if randomize_ids else "preserving original IDs"
-            print(f"Data Block pasted with preserved ordering ({randomization_mode}): {len(pasted_indices)} items")
-            viewer.mark_modified()
-            return pasted_indices
-
-        except Exception as e:
-            print(f"Error pasting Data Block: {e}")
-            traceback.print_exc()
-            return None
-
+            if not progress_made:
+                unprocessed_count = total_items - len(processed_items)
+                print(f"\nERROR: Could not resolve dependencies for {unprocessed_count} remaining items after {iteration_count} iterations")
+                print(f"Processed: {len(processed_items)}/{total_items}")
+                print("\nUnprocessed items:")
+                
+                unprocessed_by_type = {"folder": 0, "gameobject": 0}
+                for item in mixed_order:
+                    if item["id"] not in processed_items and item["id"] in all_data:
+                        data = all_data[item["id"]]
+                        parent_id = data.get("parent_id", -1)
+                        parent_is_folder = data.get("parent_is_folder", False)
+                        name = data.get("name", "Unknown")
+                        unprocessed_by_type[item["type"]] += 1
+                        
+                        print(f"\n  {item['type']} {item['id']} '{name}':")
+                        print(f"    parent_id={parent_id}, parent_is_folder={parent_is_folder}")
+                        
+                        if parent_id >= 0:
+                            if parent_is_folder:
+                                if parent_id in folder_model_map:
+                                    print(f"    Parent folder {parent_id} EXISTS in folder_model_map!")
+                                else:
+                                    print(f"    Parent folder {parent_id} NOT FOUND in folder_model_map")
+                                    print(f"    Available folders: {list(folder_model_map.keys())}")
+                            else:
+                                if parent_id in gameobject_model_map:
+                                    print(f"    Parent GameObject {parent_id} EXISTS in gameobject_model_map!")
+                                else:
+                                    print(f"    Parent GameObject {parent_id} NOT FOUND in gameobject_model_map")
+                                    print(f"    Available GameObjects: {list(gameobject_model_map.keys())}")
+                
+                print(f"\nSummary: {unprocessed_by_type['folder']} folders and {unprocessed_by_type['gameobject']} gameobjects could not be processed")
+                raise Exception(f"Failed to import {unprocessed_count} items due to unresolved dependencies")
+        
+        viewer.mark_modified()
+        return pasted_indices
+    
     @staticmethod
     def export_datablock(viewer):
         """
@@ -1152,7 +1438,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         new_go.component_count = 0
         
         if viewer.scn.is_scn:
-            guid_bytes = uuid.uuid4().bytes_le
+            guid_bytes = create_new_guid()
             new_go.guid = guid_bytes
             new_go.prefab_id = -1 
             
@@ -1204,45 +1490,6 @@ class RszGameObjectClipboard(RszClipboardBase):
                 if ref_info.target_id >= object_table_index:
                     ref_info.target_id += 1
     
-    @staticmethod
-    def _setup_userdata_for_pasted_instance(viewer, instance_id, hash_value, string_value):
-        """
-        Create userdata entries. Reuse existing UserDataInfo if string already exists.
-        """
-        if not hasattr(viewer.scn, '_rsz_userdata_set'):
-            viewer.scn._rsz_userdata_set = set()
-        if not hasattr(viewer.scn, '_rsz_userdata_dict'):
-            viewer.scn._rsz_userdata_dict = {}
-        if not hasattr(viewer.scn, '_rsz_userdata_str_map'):
-            viewer.scn._rsz_userdata_str_map = {}
-
-        new_rui = RszRSZUserDataInfo()
-        new_rui.instance_id = instance_id
-        new_rui.hash = hash_value
-        new_rui.string_offset = 0
-
-        viewer.scn._rsz_userdata_set.add(instance_id)
-        viewer.scn._rsz_userdata_dict[instance_id] = new_rui
-        viewer.scn.rsz_userdata_infos.append(new_rui)
-        viewer.scn._rsz_userdata_str_map[new_rui] = string_value
-        
-        print(f"Created userdata instance {instance_id} for string '{string_value}'")
-
-        if hasattr(viewer.scn, 'userdata_infos') and hasattr(viewer.scn, '_userdata_str_map'):
-            existing_ui = None
-            for ui in viewer.scn.userdata_infos:
-                if viewer.scn._userdata_str_map.get(ui) == string_value:
-                    existing_ui = ui
-                    break
-            
-            if not existing_ui:
-                new_ui = RszUserDataInfo()
-                new_ui.hash = hash_value
-                new_ui.string_offset = 0
-                viewer.scn.userdata_infos.append(new_ui)
-                viewer.scn._userdata_str_map[new_ui] = string_value
-
-        return True
     @staticmethod
     def _delete_instances_and_update_references(viewer, instances_to_delete):
         """Delete multiple instances and update all references efficiently"""
@@ -1300,8 +1547,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         if instance_id in viewer.scn.parsed_elements:
             fields = viewer.scn.parsed_elements[instance_id]
             
-            guid_str = guid_le_to_str(guid_bytes)
-            guid_data = GuidData(guid_str, guid_bytes)
+            guid_data = create_guid_data(guid_bytes)
             
             guid_data._display_only = True
             
@@ -1327,9 +1573,8 @@ class RszGameObjectClipboard(RszClipboardBase):
     
     @staticmethod
     def _get_instance_id(viewer, gameobject_id):
-        if gameobject_id < 0 or gameobject_id >= len(viewer.scn.object_table):
-            return -1
-        return viewer.scn.object_table[gameobject_id]
+        instance = RszGameObjectClipboard.get_instance()
+        return instance._get_gameobject_instance_id(viewer, gameobject_id)
     
     @staticmethod
     def _get_instance_name_from_fields(fields, default_name=None):
@@ -1351,193 +1596,87 @@ class RszGameObjectClipboard(RszClipboardBase):
         return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
 
     @staticmethod
-    def _get_gameobject_name(viewer, instance_id, default_name=None):
-        """Get the name of a GameObject from its first field or default name"""
-        if not hasattr(viewer, 'scn') or not hasattr(viewer.scn, 'parsed_elements'):
-            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
-            
-        if instance_id not in viewer.scn.parsed_elements:
-            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
-            
-        fields = viewer.scn.parsed_elements[instance_id]
-        return RszGameObjectClipboard._get_instance_name_from_fields(fields, default_name)
-    
-    @staticmethod
-    def _set_gameobject_name(viewer, instance_id, name):
-        if not name:
-            name = RszGameObjectClipboard.DEFAULT_GO_NAME
-            
-        if instance_id <= 0 or instance_id not in viewer.scn.parsed_elements:
-            print("shit 2")
-            return False
-            
-        fields = viewer.scn.parsed_elements[instance_id]
-        if not fields:
-            return False
-        
-        display_field = None
-    
-        first_field = fields.get(1)
-        
-        first_field.value = name
-        display_field = first_field
-        
-        if display_field:
-            go_dict = {
-                "data": [f"{name} (ID: {instance_id})", ""],
-                "type": "gameobject",
-                "instance_id": instance_id,
-                "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(instance_id),
-                "children": [],
-            }
-            display_field.is_gameobject_or_folder_name = go_dict
-            return True
-        
-        return False
-    
-
-    
-    @staticmethod
     def _get_components_for_gameobject(viewer, gameobject):
-        components = []
-        for i in range(1, gameobject.component_count + 1):
-            comp_object_id = gameobject.id + i
-            if comp_object_id < len(viewer.scn.object_table):
-                comp_instance_id = viewer.scn.object_table[comp_object_id]
-                if comp_instance_id > 0:
-                    components.append(comp_instance_id)
-        return components
+        instance = RszGameObjectClipboard.get_instance()
+        return instance._get_gameobject_components(viewer, gameobject)
     
-    @staticmethod
-    def _handle_gameobject_guid(guid_hex, guid_mapping, gameobject, is_child=False, randomize=True):
-        if not guid_hex or not hasattr(gameobject, 'guid'):
-            return None
-            
-        source_guid = bytes.fromhex(guid_hex)
-        
-        if is_null_guid(source_guid):
-            return source_guid
-        
-        if source_guid in guid_mapping:
-            return guid_mapping[source_guid]
-        
-        if randomize:
-            new_guid = uuid.uuid4().bytes_le
-        else:
-            new_guid = source_guid  # Keep original GUID
-        
-        guid_mapping[source_guid] = new_guid
-        return new_guid
-
     @staticmethod
     def _cleanup_duplicate_userdata_after_paste(viewer, pasted_instance_ids):
         """Clean up duplicate userdata entries after paste operations"""
-        try:
-            if not hasattr(viewer.scn, 'rsz_userdata_infos') or not hasattr(viewer.scn, '_rsz_userdata_str_map'):
-                return {}
-                
-            print("Starting userdata deduplication cleanup...")
-            
-            # Group RszRSZUserDataInfo by string value
-            string_to_ruis = {}
-            for rui in viewer.scn.rsz_userdata_infos:
-                string_value = viewer.scn._rsz_userdata_str_map.get(rui, "")
-                if string_value:
-                    string_to_ruis.setdefault(string_value, []).append(rui)
-            
-            # Find duplicates
-            instances_to_delete = []
-            instance_remapping = {}
-            ruis_to_remove = []
-            
-            for string_value, rui_list in string_to_ruis.items():
-                if len(rui_list) <= 1:
-                    continue
-                    
-                # Keep the first, remove the rest
-                rui_list.sort(key=lambda x: x.instance_id)
-                kept_rui = rui_list[0]
-                
-                print(f"String '{string_value}' has {len(rui_list)} RUIs, keeping instance {kept_rui.instance_id}")
-                
-                for rui in rui_list[1:]:
-                    instances_to_delete.append(rui.instance_id)
-                    instance_remapping[rui.instance_id] = kept_rui.instance_id
-                    ruis_to_remove.append(rui)
-                    print(f"  Will delete instance {rui.instance_id}")
-            
-            if not instances_to_delete:
-                print("No duplicate userdata found")
-                return {}
-            
-            # Update references before deletion
-            RszGameObjectClipboard._update_all_userdata_references(viewer, instance_remapping)
-            
-            # Remove duplicate RUIs
-            for rui in ruis_to_remove:
-                viewer.scn.rsz_userdata_infos.remove(rui)
-                if rui in viewer.scn._rsz_userdata_str_map:
-                    del viewer.scn._rsz_userdata_str_map[rui]
-            
-            # Clean tracking structures
-            for instance_id in instances_to_delete:
-                viewer.scn._rsz_userdata_set.discard(instance_id)
-                viewer.scn._rsz_userdata_dict.pop(instance_id, None)
-            
-            # Delete instances and get adjustment map
-            id_adjustment_map = RszGameObjectClipboard._delete_instances_and_update_references(
-                viewer, instances_to_delete
-            )
-            
-            # Update remaining RUI instance IDs
-            RszGameObjectClipboard._update_rui_instance_ids_after_deletion(viewer, instances_to_delete)
-            
-            print(f"Cleanup completed: removed {len(ruis_to_remove)} RUIs and {len(instances_to_delete)} instances")
-            return id_adjustment_map
-            
-        except Exception as e:
-            print(f"Error during userdata cleanup: {str(e)}")
-            import traceback
-            traceback.print_exc()
+        if not hasattr(viewer.scn, 'rsz_userdata_infos') or not hasattr(viewer.scn, '_rsz_userdata_str_map'):
             return {}
+        
+        has_embedded_rsz = hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz
+        
+        if has_embedded_rsz:
+            return RszGameObjectClipboard._cleanup_duplicate_userdata_with_embedded_contexts(viewer, pasted_instance_ids)
+        else:
+            return RszGameObjectClipboard._cleanup_duplicate_userdata_simple(viewer, pasted_instance_ids)
+
+    @staticmethod
+    def _cleanup_duplicate_userdata_with_embedded_contexts(viewer, pasted_instance_ids):
+        """Clean up duplicate userdata entries with proper embedded RSZ context handling"""
+        return {}
+    
+    @staticmethod
+    def _cleanup_duplicate_userdata_simple(viewer, pasted_instance_ids):
+        """Simple userdata cleanup for non-embedded RSZ files"""
+        # Group RszRSZUserDataInfo by string value
+        string_to_ruis = {}
+        for rui in viewer.scn.rsz_userdata_infos:
+            string_value = viewer.scn._rsz_userdata_str_map.get(rui, "")
+            if string_value:
+                string_to_ruis.setdefault(string_value, []).append(rui)
+        
+        # Find duplicates
+        instances_to_delete = []
+        instance_remapping = {}
+        ruis_to_remove = []
+        
+        for string_value, rui_list in string_to_ruis.items():
+            if len(rui_list) <= 1:
+                continue
+                
+            # Keep the first, remove the rest
+            rui_list.sort(key=lambda x: x.instance_id)
+            kept_rui = rui_list[0]
+            
+            print(f"String '{string_value}' has {len(rui_list)} RUIs, keeping instance {kept_rui.instance_id}")
+            
+            for rui in rui_list[1:]:
+                instances_to_delete.append(rui.instance_id)
+                instance_remapping[rui.instance_id] = kept_rui.instance_id
+                ruis_to_remove.append(rui)
+                print(f"  Will delete instance {rui.instance_id}")
+        
+        if not instances_to_delete:
+            print("No duplicate userdata found")
+            return {}
+        
+        RszGameObjectClipboard._update_all_userdata_references(viewer, instance_remapping)
+    
+        for rui in ruis_to_remove:
+            viewer.scn.rsz_userdata_infos.remove(rui)
+            if rui in viewer.scn._rsz_userdata_str_map:
+                del viewer.scn._rsz_userdata_str_map[rui]
+        
+        for instance_id in instances_to_delete:
+            viewer.scn._rsz_userdata_set.discard(instance_id)
+            viewer.scn._rsz_userdata_dict.pop(instance_id, None)
+        
+        id_adjustment_map = RszGameObjectClipboard._delete_instances_and_update_references(
+            viewer, instances_to_delete
+        )
+        
+        RszGameObjectClipboard._update_rui_instance_ids_after_deletion(viewer, instances_to_delete)
+        
+        return id_adjustment_map
+        
+    
     @staticmethod
     def _update_all_userdata_references(viewer, instance_remapping):
         """Update all UserDataData and ObjectData fields to point to kept instances"""
-        
-        update_count = 0
-        
-        for instance_id, fields in viewer.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData):
-                    if field_data.value in instance_remapping:
-                        old_value = field_data.value
-                        new_value = instance_remapping[old_value]
-                        field_data.value = new_value
-                        update_count += 1
-                        print(f"    Updated UserDataData: {old_value} -> {new_value}")
-                        
-                elif isinstance(field_data, ObjectData):
-                    if field_data.value in instance_remapping:
-                        old_value = field_data.value
-                        new_value = instance_remapping[old_value]
-                        field_data.value = new_value
-                        update_count += 1
-                        print(f"    Updated ObjectData: {old_value} -> {new_value}")
-                        
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value in instance_remapping:
-                            old_value = element.value
-                            new_value = instance_remapping[old_value]
-                            element.value = new_value
-                            update_count += 1
-                        elif isinstance(element, ObjectData) and element.value in instance_remapping:
-                            old_value = element.value
-                            new_value = instance_remapping[old_value]
-                            element.value = new_value
-                            update_count += 1
-        
-        print(f"  Updated {update_count} references")
+        _ReferenceUpdater.update_instance_references(viewer, instance_remapping, handle_embedded_contexts=True)
 
     @staticmethod
     def _delete_single_instance(viewer, instance_id):
@@ -1564,14 +1703,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         # Update all references in fields
         
         for inst_id, fields in viewer.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, (UserDataData, ObjectData)):
-                    if field_data.value > instance_id:
-                        field_data.value -= 1
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, (UserDataData, ObjectData)) and element.value > instance_id:
-                            element.value -= 1
+            shift_references_above_threshold(fields, instance_id, -1)
         
         # Update object table
         for i in range(len(viewer.scn.object_table)):
@@ -1682,7 +1814,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             from file_handlers.rsz.rsz_data_types import ArrayData
             import json
             
-            array_clipboard = RszArrayClipboard()
             exported_count = 0
             
             for field_name, field_data in root_fields.items():
@@ -1691,8 +1822,8 @@ class RszGameObjectClipboard(RszClipboardBase):
                 
                 try:
                     array_type = getattr(field_data, 'orig_type', 'Array')
-                    if array_clipboard.copy_multiple_to_clipboard(viewer.tree, field_data.values, array_type):
-                        clipboard_data = array_clipboard.get_clipboard_data(viewer.tree)
+                    if RszArrayClipboard.copy_multiple_to_clipboard(viewer.tree, field_data.values, array_type):
+                        clipboard_data = RszArrayClipboard.get_clipboard_data(viewer.tree)
                         if clipboard_data:
                             filename = f"{field_name}.json"
                             filepath = os.path.join(dir_path, filename)
@@ -1748,7 +1879,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             from file_handlers.rsz.rsz_data_types import ArrayData
             import json
             
-            array_clipboard = RszArrayClipboard()
             imported_arrays = 0
             skipped_arrays = 0
             
@@ -1781,7 +1911,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                     
                     array_type = getattr(current_field, 'orig_type', 'Array')
                     
-                    is_compatible = array_clipboard.is_clipboard_compatible_with_array(viewer, array_type)
+                    is_compatible = RszArrayClipboard.is_clipboard_compatible_with_array(viewer, array_type)
                     
                     if is_compatible:
                         try:
@@ -1792,7 +1922,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                             
                             for element_data in elements_list:
                                 try:
-                                    element = array_clipboard._paste_single_element(
+                                    element = RszArrayClipboard._paste_single_element(
                                         viewer, element_data, current_field, array_tree_node
                                     )
                                     
@@ -1800,7 +1930,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                                         added_count += 1
                                         
                                         if array_tree_node:
-                                            array_clipboard._add_element_to_ui_direct(viewer.tree, array_tree_node, element)
+                                            RszArrayClipboard._add_element_to_ui_direct(viewer.tree, array_tree_node, element)
                                         
                                 except Exception as e:
                                     print(f"Warning: Failed to deserialize element: {e}")
@@ -1837,8 +1967,3 @@ class RszGameObjectClipboard(RszClipboardBase):
             import traceback
             traceback.print_exc()
             return None
-    
-
-    
-
-

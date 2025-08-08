@@ -743,6 +743,9 @@ class AdvancedTreeView(QTreeView):
 
     def _update_remaining_elements_ui(self, model, array_index, array_data, deleted_index):
         """Update UI indices for remaining elements after deletion"""
+        array_item = array_index.internalPointer()
+        embedded_context = self._find_embedded_context(array_item)
+        
         for i in range(deleted_index, len(array_data.values)):
             child_idx = model.index(i, 0, array_index)
             child_item = child_idx.internalPointer()
@@ -752,49 +755,31 @@ class AdvancedTreeView(QTreeView):
                 new_text = f"{i}: {after_colon}"
                 child_item.data[0] = new_text
                 
-                widget = self.indexWidget(child_idx)
-                for child_widget in widget.findChildren(QLabel):
-                    if ':' in child_widget.text():
-                        child_widget.setText(new_text)
-                        break
+                if embedded_context:
+                    element = array_data.values[i] if i < len(array_data.values) else None
+                    if element:
+                        self.setIndexWidget(child_idx, None)
+                        if hasattr(child_item, 'raw') and isinstance(child_item.raw, dict):
+                            node_type = child_item.raw.get("type", "")
+                            data_obj = child_item.raw.get("obj")
+                            
+                            widget = TreeWidgetFactory.create_widget(
+                                node_type, data_obj, new_text, self, self.parent_modified_callback
+                            )
+                            if widget:
+                                self.setIndexWidget(child_idx, widget)
+                else:
+                    widget = self.indexWidget(child_idx)
+                    if widget:
+                        for child_widget in widget.findChildren(QLabel):
+                            if ':' in child_widget.text():
+                                child_widget.setText(new_text)
+                                break
 
     def _find_embedded_context(self, item):
-        current = item
-        while current:
-            ctx = self._get_direct_context(current) \
-            or self._get_obj_context(current) \
-            or self._get_domain_context(current)
-            if ctx:
-                return ctx
-            current = getattr(current, 'parent', None)
-        return None
-    
-    def _get_direct_context(self, node):
-        raw = getattr(node, 'raw', None)
-        if isinstance(raw, dict):
-            return raw.get('embedded_context')
-        return None
+        from file_handlers.rsz.rsz_embedded_utils import find_embedded_context
+        return find_embedded_context(item)
 
-    def _get_obj_context(self, node):
-        raw = getattr(node, 'raw', None)
-        if not isinstance(raw, dict):
-            return None
-        obj = raw.get('obj')
-        if not obj:
-            return None
-        return getattr(obj, '_owning_context', None) \
-            or getattr(obj, '_container_context', None)
-
-    def _get_domain_context(self, node):
-        raw = getattr(node, 'raw', None)
-        if not isinstance(raw, dict):
-            return None
-        if raw.get('embedded') and 'domain_id' in raw:
-            chain = raw.get('context_chain')
-            if chain:
-                return chain[0]
-        return None
-    
     def _display_confirmation(self, message):
         if(not self.parent().handler.confirmation_prompt):
             return True
@@ -1843,10 +1828,6 @@ class AdvancedTreeView(QTreeView):
     def copy_array_elements(self, parent_array_item, element_indices, index):
         """Copy multiple array elements to clipboard"""
         embedded_context = self._find_embedded_context(parent_array_item)
-        if embedded_context:
-            QMessageBox.warning(self, "Error", "Copying elements in embedded userdata is currently not supported.")
-            return
-            
         array_data = parent_array_item.raw.get('obj')
         elements = []
         for idx in element_indices:
@@ -1862,7 +1843,7 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         try:
             clipboard = parent.handler.get_array_clipboard()
-            success = clipboard.copy_multiple_to_clipboard(self, elements, array_type)
+            success = clipboard.copy_multiple_to_clipboard(self, elements, array_type, embedded_context)
             if success:
                 QMessageBox.information(self, "Success", f"{len(elements)} elements copied to clipboard")
             else:
@@ -1875,31 +1856,21 @@ class AdvancedTreeView(QTreeView):
         """Paste multiple array elements from clipboard"""
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
+        array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
             
         try:
             clipboard = parent.handler.get_array_clipboard()
             elements = clipboard.paste_elements_from_clipboard(
-                self, parent.array_operations, data_obj, array_item, embedded_context)
+                self, array_operations, data_obj, array_item, embedded_context)
             
             if elements:
                 model = self.model()
                 array_item = index.internalPointer()
-                last_child_idx = model.index(len(array_item.children) - 1, 0, index)
-                item = last_child_idx.internalPointer()
-                if item and not TreeWidgetFactory.should_skip_widget(item):
-                    name_text = item.data[0] if item.data else ""
-                    node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
-                    data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
-                    
-                    widget = TreeWidgetFactory.create_widget(
-                        node_type, data_obj, name_text, self, self.parent_modified_callback
-                    )
-                    self.setIndexWidget(last_child_idx, widget)
-                
+                if array_item.children:
+                    last_child_idx = model.index(len(array_item.children) - 1, 0, index)
                     self.scrollTo(last_child_idx)
 
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"{len(elements)} elements pasted successfully")
             else:
                 QMessageBox.warning(self, "Error", "Failed to paste elements. Make sure the clipboard contains compatible elements.")
         except Exception as e:
@@ -2115,9 +2086,9 @@ class AdvancedTreeView(QTreeView):
         if go_object_id < 0:
             QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
             return
-            
+        embedded_context = self._find_embedded_context(item)      
         try:
-            success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id)
+            success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id, embedded_context)
             if success:
                 go_name = ""
                 if hasattr(item, 'data') and item.data:
@@ -2209,24 +2180,19 @@ class AdvancedTreeView(QTreeView):
                 QMessageBox.warning(self, "Error", "Failed to paste GameObject")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
-            traceback.print_exc()
 
     def copy_array_element(self, parent_array_item, element_index):
         """Copy an array element to clipboard"""
 
         array_data = parent_array_item.raw.get('obj')
         embedded_context = self._find_embedded_context(parent_array_item)
-        if embedded_context:
-            QMessageBox.warning(self, "Error", "Copying elements in embedded userdata is currently not supported.")
-            return
-            
         element = array_data.values[element_index]
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
         
         parent = self.parent()
         try:
             clipboard = parent.handler.get_array_clipboard()
-            success = clipboard.copy_to_clipboard(self, element, array_type)
+            success = clipboard.copy_to_clipboard(self, element, array_type, embedded_context)
             if success:
                 QMessageBox.information(self, "Success", "Element copied to clipboard")
             else:
@@ -2238,31 +2204,21 @@ class AdvancedTreeView(QTreeView):
         """Paste an element from clipboard to an array"""
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
+        array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
             
         try:
             clipboard = parent.handler.get_array_clipboard()
             _ = clipboard.paste_elements_from_clipboard(
-                self, parent.array_operations, data_obj, array_item, embedded_context)
+                self, array_operations, data_obj, array_item, embedded_context)
             
             if not self.isExpanded(index):
                 self.expand(index)
             
             model = self.model()
             array_item = index.internalPointer()
-            last_child_idx = model.index(len(array_item.children) - 1, 0, index)
-            item = last_child_idx.internalPointer()
-            if item and not TreeWidgetFactory.should_skip_widget(item):
-                name_text = item.data[0] if item.data else ""
-                node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
-                data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
-                
-                widget = TreeWidgetFactory.create_widget(
-                    node_type, data_obj, name_text, self, self.parent_modified_callback
-                )
-                if widget:
-                    self.setIndexWidget(last_child_idx, widget)
-            
-            self.scrollTo(last_child_idx)
+            if array_item.children:
+                last_child_idx = model.index(len(array_item.children) - 1, 0, index)
+                self.scrollTo(last_child_idx)
             QApplication.beep()
             #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:
@@ -2317,6 +2273,5 @@ class AdvancedTreeView(QTreeView):
             
             if result:
                 QApplication.beep()
-                QMessageBox.information(self, "Success", f"Successfully imported {len(result)} items")
             else:
                 QMessageBox.warning(self, "Import Failed", "No items were imported or import was cancelled.")

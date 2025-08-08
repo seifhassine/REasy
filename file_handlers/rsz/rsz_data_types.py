@@ -466,3 +466,14 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
         return MaybeObject
 
     return TYPE_MAPPING.get(field_type, RawBytesData)
+
+def is_reference_type(obj):
+    return isinstance(obj, (ObjectData, UserDataData))
+
+def is_array_type(obj):
+    return isinstance(obj, ArrayData)
+
+def get_reference_value(obj):
+    if is_reference_type(obj):
+        return obj.value
+    return 0

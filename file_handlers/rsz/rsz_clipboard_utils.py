@@ -77,8 +77,14 @@ class RszClipboardUtils:
             
         for rui in viewer.scn.rsz_userdata_infos:
             if rui.instance_id == instance_id:
+                userdata_hash = 0
+                if hasattr(rui, 'hash'):
+                    userdata_hash = rui.hash
+                elif hasattr(rui, 'json_path_hash'):
+                    userdata_hash = rui.json_path_hash
+                
                 userdata_info = {
-                    "userdata_hash": rui.hash,
+                    "userdata_hash": userdata_hash,
                     "userdata_string": None
                 }
                 
