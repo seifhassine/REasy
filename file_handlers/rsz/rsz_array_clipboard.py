@@ -2270,7 +2270,9 @@ class RszArrayClipboard:
                             })()
                             
                             deserialized = base_clipboard.deserialize_fields_with_remapping(
-                                field_data, relative_to_new_id, guid_mapping, randomize_guids=False
+                                field_data, relative_to_new_id, {}, guid_mapping, 
+                                randomize_guids=False, viewer=viewer,
+                                context_id_mapping=None, context_id_offset=0, type_name=""
                             )
                             viewer.scn.parsed_elements[new_instance_id][field_name] = deserialized
                             

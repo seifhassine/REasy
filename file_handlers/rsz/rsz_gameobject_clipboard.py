@@ -345,7 +345,8 @@ class RszGameObjectClipboard(RszClipboardBase):
         
         created_instances = instance.paste_instances_from_hierarchy(
             viewer, hierarchy_data, instance_mapping, userdata_mapping, 
-            guid_mapping, randomize_ids, shared_userdata_keys, global_shared_mapping
+            guid_mapping, randomize_ids, shared_userdata_keys, global_shared_mapping,
+            context_id_offset
         )
         
         if not created_instances:
@@ -714,7 +715,8 @@ class RszGameObjectClipboard(RszClipboardBase):
                 guid_mapping = {}
                 
                 restored_fields = instance.deserialize_fields_with_remapping(
-                    fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer
+                    fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer,
+                    None, 0, ""
                 )
                 
                 if restored_fields:
@@ -784,7 +786,8 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             fields_data = instance_data.get("fields", {})
             new_fields = instance.deserialize_fields_with_remapping(
-                fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer
+                fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_ids, viewer,
+                None, 0, ""
             )
             
             instance.process_embedded_rsz_fields(viewer, new_fields, None, userdata_mapping)
@@ -1526,22 +1529,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             viewer.scn._prefab_str_map[new_prefab] = prefab_path
 
         return True
-    
-
-    
-    @staticmethod
-    def _update_chainsaw_context_id_group(viewer, old_instance_id, fields, context_id_offset, instance_data):
-        type_name = instance_data.get("type_name", "")
-        
-        if type_name == "chainsaw.ContextID":
-            #print("Found chainsaw.ContextID instance, updating _Group field")
-            
-            if "_Group" in fields and isinstance(fields["_Group"], S32Data):
-                original_value = fields["_Group"].value
-                new_value = original_value + context_id_offset
-                fields["_Group"].value = new_value
-                #print(f"  Updated _Group from {original_value} to {new_value}")
-
     @staticmethod
     def _add_guid_to_settings(viewer, instance_id, guid_bytes):
         if instance_id in viewer.scn.parsed_elements:

@@ -126,7 +126,8 @@ class RszClipboardBase(ABC):
                                      guid_mapping: Dict[bytes, bytes] = None,
                                      randomize_guids: bool = True,
                                      shared_userdata_keys: Set[Tuple[int, int]] = None,
-                                     global_shared_mapping: Dict[Tuple[int, int], int] = None) -> List[int]:
+                                     global_shared_mapping: Dict[Tuple[int, int], int] = None,
+                                     context_id_offset: int = 0) -> List[int]:
         """Paste instances from hierarchy data
         
         Args:
@@ -138,6 +139,7 @@ class RszClipboardBase(ABC):
             randomize_guids: Whether to randomize GUIDs
             shared_userdata_keys: Set of shared userdata keys
             global_shared_mapping: Global shared userdata mapping
+            context_id_offset: Offset to apply to context IDs when randomizing
             
         Returns:
             List of created instance IDs
@@ -148,11 +150,27 @@ class RszClipboardBase(ABC):
             userdata_mapping = {}
         if guid_mapping is None:
             guid_mapping = {}
-            
+        
+        context_id_mapping = {}
         created_instances = []
         instances_data = hierarchy_data.get("instances", {})
         instance_order = hierarchy_data.get("instance_order", [])
         
+        if context_id_offset > 0:
+            for old_id in instance_order:
+                instance_data = instances_data.get(str(old_id))
+                if not instance_data:
+                    continue
+                    
+                type_name = instance_data.get("type_name", "")
+                if type_name == "chainsaw.ContextID":
+                    fields_data = instance_data.get("fields", {})
+                    if "_Group" in fields_data:
+                        group_data = fields_data.get("_Group", {})
+                        if group_data.get("type") == "S32Data":
+                            original_value = group_data.get("value", 0)
+                            if original_value not in context_id_mapping:
+                                context_id_mapping[original_value] = original_value + context_id_offset
         for old_id in instance_order:
             instance_data = instances_data.get(str(old_id))
             if not instance_data:
@@ -188,9 +206,11 @@ class RszClipboardBase(ABC):
                 
             fields_data = instance_data.get("fields", {})
             if fields_data:
+                type_name = instance_data.get("type_name", "")
                 new_fields = self.deserialize_fields_with_remapping(
                     fields_data, instance_mapping, userdata_mapping, 
-                    guid_mapping, randomize_guids, viewer
+                    guid_mapping, randomize_guids, viewer,
+                    context_id_mapping, context_id_offset, type_name
                 )
                 
                 self.process_embedded_rsz_fields(viewer, new_fields, None, userdata_mapping)
@@ -739,7 +759,7 @@ class RszClipboardBase(ABC):
 
         return True
     
-    def deserialize_fields_with_remapping(self, fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=True, viewer=None):
+    def deserialize_fields_with_remapping(self, fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=True, viewer=None, context_id_mapping=None, context_id_offset=0, type_name=""):
         """Deserialize fields with instance/userdata/GUID remapping"""
         new_fields = {}
         
@@ -820,6 +840,14 @@ class RszClipboardBase(ABC):
                 element = RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
                 if element:
                     new_fields[field_name] = element
+        
+        if type_name == "chainsaw.ContextID" and context_id_mapping and "_Group" in new_fields:
+            from file_handlers.rsz.rsz_data_types import S32Data
+            group_field = new_fields["_Group"]
+            if isinstance(group_field, S32Data):
+                original_value = group_field.value
+                if original_value in context_id_mapping:
+                    group_field.value = context_id_mapping[original_value]
                     
         return new_fields
     

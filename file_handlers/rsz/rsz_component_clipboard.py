@@ -153,7 +153,8 @@ class RszComponentClipboard(RszClipboardBase):
             
             created_instances = self.paste_instances_from_hierarchy(
                 viewer, hierarchy_data, instance_mapping, userdata_mapping, 
-                guid_mapping, randomize_guids=False
+                guid_mapping, randomize_guids=False, 
+                shared_userdata_keys=None, global_shared_mapping=None, context_id_offset=0
             )
 
             if not created_instances:
