@@ -412,6 +412,22 @@ class F32Input(NumberInput):
         if self._data and hasattr(self._data, 'value'):
             self.line_edit.setText(f"{self._data.value:.8g}") 
 
+class F64Input(NumberInput):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit.setPlaceholderText("Float64")
+        self.line_edit.setFixedWidth(140)
+    
+    def validate_and_convert(self, text):
+        value = float(text)
+        if abs(value) > 1.7976931348623157e308:
+            raise ValueError("Out of F64 range")
+        return value
+
+    def update_display(self):
+        if self._data and hasattr(self._data, 'value'):
+            self.line_edit.setText(f"{self._data.value:.17g}")
+
 class S32Input(NumberInput):
     def __init__(self, parent=None):
         super().__init__(parent)
