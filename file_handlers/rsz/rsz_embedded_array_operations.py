@@ -466,7 +466,6 @@ class RszEmbeddedArrayOperations:
         element_class = getattr(array_data, 'element_class', None)
         if not element_class:
             raise RuntimeError("Cannot create array element: missing element_class.")
-            return None
         
         if element_class == UserDataData:
             new_elem = self._create_userdata_element_fixed(element_type, array_data, parent_context)
