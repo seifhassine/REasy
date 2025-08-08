@@ -22,7 +22,7 @@ from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
 def _get_base_dir() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys.argv[0]).resolve()
+        return Path(sys.argv[0]).resolve().parent
     else:
         return Path(__file__).resolve().parent.parent
     
