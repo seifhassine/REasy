@@ -13,11 +13,19 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
+import sys
+from pathlib import Path
 from ui.styles import get_color_scheme
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
 
+def _get_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.argv[0]).resolve()
+    else:
+        return Path(__file__).resolve().parent.parent
+    
 class _IllustrationPanel(QFrame):
     def __init__(self, dark_mode: bool, image_path: str, parent: QWidget | None = None):
         super().__init__(parent)
@@ -125,13 +133,14 @@ class ChangelogDialog(QDialog):
         colors = get_color_scheme(dark_mode)
         self._apply_stylesheet(colors)
 
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        base_dir = _get_base_dir()
+        print(base_dir)
         image_path_candidates = [
-            os.path.join(base_dir, "resources", "images", "reasy_guy.png"),
-            os.path.join(base_dir, "resources", "images", "reasy_editor_logo.png"),
-            os.path.join(base_dir, "resources", "icons", "reasy_editor_logo.ico"),
+            base_dir / "resources" / "images" / "reasy_guy.png",
+            base_dir / "resources" / "images" / "reasy_editor_logo.png",
+            base_dir / "resources" / "icons" / "reasy_editor_logo.ico",
         ]
-        image_path = next((p for p in image_path_candidates if os.path.exists(p)), "")
+        image_path = next((str(p) for p in image_path_candidates if p.exists()), "")
 
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
