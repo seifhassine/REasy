@@ -941,27 +941,6 @@ class RszObjectOperations:
         
         self.viewer.mark_modified()
         return True
-       
-   
-    def _update_chainsaw_context_id_group(self, instance_id, fields, context_id_offset):
-        """Update the _Group field for chainsaw.ContextID instances"""
-        if instance_id >= len(self.scn.instance_infos) or instance_id <= 0:
-            return
-        
-        type_id = self.scn.instance_infos[instance_id].type_id
-        type_info = self.type_registry.get_type_info(type_id)
-        
-        if not type_info or "name" not in type_info:
-            return
-        
-        if type_info["name"] == "chainsaw.ContextID":
-            #print("Found chainsaw.ContextID instance, updating _Group field")
-            
-            if "_Group" in fields and isinstance(fields["_Group"], S32Data):
-                original_value = fields["_Group"].value
-                new_value = original_value + context_id_offset
-                fields["_Group"].value = new_value
-                #print(f"  Updated _Group from {original_value} to {new_value}")
 
     def _process_userdata_fields_in_component(self, component_fields, type_info):
         """
