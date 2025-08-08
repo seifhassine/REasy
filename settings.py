@@ -25,7 +25,8 @@ DEFAULT_SETTINGS = {
         "view_next_tab": "PgUp",
         "view_debug_console": "Ctrl+Shift+D"
     },
-    "confirmation_prompt": True
+    "confirmation_prompt": True,
+    "last_seen_version": ""
 }
 
 

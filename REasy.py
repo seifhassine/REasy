@@ -19,6 +19,7 @@ from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 from ui.project_manager import ProjectManager, EXPECTED_NATIVE, PROJECTS_ROOT, ensure_projects_root
+from ui.changelog_dialog import ChangelogDialog
 
 from PySide6.QtCore import (
     Qt,
@@ -64,7 +65,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-CURRENT_VERSION = "0.4.0"
+CURRENT_VERSION = "0.3.9"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
     "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"
@@ -793,10 +794,22 @@ class REasyEditorApp(QMainWindow):
         self.resize(1160, 920)
 
         self.setAcceptDrops(True)
-  
+ 
+        last_seen = self.settings.get("last_seen_version", "")
+        if last_seen != CURRENT_VERSION:
+            QTimer.singleShot(600, self._show_changelog_if_needed)
+
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
 
+    def _show_changelog_if_needed(self):
+        last_seen = self.settings.get("last_seen_version", "")
+        if last_seen != CURRENT_VERSION:
+            dlg = ChangelogDialog(self, CURRENT_VERSION, self.dark_mode)
+            dlg.exec()
+            self.settings["last_seen_version"] = CURRENT_VERSION
+            save_settings(self.settings)
+ 
     def dragEnterEvent(self, event):
         if self._internal_drag(event):
             event.ignore()
