@@ -702,6 +702,29 @@ class RszEmbeddedArrayOperations:
                     max_id = elem.value
             return max_id + 1
         
+        is_userdata_embedded_context = (hasattr(rui, 'embedded_object_table') and 
+                                       hasattr(rui, 'embedded_rsz_header') and
+                                       hasattr(rui, 'instance_id'))
+        
+        if is_userdata_embedded_context and rui.embedded_object_table:
+            main_instance_id = rui.embedded_object_table[0] if rui.embedded_object_table else None
+            if main_instance_id is not None and main_instance_id in rui.embedded_instances:
+                max_before_main = 0
+                for inst_id in rui.embedded_instances:
+                    if inst_id < main_instance_id and inst_id > max_before_main:
+                        max_before_main = inst_id
+                
+                for elem in array_data.values:
+                    if is_reference_type(elem) and elem.value > max_before_main and elem.value < main_instance_id:
+                        max_before_main = elem.value
+                
+                insertion_idx = max_before_main + 1
+                
+                if insertion_idx >= main_instance_id:
+                    return insertion_idx
+                
+                return insertion_idx
+        
         max_before_array = parent_id 
         
         for idx in range(array_field_index):

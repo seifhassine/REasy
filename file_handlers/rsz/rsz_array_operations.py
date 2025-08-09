@@ -271,11 +271,20 @@ class RszArrayOperations:
         
         element_index = len(array_data.values) - 1
         
-        node_data = (
-            self._create_object_node_data(element.value, element_index, element) 
-            if isinstance(element, ObjectData)
-            else DataTreeBuilder.create_data_node(f"{element_index}: ", "", element.__class__.__name__, element)
-        )
+        if isinstance(element, (ObjectData, UserDataData)):
+            embedded_context = None
+            if hasattr(array_item, 'raw') and isinstance(array_item.raw, dict):
+                embedded_context = array_item.raw.get('embedded_context')
+            
+            node_data = self.viewer._handle_reference_in_array(
+                element_index, element, embedded_context, 
+                getattr(embedded_context, 'instance_id', None) if embedded_context else None
+            )
+        else:
+            # For non-reference types
+            node_data = DataTreeBuilder.create_data_node(
+                f"{element_index}: ", "", element.__class__.__name__, element
+            )
         
         model.addChild(array_item, node_data)
         
@@ -283,27 +292,6 @@ class RszArrayOperations:
         self.viewer.tree.expand(array_index)
         
         return True
-
-    def _create_object_node_data(self, ref_id, index, element):
-        """Helper to create a node for an object reference"""
-        type_name = self.viewer.name_helper.get_type_name_for_instance(ref_id)
-        
-        node_data = DataTreeBuilder.create_data_node(
-            f"{index}: ({type_name})",
-            "",
-            None,
-            element
-        )
-        
-        # Add child field nodes if available
-        if ref_id in self.scn.parsed_elements:
-            fields = self.scn.parsed_elements[ref_id]
-            for field_name, field_data in fields.items():
-                node_data["children"].append(
-                    self.viewer._create_field_dict(field_name, field_data)
-                )
-                
-        return node_data
 
     def _calculate_insertion_index(self, parent_instance_id, parent_field_name):
         """Calculate the best insertion index for a new instance based on field positioning"""

@@ -509,18 +509,23 @@ class RszObjectOperations:
 
     def _calculate_component_insertion_index(self, gameobject):
         """Calculate the best insertion index for a new component"""
-        insertion_index = len(self.scn.instance_infos)
-        if gameobject.component_count > 0:
-            last_component_go_id = gameobject.id + gameobject.component_count
-            if last_component_go_id < len(self.scn.object_table):
-                last_component_instance_id = self.scn.object_table[last_component_go_id]
-                if last_component_instance_id > 0:
-                    insertion_index = last_component_instance_id + 1
-        if insertion_index == len(self.scn.instance_infos):
-            go_instance_id = self.scn.object_table[gameobject.id]
-            if go_instance_id > 0:
-                insertion_index = go_instance_id + 1
-        return insertion_index
+        existing_component_instance_ids = []
+        for comp_offset in range(1, gameobject.component_count + 1):
+            comp_object_id = gameobject.id + comp_offset
+            if comp_object_id < len(self.scn.object_table):
+                inst_id = self.scn.object_table[comp_object_id]
+                if inst_id > 0:
+                    existing_component_instance_ids.append(inst_id)
+
+        if existing_component_instance_ids:
+            return max(max(existing_component_instance_ids) + 1, len(self.scn.instance_infos))
+
+        go_instance_id = self.scn.object_table[gameobject.id]
+        if go_instance_id > 0:
+            return max(go_instance_id + 1, len(self.scn.instance_infos))
+
+        # Fallback: append at end
+        return len(self.scn.instance_infos)
     
     def _remove_from_object_table(self, object_table_index):
         _ = self.scn.object_table[object_table_index]

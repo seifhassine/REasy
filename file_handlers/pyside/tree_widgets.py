@@ -671,8 +671,14 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
         
-        creator = RszEmbeddedArrayOperations(parent).create_array_element if embedded_context else parent.create_array_element
-        print_context = "embedded" if embedded_context else "regular"
+        if embedded_context == "userdata_array_needs_embedded":
+            creator = parent.create_array_element
+            print_context = "regular (UserData array)"
+            embedded_context = None
+        else:
+            creator = RszEmbeddedArrayOperations(parent).create_array_element if embedded_context else parent.create_array_element
+            print_context = "embedded" if embedded_context else "regular"
+        
         print(f"Creating array element in {print_context} context")
         
         new_element = creator(
@@ -723,14 +729,13 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         success = False
 
-        if embedded_context:
-            print(f"Deleting array element in embedded context (ID: {getattr(embedded_context, 'instance_id', 'unknown')})")
-            rsz_operations = RszEmbeddedArrayOperations(parent)
-            success = rsz_operations.delete_array_element(array_data, element_index, embedded_context)
-            
+        if embedded_context == "userdata_array_needs_embedded":
+            success = parent.array_operations.delete_array_element(array_data, element_index)
+        elif embedded_context:
+            success = RszEmbeddedArrayOperations(parent).delete_array_element(array_data, element_index, embedded_context)
         else:
             print("Deleting array element in regular context")
-            success = parent.delete_array_element(array_data, element_index)
+            success = parent.array_operations.delete_array_element(array_data, element_index)
     
         if success:
             model = self.model()
@@ -745,6 +750,9 @@ class AdvancedTreeView(QTreeView):
         """Update UI indices for remaining elements after deletion"""
         array_item = array_index.internalPointer()
         embedded_context = self._find_embedded_context(array_item)
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
         
         for i in range(deleted_index, len(array_data.values)):
             child_idx = model.index(i, 0, array_index)
@@ -1828,6 +1836,11 @@ class AdvancedTreeView(QTreeView):
     def copy_array_elements(self, parent_array_item, element_indices, index):
         """Copy multiple array elements to clipboard"""
         embedded_context = self._find_embedded_context(parent_array_item)
+        
+        # Handle special case for userdata arrays
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
+            
         array_data = parent_array_item.raw.get('obj')
         elements = []
         for idx in element_indices:
@@ -1856,7 +1869,12 @@ class AdvancedTreeView(QTreeView):
         """Paste multiple array elements from clipboard"""
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
-        array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            array_operations = parent.array_operations
+            embedded_context = None
+        else:
+            array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
             
         try:
             clipboard = parent.handler.get_array_clipboard()
@@ -1954,6 +1972,9 @@ class AdvancedTreeView(QTreeView):
         success = True
         model = self.model()
         parent_index = model.getIndexFromItem(parent_array_item)
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
 
         if embedded_context:
             print("Deleting array elements in embedded context")
@@ -2087,6 +2108,10 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
             return
         embedded_context = self._find_embedded_context(item)      
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
+            
         try:
             success = parent.handler.copy_gameobject_to_clipboard(parent, go_object_id, embedded_context)
             if success:
@@ -2186,6 +2211,10 @@ class AdvancedTreeView(QTreeView):
 
         array_data = parent_array_item.raw.get('obj')
         embedded_context = self._find_embedded_context(parent_array_item)
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
+            
         element = array_data.values[element_index]
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
         
@@ -2204,7 +2233,12 @@ class AdvancedTreeView(QTreeView):
         """Paste an element from clipboard to an array"""
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
-        array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
+        
+        if embedded_context == "userdata_array_needs_embedded":
+            array_operations = parent.array_operations
+            embedded_context = None
+        else:
+            array_operations = RszEmbeddedArrayOperations(parent) if embedded_context else parent.array_operations
             
         try:
             clipboard = parent.handler.get_array_clipboard()

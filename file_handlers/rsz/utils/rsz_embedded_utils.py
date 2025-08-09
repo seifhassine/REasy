@@ -138,6 +138,17 @@ def find_embedded_context(item):
         parent = parent.parent if hasattr(parent, 'parent') else None
         level += 1
     
+    # special case: if this is a userdata array that needs embedded RSZ
+    # but is in a non-embedded context, we we need to check if it's a userdata array
+    if hasattr(item, 'raw') and isinstance(item.raw, dict):
+        raw = item.raw
+        if raw.get('type') == 'array' and 'obj' in raw:
+            array_obj = raw['obj']
+            if hasattr(array_obj, 'orig_type') and array_obj.orig_type:
+                array_type = array_obj.orig_type
+                if 'UserData' in array_type or 'userdata' in array_type.lower():
+                    return "userdata_array_needs_embedded"
+    
     print("  No embedded context found")
     return None
 

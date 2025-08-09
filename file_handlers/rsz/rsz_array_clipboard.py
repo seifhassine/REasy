@@ -446,6 +446,23 @@ class RszArrayClipboard:
                 if element:
                     return element
             elif has_graph and elem_data.get("object_graph", {}).get("context_type") == "embedded_rsz":
+                if array_data and hasattr(array_data, 'values') and hasattr(array_data, 'element_class'):
+                    element_orig_type = elem_data.get("orig_type", "")
+                    if element_orig_type and hasattr(viewer, 'array_operations'):
+                        element = viewer.array_operations.create_array_element(
+                            element_orig_type, array_data, direct_update=False, array_item=None
+                        )
+                        if element:
+                            object_graph = elem_data.get("object_graph", {})
+                            if element.value > 0 and object_graph:
+                                userdata_info = RszArrayClipboard._find_userdata_info_by_instance_id(
+                                    viewer, element.value
+                                )
+                                if userdata_info:
+                                    RszArrayClipboard._populate_userdata_from_object_graph(
+                                        userdata_info, object_graph, viewer
+                                    )
+                            return element
                 element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
                     viewer, elem_data, embedded_context
                 )
@@ -2738,6 +2755,18 @@ class RszArrayClipboard:
                 for field_name, field_data in fields.items():
                     field_dict = parent_viewer._create_field_dict(field_name, field_data)
                     node_data["children"].append(field_dict)
+        elif isinstance(element, UserDataData) and element.value > 0 and hasattr(parent_viewer, '_handle_reference_in_array'):
+            embedded_context = array_item.raw.get('embedded_context') if isinstance(array_item.raw, dict) else None
+            domain_id = getattr(embedded_context, 'instance_id', None) if embedded_context else None
+            node_data = parent_viewer._handle_reference_in_array(element_index, element, embedded_context, domain_id)
+            if not node_data:
+                # Falback to simple node
+                node_data = DataTreeBuilder.create_data_node(
+                    f"{element_index}: ",
+                    "",
+                    element.__class__.__name__,
+                    element
+                )
         else:
             node_data = DataTreeBuilder.create_data_node(
                 f"{element_index}: ",
