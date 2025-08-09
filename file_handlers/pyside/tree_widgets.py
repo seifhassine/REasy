@@ -1174,12 +1174,17 @@ class AdvancedTreeView(QTreeView):
         for i, obj_id in enumerate(parent.scn.object_table):
             if obj_id == instance_id:
                 go_object_id = i
-        target_go = None
-        for go in parent.handler.rsz_file.gameobjects:
-            if go.id == go_object_id and go.prefab_id >= 0:
-                target_go = go
-                current_path = parent.handler.rsz_file._prefab_str_map[parent.handler.rsz_file.prefab_infos[go.prefab_id]]
                 break
+        target_go = None
+        for go in parent.scn.gameobjects:
+            if go.id == go_object_id:
+                target_go = go
+                break
+        if target_go is None:
+            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            return
+        if getattr(target_go, 'prefab_id', -1) >= 0:
+            current_path = parent.scn._prefab_str_map[parent.scn.prefab_infos[target_go.prefab_id]]
         
         
         
