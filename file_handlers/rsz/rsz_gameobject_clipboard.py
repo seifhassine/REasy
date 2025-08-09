@@ -1805,7 +1805,8 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             for field_name, field_data in root_fields.items():
                 if not (isinstance(field_data, ArrayData) and hasattr(field_data, 'values') and field_data.values):
-                    continue
+                    print("This user file is not an array or has no values, and is currently not supported.")
+                    return False
                 
                 try:
                     array_type = getattr(field_data, 'orig_type', 'Array')
