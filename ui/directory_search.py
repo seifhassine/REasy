@@ -6,6 +6,10 @@ import mmap
 import re
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import (
+    QKeyEvent,
+    QKeySequence
+)
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -115,7 +119,16 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
     result_label = QLabel(rtext)
     layout.addWidget(result_label)
 
+    def handle_copy(self, event: QKeyEvent):
+        if event.matches(QKeySequence.Copy):
+            data = "\n".join([i.text() for i in self.selectedItems()])
+            QApplication.clipboard().setText(data)
+        else:
+            QListWidget.keyPressEvent(self, event)
+
     result_list = QListWidget()
+    result_list.setSelectionMode(QListWidget.ExtendedSelection)
+    result_list.keyPressEvent = handle_copy.__get__(result_list, QListWidget)
     layout.addWidget(result_list)
 
     # Thread-safe queue for results
