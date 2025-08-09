@@ -1874,12 +1874,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             for array_file in array_files:
                 try:
-                    file_parts = array_file.rsplit('_', 1)
-                    if len(file_parts) == 2:
-                        field_name = file_parts[0] 
-                    else:
-                        field_name = array_file.replace('.json', '') 
-                    
+                    field_name = array_file[:-5] #remove .json
                     if field_name not in root_fields:
                         print(f"Warning: Array field '{field_name}' not found in current object, skipping")
                         skipped_arrays += 1
