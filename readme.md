@@ -28,7 +28,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
   
 | File Type | Viewing | Editing | Tested On |
 |-----------|---------|---------|-----------|
-| UVAR      | ✅       | ✅       | RE4, RE2  |
+| UVAR.3      | ✅       | ✅       | RE4  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | Most titles       |
 | User       | ✅       | ✅       |Most titles       |
