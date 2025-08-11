@@ -172,17 +172,12 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added Ability to Export/Import entire RSZ files (right-click \"Data Block\")."),
-            ("New", "Added full support for copy paste objects with embedded RSZ (for older rsz files such as scn.18, scn.19). <br><strong>Important note:</strong> due to this change, all your previous gameobject templates are no longer compatible with current version and you need to create your templates again."),
-            ("New", "Now it's possible to add array elements of type \"Resource\""),
-            ("New", "Add serialization support for Position type, and UI support for Position, F64 and Size types."),
-            ("Improved", "Improved speed of outdated RSZ files detector"),
-            ("Fixed", "Fixed an issue where nested objects were not being instantiated when creating a new component"),
-            ("Fixed", "Fixed various issues in the clipboard system"),
-            ("Fixed", "Fixes to DD2 RSZ dump, and fully identified 489 types"),
-            ("Fixed", "Some fixes to RSZ dumps of those games: RE2 RT, RE3 RT, RE7 RT, RE4, RE8, SF6"),
-            ("Updated", "Updated MHWilds RSZ dump for latest update"),
-            ("Updated", "Updated SF6 RSZ dump for latest update"),
+            ("New", "Refactored and revamped UVAR editor and added full support for .uvar files (credit to @kagenocookie for the full types)."),
+            ("New", "RSZ File Difference viewer in 'Tools'. Only supports .SCN files currently."),
+            ("Improved", "It is now possible to select and copy multiple rows in directory search results (added by @antrusd)."),
+            ("Fixed", "Fixed issue with .user file export, and restricted .user file export to those with a single array field."),
+            ("Fixed", "Some corruption issues when copy pasting some components with embedded RSZ."),
+            ("Fixed", "Regression issue that led to prefab modification failing."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
