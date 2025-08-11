@@ -17,6 +17,7 @@ from ui.about_dialog import create_about_dialog
 from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
+from ui.rsz_differ_dialog import RszDifferDialog
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 from ui.project_manager import ProjectManager, EXPECTED_NATIVE, PROJECTS_ROOT, ensure_projects_root
 from ui.changelog_dialog import ChangelogDialog
@@ -65,7 +66,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-CURRENT_VERSION = "0.4.0"
+CURRENT_VERSION = "0.3.9"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
     "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"
@@ -978,6 +979,10 @@ class REasyEditorApp(QMainWindow):
         outdated_files_action.triggered.connect(self.open_outdated_files_detector)
         tools_menu.addAction(outdated_files_action)
 
+        rsz_differ_act = QAction("RSZ File Diff", self)
+        rsz_differ_act.triggered.connect(self.open_rsz_differ)
+        tools_menu.addAction(rsz_differ_act)
+
         script_creator_act = QAction("REF Script Creator", self)
         script_creator_act.triggered.connect(self.open_script_creator)
         tools_menu.addAction(script_creator_act)
@@ -1475,6 +1480,12 @@ class REasyEditorApp(QMainWindow):
         """Open the Outdated Files Detector dialog"""
         registry_path = self.settings.get("rcol_json_path", None)
         dialog = OutdatedFilesDialog(self, registry_path)
+        dialog.exec()
+        
+    def open_rsz_differ(self):
+        game_version = self.game_dropdown.currentText() if hasattr(self, 'game_dropdown') else "RE4"
+        json_path = self.settings.get("rcol_json_path", None)
+        dialog = RszDifferDialog(self, game_version, json_path)
         dialog.exec()
         
     def search_directory_for_number(self):
