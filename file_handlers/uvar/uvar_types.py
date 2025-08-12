@@ -118,15 +118,16 @@ class Position:
 def get_python_type(type_kind: TypeKind, flags: int) -> Optional[Type]:
     if flags & UvarFlags.IsVec3:
         type_map = {
-            TypeKind.Int8: List[int],    # sbyte[3]
-            TypeKind.Uint8: List[int],   # byte[3]
-            TypeKind.Int16: List[int],   # short[3]
-            TypeKind.Uint16: List[int],  # ushort[3]
-            TypeKind.Int32: Int3,
-            TypeKind.Uint32: Uint3,
-            TypeKind.Int64: List[int],   # long[3]
-            TypeKind.Single: Vec3,
-            TypeKind.Double: Position,
+            TypeKind.Int8: list,    
+            TypeKind.Uint8: list,   
+            TypeKind.Int16: list,   
+            TypeKind.Uint16: list,  
+            TypeKind.Int32: Int3,   
+            TypeKind.Uint32: Uint3, 
+            TypeKind.Int64: list,   
+            TypeKind.Uint64: list,   
+            TypeKind.Single: Vec3,   
+            TypeKind.Double: Position,  
         }
         return type_map.get(type_kind)
     
@@ -147,10 +148,10 @@ def get_python_type(type_kind: TypeKind, flags: int) -> Optional[Type]:
         TypeKind.C16: str,
         TypeKind.String: str,
         TypeKind.Trigger: type(None),
-        TypeKind.Vec2: tuple,  # (float, float)
+        TypeKind.Vec2: tuple,
         TypeKind.Vec3: Vec3,
-        TypeKind.Vec4: tuple,  # (float, float, float, float)
-        TypeKind.Matrix: list,  # 4x4 matrix
+        TypeKind.Vec4: tuple,
+        TypeKind.Matrix: list,
         TypeKind.GUID: uuid.UUID,
     }
     return type_map.get(type_kind)

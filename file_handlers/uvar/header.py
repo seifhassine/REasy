@@ -1,5 +1,4 @@
 from typing import List, Optional, TYPE_CHECKING
-import struct
 import uuid
 
 if TYPE_CHECKING:
@@ -115,10 +114,6 @@ class HashData(BaseModel):
             
     def do_write(self, handler: FileHandler) -> bool:
         count = len(self.guids)
-        if count == 0:
-            handler.write('<QQQQ', 0, 0, 0, 0)
-            return True
-            
         self.guids_offset = handler.tell + 32
         self.maps_offset = self.guids_offset + count * 16
         self.hash_offset = self.maps_offset + count * 4
