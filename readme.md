@@ -28,7 +28,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
   
 | File Type | Viewing | Editing | Tested On |
 |-----------|---------|---------|-----------|
-| UVAR.3      | ✅       | ✅       | RE4  |
+| UVAR      | ✅       | ✅       | Most Titles  |
 | RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
 | SCN       | ✅       | ✅       | Most titles       |
 | User       | ✅       | ✅       |Most titles       |
@@ -54,6 +54,9 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
   - Support for all versions of RSZ files dating from RE7.
   - And much more..
    
+-  **RSZ Diff Viewer**
+  - Allows comparing of RSZ files. Currently, only SCN files are supported. 
+
 - **Search Functionality:**  
   Search all files across directories for:
   - Specific text (UTF-16LE encoded)
