@@ -229,7 +229,7 @@ jobs:
         organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
         project-slug: reasy
         signing-policy-slug: test-signing
-        artifact-configuration-slug: default
+        artifact-configuration-slug: Correct_Sample
         github-artifact-id: ${{ steps.upload_unsigned.outputs.artifact-id }}
         wait-for-completion: true
         parameters: |
