@@ -181,6 +181,7 @@ jobs:
         $patch = [int]$parts[2]
         $build = "0"
         $versionString = "$major.$minor.$patch.$build"
+        echo "product_version=$versionString" >> $env:GITHUB_ENV
         
         $reasyContent = Get-Content -Path "REasy.py" -Raw
         $pythonVersion = "$major.$minor.$patch"
