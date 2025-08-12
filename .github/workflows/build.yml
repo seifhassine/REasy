@@ -231,19 +231,14 @@ jobs:
         wait-for-completion: true
         parameters: |
           version: "${{ env.product_version }}"
-
-    - name: Download signed artifact
-      shell: pwsh
-      run: |
-        $url = '${{ steps.sign.outputs.signed-artifact-download-url }}'
-        Invoke-WebRequest -Uri $url -OutFile "REasy $env:version.zip"
+        output-artifact-directory: reasy-signed
 
     - name: Upload ZIP to GitHub Release (SIGNED)
       uses: softprops/action-gh-release@v2
       with:
         name: "REasy ${{ env.version }}"
         tag_name: "${{ env.version }}"
-        files: "REasy ${{ env.version }}.zip"
+        files: "reasy-signed/REasy ${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -251,4 +246,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: reasy-${{ env.version }}
-        path: "REasy ${{ env.version }}.zip"
+        path: "reasy-signed/REasy ${{ env.version }}.zip"
