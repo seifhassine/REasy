@@ -215,13 +215,6 @@ jobs:
       run: |
         Compress-Archive -Path .\dist\* -DestinationPath "REasy $env:version.zip"
 
-    - name: Upload unsigned ZIP (for SignPath)
-      id: upload_unsigned
-      uses: actions/upload-artifact@v4
-      with:
-        name: reasy-unsigned-${{ env.version }}
-        path: "REasy ${{ env.version }}.zip"
-
     - name: Submit signing request to SignPath (test cert)
       id: sign
       uses: signpath/github-action-submit-signing-request@v1.2
@@ -231,7 +224,7 @@ jobs:
         project-slug: reasy
         signing-policy-slug: test-signing
         artifact-configuration-slug: Correct_Sample
-        github-artifact-id: ${{ steps.upload_unsigned.outputs.artifact-id }}
+        file: "REasy ${{ env.version }}.zip"
         wait-for-completion: true
         parameters: |
           version: "${{ env.product_version }}"
