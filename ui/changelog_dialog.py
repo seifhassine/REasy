@@ -172,12 +172,9 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Refactored and revamped UVAR editor and added full support for .uvar files (credit to @kagenocookie for the full types)."),
-            ("New", "RSZ File Difference viewer in 'Tools'. Only supports .SCN files currently."),
-            ("Improved", "It is now possible to select and copy multiple rows in directory search results (added by @antrusd)."),
-            ("Fixed", "Fixed issue with .user file export, and restricted .user file export to those with a single array field."),
-            ("Fixed", "Some corruption issues when copy pasting some components with embedded RSZ."),
-            ("Fixed", "Regression issue that led to prefab modification failing."),
+            ("Fixed", "RSZ empty userdata issue after copying gameobjects, leading to infinite loading in games."),
+            ("Improved", "UVAR Editor bugfixes. UVAR.2 is also supported."),
+            ("New", "You can now change everything in the UVAR file (create, delete, modify nodes, embedded UVAR files, connections..)"),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
