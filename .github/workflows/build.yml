@@ -238,12 +238,12 @@ jobs:
       with:
         name: "REasy ${{ env.version }}"
         tag_name: "${{ env.version }}"
-        files: "reasy-signed/REasy ${{ env.version }}.zip"
+        files: "reasy-signed/REasy-${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload ZIP artifact (SIGNED)
       uses: actions/upload-artifact@v4
       with:
-        name: REasy-${{ env.version }}
-        path: "reasy-signed/REasy ${{ env.version }}.zip"
+        name: REasy ${{ env.version }}
+        path: "reasy-signed/REasy-${{ env.version }}.zip"
