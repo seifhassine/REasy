@@ -465,7 +465,7 @@ def build_embedded_rsz(rui, type_registry=None):
                 if old_id in old_to_new_idx:
                     new_id = old_to_new_idx[old_id]
                     updated_elements[new_id] = fields
-                elif old_id < len(filtered_instance_infos):
+                elif isinstance(old_id, int) and old_id < len(filtered_instance_infos):
                     updated_elements[old_id] = fields
         
         mini_scn.parsed_elements = updated_elements
@@ -484,15 +484,27 @@ def build_embedded_rsz(rui, type_registry=None):
         mini_scn._rsz_userdata_set = set()
         mini_scn.instance_hierarchy = getattr(rui, 'embedded_instance_hierarchy', {})
         
-        mini_scn.rsz_userdata_infos = rui.embedded_userdata_infos if hasattr(rui, 'embedded_userdata_infos') else []
-        mini_scn._rsz_userdata_str_map = {}
+        all_embedded_userdata = rui.embedded_userdata_infos if hasattr(rui, 'embedded_userdata_infos') else []
+        non_empty_embedded_userdata = []
         
-        for nested_rui in mini_scn.rsz_userdata_infos:
+        for nested_rui in all_embedded_userdata:
             if nested_rui.instance_id in old_to_new_idx:
                 nested_rui.instance_id = old_to_new_idx[nested_rui.instance_id]
             
             if hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
                 nested_rui.data = build_embedded_rsz(nested_rui, type_registry)
+            
+            has_data = False
+            if hasattr(nested_rui, 'data') and nested_rui.data and len(nested_rui.data) > 0:
+                has_data = True
+            elif hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
+                has_data = True
+            
+            if has_data:
+                non_empty_embedded_userdata.append(nested_rui)
+        
+        mini_scn.rsz_userdata_infos = non_empty_embedded_userdata
+        mini_scn._rsz_userdata_str_map = {}
         
         out = bytearray()
         
@@ -658,6 +670,18 @@ def _update_field_references(field_data, old_to_new_idx):
 def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
     """Build the RSZ section specifically for SCN.19 format"""
     
+    non_empty_userdata_infos = []
+    for rui in rsz_file.rsz_userdata_infos:
+        # Check if userdata has actual data
+        has_data = False
+        if hasattr(rui, 'data') and rui.data and len(rui.data) > 0:
+            has_data = True
+        elif hasattr(rui, 'embedded_instances') and rui.embedded_instances:
+            has_data = True
+        
+        if has_data:
+            non_empty_userdata_infos.append(rui)
+    
     if rsz_file.rsz_header.version > 3:
         rsz_header_bytes = struct.pack(
             "<5I I Q Q Q",
@@ -665,7 +689,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
             rsz_file.rsz_header.version,
             rsz_file.rsz_header.object_count,
             len(rsz_file.instance_infos),
-            len(rsz_file.rsz_userdata_infos),
+            len(non_empty_userdata_infos),  # Use filtered count
             rsz_file.rsz_header.reserved,
             0,  # instance_offset - will update later
             0,  # data_offset - will update later 
@@ -720,7 +744,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
 
     userdata_entries_start = len(out)
     
-    sorted_rsz_userdata_infos = sorted(rsz_file.rsz_userdata_infos, key=lambda rui: rui.instance_id)
+    sorted_rsz_userdata_infos = sorted(non_empty_userdata_infos, key=lambda rui: rui.instance_id)
     userdata_data_start = userdata_entries_start + len(sorted_rsz_userdata_infos) * Scn19RSZUserDataInfo.SIZE
     
     userdata_data_start = ((userdata_data_start + 15) & ~15)
@@ -755,7 +779,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         while len(out) < userdata_data_start:
             out += b"\x00"
 
-    for rui in sorted(rsz_file.rsz_userdata_infos, key=lambda r: r.instance_id):
+    for rui in sorted_rsz_userdata_infos:
         data_content = getattr(rui, "data", b"")
         if data_content is None:
             data_content = b""
@@ -782,7 +806,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
             rsz_file.rsz_header.version,
             rsz_file.rsz_header.object_count,
             len(rsz_file.instance_infos),
-            len(rsz_file.rsz_userdata_infos),
+            len(non_empty_userdata_infos),
             rsz_file.rsz_header.reserved,
             new_instance_offset,
             new_data_offset,
