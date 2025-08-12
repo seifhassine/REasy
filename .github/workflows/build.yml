@@ -233,6 +233,13 @@ jobs:
           version: "${{ env.product_version }}"
         output-artifact-directory: reasy-signed
 
+    - name: Zip signed output
+      shell: pwsh
+      run: |
+        Compress-Archive -Path reasy-signed\* `
+                        -DestinationPath "reasy-signed\REasy-${{ env.version }}.zip" `
+                        -Force
+                        
     - name: Upload ZIP to GitHub Release (SIGNED)
       uses: softprops/action-gh-release@v2
       with:
