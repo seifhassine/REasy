@@ -8,11 +8,10 @@ echo Building 64-bit version...
 REM Clean up previous build artifacts if any
 if exist build rmdir /S /Q build
 if exist dist rmdir /S /Q dist
-if exist REasy.spec del /Q REasy.spec
 
-REM Build using the current Python interpreter (assumed 64-bit)
+REM Build using PyInstaller with version file
 pip install -r requirements.txt
-python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico REasy.py
+python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt REasy.py
 xcopy /E /I /Y resources dist\resources
 rmdir /S /Q dist\resources\data\dumps
 copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"
@@ -42,7 +41,7 @@ if errorlevel 1 (
 
 REM Rename the generated executable to include _x64
 if exist dist\REasy.exe (
-    move /Y dist\REasy.exe dist\REasy_x64.exe
+    move /Y dist\REasy.exe dist\REasy.exe
 ) else (
     echo Could not find dist\REasy.exe after 64-bit build.
     pause
@@ -52,7 +51,7 @@ echo 64-bit build succeeded.
 
 echo.
 echo The executable is located in the "dist" folder as:
-echo    REasy_x64.exe  (64-bit)
+echo    REasy.exe  (64-bit)
 pause
 
 :end

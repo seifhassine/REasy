@@ -157,6 +157,47 @@ jobs:
         $content = $content -replace '"appId":\s+"change-me"', '"appId": "${{ secrets.FIREBASE_APP_ID }}"'
         Set-Content -Path $filePath -Value $content
     
+    - name: Update version info
+      shell: pwsh
+      run: |
+        if ($env:GITHUB_EVENT_NAME -eq "release") {
+          $versionStr = "${{ github.event.release.tag_name }}"
+        } else {
+          $input = "${{ github.event.inputs.version }}"
+          $versionStr = ($input -like "v*") ? $input : "v$input"
+        }
+        
+        echo "version=$versionStr" >> $env:GITHUB_ENV
+        
+        $cleanVersion = $versionStr -replace '^v', ''
+        $parts = $cleanVersion -split '\.'
+        
+        while ($parts.Count -lt 4) {
+          $parts += "0"
+        }
+        
+        $major = [int]$parts[0]
+        $minor = [int]$parts[1]
+        $patch = [int]$parts[2]
+        $build = "0"
+        $versionString = "$major.$minor.$patch.$build"
+        
+        $reasyContent = Get-Content -Path "REasy.py" -Raw
+        $pythonVersion = "$major.$minor.$patch"
+        $reasyContent = $reasyContent -replace 'CURRENT_VERSION\s*=\s*"[^"]+"', "CURRENT_VERSION = `"$pythonVersion`""
+        Set-Content -Path "REasy.py" -Value $reasyContent
+        
+        $versionFile = Get-Content -Path "version.txt" -Raw
+        
+        $versionFile = $versionFile -replace 'filevers=\([^)]+\)', "filevers=($major, $minor, $patch, $build)"
+        $versionFile = $versionFile -replace 'prodvers=\([^)]+\)', "prodvers=($major, $minor, $patch, $build)"
+        
+        $versionFile = $versionFile -replace "StringStruct\(u'FileVersion',\s*u'[^']+'\)", "StringStruct(u'FileVersion', u'$versionString')"
+        $versionFile = $versionFile -replace "StringStruct\(u'ProductVersion',\s*u'[^']+'\)", "StringStruct(u'ProductVersion', u'$versionString')"
+        
+        Set-Content -Path "version.txt" -Value $versionFile -NoNewline
+        Write-Host "Updated version.txt with version $versionString"
+    
     - name: Run build.bat
       shell: cmd
       run: build.bat
@@ -167,28 +208,40 @@ jobs:
     - name: Attest Build Provenance
       uses: actions/attest-build-provenance@v2.4.0
       with:
-        subject-path: dist/REasy_x64.exe
-
-    - name: Determine version
-      id: get_version
-      run: |
-        if ($env:GITHUB_EVENT_NAME -eq "release") {
-          $version = "${{ github.event.release.tag_name }}"
-        } else {
-          $input_version = "${{ github.event.inputs.version }}"
-          if ($input_version -like "v*") {
-            $version = $input_version
-          } else {
-            $version = "v$input_version"
-          }
-        }
-        echo "version=$version" >> $env:GITHUB_ENV
+        subject-path: dist/REasy.exe
 
     - name: Create ZIP archive
       run: |
         Compress-Archive -Path .\dist\* -DestinationPath "REasy $env:version.zip"
 
-    - name: Upload ZIP to GitHub Release
+    - name: Upload unsigned ZIP (for SignPath)
+      id: upload_unsigned
+      uses: actions/upload-artifact@v4
+      with:
+        name: reasy-unsigned-${{ env.version }}
+        path: "REasy ${{ env.version }}.zip"
+
+    - name: Submit signing request to SignPath (test cert)
+      id: sign
+      uses: signpath/github-action-submit-signing-request@v1.2
+      with:
+        api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+        organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+        project-slug: reasy
+        signing-policy-slug: test-signing
+        artifact-configuration-slug: default
+        github-artifact-id: ${{ steps.upload_unsigned.outputs.artifact-id }}
+        wait-for-completion: true
+        parameters: |
+          version: "${{ env.product_version }}"
+
+    - name: Download signed ZIP (overwrite original name)
+      shell: pwsh
+      run: |
+        $url = '${{ steps.sign.outputs.signed-artifact-download-url }}'
+        Invoke-WebRequest -Uri $url -OutFile "REasy $env:version.zip"
+
+    - name: Upload ZIP to GitHub Release (SIGNED)
       uses: softprops/action-gh-release@v2
       with:
         name: "REasy ${{ env.version }}"
@@ -196,7 +249,8 @@ jobs:
         files: "REasy ${{ env.version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Upload ZIP artifact
+
+    - name: Upload ZIP artifact (SIGNED)
       uses: actions/upload-artifact@v4
       with:
         name: reasy-${{ env.version }}
