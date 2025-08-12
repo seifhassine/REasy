@@ -215,7 +215,7 @@ jobs:
       id: upload_unsigned
       uses: actions/upload-artifact@v4
       with:
-        name: reasy-unsigned-${{ env.version }}
+        name: REasy-${{ env.version }}
         path: dist/**
 
     - name: Submit signing request to SignPath (test cert)
@@ -245,5 +245,5 @@ jobs:
     - name: Upload ZIP artifact (SIGNED)
       uses: actions/upload-artifact@v4
       with:
-        name: reasy-${{ env.version }}
+        name: REasy-${{ env.version }}
         path: "reasy-signed/REasy ${{ env.version }}.zip"
