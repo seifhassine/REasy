@@ -26,15 +26,15 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 <br>
 <div align="center">
   
-| File Type | Viewing | Editing | Tested On |
-|-----------|---------|---------|-----------|
-| UVAR      | ✅       | ✅       | Most Titles  |
-| RCOL (temporarily disabled)      | ❌       | ❌       | RE4       |
-| SCN       | ✅       | ✅       | Most titles       |
-| User       | ✅       | ✅       |Most titles       |
-| PFB       | ✅       | ✅       | Most titles      |
-| MSG       | ✅       | ✅       | RE4      |
-| EFX       | Coming Soon       | Coming Soon       |       |
+| File Type | Support | Tested On |
+|-----------|---------|-----------|
+| UVAR      | ✅       | Most Titles  |
+| RCOL (temporarily disabled)      | ❌       | RE4       |
+| SCN       | ✅       | Most titles       |
+| User       | ✅       |Most titles       |
+| PFB       | ✅       | Most titles      |
+| MSG       | ✅       | RE4      |
+| EFX       | Coming Soon       |       |
   
 </div>
 <br>
