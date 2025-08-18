@@ -34,6 +34,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
 | MSG       | ✅       | RE4      |
+| PAK       | Packing only       | RE4      |
 | EFX       | Coming Soon       |       |
   
 </div>
