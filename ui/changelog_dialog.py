@@ -172,9 +172,9 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("Fixed", "RSZ empty userdata issue after copying gameobjects, leading to infinite loading in games."),
-            ("Improved", "UVAR Editor bugfixes. UVAR.2 is also supported."),
-            ("New", "You can now change everything in the UVAR file (create, delete, modify nodes, embedded UVAR files, connections..)"),
+            ("Fixed", "Outdated RSZ file detector was slower due to not skipping data parsing."),
+            ("Updated", "MHwilds, RE7 RSZ templates."),
+            ("New", "REasy.exe is now signed and sponsored by Signpath. You should no longer get windows smartscreen/defender alerts."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
