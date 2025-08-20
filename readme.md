@@ -107,16 +107,6 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 
 If you want to run REasy on Linux and encounter the error "Aborted" on launch, try installing libxcb-cursor0 using apt-get. 
 
-## Sponsors
-<table>
- <tbody>
-  <tr>
-   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
-   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
-  </tr>
- </tbody>
-</table>
-
 ## Credits:
 
 @alphazolam for the uvar template.
@@ -137,4 +127,14 @@ If you appreciate my work and would like to support the development of the tool,
 
 REasy is under MIT license.
 You are wlecome to contribute to the project. I am currently active and will review PRs.
+
+## Sponsors
+<table>
+ <tbody>
+  <tr>
+   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
+   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
+  </tr>
+ </tbody>
+</table>
 
