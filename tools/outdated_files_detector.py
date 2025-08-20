@@ -56,7 +56,7 @@ class OutdatedFilesDetector:
             rsz_file.type_registry = self.type_registry
             rsz_file.filepath = file_path
             try:
-                rsz_file.read(data)
+                rsz_file.read(data, skip_data=True)
             except Exception as e:
                 print(f"Error reading RSZ file {file_path}: {e}")
                 
