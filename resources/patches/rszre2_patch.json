@@ -33946,20 +33946,20 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v5",
+				"name": "Colliders",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.Collider",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			}
 		],
 		"name": "via.physics.Colliders"
