@@ -38,6 +38,7 @@ class TemplatePatcher:
         self.crc_mismatches = 0
         self.deleted_nonexistent_types = 0  
         self.forced_count_mismatches = 0
+        self.deleted_empty_field_types = 0
 
     def load_templates(self) -> bool:
         """Load both source and patch templates."""
@@ -112,6 +113,16 @@ class TemplatePatcher:
             patch_fields = patch_type["fields"]
             source_fields = source_type["fields"]
 
+            if not patch_fields:
+                warning = (
+                    f"Type {type_id} ({source_type.get('name','unnamed')}): "
+                    f"Removed from patch due to empty fields"
+                )
+                self.warnings.append(warning)
+                self.deleted_empty_field_types += 1
+                del self.patch_data[type_id]
+                continue
+
             # If field counts differ, skip but do not remove patch entry
             if len(patch_fields) != len(source_fields):
                 # If force_count_mismatch is enabled and we're in CRC mode, allow the mismatch
@@ -171,7 +182,8 @@ class TemplatePatcher:
             "updated_types": self.updated_types,
             "skipped_types": self.skipped_types,
             "warnings": self.warnings,
-            "deleted_nonexistent_types": self.deleted_nonexistent_types
+            "deleted_nonexistent_types": self.deleted_nonexistent_types,
+            "deleted_empty_field_types": self.deleted_empty_field_types
         }
         if self.crc_mode:
             summary["crc_mismatches"] = self.crc_mismatches
@@ -225,6 +237,9 @@ def main():
     if patcher.deleted_nonexistent_types > 0:
         need_prune = True
         print(f"Pruning {patcher.deleted_nonexistent_types} types not present in source from patch file...")
+    if patcher.deleted_empty_field_types > 0:
+        need_prune = True
+        print(f"Pruning {patcher.deleted_empty_field_types} types with empty fields from patch file...")
 
     if need_prune:
         if not patcher.save_pruned_patch():
@@ -241,6 +256,8 @@ def main():
         print(f"- Forced count mismatches: {summary['forced_count_mismatches']}")
     if summary['deleted_nonexistent_types']:
         print(f"- Types deleted from patch (not in source): {summary['deleted_nonexistent_types']}")
+    if summary['deleted_empty_field_types']:
+        print(f"- Types deleted from patch (empty fields): {summary['deleted_empty_field_types']}")
 
     if summary['warnings']:
         if args.verbose:
