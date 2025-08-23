@@ -7,14 +7,9 @@ from PySide6.QtWidgets import (
 
 
 class BetterFindDialog(QDialog):
-    """Modal dialog that searches names AND values (widgets or raw data) in the active tree."""
 
-    # ------------------------------------------------------------------ #
-    # helpers
-    # ------------------------------------------------------------------ #
     @staticmethod
     def _widget_values(widget: QWidget) -> list[str]:
-        """Grab *all* user-visible values inside a custom index-widget."""
         vals: list[str] = []
 
         for le in widget.findChildren(QLineEdit):
@@ -32,11 +27,6 @@ class BetterFindDialog(QDialog):
 
     @staticmethod
     def _item_value(item) -> str:
-        """
-        Return a human-readable value directly from the model item
-        (without relying on a widget).  Handles the common RSZ data
-        objects your app uses (value, guid_str, x/y/z, etc.).
-        """
         if not isinstance(item, object) or not hasattr(item, "raw"):
             return ""
 
@@ -88,6 +78,18 @@ class BetterFindDialog(QDialog):
             if not cur.isValid():
                 return QModelIndex()
         return cur
+
+    def _match_with_widget_values(self, tree, idx: QModelIndex, raw_val: str, needle: str, case: bool) -> tuple[bool, str]:
+        value_blob = ""
+        if idx and idx.isValid():
+            w = tree.indexWidget(idx)
+            if w:
+                widget_vals = self._widget_values(w)
+                value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
+                cmp_val2 = value_blob if case else value_blob.lower()
+                if needle in cmp_val2:
+                    return True, value_blob
+        return False, value_blob
 
     # ------------------------------------------------------------------ #
     # GUI
@@ -163,9 +165,6 @@ class BetterFindDialog(QDialog):
         self.status = QLabel("")
         root.addWidget(self.status)
 
-    # ------------------------------------------------------------------ #
-    # search
-    # ------------------------------------------------------------------ #
     def find_all(self):
         search_text = self.search_entry.text().strip()
         if not search_text:
@@ -181,14 +180,6 @@ class BetterFindDialog(QDialog):
             self.status.setText("Tree has no model")
             return
 
-        # fetch lazy children
-        def fetch(idx):
-            if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
-                model.fetchMore(idx)
-            for r in range(model.rowCount(idx)):
-                fetch(model.index(r, 0, idx))
-        fetch(QModelIndex())
-
         case  = self.case_box.isChecked()
         mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
         needle= search_text if case else search_text.lower()
@@ -197,48 +188,135 @@ class BetterFindDialog(QDialog):
         self.result_list.clear()
         self.current_index = -1
 
-        def walk(parent_idx, path):
-            for row in range(model.rowCount(parent_idx)):
-                idx0 = model.index(row, 0, parent_idx)
-                if not idx0.isValid():
-                    continue
+        # fast path (TreeItem traversal) 
+        root_item = getattr(model, "rootItem", None)
+        is_tree_item_model = (root_item is not None and hasattr(root_item, "child_count") and hasattr(root_item, "data"))
+        if is_tree_item_model:
+            def get_item_name(item) -> str:
+                d = item.data
+                if isinstance(d, (list, tuple)):
+                    return str(d[0] or "")
+                return str(d or "")
 
-                name = str(idx0.data(Qt.DisplayRole) or "")
-                full_path = f"{path} > {name}" if path else name
+            get_index_from_item = getattr(model, "getIndexFromItem", None)
 
-                item = idx0.internalPointer()
-
-                # widget values (if the node has been expanded already)
-                widget_vals = []
-                w = tree.indexWidget(idx0)
-                if w:
-                    widget_vals = self._widget_values(w)
-
-                # raw value
-                raw_val = self._item_value(item)
-
-                all_values = widget_vals + [raw_val]
-                value_blob = " ".join(v for v in all_values if v).strip()
-
+            def walk_items(item, rows_path, names_path):
+                name = get_item_name(item)
                 cmp_name = name if case else name.lower()
-                cmp_val  = value_blob if case else value_blob.lower()
 
-                match = ((mode in ("both", "name")  and needle in cmp_name) or
-                         (mode in ("both", "value") and needle in cmp_val))
+                match_name = (mode in ("both", "name")) and (needle in cmp_name)
+                match_val = False
+                raw_val = ""
+                value_blob = ""
+
+                if not match_name and (mode in ("both", "value")):
+                    raw_val = self._item_value(item)
+                    cmp_val = raw_val if case else raw_val.lower()
+                    match_val = needle in cmp_val if cmp_val else False
+
+                    if not match_val and callable(get_index_from_item):
+                        idx = get_index_from_item(item)
+                        if idx and idx.isValid():
+                            match_val, value_blob = self._match_with_widget_values(tree, idx, raw_val, needle, case)
+
+                match = match_name or match_val
+
                 if match:
+                    if not value_blob:
+                        widget_vals = []
+                        if callable(get_index_from_item):
+                            idx = get_index_from_item(item)
+                            if idx and idx.isValid():
+                                w = tree.indexWidget(idx)
+                                if w:
+                                    widget_vals = self._widget_values(w)
+                        if not raw_val:
+                            raw_val = self._item_value(item)
+                        value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
+
+                    full_path = " > ".join(names_path + [name]) if names_path else name
                     self.results.append({
                         "path": full_path, "name": name,
-                        "value": value_blob, "rows": self._row_path(idx0)
+                        "value": value_blob, "rows": rows_path[:]
                     })
                     disp = f"{name}: {value_blob}" if value_blob else name
                     if len(full_path.split(" > ")) > 3:
                         disp = "…" + disp
                     self.result_list.addItem(disp)
 
-                if model.hasChildren(idx0):
-                    walk(idx0, full_path)
+                child_count = item.child_count()
+                if child_count:
+                    for r in range(child_count):
+                        child = item.child(r)
+                        if not child:
+                            continue
+                        walk_items(child, rows_path + [r], names_path + [name])
 
-        walk(QModelIndex(), "")
+            for r in range(root_item.child_count()):
+                child = root_item.child(r)
+                if child:
+                    walk_items(child, [r], [])
+
+        else:
+            # fetch lazy children
+            def fetch(idx):
+                if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
+                    model.fetchMore(idx)
+                for r in range(model.rowCount(idx)):
+                    fetch(model.index(r, 0, idx))
+            fetch(QModelIndex())
+
+            def walk(parent_idx, path):
+                for row in range(model.rowCount(parent_idx)):
+                    idx0 = model.index(row, 0, parent_idx)
+                    if not idx0.isValid():
+                        continue
+
+                    name = str(idx0.data(Qt.DisplayRole) or "")
+                    item = idx0.internalPointer()
+
+                    cmp_name = name if case else name.lower()
+
+                    raw_val = ""
+                    widget_vals = []
+                    value_blob = ""
+
+                    match_name = (mode in ("both", "name")) and (needle in cmp_name)
+                    match_val = False
+
+                    if not match_name and (mode in ("both", "value")):
+                        raw_val = self._item_value(item)
+                        cmp_val = raw_val if case else raw_val.lower()
+                        match_val = needle in cmp_val if cmp_val else False
+                        if not match_val:
+                            match_val, value_blob = self._match_with_widget_values(tree, idx0, raw_val, needle, case)
+
+                    match = match_name or match_val
+
+                    if match:
+                        if not value_blob:
+                            if not raw_val:
+                                raw_val = self._item_value(item)
+                            w = tree.indexWidget(idx0)
+                            if w:
+                                widget_vals = self._widget_values(w)
+                            value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
+
+                        full_path = f"{path} > {name}" if path else name
+                        self.results.append({
+                            "path": full_path, "name": name,
+                            "value": value_blob, "rows": self._row_path(idx0)
+                        })
+                        disp = f"{name}: {value_blob}" if value_blob else name
+                        if len(full_path.split(" > ")) > 3:
+                            disp = "…" + disp
+                        self.result_list.addItem(disp)
+
+                    if model.hasChildren(idx0):
+                        next_path = f"{path} > {name}" if path else name
+                        walk(idx0, next_path)
+
+            walk(QModelIndex(), "")
 
         if self.results:
             self.status.setText(f"Found {len(self.results)} matches")
@@ -246,7 +324,6 @@ class BetterFindDialog(QDialog):
         else:
             self.status.setText("No matches found")
 
-    # navigation
     def _select(self, i):
         if not (0 <= i < len(self.results)):
             return
@@ -277,7 +354,6 @@ class BetterFindDialog(QDialog):
             return
         self._select((self.current_index - 1) % len(self.results))
 
-    # Qt events
     def showEvent(self, e): 
         super().showEvent(e)
         self.search_entry.setFocus()
