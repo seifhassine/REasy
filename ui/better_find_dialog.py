@@ -27,6 +27,12 @@ class BetterFindDialog(QDialog):
 
     @staticmethod
     def _item_value(item) -> str:
+        try:
+            if hasattr(item, "text"):
+                return str(item.text(1) or "")
+        except Exception:
+            pass
+
         if not isinstance(item, object) or not hasattr(item, "raw"):
             return ""
 
@@ -188,135 +194,209 @@ class BetterFindDialog(QDialog):
         self.result_list.clear()
         self.current_index = -1
 
-        # fast path (TreeItem traversal) 
-        root_item = getattr(model, "rootItem", None)
-        is_tree_item_model = (root_item is not None and hasattr(root_item, "child_count") and hasattr(root_item, "data"))
-        if is_tree_item_model:
-            def get_item_name(item) -> str:
-                d = item.data
-                if isinstance(d, (list, tuple)):
-                    return str(d[0] or "")
-                return str(d or "")
+        # QTreeWidget path (for now UVAR viewer)
+        if hasattr(tree, "invisibleRootItem"):
+            metadata_map = getattr(tree, "_metadata_map", None)
+            handler = getattr(tree, "_handler", None)
 
-            get_index_from_item = getattr(model, "getIndexFromItem", None)
+            def ensure_loaded(item):
+                if not item:
+                    return
+                children_snapshot = [item.child(i) for i in range(item.childCount())]
+                for ch in children_snapshot:
+                    meta = metadata_map.get(id(ch)) if metadata_map else None
+                    if meta and meta.get("type") == "placeholder" and handler:
+                        embed = meta.get("embedded")
+                        item.removeChild(ch)
+                        handler._populate_embedded_contents(item, embed, metadata_map)
+                        
+                for i in range(item.childCount()):
+                    ensure_loaded(item.child(i))
+                    
+            for r in range(tree.topLevelItemCount()):
+                ensure_loaded(tree.topLevelItem(r))
 
-            def walk_items(item, rows_path, names_path):
-                name = get_item_name(item)
+            def walk_qtreewidget_item(item, names_path):
+                if item is None:
+                    return
+                name = str(item.text(0) or "")
                 cmp_name = name if case else name.lower()
 
+                raw_val = str(item.text(1) or "")
+                cmp_val = raw_val if case else raw_val.lower()
+
                 match_name = (mode in ("both", "name")) and (needle in cmp_name)
-                match_val = False
-                raw_val = ""
+                match_val = (mode in ("both", "value")) and (needle in cmp_val) if cmp_val else False
                 value_blob = ""
 
-                if not match_name and (mode in ("both", "value")):
-                    raw_val = self._item_value(item)
-                    cmp_val = raw_val if case else raw_val.lower()
-                    match_val = needle in cmp_val if cmp_val else False
-
-                    if not match_val and callable(get_index_from_item):
-                        idx = get_index_from_item(item)
-                        if idx and idx.isValid():
-                            match_val, value_blob = self._match_with_widget_values(tree, idx, raw_val, needle, case)
+                if not match_val:
+                    idx = tree.indexFromItem(item, 0)
+                    if idx and idx.isValid():
+                        match_val, value_blob = self._match_with_widget_values(tree, idx, raw_val, needle, case)
 
                 match = match_name or match_val
 
                 if match:
                     if not value_blob:
+                        idx = tree.indexFromItem(item, 0)
                         widget_vals = []
-                        if callable(get_index_from_item):
-                            idx = get_index_from_item(item)
-                            if idx and idx.isValid():
-                                w = tree.indexWidget(idx)
-                                if w:
-                                    widget_vals = self._widget_values(w)
-                        if not raw_val:
-                            raw_val = self._item_value(item)
+                        if idx and idx.isValid():
+                            w = tree.indexWidget(idx)
+                            if w:
+                                widget_vals = self._widget_values(w)
                         value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
                     full_path = " > ".join(names_path + [name]) if names_path else name
+                    rows = self._row_path(tree.indexFromItem(item, 0))
                     self.results.append({
                         "path": full_path, "name": name,
-                        "value": value_blob, "rows": rows_path[:]
+                        "value": value_blob, "rows": rows
                     })
                     disp = f"{name}: {value_blob}" if value_blob else name
                     if len(full_path.split(" > ")) > 3:
                         disp = "…" + disp
                     self.result_list.addItem(disp)
 
-                child_count = item.child_count()
-                if child_count:
-                    for r in range(child_count):
-                        child = item.child(r)
-                        if not child:
-                            continue
-                        walk_items(child, rows_path + [r], names_path + [name])
+                for r in range(item.childCount()):
+                    child = item.child(r)
+                    if child:
+                        walk_qtreewidget_item(child, names_path + [name])
 
-            for r in range(root_item.child_count()):
-                child = root_item.child(r)
-                if child:
-                    walk_items(child, [r], [])
+            for r in range(tree.topLevelItemCount()):
+                top = tree.topLevelItem(r)
+                if top:
+                    walk_qtreewidget_item(top, [])
 
         else:
-            # fetch lazy children
-            def fetch(idx):
-                if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
-                    model.fetchMore(idx)
-                for r in range(model.rowCount(idx)):
-                    fetch(model.index(r, 0, idx))
-            fetch(QModelIndex())
+            # fast path (TreeItem traversal) 
+            root_item = getattr(model, "rootItem", None)
+            is_tree_item_model = (root_item is not None and hasattr(root_item, "child_count") and hasattr(root_item, "data"))
+            if is_tree_item_model:
+                def get_item_name(item) -> str:
+                    d = item.data
+                    if isinstance(d, (list, tuple)):
+                        return str(d[0] or "")
+                    return str(d or "")
 
-            def walk(parent_idx, path):
-                for row in range(model.rowCount(parent_idx)):
-                    idx0 = model.index(row, 0, parent_idx)
-                    if not idx0.isValid():
-                        continue
+                get_index_from_item = getattr(model, "getIndexFromItem", None)
 
-                    name = str(idx0.data(Qt.DisplayRole) or "")
-                    item = idx0.internalPointer()
-
+                def walk_items(item, rows_path, names_path):
+                    name = get_item_name(item)
                     cmp_name = name if case else name.lower()
-
-                    raw_val = ""
-                    widget_vals = []
-                    value_blob = ""
 
                     match_name = (mode in ("both", "name")) and (needle in cmp_name)
                     match_val = False
+                    raw_val = ""
+                    value_blob = ""
 
                     if not match_name and (mode in ("both", "value")):
                         raw_val = self._item_value(item)
                         cmp_val = raw_val if case else raw_val.lower()
                         match_val = needle in cmp_val if cmp_val else False
-                        if not match_val:
-                            match_val, value_blob = self._match_with_widget_values(tree, idx0, raw_val, needle, case)
+
+                        if not match_val and callable(get_index_from_item):
+                            idx = get_index_from_item(item)
+                            if idx and idx.isValid():
+                                match_val, value_blob = self._match_with_widget_values(tree, idx, raw_val, needle, case)
 
                     match = match_name or match_val
 
                     if match:
                         if not value_blob:
+                            widget_vals = []
+                            if callable(get_index_from_item):
+                                idx = get_index_from_item(item)
+                                if idx and idx.isValid():
+                                    w = tree.indexWidget(idx)
+                                    if w:
+                                        widget_vals = self._widget_values(w)
                             if not raw_val:
                                 raw_val = self._item_value(item)
-                            w = tree.indexWidget(idx0)
-                            if w:
-                                widget_vals = self._widget_values(w)
                             value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
-                        full_path = f"{path} > {name}" if path else name
+                        full_path = " > ".join(names_path + [name]) if names_path else name
                         self.results.append({
                             "path": full_path, "name": name,
-                            "value": value_blob, "rows": self._row_path(idx0)
+                            "value": value_blob, "rows": rows_path[:]
                         })
                         disp = f"{name}: {value_blob}" if value_blob else name
                         if len(full_path.split(" > ")) > 3:
                             disp = "…" + disp
                         self.result_list.addItem(disp)
 
-                    if model.hasChildren(idx0):
-                        next_path = f"{path} > {name}" if path else name
-                        walk(idx0, next_path)
+                    child_count = item.child_count()
+                    if child_count:
+                        for r in range(child_count):
+                            child = item.child(r)
+                            if not child:
+                                continue
+                            walk_items(child, rows_path + [r], names_path + [name])
 
-            walk(QModelIndex(), "")
+                for r in range(root_item.child_count()):
+                    child = root_item.child(r)
+                    if child:
+                        walk_items(child, [r], [])
+
+            else:
+                # fetch lazy children
+                def fetch(idx):
+                    if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
+                        model.fetchMore(idx)
+                    for r in range(model.rowCount(idx)):
+                        fetch(model.index(r, 0, idx))
+                fetch(QModelIndex())
+
+                def walk(parent_idx, path):
+                    for row in range(model.rowCount(parent_idx)):
+                        idx0 = model.index(row, 0, parent_idx)
+                        if not idx0.isValid():
+                            continue
+
+                        name = str(idx0.data(Qt.DisplayRole) or "")
+                        item = idx0.internalPointer()
+
+                        cmp_name = name if case else name.lower()
+
+                        raw_val = ""
+                        widget_vals = []
+                        value_blob = ""
+
+                        match_name = (mode in ("both", "name")) and (needle in cmp_name)
+                        match_val = False
+
+                        if not match_name and (mode in ("both", "value")):
+                            raw_val = self._item_value(item)
+                            cmp_val = raw_val if case else raw_val.lower()
+                            match_val = needle in cmp_val if cmp_val else False
+                            if not match_val:
+                                match_val, value_blob = self._match_with_widget_values(tree, idx0, raw_val, needle, case)
+
+                        match = match_name or match_val
+
+                        if match:
+                            if not value_blob:
+                                if not raw_val:
+                                    raw_val = self._item_value(item)
+                                w = tree.indexWidget(idx0)
+                                if w:
+                                    widget_vals = self._widget_values(w)
+                                value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
+
+                            full_path = f"{path} > {name}" if path else name
+                            self.results.append({
+                                "path": full_path, "name": name,
+                                "value": value_blob, "rows": self._row_path(idx0)
+                            })
+                            disp = f"{name}: {value_blob}" if value_blob else name
+                            if len(full_path.split(" > ")) > 3:
+                                disp = "…" + disp
+                            self.result_list.addItem(disp)
+
+                        if model.hasChildren(idx0):
+                            next_path = f"{path} > {name}" if path else name
+                            walk(idx0, next_path)
+
+                walk(QModelIndex(), "")
 
         if self.results:
             self.status.setText(f"Found {len(self.results)} matches")
