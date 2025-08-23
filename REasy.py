@@ -9,6 +9,7 @@ import datetime
 import re
 
 from file_handlers.factory import get_handler_for_data 
+from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.rsz.rsz_handler import RszHandler  
 
 from ui.better_find_dialog import BetterFindDialog
@@ -637,6 +638,9 @@ class FileTab:
             traceback.print_exc()
 
     def open_find_dialog(self):
+        if isinstance(self.handler, MsgHandler):
+                QMessageBox.information(self.notebook_widget, "Search in MSG", "MSG files have a built-in search at the top of the editor. Please use that search bar.")
+                return
         if hasattr(self, "_find_dialog") and self._find_dialog:
             try:
                 if self._find_dialog.isVisible():
