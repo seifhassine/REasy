@@ -14,6 +14,7 @@ pip install -r requirements.txt
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt REasy.py
 xcopy /E /I /Y resources dist\resources
 rmdir /S /Q dist\resources\data\dumps
+rmdir /S /Q dist\resources\patches
 copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"
 copy "resources\data\dumps\rszre4_reasy.json" "dist\rszre4_reasy.json"
 copy "resources\data\dumps\rszre2.json" "dist\rszre2.json"
