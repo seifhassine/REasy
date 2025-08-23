@@ -253,8 +253,6 @@ class MsgViewer(QWidget):
         self._update_search_results()
 
     def _on_search_text_changed(self, text):
-        self.search_timer.stop()
-        self.search_timer.start(300)
         self._perform_search()
 
     def _perform_search(self):
