@@ -3942,7 +3942,7 @@
 				"array": false,
 				"name": "GravityCoord",
 				"native": true,
-				"original_type": "via.motion.Chain.GravityCoord(?)",
+				"original_type": "via.motion.Chain.GravityCoord",
 				"size": 4,
 				"type": "S32"
 			},
