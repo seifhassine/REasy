@@ -44516,137 +44516,137 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "CalculateMode(?)",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.Chain.CalculateMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "GravityCoord(?)",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.Chain.GravityCoord",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "AutoMotionBlendEnabled(?)",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "StabilaizeNum(?)",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "EnableWindStabilizing(?)",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "BlendRate(?)",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "FreezeRate(?)",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "EnabledAngleLimit",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v13",
+				"name": "EnabledCollision",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v14",
+				"name": "EnabledVirtualFloor",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "VirtualGroundTargetHeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "SubReduceDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "PresetID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "GlobalColliderAreaLimitScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v19",
+				"name": "FixPartBlend",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			}
 		],
 		"name": "via.motion.Chain"
