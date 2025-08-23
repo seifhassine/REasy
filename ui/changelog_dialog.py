@@ -172,9 +172,14 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("Fixed", "Outdated RSZ file detector was slower due to not skipping data parsing."),
-            ("Updated", "MHwilds, RE7 RSZ templates."),
-            ("New", "REasy.exe is now signed and sponsored by Signpath. You should no longer get windows smartscreen/defender alerts."),
+            ("Fixed", "[MSG]: Some legacy code that caused the built-in search to fail."),
+            ("New", "[UVAR]: CTRL+F search is now possible and does not crash the editor."),
+            ("Fixed", "[RSZ]: Minor issues in SF6, RE4, DMC5 dumps."),
+            ("Fixed", "[RSZ]: Issues in MHWilds dump leading to incorrect/impossible parsing of some files."),
+            ("New", "[RSZ]: Added new patch file for MHRise dump."),
+            ("Improved", "[RSZ]: CTRL+F search is now much faster."),
+            ("Improved", "[RSZ]: RE2 non-rt dump (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)."),
+            ("Improved", "[RSZ]: REasy .zip archive now no longer contains unneeded patches folder."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -212,6 +217,7 @@ class ChangelogDialog(QDialog):
 
         desc = QLabel(text)
         desc.setWordWrap(True)
+        desc.setOpenExternalLinks(True)
 
         layout.addWidget(pill)
         layout.addWidget(desc, 1)
