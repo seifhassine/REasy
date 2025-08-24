@@ -8931,48 +8931,6 @@
 		],
 		"name": "app.ropeway.effect.script.EPVExpertMuzzleFlashCustomData"
 	},
-	"71dafdc5": {
-		"crc": "c4d68401",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "Name",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 8,
-				"array": false,
-				"name": "Rank",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "U64"
-			},
-			{
-				"align": 8,
-				"array": false,
-				"name": "Value",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "S64"
-			},
-			{
-				"align": 8,
-				"array": true,
-				"name": "Option",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "S64"
-			}
-		],
-		"name": "via.network.ranking.ScoreInfo"
-	},
 	"40832259": {
 		"crc": "f2aeb732",
 		"fields": [
@@ -14808,66 +14766,6 @@
 			}
 		],
 		"name": "app.ropeway.enemy.em7100.Em7100Param"
-	},
-	"c7aa15ad": {
-		"crc": "21b788f2",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "JointName",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "Axis",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "IsLimitAngle",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "AngleMin",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "AngleMax",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "Mass",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			}
-		],
-		"name": "via.motion.IkJacobian.Link"
 	},
 	"fcd5a367": {
 		"crc": "45170236",
@@ -20883,21 +20781,6 @@
 			}
 		],
 		"name": "app.ropeway.RopewaySingletonBehaviorRoot`1<app.ropeway.gamemastering.RogueDevelopManager>"
-	},
-	"6689c9a9": {
-		"crc": "5722321e",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "Str",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			}
-		],
-		"name": "via.network.utility.Nickname"
 	},
 	"93820a12": {
 		"crc": "3ede0af3",
@@ -42986,30 +42869,6 @@
 		],
 		"name": "app.ropeway.gimmick.GimmickFixCameraController"
 	},
-	"8d8939e0": {
-		"crc": "48933534",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "DialogText",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "Result",
-				"native": true,
-				"original_type": "via.hid.virtualKeyboard.nsw.TextCheckResult",
-				"size": 4,
-				"type": "S32"
-			}
-		],
-		"name": "via.hid.NswSoftwareKeyboardDevice.TextCheckArg"
-	},
 	"1a2601bd": {
 		"crc": "abd96341",
 		"fields": [
@@ -59661,57 +59520,6 @@
 		"crc": "f9bb477f",
 		"fields": [],
 		"name": "via.Steam"
-	},
-	"f057b034": {
-		"crc": "cf4f6b7f",
-		"fields": [
-			{
-				"align": 1,
-				"array": false,
-				"name": "v0_Enable",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v1_InvertTest",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v2_Mode",
-				"native": true,
-				"original_type": "via.areamap.AreaTest.Mode",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v3_Weight",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ItemTag",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			}
-		],
-		"name": "via.areamap.test.CollisionAABB"
 	},
 	"ed55df02": {
 		"crc": "d6413e6f",
@@ -78395,21 +78203,6 @@
 		],
 		"name": "app.ropeway.gui.BonusBehavior"
 	},
-	"7255797c": {
-		"crc": "999bc1fa",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "Name",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			}
-		],
-		"name": "via.network.storage.Info"
-	},
 	"30a452c8": {
 		"crc": "1d02eaf3",
 		"fields": [
@@ -96376,39 +96169,6 @@
 		],
 		"name": "app.ropeway.GroundFixSystem"
 	},
-	"f556f1b8": {
-		"crc": "c4eb9239",
-		"fields": [
-			{
-				"align": 4,
-				"array": false,
-				"name": "BoardName",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 8,
-				"array": false,
-				"name": "Offset",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "U64"
-			},
-			{
-				"align": 8,
-				"array": false,
-				"name": "Total",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "U64"
-			}
-		],
-		"name": "via.network.ranking.ScoreInfoTbl"
-	},
 	"26c98794": {
 		"crc": "ac32fc73",
 		"fields": [
@@ -108747,57 +108507,6 @@
 		],
 		"name": "app.ropeway.RopewaySingletonBehaviorRoot`1<app.ropeway.gamemastering.ActorManager>"
 	},
-	"5a82e2a5": {
-		"crc": "a521133a",
-		"fields": [
-			{
-				"align": 1,
-				"array": false,
-				"name": "v0_Enable",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v1_InvertTest",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v2_Mode",
-				"native": true,
-				"original_type": "via.areamap.AreaTest.Mode",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v3_Weight",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "PropertyName",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			}
-		],
-		"name": "via.areamap.test.ContainsProperty"
-	},
 	"c7ed13e5": {
 		"crc": "f77bef1a",
 		"fields": [
@@ -120015,57 +119724,6 @@
 			}
 		],
 		"name": "via.wwise.WwiseBankParam"
-	},
-	"a8486deb": {
-		"crc": "fa117c03",
-		"fields": [
-			{
-				"align": 1,
-				"array": false,
-				"name": "v0_Enable",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v1_InvertTest",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v2_Mode",
-				"native": true,
-				"original_type": "via.areamap.AreaTest.Mode",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v3_Weight",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ItemTag",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			}
-		],
-		"name": "via.areamap.test.RegionContains"
 	},
 	"2b61d235": {
 		"crc": "c381a434",
@@ -131609,5 +131267,6129 @@
 			}
 		],
 		"name": "app.ropeway.gui.FloorMapSt52Behavior"
+	},
+	
+	"104d8ec8": {
+		"crc": "ff65614f",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_OwnerComponent",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerGameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HandleID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_HandleAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.fsm.SelectorArg"
+	},
+	"11f83c6a": {
+		"crc": "c40a6f01",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "Position",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": true,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Scale",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.motion.AnimationTransformData"
+	},
+	"132dad81": {
+		"crc": "e5c733cc",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.areamap.AreaTest"
+	},
+	"156656c6": {
+		"crc": "901dd095",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ServiceLabel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Mode",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.store.Native.NpCommerceDialogParam"
+	},
+	"157c4edd": {
+		"crc": "46d46de3",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.motion.Fsm2ConditionMotionEnd"
+	},
+	"160905ca": {
+		"crc": "8a687dde",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRLeftTrigger"
+	},
+	"1c07d5b4": {
+		"crc": "16d0d39f",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_DefaultStatusStr",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.Native.NpPresenceStatus"
+	},
+	"1c20292e": {
+		"crc": "ad601060",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Depth",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.areamap.source.AdjacentRegions"
+	},
+	"1d12fff": {
+		"crc": "f0db3026",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_EffectorEnabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.SetEffectorEnabled"
+	},
+	"1d61fe0f": {
+		"crc": "fb93a030",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_OutputVariable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Variable",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "via.behaviortree.SelectorRandom"
+	},
+	"205fdc1a": {
+		"crc": "8836342a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Left",
+				"native": true,
+				"original_type": "via.geometry.HalfEdge",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Right",
+				"native": true,
+				"original_type": "via.geometry.HalfEdge",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Start",
+				"native": true,
+				"original_type": "via.geometry.Vertex",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_End",
+				"native": true,
+				"original_type": "via.geometry.Vertex",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.geometry.Edge"
+	},
+	"2073af85": {
+		"crc": "972c6e1f",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_CoreID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Immediate",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ForceExecute",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_PassSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_ClearQueue",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.SetStateInfo"
+	},
+	"2170cbe5": {
+		"crc": "dd10f923",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Period",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.dynamics.cloth.Wind"
+	},
+	"24cf06b7": {
+		"crc": "993e62ec",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ItemSpacing",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HeightOffset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.areamap.source.GridInsideTestedArea"
+	},
+	"2566b80f": {
+		"crc": "4cc7276",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_JointName",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_MyJointName",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_LocalPositionOffset",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v3_LocalRotationOffset",
+				"native": true,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			}
+		],
+		"name": "via.motion.ConstraintTargetJoint"
+	},
+	"2a22230b": {
+		"crc": "648cca77",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.areamap.AreaSource"
+	},
+	"2a2fb84": {
+		"crc": "12694cd8",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRRightTrigger"
+	},
+	"2ad84b76": {
+		"crc": "85fb5ae9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_OwnerComponent",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerGameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HandleID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_HandleAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.fsm.ContentArg"
+	},
+	"2d0fabba": {
+		"crc": "972acc3b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Period",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ScaleCurveX",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_CurveX",
+				"native": true,
+				"original_type": "via.AnimationCurve",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_ScaleCurveY",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_CurveY",
+				"native": true,
+				"original_type": "via.AnimationCurve",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_ScaleCurveZ",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_CurveZ",
+				"native": true,
+				"original_type": "via.AnimationCurve",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.dynamics.cloth.CurveWind"
+	},
+	"2f12240c": {
+		"crc": "e8dcd68d",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "TotalItems",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.network.native.XboInventoryItemTbl"
+	},
+	"2ff2e4f3": {
+		"crc": "806b1106",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_MaxDistance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_HeightCastOffset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.RaycastFromItem"
+	},
+	"331f90e0": {
+		"crc": "40dcf736",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Min",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Max",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.behaviortree.ConditionRandomRange"
+	},
+	"33d768d8": {
+		"crc": "52ef9162",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.Condition"
+	},
+	"36e9d82b": {
+		"crc": "1c7f3835",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "v0_Shape",
+				"native": true,
+				"original_type": "via.Sphere",
+				"size": 16,
+				"type": "Sphere"
+			}
+		],
+		"name": "via.navigation.map.NodeCollectShapeSphere"
+	},
+	"37dbbec7": {
+		"crc": "d8a86791",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_MaxDistance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_HeightCastOffset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.areamap.test.RaycastToSelf"
+	},
+	"3d04fa8e": {
+		"crc": "c21fd485",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.behaviortree.Action"
+	},
+	"3ec9b9a9": {
+		"crc": "631255ee",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRDownOn"
+	},
+	"40798999": {
+		"crc": "245344ed",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "UseLimit",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.network.native.NpEntitlementUseResult"
+	},
+	"42fff711": {
+		"crc": "eac48590",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_ViewAngle",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_MaxDistance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.ItemFieldOfView"
+	},
+	"441bb9fb": {
+		"crc": "6224e167",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.ConditionRandomCase"
+	},
+	"453aafac": {
+		"crc": "fcc15600",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRRightOn"
+	},
+	"4673a666": {
+		"crc": "d6aa3a9b",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Text",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Position",
+				"native": true,
+				"original_type": "via.Point",
+				"size": 8,
+				"type": "Point"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Color",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			}
+		],
+		"name": "via.behaviortree.action.DrawString"
+	},
+	"48ccb223": {
+		"crc": "2aceb7f1",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.navigation.AttributeInfo"
+	},
+	"4cb74de3": {
+		"crc": "f82ab424",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_PropertyName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.source.AllItemsWithProperty"
+	},
+	"4d8d4e56": {
+		"crc": "a52f912e",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Variable",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v5_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.SetFloat"
+	},
+	"4fb6cf35": {
+		"crc": "604367c0",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Time",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Unit",
+				"native": true,
+				"original_type": "via.behaviortree.action.NodeTimer.Unit",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_ApplyTimeScale",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.action.NodeTimer"
+	},
+	"4fd3fa65": {
+		"crc": "23d578e6",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "v0_Position",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v1_Orientation",
+				"native": true,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			}
+		],
+		"name": "via.hid.VrTrackerPose"
+	},
+	"5163a0a0": {
+		"crc": "7e30f5c7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.areamap.ConditionMemoryEvent"
+	},
+	"51712b62": {
+		"crc": "53d03520",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_DescriptionStr",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.native.NpPlayedWithFeed"
+	},
+	"522d76de": {
+		"crc": "708f0f8",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.areamap.source.KnownItemsSource"
+	},
+	"5339f6fb": {
+		"crc": "72ac79c7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Map",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_CopyAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.navigation.RelationMapInfo"
+	},
+	"564f26ec": {
+		"crc": "7503260f",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Name",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.storage.saveService.ShowSaveData"
+	},
+	"5730bbdd": {
+		"crc": "b5b835eb",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ItemSpacing",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HeightOffset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.areamap.source.GridInsideTestedRegion"
+	},
+	"577a986d": {
+		"crc": "54e4297d",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Async",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.telemetry.Request"
+	},
+	"5a82e2a5": {
+		"crc": "a521133a",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PropertyName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.ContainsProperty"
+	},
+	"5c6e6a89": {
+		"crc": "b42560e2",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_ViewAngle",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.areamap.test.BasicFoV"
+	},
+	"5fa1bd17": {
+		"crc": "7f8b71bd",
+		"fields": [
+			{
+				"align": 1,
+				"array": true,
+				"name": "v0_Data",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			}
+		],
+		"name": "via.network.utility.BinaryInfo"
+	},
+	"606bf5a9": {
+		"crc": "4a13a50c",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "UpdatedRegion",
+				"native": true,
+				"original_type": "via.areamap.AreaRegionObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "OldRegion",
+				"native": true,
+				"original_type": "via.areamap.AreaRegionObject",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.areamap.AreaMemoryEvent"
+	},
+	"64398cb1": {
+		"crc": "8a0a45b6",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Status",
+				"native": true,
+				"original_type": "via.behaviortree.action.SetBool.Status",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_SetMethod",
+				"native": true,
+				"original_type": "via.behaviortree.action.DataSetOn",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_NotifyNodeEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.action.SetBool"
+	},
+	"64d45bc2": {
+		"crc": "30bebe81",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.nodework.ConditionAllActionNodeWorkFailed"
+	},
+	"64f5468a": {
+		"crc": "2202b1c0",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.nodework.ConditionNodeWorkFailed"
+	},
+	"6528a501": {
+		"crc": "a9740145",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "SupportMode",
+				"native": true,
+				"original_type": "via.motion.SupportPolygon.SupportModeType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.motion.SupportPolygon"
+	},
+	"6689c9a9": {
+		"crc": "5722321e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Str",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.utility.Nickname"
+	},
+	"673cb25f": {
+		"crc": "2347bdd8",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.behaviortree.NodeIDRef"
+	},
+	"71d67a48": {
+		"crc": "7bf74c7",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_RandomUVOffset",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_NoisePower",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_NoisePowerCroma",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_NoiseSize",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_NoiseDensity",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_NoiseContrast",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7_BlendRate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.render.LDRFilmGrain"
+	},
+	"71dafdc5": {
+		"crc": "c4d68401",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Rank",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "S64"
+			},
+			{
+				"align": 8,
+				"array": true,
+				"name": "Option",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "S64"
+			}
+		],
+		"name": "via.network.ranking.ScoreInfo"
+	},
+	"7255797c": {
+		"crc": "999bc1fa",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.storage.Info"
+	},
+	"7739fc81": {
+		"crc": "5f3831c9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Float",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Test",
+				"native": true,
+				"original_type": "via.motion.CppSampleChild.Test",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.motion.CppSampleChild"
+	},
+	"7811aa48": {
+		"crc": "9e9a4b5",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "LinearCorrectorType",
+				"native": true,
+				"original_type": "via.render.ColorCorrectLinearParams.LinearCorrector",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "LinearFactor",
+				"native": true,
+				"original_type": "via.vec4",
+				"size": 16,
+				"type": "Vec4"
+			}
+		],
+		"name": "via.render.ColorCorrectLinearParams"
+	},
+	"7a5155d4": {
+		"crc": "727d8279",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Type",
+				"native": true,
+				"original_type": "via.navigation.ObstacleFilterInfo.FilterType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.navigation.ObstacleFilterInfo"
+	},
+	"7ba61b6c": {
+		"crc": "5406e377",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_JointName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_GameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Attribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.motion.IkJacobian.Effector"
+	},
+	"7d2a5c6a": {
+		"crc": "cd6ce21e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "InverseMethod",
+				"native": true,
+				"original_type": "via.motion.IkJacobian.InverseMethodType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Effector",
+				"native": true,
+				"original_type": "via.motion.IkJacobian.Effector",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Link",
+				"native": true,
+				"original_type": "via.motion.IkJacobian.Link",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MomentumMode",
+				"native": true,
+				"original_type": "via.motion.IkJacobian.MomentumModeType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "TargetCenterOfMass",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "OffsetCenterOfMass",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Iteration",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Iteration0",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Iteration1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DerivationCulling",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Lambda",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GainDiffVelocityPos",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GainDiffVelocityRot",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GainDiffReference",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GainDiffMomentum",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RatioRoot",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsLog",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsSkipWriteBack",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.motion.IkJacobian"
+	},
+	"7e595dc3": {
+		"crc": "a35760f3",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Options",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FilterInfo",
+				"native": true,
+				"original_type": "via.dynamics.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.dynamics.RayCastQuery"
+	},
+	"7ee7d1c9": {
+		"crc": "80398a57",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "v0_Area",
+				"native": true,
+				"original_type": "via.AABB",
+				"size": 32,
+				"type": "AABB"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_FilterInfo",
+				"native": true,
+				"original_type": "via.physics.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.GetAreaPrimitiveQuery"
+	},
+	"81707421": {
+		"crc": "53f3bba",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.TransitionEvent"
+	},
+	"81cf6781": {
+		"crc": "e1b57236",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRUpTrigger"
+	},
+	"82872b2d": {
+		"crc": "94db0ecd",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_RunType",
+				"native": true,
+				"original_type": "via.behaviortree.SelectorSequence.RunType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.SelectorSequence"
+	},
+	"82c0e7bd": {
+		"crc": "a41a1143",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLLeftOn"
+	},
+	"87ad7187": {
+		"crc": "427804b3",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_GridRadius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_ItemSpacing",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_GridStep",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_HeightOffset",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_AlignedToQuerier",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.areamap.source.GridAroundQuerier"
+	},
+	"882db571": {
+		"crc": "f8470348",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLLeftTrigger"
+	},
+	"884d950c": {
+		"crc": "f65f61f3",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "Total",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Offset",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "ReadSize",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.network.native.NpEntitlementInfoTbl"
+	},
+	"887d0c6f": {
+		"crc": "c94722d7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRLeftOn"
+	},
+	"88f72f11": {
+		"crc": "2d03b783",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_CheckType",
+				"native": true,
+				"original_type": "via.behaviortree.SelectorCallerChildNodeEnd.CheckType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.SelectorCallerChildNodeEnd"
+	},
+	"8a412be5": {
+		"crc": "519a2898",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.render.LDRPath"
+	},
+	"8b255d60": {
+		"crc": "69fcb1b8",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.SelectorMulti"
+	},
+	"8ba06edd": {
+		"crc": "ac9e335e",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_Addtion",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.behaviortree.action.AddPosition"
+	},
+	"8d8939e0": {
+		"crc": "48933534",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "DialogText",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Result",
+				"native": true,
+				"original_type": "via.hid.virtualKeyboard.nsw.TextCheckResult",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.hid.NswSoftwareKeyboardDevice.TextCheckArg"
+	},
+	"8ef57cc": {
+		"crc": "b0e9146d",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_EnableBone",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v1_TargetPosition",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_EffectorJointName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_ChainNum",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Limit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_LoopNum",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7_Rate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v8_BlendRate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v9_ExtraScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.motion.IkNboneContainer"
+	},
+	"8f2bd75c": {
+		"crc": "f79471f3",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_UniqueId",
+				"native": true,
+				"original_type": "via.network.utility.UniqueId",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.network.utility.UniqueIdTbl"
+	},
+	"8ffe597": {
+		"crc": "5c20f22f",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_IdStr",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.achievements.IdList"
+	},
+	"90035a32": {
+		"crc": "4dcce2f8",
+		"fields": [
+			{
+				"align": 16,
+				"array": true,
+				"name": "XKeys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "YKeys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 16,
+				"array": true,
+				"name": "ZKeys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopStartTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopEndTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopWrapNo",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.AnimationCurve3D"
+	},
+	"9078352f": {
+		"crc": "414f4694",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_DataSize",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.fsm.CoreSyncHandle"
+	},
+	"909d1aeb": {
+		"crc": "a60c59a0",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Text",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Type",
+				"native": true,
+				"original_type": "via.behaviortree.action.Trace.TraceType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.action.Trace"
+	},
+	"911ad269": {
+		"crc": "29bf6ff6",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLUpOn"
+	},
+	"918e0c31": {
+		"crc": "21ed5182",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_DefaultStatusStr",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.native.NpPresenceStatus"
+	},
+	"9211917b": {
+		"crc": "e4f667a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLDownOn"
+	},
+	"94161bd": {
+		"crc": "6312ed04",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_OutputVariable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Variable",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "via.behaviortree.SelectorRandomFloat"
+	},
+	"94283ded": {
+		"crc": "869da9ae",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Illegal",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.SelectorFSM"
+	},
+	"9547b35d": {
+		"crc": "9ba7b163",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRUpOn"
+	},
+	"968f56f2": {
+		"crc": "2199311d",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_MapName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.CanNavigate"
+	},
+	"9707e2b3": {
+		"crc": "43c4cbbf",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_FailLevel",
+				"native": true,
+				"original_type": "via.navigation.FailReport.FailLevel",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v1_StartPos",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_DestPos",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_StartNodeID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_DestNodeID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.navigation.FailReport"
+	},
+	"975ea6e7": {
+		"crc": "4e26a01c",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			}
+		],
+		"name": "via.fsm.Action"
+	},
+	"99438d7": {
+		"crc": "5e0152ad",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_OwnerComponent",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerGameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HandleID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_HandleAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.fsm.TransitionEventArg"
+	},
+	"99517389": {
+		"crc": "3161ee",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_From",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_To",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.navigation.map.ManagedIndexedLink"
+	},
+	"9c200cb": {
+		"crc": "faf853e8",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_IsCreateNewSaveData",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ListShowAuto",
+				"native": true,
+				"original_type": "via.storage.saveService.SaveDialogOption.SaveTypeFlag",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_IsShowDoFinishedSystemMessage",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_NeedFreeSpaceSystemMessageContinuable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.storage.saveService.SaveDialogOption"
+	},
+	"9e398276": {
+		"crc": "cfee8c41",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_OwnerComponent",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerGameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HandleID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_HandleAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_TransitionID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_NodeWorkEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6_AllActionNodeWorkEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7_NodeWorkFailed",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v8_AllActionNodeWorkFailed",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.ConditionArg"
+	},
+	"a35e86e1": {
+		"crc": "da144f8e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Rad",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Height",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_Offset",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.navigation.NavigationObstacle.ObstacleRegion"
+	},
+	"a3e66934": {
+		"crc": "8fbb2fa0",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Type",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo.FilterType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Cost",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_NotifyAround",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_NotifyContainsLink",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_NotifyDistance",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7_TraceDestination",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo.TraceDestination",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.navigation.FilterInfo"
+	},
+	"a3e7820c": {
+		"crc": "fa1e2a0e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLUpTrigger"
+	},
+	"a78b2904": {
+		"crc": "d727a676",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.Selector"
+	},
+	"a8486deb": {
+		"crc": "fa117c03",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.RegionContains"
+	},
+	"ab52ef7c": {
+		"crc": "d8913e10",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_CoreID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_ActionID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_ActionIndex",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			}
+		],
+		"name": "via.fsm.ActionInfo"
+	},
+	"ab77eb0f": {
+		"crc": "704b0605",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_Filters",
+				"native": true,
+				"original_type": "via.navigation.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.navigation.FilterSet"
+	},
+	"ac216bb0": {
+		"crc": "395c9f9b",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "Exist",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ChangedMap",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.navigation.PathQueryReport"
+	},
+	"ae0802c": {
+		"crc": "8b9b9dcc",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Text",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_Position",
+				"native": true,
+				"original_type": "via.Point",
+				"size": 8,
+				"type": "Point"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_Color",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7_DrawGameObjectPos",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.DrawString"
+	},
+	"ae45bc35": {
+		"crc": "62e1dcf2",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Name",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.effect.GroupName"
+	},
+	"b1d33416": {
+		"crc": "3c132a74",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Shape",
+				"native": true,
+				"original_type": "via.dynamics.Shape",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Position",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Rotation",
+				"native": true,
+				"original_type": "via.Quaternion",
+				"size": 16,
+				"type": "Quaternion"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "LinearVelocity",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "AngularVelocity",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LinearDamping",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AngularDamping",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Component",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.dynamics.RigidBody"
+	},
+	"b5750930": {
+		"crc": "21de4ab3",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Variable",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v5_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.SetTrigger"
+	},
+	"b77701b0": {
+		"crc": "87256646",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_OutputVariable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Variable",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Min",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Max",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.SelectorRandomInt"
+	},
+	"b8370b43": {
+		"crc": "bb815cd9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.TransitionEvent"
+	},
+	"b903e888": {
+		"crc": "3d5476d0",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_LateSelect",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.SelectorSwitch"
+	},
+	"bfa2353f": {
+		"crc": "11200adb",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Radius",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_NeighborDist",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_PrefSpeed",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_MaxAccel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.navigation.ReciprocalActionAgent"
+	},
+	"c170d4f4": {
+		"crc": "f7b3947b",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_GateEventType",
+				"native": true,
+				"original_type": "via.physics.GateEventType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_SensorTarget",
+				"native": true,
+				"original_type": "via.physics.SensorTarget",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_GateSet",
+				"native": true,
+				"original_type": "via.physics.GateSet",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Gate",
+				"native": true,
+				"original_type": "via.physics.Gate",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.GateEventArgs"
+	},
+	"c1b00949": {
+		"crc": "2c878448",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_PropertyName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.source.KnownItemsWithProperty"
+	},
+	"c1d5c6db": {
+		"crc": "d834ae19",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.nodework.ConditionUnderLayerEnd"
+	},
+	"c360f674": {
+		"crc": "ee2e8734",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadRDownTrigger"
+	},
+	"c4ab047": {
+		"crc": "6ee5d0fd",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_DefaultName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_DefaultStatusStr",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_MessageBodyStr",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.network.session.InvitationParamPsn"
+	},
+	"c4b2ff54": {
+		"crc": "e854d9e3",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_PadBit",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_TimeStamp",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_LStick",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v3_RStick",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v4_RawLStick",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v5_RawRStick",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_AnalogL",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7_AnalogR",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.autoplay.action.ControllerCaptureItem"
+	},
+	"c4c4bae5": {
+		"crc": "c89e8978",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_Link",
+				"native": true,
+				"original_type": "via.navigation.map.LinkInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.navigation.map.LinkInfoList"
+	},
+	"c4f52e60": {
+		"crc": "9c01f9a2",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLDownTrigger"
+	},
+	"c520c051": {
+		"crc": "c16af4fd",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Variable",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v5_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_Status",
+				"native": true,
+				"original_type": "via.fsm.action.SetBool.Status",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.SetBool"
+	},
+	"c7aa15ad": {
+		"crc": "21b788f2",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "JointName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Axis",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "IsLimitAngle",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AngleMin",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AngleMax",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Mass",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.motion.IkJacobian.Link"
+	},
+	"caf7e647": {
+		"crc": "3dd56eea",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Variable",
+				"native": true,
+				"original_type": "System.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.behaviortree.ConditionVariableCase"
+	},
+	"cb2c0510": {
+		"crc": "a5b9a7bc",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_MaxLodProjectedAreaSize",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_MinLodProjectedAreaSize",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.render.GlobalLodSettings"
+	},
+	"cc23f933": {
+		"crc": "31fd408e",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Bool",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Float",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Test",
+				"native": true,
+				"original_type": "via.motion.CppSampleAppendChild.Test",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v3_Vec3",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Str",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.motion.CppSampleAppendChild"
+	},
+	"d37269": {
+		"crc": "6cafbeab",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Draw",
+				"native": true,
+				"original_type": "via.fsm.Action.SwitchSetting",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v5_GameObject",
+				"native": true,
+				"original_type": "via.GameObjectRef",
+				"size": 16,
+				"type": "GameObjectRef"
+			}
+		],
+		"name": "via.fsm.action.SetDrawGameObject"
+	},
+	"d4591c11": {
+		"crc": "90a7b6d1",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.nodework.ConditionAllActionNodeWorkEnd"
+	},
+	"d57590d4": {
+		"crc": "b7755d7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLRightTrigger"
+	},
+	"d5d36b81": {
+		"crc": "3be522a1",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v4_Addtion",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.fsm.action.AddRotation"
+	},
+	"d6c47177": {
+		"crc": "864aaeb4",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.nodework.ConditionNodeWorkEnd"
+	},
+	"d86116b5": {
+		"crc": "e4b0c065",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_IntervalTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			}
+		],
+		"name": "via.behaviortree.SelectorCallerInterval"
+	},
+	"d89d395": {
+		"crc": "6a3122c9",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Options(?)",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FilterInfo(?)",
+				"native": true,
+				"original_type": "via.physics.FilterInfo",
+				"size": 4,
+				"type": "Object"
+			}
+		],
+		"name": "via.physics.CastRayQuery"
+	},
+	"dbf3db09": {
+		"crc": "ecf3ed16",
+		"fields": [
+			{
+				"align": 16,
+				"array": false,
+				"name": "v0_Shape",
+				"native": true,
+				"original_type": "via.OBB",
+				"size": 80,
+				"type": "OBB"
+			}
+		],
+		"name": "via.navigation.map.NodeCollectShapeOBB"
+	},
+	"dd4a871": {
+		"crc": "fdca9c46",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Layer",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Group",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SubGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "IgnoreSubGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaskBits",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Bits"
+			}
+		],
+		"name": "via.physics.FilterInfo"
+	},
+	"dd5a4dba": {
+		"crc": "1475188d",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_BoardName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_Value",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "S64"
+			},
+			{
+				"align": 8,
+				"array": true,
+				"name": "v2_Option",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "S64"
+			}
+		],
+		"name": "via.network.ranking.RegisterInfo"
+	},
+	"de46cccd": {
+		"crc": "fd130be7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_BalanceRemaining",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ExtendedError",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Status",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v3_TrackingId",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "via.network.native.UwpStoreConsumableResult"
+	},
+	"de5e7201": {
+		"crc": "a316f977",
+		"fields": [
+			{
+				"align": 4,
+				"array": true,
+				"name": "v0_Colors",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			}
+		],
+		"name": "via.navigation.ManagedColorList"
+	},
+	"df16e628": {
+		"crc": "6eeae594",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Save",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Load",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Remove",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.storage.saveService.SaveDialogOption.SaveTypeFlag"
+	},
+	"e212638d": {
+		"crc": "29217f7",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_SetMethod",
+				"native": true,
+				"original_type": "via.behaviortree.action.DataSetOn",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_NotifyNodeEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.action.SetFloat"
+	},
+	"e36675c9": {
+		"crc": "9512e458",
+		"fields": [
+			{
+				"align": 8,
+				"array": false,
+				"name": "v0_Expression",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "via.scenario.ConditionUserVariable"
+	},
+	"e4ede06": {
+		"crc": "5c221ea6",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_DeficiencyType",
+				"native": true,
+				"original_type": "via.render.LDRColorDeficiencySimulation.DeficiencyType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.render.LDRColorDeficiencySimulation"
+	},
+	"e68c7e62": {
+		"crc": "c4f4f7a0",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v2_Addtion",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.behaviortree.action.AddRotation"
+	},
+	"e813a601": {
+		"crc": "dd583797",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.source.AllItemsWithTag"
+	},
+	"e8235d36": {
+		"crc": "bce5c6e",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.gamepad.ConditionPadLRightOn"
+	},
+	"eab06d4b": {
+		"crc": "d8a2551d",
+		"fields": [
+			{
+				"align": 16,
+				"array": true,
+				"name": "Keys",
+				"native": true,
+				"original_type": "via.KeyFrame",
+				"size": 16,
+				"type": "KeyFrame"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MinValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MaxValue",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopStartTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopEndTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "LoopWrapNo",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.AnimationCurve"
+	},
+	"eae5c615": {
+		"crc": "c0899a7a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v1_GUID",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2_Condition",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v3_Expression",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			}
+		],
+		"name": "via.behaviortree.ConditionUserVariable"
+	},
+	"ec628862": {
+		"crc": "953a9b75",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_QueryResponse",
+				"native": true,
+				"original_type": "via.areamap.AreaQueryResponse",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.source.KnownItemsWithTag"
+	},
+	"ede2fd36": {
+		"crc": "7135366a",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_Layer",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ChannelBits",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_IntersectChannelBits",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_IgnoreChannelBits",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Group",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_SubGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_IgnoreSubGroup",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.dynamics.FilterInfo"
+	},
+	"ee2cc36a": {
+		"crc": "6459b567",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Type",
+				"native": true,
+				"original_type": "via.navigation.NodeFilterInfo.FilterType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.navigation.NodeFilterInfo"
+	},
+	"f057b034": {
+		"crc": "cf4f6b7f",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enable",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_InvertTest",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_Mode",
+				"native": true,
+				"original_type": "via.areamap.AreaTest.Mode",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Weight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ItemTag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			}
+		],
+		"name": "via.areamap.test.CollisionAABB"
+	},
+	"f145c749": {
+		"crc": "e25eaae2",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Variable",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v5_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v6_Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v7_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.action.SetInt"
+	},
+	"f556f1b8": {
+		"crc": "c4eb9239",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "BoardName",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Offset",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "Total",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "U64"
+			}
+		],
+		"name": "via.network.ranking.ScoreInfoTbl"
+	},
+	"f87f16a4": {
+		"crc": "5b4087a9",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_SetMethod",
+				"native": true,
+				"original_type": "via.behaviortree.action.DataSetOn",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_NotifyNodeEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.action.SetTrigger"
+	},
+	"fa49c442": {
+		"crc": "ca03622",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_ID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 8,
+				"array": false,
+				"name": "v2_Guid",
+				"native": true,
+				"original_type": "via.Guid",
+				"size": 16,
+				"type": "Guid"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_SetMethod",
+				"native": true,
+				"original_type": "via.behaviortree.action.DataSetOn",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v5_NotifyNodeEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6_ActionEnd",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.behaviortree.action.SetInt"
+	},
+	"fb9a33af": {
+		"crc": "233a7303",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "v0_OwnerComponent",
+				"native": true,
+				"original_type": "via.Component",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v1_OwnerGameObject",
+				"native": true,
+				"original_type": "via.GameObject",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_HandleID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v3_HandleAttribute",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4_DoneAction",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			}
+		],
+		"name": "via.fsm.ActionArg"
+	},
+	"fbb2e6aa": {
+		"crc": "d1bac76",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v4_Text",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v5_Type",
+				"native": true,
+				"original_type": "via.fsm.action.Trace.TraceType",
+				"size": 4,
+				"type": "S32"
+			}
+		],
+		"name": "via.fsm.action.Trace"
+	},
+	"fd3cc771": {
+		"crc": "ecbed697",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "v0_Enabled",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v1_Modified",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v2_UID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3_ListNo",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v4_Addtion",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.fsm.action.AddPosition"
+	},
+	"fe954d90": {
+		"crc": "c7b5f676",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Int",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "BoolEvent",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TestEnum",
+				"native": true,
+				"original_type": "via.motion.CppSampleAppendData.Test",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Child",
+				"native": true,
+				"original_type": "via.motion.CppSampleAppendChild",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Param",
+				"native": true,
+				"original_type": "via.motion.CppSampleAppendChild",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "Value",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "Vec3",
+				"native": true,
+				"original_type": "via.vec3",
+				"size": 16,
+				"type": "Vec3"
+			}
+		],
+		"name": "via.motion.CppSampleAppendData"
 	}
 }
