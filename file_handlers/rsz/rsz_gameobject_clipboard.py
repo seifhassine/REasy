@@ -1654,6 +1654,9 @@ class RszGameObjectClipboard(RszClipboardBase):
         id_adjustment_map = RszGameObjectClipboard._delete_instances_and_update_references(
             viewer, instances_to_delete
         )
+
+        if id_adjustment_map:
+            viewer.handler.id_manager.update_all_mappings(id_adjustment_map, set(instances_to_delete))
         
         RszGameObjectClipboard._update_rui_instance_ids_after_deletion(viewer, instances_to_delete)
         

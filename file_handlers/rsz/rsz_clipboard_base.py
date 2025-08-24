@@ -981,6 +981,12 @@ class RszClipboardBase(ABC):
     
     def _deserialize_array_with_remapping(self, field_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=True, viewer=None):
         """Deserialize an ArrayData field with remapping"""
+        from file_handlers.rsz.rsz_data_types import (
+            ArrayData, ObjectData, UserDataData, GameObjectRefData, 
+            get_type_class
+        )
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+        
         values = field_data.get("values", [])
         orig_type = field_data.get("orig_type", "")
         element_type_name = field_data.get("element_type", "")
@@ -1008,8 +1014,6 @@ class RszClipboardBase(ABC):
                     
             elif value_type == "UserDataData":
                 if "object_graph" in value_data and value_data.get("object_graph", {}).get("context_type") == "embedded_rsz":
-                    from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
-                    from file_handlers.rsz.rsz_data_types import UserDataData
                     
                     original_userdata_value = value_data.get("value", 0)
                     pre_allocated_instance_id = userdata_mapping.get(original_userdata_value) if userdata_mapping else None
@@ -1045,7 +1049,6 @@ class RszClipboardBase(ABC):
             elif value_type == "GameObjectRefData":
                 new_array.values.append(self._deserialize_gameobject_ref(value_data, guid_mapping, randomize_guids))
             else:
-                from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
                 element = RszArrayClipboard._deserialize_element(value_data, element_class)
                 if element:
                     new_array.values.append(element)
