@@ -6236,7 +6236,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			}
 		],
 		"name": "via.Prefab",
