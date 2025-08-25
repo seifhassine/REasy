@@ -172,14 +172,9 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("Fixed", "[MSG]: Some legacy code that caused the built-in search to fail."),
-            ("New", "[UVAR]: CTRL+F search is now possible and does not crash the editor."),
-            ("Fixed", "[RSZ]: Minor issues in SF6, RE4, DMC5 dumps."),
-            ("Fixed", "[RSZ]: Issues in MHWilds dump leading to incorrect/impossible parsing of some files."),
-            ("New", "[RSZ]: Added new patch file for MHRise dump."),
-            ("Improved", "[RSZ]: CTRL+F search is now much faster."),
-            ("Improved", "[RSZ]: RE2 non-rt dump (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)."),
-            ("Improved", "[RSZ]: REasy .zip archive now no longer contains unneeded patches folder."),
+            ("Fixed", "Some UserData fields were wrongly marked as Object fields in RE4 and SF6 RSZ templates."),
+            ("Improved", "More patching of RE2 non-rt dump (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)."),
+            ("Fixed", "GameObject copy/paste was not working correctly for newer games (DD2, RE4, MHWilds, SF6..) due to a regression issue."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
