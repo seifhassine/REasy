@@ -3,6 +3,16 @@ REM ***********************************************
 REM Build script for REasy Editor (64-bit only)
 REM ***********************************************
 
+REM Check Python 3.12+
+python -c "import sys; exit(0 if sys.version_info >= (3,12) else 1)" 2>nul
+if errorlevel 1 (
+    echo ERROR: Python 3.12+ required!
+    pause
+    exit /b 1
+)
+echo Python 3.12+ detected - OK
+echo.
+
 echo Building 64-bit version...
 
 REM Clean up previous build artifacts if any
