@@ -216,6 +216,9 @@ class RszClipboardBase(ABC):
                 self.process_embedded_rsz_fields(viewer, new_fields, None, userdata_mapping)
                 
                 viewer.scn.parsed_elements[new_id] = new_fields
+            else:
+                if new_id not in viewer.scn.parsed_elements:
+                    viewer.scn.parsed_elements[new_id] = {}
         
         if hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz:
             self._ensure_userdata_info_for_references(viewer, created_instances, instance_mapping)
