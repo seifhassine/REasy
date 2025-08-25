@@ -46092,7 +46092,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
+				"type": "Resource"
 			},
 			{
 				"align": 8,

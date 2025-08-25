@@ -36742,5 +36742,65 @@
 			}
 		],
 		"name": "offline.posteffect.param.nullable.ColorCorrect"
+	},
+	"aea2d9cc": {
+		"crc": "eadf2b7",
+		"fields": [
+			{
+				"align": 4,
+				"array": false,
+				"name": "Name",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Tag",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Update",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Draw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "Standby",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ScenePath",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Resource"
+			}
+		],
+		"name": "via.Folder"
 	}
 }
