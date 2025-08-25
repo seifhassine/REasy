@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
 from file_handlers.rsz.rsz_data_types import (
     is_reference_type, is_array_type
 )
-from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject
+from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject, PfbGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -251,12 +251,14 @@ class RszGameObjectClipboard(RszClipboardBase):
                 "instance_id": source_instance_id,
                 "guid": source_go.guid.hex() if hasattr(source_go, 'guid') and source_go.guid else None,
                 "prefab_path": prefab_path,
-                "ukn": source_go.ukn,
                 "component_count": source_go.component_count,
                 "components": component_instances,
                 "children": [child.id for child in child_gameobjects],
                 "hierarchy": hierarchy
             }
+            
+            if hasattr(source_go, 'ukn'):
+                gameobject_data["ukn"] = source_go.ukn
             
             instance.save_clipboard_data(viewer, gameobject_data)
                 
@@ -373,7 +375,8 @@ class RszGameObjectClipboard(RszClipboardBase):
         
         new_root_object = RszGameObjectClipboard._create_gameobject_entry(viewer, new_root_object_id, parent_id)
         
-        new_root_object.ukn = root_go_data["ukn"]
+        if hasattr(new_root_object, 'ukn') and "ukn" in root_go_data:
+            new_root_object.ukn = root_go_data["ukn"]
         _GameObjectHelper.setup_gameobject_guid(
             viewer, new_root_object, root_go_data.get("guid"), 
             new_root_instance_id, guid_mapping, randomize_ids
@@ -429,7 +432,8 @@ class RszGameObjectClipboard(RszClipboardBase):
                 
             new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
             
-            new_child_go.ukn = go_data["ukn"]
+            if hasattr(new_child_go, "ukn") and "ukn" in go_data:
+                        new_child_go.ukn = go_data["ukn"]
 
             _GameObjectHelper.setup_gameobject_guid(
                 viewer, new_child_go, go_data.get("guid"),
@@ -586,10 +590,12 @@ class RszGameObjectClipboard(RszClipboardBase):
             "instance_id": instance_id,
             "name": name,
             "parent_id": go.parent_id,
-            "ukn": go.ukn,
             "component_count": go.component_count,
             "components": RszGameObjectClipboard._get_components_for_gameobject(viewer, go)
         }
+        
+        if hasattr(go, "ukn"):
+            go_data["ukn"] = go.ukn
         
         if hasattr(go, 'guid') and go.guid:
             go_data["guid"] = go.guid.hex()
@@ -829,7 +835,8 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
             
-            new_child_go.ukn = go_data["ukn"]
+            if hasattr(new_child_go, "ukn") and "ukn" in go_data:
+                new_child_go.ukn = go_data["ukn"]
             _GameObjectHelper.setup_gameobject_guid(
                 viewer, new_child_go, go_data.get("guid"),
                 new_go_instance_id, guid_mapping, randomize_ids
@@ -1435,11 +1442,14 @@ class RszGameObjectClipboard(RszClipboardBase):
         
     @staticmethod
     def _create_gameobject_entry(viewer, object_id, parent_id):
-        new_go = RszGameObject()
+        if viewer.scn.is_pfb:
+            new_go = PfbGameObject()
+        else:
+            new_go = RszGameObject()
+        
         new_go.id = object_id
         new_go.parent_id = parent_id
         new_go.component_count = 0
-        
         if viewer.scn.is_scn:
             guid_bytes = create_new_guid()
             new_go.guid = guid_bytes
