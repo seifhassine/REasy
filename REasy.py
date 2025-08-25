@@ -66,7 +66,7 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-CURRENT_VERSION = "0.4.5"
+CURRENT_VERSION = "0.4.6"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
     "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"

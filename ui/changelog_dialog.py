@@ -172,9 +172,10 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("Fixed", "Some UserData fields were wrongly marked as Object fields in RE4 and SF6 RSZ templates."),
-            ("Improved", "More patching of RE2 non-rt dump (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)."),
-            ("Fixed", "GameObject copy/paste was not working correctly for newer games (DD2, RE4, MHWilds, SF6..) due to a regression issue."),
+            ("New", "Auto-Update system."),
+            ("Fixed", "[RSZ] Fieldless components were causing an error when pasted."),
+            ("Fixed", "[RSZ] GameObjects copy was not working in PFB files due to a regression issue."),
+            ("Improved", "Python >= 3.12 is now a hard requirement to avoid launch errors in reasy.exe."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
