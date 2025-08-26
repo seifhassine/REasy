@@ -43,7 +43,10 @@ class RszArrayClipboard:
         if isinstance(element, ObjectData) and element.value > 0:
             serialised = RszArrayClipboard._serialize_object_with_graph(element, parent_viewer)
         elif isinstance(element, UserDataData):
-            serialised = RszArrayClipboard._serialize_userdata_with_graph(element, parent_viewer, embedded_context)
+            if element.value > 0:
+                serialised = RszArrayClipboard._serialize_userdata_with_graph(element, parent_viewer, embedded_context)
+            else:
+                serialised = RszArrayClipboard._serialize_element(element)
         else:
             serialised = RszArrayClipboard._serialize_element(element)
         
@@ -72,28 +75,58 @@ class RszArrayClipboard:
             "orig_type": getattr(element, "orig_type", "")
         }
         
-        if element.value > 0:
-            userdata_info = None
+        if element.value <= 0:
+            return result
             
-            if embedded_context:
-                if hasattr(embedded_context, 'embedded_userdata_infos'):
-                    for rui in embedded_context.embedded_userdata_infos:
-                        if getattr(rui, 'instance_id', -1) == element.value:
-                            userdata_info = rui
-                            break
+        userdata_info = None
+        
+        if embedded_context:
+            if hasattr(embedded_context, 'embedded_userdata_infos'):
+                for rui in embedded_context.embedded_userdata_infos:
+                    if getattr(rui, 'instance_id', -1) == element.value:
+                        userdata_info = rui
+                        break
+        
+        if not userdata_info:
+            userdata_info = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
+        
+        if userdata_info and hasattr(userdata_info, 'embedded_instances') and userdata_info.embedded_instances:        
+            object_graph = RszArrayClipboard._create_embedded_rsz_object_graph(userdata_info, viewer, embedded_context)
             
-            if not userdata_info:
-                userdata_info = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
+            if object_graph:
+                result["object_graph"] = object_graph
+                result["embedded_data"] = RszArrayClipboard._convert_object_graph_to_embedded_data(userdata_info, object_graph)
+                result["has_full_content"] = True
+            else:
+                print(f"Failed to create object graph for UserData instance {element.value}")
+        elif element.value < len(viewer.scn.instance_infos):
+            from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
             
-            if userdata_info and hasattr(userdata_info, 'embedded_instances') and userdata_info.embedded_instances:        
-                object_graph = RszArrayClipboard._create_embedded_rsz_object_graph(userdata_info, viewer, embedded_context)
-                
-                if object_graph:
-                    result["object_graph"] = object_graph
-                    result["embedded_data"] = RszArrayClipboard._convert_object_graph_to_embedded_data(userdata_info, object_graph)
-                    result["has_full_content"] = True
-                else:
-                    print(f"Failed to create object graph for UserData instance {element.value}")
+            instance_info = viewer.scn.instance_infos[element.value]
+            
+            instance_data = {
+                "id": 0,
+                "type_id": instance_info.type_id,
+                "crc": instance_info.crc,
+                "fields": {}, 
+                "is_userdata": True
+            }
+            
+            if hasattr(viewer, "type_registry") and viewer.type_registry:
+                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
+                if type_info and "name" in type_info:
+                    instance_data["type_name"] = type_info["name"]
+            
+            userdata_dict = RszClipboardUtils.check_userdata_info(viewer, element.value)
+            if userdata_dict:
+                if userdata_dict["userdata_string"] is not None:
+                    instance_data["userdata_string"] = userdata_dict["userdata_string"]
+            
+            result["object_graph"] = {
+                "root_id": 0,
+                "instances": [instance_data],
+                "external_refs": []
+            }
         
         return result
     
@@ -486,7 +519,9 @@ class RszArrayClipboard:
                     viewer, elem_data, array_data, embedded_context
                 )
             else:
-                element = RszArrayClipboard._deserialize_element(elem_data, None, {}, randomize_guids=False)
+                element = RszArrayClipboard._deserialize_field_with_relative_mapping(
+                    elem_data, {}, {}, randomize_guids=False
+                )
                 if element:
                     array_data.values.append(element)
         else:
@@ -2030,24 +2065,11 @@ class RszArrayClipboard:
         for el in elements:
             if isinstance(el, ObjectData) and el.value > 0:
                 serialised = RszArrayClipboard._serialize_object_with_graph(el, parent_viewer)
-            elif isinstance(el, UserDataData) and el.value > 0:
-                serialised = RszArrayClipboard._serialize_userdata_with_graph(el, parent_viewer, embedded_context)
-                
-                if hasattr(parent_viewer.scn, 'instance_infos') and 0 < el.value < len(parent_viewer.scn.instance_infos):
-                    instance_info = parent_viewer.scn.instance_infos[el.value]
-                    serialised["instance_info"] = {
-                        "type_id": instance_info.type_id,
-                        "crc": instance_info.crc
-                    }
-                    
-                    if hasattr(parent_viewer.scn, '_rsz_userdata_dict') and el.value in parent_viewer.scn._rsz_userdata_dict:
-                        rui = parent_viewer.scn._rsz_userdata_dict[el.value]
-                        serialised["has_rsz_userdata"] = True
-                        serialised["userdata_hash"] = getattr(rui, 'hash', 0)
-                    
-                    if hasattr(parent_viewer.scn, 'parsed_elements') and el.value in parent_viewer.scn.parsed_elements:
-                        fields = parent_viewer.scn.parsed_elements[el.value]
-                        serialised["instance_fields"] = RszArrayClipboard._serialize_fields_for_userdata(fields, parent_viewer)
+            elif isinstance(el, UserDataData):
+                if el.value > 0:
+                    serialised = RszArrayClipboard._serialize_userdata_with_graph(el, parent_viewer, embedded_context)
+                else:
+                    serialised = RszArrayClipboard._serialize_element(el)
             else:
                 serialised = RszArrayClipboard._serialize_element(el)
             
@@ -2226,6 +2248,25 @@ class RszArrayClipboard:
         if not instances or root_relative_id < 0:
             print("Invalid UserDataData graph data")
             return None
+        
+        root_instance = instances[root_relative_id] if root_relative_id < len(instances) else None
+        if root_instance and root_instance.get("is_userdata", False):
+            userdata_hash = root_instance.get("userdata_hash", 0)
+            userdata_string = root_instance.get("userdata_string", "")
+            
+            for existing_rui in viewer.scn.rsz_userdata_infos:
+                existing_hash = getattr(existing_rui, 'hash', 0) or getattr(existing_rui, 'json_path_hash', 0)
+                existing_string = viewer.scn._rsz_userdata_str_map.get(existing_rui, "") if hasattr(viewer.scn, '_rsz_userdata_str_map') else ""
+                
+                if existing_hash == userdata_hash and existing_string == userdata_string:
+                    print(f"Reusing existing UserData instance {existing_rui.instance_id} (deduplication)")
+                    element = UserDataData(
+                        existing_rui.instance_id,
+                        userdata_string,
+                        element_data.get("orig_type", "")
+                    )
+                    array_data.values.append(element)
+                    return element
             
         from file_handlers.rsz.rsz_file import RszInstanceInfo
         
