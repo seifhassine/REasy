@@ -21,7 +21,7 @@ class RszArrayOperations:
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
 
-    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None):
+    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
         """Create a new element for an array based on type information"""
         element_class = getattr(array_data, 'element_class', None) if array_data else None
         
@@ -37,7 +37,7 @@ class RszArrayOperations:
         if element_class == ObjectData:
             new_element = self._create_new_object_instance_for_array(type_id, type_info, element_type, array_data)
         elif element_class == UserDataData:
-            new_element = self._create_new_userdata_instance_for_array(type_id, type_info, element_type, array_data)
+            new_element = self._create_new_userdata_instance_for_array(type_id, type_info, element_type, array_data, userdata_string)
         else:
             new_element = self.viewer._create_default_field(element_class, array_data.orig_type)
         
@@ -52,7 +52,7 @@ class RszArrayOperations:
         return new_element
 
 
-    def _create_new_userdata_instance_for_array(self, type_id, type_info, element_type, array_data):
+    def _create_new_userdata_instance_for_array(self, type_id, type_info, element_type, array_data, userdata_string=None):
         """Create a new UserDataData instance with associated RSZUserDataInfo for an array element"""
         from file_handlers.rsz.rsz_object_operations import RszObjectOperations
         
@@ -69,10 +69,10 @@ class RszArrayOperations:
         if next_instance_id == 0:
             next_instance_id = 1
             
-        instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id)
+        instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id, userdata_string)
         
         if instance_id is not None and instance_id >= 0:
-            userdata = UserDataData(instance_id, "", element_type)
+            userdata = UserDataData(instance_id, userdata_string or "", element_type)
             userdata._container_array = array_data
             if hasattr(userdata, '_container_array') and userdata._container_array:
                 userdata._container_array.modified = True

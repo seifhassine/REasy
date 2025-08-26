@@ -670,6 +670,7 @@ class AdvancedTreeView(QTreeView):
         element_type = AdvancedTreeView._get_element_type(array_type)
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
+        userdata_string = None
         
         if embedded_context == "userdata_array_needs_embedded":
             creator = parent.create_array_element
@@ -681,12 +682,32 @@ class AdvancedTreeView(QTreeView):
         
         print(f"Creating array element in {print_context} context")
         
+        if not embedded_context:
+            try:
+                from file_handlers.rsz.rsz_data_types import UserDataData
+                is_userdata_array = getattr(data_obj, 'element_class', None) == UserDataData
+            except Exception:
+                is_userdata_array = False
+            is_normal_rsz = not parent.scn.has_embedded_rsz
+            if is_userdata_array and is_normal_rsz:
+                from PySide6.QtWidgets import QInputDialog, QLineEdit
+                default_text = element_type or ""
+                text, ok = QInputDialog.getText(
+                    self,
+                    "New UserData String",
+                    "Enter UserData string:",
+                    QLineEdit.Normal,
+                    default_text
+                )
+                if ok:
+                    userdata_string = text
+
         new_element = creator(
             element_type, data_obj, embedded_context, 
             direct_update=True, array_item=array_item
         ) if embedded_context else creator(
             element_type, data_obj, 
-            direct_update=True, array_item=array_item
+            direct_update=True, array_item=array_item, userdata_string=userdata_string
         )
         
         if not new_element:

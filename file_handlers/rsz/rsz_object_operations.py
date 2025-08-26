@@ -685,7 +685,7 @@ class RszObjectOperations:
 
                 if isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
                     if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
-                        userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index)
+                        userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index, None)
                         if userdata_id is not None:
                             field_obj.value = userdata_id
                             field_obj.string = field_obj.orig_type
@@ -725,7 +725,7 @@ class RszObjectOperations:
 
             if isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
                 if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
-                    userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index)
+                    userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index, None)
                     if userdata_id is not None:
                         field_obj.value = userdata_id
                         field_obj.string = field_obj.orig_type
@@ -969,9 +969,12 @@ class RszObjectOperations:
                     if isinstance(element, UserDataData) and element.value == 0 and element_type:
                         self._create_userdata_info_for_field(element, element_type)
     
-    def _create_userdata_instance_for_field(self, field_type, current_insertion_index):
+    def _create_userdata_instance_for_field(self, field_type, current_insertion_index, userdata_string=None):
         """
-        Create a UserDataData instance with embedded RSZ for a field.
+        Create a UserDataData instance for a field.
+        - If the current RSZ file format supports embedded RSZ (SCN.19 style), create a
+          Scn19RSZUserDataInfo entry with embedded structures.
+        - Otherwise, create a standard RSZUserDataInfo (16-byte) entry.
         This is called BEFORE the component instance is created to ensure proper ordering.
         Returns the instance ID of the created UserDataData instance.
         """
@@ -981,10 +984,10 @@ class RszObjectOperations:
         if not type_info:
             print(f"Warning: Type not found for UserDataData field: {field_type}")
             return None
-        
-        instance_info = self._create_instance_info(type_id, 
-                                                    int(type_info.get("crc", "0"), 16))
-        
+        instance_info = self._create_instance_info(
+            type_id,
+            int(type_info.get("crc", "0"), 16)
+        )
         self.viewer._insert_instance_and_update_references(current_insertion_index, instance_info)
 
         self.scn.parsed_elements[current_insertion_index] = {}
@@ -994,56 +997,60 @@ class RszObjectOperations:
         self.scn.instance_hierarchy[current_insertion_index] = {"children": [], "parent": None}
         
         self.viewer.handler.id_manager.register_instance(current_insertion_index)
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = current_insertion_index 
-        userdata_info.type_id = type_id
-        userdata_info.crc = int(type_info.get("crc", "0"), 16)
-        userdata_info.name = field_type
-        userdata_info.value = field_type
-        userdata_info.data = b""
-        userdata_info.data_size = 0
+        if self.scn.has_embedded_rsz:
+            userdata_info = Scn19RSZUserDataInfo()
+            userdata_info.instance_id = current_insertion_index
+            userdata_info.type_id = type_id
+            userdata_info.crc = int(type_info.get("crc", "0"), 16)
+            userdata_info.name = field_type
+            userdata_info.value = field_type
+            userdata_info.data = b""
+            userdata_info.data_size = 0
     
-        userdata_info.embedded_rsz_header = type(self.scn.rsz_header)()
-        copy_embedded_rsz_header(self.scn.rsz_header, userdata_info.embedded_rsz_header)
+            userdata_info.embedded_rsz_header = type(self.scn.rsz_header)()
+            copy_embedded_rsz_header(self.scn.rsz_header, userdata_info.embedded_rsz_header)
+            userdata_info.embedded_instances = {}
+            userdata_info.embedded_instance_infos = []
+            userdata_info.embedded_userdata_infos = []
+            userdata_info.embedded_object_table = []
+            userdata_info.parsed_elements = {}
         
-        userdata_info.embedded_instances = {}
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_object_table = []
-        userdata_info.parsed_elements = {}
+            userdata_info.id_manager = EmbeddedIdManager(current_insertion_index)
+            userdata_info._rsz_userdata_dict = {}
+            userdata_info._rsz_userdata_set = set()
+            userdata_info._rsz_userdata_str_map = {}
+            userdata_info.embedded_instance_hierarchy = {}
+            userdata_info._array_counters = {}
+            userdata_info.modified = False
         
-        userdata_info.id_manager = EmbeddedIdManager(current_insertion_index)
+            def mark_modified_func():
+                userdata_info.modified = True
+                self.viewer.mark_modified()
+            userdata_info.mark_modified = mark_modified_func
         
-        userdata_info._rsz_userdata_dict = {}
-        userdata_info._rsz_userdata_set = set()
-        userdata_info._rsz_userdata_str_map = {}
-        userdata_info.embedded_instance_hierarchy = {}
-        userdata_info._array_counters = {}
-        
-        userdata_info.modified = False
-        
-        def mark_modified_func():
-            userdata_info.modified = True
-            self.viewer.mark_modified()
-        
-        userdata_info.mark_modified = mark_modified_func
-        
-        if type_info:
             self._create_embedded_instance_with_nested_objects(
                 userdata_info, type_info, type_id, field_type
             )
-        
+        else:
+            from file_handlers.rsz.rsz_file import RszRSZUserDataInfo
+
+            userdata_info = RszRSZUserDataInfo()
+            userdata_info.instance_id = current_insertion_index
+            
+            final_string = userdata_string if (userdata_string is not None) else field_type
+            
+            userdata_info.string_offset = 0
+
         if not hasattr(self.scn, 'rsz_userdata_infos'):
             self.scn.rsz_userdata_infos = []
         self.scn.rsz_userdata_infos.append(userdata_info)
-        
         if hasattr(self.scn, '_rsz_userdata_dict'):
             self.scn._rsz_userdata_dict[current_insertion_index] = userdata_info
         if hasattr(self.scn, '_rsz_userdata_set'):
             self.scn._rsz_userdata_set.add(current_insertion_index)
         if hasattr(self.scn, '_rsz_userdata_str_map'):
-            self.scn._rsz_userdata_str_map[userdata_info] = field_type
+            final_string = userdata_string if (userdata_string is not None) else field_type
+            self.scn._rsz_userdata_str_map[userdata_info] = final_string
         
         self.scn.rsz_header.userdata_count = len(self.scn.rsz_userdata_infos)
         self.scn.rsz_header.instance_count = len(self.scn.instance_infos)

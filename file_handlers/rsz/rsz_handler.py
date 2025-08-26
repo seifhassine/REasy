@@ -1267,7 +1267,7 @@ class RszViewer(QWidget):
         except Exception as e:
             raise RuntimeError(f"Failed to rebuild SCN file: {str(e)}")
 
-    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None):
+    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
         if hasattr(array_data, '_owning_context') and array_data._owning_context:
             from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
             embedded_ops = RszEmbeddedArrayOperations(self)
@@ -1279,7 +1279,7 @@ class RszViewer(QWidget):
         if not self.array_operations:
             self.array_operations = RszArrayOperations(self)
         return self.array_operations.create_array_element(
-            element_type, array_data, direct_update, array_item
+            element_type, array_data, direct_update, array_item, userdata_string=userdata_string
         )
 
     def delete_array_element(self, array_data, element_index):
