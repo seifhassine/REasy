@@ -8,7 +8,7 @@ class RszClipboardUtils:
     @staticmethod
     def get_base_clipboard_directory():
         """Get the base clipboard directory for all clipboard types"""
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        base_dir = os.getcwd()
         clipboard_dir = os.path.join(base_dir, ".clipboard")
         
         if not os.path.exists(clipboard_dir):

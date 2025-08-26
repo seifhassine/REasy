@@ -12,8 +12,8 @@ class RszTemplateManager:
     @staticmethod
     def get_template_root_directory():
         """Get the root templates directory"""
-        app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        return os.path.join(app_dir, "templates")
+        base_dir = os.getcwd()
+        return os.path.join(base_dir, "templates")
     
     @staticmethod
     def get_template_directory(registry_name):
