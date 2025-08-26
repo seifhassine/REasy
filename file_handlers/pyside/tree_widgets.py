@@ -701,6 +701,8 @@ class AdvancedTreeView(QTreeView):
                 )
                 if ok:
                     userdata_string = text
+                else: 
+                    return
 
         new_element = creator(
             element_type, data_obj, embedded_context, 
