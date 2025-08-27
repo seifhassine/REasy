@@ -63,6 +63,7 @@ from PySide6.QtWidgets import (
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
+from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
@@ -158,31 +159,6 @@ def create_search_patterns(search_type, value):
                 
         except Exception as e:
             raise ValueError(f"Invalid hex value: {str(e)}")
-
-
-class CustomNotebook(QTabWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setTabsClosable(True)
-        self.setMovable(True)  # Allow reordering tabs by drag and drop
-        self.tabCloseRequested.connect(self.on_tab_close_requested)
-
-        self.dark_mode = False
-        self.app_instance = None
-
-    def set_dark_mode(self, is_dark):
-        self.dark_mode = is_dark
-        if is_dark:
-            self.setStyleSheet("QTabWidget { background-color: #2b2b2b; }")
-        else:
-            self.setStyleSheet("QTabWidget { background-color: white; }")
-
-    def on_tab_close_requested(self, index):
-        if self.app_instance:
-            self.app_instance.close_tab(index)
-        else:
-            self.removeTab(index)
-
 
 class FileTab:
 
@@ -612,24 +588,11 @@ class FileTab:
             with open(self.filename, "rb") as f:
                 data = f.read()
 
-            current_index = self.parent_notebook.indexOf(self.notebook_widget)
-
-            new_tab = FileTab(self.parent_notebook, self.filename, data, self.app)
-            self.parent_notebook.addTab(
-                new_tab.notebook_widget, os.path.basename(self.filename)
-            )
-
-            self.app.tabs[new_tab.notebook_widget] = new_tab
-
-            if self.notebook_widget in self.app.tabs:
-                del self.app.tabs[self.notebook_widget]
-
-            self.parent_notebook.removeTab(current_index)
-
-            self.parent_notebook.insertTab(
-                current_index, new_tab.notebook_widget, os.path.basename(self.filename)
-            )
-            self.parent_notebook.setCurrentIndex(current_index)
+            if self.viewer:
+                self._cleanup_viewer()
+            success = self.load_file(self.filename, data)
+            if success and self.app and hasattr(self.app, "status_bar"):
+                self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
 
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Failed to reload file: {e}")
@@ -759,6 +722,7 @@ class REasyEditorApp(QMainWindow):
         self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.notebook.setMinimumSize(50, 50)    
         self.notebook.app_instance = self
+        self.notebook._set_icon_callback = set_app_icon
         main_layout.addWidget(self.notebook)
 
         self.tabs = weakref.WeakValueDictionary()
@@ -1566,8 +1530,25 @@ class REasyEditorApp(QMainWindow):
                     print(f"Error closing tab: {e}")
 
     def get_active_tab(self):
+        aw = QApplication.activeWindow()
+        if isinstance(aw, FloatingTabWindow):
+            tab = self._resolve_tab_from_widget(aw.centralWidget())
+            if tab:
+                return tab
         current_widget = self.notebook.currentWidget()
-        return self.tabs.get(current_widget, None)
+        tab = self.tabs.get(current_widget, None)
+        if tab:
+            return tab
+        fw = QApplication.focusWidget()
+        tab = self._resolve_tab_from_widget(fw)
+        if tab:
+            return tab
+            aw = QApplication.activeWindow()
+            if aw is not None and hasattr(aw, 'centralWidget'):
+                tab = self._resolve_tab_from_widget(aw.centralWidget())
+                if tab:
+                    return tab
+        return None
 
     def get_active_tree(self):
         active_tab = self.get_active_tab()
@@ -1622,10 +1603,37 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.critical(self, "Error", "No active tab to reload.")
 
     def close_current_tab(self):
+        aw = QApplication.activeWindow()
+        if aw is not None and hasattr(aw, 'centralWidget'):
+            tab = self._resolve_tab_from_widget(aw.centralWidget())
+            if tab is not None and hasattr(tab, 'notebook_widget'):
+                if aw is not self:
+                    try:
+                        aw.close()
+                    except Exception:
+                        pass
+                idx = self.notebook.indexOf(tab.notebook_widget)
+                if idx >= 0:
+                    self.close_tab(idx)
+                    return
         current_index = self.notebook.currentIndex()
         if current_index >= 0:
             self.close_tab(current_index)
 
+    def _resolve_tab_from_widget(self, widget):
+        w = widget
+        while w is not None:
+            if w in self.tabs:
+                return self.tabs.get(w)
+            ft = getattr(w, "_reasy_file_tab", None)
+            if ft is not None:
+                return ft
+            if hasattr(w, 'parentWidget'):
+                w = w.parentWidget()
+            else:
+                break
+        return None
+    
     def close_tab(self, index):
         widget = self.notebook.widget(index)
         tab = self.tabs.get(widget)

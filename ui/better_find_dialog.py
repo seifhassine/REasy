@@ -78,7 +78,7 @@ class BetterFindDialog(QDialog):
 
     def _index_from_rows(self, rows: list[int]) -> QModelIndex:
         cur = QModelIndex()
-        model = self.app.get_active_tree().model()
+        model = self._get_tree().model()
         for r in rows:
             cur = model.index(r, 0, cur)
             if not cur.isValid():
@@ -97,6 +97,18 @@ class BetterFindDialog(QDialog):
                     return True, value_blob
         return False, value_blob
 
+    def _get_tree(self):
+        if self._tree_for_tab is not None:
+            return self._tree_for_tab
+        try:
+            if self.file_tab.viewer and hasattr(self.file_tab.viewer, "tree"):
+                self._tree_for_tab = self.file_tab.viewer.tree
+            else:
+                self._tree_for_tab = self.file_tab.tree
+        except Exception:
+            self._tree_for_tab = None
+        return self._tree_for_tab
+
     # ------------------------------------------------------------------ #
     # GUI
     # ------------------------------------------------------------------ #
@@ -107,6 +119,8 @@ class BetterFindDialog(QDialog):
 
         self.file_tab = file_tab
         self.app = file_tab.app
+        
+        self._tree_for_tab = None
 
         self.results = []
         self.current_index = -1
@@ -177,7 +191,7 @@ class BetterFindDialog(QDialog):
             self.status.setText("Please enter search text")
             return
 
-        tree = self.app.get_active_tree()
+        tree = self._get_tree()
         if not tree:
             self.status.setText("No tree view available")
             return
@@ -416,7 +430,7 @@ class BetterFindDialog(QDialog):
 
         idx = self._index_from_rows(res["rows"])
         if idx.isValid():
-            tree = self.app.get_active_tree()
+            tree = self._get_tree()
             tree.setCurrentIndex(idx)
             tree.scrollTo(idx, QAbstractItemView.PositionAtCenter)
 
