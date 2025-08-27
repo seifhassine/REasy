@@ -172,10 +172,14 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Auto-Update system."),
-            ("Fixed", "[RSZ] Fieldless components were causing an error when pasted."),
-            ("Fixed", "[RSZ] GameObjects copy was not working in PFB files due to a regression issue."),
-            ("Improved", "Python >= 3.12 is now a hard requirement to avoid launch errors in reasy.exe."),
+            ("New", "Detachable tabs. You can now click the arrow button to detach a tab, and Tab>Reattach to reattach the tab."),
+            ("New", "It's now possible to add new userdata strings as array elements (Applicable for RE4, DD2, SF6, MHWilds..)"),
+            ("Fixed", "Issues in RE7 non-rt RSZ template."),
+            ("Fixed", "Some Resource fields were incorrectly identified as String fields in RSZ dumps (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
+            ("Fixed", "Copy paste of normal userdata (non-embedded) array elements was creating embedded rsz instead."),
+            ("Fixed", "REasy.exe was using windows TEMP folder as working directory for some operations, instead of the .exe's directory."),
+            ("Fixed", "Embedded RSZ was not showing as such in the UI for PFB.16 files."),
+            ("Planned", "For 0.4.8: RCOL support, PAK files browser in project manager."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -259,7 +263,7 @@ class ChangelogDialog(QDialog):
             QLabel#TagPill[tagName="fixed"] {{
                 background-color: #e74c3c;
             }}
-            QLabel#TagPill[tagName="updated"] {{
+            QLabel#TagPill[tagName="planned"] {{
                 background-color: #3498db;
             }}
         """)
