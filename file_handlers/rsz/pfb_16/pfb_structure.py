@@ -193,6 +193,7 @@ def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = Fa
 
 def parse_pfb16_rsz_userdata(rsz_file, data, skip_data=False):
     """Parse embedded RSZ userdata in PFB.16 files by leveraging SCN.19 implementation"""
+    rsz_file.has_embedded_rsz = True
     return parse_scn19_rsz_userdata(rsz_file, data, skip_data)
 
 def create_pfb16_resource(path=""):
