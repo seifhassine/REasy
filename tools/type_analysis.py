@@ -20,7 +20,7 @@ def extract_distinct_field_types(type_json: dict) -> set:
 
 if __name__ == "__main__":
     import json
-    with open("rszre4_reasy.json") as f:
+    with open("rszre4.json") as f:
         type_json = json.load(f)
         
     distinct_types = extract_distinct_field_types(type_json)

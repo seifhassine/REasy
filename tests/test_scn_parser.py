@@ -37,7 +37,7 @@ GAME_CONFIGS = {
             "wtc0101_08.scn (5).20", "wtc0101_10.scn (5).20", "wtc0400_12_Props_Manual.scn.20", "wtc0400_14_Props_Manual.scn.20",
             "wtc0400_17_Props_Manual.scn.20", "wtc0400_24_Props_Manual.scn.20", "wtc0400_27_Props_Manual.scn.20", "wtc0400_36_Props_Manual.scn.20"]},
     
-    "re4":    {"registry_json": "rszre4_reasy.json", "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
+    "re4":    {"registry_json": "rszre4.json", "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
         "usr_file_exceptions": ["ch4fez0actionpropertyuserdata.user.2", "tabledefine.user.2"],
         "scn_file_exceptions": ["gimmick_st61_500.scn.20", "gimmick_st63_108.scn.20", "gimmick_st61_502.scn.20", "gimmick_st61_502_ch.scn.20"]
     },
