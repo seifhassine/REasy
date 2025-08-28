@@ -28,7 +28,7 @@ rmdir /S /Q dist\resources\patches
 copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"
 if not exist dist\resources\scripts mkdir dist\resources\scripts
 copy "scripts\auto_update.ps1" "dist\resources\scripts\auto_update.ps1"
-copy "resources\data\dumps\rszre4_reasy.json" "dist\rszre4_reasy.json"
+copy "resources\data\dumps\rszre4.json" "dist\rszre4.json"
 copy "resources\data\dumps\rszre2.json" "dist\rszre2.json"
 copy "resources\data\dumps\rszre2rt.json" "dist\rszre2rt.json"
 copy "resources\data\dumps\rszdmc5.json" "dist\rszdmc5.json"

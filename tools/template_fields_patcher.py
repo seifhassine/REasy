@@ -3,7 +3,7 @@ import sys
 import argparse
 from typing import Dict, Any
 
-# python template_fields_patcher.py --source "D:\RE Modding\REasy\resources\data\dumps\rszre4_reasy.json" --patch "D:\RE Modding\REasy\resources\patches\rszre4_patch.json" --crc --force-count-mismatch
+# python template_fields_patcher.py --source "D:\RE Modding\REasy\resources\data\dumps\rszre4.json" --patch "D:\RE Modding\REasy\resources\patches\rszre4_patch.json" --crc --force-count-mismatch
 
 
 '''    

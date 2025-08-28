@@ -30,5 +30,5 @@ def find_userdata_fields(json_file):
     return userdata_types
 
 if __name__ == "__main__":
-    json_path = "rszre4_reasy.json"
+    json_path = "rszre4.json"
     find_userdata_fields(json_path)
