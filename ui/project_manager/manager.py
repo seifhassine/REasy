@@ -59,10 +59,7 @@ class ProjectManager(QDockWidget):
         self.app_win       = app_window
         self.current_game  = getattr(app_window, "current_game", None)
         self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
-        try:
-            self.pak_dir = os.path.abspath(app_window.settings.get("pak_path")) if app_window and getattr(app_window, "settings", None) and app_window.settings.get("pak_path") else None
-        except Exception:
-            self.pak_dir = None
+        self.pak_dir = None
         self.project_dir   = None
         self._active_tab   = "sys"
         self._pak_list_path: str | None = None
@@ -497,6 +494,7 @@ class ProjectManager(QDockWidget):
                     if gdir and os.path.isdir(gdir):
                         self.pak_dir = gdir
                         self._scan_paks()
+                        self._update_path_label()
                     path = cfg.get("pak_list_path")
                     if path and os.path.isfile(path):
                         self._pak_list_path = path
