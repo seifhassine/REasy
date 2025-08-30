@@ -1,4 +1,4 @@
-# REasy Editor v0.4.7 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
+# REasy Editor v0.4.8 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -34,12 +34,17 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
 | MSG       | ✅       | RE4      |
-| PAK       | Packing only       | RE4      |
+| PAK       | ✅       | RE4      |
 | EFX       | Coming Soon       |       |
   
 </div>
 <br>
 <br>
+
+- **PAK File Extraction and Creation**  
+  - REasy currently has the fastest PAK extraction system.
+  - Support for single entry extraction.
+  - Regex search in the file list is supported. 
 
 - **UVAR File Editing**
  

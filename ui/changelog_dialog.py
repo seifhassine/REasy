@@ -172,14 +172,9 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Detachable tabs. You can now click the arrow button to detach a tab, and Tab>Reattach to reattach the tab."),
-            ("New", "It's now possible to add new userdata strings as array elements (Applicable for RE4, DD2, SF6, MHWilds..)"),
-            ("Fixed", "Issues in RE7 non-rt RSZ template."),
-            ("Fixed", "Some Resource fields were incorrectly identified as String fields in RSZ dumps (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
-            ("Fixed", "Copy paste of normal userdata (non-embedded) array elements was creating embedded rsz instead."),
-            ("Fixed", "REasy.exe was using windows TEMP folder as working directory for some operations, instead of the .exe's directory."),
-            ("Fixed", "Embedded RSZ was not showing as such in the UI for PFB.16 files."),
-            ("Planned", "For 0.4.8: RCOL support, PAK files browser in project manager."),
+            ("New", "PAK file system support! Browse and extract game PAK files directly within REasy.\nREasy currently has the fastest PAK extraction compared to other tools."),
+            ("New", "Detailed PAK Browser dialog in \"Tools > Pak Browser\"."),
+            ("New", "Integrated PAK support in Project Manager."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -188,6 +183,13 @@ class ChangelogDialog(QDialog):
         scroll_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         buttons_row = QHBoxLayout()
+
+        github_btn = QPushButton("⭐ Star on GitHub")
+        github_btn.setObjectName("GitHubButton")
+        github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy")))
+        github_btn.setCursor(Qt.PointingHandCursor)
+        buttons_row.addWidget(github_btn)
+        
         buttons_row.addStretch(1)
         view_btn = QPushButton("View release notes…")
         view_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy/releases")))
@@ -265,5 +267,22 @@ class ChangelogDialog(QDialog):
             }}
             QLabel#TagPill[tagName="planned"] {{
                 background-color: #3498db;
+            }}
+            QPushButton#GitHubButton {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {highlight}, stop:1 rgba(255, 133, 27, 0.8));
+                color: white;
+                border: none;
+                padding: 8px 14px;
+                border-radius: 6px;
+                font-weight: 600;
+            }}
+            QPushButton#GitHubButton:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 153, 51, 1.0), stop:1 {highlight});
+            }}
+            QPushButton#GitHubButton:pressed {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 133, 27, 0.9), stop:1 rgba(255, 133, 27, 0.7));
             }}
         """)
