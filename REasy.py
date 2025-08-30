@@ -20,7 +20,6 @@ from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
 from ui.rsz_differ_dialog import RszDifferDialog
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
-from ui.project_manager import ProjectManager, EXPECTED_NATIVE, PROJECTS_ROOT, ensure_projects_root
 from ui.changelog_dialog import ChangelogDialog
 
 from PySide6.QtCore import (
@@ -66,6 +65,13 @@ from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
+
+from utils.native_build import ensure_fast_pakresolve
+fast_pakresolve = ensure_fast_pakresolve()
+
+from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
+from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
+from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
 
 CURRENT_VERSION = "0.4.7"
 GAMES = [
@@ -705,8 +711,7 @@ class REasyEditorApp(QMainWindow):
 
         ensure_projects_root()
         self.current_project = None
-        self.unpacked_root = self.settings.get("unpacked_path", "INVALID PATH")
-        self.proj_dock = ProjectManager(self, self.unpacked_root)
+        self.proj_dock = ProjectManager(self, None)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.proj_dock)
         self.proj_dock.hide()
 
@@ -953,6 +958,10 @@ class REasyEditorApp(QMainWindow):
         script_creator_act = QAction("REF Script Creator", self)
         script_creator_act.triggered.connect(self.open_script_creator)
         tools_menu.addAction(script_creator_act)
+        
+        pak_browser_act = QAction("PAK Browser", self)
+        pak_browser_act.triggered.connect(self.open_pak_browser)
+        tools_menu.addAction(pak_browser_act)
 
         tools_menu.addSeparator()
 
@@ -978,36 +987,64 @@ class REasyEditorApp(QMainWindow):
         if not game:
             return
 
-        start_dir = str(self.settings.get("unpacked_path", ""))
-        folder = QFileDialog.getExistingDirectory(
-            self,
-            f"Locate unpacked files for {game}",
-            start_dir,
-            QFileDialog.ShowDirsOnly
-        )
-        if not folder:
+        choose_paks = SelectSourceDialog.prompt(self, game, unpacked_checked=True, paks_checked=False)
+        if choose_paks is None:
             return
 
-        expected = EXPECTED_NATIVE.get(game, ())
-        if expected:
-            test = os.path.join(folder, *expected)
-            if not os.path.isdir(test):
-                QMessageBox.warning(
-                    self, "Invalid unpacked folder",
-                    f"The folder you selected doesn’t contain:\n"
-                    f"  {os.path.join(*expected)}\n"
-                    f"Please select the correct unpacked game directory.")
+        use_paks = bool(choose_paks)
+
+        if not use_paks:
+            start_dir = str(self.settings.get("unpacked_path", ""))
+            folder = QFileDialog.getExistingDirectory(
+                self,
+                f"Locate unpacked files for {game}",
+                start_dir,
+                QFileDialog.ShowDirsOnly
+            )
+            if not folder:
                 return
 
-        self.settings["unpacked_path"] = folder
-        self.save_settings()
+            expected = self.proj_dock.expected_native_tuple(game)
+            if expected:
+                test = os.path.join(folder, *expected)
+                if not os.path.isdir(test):
+                    QMessageBox.warning(
+                        self, "Invalid unpacked folder",
+                        f"The folder you selected doesn't contain:\n"
+                        f"  {os.path.join(*expected)}\n"
+                        f"Please select the correct unpacked game directory.")
+                    return
+
+            self.settings["unpacked_path"] = folder
+            self.save_settings()
+        else:
+            start_dir = str(self.settings.get("pak_path", "")) or str(self.settings.get("unpacked_path", ""))
+            folder = QFileDialog.getExistingDirectory(
+                self,
+                "Locate game directory (contains .pak)",
+                start_dir,
+                QFileDialog.ShowDirsOnly
+            )
+            if not folder:
+                return
+            
+            if not self.proj_dock.has_valid_paks(folder, ignore_mod_paks=True):
+                QMessageBox.warning(self, "Invalid game folder", "No .pak files found in the selected directory.")
+                return
+            self.settings["pak_path"] = folder
+            self.save_settings()
 
         mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
         os.makedirs(mod_dir, exist_ok=True)
 
         self.current_game = game
-        self.proj_dock._apply_unpacked_root(folder)
+        
         self._activate_project(mod_dir)
+        if use_paks:
+            self.proj_dock.switch_tab("pak")
+            self.proj_dock.apply_pak_root(folder)
+        else:
+            self.proj_dock.apply_unpacked_root(folder)
 
     def open_project(self):
         start_root = str(PROJECTS_ROOT)
@@ -1035,24 +1072,50 @@ class REasyEditorApp(QMainWindow):
         self.current_game            = game
         self.proj_dock.current_game  = game
 
-        need_unpack = (
-            game != self.settings.get("last_game")
-            or not self.settings.get("unpacked_path")
-            or not self.proj_dock._check_folder(self.settings.get("unpacked_path", ""))
+        valid_unpacked = (
+            bool(self.settings.get("unpacked_path"))
+            and self.proj_dock.check_unpacked_folder(self.settings.get("unpacked_path", ""), game)
         )
-        if need_unpack:
-            unpack_start = str(self.settings.get("unpacked_path", ""))
-            folder = QFileDialog.getExistingDirectory(
-                self,
-                f"Locate unpacked files for {game}",
-                unpack_start,
-                QFileDialog.ShowDirsOnly
-            )
-            if not folder:
+        def _has_valid_paks() -> bool:
+            p = self.settings.get("pak_path")
+            return self.proj_dock.has_valid_paks(p, ignore_mod_paks=True)
+        valid_paks = _has_valid_paks()
+
+        if not (valid_unpacked or valid_paks) or game != self.settings.get("last_game"):
+            choose_paks = SelectSourceDialog.prompt(self, game, unpacked_checked=(valid_unpacked or not valid_paks), paks_checked=(valid_paks and not valid_unpacked))
+            if choose_paks is None:
                 return
-            self.settings["unpacked_path"] = folder
-            self.save_settings()
-            self.proj_dock._apply_unpacked_root(folder)
+
+            if not choose_paks:
+                start = str(self.settings.get("unpacked_path", ""))
+                folder = QFileDialog.getExistingDirectory(
+                    self, f"Locate unpacked files for {game}", start, QFileDialog.ShowDirsOnly
+                )
+                if not folder:
+                    return
+                self.settings["unpacked_path"] = folder
+                self.save_settings()
+                self.proj_dock.apply_unpacked_root(folder)
+            else:
+                start = str(self.settings.get("pak_path", "")) or str(self.settings.get("unpacked_path", ""))
+                folder = QFileDialog.getExistingDirectory(
+                    self, "Locate game directory (contains .pak)", start, QFileDialog.ShowDirsOnly
+                )
+                if not folder:
+                    return
+                if not self.proj_dock.has_valid_paks(folder, ignore_mod_paks=True):
+                    QMessageBox.warning(self, "Invalid game folder", "No .pak files found in the selected directory.")
+                    return
+                self.settings["pak_path"] = folder
+                self.save_settings()
+                self.proj_dock.switch_tab("pak")
+                self.proj_dock.apply_pak_root(folder)
+        else:
+            if valid_unpacked:
+                self.proj_dock.apply_unpacked_root(self.settings.get("unpacked_path", ""))
+            else:
+                self.proj_dock.switch_tab("pak")
+                self.proj_dock.apply_pak_root(self.settings.get("pak_path", ""))
 
         self.settings["last_game"] = game
         self.save_settings()
@@ -1087,6 +1150,10 @@ class REasyEditorApp(QMainWindow):
         self._script_creator.show()
         self._script_creator.raise_()
         self._script_creator.activateWindow()
+    
+    def open_pak_browser(self):
+        dialog = PakBrowserDialog(self)
+        dialog.exec()
 
     def set_dark_mode(self, state):
         self.dark_mode = state
@@ -1543,11 +1610,6 @@ class REasyEditorApp(QMainWindow):
         tab = self._resolve_tab_from_widget(fw)
         if tab:
             return tab
-            aw = QApplication.activeWindow()
-            if aw is not None and hasattr(aw, 'centralWidget'):
-                tab = self._resolve_tab_from_widget(aw.centralWidget())
-                if tab:
-                    return tab
         return None
 
     def get_active_tree(self):

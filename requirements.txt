@@ -5,4 +5,5 @@ shiboken6
 PyInstaller
 requests
 firebase-admin
-NodeGraphQt
+#NodeGraphQt
+zstandard

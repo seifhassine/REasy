@@ -21,7 +21,13 @@ if exist dist rmdir /S /Q dist
 
 REM Build using PyInstaller with version file
 pip install -r requirements.txt
-python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt REasy.py
+
+REM Pre-build native extension into site-packages so PyInstaller can collect it
+python setup.py build_ext --inplace
+python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
+  --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
+  REasy.py
+  
 xcopy /E /I /Y resources dist\resources
 rmdir /S /Q dist\resources\data\dumps
 rmdir /S /Q dist\resources\patches
