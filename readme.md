@@ -133,6 +133,13 @@ If you appreciate my work and would like to support the development of the tool,
 REasy is under MIT license.
 You are wlecome to contribute to the project. I am currently active and will review PRs.
 
+## Third-Party Components
+
+This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Python), licensed under **LGPL version 3**.
+For more information, see:  
+- [Qt Licensing Information](https://www.qt.io/licensing/)  
+- [LGPL v3 License Text](https://www.gnu.org/licenses/lgpl-3.0.html)
+  
 ## Sponsors
 <table>
  <tbody>
