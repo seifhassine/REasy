@@ -24,6 +24,7 @@ pip install -r requirements.txt
 
 REM Pre-build native extension into site-packages so PyInstaller can collect it
 python setup.py build_ext --inplace
+python scripts\compile_qm.py
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
   REasy.py
@@ -31,6 +32,8 @@ python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_l
 xcopy /E /I /Y resources dist\resources
 rmdir /S /Q dist\resources\data\dumps
 rmdir /S /Q dist\resources\patches
+if not exist dist\resources\i18n mkdir dist\resources\i18n
+xcopy /Y /I resources\i18n\ dist\resources\i18n\
 copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"
 if not exist dist\resources\scripts mkdir dist\resources\scripts
 copy "scripts\auto_update.ps1" "dist\resources\scripts\auto_update.ps1"

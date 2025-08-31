@@ -7,6 +7,9 @@ import struct
 import weakref
 import datetime
 import re
+from pathlib import Path
+import PySide6
+import subprocess
 
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.msg.msg_handler import MsgHandler
@@ -60,6 +63,8 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
 )
+
+from i18n.language_manager import LanguageManager
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
@@ -885,16 +890,16 @@ class REasyEditorApp(QMainWindow):
         menubar = self.menuBar()
         self.update_notification.update_update_menu(force=True, menubar=menubar)
 
-        file_menu = menubar.addMenu("File")
+        file_menu = menubar.addMenu(self.tr("File"))
 
-        open_act = QAction("Open File...", self)
+        open_act = QAction(self.tr("Open File..."), self)
         open_act.setObjectName("file_open")
         open_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_open", "Ctrl+O")))
         open_act.triggered.connect(self.on_open)
 
-        new_proj_act = QAction("New Project (Create Mod)...", self)
-        open_proj_act = QAction("Open Project...", self)
-        close_proj_act = QAction("Close Project", self)
+        new_proj_act = QAction(self.tr("New Project (Create Mod)..."), self)
+        open_proj_act = QAction(self.tr("Open Project..."), self)
+        close_proj_act = QAction(self.tr("Close Project"), self)
         new_proj_act.triggered.connect(self.new_project)
         open_proj_act.triggered.connect(self.open_project)
         close_proj_act.triggered.connect(self.close_project)
@@ -907,29 +912,29 @@ class REasyEditorApp(QMainWindow):
 
         file_menu.addAction(open_act)
 
-        save_act = QAction("Save", self)
+        save_act = QAction(self.tr("Save"), self)
         save_act.setObjectName("file_save")
         save_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_save", "Ctrl+S")))
         save_act.triggered.connect(self.on_direct_save)
         file_menu.addAction(save_act)
 
-        save_as_act = QAction("Save As...", self)
+        save_as_act = QAction(self.tr("Save As..."), self)
         save_as_act.setObjectName("file_save_as")
         save_as_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_save_as", "Ctrl+Shift+S")))
         save_as_act.triggered.connect(self.on_save)
         file_menu.addAction(save_as_act)
         
-        restore_backup_act = QAction("Restore Backup...", self)
+        restore_backup_act = QAction(self.tr("Restore Backup..."), self)
         restore_backup_act.triggered.connect(self.on_restore_backup)
         file_menu.addAction(restore_backup_act)
 
-        reload_act = QAction("Reload", self)
+        reload_act = QAction(self.tr("Reload"), self)
         reload_act.setObjectName("file_reload")
         reload_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_reload", "Ctrl+R")))
         reload_act.triggered.connect(self.reload_file)
         file_menu.addAction(reload_act)
 
-        close_tab_act = QAction("Close Tab", self)
+        close_tab_act = QAction(self.tr("Close Tab"), self)
         close_tab_act.setObjectName("file_close_tab")
         close_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_close_tab", "Ctrl+W")))
         close_tab_act.triggered.connect(self.close_current_tab)
@@ -937,41 +942,41 @@ class REasyEditorApp(QMainWindow):
 
         file_menu.addSeparator()
 
-        settings_act = QAction("Settings", self)
+        settings_act = QAction(self.tr("Settings"), self)
         settings_act.triggered.connect(self.open_settings_dialog)
         file_menu.addAction(settings_act)
 
-        exit_act = QAction("Exit", self)
+        exit_act = QAction(self.tr("Exit"), self)
         exit_act.triggered.connect(self.close)
         file_menu.addAction(exit_act)
 
-        find_menu = menubar.addMenu("Find")
+        find_menu = menubar.addMenu(self.tr("Find"))
 
-        find_act = QAction("Find", self)
+        find_act = QAction(self.tr("Find"), self)
         find_act.setObjectName("find_search")
         find_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search", "Ctrl+F")))
         find_act.triggered.connect(self.open_find_dialog)
         find_menu.addAction(find_act)
 
-        guid_act = QAction("Search Directory for GUID", self)
+        guid_act = QAction(self.tr("Search Directory for GUID"), self)
         guid_act.setObjectName("find_search_guid")
         guid_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_guid", "Ctrl+G")))
         guid_act.triggered.connect(self.search_directory_for_guid)
         find_menu.addAction(guid_act)
 
-        text_act = QAction("Search Directory for Text", self)
+        text_act = QAction(self.tr("Search Directory for Text"), self)
         text_act.setObjectName("find_search_text")
         text_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_text", "Ctrl+T")))
         text_act.triggered.connect(self.search_directory_for_text)
         find_menu.addAction(text_act)
 
-        num_act = QAction("Search Directory for Number", self)
+        num_act = QAction(self.tr("Search Directory for Number"), self)
         num_act.setObjectName("find_search_number")
         num_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_number", "Ctrl+N")))
         num_act.triggered.connect(self.search_directory_for_number)
         find_menu.addAction(num_act)
         
-        hex_act = QAction("Search Directory for Hex", self)
+        hex_act = QAction(self.tr("Search Directory for Hex"), self)
         hex_act.setObjectName("find_search_hex")
         hex_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_hex", "Ctrl+H")))
         hex_act.triggered.connect(self.search_directory_for_hex)
@@ -983,27 +988,27 @@ class REasyEditorApp(QMainWindow):
         rsz_field_act.triggered.connect(self.open_rsz_field_value_finder)
         find_menu.addAction(rsz_field_act)
 
-        view_menu = menubar.addMenu("View")
+        view_menu = menubar.addMenu(self.tr("View"))
 
-        dark_act = QAction("Toggle Dark Mode", self)
+        dark_act = QAction(self.tr("Toggle Dark Mode"), self)
         dark_act.setObjectName("view_dark_mode")
         dark_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_dark_mode", "Ctrl+D")))
         dark_act.triggered.connect(self.toggle_dark_mode)
         view_menu.addAction(dark_act)
 
-        prev_tab_act = QAction("Previous Tab", self)
+        prev_tab_act = QAction(self.tr("Previous Tab"), self)
         prev_tab_act.setObjectName("view_prev_tab")
         prev_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_prev_tab", "PgDown")))
         prev_tab_act.triggered.connect(self.goto_previous_tab)
         view_menu.addAction(prev_tab_act)
 
-        next_tab_act = QAction("Next Tab", self)
+        next_tab_act = QAction(self.tr("Next Tab"), self)
         next_tab_act.setObjectName("view_next_tab")
         next_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_next_tab", "PgUp")))
         next_tab_act.triggered.connect(self.goto_next_tab)
         view_menu.addAction(next_tab_act)
 
-        dbg_act = QAction("Toggle Debug Console", self)
+        dbg_act = QAction(self.tr("Toggle Debug Console"), self)
         dbg_act.setObjectName("view_debug_console")
         dbg_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("view_debug_console", "Ctrl+Shift+D")))
         dbg_act.triggered.connect(
@@ -1013,43 +1018,43 @@ class REasyEditorApp(QMainWindow):
         )
         view_menu.addAction(dbg_act)
 
-        tools_menu = menubar.addMenu("Tools")
-        guid_conv_act = QAction("GUID Converter", self)
+        tools_menu = menubar.addMenu(self.tr("Tools"))
+        guid_conv_act = QAction(self.tr("GUID Converter"), self)
         guid_conv_act.triggered.connect(self.open_guid_converter)
         tools_menu.addAction(guid_conv_act)
 
-        hash_calc_act = QAction("Hash Calculator", self)
+        hash_calc_act = QAction(self.tr("Hash Calculator"), self)
         hash_calc_act.triggered.connect(self.open_hash_calculator)
         tools_menu.addAction(hash_calc_act)
 
-        outdated_files_action = QAction("Outdated RSZ Files Detector", self)
+        outdated_files_action = QAction(self.tr("Outdated Files Detector"), self)
         outdated_files_action.triggered.connect(self.open_outdated_files_detector)
         tools_menu.addAction(outdated_files_action)
 
-        rsz_differ_act = QAction("RSZ File Diff", self)
+        rsz_differ_act = QAction(self.tr("RSZ Diff Viewer"), self)
         rsz_differ_act.triggered.connect(self.open_rsz_differ)
         tools_menu.addAction(rsz_differ_act)
 
-        script_creator_act = QAction("REF Script Creator", self)
+        script_creator_act = QAction(self.tr("REF Script Creator"), self)
         script_creator_act.triggered.connect(self.open_script_creator)
         tools_menu.addAction(script_creator_act)
         
-        pak_browser_act = QAction("PAK Browser", self)
+        pak_browser_act = QAction(self.tr("PAK Browser"), self)
         pak_browser_act.triggered.connect(self.open_pak_browser)
         tools_menu.addAction(pak_browser_act)
 
         tools_menu.addSeparator()
 
-        help_menu = menubar.addMenu("Help")
-        about_act = QAction("About", self)
-        wiki_act = QAction("REasy Wiki", self)
+        help_menu = menubar.addMenu(self.tr("Help"))
+        about_act = QAction(self.tr("About"), self)
+        wiki_act = QAction(self.tr("REasy Wiki"), self)
         about_act.triggered.connect(self.show_about)
         wiki_act.triggered.connect(self.show_wiki)
         help_menu.addAction(about_act)
         help_menu.addAction(wiki_act)
         
-        donate_menu = menubar.addMenu("Donate")
-        donate_act = QAction("Support REasy", self)
+        donate_menu = menubar.addMenu(self.tr("Donate"))
+        donate_act = QAction(self.tr("Support REasy"), self)
         donate_act.triggered.connect(self.show_donate_dialog)
         donate_menu.addAction(donate_act)
 
@@ -1433,6 +1438,23 @@ class REasyEditorApp(QMainWindow):
         confirmation_prompt_box.setChecked(self.settings.get("confirmation_prompt", True))
         general_layout.addWidget(confirmation_prompt_box)
 
+        ui_lang_layout = QHBoxLayout()
+        ui_lang_layout.setContentsMargins(0, 0, 0, 0)
+        ui_lang_label = QLabel("UI Language (Restart Recommended):")
+        ui_lang_layout.addWidget(ui_lang_label)
+
+        ui_lang_combo = QComboBox()
+        ui_lang_combo.addItem("System", "system")
+        for info in LanguageManager.instance().available_languages():
+            ui_lang_combo.addItem(info.name, info.code)
+        current_ui_lang = self.settings.get("ui_language", "system")
+        for i in range(ui_lang_combo.count()):
+            if ui_lang_combo.itemData(i) == current_ui_lang:
+                ui_lang_combo.setCurrentIndex(i)
+                break
+        ui_lang_layout.addWidget(ui_lang_combo)
+        general_layout.addLayout(ui_lang_layout)
+
         general_layout.addStretch()
         
         shortcuts_tab = create_shortcuts_tab()
@@ -1491,7 +1513,18 @@ class REasyEditorApp(QMainWindow):
             
             self.apply_keyboard_shortcuts()
 
+            new_ui_lang = ui_lang_combo.currentData()
+            lang_changed = new_ui_lang != self.settings.get("ui_language", "system")
+
+            self.settings["ui_language"] = new_ui_lang
+
             self.save_settings()
+            if lang_changed:
+                QMessageBox.information(
+                    dialog,
+                    "Language Changed",
+                    "UI language will be applied after restart."
+                )
             dialog.accept()
 
         def on_cancel():
@@ -1658,9 +1691,9 @@ class REasyEditorApp(QMainWindow):
     def on_open(self):
         fn, _ = QFileDialog.getOpenFileName(
             self,
-            "Open File",
+            self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;All Files (*.*)",
+            self.tr("RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;All Files (*.*)")
         )
         if not fn:
             return
@@ -1863,6 +1896,37 @@ def main():
     app = QApplication(sys.argv)
 
     app.setStyle(QStyleFactory.create("Fusion"))
+
+    try:
+        from settings import load_settings
+        settings = load_settings()
+    except Exception:
+        settings = {}
+
+    base_dir = Path(sys.argv[0]).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+    ts_dir = base_dir / "resources" / "i18n"
+    if getattr(sys, "frozen", False):
+        exe_candidates = [
+            str(base_dir / ("lrelease.exe" if os.name == "nt" else "lrelease")),
+        ]
+    else:
+        base_pkg = Path(PySide6.__file__).resolve().parent
+        exe_candidates = [
+            str(base_pkg / ("lrelease.exe" if os.name == "nt" else "lrelease")),
+            "lrelease",
+        ]
+    exe = next((p for p in exe_candidates if p and os.path.exists(p)), None)
+    preferred = settings.get("ui_language", "system")
+    selected_code = LanguageManager.instance().detect(preferred)
+    if exe and selected_code != "en":
+        ts = str(ts_dir / f"REasy_{selected_code}.ts")
+        qm = str(ts_dir / f"REasy_{selected_code}.qm")
+        if os.path.exists(ts):
+            if not os.path.exists(qm) or os.path.getmtime(qm) < os.path.getmtime(ts):
+                print(f"i18n: compiling {os.path.basename(ts)} -> {os.path.basename(qm)} using {exe}")
+                subprocess.check_call([exe, ts, "-qm", qm])
+
+    LanguageManager.instance().initialize(app, settings)
 
     window = REasyEditorApp()
 

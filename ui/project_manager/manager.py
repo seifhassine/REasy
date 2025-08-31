@@ -334,11 +334,11 @@ class ProjectManager(QDockWidget):
 
     def _browse(self):
         if self._active_tab == "pak":
-            d = QFileDialog.getExistingDirectory(self, "Select Game Directory (contains .pak)", self.pak_dir or "")
+            d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory (contains .pak)"), self.pak_dir or "")
             if d:
                 self._apply_pak_root(d)
         else:
-            d = QFileDialog.getExistingDirectory(self, "Select unpacked Game folder", self.unpacked_dir or "")
+            d = QFileDialog.getExistingDirectory(self, self.tr("Select unpacked Game folder"), self.unpacked_dir or "")
             if d:
                 self._apply_unpacked_root(d)
 
@@ -354,7 +354,7 @@ class ProjectManager(QDockWidget):
             self._schedule_column_resize()
             self._update_project_cfg({"unpacked_dir": self.unpacked_dir})
         else:
-            QMessageBox.warning(self, "Invalid folder",
+            QMessageBox.warning(self, self.tr("Invalid folder"),
                                 f"Expected sub‑folder \"{'/'.join(self._expected_native())}\".")
         self._update_placeholders()
 
@@ -368,10 +368,10 @@ class ProjectManager(QDockWidget):
         try:
             paks = scan_pak_files(self.pak_dir, ignore_mod_paks=self.pak_ignore_mods_cb.isChecked())
         except Exception as e:
-            QMessageBox.critical(self, "Scan failed", str(e))
+            QMessageBox.critical(self, self.tr("Scan failed"), str(e))
             return
         if not paks:
-            QMessageBox.warning(self, "Invalid folder", "No .pak files found in the selected directory.")
+            QMessageBox.warning(self, self.tr("Invalid folder"), self.tr("No .pak files found in the selected directory."))
         
         self._update_project_cfg({"pak_game_dir": self.pak_dir})
         self._active_tab = "pak"
@@ -434,11 +434,11 @@ class ProjectManager(QDockWidget):
         # PAK Files placeholder
         if self._active_tab == "pak":
             if not self.pak_dir:
-                self.pak_placeholder.setText("Please choose game directory (contains .pak) using the Browse button above")
+                self.pak_placeholder.setText(self.tr("Please choose game directory (contains .pak) using the Browse button above"))
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             elif not self._pak_base_paths:
-                self.pak_placeholder.setText("Please load a list using the Load .list… button above")
+                self.pak_placeholder.setText(self.tr("Please load a list using the Load .list… button above"))
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             else:
@@ -461,7 +461,7 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
         if proj_dir:
-            self.project_label.setText(f"<b>Project: {os.path.basename(proj_dir)}</b>")
+            self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
             self._schedule_column_resize()
@@ -494,7 +494,7 @@ class ProjectManager(QDockWidget):
                     if gdir and os.path.isdir(gdir):
                         self.pak_dir = gdir
                         self._scan_paks()
-                        self._update_path_label()
+                        self._update_path_label()  # Update label after setting pak_dir
                     path = cfg.get("pak_list_path")
                     if path and os.path.isfile(path):
                         self._pak_list_path = path
@@ -503,7 +503,7 @@ class ProjectManager(QDockWidget):
             except Exception:
                 pass
         else:
-            self.project_label.setText("<i>No project open</i>")
+            self.project_label.setText(self.tr("<i>No project open</i>"))
             self.tree_proj .setRootIndex(QModelIndex())
             
             self._pak_base_paths = []
@@ -522,15 +522,15 @@ class ProjectManager(QDockWidget):
     # ---------------- PAK integration ----------------
     def _scan_paks(self):
         if not self.pak_dir:
-            QMessageBox.information(self, "Scan", "Select a game directory first.")
+            QMessageBox.information(self, self.tr("Scan"), self.tr("Select a game directory first."))
             return
         try:
             paks = scan_pak_files(self.pak_dir, ignore_mod_paks=self.pak_ignore_mods_cb.isChecked())
         except Exception as e:
-            QMessageBox.critical(self, "Scan failed", str(e))
+            QMessageBox.critical(self, self.tr("Scan failed"), str(e))
             return
         if not paks:
-            QMessageBox.information(self, "Scan", "No .pak files found.")
+            QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
             self._pak_selected_paks = []
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
@@ -541,7 +541,7 @@ class ProjectManager(QDockWidget):
         self._rebuild_pak_index()
 
     def _choose_pak_list(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Open list file", filter="List files (*.list *.txt);;All files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)"))
         if not path:
             return
         self._load_pak_list_file(path)
@@ -552,7 +552,7 @@ class ProjectManager(QDockWidget):
             with open(path, "r", encoding="utf-8") as f:
                 items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
         except Exception as e:
-            QMessageBox.critical(self, "Read failed", str(e))
+            QMessageBox.critical(self, self.tr("Read failed"), str(e))
             return
         self._pak_base_paths = items
         self.pak_list_edit.setText(path)
@@ -607,14 +607,14 @@ class ProjectManager(QDockWidget):
             self._apply_pak_filter_now()
             self._update_placeholders()
         except Exception as e:
-            QMessageBox.critical(self, "Index failed", str(e))
+            QMessageBox.critical(self, self.tr("Index failed"), str(e))
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
             self._update_placeholders()
 
     def _build_pak_tree_model(self, paths: list[str]):
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Paths"])
+        model.setHorizontalHeaderLabels([self.tr("Paths")])
         
         display_paths = list(paths)
         try:
@@ -743,8 +743,8 @@ class ProjectManager(QDockWidget):
             base_name = os.path.basename(folder_prefix.rstrip('/'))
             if QMessageBox.question(
                 self,
-                "Confirm Add",
-                f"Add entire folder\n\"{base_name}\" and all its contents?",
+                self.tr("Confirm Add"),
+                self.tr(f"Add entire folder\n\"{base_name}\" and all its contents?"),
                 QMessageBox.Yes | QMessageBox.No
             ) != QMessageBox.Yes:
                 return
@@ -760,7 +760,7 @@ class ProjectManager(QDockWidget):
             if targets:
                 self._extract_from_paks_to_project(targets)
         except Exception as e:
-            QMessageBox.critical(self, "Add failed", str(e))
+            QMessageBox.critical(self, self.tr("Add failed"), str(e))
 
     def _pak_menu(self, pos):
         model = self.tree_pak.model()
@@ -770,8 +770,8 @@ class ProjectManager(QDockWidget):
         if not idx.isValid():
             return
         menu = QMenu(self)
-        add_act = menu.addAction("Add to project")
-        open_act = menu.addAction("Open")
+        add_act = menu.addAction(self.tr("Add to project"))
+        open_act = menu.addAction(self.tr("Open"))
         chosen = menu.exec(self.tree_pak.viewport().mapToGlobal(pos))
         if chosen is add_act:
             folder_prefix = idx.data(Qt.UserRole + 2)
@@ -817,7 +817,7 @@ class ProjectManager(QDockWidget):
                     found = (pth, stream)
                     break
             if not found:
-                QMessageBox.information(self, "Open", f"Path not found in PAKs: {path}")
+                QMessageBox.information(self, self.tr("Open"), f"{self.tr('Path')} not found in {self.tr('PAKs')}: {path}")
                 return
             pth, stream = found
             data = stream.read()
@@ -828,16 +828,16 @@ class ProjectManager(QDockWidget):
             name = pth if ('.' in os.path.basename(pth)) else (pth + ('.' + ext.lower() if ext else ''))
             self.app_win.add_tab(name, data)
         except Exception as e:
-            QMessageBox.critical(self, "Open failed", str(e))
+            QMessageBox.critical(self, self.tr("Open failed"), str(e))
 
     def _extract_from_paks_to_project(self, paths: list[str]):
         if not paths:
             return
         if not self.project_dir:
-            QMessageBox.information(self, "Add to project", "Open a project first.")
+            QMessageBox.information(self, self.tr("Add to project"), self.tr("Open a project first."))
             return
         if not self._pak_selected_paks:
-            QMessageBox.information(self, "Add to project", "Scan for .pak files first.")
+            QMessageBox.information(self, self.tr("Add to project"), self.tr("Scan for .pak files first."))
             return
         try:
             r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
@@ -854,12 +854,12 @@ class ProjectManager(QDockWidget):
             targets = sorted(set(paths))
             count = r.extract_files_to(self.project_dir, targets, missing_files=missing)
             self._refresh_proj()
-            msg = f"Added {count} file(s) to project."
+            msg = f"{self.tr('Added')} {count} {self.tr('file(s) to project.')}"
             if missing:
-                msg += "\n\nMissing paths (not found in PAKs):\n" + "\n".join(missing[:50])
-            QMessageBox.information(self, "Done", msg)
+                msg += "\n\n" + self.tr("Missing paths (not found in PAKs):") + "\n" + "\n".join(missing[:50])
+            QMessageBox.information(self, self.tr("Done"), msg)
         except Exception as e:
-            QMessageBox.critical(self, "Add failed", str(e))
+            QMessageBox.critical(self, self.tr("Add failed"), str(e))
 
     def _sys_menu(self, pos):
         idx = self.tree_sys.indexAt(pos)
@@ -867,7 +867,7 @@ class ProjectManager(QDockWidget):
             return
 
         menu = QMenu(self)
-        add_act = menu.addAction("Add to project")
+        add_act = menu.addAction(self.tr("Add to project"))
 
         chosen = menu.exec(self.tree_sys.viewport().mapToGlobal(pos))
         if chosen is add_act:
@@ -879,7 +879,7 @@ class ProjectManager(QDockWidget):
             return
 
         menu = QMenu(self)
-        remove_act = menu.addAction("Remove")
+        remove_act = menu.addAction(self.tr("Remove"))
 
         chosen = menu.exec(self.tree_proj.viewport().mapToGlobal(pos))
         if chosen is remove_act:
@@ -892,12 +892,12 @@ class ProjectManager(QDockWidget):
         dst = os.path.join(self.project_dir, rel)
 
         if os.path.isdir(src) and QMessageBox.question(
-                self, "Confirm Add", f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?",
+                self, self.tr("Confirm Add"), self.tr(f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?"),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
         if os.path.exists(dst) and QMessageBox.question(
-                self, "Confirm Overwrite", f"""{rel}" already exists — overwrite?""",
+                self, self.tr("Confirm Overwrite"), self.tr(f"""\"{rel}\" already exists — overwrite?"""),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
@@ -907,9 +907,9 @@ class ProjectManager(QDockWidget):
             else:                   
                 (os.makedirs(os.path.dirname(dst), exist_ok=True), shutil.copy2(src, dst))
             self._refresh_proj()
-            QMessageBox.information(self, "Added", f"{rel}\nwas copied successfully.")
+            QMessageBox.information(self, self.tr("Added"), f"{rel}\n{self.tr('was copied successfully.')}")
         except Exception as e:
-            QMessageBox.critical(self, "Copy failed", str(e))
+            QMessageBox.critical(self, self.tr("Copy failed"), str(e))
 
     def _prune_empty_dirs(self, start_path: str) -> bool:
         removed = False
@@ -933,7 +933,7 @@ class ProjectManager(QDockWidget):
                 os.remove(path)
                 self._prune_empty_dirs(os.path.dirname(path))
         except Exception as e:
-            QMessageBox.critical(self, "Remove failed", str(e))
+            QMessageBox.critical(self, self.tr("Remove failed"), str(e))
             return
 
         parent = os.path.dirname(path)
@@ -973,7 +973,7 @@ class ProjectManager(QDockWidget):
                     data = f.read()
                 self.app_win.add_tab(path, data)
             except Exception as e:
-                QMessageBox.critical(self, "Open failed", str(e))
+                QMessageBox.critical(self, self.tr("Open failed"), str(e))
 
     def _on_double(self, idx, in_project):
         path = (self.model_proj if in_project else self.model_sys).filePath(idx)
@@ -982,7 +982,7 @@ class ProjectManager(QDockWidget):
 
     def _choose_game(self) -> str | None:
         dlg = QDialog(self)
-        dlg.setWindowTitle("Select Game")
+        dlg.setWindowTitle(self.tr("Select Game"))
         lay = QVBoxLayout(dlg)
 
         info_lbl = QLabel()                  
@@ -1002,9 +1002,9 @@ class ProjectManager(QDockWidget):
         def _upd(idx: int):
             g = combo.itemText(idx)
             hint = "/".join(EXPECTED_NATIVE.get(g, ()))
-            info_lbl.setText(f"Expected sub‑folder for <b>{g}</b>: "
+            info_lbl.setText(f"{self.tr('Expected sub‑folder for')} <b>{g}</b>: "
                              f"<code>{hint or '‑‑ any ‑‑'}</code>"
-                             f"<br>Note: Make sure your directory contains that folder.")
+                             f"<br>{self.tr('Note')}: {self.tr('Make sure your directory contains that folder.')}")
         _upd(0)
         combo.currentIndexChanged.connect(_upd)
 
@@ -1093,15 +1093,15 @@ class ProjectManager(QDockWidget):
 
     def _export_zip(self):
         if not self.project_dir:
-            QMessageBox.information(self, "Export Fluffy ZIP", "Open a project first.")
+            QMessageBox.information(self, self.tr("Export Fluffy ZIP"), self.tr("Open a project first."))
             return
 
         proj     = Path(self.project_dir)
         cfg_path = proj / ".reasy_project.json"
         if not cfg_path.exists():
             if QMessageBox.question(
-                self, "Missing info",
-                "Project settings not configured yet.\nOpen the settings dialog now?",
+                self, self.tr("Missing info"),
+                self.tr("Project settings not configured yet.\nOpen the settings dialog now?"),
                 QMessageBox.Yes | QMessageBox.No
             ) == QMessageBox.Yes:
                 self._proj_settings()
@@ -1118,11 +1118,11 @@ class ProjectManager(QDockWidget):
         try:
             create_fluffy_zip(proj, zip_path)
             QMessageBox.information(
-                self, "Done",
-                f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}"
+                self, self.tr("Done"),
+                self.tr(f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}")
             )
         except Exception as e:
-            QMessageBox.critical(self, "ZIP failed", str(e))
+            QMessageBox.critical(self, self.tr("ZIP failed"), str(e))
 
     def _export_mod(self):
 
@@ -1130,17 +1130,17 @@ class ProjectManager(QDockWidget):
         if need:
             tag_txt = latest or "latest"
             msg = (
-                f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n"
+                self.tr(f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n")
                 if not _EXE_PATH.exists()
-                else f"A newer packer release ({tag_txt}) is available\n"
-            ) + "Do you want to download it now?"
-            if QMessageBox.question(self, "Download packer?", msg,
+                else self.tr(f"A newer packer release ({tag_txt}) is available\n")
+            ) + self.tr("Do you want to download it now?")
+            if QMessageBox.question(self, self.tr("Download packer?"), msg,
                                     QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
                 return
             try:
                 _ensure_packer(auto_download=True)
             except Exception as e:
-                QMessageBox.critical(self, "Download failed", str(e))
+                QMessageBox.critical(self, self.tr("Download failed"), str(e))
                 return
 
         base_dir    = _get_base_dir()
@@ -1154,7 +1154,7 @@ class ProjectManager(QDockWidget):
         dest_path = mods_folder / pak_name
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("REE.Packer output")
+        dlg.setWindowTitle(self.tr("REE.Packer output"))
         v = QVBoxLayout(dlg)
         log = QTextEdit(readOnly=True, lineWrapMode=QTextEdit.NoWrap)
         v.addWidget(log)
@@ -1179,12 +1179,12 @@ class ProjectManager(QDockWidget):
                 log.append(out)
                 if code == 0:
                     QMessageBox.information(
-                        self, "Done",
-                        f"Export completed.\nPAK file saved to:\n{dest_path}"
+                        self, self.tr("Done"),
+                        self.tr(f"Export completed.\nPAK file saved to:\n{dest_path}")
                     )
                 else:
-                    QMessageBox.critical(self, "Error",
-                                         "PAK packer returned an error.")
+                    QMessageBox.critical(self, self.tr("Error"),
+                                         self.tr("PAK packer returned an error."))
             else:
                 QTimer.singleShot(150, _poll)
 

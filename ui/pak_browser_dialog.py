@@ -23,7 +23,7 @@ from ui.widgets_utils import create_list_file_help_widget
 class PakBrowserDialog(QDialog):
 	def __init__(self, parent=None):
 		super().__init__(parent)
-		self.setWindowTitle("PAK Browser")
+		self.setWindowTitle(self.tr("PAK Browser"))
 		self.resize(900, 600)
 		lay = QVBoxLayout(self)
 
@@ -32,22 +32,22 @@ class PakBrowserDialog(QDialog):
 		lay.addLayout(top)
 
 		self.dir_edit = QLineEdit(self)
-		self.dir_edit.setPlaceholderText("Game directory (optional, for scan)")
+		self.dir_edit.setPlaceholderText(self.tr("Game directory (optional, for scan)"))
 		top.addWidget(self.dir_edit, 1)
-		top.addWidget(QPushButton("Browse…", clicked=self._choose_dir))
-		self.ignore_mods_cb = QCheckBox("Ignore mod PAKs", self)
+		top.addWidget(QPushButton(self.tr("Browse…"), clicked=self._choose_dir))
+		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs"), self)
 		self.ignore_mods_cb.setChecked(True)
 		top.addWidget(self.ignore_mods_cb)
-		top.addWidget(QPushButton("Scan", clicked=self._scan_dir))
+		top.addWidget(QPushButton(self.tr("Scan"), clicked=self._scan_dir))
 
 		row2 = QHBoxLayout()
 		lay.addLayout(row2)
-		row2.addWidget(QLabel("PAK files (ordered):"))
+		row2.addWidget(QLabel(self.tr("PAK files (ordered):")))
 		row2.addStretch(1)
-		row2.addWidget(QPushButton("Add PAK…",   clicked=self._add_paks))
-		row2.addWidget(QPushButton("Remove",     clicked=self._remove_paks))
-		row2.addWidget(QPushButton("Move Up",    clicked=lambda: self._move_selected(-1)))
-		row2.addWidget(QPushButton("Move Down",  clicked=lambda: self._move_selected(+1)))
+		row2.addWidget(QPushButton(self.tr("Add PAK…"),   clicked=self._add_paks))
+		row2.addWidget(QPushButton(self.tr("Remove"),     clicked=self._remove_paks))
+		row2.addWidget(QPushButton(self.tr("Move Up"),    clicked=lambda: self._move_selected(-1)))
+		row2.addWidget(QPushButton(self.tr("Move Down"),  clicked=lambda: self._move_selected(+1)))
 
 		self.pak_list = QListWidget(self)
 		lay.addWidget(self.pak_list, 1)
@@ -55,19 +55,19 @@ class PakBrowserDialog(QDialog):
 
 		mid = QHBoxLayout()
 		lay.addLayout(mid)
-		mid.addWidget(QLabel("Filter:"))
+		mid.addWidget(QLabel(self.tr("Filter:")))
 		self.filter_edit = QLineEdit(self)
-		self.filter_edit.setPlaceholderText("Search (supports regex) - shows flat list; clear for tree view")
+		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex) - shows flat list; clear for tree view"))
 		self._filter_timer = QTimer(self)
 		self._filter_timer.setSingleShot(True)
 		self._filter_timer.timeout.connect(self._apply_filter_now)
 		self.filter_edit.textChanged.connect(self._on_filter_text_changed)
 		mid.addWidget(self.filter_edit, 1)
-		self.show_unknown_cb = QCheckBox("Include unknown entries")
+		self.show_unknown_cb = QCheckBox(self.tr("Include unknown entries"))
 		self.show_unknown_cb.setChecked(False)
 		mid.addWidget(self.show_unknown_cb)
 		
-		self.show_only_valid_cb = QCheckBox("Show only valid files")
+		self.show_only_valid_cb = QCheckBox(self.tr("Show only valid files"))
 		self.show_only_valid_cb.setChecked(False)
 		self.show_only_valid_cb.toggled.connect(self._on_show_only_valid_toggled)
 		mid.addWidget(self.show_only_valid_cb)
@@ -90,13 +90,13 @@ class PakBrowserDialog(QDialog):
 
 		out = QHBoxLayout()
 		lay.addLayout(out)
-		out.addWidget(QLabel("Output directory:"))
+		out.addWidget(QLabel(self.tr("Output directory:")))
 		self.out_edit = QLineEdit(self)
 		out.addWidget(self.out_edit, 1)
-		out.addWidget(QPushButton("Choose…", clicked=self._choose_out))
+		out.addWidget(QPushButton(self.tr("Choose…"), clicked=self._choose_out))
 		out.addStretch(1)
-		out.addWidget(QPushButton("Extract Selected", clicked=self._extract_selected))
-		out.addWidget(QPushButton("Extract All", clicked=self._extract_all))
+		out.addWidget(QPushButton(self.tr("Extract Selected"), clicked=self._extract_selected))
+		out.addWidget(QPushButton(self.tr("Extract All"), clicked=self._extract_all))
 
 		self._all_manifest_paths: List[str] = []
 		self._base_paths: List[str] = []
@@ -110,18 +110,18 @@ class PakBrowserDialog(QDialog):
 
 
 	def _choose_dir(self):
-		d = QFileDialog.getExistingDirectory(self, "Select Game Directory")
+		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
 		if d:
 			self.dir_edit.setText(d)
 
 	def _scan_dir(self):
 		root = self.dir_edit.text().strip()
 		if not root:
-			QMessageBox.information(self, "Scan", "Select a directory to scan.")
+			QMessageBox.information(self, self.tr("Scan"), self.tr("Select a directory to scan."))
 			return
 		paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
 		if not paks:
-			QMessageBox.information(self, "Scan", "No .pak files found.")
+			QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
 			return
 		
 
@@ -138,7 +138,7 @@ class PakBrowserDialog(QDialog):
 		self._recompute_display()
 
 	def _add_paks(self):
-		files, _ = QFileDialog.getOpenFileNames(self, "Add PAK files", filter="PAK files (*.pak)")
+		files, _ = QFileDialog.getOpenFileNames(self, self.tr("Add PAK files"), filter=self.tr("PAK files (*.pak)"))
 		for f in files:
 			if not any(self.pak_list.item(i).text() == f for i in range(self.pak_list.count())):
 				self.pak_list.addItem(f)
@@ -167,7 +167,7 @@ class PakBrowserDialog(QDialog):
 			self._cache_outdated = True
 
 	def _choose_out(self):
-		d = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+		d = QFileDialog.getExistingDirectory(self, self.tr("Select Output Directory"))
 		if d:
 			self.out_edit.setText(d)
 	
@@ -185,7 +185,7 @@ class PakBrowserDialog(QDialog):
 		
 		if not self._all_manifest_paths:
 			model = QStandardItemModel()
-			model.setHorizontalHeaderLabels(["Paths"])
+			model.setHorizontalHeaderLabels([self.tr("Paths")])
 			self.tree.setModel(model)
 			self._tree_model = model
 			return
@@ -194,7 +194,7 @@ class PakBrowserDialog(QDialog):
 			source = self._flat_model_valid_only if self.show_only_valid_cb.isChecked() else self._flat_model
 			if source is None:
 				model = QStandardItemModel()
-				model.setHorizontalHeaderLabels(["Search Results"])
+				model.setHorizontalHeaderLabels([self.tr("Search Results")])
 				self.tree.setModel(model)
 				self._tree_model = model
 				return
@@ -216,7 +216,7 @@ class PakBrowserDialog(QDialog):
 				return
 		
 		model = QStandardItemModel()
-		model.setHorizontalHeaderLabels(["Paths"])
+		model.setHorizontalHeaderLabels([self.tr("Paths")])
 		
 		root = {}
 		for p in self._all_manifest_paths:
@@ -342,7 +342,7 @@ class PakBrowserDialog(QDialog):
 
 				r.cache_entries(assign_paths=False)
 		except Exception as e:
-			QMessageBox.critical(self, "Index failed", str(e))
+			QMessageBox.critical(self, self.tr("Index failed"), str(e))
 			return
 		self._cached_reader = r
 		self._cache_outdated = False
@@ -374,7 +374,7 @@ class PakBrowserDialog(QDialog):
 		self._apply_filter_now()
 
 	def _load_list_file(self):
-		path, _ = QFileDialog.getOpenFileName(self, "Open list file", filter="List files (*.list *.txt);;All files (*)")
+		path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)") )
 		if not path:
 			return
 		_profile = os.getenv("REASY_PROFILE", "0").lower() in ("1", "true", "yes", "on")
@@ -421,7 +421,7 @@ class PakBrowserDialog(QDialog):
 			_total = sum(ms for _, ms in _sections)
 			msg = "\n".join(f"{name}: {ms:.2f} ms" for name, ms in _sections)
 			msg += f"\nTotal: {_total:.2f} ms"
-			QMessageBox.information(self, "Profile – Load .list", msg)
+			QMessageBox.information(self, self.tr("Profile – Load .list"), msg)
 
 	def _extract_selected(self):
 		targets = self._collect_selected_paths()
@@ -452,15 +452,15 @@ class PakBrowserDialog(QDialog):
 
 	def _extract(self, targets: List[str]):
 		if not targets:
-			QMessageBox.information(self, "Extract", "No files selected.")
+			QMessageBox.information(self, self.tr("Extract"), self.tr("No files selected."))
 			return
 		paks = self._selected_paks()
 		if not paks:
-			QMessageBox.information(self, "Extract", "Add one or more PAK files first.")
+			QMessageBox.information(self, self.tr("Extract"), self.tr("Add one or more PAK files first."))
 			return
 		outdir = self.out_edit.text().strip()
 		if not outdir:
-			QMessageBox.information(self, "Extract", "Choose an output directory.")
+			QMessageBox.information(self, self.tr("Extract"), self.tr("Choose an output directory."))
 			return
 		Path(outdir).mkdir(parents=True, exist_ok=True)
 
@@ -477,7 +477,7 @@ class PakBrowserDialog(QDialog):
 
 					rc.cache_entries(assign_paths=False)
 				except Exception as e:
-					QMessageBox.critical(self, "Index failed", str(e))
+					QMessageBox.critical(self, self.tr("Index failed"), str(e))
 					return
 			missing: List[str] = []
 			
@@ -508,20 +508,20 @@ class PakBrowserDialog(QDialog):
 			extraction_thread.join(timeout=2.0)
 			
 			if extraction_error[0]:
-				QMessageBox.critical(self, "Extract failed", str(extraction_error[0]))
+				QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
 				return
 			
 			if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-				QMessageBox.information(self, "Cancelled", "Extraction was cancelled")
+				QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
 				return
 			
 			count = extraction_count[0]
-			msg = f"Extracted {count} file(s) to:\n{self.out_edit.text().strip()}"
+			msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(count=count, dest=self.out_edit.text().strip())
 			if missing:
-				msg += "\n\nMissing paths (not found in PAKs):\n" + "\n".join(missing[:50])
+				msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
 				if len(missing) > 50:
-					msg += f"\n… and {len(missing) - 50} more"
-			QMessageBox.information(self, "Done", msg)
+					msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
+			QMessageBox.information(self, self.tr("Done"), msg)
 			return
 
 
@@ -561,18 +561,18 @@ class PakBrowserDialog(QDialog):
 		extraction_thread.join(timeout=2.0)
 		
 		if extraction_error[0]:
-			QMessageBox.critical(self, "Extract failed", str(extraction_error[0]))
+			QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
 			return
 		
 		if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-			QMessageBox.information(self, "Cancelled", "Extraction was cancelled")
+			QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
 			return
 		
 		count = extraction_count[0]
-		msg = f"Extracted {count} file(s) to:\n{outdir}"
+		msg = f"{self.tr('Extracted')} {count} {self.tr('file(s) to:')}\n{outdir}"
 		if missing:
-			msg += "\n\nMissing paths (not found in PAKs):\n" + "\n".join(missing[:50])
+			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
 			if len(missing) > 50:
-				msg += f"\n… and {len(missing) - 50} more"
-		QMessageBox.information(self, "Done", msg)
+				msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
+		QMessageBox.information(self, self.tr("Done"), msg)
 

@@ -5,33 +5,30 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt
+from i18n import tr
 
 
 def create_about_dialog(parent):
-    """Creates and shows the About dialog"""
     dialog = QDialog(parent)
-    dialog.setWindowTitle("About REasy Editor")
+    dialog.setWindowTitle(tr("AboutDialog", "About REasy Editor"))
     dialog.setFixedSize(450, 250)
     layout = QVBoxLayout(dialog)
 
     from REasy import CURRENT_VERSION
-    title_label = QLabel(f"REasy Editor v{CURRENT_VERSION}")
+    title_label = QLabel(tr("AboutDialog", "REasy Editor v{version}").format(version=CURRENT_VERSION))
     title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
     layout.addWidget(title_label, alignment=Qt.AlignHCenter)
 
     info_label = QLabel(
-        "REasy Editor is a quality of life toolkit for modders.\n\n"
-        "It supports viewing and full editing of UVAR, MSG and RSZ files.\n"
-        "\n\n"
-        "For more information, visit my GitHub page:"
+        tr("AboutDialog", "REasy Editor is a quality of life toolkit for modders.") + "\n\n" +
+        tr("AboutDialog", "It supports viewing and full editing of UVAR, MSG and RSZ files.") + "\n\n" +
+        tr("AboutDialog", "For more information, visit my GitHub page:")
     )
     info_label.setWordWrap(True)
     info_label.setAlignment(Qt.AlignCenter)
     layout.addWidget(info_label, alignment=Qt.AlignCenter)
 
-    link = QLabel(
-        '<a href="http://github.com/seifhassine">http://github.com/seifhassine</a>'
-    )
+    link = QLabel('<a href="http://github.com/seifhassine">http://github.com/seifhassine</a>')
     link.setOpenExternalLinks(True)
     layout.addWidget(link, alignment=Qt.AlignHCenter)
 
