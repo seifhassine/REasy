@@ -115,28 +115,97 @@ def create_standard_dialog(parent, title, geometry=None):
     return dialog, bg_color
 
 
-def create_search_dialog(parent, search_type):
-    prompts = {
-        'number': ('Number Search', 'Enter number to search for (32-bit integer):', -2147483648, 2147483647),
-        'text': ('Text Search', 'Enter text to search (UTF-16LE):', None, None),
-        'guid': ('GUID Search', 'Enter GUID (standard format):', None, None),
-        'hex': ('Hex Search', 'Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):', None, None)
+def create_integer_search_dialog(parent):
+    dialog = QDialog(parent)
+    dialog.setWindowTitle("Integer Search")
+    layout = QVBoxLayout(dialog)
+    
+    type_label = QLabel("Select integer type:")
+    layout.addWidget(type_label)
+    
+    integer_types = {
+        0: ("int32", -2147483648, 2147483647),
+        1: ("uint32", 0, 4294967295),
+        2: ("int64", -9223372036854775808, 9223372036854775807),
+        3: ("uint64", 0, 18446744073709551615)
     }
     
-    title, msg, min_val, max_val = prompts[search_type]
+    type_combo = QComboBox()
+    type_combo.addItems(["int32 (signed 32-bit)", "uint32 (unsigned 32-bit)", 
+                        "int64 (signed 64-bit)", "uint64 (unsigned 64-bit)"])
+    layout.addWidget(type_combo)
     
-    if search_type == 'number':
-        val, ok = QInputDialog.getInt(parent, title, msg, 0, min_val, max_val)
-    else:
-        val, ok = QInputDialog.getText(parent, title, msg)
+    value_label = QLabel("Enter value:")
+    layout.addWidget(value_label)
+    
+    value_input = QLineEdit()
+    layout.addWidget(value_input)
+    
+    def update_limits():
+        _, min_val, max_val = integer_types[type_combo.currentIndex()]
+        value_label.setText(f"Enter value ({min_val} to {max_val}):")
+    
+    type_combo.currentIndexChanged.connect(update_limits)
+    update_limits()
+    
+    button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    button_box.accepted.connect(dialog.accept)
+    button_box.rejected.connect(dialog.reject)
+    layout.addWidget(button_box)
+    
+    result = dialog.exec()
+    
+    if result == QDialog.Accepted:
+        int_type, min_val, max_val = integer_types[type_combo.currentIndex()]
         
+        try:
+            value = int(value_input.text())
+            if not (min_val <= value <= max_val):
+                raise ValueError(f"Value out of range for {int_type}")
+            
+            return (int_type, value), True
+        except ValueError as e:
+            QMessageBox.critical(parent, "Invalid Input", str(e))
+            return None, False
+    
+    return None, False
+
+def create_search_dialog(parent, search_type):
+    if search_type == 'number':
+        return create_integer_search_dialog(parent)
+    
+    prompts = {
+        'text': ('Text Search', 'Enter text to search (UTF-16LE):'),
+        'guid': ('GUID Search', 'Enter GUID (standard format):'),
+        'hex': ('Hex Search', 'Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):')
+    }
+    
+    title, msg = prompts[search_type]
+    val, ok = QInputDialog.getText(parent, title, msg)
+    
     return (val, ok) if ok else (None, False)
 
 def create_search_patterns(search_type, value):
     if search_type == 'number':
         try:
-            sbytes = struct.pack("<i", value)
-            return [sbytes]
+            int_type, actual_value = value
+            
+            format_map = {
+                'int32': 'i',
+                'uint32': 'I',
+                'int64': 'q',
+                'uint64': 'Q'
+            }
+            
+            format_char = format_map[int_type]
+            le_bytes = struct.pack('<' + format_char, actual_value)
+            be_bytes = struct.pack('>' + format_char, actual_value)
+            
+            patterns = [le_bytes]
+            if le_bytes != be_bytes:
+                patterns.append(be_bytes)
+            
+            return patterns
         except Exception as e:
             raise ValueError(f"Could not convert number: {e}")
     elif search_type == 'text':

@@ -234,6 +234,12 @@ def search_directory_for_type(parent, search_type, create_search_dialog_fn, crea
             
             for i, pattern in enumerate(patterns):
                 print(f"Search pattern {i+1}: {pattern.hex().upper()}")
+        elif search_type == 'number' and isinstance(value, tuple):
+            int_type, actual_value = value
+            rtext = f"Files containing {int_type} value {actual_value}:"
+            
+            for pattern in patterns:
+                print(f"Search pattern: {pattern.hex().upper()}")
         else:
             rtext = f"Files containing {search_type} {value}:"
             
