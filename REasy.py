@@ -1693,7 +1693,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            self.tr("RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;All Files (*.*)")
+            self.tr("RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;All Files (*.*)")
         )
         if not fn:
             return
