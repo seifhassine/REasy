@@ -172,9 +172,11 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "PAK file system support! Browse and extract game PAK files directly within REasy.\nREasy currently has the fastest PAK extraction compared to other tools."),
-            ("New", "Detailed PAK Browser dialog in \"Tools > Pak Browser\"."),
-            ("New", "Integrated PAK support in Project Manager."),
+            ("New", "RSZ: Field value search accessible from \"Find > Find RSZ Field Value\"."),
+            ("Improved", "Number search: Add support for int64 and uint32/64."),
+            ("Improved", "Directory Search: You can now double click to open result. Result window will no longer block the entire GUI."),
+            ("Fixed", "Some behaviour/motion related types for RE8. (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
+            ("Fixed", "Game Pak path was being shared across projects in project manager."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
