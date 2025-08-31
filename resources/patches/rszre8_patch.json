@@ -6251,65 +6251,65 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
 				"name": "Resource",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "Resource"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "DynamicReference",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ReferenceTreeReleaseTime",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v4",
+				"name": "DebugGuid",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Guid",
 				"size": 16,
-				"type": "Data"
+				"type": "Guid"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "AttachedTool",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "OwnerExecLine",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.ExecLine",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			}
 		],
 		"name": "via.behaviortree.BehaviorTree.CoreHandle"
@@ -26195,83 +26195,83 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v1",
+				"name": "Trees",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.BehaviorTree.CoreHandle",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
 				"name": "UserVariables",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "Resource"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ExecLine",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.ExecLine",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "ExecGroup",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.behaviortree.ExecGroup",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "PuppetMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "PuppetKeepActivation",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "ToolPuppetMode(?)",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "unknown",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "RawBytes"
 			}
 		],
 		"name": "via.behaviortree.BehaviorTree"
@@ -34694,56 +34694,56 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "DevelopDrawFillMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.FillMode",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
 				"array": true,
 				"name": "DependencyResources",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "Resource"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "Static",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v5",
+				"name": "Colliders",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.Collider",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			}
 		],
 		"name": "via.physics.Colliders"
@@ -35054,54 +35054,54 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "DevelopDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "Shape",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.Shape",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "FilterInfo",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.FilterInfo",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "Userdata",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.UserData",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": false,
 				"name": "CollisionFilterResource",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -35110,7 +35110,7 @@
 				"array": false,
 				"name": "CollisionMaterialResource",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.resource_handle",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -66842,29 +66842,29 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v14",
+				"name": "Layer",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.TreeLayer",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v15",
+				"name": "MotionBank",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.MotionBank",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v16",
+				"name": "DynamicMotionBank",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.DynamicMotionBank",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 1,
