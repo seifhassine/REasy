@@ -111,7 +111,7 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
     progress.setWindowModality(Qt.WindowModal)
     progress.show()
 
-    results_dialog = QDialog(parent)
+    results_dialog = QDialog(parent, Qt.Window)
     results_dialog.setWindowTitle("Search Results")
     results_dialog.resize(600, 400)
     layout = QVBoxLayout(results_dialog)
@@ -129,6 +129,17 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
     result_list = QListWidget()
     result_list.setSelectionMode(QListWidget.ExtendedSelection)
     result_list.keyPressEvent = handle_copy.__get__(result_list, QListWidget)
+    
+    def handle_double_click(item):
+        file_path = item.text()
+        try:
+            with open(file_path, 'rb') as f:
+                data = f.read()
+            parent.add_tab(file_path, data)
+        except Exception as e:
+            pass
+    
+    result_list.itemDoubleClicked.connect(handle_double_click)
     layout.addWidget(result_list)
 
     # Thread-safe queue for results
@@ -193,7 +204,7 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
 
     progress.close()
     if not cancel_event.is_set():
-        results_dialog.exec()
+        results_dialog.show()
 
 def search_directory_for_type(parent, search_type, create_search_dialog_fn, create_search_patterns_fn):
     """Unified directory search method"""
