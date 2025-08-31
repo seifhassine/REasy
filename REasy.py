@@ -976,6 +976,12 @@ class REasyEditorApp(QMainWindow):
         hex_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_hex", "Ctrl+H")))
         hex_act.triggered.connect(self.search_directory_for_hex)
         find_menu.addAction(hex_act)
+        
+        rsz_field_act = QAction("Find RSZ Field Value", self)
+        rsz_field_act.setObjectName("find_rsz_field_value")
+        rsz_field_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_rsz_field_value", "Ctrl+Shift+F")))
+        rsz_field_act.triggered.connect(self.open_rsz_field_value_finder)
+        find_menu.addAction(rsz_field_act)
 
         view_menu = menubar.addMenu("View")
 
@@ -1555,6 +1561,12 @@ class REasyEditorApp(QMainWindow):
 
     def search_directory_for_hex(self):
         search_directory_for_type(self, 'hex', create_search_dialog, create_search_patterns)
+    
+    def open_rsz_field_value_finder(self):
+        """Open the RSZ field value finder dialog"""
+        from ui.rsz_field_value_finder_dialog import RszFieldValueFinderDialog
+        dialog = RszFieldValueFinderDialog(self, self.settings)
+        dialog.exec()
 
     def open_find_dialog(self):
         active = self.get_active_tab()
