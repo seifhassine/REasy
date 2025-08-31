@@ -68,6 +68,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG files.
   - Specific text (UTF-16LE encoded)
   - 32-bit numbers (with hexadecimal display)
   - GUIDs (with conversion from standard format)
+  - Specific RSZ field values 
 - **Project Manager:**
  
   Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
