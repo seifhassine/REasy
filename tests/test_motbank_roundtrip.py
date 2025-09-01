@@ -4,12 +4,13 @@ import sys
 import time
 import unittest
 from pathlib import Path
-from file_handlers.motbank.motbank_file import MotbankFile
 
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent
 
 sys.path.insert(0, str(project_root))
+
+from file_handlers.motbank.motbank_file import MotbankFile
 
 
 KNOWN_GAMES = [
