@@ -40,6 +40,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | PAK       | ✅       | RE4      |
 | CFIL       | ✅       | Most titles      |
 | MOTBANK       | ✅       | Most titles      |
+| CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
   
 </div>
