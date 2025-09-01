@@ -131,6 +131,8 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @shadowcookie for consulting with misc. stuff as well as many updated file format structures. 
 
+@Ekey - PAK file decryption algorithms
+
 ## Support REasy:
 
 If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
