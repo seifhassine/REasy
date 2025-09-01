@@ -126,7 +126,7 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @don on Discord for helping out with .exe debugging related stuff.
 
-@shadowcookie for consulting with misc. stuff
+@shadowcookie for consulting with misc. stuff as well as many updated file format structures. 
 
 ## Support REasy:
 
