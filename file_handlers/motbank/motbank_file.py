@@ -18,7 +18,7 @@ class MotlistItem:
 
 	def read(self, handler: BinaryHandler, version: int):
 		self.offset = handler.read_int64()
-		if version in (3,4):
+		if version >= 3:
 			self.bank_id = handler.read_int32()
 			self.bank_type = handler.read_uint32()
 		else:
@@ -32,7 +32,7 @@ class MotlistItem:
 
 	def write(self, handler: BinaryHandler, version: int):
 		handler.write_offset_wstring(self.path)
-		if version in (3,4):
+		if version >= 3:
 			handler.write_int32(int(self.bank_id))
 			handler.write_uint32(self.bank_type)
 		else:
@@ -74,7 +74,7 @@ class MotbankFile:
 		handler.skip(8)
 		self.motlists_offset = handler.read_int64()
 		self.uvar_offset = handler.read_int64()
-		if self.version in (3,4):
+		if self.version >= 3:
 			self.jmap_offset = handler.read_int64()
 		self.motlist_count = handler.read_int32()
 
@@ -84,7 +84,7 @@ class MotbankFile:
 			with handler.seek_jump_back(self.uvar_offset):
 				self.uvar_path = handler.read_wstring()
 
-		if self.version in (3,4):
+		if self.version >= 3:
 			if self.jmap_offset == 0:
 				self.jmap_path = ""
 			else:
@@ -114,7 +114,7 @@ class MotbankFile:
 			handler.write_offset_wstring(self.uvar_path)
 		else:
 			handler.write_int64(0)
-		if self.version in (3,4):
+		if self.version >= 3:
 			if self.jmap_path:
 				handler.write_offset_wstring(self.jmap_path)
 			else:
