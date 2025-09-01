@@ -28,7 +28,7 @@ REasy GUI is currently available in English and Chinese (limited)
 <br>
 <div align="center">
 
-<sub><sup>Note: Below formats are listed according to source code. The release archive may be outdated and/or might not support them.</sup></sub>  
+<sub><sup>Note: Below formats are listed according to source code. The release archive may be outdated and might not yet support them.</sup></sub>  
 | File Type | Support | Tested On |
 |-----------|---------|-----------|
 | UVAR      | ✅       | Most Titles  |
