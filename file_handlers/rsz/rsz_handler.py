@@ -566,7 +566,7 @@ class RszViewer(QWidget):
             "Object Table", f"{len(self.scn.object_table)} items"
         )
         for i, entry in enumerate(self.scn.object_table):
-            node["children"].append(DataTreeBuilder.create_data_node(f"Entry {i}: {entry}", ""))
+            node["children"].append(DataTreeBuilder.create_data_node(f"Object {i} = Instance {entry}", ""))
         return node
 
     def _create_instance_infos(self):
@@ -577,11 +577,12 @@ class RszViewer(QWidget):
             if i == 0:
                 node["children"].append(DataTreeBuilder.create_data_node("NULL Entry", ""))
             else:
-                friendly = f"Instance[{i}]"
+                type_name = f"Instance[{i}]"
                 if self.type_registry:
                     info = self.type_registry.get_type_info(int(inst.type_id))
                     if info and "name" in info:
-                        friendly = info["name"]
+                        type_name = info["name"]
+                friendly = f"{i}: {type_name}"
                 children = [
                     DataTreeBuilder.create_data_node(f"Type: 0x{inst.type_id:08X}", ""),
                     DataTreeBuilder.create_data_node(f"CRC: 0x{inst.crc:08X}", ""),
