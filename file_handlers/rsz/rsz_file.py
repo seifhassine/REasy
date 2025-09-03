@@ -183,29 +183,20 @@ class RszPrefabInfo:
         self.string_offset, self.parent_id = struct.unpack_from("<II", data, offset)
         return offset + self.SIZE
 
-class RszUserDataInfo:
-    SIZE = 16
-    def __init__(self):
-        self.hash = 0
-        self.crc = 0
-        self.string_offset = 0  # 8 bytes (uint64)
-    def parse(self, data: bytes, offset: int) -> int:
-        if offset + self.SIZE > len(data):
-            raise ValueError(f"Truncated userdata info at 0x{offset:X}")
-        self.hash, self.crc, self.string_offset = struct.unpack_from("<IIQ", data, offset)
-        return offset + self.SIZE
-
 # RSZUserDataInfos – each entry is 16 bytes.
-class RszRSZUserDataInfo:
+class RSZUserDataInfo:
     SIZE = 16
     def __init__(self):
         self.instance_id = 0   # 4 bytes: which instance this userdata is associated with
         self.hash = 0          # 4 bytes: hash
         self.string_offset = 0 # 8 bytes: offset for the userdata string (uint64)
-    def parse(self, data: bytes, offset: int) -> int:
+    def parse(self, data: bytes, offset: int, is_rszuserdata: bool = True) -> int:
         if offset + self.SIZE > len(data):
             raise ValueError(f"Truncated RSZUserData info at 0x{offset:X}")
-        self.instance_id, self.hash, self.string_offset = struct.unpack_from("<IIQ", data, offset)
+        if is_rszuserdata:
+            self.instance_id, self.hash, self.string_offset = struct.unpack_from("<IIQ", data, offset)
+        else:
+            self.hash, _, self.string_offset = struct.unpack_from("<IIQ", data, offset)
         return offset + self.SIZE
 
 class RszRSZHeader:
@@ -446,8 +437,8 @@ class RszFile:
 
     def _parse_userdata_infos(self, data):
         for _ in range(self.header.userdata_count):
-            ui = RszUserDataInfo()
-            self._current_offset = ui.parse(data, self._current_offset)
+            ui = RSZUserDataInfo()
+            self._current_offset = ui.parse(data, self._current_offset, is_rszuserdata=False)
             self.userdata_infos.append(ui)
         self._current_offset = _align(self._current_offset, 16)
 
@@ -531,7 +522,7 @@ class RszFile:
         """Parse standard RSZ userdata entries (16 bytes each)"""
         self.rsz_userdata_infos = []
         for _ in range(self.rsz_header.userdata_count):
-            rui = RszRSZUserDataInfo()
+            rui = RSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
             if rui.string_offset != 0:
                 abs_offset = self.header.data_offset + rui.string_offset
@@ -1152,7 +1143,7 @@ class RszFile:
         userdata_info_tbl_offset = len(out)
         for ui in self.userdata_infos:
             ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
 
         # Write strings in order of their offsets
         string_entries = []
@@ -1386,7 +1377,7 @@ class RszFile:
         
         for ui in self.userdata_infos:
             ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
 
         # Write strings in order of their offsets
         string_entries = []
@@ -1587,7 +1578,7 @@ class RszFile:
         
         for ui in self.userdata_infos:
             ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, ui.crc, ui.string_offset)
+            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
 
         # Write strings in order of their offsets
         string_entries = []

@@ -1,11 +1,12 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QTreeView, QApplication, QSlider, QToolButton)
+                              QTreeView, QApplication, QSlider, QToolButton, QInputDialog)
 from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntValidator, QColor, QPalette, QFontMetrics
 import uuid
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
+from file_handlers.pyside.component_selector import ComponentSelectorDialog
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -1064,6 +1065,11 @@ class UserDataInput(BaseValueWidget):
         self.line_edit.setMinimumWidth(200) 
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
+        self.modify_button = QToolButton()
+        self.modify_button.setText("Modify…")
+        self.modify_button.setToolTip("Edit userdata string and instance type")
+        self.modify_button.clicked.connect(self._on_modify_clicked)
+        self.layout.addWidget(self.modify_button)
         self.layout.addStretch()
         self.line_edit.textChanged.connect(self._on_value_changed)
 
@@ -1078,6 +1084,74 @@ class UserDataInput(BaseValueWidget):
             self._data.string = text
             self.valueChanged.emit(text)
             self.mark_modified()
+
+    def _find_viewer(self):
+        parent_widget = self
+        while parent_widget:
+            parent_widget = parent_widget.parent()
+            if hasattr(parent_widget, 'scn') and hasattr(parent_widget, 'handler'):
+                return parent_widget
+        return None
+
+    def _on_modify_clicked(self):
+        viewer = self._find_viewer()
+        if not viewer or not hasattr(viewer, 'scn'):
+            return
+        scn = viewer.scn
+        if getattr(scn, 'has_embedded_rsz', False):
+            return
+
+        current_instance_id = getattr(self._data, 'value', 0) or 0
+        default_type_name = None
+        default_string = getattr(self._data, 'string', '') or ''
+
+        if current_instance_id > 0 and current_instance_id < len(scn.instance_infos):
+            try:
+                type_id = scn.instance_infos[current_instance_id].type_id
+                if viewer.type_registry:
+                    tinfo = viewer.type_registry.get_type_info(type_id)
+                    if tinfo and 'name' in tinfo:
+                        default_type_name = tinfo['name']
+            except Exception:
+                pass
+            try:
+                rui = scn._rsz_userdata_dict.get(current_instance_id)
+                if rui:
+                    default_string = scn._rsz_userdata_str_map.get(rui, default_string)
+            except Exception:
+                pass
+        else:
+            default_type_name = getattr(self._data, 'orig_type', '') or ''
+
+        new_string, ok = QInputDialog.getText(
+            self,
+            "Modify UserData String",
+            "Enter new UserData string:",
+            QLineEdit.Normal,
+            default_string
+        )
+        if not ok:
+            return
+
+        type_dialog = ComponentSelectorDialog(self, viewer.type_registry)
+        type_dialog.setWindowTitle("Select UserData Instance Type")
+        if default_type_name:
+            try:
+                type_dialog.search_input.setText(default_type_name)
+            except Exception:
+                pass
+        if not type_dialog.exec_():
+            return
+        selected_type = type_dialog.get_selected_component()
+        if not selected_type:
+            return
+
+        try:
+            success = viewer.object_operations.modify_userdata_field(self._data, new_string, selected_type)
+            if success:
+                self.line_edit.setText(new_string)
+        except Exception:
+            pass
 
 class BoolInput(BaseValueWidget):
     valueChanged = Signal(bool)

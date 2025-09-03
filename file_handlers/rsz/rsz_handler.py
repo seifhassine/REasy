@@ -903,7 +903,7 @@ class RszViewer(QWidget):
         if embedded_context:
             return self._handle_embedded_reference(label, ref_id, embedded_context, data_obj)
         else:
-            return self._handle_standard_reference(label, ref_id)
+            return self._handle_standard_reference(label, ref_id, data_obj)
 
     def _handle_embedded_reference(self, field_name, ref_id, embedded_context, data_obj):
         """Handle reference in embedded context"""
@@ -987,19 +987,52 @@ class RszViewer(QWidget):
         return wrapper
     
     @cycle_guard
-    def _handle_standard_reference(self, field_name, ref_id):
+    def _handle_standard_reference(self, field_name, ref_id, data_obj=None):
         scn = self.scn
         
         # UserData reference
         if ref_id in scn._rsz_userdata_set:
-            rui = scn._rsz_userdata_dict.get(ref_id)
-            if rui and hasattr(rui, 'embedded_instances') and rui.embedded_instances:
-                return self._create_direct_embedded_usr_node(field_name, rui)
-            else:
+            try:
+                from file_handlers.rsz.rsz_data_types import UserDataData
+            except Exception:
+                UserDataData = None
+
+            if UserDataData is not None and isinstance(data_obj, UserDataData) and not getattr(self.scn, 'has_embedded_rsz', False):
+                rui = scn._rsz_userdata_dict.get(ref_id)
                 display_value = self.name_helper.get_userdata_display_value(ref_id)
+                try:
+                    if rui:
+                        s = scn.get_rsz_userdata_string(rui)
+                        if s:
+                            data_obj.string = s
+                    elif display_value:
+                        data_obj.string = display_value
+                except Exception:
+                    pass
                 return DataTreeBuilder.create_data_node(
-                    f"{field_name}: {display_value}", "", None, None, []
+                    f"{field_name}:", str(getattr(data_obj, 'string', '') or display_value), "UserDataData", data_obj
                 )
+            else:
+                rui = scn._rsz_userdata_dict.get(ref_id)
+                if rui and hasattr(rui, 'embedded_instances') and rui.embedded_instances:
+                    return self._create_direct_embedded_usr_node(field_name, rui)
+                else:
+                    display_value = self.name_helper.get_userdata_display_value(ref_id)
+                    return DataTreeBuilder.create_data_node(
+                        f"{field_name}: {display_value}", "", None, None, []
+                    )
+        
+        try:
+            from file_handlers.rsz.rsz_data_types import UserDataData
+        except Exception:
+            UserDataData = None
+        if (UserDataData is not None and isinstance(data_obj, UserDataData)
+            and not getattr(self.scn, 'has_embedded_rsz', False)
+            and (ref_id == 0)):
+            display_value = getattr(data_obj, 'string', '') or ''
+            return DataTreeBuilder.create_data_node(
+                f"{field_name}:", display_value, "UserDataData", data_obj
+            )
         
         # Object reference
         type_name = self.name_helper.get_type_name_for_instance(ref_id)
@@ -1424,6 +1457,25 @@ class RszViewer(QWidget):
                 rsz_indices_to_remove.append(i)
                 rsz_userdata_to_remove.append(rui)
         
+        userdata_infos_to_remove = []
+        for rui in rsz_userdata_to_remove:
+            rui_string = self.scn._rsz_userdata_str_map.get(rui, "")
+            
+            string_still_in_use = False
+            for other_rui in self.scn.rsz_userdata_infos:
+                if other_rui not in rsz_userdata_to_remove:
+                    other_string = self.scn._rsz_userdata_str_map.get(other_rui, "")
+                    if other_string == rui_string:
+                        string_still_in_use = True
+                        break
+            
+            if not string_still_in_use:
+                for ui in list(self.scn.userdata_infos):
+                    ui_string = self.scn._userdata_str_map.get(ui, "")
+                    if ui_string == rui_string and ui not in userdata_infos_to_remove:
+                        userdata_infos_to_remove.append(ui)
+                        break 
+        
         # Remove from mapping tables
         if instance_id in self.scn._rsz_userdata_dict:
             del self.scn._rsz_userdata_dict[instance_id]
@@ -1435,17 +1487,14 @@ class RszViewer(QWidget):
             if rui in self.scn._rsz_userdata_str_map:
                 del self.scn._rsz_userdata_str_map[rui]
         
-        # Only remove the userdata_infos that correspond to the RSZ UserData being removed
-        # They should be in the same order, so we can use the same indices
         for idx in sorted(rsz_indices_to_remove, reverse=True):
-            # Remove the RSZ UserData
             del self.scn.rsz_userdata_infos[idx]
-            
-            if idx < len(self.scn.userdata_infos):
-                ui = self.scn.userdata_infos[idx]
-                if ui in self.scn._userdata_str_map:
-                    del self.scn._userdata_str_map[ui]
-                del self.scn.userdata_infos[idx]
+        
+        for ui in userdata_infos_to_remove:
+            if ui in self.scn._userdata_str_map:
+                del self.scn._userdata_str_map[ui]
+            if ui in self.scn.userdata_infos:
+                self.scn.userdata_infos.remove(ui)
 
     def _update_instance_references_after_deletion(self, deleted_id, deleted_nested_ids=None):
         if deleted_nested_ids is None:

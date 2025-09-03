@@ -40,15 +40,21 @@ class BetterFindDialog(QDialog):
         if isinstance(raw, dict):
             obj = raw.get("obj")
             if obj:
+                # strings
+                if hasattr(obj, "string"):
+                    try:
+                        s = str(obj.string)
+                        if s:
+                            return s
+                    except Exception:
+                        pass
+
+                if hasattr(obj, "guid_str"):
+                    return obj.guid_str
+
                 # numeric scalars
                 if hasattr(obj, "value"):
                     return str(obj.value)
-
-                # strings
-                if hasattr(obj, "guid_str"):
-                    return obj.guid_str
-                if hasattr(obj, "string"):
-                    return str(obj.string)
 
                 # vectors / ranges
                 if all(hasattr(obj, attr) for attr in ("x", "y")):

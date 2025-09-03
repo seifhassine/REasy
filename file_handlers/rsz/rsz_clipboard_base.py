@@ -8,7 +8,7 @@ from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, ArrayData
 )
-from file_handlers.rsz.rsz_file import RszRSZUserDataInfo, RszUserDataInfo, RszInstanceInfo
+from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszInstanceInfo
 from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
 
 
@@ -803,9 +803,12 @@ class RszClipboardBase(ABC):
             new_rui.value = string_value
             new_rui.modified = True
         else:
-            new_rui = RszRSZUserDataInfo()
+            new_rui = RSZUserDataInfo()
             new_rui.instance_id = instance_id
-            new_rui.hash = hash_value
+            if 0 <= instance_id < len(viewer.scn.instance_infos):
+                new_rui.hash = viewer.scn.instance_infos[instance_id].type_id
+            else:
+                new_rui.hash = hash_value
             new_rui.string_offset = 0
 
         viewer.scn._rsz_userdata_set.add(instance_id)
@@ -821,8 +824,11 @@ class RszClipboardBase(ABC):
                     break
             
             if not existing_ui:
-                new_ui = RszUserDataInfo()
-                new_ui.hash = hash_value
+                new_ui = RSZUserDataInfo()
+                if 0 <= instance_id < len(viewer.scn.instance_infos):
+                    new_ui.hash = viewer.scn.instance_infos[instance_id].type_id
+                else:
+                    new_ui.hash = hash_value
                 new_ui.string_offset = 0
                 viewer.scn.userdata_infos.append(new_ui)
                 viewer.scn._userdata_str_map[new_ui] = string_value
