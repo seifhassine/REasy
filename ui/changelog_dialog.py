@@ -172,11 +172,22 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "RSZ: Field value search accessible from \"Find > Find RSZ Field Value\"."),
-            ("Improved", "Number search: Add support for int64 and uint32/64."),
-            ("Improved", "Directory Search: You can now double click to open result. Result window will no longer block the entire GUI."),
-            ("Fixed", "Some behaviour/motion related types for RE8. (by <a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
-            ("Fixed", "Game Pak path was being shared across projects in project manager."),
+            ("New", "Added support for .motbank files"),
+            ("New", "Added support for .cfil files"),
+            ("New", "Revamped find dialog and made find dialogs of main window shared between its tabs"),
+            ("New", "Normal userdata can now be fully modified."),
+            
+            ("Improved", "RSZ: Improved UI for object table and instance infos in Advanced Information node"),
+            ("Improved", "RSZ: Simplified component deletion process"),
+            
+            ("Fixed", "RSZ: Fixed creation of string userdata array element and added selection of userdata instance type"),
+            ("Fixed", "RSZ: Fixed creation of normal userdata array elements, and cleaned up userdata related code"),
+            ("Fixed", "RSZ: Fixed edge case leading to deletion of unrelated instances when deleting a component"),
+            ("Fixed", "Some RE8 RSZ template fixes (<a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
+
+            ("Updated", "Updated and added game file lists for RE4, RE8, DMC5, and SF6"),
+            ("Updated", "Updated enums for SF6 and Monster Hunter Wilds"),
+            ("Updated", "Updated RSZ template for SF6"),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
