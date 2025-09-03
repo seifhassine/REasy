@@ -246,6 +246,7 @@ class FileTab:
     def __init__(self, parent_notebook, filename=None, data=None, app=None):
         self.parent_notebook = parent_notebook
         self.notebook_widget = QWidget()
+        self.notebook_widget.parent_tab = self
         self.filename = filename
         self.handler = None
         self.metadata_map = {}
@@ -684,14 +685,25 @@ class FileTab:
         if isinstance(self.handler, MsgHandler):
                 QMessageBox.information(self.notebook_widget, "Search in MSG", "MSG files have a built-in search at the top of the editor. Please use that search bar.")
                 return
-        if hasattr(self, "_find_dialog") and self._find_dialog:
-            try:
-                if self._find_dialog.isVisible():
-                    self._find_dialog.close()
-            except RuntimeError:
-                pass
-        self._find_dialog = BetterFindDialog(self, parent=self.notebook_widget)
-        self._find_dialog.show()
+        parent_window = self.notebook_widget.window()
+        if isinstance(parent_window, QMainWindow) and parent_window.__class__.__name__ == 'FloatingTabWindow':
+            if hasattr(self, "_find_dialog") and self._find_dialog:
+                try:
+                    if self._find_dialog.isVisible():
+                        self._find_dialog.raise_()
+                        self._find_dialog.activateWindow()
+                        return
+                    else:
+                        self._find_dialog.close()
+                except RuntimeError:
+                    pass
+            self._find_dialog = BetterFindDialog(self, parent=None, shared_mode=False)
+            if self.app and hasattr(self.app, 'dark_mode'):
+                self._find_dialog.set_dark_mode(self.app.dark_mode)
+            self._find_dialog.show()
+        else:
+            if self.app:
+                self.app.open_find_dialog()
 
     def find_matching_backups(self):
         """Find all backup files that match the current filename"""
@@ -805,6 +817,7 @@ class REasyEditorApp(QMainWindow):
         main_layout.addWidget(self.notebook)
 
         self.tabs = weakref.WeakValueDictionary()
+        self._shared_find_dialog = None
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
@@ -1210,6 +1223,9 @@ class REasyEditorApp(QMainWindow):
         
         self.notebook.set_dark_mode(state)
         self._update_tab_viewers(state)
+        
+        if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
+            self._shared_find_dialog.set_dark_mode(state)
 
     def _apply_style(self, colors):
         self.setStyleSheet(f"""
@@ -1251,6 +1267,12 @@ class REasyEditorApp(QMainWindow):
         for tab in self.tabs.values():
             if hasattr(tab, "dark_mode"):
                 tab.dark_mode = dark_mode
+
+            if hasattr(tab, '_find_dialog') and tab._find_dialog:
+                try:
+                    tab._find_dialog.set_dark_mode(dark_mode)
+                except RuntimeError:
+                    pass
             
             if tab.handler:
                 tab.handler.dark_mode = dark_mode
@@ -1317,6 +1339,11 @@ class REasyEditorApp(QMainWindow):
         save_settings(self.settings)
 
     def closeEvent(self, event):
+        if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
+            try:
+                self._shared_find_dialog.close()
+            except RuntimeError:
+                pass
         for tab in self.tabs.values():
             if tab.modified:
                 ans = QMessageBox.question(
@@ -1334,7 +1361,7 @@ class REasyEditorApp(QMainWindow):
                         event.ignore()
                         return
                 tab.modified = False
-
+        
         event.accept()
 
     def update_from_app_settings(self):
@@ -1603,10 +1630,64 @@ class REasyEditorApp(QMainWindow):
 
     def open_find_dialog(self):
         active = self.get_active_tab()
-        if active:
-            active.open_find_dialog()
-        else:
+        if not active:
             QMessageBox.critical(self, "Error", "No active tab for searching.")
+            return
+        
+        if isinstance(active.handler, MsgHandler):
+            QMessageBox.information(self, "Search in MSG", "MSG files have a built-in search at the top of the editor. Please use that search bar.")
+            return
+            
+        for window in self.notebook._floating_windows:
+            if window.page == active.notebook_widget:
+                active.open_find_dialog()
+                return
+        if not self._shared_find_dialog or not isinstance(self._shared_find_dialog, BetterFindDialog):
+            self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=None, shared_mode=True)
+            self._shared_find_dialog.set_dark_mode(self.dark_mode)
+            self.notebook.currentChanged.connect(self._on_tab_changed_for_find)
+        else:
+            self._shared_find_dialog.set_file_tab(active)
+            
+        self._shared_find_dialog.show()
+        self._shared_find_dialog.raise_()
+        self._shared_find_dialog.activateWindow()
+
+    def _on_tab_changed_for_find(self):
+        """Update the shared find dialog when tab changes"""
+        if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog and self._shared_find_dialog.isVisible():
+            active = self.get_active_tab()
+            if active:
+                is_detached = False
+                for window in self.notebook._floating_windows:
+                    if window.page == active.notebook_widget:
+                        is_detached = True
+                        break
+                
+                if not is_detached:
+                    self._shared_find_dialog.set_file_tab(active)
+    
+    def _check_and_close_shared_find_dialog(self):
+        """Close the shared find dialog if no tabs are left in the main window"""
+        has_main_tabs = False
+        for i in range(self.notebook.count()):
+            widget = self.notebook.widget(i)
+            if widget:
+                is_detached = False
+                for window in self.notebook._floating_windows:
+                    if window.page == widget:
+                        is_detached = True
+                        break
+                if not is_detached:
+                    has_main_tabs = True
+                    break
+        
+        if not has_main_tabs and hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
+            try:
+                if self._shared_find_dialog.isVisible():
+                    self._shared_find_dialog.close()
+            except RuntimeError:
+                pass
 
     def add_tab(self, filename=None, data=None):
         if filename:
@@ -1789,6 +1870,7 @@ class REasyEditorApp(QMainWindow):
             tab.tree = None
             
         self.notebook.removeTab(index)
+        self._check_and_close_shared_find_dialog()
 
     def show_about(self):
         create_about_dialog(self)

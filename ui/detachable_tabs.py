@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QTabWidget, QMainWindow, QWidget, QMenu, QToolButton, QTabBar
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtWidgets import QTabWidget, QMainWindow, QWidget, QToolButton, QTabBar, QMessageBox
 
 
 class FloatingTabWindow(QMainWindow):
@@ -14,6 +14,12 @@ class FloatingTabWindow(QMainWindow):
 		self.setWindowTitle(title)
 		self.setCentralWidget(page)
 		self.page.show()
+		
+		self.file_tab = None
+		if hasattr(page, 'parent_tab'):
+			self.file_tab = page.parent_tab
+		
+		self.setFocusPolicy(Qt.StrongFocus)
 		main_window = self._get_main_window()
 		if main_window is not None:
 			self.setStyleSheet(main_window.styleSheet())
@@ -26,9 +32,10 @@ class FloatingTabWindow(QMainWindow):
 		main_window = self._get_main_window()
 		if main_window is not None:
 			self._mirror_menubar_from(main_window)
+			self._create_find_action(main_window)
 			actions = self._collect_all_actions(main_window)
-			self.addActions(actions)
 			for act in actions:
+				self.addAction(act)
 				act.setShortcutContext(Qt.ApplicationShortcut)
 
 	def _get_main_window(self):
@@ -38,6 +45,13 @@ class FloatingTabWindow(QMainWindow):
 		self.close()
 
 	def closeEvent(self, event):
+		if self.file_tab and hasattr(self.file_tab, '_find_dialog'):
+			try:
+				if self.file_tab._find_dialog and self.file_tab._find_dialog.isVisible():
+					self.file_tab._find_dialog.close()
+			except RuntimeError:
+				pass
+		
 		page = self.centralWidget()
 		if page is not None:
 			self.takeCentralWidget()
@@ -57,26 +71,79 @@ class FloatingTabWindow(QMainWindow):
 				continue
 			if src_menu.title() == "Tab":
 				continue
-			new_menu = dst_mb.addMenu(src_menu.title())
-			for act in src_menu.actions():
-				if act.isSeparator():
-					new_menu.addSeparator()
-				elif act.menu():
-					sub = new_menu.addMenu(act.menu().title())
-					for sub_act in act.menu().actions():
-						if sub_act.isSeparator():
-							sub.addSeparator()
+			if src_menu.title() == "Find":
+				new_menu = dst_mb.addMenu(src_menu.title())
+				if hasattr(self, '_find_action'):
+					new_menu.addAction(self._find_action)
+				new_menu.addSeparator()
+				for act in src_menu.actions():
+					if act.objectName() != "find_search":
+						if act.isSeparator():
+							new_menu.addSeparator()
 						else:
-							sub.addAction(sub_act)
-				else:
-					new_menu.addAction(act)
+							new_menu.addAction(act)
+			else:
+				new_menu = dst_mb.addMenu(src_menu.title())
+				for act in src_menu.actions():
+					if act.isSeparator():
+						new_menu.addSeparator()
+					elif act.menu():
+						sub = new_menu.addMenu(act.menu().title())
+						for sub_act in act.menu().actions():
+							if sub_act.isSeparator():
+								sub.addSeparator()
+							else:
+								sub.addAction(sub_act)
+					else:
+						new_menu.addAction(act)
 
+	def _create_find_action(self, main_window):
+		find_act = QAction("Find", self)
+		find_act.setObjectName("find_search_detached")
+		
+		if hasattr(main_window, 'settings'):
+			shortcut = main_window.settings.get("keyboard_shortcuts", {}).get("find_search", "Ctrl+F")
+		else:
+			shortcut = "Ctrl+F"
+		
+		find_act.setShortcut(QKeySequence(shortcut))
+		find_act.setShortcutContext(Qt.WidgetWithChildrenShortcut)
+		find_act.triggered.connect(self.open_find_dialog)
+		
+		self.addAction(find_act)
+		self._find_action = find_act
+	
 	def _collect_all_actions(self, main_window: QMainWindow):
 		actions = []
 		for a in main_window.findChildren(QAction):
 			if not a.shortcut().isEmpty() or a.parent() == main_window.menuBar():
+				if a.objectName() == "find_search":
+					continue
 				actions.append(a)
 		return actions
+	
+	def open_find_dialog(self):
+		if self.file_tab:
+			self.file_tab.open_find_dialog()
+		else:
+			page = self.centralWidget()
+			if page:
+				main_window = self._get_main_window()
+				if main_window and hasattr(main_window, 'tabs'):
+					for tab in main_window.tabs.values():
+						if hasattr(tab, 'notebook_widget') and tab.notebook_widget == page:
+							self.file_tab = tab
+							tab.open_find_dialog()
+							return
+			QMessageBox.warning(self, "Warning", "Cannot open find dialog for this tab")
+	
+	def keyPressEvent(self, event):
+		if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_F:
+			self.open_find_dialog()
+			event.accept()
+			return
+		
+		super().keyPressEvent(event)
 
 
 class DetachTabBar(QTabBar):
@@ -155,7 +222,12 @@ class CustomNotebook(QTabWidget):
 		win = FloatingTabWindow(page, title, self, index, getattr(self, '_set_icon_callback', None))
 		self._floating_windows.append(win)
 		win.show()
+		win.raise_()
+		win.activateWindow()
 		self._refresh_detach_buttons()
+		
+		if self.app_instance and hasattr(self.app_instance, '_check_and_close_shared_find_dialog'):
+			self.app_instance._check_and_close_shared_find_dialog()
 
 
 	def _refresh_detach_buttons(self):

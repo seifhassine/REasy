@@ -1,4 +1,5 @@
-from PySide6.QtCore import Qt, QModelIndex
+import os
+from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
@@ -104,13 +105,21 @@ class BetterFindDialog(QDialog):
         return False, value_blob
 
     def _get_tree(self):
+        if self.shared_mode:
+            self._tree_for_tab = None
+        
         if self._tree_for_tab is not None:
             return self._tree_for_tab
+        
+        current_tab = self.file_tab
+        if not current_tab:
+            return None
+            
         try:
-            if self.file_tab.viewer and hasattr(self.file_tab.viewer, "tree"):
-                self._tree_for_tab = self.file_tab.viewer.tree
+            if current_tab.viewer and hasattr(current_tab.viewer, "tree"):
+                self._tree_for_tab = current_tab.viewer.tree
             else:
-                self._tree_for_tab = self.file_tab.tree
+                self._tree_for_tab = current_tab.tree
         except Exception:
             self._tree_for_tab = None
         return self._tree_for_tab
@@ -118,15 +127,21 @@ class BetterFindDialog(QDialog):
     # ------------------------------------------------------------------ #
     # GUI
     # ------------------------------------------------------------------ #
-    def __init__(self, file_tab, parent=None):
-        super().__init__(parent, Qt.Window | Qt.WindowStaysOnTopHint)
+    def __init__(self, file_tab=None, parent=None, shared_mode=False):
+        super().__init__(None)
+        
+        self.setWindowFlags(Qt.Tool | Qt.WindowStaysOnTopHint)
         self.setWindowTitle("Find in Tree")
         self.resize(460, 330)
+        self.setWindowModality(Qt.NonModal)
 
+        self.shared_mode = shared_mode
         self.file_tab = file_tab
-        self.app = file_tab.app
+        self.app = file_tab.app if file_tab else None
+        self.dark_mode = self.app.dark_mode if self.app and hasattr(self.app, 'dark_mode') else False
         
         self._tree_for_tab = None
+        self._raising_parent = False
 
         self.results = []
         self.current_index = -1
@@ -187,11 +202,15 @@ class BetterFindDialog(QDialog):
         nav.addWidget(QPushButton("Close", clicked=self.close))
         root.addLayout(nav)
 
-        # status
         self.status = QLabel("")
         root.addWidget(self.status)
+        
+        self._apply_theme()
+        self.search_entry.setFocus()
 
     def find_all(self):
+        self.raise_parent()
+        
         search_text = self.search_entry.text().strip()
         if not search_text:
             self.status.setText("Please enter search text")
@@ -427,6 +446,9 @@ class BetterFindDialog(QDialog):
     def _select(self, i):
         if not (0 <= i < len(self.results)):
             return
+        
+        self.raise_parent()
+        
         self.current_index = i
         res = self.results[i]
         self.preview.setPlainText(
@@ -454,11 +476,173 @@ class BetterFindDialog(QDialog):
             return
         self._select((self.current_index - 1) % len(self.results))
 
-    def showEvent(self, e): 
-        super().showEvent(e)
-        self.search_entry.setFocus()
+    def set_file_tab(self, file_tab):
+        """Update the current file tab (for shared mode)"""
+        if self.file_tab == file_tab:
+            return  # No change needed
+            
+        self.file_tab = file_tab
+        self.app = file_tab.app if file_tab else None
+        self._tree_for_tab = None
+        # Clear results when switching tabs
+        if self.shared_mode:
+            self.results.clear()
+            self.result_list.clear()
+            self.current_index = -1
+            self.preview.clear()
+            self.status.setText("Tab switched - search cleared")
+            # Update window title to show current tab
+            if file_tab and hasattr(file_tab, 'filename'):
+                tab_name = os.path.basename(file_tab.filename) if file_tab.filename else "Untitled"
+                self.setWindowTitle(f"Find in Tree - {tab_name}")
+            else:
+                self.setWindowTitle("Find in Tree")
+    
+    def set_dark_mode(self, dark_mode):
+        self.dark_mode = dark_mode
+        self._apply_theme()
+    
+    def _apply_theme(self):
+        if self.dark_mode:
+            colors = {
+                "bg": "#2b2b2b",
+                "fg": "#ffffff",
+                "input_bg": "#3b3b3b",
+                "list_bg": "#353535",
+                "border": "#555555",
+                "highlight": "#ff851b",
+                "button_bg": "#404040",
+                "button_hover": "#4a4a4a",
+                "selection": "rgba(255, 133, 27, 0.3)"
+            }
+        else:
+            colors = {
+                "bg": "#f5f5f5",
+                "fg": "#000000",
+                "input_bg": "#ffffff",
+                "list_bg": "#ffffff",
+                "border": "#cccccc",
+                "highlight": "#ff851b",
+                "button_bg": "#e0e0e0",
+                "button_hover": "#d0d0d0",
+                "selection": "rgba(255, 133, 27, 0.2)"
+            }
+        
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {colors['bg']};
+                color: {colors['fg']};
+            }}
+            QLabel {{
+                color: {colors['fg']};
+            }}
+            QLineEdit {{
+                background-color: {colors['input_bg']};
+                color: {colors['fg']};
+                border: 1px solid {colors['border']};
+                padding: 5px;
+                border-radius: 3px;
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {colors['highlight']};
+            }}
+            QRadioButton, QCheckBox {{
+                color: {colors['fg']};
+                spacing: 5px;
+            }}
+            QRadioButton::indicator, QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+                background-color: {colors['input_bg']};
+                border: 1px solid {colors['border']};
+                border-radius: 2px;
+            }}
+            QRadioButton::indicator:checked, QCheckBox::indicator:checked {{
+                background-color: {colors['highlight']};
+                border-color: {colors['highlight']};
+            }}
+            QRadioButton::indicator {{
+                border-radius: 8px;
+            }}
+            QListWidget {{
+                background-color: {colors['list_bg']};
+                color: {colors['fg']};
+                border: 1px solid {colors['border']};
+                border-radius: 3px;
+                padding: 2px;
+            }}
+            QListWidget::item {{
+                padding: 3px;
+                border-radius: 2px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {colors['selection']};
+                color: {colors['fg']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {colors['button_hover']};
+            }}
+            QPlainTextEdit {{
+                background-color: {colors['input_bg']};
+                color: {colors['fg']};
+                border: 1px solid {colors['border']};
+                border-radius: 3px;
+                padding: 5px;
+                font-family: monospace;
+            }}
+            QPushButton {{
+                background-color: {colors['button_bg']};
+                color: {colors['fg']};
+                border: 1px solid {colors['border']};
+                padding: 6px 12px;
+                border-radius: 3px;
+                min-width: 80px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors['button_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {colors['border']};
+            }}
+            QSplitter::handle {{
+                background-color: {colors['border']};
+                height: 3px;
+            }}
+        """)
+    
+    def raise_parent(self):
+        if self.shared_mode or self._raising_parent:
+            return
+            
+        self._raising_parent = True
+        
+        try:
+            if self.file_tab and hasattr(self.file_tab, 'notebook_widget'):
+                parent_window = self.file_tab.notebook_widget.window()
+                if parent_window and parent_window.__class__.__name__ == 'FloatingTabWindow':
+                    parent_window.raise_()
+                    QTimer.singleShot(10, self._refocus_dialog)
+        finally:
+            QTimer.singleShot(50, lambda: setattr(self, '_raising_parent', False))
+    
+    def _refocus_dialog(self):
+        """Refocus the dialog and its search field"""
+        self.raise_()
+        self.activateWindow()
+        if hasattr(self, 'search_entry'):
+            self.search_entry.setFocus()
+    
+    def showEvent(self, event):
+        """Raise parent once when dialog is first shown"""
+        super().showEvent(event)
+        if not hasattr(self, '_shown_once'):
+            self._shown_once = True
+            self.raise_parent()
+        QTimer.singleShot(20, lambda: self.search_entry.setFocus() if hasattr(self, 'search_entry') else None)
+    
     def closeEvent(self, e):
         self.results.clear()
         self.result_list.clear()
-        self.file_tab = self.app = None
+        if not self.shared_mode:
+            self.file_tab = self.app = None
         super().closeEvent(e)
