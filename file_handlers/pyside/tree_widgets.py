@@ -691,6 +691,7 @@ class AdvancedTreeView(QTreeView):
             is_normal_rsz = not parent.scn.has_embedded_rsz
             if is_userdata_array and is_normal_rsz:
                 from PySide6.QtWidgets import QInputDialog, QLineEdit
+                from file_handlers.pyside.component_selector import ComponentSelectorDialog
                 default_text = element_type or ""
                 text, ok = QInputDialog.getText(
                     self,
@@ -703,6 +704,24 @@ class AdvancedTreeView(QTreeView):
                     userdata_string = text
                 else: 
                     return
+                
+                type_dialog = ComponentSelectorDialog(self, parent.type_registry)
+                type_dialog.setWindowTitle("Select UserData Instance Type")
+                
+                if element_type:
+                    try:
+                        type_dialog.search_input.setText(element_type)
+                    except Exception:
+                        pass
+                
+                if not type_dialog.exec_():
+                    return
+                    
+                selected_type = type_dialog.get_selected_component()
+                if not selected_type:
+                    return
+                
+                element_type = selected_type
 
         new_element = creator(
             element_type, data_obj, embedded_context, 

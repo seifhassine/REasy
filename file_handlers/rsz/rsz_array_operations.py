@@ -68,11 +68,19 @@ class RszArrayOperations:
         # Ensure we never use 0 as instance_id
         if next_instance_id == 0:
             next_instance_id = 1
+        
+        final_string = userdata_string if userdata_string is not None else element_type
             
-        instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id, userdata_string)
+        instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id, final_string)
         
         if instance_id is not None and instance_id >= 0:
             userdata = UserDataData(instance_id, userdata_string or "", element_type)
+            
+            if not hasattr(self.scn, 'has_embedded_rsz') or not self.scn.has_embedded_rsz:
+                crc_val = int(type_info.get("crc", "0"), 16) if type_info else 0
+                object_ops._ensure_header_userdata_string(final_string, type_id, crc_val)
+                
+            userdata = UserDataData(instance_id, final_string, element_type)
             userdata._container_array = array_data
             if hasattr(userdata, '_container_array') and userdata._container_array:
                 userdata._container_array.modified = True
