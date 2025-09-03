@@ -774,31 +774,19 @@ class RszObjectOperations:
         
         object_table_index = -1
         owner_go = None
-        
-        if owner_go_id is not None:
-            owner_go = next((go for go in self.scn.gameobjects if go.id == owner_go_id), None)
-            if owner_go:
-                for comp_index in range(1, owner_go.component_count + 1):
-                    comp_object_id = owner_go.id + comp_index
-                    if (comp_object_id < len(self.scn.object_table) and 
-                        self.scn.object_table[comp_object_id] == component_instance_id):
-                        object_table_index = comp_object_id
-                        break
-        
+    
+        for i, instance_id in enumerate(self.scn.object_table):
+            if instance_id == component_instance_id:
+                object_table_index = i
+                break
+
         if object_table_index < 0:
-            for i, instance_id in enumerate(self.scn.object_table):
-                if instance_id == component_instance_id:
-                    object_table_index = i
-                    break
-                    
-            if object_table_index < 0:
-                raise ValueError(f"Component {component_instance_id} not found in object table")
-            
-            if not owner_go:
-                for go in self.scn.gameobjects:
-                    if go.id < object_table_index and object_table_index <= go.id + go.component_count:
-                        owner_go = go
-                        break
+            raise ValueError(f"Component {component_instance_id} not found in object table")
+        
+        for go in self.scn.gameobjects:
+            if go.id < object_table_index and object_table_index <= go.id + go.component_count:
+                owner_go = go
+                break
         
         if not owner_go:
             raise ValueError(f"Could not find GameObject owning component {component_instance_id}")
