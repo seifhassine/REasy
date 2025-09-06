@@ -21,4 +21,4 @@ This tool extracts `{extension_string : number}` pairs from a game executable by
 Alternatively you can feed it a file containing some known extension names, using `-F` or `--ext-file`
 ```
 
-*Tested on RE8, RE4, MHWilds.
+*Currently not working for MHRise, RE Resistance and RE7 Demo.
