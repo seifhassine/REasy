@@ -16,7 +16,7 @@ This tool extracts `{extension_string : number}` pairs from a game executable by
 ```bash
 1- Prepare your enviroment
 2- pip install -r requirements.txt
-3- python type_field_detector.py <game.exe> -ext "name1" [-ext "name2" ...] [-o output.json]
+3- python extension_dumper.py <game.exe> -ext "name1" [-ext "name2" ...] [-o output.json]
 
 Alternatively you can feed it a file containing some known extension names, using `-F` or `--ext-file`
 ```
