@@ -8,7 +8,7 @@ This tool extracts `{extension_string : number}` pairs from a game executable by
 2. **Next call**: It scans **code** for spots that load one of those anchors into **RCX** and takes the **very next call** — that’s the callee we care about.
 3. **Callsites**: It indexes all callsites of that callee and looks for patterns (mov, lea, etc..) to get what's being assigned to RCX (holds string) and EDX (version number)
 
-**Output**: If an extension is missing from the result, re-run the script and use it as an extra argument `-ext "your extension"`
+**Output**: If an extension is missing from the result, re-run the script and use it as an extra argument `-ext "your extension"`. That will also allow the script to find some other missing extensions.
 
 
 ## Run
