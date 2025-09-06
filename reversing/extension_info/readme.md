@@ -4,7 +4,7 @@ This tool extracts `{extension_string : number}` pairs from a game executable by
 
 ## How it works
 
-1. **Anchors**: You provide one or more known extension strings (e.g., `"fbxskel"`, `"lmap"`). The tool finds their UTF-16LE occurrences in **data** sections.
+1. **Anchors**: You provide one or more known extension strings (e.g., `"fbxskel"`, `"lmap"`). The tool finds their UTF-16LE occurrences in **data** sections (you don't need to give it all extensions).
 2. **Next call**: It scans **code** for spots that load one of those anchors into **RCX** and takes the **very next call** — that’s the callee we care about.
 3. **Callsites**: It indexes all callsites of that callee and looks for patterns (mov, lea, etc..) to get what's being assigned to RCX (holds string) and EDX (version number)
 
