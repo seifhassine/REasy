@@ -34014,7 +34014,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
@@ -36154,9 +36154,9 @@
 				"array": true,
 				"name": "v4",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ConstraintTargetJoint",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 1,
@@ -62101,9 +62101,9 @@
 				"array": false,
 				"name": "v1",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.UserData",
 				"size": 4,
-				"type": "Data"
+				"type": "UserData"
 			},
 			{
 				"align": 4,
@@ -69795,7 +69795,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
@@ -70036,9 +70036,9 @@
 				"array": true,
 				"name": "v27",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.MaterialParam",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 1,
@@ -70083,7 +70083,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			},
 			{
 				"align": 1,
