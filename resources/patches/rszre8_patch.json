@@ -36154,9 +36154,9 @@
 				"array": true,
 				"name": "v4",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ConstraintTargetJoint",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 1,
