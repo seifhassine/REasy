@@ -21,4 +21,5 @@ This tool extracts `{extension_string : number}` pairs from a game executable by
 Alternatively you can feed it a file containing some known extension names, using `-F` or `--ext-file`
 ```
 
-*SHould support all games. Handles instruction patterns from both old and new builds.
+<br>
+<sup>Should support all games. Handles instruction patterns from both old and new builds.<sup>
