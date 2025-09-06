@@ -40,7 +40,7 @@ def in_data(secs, va):
 
 def utf16_at(img, base, secs, va, maxlen=1024):
     """Return the UTF-16 string at VA if it looks valid; else None."""
-    if va & 1 or not in_data(secs, va): return None
+    if va & 1: return None
     off = va - base
     if off < 0 or off + 2 > len(img): return None
     out = bytearray(); i = off; lim = min(len(img)-1, off + 2*maxlen)
@@ -62,7 +62,6 @@ def find_anchors(img, base, secs, text):
     """Find UTF-16 byte hits for 'text' in data sections and keep only valid ones."""
     needle = text.encode("utf-16le", "ignore"); hits = set()
     for s in secs:
-        if s["exec"]: continue
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""
         i = 0
         while True:
@@ -153,11 +152,13 @@ def _next_call(img, base, s, off):
     return None
 
 def discover_callee(img, base, secs, anchors):
-    """Find RCX <- [extension string] (LEA/MOV) and take the next call as the callee."""
+    """Find RCX<-anchor or RDX<-anchor (LEA/MOV), then take the next CALL as the callee."""
     for s in secs:
         if not s["exec"]: continue
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""; L = len(b)
-        # LEA RCX, [RIP+disp]
+
+        # ---- RCX patterns ----
+        # LEA RCX, [RIP+disp] -> 48 8D 0D disp32
         i = 0
         while True:
             i = b.find(b"\x48\x8D\x0D", i)
@@ -167,7 +168,7 @@ def discover_callee(img, base, secs, anchors):
                 r = _next_call(img, base, s, i + 7)
                 if r: return r
             i += 1
-        # MOV RCX, imm64
+        # MOV RCX, imm64 -> 48 B9 imm64
         i = 0
         while True:
             i = b.find(b"\x48\xB9", i)
@@ -176,7 +177,7 @@ def discover_callee(img, base, secs, anchors):
                 r = _next_call(img, base, s, i + 10)
                 if r: return r
             i += 1
-        # MOV RCX, [RIP+disp]
+        # MOV RCX, [RIP+disp] -> 48 8B 0D disp32
         i = 0
         while True:
             i = b.find(b"\x48\x8B\x0D", i)
@@ -187,6 +188,38 @@ def discover_callee(img, base, secs, anchors):
                 r = _next_call(img, base, s, i + 7)
                 if r: return r
             i += 1
+
+        # ---- RDX patterns (older builds use RDX for the string) ----
+        i = 0  # LEA RDX, [RIP+disp] -> 48 8D 15 disp32
+        while True:
+            i = b.find(b"\x48\x8D\x15", i)
+            if i < 0 or i + 7 > L: break
+            ptr = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+            if ptr in anchors:
+                r = _next_call(img, base, s, i + 7)
+                if r: return r
+            i += 1
+
+        i = 0  # MOV RDX, imm64 -> 48 BA imm64
+        while True:
+            i = b.find(b"\x48\xBA", i)
+            if i < 0 or i + 10 > L: break
+            if struct.unpack_from("<Q", b, i+2)[0] in anchors:
+                r = _next_call(img, base, s, i + 10)
+                if r: return r
+            i += 1
+
+        i = 0  # MOV RDX, [RIP+disp] -> 48 8B 15 disp32
+        while True:
+            i = b.find(b"\x48\x8B\x15", i)
+            if i < 0 or i + 7 > L: break
+            slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+            v = u64(img, base, slot)
+            if v in anchors:
+                r = _next_call(img, base, s, i + 7)
+                if r: return r
+            i += 1
+
     return None
 
 def resolve_thunk(img, base, cal):
@@ -307,6 +340,39 @@ def tail_scan_rcx(img, base, s, call_off, span=48):
         i -= 1
     return None
 
+def tail_scan_r8d(img, base, s, call_off, span=32):
+    """Scan just-before-call for r8d imm/zero patterns."""
+    b = rd(img, base, s["va"], s["end"] - s["va"]) or b""
+    lo = max(0, call_off - span); hi = call_off; i = hi - 1
+    while i >= lo:
+        # mov r8d, imm32 -> 41 B8 imm32
+        if i + 6 <= hi and b[i] == 0x41 and b[i+1] == 0xB8:
+            return struct.unpack_from("<I", b, i+2)[0]
+        # xor r8d, r8d -> 45 33 C0  (or 45 31 C0 depending?)
+        if i + 3 <= hi and b[i] == 0x45 and b[i+1] in (0x31, 0x33) and b[i+2] == 0xC0:
+            return 0
+        i -= 1
+    return None
+
+def tail_scan_rdx(img, base, s, call_off, span=48):
+    """Scan just-before-call for rdx set from utf16 string (lea/mov forms)."""
+    b = rd(img, base, s["va"], s["end"] - s["va"]) or b""
+    lo = max(0, call_off - span); hi = call_off; i = hi - 1
+    while i >= lo:
+        # lea rdx, [rip+disp] -> 48 8D 15 disp32
+        if i + 7 <= hi and b[i:i+3] == b"\x48\x8D\x15":
+            return (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+        # mov rdx, imm64 -> 48 BA imm64
+        if i + 10 <= hi and b[i:i+2] == b"\x48\xBA":
+            return int(struct.unpack_from("<Q", b, i+2)[0])
+        # mov rdx, [rip+disp] -> 48 8B 15 disp32
+        if i + 7 <= hi and b[i:i+3] == b"\x48\x8B\x15":
+            slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+            v = u64(img, base, slot)
+            if v is not None: return int(v)
+        i -= 1
+    return None
+
 def eval_block(img, base, secs, s, start_va, call_off, m):
     """Emulate the short block [start_va, call) to recover RCX/EDX."""
     end_va = s["va"] + call_off
@@ -392,19 +458,40 @@ def eval_block(img, base, secs, s, start_va, call_off, m):
 
     rcx = st.get("rcx")
     edx = st.get("rdx") if "rdx" in st else st.get("edx")
-
-    # TODO
-    if edx is None:
-        t = tail_scan_edx(img, base, s, call_off, span=32)
-        if t is not None: edx = int(t)
-    if rcx is None:
-        r = tail_scan_rcx(img, base, s, call_off, span=48)
-        if r is not None: rcx = int(r)
-
-    # RCX must be a valid data string
-    if not (isinstance(rcx, int) and in_data(secs, rcx) and utf16_at(img, base, secs, rcx)):
+    if (not isinstance(rcx, int) or not utf16_at(img, base, secs, rcx)):
         rcx = None
-    return rcx, (int(edx) if isinstance(edx, int) else None)
+    if rcx is None or edx is None:
+        # tail assists for A
+        if edx is None:
+            t = tail_scan_edx(img, base, s, call_off, span=32)
+            if t is not None: edx = int(t)
+        if rcx is None:
+            r = tail_scan_rcx(img, base, s, call_off, span=48)
+            if r is not None and utf16_at(img, base, secs, int(r)):
+                rcx = int(r)
+
+    if rcx is not None and isinstance(edx, int):
+        return rcx, edx
+
+    # B) fallback: RDX + R8D  (seen in newer builds)
+    rdx = st.get("rdx") if isinstance(st.get("rdx"), int) else None
+    r8  = st.get("r8") if isinstance(st.get("r8"), int) else None
+    if (rdx is None or not utf16_at(img, base, secs, rdx)) or (r8 is None):
+        # tail assists for B
+        if r8 is None:
+            t8 = tail_scan_r8d(img, base, s, call_off, span=32)
+            if t8 is not None: r8 = int(t8)
+        if rdx is None or not utf16_at(img, base, secs, rdx):
+            rdxt = tail_scan_rdx(img, base, s, call_off, span=48)
+            if rdxt is not None and utf16_at(img, base, secs, int(rdxt)):
+                rdx = int(rdxt)
+
+    if rdx is not None and isinstance(r8, int):
+        # normalize to the same return contract: (string_ptr, number)
+        return rdx, r8
+
+    # nothing confident
+    return None, None
 
 # --- CLI ----------------------------------------------------------------------
 
