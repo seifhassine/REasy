@@ -277,6 +277,11 @@ class RszArrayOperations:
         if not array_data or not hasattr(array_data, 'values'):
             return False
         
+        if hasattr(array_item, '_deferred_builder') and array_item._deferred_builder and not array_item._children_built:
+            array_index = model.getIndexFromItem(array_item)
+            self.viewer.tree.expand(array_index)
+            return True
+        
         element_index = len(array_data.values) - 1
         
         if isinstance(element, (ObjectData, UserDataData)):

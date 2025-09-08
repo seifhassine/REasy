@@ -39,6 +39,7 @@ from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
 from .utils.rsz_field_utils import update_references_with_mapping, shift_references_above_threshold
 from .utils.rsz_guid_utils import create_guid_data
+from .rsz_lazy_loading import RszLazyNodeBuilder
 
 RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot manually manage resources."
 
@@ -122,6 +123,7 @@ class RszHandler(BaseFileHandler):
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
         viewer.array_operations = RszArrayOperations(viewer)
         viewer.object_operations = RszObjectOperations(viewer)
+        viewer.lazy_builder = RszLazyNodeBuilder(viewer)
         viewer.populate_tree()
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
@@ -298,6 +300,7 @@ class RszViewer(QWidget):
         self.array_operations = RszArrayOperations(self)
         self.name_helper = RszViewerNameHelper(self.scn, type_registry)
         self.object_operations = RszObjectOperations(self)
+        self.lazy_builder = RszLazyNodeBuilder(self)
         self.populate_tree()
 
     def supports_editing(self) -> bool:
@@ -782,10 +785,17 @@ class RszViewer(QWidget):
         
         print("added data block")
 
-    def _create_field_dict(self, field_name, data_obj, embedded_context=None):
+    def _create_field_dict(self, field_name, data_obj, embedded_context=None, use_lazy=True):
         """Create a dictionary representation of a field for the tree view"""
         domain_id = None
         is_embedded = embedded_context is not None
+        
+        if use_lazy and hasattr(self, 'lazy_builder') and self.lazy_builder:
+            if isinstance(data_obj, StructData) and self.lazy_builder.should_use_lazy_loading(data_obj):
+                return self.lazy_builder.create_lazy_struct_node(field_name, data_obj, embedded_context)
+            elif is_array_type(data_obj) and self.lazy_builder.should_use_lazy_loading(data_obj):
+                return self.lazy_builder.create_lazy_array_node(field_name, data_obj, embedded_context)
+            
         if isinstance(data_obj, StructData):
             original_type = f"{data_obj.orig_type}" if hasattr(data_obj, 'orig_type') and data_obj.orig_type else ""
             

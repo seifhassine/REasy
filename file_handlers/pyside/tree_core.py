@@ -4,37 +4,85 @@ Consolidated tree infrastructure that handles both eager and lazy-loading approa
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
 from PySide6.QtWidgets import QAbstractItemView, QStyledItemDelegate
+from typing import Callable, Optional, Any
+class DeferredChildBuilder:
+    __slots__ = ('builder_func', 'context', '_built', '_children')
+    
+    def __init__(self, builder_func: Callable, context: Any = None):
+        self.builder_func = builder_func
+        self.context = context
+        self._built = False
+        self._children = None
+    
+    def build(self) -> list:
+        if not self._built:
+            self._children = self.builder_func(self.context) if self.context else self.builder_func()
+            self._built = True
+        return self._children or []
+    
+    def is_built(self) -> bool:
+        return self._built
+    
+    def reset(self):
+        self._built = False
+        self._children = None
+
+
 class TreeItem:
     __slots__ = ("raw", "data", "parent",
-                 "_raw_children", "_children", "_children_list", "_child_to_row")
+                 "_raw_children", "_children", "_children_list", "_child_to_row",
+                 "_deferred_builder", "_children_built", "_expandable_hint")
 
     def __init__(self, data, parent=None):
         self.raw = data
         self.data = data["data"] if isinstance(data, dict) and "data" in data else data
         self.parent = parent
 
-        self._raw_children = data.get("children", []) if isinstance(data, dict) else []
+        self._deferred_builder = data.get("deferred_builder") if isinstance(data, dict) else None
+        self._children_built = False
+        self._expandable_hint = data.get("expandable", None) if isinstance(data, dict) else None
+        
+        if self._deferred_builder:
+            self._raw_children = []
+        else:
+            self._raw_children = data.get("children", []) if isinstance(data, dict) else []
+            self._children_built = True
+            
         self._children: dict[int, "TreeItem"] = {}
         self._children_list = None
         self._child_to_row = {}
 
     def child_count(self) -> int:
+        self._ensure_children_built()
         return len(self._raw_children)
+    
+    def has_children(self) -> bool:
+        if self._deferred_builder and not self._children_built:
+            if self._expandable_hint is not None:
+                return self._expandable_hint
+            return True
+        return len(self._raw_children) > 0
+    
+    def _ensure_children_built(self):
+        if self._deferred_builder and not self._children_built:
+            self._raw_children = self._deferred_builder.build()
+            self._children_built = True
 
     def child(self, row: int):
+        self._ensure_children_built()
         if row < 0 or row >= len(self._raw_children):
             return None
         if row not in self._children:
             self._children[row] = TreeItem(self._raw_children[row], parent=self)
-            self._child_to_row[id(self._children[row])] = row  # 🔹 keep reverse map
+            self._child_to_row[id(self._children[row])] = row
         return self._children[row]
 
     def row(self) -> int:
         return 0 if self.parent is None else self.parent._row_of(self)
 
-    # ---------- legacy compatibility ----------
     @property
     def children(self):
+        self._ensure_children_built()
         return [self.child(i) for i in range(self.child_count())]
 
     def _row_of(self, child):
@@ -42,7 +90,6 @@ class TreeItem:
 
 
 class TreeModel(QAbstractItemModel):
-    """Unified tree model implementation with optional lazy loading"""
     
     def __init__(self, root_data, parent=None):
         super().__init__(parent)
@@ -75,7 +122,16 @@ class TreeModel(QAbstractItemModel):
             parent_item = self.rootItem
         else:
             parent_item = parent.internalPointer()
+        
+        parent_item._ensure_children_built()
         return parent_item.child_count()
+    
+    def hasChildren(self, parent=QModelIndex()):
+        if not parent.isValid():
+            parent_item = self.rootItem
+        else:
+            parent_item = parent.internalPointer()
+        return parent_item.has_children()
 
     def columnCount(self, parent=QModelIndex()):
         return 1
@@ -102,14 +158,12 @@ class TreeModel(QAbstractItemModel):
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
     
     def getIndexFromItem(self, item):
-        """Get the model index for a tree item"""
         if item is self.rootItem:
             return QModelIndex()
             
         if not item or not item.parent:
             return QModelIndex()
         
-        # Find this item's row in its parent
         row = item.row()
         return self.createIndex(row, 0, item)
     
@@ -117,6 +171,8 @@ class TreeModel(QAbstractItemModel):
         if parent_item is None or not children_raw:
             return False
 
+        parent_item._ensure_children_built()
+        
         start_row = parent_item.child_count()
         end_row   = start_row + len(children_raw) - 1
 
@@ -126,13 +182,11 @@ class TreeModel(QAbstractItemModel):
         for offset, raw in enumerate(children_raw):
             pos      = start_row + offset
             
-            parent_item._raw_children.insert(pos, raw)
+            parent_item._raw_children.append(raw)
 
             child_it = TreeItem(raw, parent=parent_item)
-            parent_item._children[pos]          = child_it
+            parent_item._children[pos] = child_it
             parent_item._child_to_row[id(child_it)] = pos
-
-        # 3) legacy list (todo remove list)
         if parent_item._children_list is not None:
             parent_item._children_list = [parent_item.child(i)
                                         for i in range(parent_item.child_count())]
@@ -145,15 +199,14 @@ class TreeModel(QAbstractItemModel):
 
 
     def removeRow(self, row, parent=QModelIndex()):
-        """Remove a row from the model"""
         return self.removeRows(row, 1, parent)
         
     def removeRows(self, row, count, parent=QModelIndex()):
-        """Remove `count` rows starting at `row` from `parent`."""
         if row < 0 or count <= 0:
             return False
 
         parent_item = self.rootItem if not parent.isValid() else parent.internalPointer()
+        parent_item._ensure_children_built()
         if row + count > parent_item.child_count():
             return False
 
@@ -180,7 +233,6 @@ class TreeModel(QAbstractItemModel):
             parent_item._children[new_row] = child
             parent_item._child_to_row[id(child)] = new_row
 
-        #  legacy list becomes stale, rebuild lazily next time it’s accessed
         parent_item._children_list = None
 
         self.endRemoveRows()
