@@ -3,6 +3,7 @@ import os
 from typing import Dict, List, Optional, Set
 import copy
 import fire
+from collections import OrderedDict
 
 Field = Dict
 
@@ -144,7 +145,14 @@ def propagate_file(input_json: str, out: Optional[str] = None):
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent='\t', sort_keys=True)
+        json.dump(
+            OrderedDict(
+                ([("metadata", result["metadata"])] if "metadata" in result else [])
+                + [(k, result[k]) for k in sorted(result.keys()) if k != "metadata"]
+            ),
+            f,
+            indent='\t'
+        )
     print(f"Wrote propagated JSON to: {out}")
 
 def main():
