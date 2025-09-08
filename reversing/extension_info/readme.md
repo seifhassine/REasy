@@ -24,4 +24,4 @@ Alternatively you can feed it a file containing some known extension names, usin
 <br>
 <sup>Should support all games. Handles instruction patterns from both old and new builds.</sup>
   
-<sup>Sometimes you will some extensions, and wrong versions along with them. If that happens, try with different extension names, and preferably 4 characters long or more.</sup>
+<sup>Sometimes you will try some extensions and get wrong versions along with them. If that happens, try with different extension names, and preferably 4 characters long or more.</sup>
