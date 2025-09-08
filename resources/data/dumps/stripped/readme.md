@@ -13,11 +13,11 @@ Use this tool when you want to make any changes to the RSZ dumps (in parent dire
 ### Strip
 For each type, remove all fields belonging to the parent(s), leaving each type with no inherited fields.
 ```bash
-python inheritance_rsz.py strip "rsz[gamename].json"
+python stripper_propagator.py strip "rsz[gamename].json"
 ```
 
 ### Propagate
 For each type, append all fields belonging to the parent(s) at the start. The result will be saved in the parent directory (`dumps` in this case.)
 ```bash
-python inheritance_rsz.py propagate "rsz[gamename]_strip.json"
+python stripper_propagator.py propagate "rsz[gamename]_strip.json"
 ```
