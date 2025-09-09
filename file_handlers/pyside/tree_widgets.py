@@ -2021,6 +2021,10 @@ class AdvancedTreeView(QTreeView):
         if node.get("deferred_builder"):
             children_raw = node["deferred_builder"].build()
 
+        widget = self.indexWidget(array_index)
+        label = widget.findChild(QLabel)
+        label.setText(f"{array_item.data[0]} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
+
         model.addChildren(array_item, children_raw)
         self.expand(array_index)
         self.create_widgets_for_children(array_index)
