@@ -66,10 +66,13 @@ class AdvancedTreeView(QTreeView):
             if not indexes:
                 return
                 
-            index = indexes[0] 
+            index = indexes[0]
             item = index.internalPointer()
             item_info = self._identify_item_type(item)
-            
+
+            if item_info.get('is_array_group'):
+                return
+
             if item_info.get('is_embedded', False) and not item_info['is_array_element']:
                 return
             
@@ -220,7 +223,10 @@ class AdvancedTreeView(QTreeView):
             return
         item = index.internalPointer()
         item_info = self._identify_item_type(item)
-        
+
+        if item_info.get('is_array_group'):
+            return
+
         menu = QMenu(self)
         parent_widget = self.parent()
         has_go_clipboard = parent_widget.handler.has_gameobject_clipboard_data(self)
@@ -257,8 +263,6 @@ class AdvancedTreeView(QTreeView):
 
         if item_info.get('is_embedded'):
             return
-
-        print("No special actions for this node type")
 
     def _handle_resource_menu(self, menu, index, item_info):
         edit_action = menu.addAction("Edit Resource Path")
@@ -405,10 +409,9 @@ class AdvancedTreeView(QTreeView):
                 item_info['parent_array_item'], selected_indices
             )
         else:
+            item = index.internalPointer()
             copy_action = menu.addAction("Copy Element")
-            actions[copy_action] = lambda: self.copy_array_element(
-                item_info['parent_array_item'], item_info['element_index']
-            )
+            actions[copy_action] = lambda: self.copy_array_element(item)
             
             delete_action = menu.addAction("Delete Element")
             actions[delete_action] = lambda: self.delete_array_element(
@@ -581,7 +584,8 @@ class AdvancedTreeView(QTreeView):
             'is_array_element': False, 'parent_array_item': None, 'element_index': -1,
             'is_gameobject': False, 'is_component': False, 'component_instance_id': -1,
             'is_folder': False, 'is_gameobjects_root': False, 'is_resource': False,
-            'resource_index': -1, 'is_resources_section': False
+            'resource_index': -1, 'is_resources_section': False,
+            'is_array_group': False,
         }
         
         result.update({
@@ -591,7 +595,8 @@ class AdvancedTreeView(QTreeView):
             "is_resource": item.raw.get("type") == "resource",
             "is_array": item.raw.get("type") == "array",
             "data_obj": item.raw.get("obj"),
-            "resource_index": item.raw.get("resource_index", -1) if item.raw.get("type") == "resource" else -1
+            "resource_index": item.raw.get("resource_index", -1) if item.raw.get("type") == "resource" else -1,
+            "is_array_group": item.raw.get("type") == "array_group",
         })
         
         if result['is_array'] and result['data_obj'] and hasattr(result['data_obj'], 'orig_type'):
@@ -609,13 +614,24 @@ class AdvancedTreeView(QTreeView):
         elif item.data and item.data[0] == "Folders":
             result['is_folders_root'] = True
 
-        if not result['is_array'] and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict) and item.parent.raw.get("type") == "array":
-            result.update({
-                'parent_array_item': item.parent,
-                'array_type': item.parent.raw['obj'].orig_type,
-                'is_array_element': True,
-                'element_index': item.row(),
-            })
+        if (not result['is_array'] and not result['is_array_group']
+                and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict)):
+            parent_item = item.parent
+            # Walk up through any array_group wrappers
+            while parent_item and isinstance(parent_item.raw, dict) and parent_item.raw.get("type") == "array_group":
+                parent_item = parent_item.parent
+
+            if parent_item and isinstance(parent_item.raw, dict) and parent_item.raw.get("type") == "array":
+                elem_obj = item.raw.get("obj") if isinstance(item.raw, dict) else None
+                elem_index = item.raw.get("element_index")
+                if elem_index is None:
+                    elem_index = getattr(elem_obj, "_container_index", item.row())
+                result.update({
+                    'parent_array_item': parent_item,
+                    'array_type': parent_item.raw['obj'].orig_type,
+                    'is_array_element': True,
+                    'element_index': elem_index,
+                })
         
         return result
     
@@ -680,8 +696,6 @@ class AdvancedTreeView(QTreeView):
             creator = RszEmbeddedArrayOperations(parent).create_array_element if embedded_context else parent.create_array_element
             print_context = "embedded" if embedded_context else "regular"
         
-        print(f"Creating array element in {print_context} context")
-        
         if not embedded_context:
             try:
                 from file_handlers.rsz.rsz_data_types import UserDataData
@@ -723,41 +737,26 @@ class AdvancedTreeView(QTreeView):
                 
                 element_type = selected_type
 
-        new_element = creator(
-            element_type, data_obj, embedded_context, 
-            direct_update=True, array_item=array_item
-        ) if embedded_context else creator(
-            element_type, data_obj, 
-            direct_update=True, array_item=array_item, userdata_string=userdata_string
+        new_element = (
+            creator(
+                element_type, data_obj, embedded_context,
+                direct_update=True, array_item=array_item
+            )
+            if embedded_context
+            else creator(
+                element_type,
+                data_obj,
+                direct_update=True,
+                array_item=array_item,
+                userdata_string=userdata_string,
+            )
         )
-        
+
         if not new_element:
             return
-            
-        if not self.isExpanded(index):
-            self.expand(index)
-            
-        model = self.model()
-        array_node = index.internalPointer()
-        if not (hasattr(array_node, 'children') and array_node.children):
-            return
-            
-        last_child_idx = model.index(len(array_node.children) - 1, 0, index)
-        child_item = last_child_idx.internalPointer()
-        
-        if TreeWidgetFactory.should_skip_widget(child_item):
-            return
-            
-        name = child_item.data[0] if child_item.data else ""
-        raw = child_item.raw if isinstance(child_item.raw, dict) else {}
-        node_type = raw.get("type", "")
-        child_data_obj = raw.get("obj")
-        
-        widget = TreeWidgetFactory.create_widget(
-            node_type, child_data_obj, name, self, self.parent_modified_callback
-        )
-        self.setIndexWidget(last_child_idx, widget)
-        self.scrollTo(last_child_idx)
+
+        self._refresh_array_node(array_item)
+        self._scroll_to_array_end(array_item)
 
     def delete_array_element(self, parent_array_item, element_index):
         """Delete an element from an array with proper backend updates"""
@@ -774,57 +773,16 @@ class AdvancedTreeView(QTreeView):
         if embedded_context == "userdata_array_needs_embedded":
             success = parent.array_operations.delete_array_element(array_data, element_index)
         elif embedded_context:
-            success = RszEmbeddedArrayOperations(parent).delete_array_element(array_data, element_index, embedded_context)
+            success = RszEmbeddedArrayOperations(parent).delete_array_element(
+                array_data, element_index, embedded_context
+            )
         else:
-            print("Deleting array element in regular context")
             success = parent.array_operations.delete_array_element(array_data, element_index)
     
         if success:
-            model = self.model()
-            parent_index = model.getIndexFromItem(parent_array_item)
-            child_index = model.index(element_index, 0, parent_index)
-            model.removeRow(child_index.row(), parent_index)
-            self._update_remaining_elements_ui(model, parent_index, array_data, element_index)
+            self._refresh_array_node(parent_array_item)
         else:
             QMessageBox.warning(self, "Error", "Failed to delete element in embedded context")
-
-    def _update_remaining_elements_ui(self, model, array_index, array_data, deleted_index):
-        """Update UI indices for remaining elements after deletion"""
-        array_item = array_index.internalPointer()
-        embedded_context = self._find_embedded_context(array_item)
-        
-        if embedded_context == "userdata_array_needs_embedded":
-            embedded_context = None
-        
-        for i in range(deleted_index, len(array_data.values)):
-            child_idx = model.index(i, 0, array_index)
-            child_item = child_idx.internalPointer()
-            if child_item and hasattr(child_item, 'data'):
-                old_text = child_item.data[0]
-                after_colon = old_text.split(':', 1)[1].strip() if ':' in old_text else ''
-                new_text = f"{i}: {after_colon}"
-                child_item.data[0] = new_text
-                
-                if embedded_context:
-                    element = array_data.values[i] if i < len(array_data.values) else None
-                    if element:
-                        self.setIndexWidget(child_idx, None)
-                        if hasattr(child_item, 'raw') and isinstance(child_item.raw, dict):
-                            node_type = child_item.raw.get("type", "")
-                            data_obj = child_item.raw.get("obj")
-                            
-                            widget = TreeWidgetFactory.create_widget(
-                                node_type, data_obj, new_text, self, self.parent_modified_callback
-                            )
-                            if widget:
-                                self.setIndexWidget(child_idx, widget)
-                else:
-                    widget = self.indexWidget(child_idx)
-                    if widget:
-                        for child_widget in widget.findChildren(QLabel):
-                            if ':' in child_widget.text():
-                                child_widget.setText(new_text)
-                                break
 
     def _find_embedded_context(self, item):
         from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
@@ -1927,14 +1885,10 @@ class AdvancedTreeView(QTreeView):
             clipboard = parent.handler.get_array_clipboard()
             elements = clipboard.paste_elements_from_clipboard(
                 self, array_operations, data_obj, array_item, embedded_context)
-            
-            if elements:
-                model = self.model()
-                array_item = index.internalPointer()
-                if array_item.children:
-                    last_child_idx = model.index(len(array_item.children) - 1, 0, index)
-                    self.scrollTo(last_child_idx)
 
+            if elements:
+                self._refresh_array_node(array_item)
+                self._scroll_to_array_end(array_item)
                 QApplication.beep()
             else:
                 QMessageBox.warning(self, "Error", "Failed to paste elements. Make sure the clipboard contains compatible elements.")
@@ -2017,52 +1971,84 @@ class AdvancedTreeView(QTreeView):
         embedded_context = self._find_embedded_context(parent_array_item)
         parent = self.parent()
         success = True
-        model = self.model()
-        parent_index = model.getIndexFromItem(parent_array_item)
         
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
 
         if embedded_context:
-            print("Deleting array elements in embedded context")
             rsz_operations = RszEmbeddedArrayOperations(parent)
             for idx in element_indices:
                 if not rsz_operations.delete_array_element(array_data, idx, embedded_context):
                     success = False
                     break
-                child_index = model.index(idx, 0, parent_index)
-                model.removeRow(child_index.row(), parent_index) 
         else:
-            print("Deleting array elements in regular context")
             for idx in element_indices:
                 if not parent.delete_array_element(array_data, idx):
                     success = False
                     break
-                child_index = model.index(idx, 0, parent_index)
-                model.removeRow(child_index.row(), parent_index) 
         if success:
-            self._update_array_element_indices(model, parent_index, array_data)  
+            self._refresh_array_node(parent_array_item)
             QApplication.beep()
             #QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
         else:
             QMessageBox.warning(self, "Error", "Failed to delete all elements")
 
+    def _refresh_array_node(self, array_item):
+        """Rebuild UI nodes for an array after modifications"""
+        model = self.model()
+        if not model:
+            return
 
-    def _update_array_element_indices(self, model, array_index, array_data):
-        """Update UI indices for all elements in an array"""
-        for i in range(len(array_data.values)):
-            child_idx = model.index(i, 0, array_index)
-            child_item = child_idx.internalPointer()
-            if child_item and hasattr(child_item, 'data'):
-                old_text = child_item.data[0]
-                after_colon = old_text.split(':', 1)[1].strip() if ':' in old_text else ''
-                new_text = f"{i}: {after_colon}"
-                child_item.data[0] = new_text
-                
-                for child_widget in self.indexWidget(child_idx).findChildren(QLabel):
-                    if ':' in child_widget.text():
-                        child_widget.setText(new_text)
-                        break
+        array_index = model.getIndexFromItem(array_item)
+        if not array_index.isValid():
+            return
+
+        count = array_item.child_count()
+        if count > 0:
+            model.removeRows(0, count, array_index)
+
+        parent_widget = self.parent()
+        builder = getattr(parent_widget, "lazy_builder", None)
+        if not builder:
+            return
+
+        data_obj = array_item.raw.get('obj')
+        embedded_context = self._find_embedded_context(array_item)
+        node = builder.create_lazy_array_node(
+            array_item.data[0].split(':')[0], data_obj, embedded_context
+        )
+        children_raw = []
+        if node.get("deferred_builder"):
+            children_raw = node["deferred_builder"].build()
+
+        model.addChildren(array_item, children_raw)
+        self.expand(array_index)
+        self.create_widgets_for_children(array_index)
+
+    def _scroll_to_array_end(self, array_item):
+        """Scroll view to the last actual element of an array"""
+        model = self.model()
+        if not model:
+            return
+
+        array_index = model.getIndexFromItem(array_item)
+        if not array_index.isValid() or array_item.child_count() == 0:
+            return
+
+        last_child_idx = model.index(array_item.child_count() - 1, 0, array_index)
+        last_child_item = last_child_idx.internalPointer()
+        raw = last_child_item.raw if isinstance(last_child_item.raw, dict) else {}
+
+        if raw.get("type") == "array_group":
+            self.expand(last_child_idx)
+            self.create_widgets_for_children(last_child_idx)
+            if last_child_item.child_count() > 0:
+                final_idx = model.index(
+                    last_child_item.child_count() - 1, 0, last_child_idx
+                )
+                self.scrollTo(final_idx)
+        else:
+            self.scrollTo(last_child_idx)
 
     def get_selected_array_elements(self, parent_array_item):
         """Get indices of selected array elements"""
@@ -2070,26 +2056,44 @@ class AdvancedTreeView(QTreeView):
         model = self.model()
         if not model:
             return selected_indices
-            
+
         parent_index = model.getIndexFromItem(parent_array_item)
         if not parent_index.isValid():
             return selected_indices
-            
+
         selection_model = self.selectionModel()
         if not selection_model:
             return selected_indices
-            
-        selected_indexes = selection_model.selectedIndexes()
-        
-        for index in selected_indexes:
-            if not index.isValid() or index.parent() != parent_index:
+
+        for index in selection_model.selectedIndexes():
+            if not index.isValid():
                 continue
-                
-            row = index.row()
-            if row >= 0:
-                selected_indices.append(row)
-                
-        return sorted(selected_indices)
+
+            # Verify the selected item belongs to the target array
+            ancestor = index
+            belongs = False
+            while ancestor.isValid():
+                if ancestor == parent_index:
+                    belongs = True
+                    break
+                ancestor = ancestor.parent()
+            if not belongs:
+                continue
+
+            item = index.internalPointer()
+            if not item or not isinstance(item.raw, dict):
+                continue
+            if "element_index" in item.raw:
+                selected_indices.append(item.raw["element_index"])
+                continue
+            elem_obj = item.raw.get("obj")
+            if elem_obj is None:
+                continue
+            elem_idx = getattr(elem_obj, "_container_index", -1)
+            if elem_idx >= 0:
+                selected_indices.append(elem_idx)
+
+        return sorted(set(selected_indices))
         
     def copy_component(self, component_instance_id):
         """Copy a component to clipboard for pasting to another GameObject"""
@@ -2253,18 +2257,40 @@ class AdvancedTreeView(QTreeView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
 
-    def copy_array_element(self, parent_array_item, element_index):
+    def copy_array_element(self, element_item):
         """Copy an array element to clipboard"""
 
+        if not element_item or not hasattr(element_item, 'raw'):
+            return
+
+        parent_array_item = element_item.parent
+        while parent_array_item and isinstance(parent_array_item.raw, dict) \
+                and parent_array_item.raw.get("type") == "array_group":
+            parent_array_item = parent_array_item.parent
+
+        if not parent_array_item or parent_array_item.raw.get("type") != "array":
+            QMessageBox.warning(self, "Error", "Invalid array element selection")
+            return
+
         array_data = parent_array_item.raw.get('obj')
+        elem_obj = element_item.raw.get('obj') if isinstance(element_item.raw, dict) else None
+        if not array_data:
+            QMessageBox.warning(self, "Error", "Failed to access array element")
+            return
+
+        element_index = element_item.raw.get("element_index")
+        if element_index is None:
+            if elem_obj is None:
+                QMessageBox.warning(self, "Error", "Failed to access array element")
+                return
+            element_index = getattr(elem_obj, '_container_index', element_item.row())
         embedded_context = self._find_embedded_context(parent_array_item)
-        
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
-            
+
         element = array_data.values[element_index]
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
-        
+
         parent = self.parent()
         try:
             clipboard = parent.handler.get_array_clipboard()
@@ -2291,15 +2317,11 @@ class AdvancedTreeView(QTreeView):
             clipboard = parent.handler.get_array_clipboard()
             _ = clipboard.paste_elements_from_clipboard(
                 self, array_operations, data_obj, array_item, embedded_context)
-            
+
             if not self.isExpanded(index):
                 self.expand(index)
-            
-            model = self.model()
-            array_item = index.internalPointer()
-            if array_item.children:
-                last_child_idx = model.index(len(array_item.children) - 1, 0, index)
-                self.scrollTo(last_child_idx)
+            self._refresh_array_node(array_item)
+            self._scroll_to_array_end(array_item)
             QApplication.beep()
             #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:

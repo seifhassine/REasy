@@ -2,7 +2,6 @@
 RSZ Lazy Loading Support
 """
 
-from typing import Any, Dict, List, Callable, Optional
 from ..pyside.tree_core import DeferredChildBuilder
 from ..pyside.tree_model import DataTreeBuilder
 from .rsz_data_types import (
@@ -13,6 +12,7 @@ from .rsz_data_types import (
     is_reference_type,
     is_array_type,
 )
+CHUNK_SIZE = 100
 
 
 class RszLazyNodeBuilder:
@@ -107,41 +107,89 @@ class RszLazyNodeBuilder:
                 if hasattr(embedded_context, 'embedded_object_table') and embedded_context.embedded_object_table:
                     data_obj._owning_instance_id = embedded_context.embedded_object_table[0]
         
-        if hasattr(data_obj, 'values') and data_obj.values:
+        if hasattr(data_obj, 'values') and data_obj.values is not None:
             def build_array_children():
-                children = []
-                
-                for i, element in enumerate(data_obj.values):
-                    if isinstance(element, (ArrayData, ObjectData, UserDataData)):
-                        if not hasattr(element, '_container_array') or element._container_array is None:
-                            element._container_array = data_obj
-                        if not hasattr(element, '_container_index'):
-                            element._container_index = i
-                        if embedded_context:
-                            if not hasattr(element, '_container_context') or element._container_context is None:
-                                element._container_context = embedded_context
-                    
-                    if is_reference_type(element):
-                        child_node = self.viewer._handle_reference_in_array(i, element, embedded_context, None)
-                        if child_node:
-                            if isinstance(child_node, dict) and "children" in child_node and child_node["children"]:
-                                child_node = self._make_node_lazy(child_node)
-                            children.append(child_node)
-                    else:
-                        element_type = element.__class__.__name__
-                        elem_node = DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
-                        
-                        if isinstance(element, (ArrayData, StructData)):
-                            elem_node = self._make_element_lazy(str(i), element, embedded_context)
-                        
-                        children.append(elem_node)
-                
-                return children
-            
+                total = len(data_obj.values)
+                # For very large arrays, build child nodes in manageable chunks.
+                if total > CHUNK_SIZE:
+                    return self._build_array_chunks(data_obj, embedded_context)
+                return self._build_array_elements_range(
+                    data_obj, 0, total, embedded_context
+                )
+
             array_node["deferred_builder"] = DeferredChildBuilder(build_array_children)
             array_node["expandable"] = len(data_obj.values) > 0
         
         return array_node
+
+    def _build_array_chunks(self, data_obj, embedded_context):
+        """Create group nodes for large arrays to defer element creation."""
+        children = []
+        total = len(data_obj.values)
+        for start in range(0, total, CHUNK_SIZE):
+            end = min(start + CHUNK_SIZE, total)
+            group_label = f"{start}-{end - 1}"
+            group_node = DataTreeBuilder.create_data_node(group_label, "", "array_group", None)
+
+            # Capture start/end for the builder using default arguments
+            group_node["deferred_builder"] = DeferredChildBuilder(
+                lambda s=start, e=end: self._build_array_elements_range(
+                    data_obj, s, e, embedded_context
+                )
+            )
+            group_node["expandable"] = True
+            children.append(group_node)
+
+        return children
+
+    def _build_array_elements_range(self, data_obj, start, end, embedded_context):
+        """Build actual element nodes for a slice of an array."""
+        children = []
+        for i in range(start, end):
+            element = data_obj.values[i]
+            if isinstance(element, (ArrayData, ObjectData, UserDataData)):
+                if not hasattr(element, '_container_array') or element._container_array is None:
+                    element._container_array = data_obj
+                # Always refresh the container index so it stays in sync after edits
+                element._container_index = i
+                if embedded_context:
+                    if not hasattr(element, '_container_context') or element._container_context is None:
+                        element._container_context = embedded_context
+
+            if is_reference_type(element):
+                child_node = self.viewer._handle_reference_in_array(
+                    i, element, embedded_context, None
+                )
+                if child_node:
+                    if (
+                        isinstance(child_node, dict)
+                        and "children" in child_node
+                        and child_node["children"]
+                    ):
+                        child_node = self._make_node_lazy(child_node)
+                    # Ensure the element reference carries its source object and index
+                    if isinstance(child_node, dict):
+                        child_node.setdefault("obj", element)
+                        child_node["element_index"] = i
+                    children.append(child_node)
+            else:
+                element_type = element.__class__.__name__
+                elem_node = DataTreeBuilder.create_data_node(
+                    str(i) + ": ", "", element_type, element
+                )
+
+                if isinstance(element, (ArrayData, StructData)):
+                    elem_node = self._make_element_lazy(
+                        str(i), element, embedded_context
+                    )
+
+                # Store the element's index for primitives that can't hold attributes
+                if isinstance(elem_node, dict):
+                    elem_node["element_index"] = i
+
+                children.append(elem_node)
+
+        return children
     
     def create_lazy_reference_node(self, field_name: str, ref_id: int, ref_type: str, embedded_context=None) -> dict:
         if ref_type == "UserData":
@@ -215,5 +263,4 @@ class RszLazyNodeBuilder:
         
         if is_reference_type(data_obj):
             return True
-        
         return False

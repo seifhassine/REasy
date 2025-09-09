@@ -183,7 +183,7 @@ class TreeWidgetFactory:
             return False
             
         parent = item.parent
-        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") == "array" or parent.raw.get("type") == "struct":
+        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") in ("array", "struct"):
             return False
             
         return True
@@ -198,9 +198,10 @@ class TreeWidgetFactory:
         name = item.raw.get("data", [""])[0]
         if name in ("Header", "GameObjects", "RSZHeader", "Folder Infos", "Object Table", "Instance Infos", "RSZUserData Infos"):
             return True
+
+        # Skip artificial group nodes used for chunked array loading
+        if item.raw.get("type") == "array_group":
+            return True
             
         # Don't skip array element widgets if they have a supported type
-        node_type = item.raw.get("type")
-        if node_type in TreeWidgetFactory.WIDGET_TYPES:
-            return False
         return False

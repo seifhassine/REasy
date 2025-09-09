@@ -860,8 +860,8 @@ class RszViewer(QWidget):
                 if isinstance(element, (ArrayData, ObjectData, UserDataData)):
                     if not hasattr(element, '_container_array') or element._container_array is None:
                         element._container_array = data_obj
-                    if not hasattr(element, '_container_index'):
-                        element._container_index = i
+                    # Always update container index to reflect current position
+                    element._container_index = i
                     if is_embedded:
                         if not hasattr(element, '_container_context') or element._container_context is None:
                             element._container_context = embedded_context
@@ -869,13 +869,17 @@ class RszViewer(QWidget):
                 if is_reference_type(element):
                     child_node = self._handle_reference_in_array(i, element, embedded_context, domain_id)
                     if child_node:
+                        if isinstance(child_node, dict):
+                            child_node.setdefault("obj", element)
+                            child_node["element_index"] = i
                         children.append(child_node)
                 else:
                     # Non-object elements are handled the same for both contexts
                     element_type = element.__class__.__name__
-                    children.append(
-                        DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
-                    )
+                    elem_node = DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
+                    if isinstance(elem_node, dict):
+                        elem_node["element_index"] = i
+                    children.append(elem_node)
                     
             array_node = DataTreeBuilder.create_data_node(
                 f"{field_name}: {original_type}", "", "array", data_obj, children
