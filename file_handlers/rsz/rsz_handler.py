@@ -598,10 +598,10 @@ class RszViewer(QWidget):
         node = DataTreeBuilder.create_data_node(
             "RSZUserData Infos", f"{len(self.scn.rsz_userdata_infos)} items"
         )
-        if self.scn.filepath.lower().endswith('.18'):
+        if self.scn.filepath.lower().endswith('.18') and self.scn.is_scn:
             return node
         
-        is_scn19 = self.scn.filepath.lower().endswith('.19')
+        is_scn19 = self.scn.filepath.lower().endswith('.19') or self.scn.filepath.lower().endswith('.16')
         
         for i, rui in enumerate(self.scn.rsz_userdata_infos):
             if is_scn19:
