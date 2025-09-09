@@ -31,7 +31,6 @@ class RszInstanceOperations:
         
         prev_instance_id = 0
         if(is_component_deletion):
-            prev_instance_id = 0
             for id_ in object_table:
                 if id_ > 0 and id_ < instance_id and id_ > prev_instance_id:
                     prev_instance_id = id_

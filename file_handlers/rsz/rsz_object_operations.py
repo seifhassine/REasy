@@ -647,6 +647,232 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         return True
 
+    # -------------------------------
+    # UserData modifications (non-embedded RSZ)
+    # -------------------------------
+    def _find_userdata_parent_info(self, userdata_field):
+        """Locate parent instance/field and array context for a given UserDataData field object."""
+        parent_instance_id = None
+        parent_field_name = None
+        is_array = False
+        array_data = None
+        element_index = -1
+
+        if hasattr(userdata_field, '_container_array') and getattr(userdata_field, '_container_array') is not None:
+            array_data = getattr(userdata_field, '_container_array')
+            element_index = getattr(userdata_field, '_container_index', -1)
+            for inst_id, fields in self.scn.parsed_elements.items():
+                for fname, fval in fields.items():
+                    if fval is array_data:
+                        parent_instance_id = inst_id
+                        parent_field_name = fname
+                        is_array = True
+                        break
+                if parent_instance_id is not None:
+                    break
+
+        if parent_instance_id is None:
+            for inst_id, fields in self.scn.parsed_elements.items():
+                for fname, fval in fields.items():
+                    if fval is userdata_field:
+                        parent_instance_id = inst_id
+                        parent_field_name = fname
+                        is_array = False
+                        break
+                if parent_instance_id is not None:
+                    break
+
+        return parent_instance_id, parent_field_name, is_array, array_data, element_index
+
+    def _compute_userdata_insertion_index(self, parent_instance_id, parent_field_name, is_array):
+        """Compute insertion index for creating a new userdata instance based on its parent position."""
+        from .rsz_array_operations import RszArrayOperations
+        if not self.viewer.array_operations:
+            self.viewer.array_operations = RszArrayOperations(self.viewer)
+        if parent_instance_id is None or parent_field_name is None:
+            return len(self.scn.instance_infos)
+        if is_array:
+            return self.viewer.array_operations._calculate_array_element_insertion_index(parent_instance_id, parent_field_name)
+        return self.viewer.array_operations._calculate_insertion_index(parent_instance_id, parent_field_name)
+
+    def _ensure_header_userdata_string(self, string_value: str, type_id: int | None = None, crc_value: int | None = None):
+        """Ensure there is a header-level UserDataInfo entry for the given string (normal RSZ).
+        If creating a new entry, set its hash to the provided type_id and crc to crc_value when available.
+        """
+        for ui in getattr(self.scn, 'userdata_infos', []) or []:
+            if self.scn._userdata_str_map.get(ui) == string_value:
+                # Update the hash if a type_id is provided and it differs
+                if type_id is not None and ui.hash != type_id:
+                    ui.hash = type_id
+                return ui
+        from file_handlers.rsz.rsz_file import RSZUserDataInfo
+        new_ui = RSZUserDataInfo()
+        new_ui.hash = int(type_id) if type_id is not None else 0
+        new_ui.crc = int(crc_value) if crc_value is not None else 0
+        new_ui.string_offset = 0
+        if not hasattr(self.scn, 'userdata_infos'):
+            self.scn.userdata_infos = []
+        self.scn.userdata_infos.append(new_ui)
+        if not hasattr(self.scn, '_userdata_str_map'):
+            self.scn._userdata_str_map = {}
+        self.scn._userdata_str_map[new_ui] = string_value
+        return new_ui
+
+    def _update_header_userdata_string_for_rui(self, rui, new_string: str):
+        if rui not in self.scn.rsz_userdata_infos:
+            return False
+        
+        current_rui_string = self.scn._rsz_userdata_str_map.get(rui, "")
+        
+        for ui in getattr(self.scn, 'userdata_infos', []):
+            ui_string = self.scn._userdata_str_map.get(ui, "")
+            if ui_string == current_rui_string:
+                self.scn._userdata_str_map[ui] = new_string
+                inst_id = rui.instance_id
+                if 0 <= inst_id < len(self.scn.instance_infos):
+                    ui.hash = self.scn.instance_infos[inst_id].type_id
+                return True
+        
+        return False
+
+    def _try_cleanup_unused_userdata_instance(self, instance_id: int) -> bool:
+        """If the given userdata instance is no longer referenced by any field, delete it and
+        its paired RSZUserDataInfo/header entry, and update references/ID mappings accordingly.
+        """
+        if not (instance_id and 0 <= instance_id < len(self.scn.instance_infos)):
+            return False
+        refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, instance_id)
+        if refs:
+            return False
+        self.viewer._remove_instance_references(instance_id)
+        id_mapping = self.viewer._update_instance_references_after_deletion(instance_id, set())
+        if id_mapping:
+            self.viewer.handler.id_manager.update_all_mappings(id_mapping, {instance_id})
+        return True
+
+    def modify_userdata_field(self, userdata_field, new_string: str, selected_type: str) -> bool:
+        """Modify a UserDataData field in normal RSZ files according to sharing rules.
+        Returns True on success, False otherwise.
+        """
+        if getattr(self.scn, 'has_embedded_rsz', False):
+            return False
+
+        current_instance_id = getattr(userdata_field, 'value', 0) or 0
+        parent_instance_id, parent_field_name, is_array, array_data, element_index = self._find_userdata_parent_info(userdata_field)
+        insertion_index = self._compute_userdata_insertion_index(parent_instance_id, parent_field_name, is_array)
+
+        instance_is_shared = False
+        string_is_shared = False
+
+        if current_instance_id > 0:
+            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+            refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, current_instance_id)
+            total_refs = sum(len(v) for v in refs.values())
+            our_only_ref = False
+            if total_refs == 1 and parent_instance_id in refs:
+                entries = refs[parent_instance_id]
+                if is_array:
+                    expected = f"{parent_field_name}[{element_index}]"
+                    our_only_ref = any(name == expected for name, _ in entries)
+                else:
+                    our_only_ref = any(name == parent_field_name and kind == "direct" for name, kind in entries)
+            instance_is_shared = not our_only_ref
+
+            rui = self.scn._rsz_userdata_dict.get(current_instance_id)
+            if rui:
+                target_str = self.scn._rsz_userdata_str_map.get(rui, "")
+                occurrences = 0
+                for other in self.scn.rsz_userdata_infos:
+                    s = self.scn._rsz_userdata_str_map.get(other, None)
+                    if s == target_str:
+                        occurrences += 1
+                        if occurrences > 1:
+                            break
+                string_is_shared = occurrences > 1
+
+        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
+        if type_id:
+            for rui in self.scn.rsz_userdata_infos:
+                existing_str = self.scn._rsz_userdata_str_map.get(rui, None)
+                if existing_str == new_string:
+                    target_inst = rui.instance_id
+                    if 0 <= target_inst < len(self.scn.instance_infos):
+                        if self.scn.instance_infos[target_inst].type_id == type_id:
+                            old_instance_id = current_instance_id
+                            userdata_field.value = target_inst
+                            userdata_field.string = new_string
+                            self._update_header_userdata_string_for_rui(rui, new_string)
+                            self.viewer.mark_modified()
+                            self._try_cleanup_unused_userdata_instance(old_instance_id)
+                            return True
+
+        if current_instance_id == 0:
+            created_id = self._create_userdata_instance_for_field(selected_type, insertion_index, new_string)
+            if created_id is None or created_id < 0:
+                return False
+            userdata_field.value = created_id
+            userdata_field.string = new_string
+            crc_val = int(type_info.get("crc", "0"), 16)
+            self._ensure_header_userdata_string(new_string, type_id, crc_val)
+            self.scn.rsz_header.userdata_count = len(self.scn.rsz_userdata_infos)
+            self.scn.header.userdata_count = len(getattr(self.scn, 'userdata_infos', []))
+            self.viewer.mark_modified()
+            return True
+
+        if instance_is_shared or string_is_shared:
+            created_id = self._create_userdata_instance_for_field(selected_type, insertion_index, new_string)
+            if created_id is None or created_id < 0:
+                return False
+            old_instance_id = current_instance_id
+            userdata_field.value = created_id
+            userdata_field.string = new_string
+            crc_val = int(type_info.get("crc", "0"), 16)
+            self._ensure_header_userdata_string(new_string, type_id, crc_val)
+            self.scn.rsz_header.userdata_count = len(self.scn.rsz_userdata_infos)
+            self.scn.header.userdata_count = len(getattr(self.scn, 'userdata_infos', []))
+            self.viewer.mark_modified()
+            self._try_cleanup_unused_userdata_instance(old_instance_id)
+            return True
+
+        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
+        if not type_info or not type_id:
+            return False
+        
+        new_crc = int(type_info.get("crc", "0"), 16)
+        
+        cur_type_id = self.scn.instance_infos[current_instance_id].type_id
+        if cur_type_id != type_id:
+            self.scn.instance_infos[current_instance_id].type_id = type_id
+            self.scn.instance_infos[current_instance_id].crc = new_crc
+            rui = self.scn._rsz_userdata_dict.get(current_instance_id)
+            if rui and hasattr(rui, 'hash'):
+                rui.hash = type_id
+
+        rui = self.scn._rsz_userdata_dict.get(current_instance_id)
+        if rui and rui in self.scn._rsz_userdata_str_map:
+            old_rui_string = self.scn._rsz_userdata_str_map.get(rui, "")
+            self.scn._rsz_userdata_str_map[rui] = new_string
+            
+            for ui in getattr(self.scn, 'userdata_infos', []):
+                ui_string = self.scn._userdata_str_map.get(ui, "")
+                if ui_string == old_rui_string:
+                    if not string_is_shared:
+                        self.scn._userdata_str_map[ui] = new_string
+                        ui.hash = type_id
+                        break
+                    else:
+                        if ui.hash == type_id:
+                            self.scn._userdata_str_map[ui] = new_string
+                            break
+            else:
+                if string_is_shared or not old_rui_string:
+                    self._ensure_header_userdata_string(new_string, type_id, new_crc)
+        userdata_field.string = new_string
+        self.scn.rsz_header.userdata_count = len(self.scn.rsz_userdata_infos)
+        self.scn.header.userdata_count = len(getattr(self.scn, 'userdata_infos', []))
+        self.viewer.mark_modified()
+        return True
+        
     def create_component_for_gameobject(self, gameobject_instance_id, component_type):
         """Create a new component on the specified GameObject"""
         # Find the target GameObject
@@ -1020,13 +1246,14 @@ class RszObjectOperations:
                 userdata_info, type_info, type_id, field_type
             )
         else:
-            from file_handlers.rsz.rsz_file import RszRSZUserDataInfo
+            from file_handlers.rsz.rsz_file import RSZUserDataInfo
 
-            userdata_info = RszRSZUserDataInfo()
+            userdata_info = RSZUserDataInfo()
             userdata_info.instance_id = current_insertion_index
             
             final_string = userdata_string if (userdata_string is not None) else field_type
             
+            userdata_info.hash = type_id
             userdata_info.string_offset = 0
 
         if not hasattr(self.scn, 'rsz_userdata_infos'):

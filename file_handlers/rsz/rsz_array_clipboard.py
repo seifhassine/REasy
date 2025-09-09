@@ -583,7 +583,7 @@ class RszArrayClipboard:
 
     @staticmethod
     def _create_rsz_userdata_info_for_existing_instance(viewer, elem_data, existing_instance_id):
-        """Create RszUserDataInfo for an existing instance (used when instance was pre-allocated)"""
+        """Create RSZUserDataInfo for an existing instance (used when instance was pre-allocated)"""
         object_graph = elem_data.get("object_graph", {})
         if not object_graph or object_graph.get("context_type") != "embedded_rsz":
             return None
