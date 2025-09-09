@@ -10,7 +10,7 @@ class RszInstanceOperations:
     """
     
     @staticmethod
-    def find_nested_objects(parsed_elements, instance_id, object_table=None):
+    def find_nested_objects(parsed_elements, instance_id, object_table=None, is_component_deletion = False):
         """
         Find instance IDs of nested objects that aren't in the object table.
         
@@ -30,9 +30,23 @@ class RszInstanceOperations:
         object_table_ids = set(object_table)
         
         prev_instance_id = 0
-        for id_ in object_table:
-            if id_ > 0 and id_ < instance_id and id_ > prev_instance_id:
-                prev_instance_id = id_
+        if(is_component_deletion):
+            prev_instance_id = 0
+            for id_ in object_table:
+                if id_ > 0 and id_ < instance_id and id_ > prev_instance_id:
+                    prev_instance_id = id_
+        else:      
+            base_object_idx = -1
+            
+            for i, id_ in enumerate(object_table):
+                if id_ == instance_id:
+                    base_object_idx = i
+                    break
+                    
+            if base_object_idx <= 0:
+                return nested_objects
+                
+            prev_instance_id = next((id_ for id_ in reversed(object_table[:base_object_idx]) if id_ > 0), 0)
         
         for potential_nested_id in range(prev_instance_id + 1, instance_id):
             if (potential_nested_id > 0 and 

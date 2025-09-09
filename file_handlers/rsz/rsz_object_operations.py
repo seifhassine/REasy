@@ -794,7 +794,7 @@ class RszObjectOperations:
         original_component_count = owner_go.component_count
         
         nested_objects = RszInstanceOperations.find_nested_objects(
-            self.scn.parsed_elements, component_instance_id, self.scn.object_table
+            self.scn.parsed_elements, component_instance_id, self.scn.object_table, is_component_deletion=True
         )
         nested_objects.add(component_instance_id)
         
