@@ -3,7 +3,7 @@ import json
 import traceback
 from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
 from file_handlers.rsz.rsz_data_types import (
-    is_reference_type, is_array_type
+    is_reference_type, is_array_type, StringData
 )
 from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject, PfbGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
@@ -397,6 +397,8 @@ class RszGameObjectClipboard(RszClipboardBase):
         
         RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_root_object)
         viewer.scn.gameobjects.append(new_root_object)
+        
+        RszGameObjectClipboard._apply_name_to_instance(viewer, new_root_instance_id, root_name)
         
         pasted_children = []
         go_ids = sorted([int(id_str) for id_str in gameobjects_data.keys()])
@@ -1574,23 +1576,15 @@ class RszGameObjectClipboard(RszClipboardBase):
         return instance._get_gameobject_instance_id(viewer, gameobject_id)
     
     @staticmethod
+    def _apply_name_to_instance(viewer, instance_id, new_name):
+        fields = viewer.scn.parsed_elements[instance_id]
+        name_field = fields["Name"]
+        name_field.value = new_name
+        return True
+    
+    @staticmethod
     def _get_instance_name_from_fields(fields, default_name=None):
-        """Extract name from instance fields (used by both GameObjects and Folders)"""
-        if not fields:
-            return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
-            
-        first_field_name = next(iter(fields), None)
-        if first_field_name:
-            first_field = fields[first_field_name]
-            if hasattr(first_field, 'value'):
-                try:
-                    name = str(first_field.value).strip("\00")
-                    if name: 
-                        return name
-                except Exception:
-                    pass
-                    
-        return default_name or RszGameObjectClipboard.DEFAULT_GO_NAME
+        return (fields["Name"].value or default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
 
     @staticmethod
     def _get_components_for_gameobject(viewer, gameobject):
