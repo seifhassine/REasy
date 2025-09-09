@@ -1,6 +1,7 @@
 from file_handlers.rsz.rsz_data_types import (
     StructData, U32Data, S32Data
 )
+import uuid
 from file_handlers.pyside.value_widgets import (
     Vec2Input, Vec3Input, Vec4Input, F32Input, S32Input, U32Input, S16Input, U16Input, U64Input, S64Input, S8Input, U8Input,
     GuidInput, OBBInput, AABBInput, AreaInput, Mat4Input, HexBytesInput, StringInput, BoolInput, UserDataInput, RangeInput,
@@ -143,6 +144,14 @@ class TreeWidgetFactory:
             
             if on_modified:
                 input_widget.modified_changed.connect(on_modified)
+            
+            if node_type == "GuidData" and hasattr(data_obj, 'gameobject'):
+                def _on_guid_changed(new_guid: str, d=data_obj):
+                    d.guid_str = new_guid
+                    b = uuid.UUID(new_guid).bytes_le
+                    d.gameobject.guid = b
+                if hasattr(input_widget, 'valueChanged'):
+                    input_widget.valueChanged.connect(_on_guid_changed)
                 
             if node_type == "OBBData" or node_type == "Mat4Data":
                 widget.setFixedHeight(150)

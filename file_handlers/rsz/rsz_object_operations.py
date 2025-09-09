@@ -124,6 +124,9 @@ class RszObjectOperations:
         
         self._update_gameobject_hierarchy(new_gameobject)
         self.scn.gameobjects.append(new_gameobject)
+        if self.scn.is_scn:
+            from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+            RszGameObjectClipboard._add_guid_to_settings(self.viewer, insertion_index, new_gameobject.guid)
         self.viewer.mark_modified()
         
         return {
