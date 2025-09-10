@@ -1133,7 +1133,7 @@ class UserDataInput(BaseValueWidget):
         if not ok:
             return
 
-        type_dialog = ComponentSelectorDialog(self, viewer.type_registry)
+        type_dialog = ComponentSelectorDialog(self, viewer.type_registry, required_parent_name="via.UserData")
         type_dialog.setWindowTitle("Select UserData Instance Type")
         if default_type_name:
             try:

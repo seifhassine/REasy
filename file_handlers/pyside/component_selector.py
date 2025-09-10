@@ -4,10 +4,11 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget,
 class ComponentSelectorDialog(QDialog):
     """Dialog for selecting a component type with filtering and autocomplete"""
     
-    def __init__(self, parent=None, type_registry=None):
+    def __init__(self, parent=None, type_registry=None, required_parent_name=None):
         super().__init__(parent)
         self.type_registry = type_registry
         self.selected_component = None
+        self.required_parent_name = required_parent_name
         
         self.setWindowTitle("Add Component")
         self.resize(500, 400)
@@ -55,6 +56,13 @@ class ComponentSelectorDialog(QDialog):
                     "[]" in type_name):
                     continue
                     
+                if self.required_parent_name:
+                    parents = self.type_registry.getTypeParents(type_name)
+                    if self.required_parent_name in parents:
+                        self.all_component_types.append(type_name)
+                        count += 1
+                    continue
+
                 # Only add types with fields (likely to be valid components)
                 if type_info["fields"]:
                     self.all_component_types.append(type_name)
@@ -79,7 +87,7 @@ class ComponentSelectorDialog(QDialog):
         for component_type in self.all_component_types:
             if not search_text or search_lower in component_type.lower():
                 matching_types.append(component_type)
-                if len(matching_types) >= 600:
+                if not self.required_parent_name and len(matching_types) >= 600:
                     break
         
         self.component_list.addItems(matching_types)
@@ -87,7 +95,10 @@ class ComponentSelectorDialog(QDialog):
         if self.component_list.count() > 0:
             self.component_list.setCurrentRow(0)
             
-        self.status_label.setText(f"Showing first {len(matching_types)} matches out of {len(self.all_component_types)} components")
+        if self.required_parent_name:
+            self.status_label.setText(f"Showing {len(matching_types)} matches out of {len(self.all_component_types)} components")
+        else:
+            self.status_label.setText(f"Showing first {len(matching_types)} matches out of {len(self.all_component_types)} components")
         
     def get_selected_component(self):
         """Return the selected component type name"""

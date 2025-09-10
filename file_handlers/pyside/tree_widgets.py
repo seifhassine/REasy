@@ -719,7 +719,7 @@ class AdvancedTreeView(QTreeView):
                 else: 
                     return
                 
-                type_dialog = ComponentSelectorDialog(self, parent.type_registry)
+                type_dialog = ComponentSelectorDialog(self, parent.type_registry, required_parent_name="via.UserData")
                 type_dialog.setWindowTitle("Select UserData Instance Type")
                 
                 if element_type:
@@ -1031,7 +1031,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
             return
         
-        dialog = ComponentSelectorDialog(self, parent.type_registry)
+        dialog = ComponentSelectorDialog(self, parent.type_registry, required_parent_name="via.Component")
         component_type = dialog.get_selected_component() if dialog.exec_() else None
         
         if not component_type:
