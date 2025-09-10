@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, wait, as_completed
 
-from .utils import filepath_hash
+from .utils import filepath_hash, guess_extension_from_header
 from utils.native_build import ensure_fast_pakresolve
 from .pakfile import PakFile, PakEntry, _read_entry_raw, _decrypt_pak_entry_data, _decrypt_resource
 
@@ -482,20 +482,31 @@ class CachedPakReader(PakReader):
             with open(pak_path, "rb") as pak_file:
                 for e, outp in entries:
                     try:
-                        parent = outp.parent
-                        if parent not in resources.created_dirs:
-                            parent.mkdir(parents=True, exist_ok=True)
-                            resources.created_dirs.add(parent)
-                        
                         pak_file.seek(int(e.offset))
+                        
+                        is_unknown = (e.path is None)
+                        target_outp = outp
                         
                         if e.compression == 0 and e.encryption == 0:
                             size = int(e.decompressed_size)
-                            with open(outp, "wb") as out_file:
-                                remaining = size
+                            header_peek_size = min(64, size)
+                            header = pak_file.read(header_peek_size)
+                            if is_unknown and header:
+                                ext = guess_extension_from_header(header)
+                                if ext and not target_outp.suffix:
+                                    target_outp = target_outp.with_suffix("." + ext)
+                            
+                            parent = target_outp.parent
+                            if parent not in resources.created_dirs:
+                                parent.mkdir(parents=True, exist_ok=True)
+                                resources.created_dirs.add(parent)
+                            
+                            with open(target_outp, "wb") as out_file:
+                                if header:
+                                    out_file.write(header)
+                                remaining = size - len(header)
                                 buffer = resources.buffer
                                 buffer_size = len(buffer)
-                                
                                 while remaining > 0:
                                     chunk_size = min(remaining, buffer_size)
                                     bytes_read = pak_file.readinto(memoryview(buffer)[:chunk_size])
@@ -518,7 +529,17 @@ class CachedPakReader(PakReader):
                             elif e.compression == 2 and resources.zstd_decompressor:
                                 data = resources.zstd_decompressor.decompress(data)
                             
-                            with open(outp, "wb") as out_file:
+                            if is_unknown and data:
+                                ext = guess_extension_from_header(data[:64])
+                                if ext and not target_outp.suffix:
+                                    target_outp = target_outp.with_suffix("." + ext)
+                            
+                            parent = target_outp.parent
+                            if parent not in resources.created_dirs:
+                                parent.mkdir(parents=True, exist_ok=True)
+                                resources.created_dirs.add(parent)
+                            
+                            with open(target_outp, "wb") as out_file:
                                 out_file.write(data)
                         
                         count += 1
