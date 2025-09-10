@@ -172,22 +172,21 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added support for .motbank files"),
-            ("New", "Added support for .cfil files"),
-            ("New", "Revamped find dialog and made find dialogs of main window shared between its tabs"),
-            ("New", "Normal userdata can now be fully modified."),
+            ("New", "RSZ: Added GUID field in settings node of newly created GameObjects."),
             
-            ("Improved", "RSZ: Improved UI for object table and instance infos in Advanced Information node"),
-            ("Improved", "RSZ: Simplified component deletion process"),
+            ("Improved", "RSZ: Added lazy loading of some elements to reduce GUI loading times."),
+            ("Improved", "RSZ: Component and UserData selection dialogs are now accurate."),
+            ("Improved", "RSZ: Improved consistency in all RSZ templates and fixed some issues."),
+            ("Improved", "RSZ: Large arrays are now grouped together one hundred at a time to improve performance."),
             
-            ("Fixed", "RSZ: Fixed creation of string userdata array element and added selection of userdata instance type"),
-            ("Fixed", "RSZ: Fixed creation of normal userdata array elements, and cleaned up userdata related code"),
-            ("Fixed", "RSZ: Fixed edge case leading to deletion of unrelated instances when deleting a component"),
-            ("Fixed", "Some RE8 RSZ template fixes (<a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
+            ("Fixed", "RSZ: Regression issue in array element copy paste causing slowdowns and sometimes preventing such operations."),
+            ("Fixed", "RSZ: UserData modification was not working."),
+            ("Fixed", "RSZ: Array elemnt count was not updating instantly on the UI."),
+            ("Fixed", "RSZ: Changing of GameObject GUIDs had no effect when saving."),
+            ("Fixed", "RSZ: Some issues with GameObject names on Copy/Paste."),
+            ("Fixed", "RSZ: RSZUserData Infos were not showing in Advanced Information for PFB.18/16 files."),
+            ("Fixed", "RSZ: Some RE8 RSZ template fixes (<a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
 
-            ("Updated", "Updated and added game file lists for RE4, RE8, DMC5, and SF6"),
-            ("Updated", "Updated enums for SF6 and Monster Hunter Wilds"),
-            ("Updated", "Updated RSZ template for SF6"),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
