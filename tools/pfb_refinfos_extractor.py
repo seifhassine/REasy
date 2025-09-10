@@ -1,6 +1,5 @@
 #python pfb_refinfos_extractor.py <dir-or-file> --registry <path/to/rsz.json> --pretty --output result.json
 
-#!/usr/bin/env python3
 import os
 import sys
 import argparse
