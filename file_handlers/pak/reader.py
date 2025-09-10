@@ -489,18 +489,18 @@ class CachedPakReader(PakReader):
                         
                         if e.compression == 0 and e.encryption == 0:
                             size = int(e.decompressed_size)
-                            header_peek_size = min(64, size)
-                            header = pak_file.read(header_peek_size)
-                            if is_unknown and header:
-                                ext = guess_extension_from_header(header)
-                                if ext and not target_outp.suffix:
-                                    target_outp = target_outp.with_suffix("." + ext)
-                            
+                            header = b""
+                            if is_unknown:
+                                peek = min(64, size)
+                                header = pak_file.read(peek)
+                                if header:
+                                    ext = guess_extension_from_header(header)
+                                    if ext and not target_outp.suffix:
+                                        target_outp = target_outp.with_suffix("." + ext)
                             parent = target_outp.parent
                             if parent not in resources.created_dirs:
                                 parent.mkdir(parents=True, exist_ok=True)
                                 resources.created_dirs.add(parent)
-                            
                             with open(target_outp, "wb") as out_file:
                                 if header:
                                     out_file.write(header)
@@ -608,5 +608,4 @@ class CachedPakReader(PakReader):
             missing_files.extend(missing_local)
         
         return extracted
-
 
