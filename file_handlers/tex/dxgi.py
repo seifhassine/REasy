@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+DXGI_FORMAT_UNKNOWN = 0
+DXGI_FORMAT_R8G8B8A8_UNORM = 28
+DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29
+DXGI_FORMAT_BC1_UNORM = 71
+DXGI_FORMAT_BC1_UNORM_SRGB = 72
+DXGI_FORMAT_BC2_UNORM = 74
+DXGI_FORMAT_BC2_UNORM_SRGB = 75
+DXGI_FORMAT_BC3_UNORM = 77
+DXGI_FORMAT_BC3_UNORM_SRGB = 78
+DXGI_FORMAT_BC4_UNORM = 80
+DXGI_FORMAT_BC4_SNORM = 81
+DXGI_FORMAT_BC5_UNORM = 83
+DXGI_FORMAT_BC5_SNORM = 84
+DXGI_FORMAT_BC6H_UF16 = 95
+DXGI_FORMAT_BC6H_SF16 = 96
+DXGI_FORMAT_BC7_UNORM = 98
+DXGI_FORMAT_BC7_UNORM_SRGB = 99
+DXGI_FORMAT_VIAEXTENSION = 0x400
+DXGI_FORMAT_FORCE_UINT = 0x7FFFFFFF
+
+_BC8BPP = {DXGI_FORMAT_BC2_UNORM, DXGI_FORMAT_BC2_UNORM_SRGB, DXGI_FORMAT_BC3_UNORM, DXGI_FORMAT_BC3_UNORM_SRGB, DXGI_FORMAT_BC5_UNORM, DXGI_FORMAT_BC5_SNORM, DXGI_FORMAT_BC6H_UF16, DXGI_FORMAT_BC6H_SF16, DXGI_FORMAT_BC7_UNORM, DXGI_FORMAT_BC7_UNORM_SRGB}
+_BC4BPP = {DXGI_FORMAT_BC1_UNORM, DXGI_FORMAT_BC1_UNORM_SRGB, DXGI_FORMAT_BC4_UNORM, DXGI_FORMAT_BC4_SNORM}
+_BC_ALL = _BC8BPP | _BC4BPP
+
+def is_astc_format(dxgi_format: int) -> bool:
+    return (dxgi_format & DXGI_FORMAT_VIAEXTENSION) != 0 and dxgi_format != DXGI_FORMAT_FORCE_UINT
+
+def is_block_compressed(dxgi_format: int) -> bool:
+    return dxgi_format in _BC_ALL
+
+def is_rgb_format(dxgi_format: int) -> bool:
+    return not is_astc_format(dxgi_format) and not is_block_compressed(dxgi_format) and dxgi_format != DXGI_FORMAT_FORCE_UINT
+
+def get_bits_per_pixel(dxgi_format: int) -> int:
+    if dxgi_format in _BC4BPP:
+        return 4
+    if dxgi_format in _BC8BPP:
+        return 8
+    if dxgi_format == DXGI_FORMAT_R8G8B8A8_UNORM:
+        return 32
+    return 32
+
+def get_block_size_bytes(dxgi_format: int) -> int:
+    if dxgi_format in _BC4BPP:
+        return 8
+    if dxgi_format in _BC8BPP:
+        return 16
+    return 0
+
+def top_mip_size_bytes(dxgi_format: int, width: int, height: int) -> int:
+    if is_block_compressed(dxgi_format):
+        bw = (width + 3) // 4
+        bh = (height + 3) // 4
+        return bw * bh * get_block_size_bytes(dxgi_format)
+    bpp = get_bits_per_pixel(dxgi_format)
+    return (width * height * bpp) // 8
+
+_NAME_MAP = {
+    DXGI_FORMAT_UNKNOWN: "UNKNOWN",
+    DXGI_FORMAT_R8G8B8A8_UNORM: "R8G8B8A8_UNORM",
+    DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: "R8G8B8A8_UNORM_SRGB",
+    DXGI_FORMAT_BC1_UNORM: "BC1_UNORM",
+    DXGI_FORMAT_BC1_UNORM_SRGB: "BC1_UNORM_SRGB",
+    DXGI_FORMAT_BC2_UNORM: "BC2_UNORM",
+    DXGI_FORMAT_BC2_UNORM_SRGB: "BC2_UNORM_SRGB",
+    DXGI_FORMAT_BC3_UNORM: "BC3_UNORM",
+    DXGI_FORMAT_BC3_UNORM_SRGB: "BC3_UNORM_SRGB",
+    DXGI_FORMAT_BC4_UNORM: "BC4_UNORM",
+    DXGI_FORMAT_BC4_SNORM: "BC4_SNORM",
+    DXGI_FORMAT_BC5_UNORM: "BC5_UNORM",
+    DXGI_FORMAT_BC5_SNORM: "BC5_SNORM",
+    DXGI_FORMAT_BC6H_UF16: "BC6H_UF16",
+    DXGI_FORMAT_BC6H_SF16: "BC6H_SF16",
+    DXGI_FORMAT_BC7_UNORM: "BC7_UNORM",
+    DXGI_FORMAT_BC7_UNORM_SRGB: "BC7_UNORM_SRGB",
+}
+
+def dxgi_name(dxgi_format: int) -> str:
+    return _NAME_MAP.get(dxgi_format, f"DXGI_{dxgi_format}")
+
+def describe_format(dxgi_format: int) -> dict:
+    comp = is_block_compressed(dxgi_format)
+    bpp = get_bits_per_pixel(dxgi_format)
+    bs = get_block_size_bytes(dxgi_format) if comp else 0
+    return {'name': dxgi_name(dxgi_format), 'compressed': comp, 'bits_per_pixel': bpp, 'block_size': bs}
+
