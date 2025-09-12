@@ -135,7 +135,7 @@ class _PakActionsDelegate(QStyledItemDelegate):
         relx = ev.pos().x() - option.rect.left()
         path = index.data(Qt.UserRole + 1)
         if not isinstance(path, str) or not path:
-            path = index.data(Qt.UserRole + 2)
+            path = index.data(Qt.DisplayRole)
 
         if LEFT <= relx <= LEFT + ICON_W:
             if isinstance(path, str) and path:

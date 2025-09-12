@@ -151,6 +151,7 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setUniformRowHeights(True)
         self.tree_pak.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tree_pak.setHeaderHidden(True)
+        self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tree_pak.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree_pak.hide()
         self._pak_tree_model = None
@@ -672,6 +673,7 @@ class ProjectManager(QDockWidget):
         if not text:
             if self._pak_tree_model is not None:
                 self.tree_pak.setModel(self._pak_tree_model)
+                self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
                 self._schedule_column_resize()
             return
 
@@ -689,6 +691,7 @@ class ProjectManager(QDockWidget):
         pat.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
         proxy.setFilterRegularExpression(pat)
         self.tree_pak.setModel(proxy)
+        self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self._schedule_column_resize()
 
     def _collect_selected_pak_paths(self) -> list[str]:
