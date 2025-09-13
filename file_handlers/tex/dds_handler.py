@@ -9,47 +9,51 @@ from .dds import DDS_MAGIC
 
 
 class DdsHandler(BaseFileHandler):
-	def __init__(self):
-		super().__init__()
-		self.raw_data: bytes | bytearray = b""
+    def __init__(self):
+        super().__init__()
+        self.raw_data: bytes | bytearray = b""
 
-	@classmethod
-	def can_handle(cls, data: bytes) -> bool:
-		if len(data) < 4:
-			return False
-		magic = struct.unpack_from('<I', data, 0)[0]
-		return magic == DDS_MAGIC
+    @classmethod
+    def can_handle(cls, data: bytes) -> bool:
+        if len(data) < 4:
+            return False
+        magic = struct.unpack_from('<I', data, 0)[0]
+        return magic == DDS_MAGIC
 
-	def supports_editing(self) -> bool:
-		return False
+    def supports_editing(self) -> bool:
+        return False
 
-	def read(self, data: bytes):
-		self.raw_data = data
-		self.modified = False
+    def read(self, data: bytes):
+        self.raw_data = data
+        self.modified = False
 
-	def rebuild(self) -> bytes:
-		return bytes(self.raw_data)
+    def rebuild(self) -> bytes:
+        return bytes(self.raw_data)
 
-	def populate_treeview(self, tree, parent_item, metadata_map: dict):
-		return
+    def populate_treeview(self, tree, parent_item, metadata_map: dict):
+        return
 
-	def get_context_menu(self, tree, item, meta: dict):
-		return None
+    def get_context_menu(self, tree, item, meta: dict):
+        return None
 
-	def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
-		pass
+    def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
+        pass
 
-	def add_variables(self, target, prefix: str, count: int):
-		pass
+    def add_variables(self, target, prefix: str, count: int):
+        pass
 
-	def update_strings(self):
-		pass
+    def update_strings(self):
+        pass
 
-	def create_viewer(self):
-		try:
-			from .tex_viewer import TexViewer
-			v = TexViewer(self)
-			v.modified_changed.connect(self.modified_changed.emit)
-			return v
-		except Exception:
-			return None
+    def create_viewer(self):
+        try:
+            from .tex_viewer import TexViewer
+            v = TexViewer(self)
+            v.modified_changed.connect(self.modified_changed.emit)
+            return v
+        except Exception:
+            return None
+
+    def build_dds_bytes_for_viewing(self, image_index: int = 0) -> bytes:
+        from .dds import convert_dds_for_pil_compatibility
+        return convert_dds_for_pil_compatibility(self.raw_data)

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from PIL import Image
+PIL_OK = True
 
 class TexViewer(QWidget):
     modified_changed = Signal(bool)
@@ -80,6 +81,9 @@ class TexViewer(QWidget):
         exp.addStretch()
         layout.addLayout(exp)
 
+        if not PIL_OK:
+            self.info_label.setText("Pillow + pillow-dds not installed. Cannot display images.")
+
     def _populate(self):
         t = getattr(self.handler, 'tex', None)
         raw = getattr(self.handler, 'raw_data', b"")
@@ -115,10 +119,17 @@ class TexViewer(QWidget):
         self._refresh()
 
     def _refresh(self):
+        if not PIL_OK:
+            return
         img_idx = self.image_index.value()
         mip_idx = self.mip_index.value()
         dds = b""
-        if hasattr(self.handler, 'build_dds_bytes'):
+        if hasattr(self.handler, 'build_dds_bytes_for_viewing'):
+            try:
+                dds = self.handler.build_dds_bytes_for_viewing(img_idx)
+            except Exception:
+                dds = b""
+        elif hasattr(self.handler, 'build_dds_bytes'):
             try:
                 dds = self.handler.build_dds_bytes(img_idx)
             except Exception:
@@ -130,7 +141,12 @@ class TexViewer(QWidget):
         if not dds:
             return
         try:
-            im = Image.open(BytesIO(dds))
+            if hasattr(self.handler, 'build_dds_bytes_for_viewing'):
+                im = Image.open(BytesIO(dds))
+            else:
+                from .dds import convert_dds_for_pil_compatibility
+                compatible_dds = convert_dds_for_pil_compatibility(dds)
+                im = Image.open(BytesIO(compatible_dds))
             for _ in range(mip_idx):
                 if im.width <= 1 and im.height <= 1:
                     break

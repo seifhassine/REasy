@@ -1,5 +1,5 @@
 import struct
-from .dxgi import is_block_compressed, top_mip_size_bytes
+from .dxgi import is_block_compressed, top_mip_size_bytes, get_pil_compatible_format, get_bits_per_pixel
 
 DDS_MAGIC = 0x20534444
 
@@ -87,4 +87,61 @@ def build_dds_dx10(
 
     dx10_header = struct.pack('<I I I I I', dxgi_format, 3, misc_flags, max(1, array_size), misc_flags2)
     return header + dx10_header
+
+def convert_dds_for_pil_compatibility(dds_data: bytes) -> bytes:
+    if len(dds_data) < 148:
+        return dds_data
+        
+    magic = struct.unpack_from('<I', dds_data, 0)[0]
+    if magic != DDS_MAGIC:
+        return dds_data
+        
+    fourcc = struct.unpack_from('<I', dds_data, 84)[0]
+    if fourcc != FOURCC_DX10:
+        return dds_data
+        
+    original_format = struct.unpack_from('<I', dds_data, 128)[0]
+    compatible_format = get_pil_compatible_format(original_format)
+    
+    if compatible_format == original_format:
+        return dds_data
+    
+    height = struct.unpack_from('<I', dds_data, 12)[0]
+    width = struct.unpack_from('<I', dds_data, 16)[0]
+    
+    original_compressed = is_block_compressed(original_format)
+    compatible_compressed = is_block_compressed(compatible_format)
+    
+    modified_data = bytearray(dds_data)
+    
+    struct.pack_into('<I', modified_data, 128, compatible_format)
+    
+    original_size = top_mip_size_bytes(original_format, width, height)
+    compatible_size = top_mip_size_bytes(compatible_format, width, height)
+    
+    if original_compressed == compatible_compressed and original_size == compatible_size:
+        return bytes(modified_data)
+    
+    if original_size != compatible_size:
+        header_size = 148
+        original_texture_data = dds_data[header_size:]
+        
+        if compatible_size > original_size:
+            padding_size = compatible_size - len(original_texture_data)
+            padded_data = original_texture_data + b'\x00' * padding_size
+            modified_data = bytearray(modified_data[:header_size]) + padded_data
+        else:
+            truncated_data = original_texture_data[:compatible_size]
+            modified_data = bytearray(modified_data[:header_size]) + truncated_data
+        
+        struct.pack_into('<I', modified_data, 20, compatible_size)
+        
+        if not compatible_compressed:
+            flags = struct.unpack_from('<I', modified_data, 8)[0]
+            flags = (flags & ~0x80000) | 0x8
+            struct.pack_into('<I', modified_data, 8, flags)
+            pitch = (width * get_bits_per_pixel(compatible_format)) // 8
+            struct.pack_into('<I', modified_data, 20, pitch)
+    
+    return bytes(modified_data)
 

@@ -174,13 +174,27 @@ class TexFile:
         mip_datas: List[bytes],
         pitches_override: List[int] | None = None,
         version_override: int | None = None,
+        depth: int = 1,
+        array_size: int = 1,
+        misc_flags: int = 0,
     ) -> bytes:
         version = int(version_override) if version_override is not None else 28
-        image_count = 1
-        depth = 1
+        
+        image_count = max(1, array_size)
+        depth = max(1, depth)
         swizzle_control = -1
-        cubemap_marker = 0
-        flags = 0x0580 if is_block_compressed(dxgi_format) else 0
+        
+        D3D11_RESOURCE_MISC_TEXTURECUBE = 0x4
+        cubemap_marker = 1 if (misc_flags & D3D11_RESOURCE_MISC_TEXTURECUBE) else 0
+        
+        internal_version = get_internal_version(version)
+        if internal_version <= 20:
+            flags = 0x0001
+        else:
+            if is_block_compressed(dxgi_format):
+                flags = 0x0580
+            else:
+                flags = 0x0080
         swizzle_height_depth = 0
         swizzle_width = 0
         null1 = 0
