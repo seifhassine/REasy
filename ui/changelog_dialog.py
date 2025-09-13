@@ -172,20 +172,12 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "RSZ: Added GUID field in settings node of newly created GameObjects."),
+            ("New", "RSZ: CSV data generator. Still experimental, but should suffice for most cases. Access it via <i>Tools</i>."),
+            ("New", "TEX/DDS viewing and conversion support."),
             
-            ("Improved", "RSZ: Added lazy loading of some elements to reduce GUI loading times."),
-            ("Improved", "RSZ: Component and UserData selection dialogs are now accurate."),
-            ("Improved", "RSZ: Improved consistency in all RSZ templates and fixed some issues."),
-            ("Improved", "RSZ: Large arrays are now grouped together one hundred at a time to improve performance."),
+            ("Improved", "PAK: Extracted unknown files will now have an extension when possible."),
             
-            ("Fixed", "RSZ: Regression issue in array element copy paste causing slowdowns and sometimes preventing such operations."),
-            ("Fixed", "RSZ: UserData modification was not working."),
-            ("Fixed", "RSZ: Array elemnt count was not updating instantly on the UI."),
-            ("Fixed", "RSZ: Changing of GameObject GUIDs had no effect when saving."),
-            ("Fixed", "RSZ: Some issues with GameObject names on Copy/Paste."),
-            ("Fixed", "RSZ: RSZUserData Infos were not showing in Advanced Information for PFB.18/16 files."),
-            ("Fixed", "RSZ: Some RE8 RSZ template fixes (<a href='https://github.com/IntelOrca/'>@IntelOrca</a>)"),
+            ("Fixed", "Icons next to search results in PAK View of projects were not clickable. You can now also open a file in results by double clicking it."),
 
         ]
         for tag, text in changes:
