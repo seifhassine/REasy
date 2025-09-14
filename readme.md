@@ -131,7 +131,7 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 ## Credits:
 
-@alphazolam for the uvar template.
+@alphazolam for the 010 RE templates.
 
 @TrikzMe for RE's MurMurHash3 
 
