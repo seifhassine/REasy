@@ -172,13 +172,8 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "RSZ: CSV data generator. Still experimental, but should suffice for most cases. Access it via <i>Tools</i>."),
-            ("New", "TEX/DDS viewing and conversion support."),
-            
-            ("Improved", "PAK: Extracted unknown files will now have an extension when possible."),
-            
-            ("Fixed", "Icons next to search results in PAK View of projects were not clickable. You can now also open a file in results by double clicking it."),
-
+            ("New", "Add MESH file support along with 3D viewing."),
+           
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
