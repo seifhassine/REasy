@@ -59,7 +59,7 @@ REasy GUI is currently available in English and Chinese (limited)
   - Regex search in the file list is supported. 
 
 - **UVAR File Editing**
-- 
+ 
 - **3D Mesh Inspecting**
  
 - **MSG File Editing**
