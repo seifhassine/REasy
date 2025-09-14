@@ -27,6 +27,7 @@ python setup.py build_ext --inplace
 python scripts\compile_qm.py
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
+  --hidden-import fastmesh --collect-binaries fastmesh ^
   REasy.py
   
 xcopy /E /I /Y resources dist\resources

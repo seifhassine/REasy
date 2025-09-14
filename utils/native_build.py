@@ -67,3 +67,6 @@ def _build_native_module(module_name):
 def ensure_fast_pakresolve():
     return _build_native_module('fast_pakresolve')
 
+
+def ensure_fastmesh():
+    return _build_native_module('fastmesh')

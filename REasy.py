@@ -71,8 +71,9 @@ from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
 from tools.hash_calculator import HashCalculator
 
-from utils.native_build import ensure_fast_pakresolve
+from utils.native_build import ensure_fast_pakresolve, ensure_fastmesh
 fast_pakresolve = ensure_fast_pakresolve()
+fastmesh = ensure_fastmesh()
 
 from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402

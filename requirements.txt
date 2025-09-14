@@ -8,3 +8,5 @@ firebase-admin
 #NodeGraphQt
 zstandard
 Pillow
+PyOpenGL
+numpy
