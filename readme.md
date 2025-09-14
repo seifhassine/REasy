@@ -8,7 +8,7 @@
 <br>
 
 **REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of some RE Engine files. It also includes miscellaneous tools to speed up your work. 
-Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBANK and CFIL files.
+Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBANK, MESH and CFIL files.
 
 REasy GUI is currently available in English and Chinese (limited) 
 
@@ -18,6 +18,10 @@ REasy GUI is currently available in English and Chinese (limited)
 
 <p align="center">
    <img src="https://github.com/user-attachments/assets/64a84918-ad58-47ee-8186-e0e7a5a1ace0" alt="REasy Editor Logo" width=70%">
+</p>
+
+<p align="center">
+<img alt="image" src="https://github.com/user-attachments/assets/19ca472b-8578-495a-852e-a8ddc924b06c"  width=70%/>
 </p>
 
 <br>
@@ -55,6 +59,8 @@ REasy GUI is currently available in English and Chinese (limited)
   - Regex search in the file list is supported. 
 
 - **UVAR File Editing**
+- 
+- **3D Mesh Inspecting**
  
 - **MSG File Editing**
   
