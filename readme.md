@@ -46,6 +46,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | CFIL       | ✅       | Most titles      |
 | MOTBANK       | ✅       | Most titles      |
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
+| MDF       | Coming Next       |       |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
   
