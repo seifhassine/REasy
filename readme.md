@@ -58,14 +58,10 @@ REasy GUI is currently available in English and Chinese (limited)
   - REasy currently has the fastest PAK extraction system.
   - Support for single entry extraction.
   - Regex search in the file list is supported. 
-
-- **UVAR File Editing**
  
 - **3D Mesh Inspecting**
- 
-- **MSG File Editing**
   
-- **RSZ File Viewing and Editing:**  
+- **RSZ Extended File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.
   - Template Manager to export your favorite GameObjects and import them in different files (Exported GameObjects can be found in the "templates" directory in plaintext (JSON)).
   - Clipboard system allowing to copy paste array elements, components and GameObjects across different files (JSON serialized).
@@ -83,13 +79,12 @@ REasy GUI is currently available in English and Chinese (limited)
   - Specific text (UTF-16LE encoded)
   - 32-bit numbers (with hexadecimal display)
   - GUIDs (with conversion from standard format)
-  - Specific RSZ field values 
+  - Specific RSZ field values
+
 - **Project Manager:**
  
   Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
-- **GUID Converter Tool:**  
-  Convert between memory (hyphenated hex) and standard (hyphenated) GUID formats.
-
+  
 -  **Backup System for Files**
 
 -  **Dark Mode**  
