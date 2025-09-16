@@ -313,16 +313,20 @@ class BinaryHandler:
     def offset_content_table_add(self, writer_func):
         self.offset_content_table.append((self.tell, writer_func))
     
-    def string_table_flush(self):
+    def string_table_flush(self, dedup: bool = True):
         sorted_entries = sorted(self.string_table_offsets, key=lambda x: x[0])
         
         first_offset_by_string = {}
         for offset_pos, string in sorted_entries:
-            if string not in first_offset_by_string:
-                first_offset_by_string[string] = self.tell
+            write_pos_for_this_string = self.tell
             self.write_wstring(string)
-            self.write_at(offset_pos, '<q', first_offset_by_string[string])
-        
+            if dedup:
+                if string not in first_offset_by_string:
+                    first_offset_by_string[string] = write_pos_for_this_string
+                target_offset = first_offset_by_string[string]
+            else:
+                target_offset = write_pos_for_this_string
+            self.write_at(offset_pos, '<q', target_offset)
         self.string_table_offsets.clear()
     
     def offset_content_table_flush(self):

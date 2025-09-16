@@ -130,7 +130,7 @@ class MotbankFile:
 
 		handler.write_int64_at(motlists_offset_placeholder_pos, motlists_offset)
 
-		handler.string_table_flush()
+		handler.string_table_flush(dedup=False)
 
 		return handler.get_bytes()
 
