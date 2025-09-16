@@ -14,6 +14,7 @@ import subprocess
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.rsz.rsz_handler import RszHandler  
+from file_handlers.mdf.mdf_handler import MdfHandler  
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
@@ -389,6 +390,8 @@ class FileTab:
                 handler.set_game_version(self.app.settings.get("game_version", "RE4"))
                 handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
                 handler.confirmation_prompt = self.app.settings.get("confirmation_prompt", True)
+                handler.filepath = self.filename or ""
+            if isinstance(handler, MdfHandler):
                 handler.filepath = self.filename or ""
             
             handler.refresh_tree_callback = self.refresh_tree

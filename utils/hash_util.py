@@ -54,3 +54,9 @@ def murmur3_hash(data: bytes) -> int:
     h1 ^= stream_length
     h1 = fmix(h1)
     return h1
+
+def murmur3_hash_ascii(text: str) -> int:
+    return murmur3_hash(text.encode('ascii', 'ignore'))
+
+def murmur3_hash_utf16le(text: str) -> int:
+    return murmur3_hash(text.encode('utf-16le'))

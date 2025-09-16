@@ -6,6 +6,7 @@ from file_handlers.motbank.motbank_handler import MotbankHandler
 from file_handlers.tex.tex_handler import TexHandler
 from file_handlers.tex.dds_handler import DdsHandler
 from file_handlers.mesh.mesh_handler import MeshHandler
+from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.base_handler import FileHandler
 
 
@@ -16,6 +17,7 @@ def get_handler_for_data(data: bytes) -> FileHandler:
         UvarHandler,
         CfilHandler,
         MotbankHandler,
+        MdfHandler,
         TexHandler,
         DdsHandler,
         MeshHandler,

@@ -21,7 +21,7 @@ def create_about_dialog(parent):
 
     info_label = QLabel(
         tr("AboutDialog", "REasy Editor is a quality of life toolkit for modders.") + "\n\n" +
-        tr("AboutDialog", "It supports viewing and full editing of UVAR, MSG and RSZ files.") + "\n\n" +
+        tr("AboutDialog", "It supports viewing and full editing of RE Engine files with 3D capabilities.") + "\n\n" +
         tr("AboutDialog", "For more information, visit my GitHub page:")
     )
     info_label.setWordWrap(True)

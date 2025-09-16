@@ -316,10 +316,12 @@ class BinaryHandler:
     def string_table_flush(self):
         sorted_entries = sorted(self.string_table_offsets, key=lambda x: x[0])
         
+        first_offset_by_string = {}
         for offset_pos, string in sorted_entries:
-            string_offset = self.tell
+            if string not in first_offset_by_string:
+                first_offset_by_string[string] = self.tell
             self.write_wstring(string)
-            self.write_at(offset_pos, '<q', string_offset)
+            self.write_at(offset_pos, '<q', first_offset_by_string[string])
         
         self.string_table_offsets.clear()
     
