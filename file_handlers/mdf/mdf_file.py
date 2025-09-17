@@ -440,7 +440,7 @@ class MdfFile:
                         n = GpbfHeader()
                         d = GpbfHeader()
                         n.read(h)
-		                d.read(h)
+                        d.read(h)
                         mat.gpu_buffers.append((n, d))
                 h.seek(tell)
 
