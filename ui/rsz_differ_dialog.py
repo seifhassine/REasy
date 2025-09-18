@@ -7,103 +7,93 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 import os
 
 from file_handlers.rsz.rsz_differ import RszDiffer, DiffResult
 
 
+DROP_LABEL_DEFAULT_STYLE = """
+    QLabel {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border: 2px dashed #ccc;
+        border-radius: 5px;
+        color: #333;
+    }
+    QLabel:hover {
+        background-color: #e8e8e8;
+        border-color: #999;
+    }
+"""
+
+DROP_LABEL_ACCEPT_STYLE = """
+    QLabel {
+        background-color: #e0f0e0;
+        padding: 10px;
+        border: 2px solid #4CAF50;
+        border-radius: 5px;
+        color: #333;
+    }
+"""
+
+
+def _is_rsz_file(file_path: str) -> bool:
+    if not file_path:
+        return False
+
+    file_lower = file_path.lower()
+    if file_lower.endswith('.scn'):
+        return True
+
+    parts = os.path.basename(file_path).split('.')
+    if len(parts) >= 2 and ('.' + parts[-2]).lower() == '.scn':
+        return True
+
+    return False
+
+
+def _collect_rsz_files(event) -> List[str]:
+    if not event.mimeData().hasUrls():
+        return []
+
+    files: List[str] = []
+    for url in event.mimeData().urls():
+        if url.isLocalFile():
+            file_path = url.toLocalFile()
+            if _is_rsz_file(file_path):
+                files.append(file_path)
+
+    return files
+
+
 class DropLabel(QLabel):
     file_dropped = Signal(str)
-    
+
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
         self.setAcceptDrops(True)
-        self.setStyleSheet("""
-            QLabel {
-                background-color: #f0f0f0;
-                padding: 10px;
-                border: 2px dashed #ccc;
-                border-radius: 5px;
-                color: #333;
-            }
-            QLabel:hover {
-                background-color: #e8e8e8;
-                border-color: #999;
-            }
-        """)
-        
+        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
+
     def dragEnterEvent(self, event: QDragEnterEvent):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if urls and urls[0].isLocalFile():
-                file_path = urls[0].toLocalFile()
-                if self.is_rsz_file(file_path):
-                    event.acceptProposedAction()
-                    self.setStyleSheet("""
-                        QLabel {
-                            background-color: #e0f0e0;
-                            padding: 10px;
-                            border: 2px solid #4CAF50;
-                            border-radius: 5px;
-                            color: #333;
-                        }
-                    """)
-                    return
-        event.ignore()
-        
+        files = _collect_rsz_files(event)
+        if files:
+            event.acceptProposedAction()
+            self.setStyleSheet(DROP_LABEL_ACCEPT_STYLE)
+        else:
+            event.ignore()
+
     def dragLeaveEvent(self, event):
-        self.setStyleSheet("""
-            QLabel {
-                background-color: #f0f0f0;
-                padding: 10px;
-                border: 2px dashed #ccc;
-                border-radius: 5px;
-                color: #333;
-            }
-            QLabel:hover {
-                background-color: #e8e8e8;
-                border-color: #999;
-            }
-        """)
-        
+        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
+
     def dropEvent(self, event: QDropEvent):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            if urls and urls[0].isLocalFile():
-                file_path = urls[0].toLocalFile()
-                if self.is_rsz_file(file_path):
-                    event.acceptProposedAction()
-                    self.file_dropped.emit(file_path)
-                    self.setStyleSheet("""
-                        QLabel {
-                            background-color: #f0f0f0;
-                            padding: 10px;
-                            border: 2px dashed #ccc;
-                            border-radius: 5px;
-                            color: #333;
-                        }
-                        QLabel:hover {
-                            background-color: #e8e8e8;
-                            border-color: #999;
-                        }
-                    """)
-                    return
-        event.ignore()
-        
-    def is_rsz_file(self, file_path: str) -> bool:
-        file_lower = file_path.lower()
-        
-        if file_lower.endswith('.scn'):
-            return True
-                
-        parts = os.path.basename(file_path).split('.')
-        if len(parts) >= 2:
-            second_to_last = '.' + parts[-2]
-            if second_to_last == '.scn':
-                return True
-                
-        return False
+        files = _collect_rsz_files(event)
+        if files:
+            event.acceptProposedAction()
+            self.file_dropped.emit(files[0])
+        else:
+            event.ignore()
+        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
 
 
 class DiffWorker(QThread):
@@ -146,61 +136,39 @@ class RszDifferDialog(QDialog):
         self.setup_ui()
     
     def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            scn_files = [url for url in urls if url.isLocalFile() and self.is_rsz_file(url.toLocalFile())]
-            if scn_files:
-                event.acceptProposedAction()
-                if len(scn_files) >= 2:
-                    self.setStatusTip(f"Drop to load {min(2, len(scn_files))} files")
-                else:
-                    self.setStatusTip("Drop to load file")
-    
-    def dropEvent(self, event):
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            scn_files = []
-            
-            for url in urls:
-                if url.isLocalFile():
-                    file_path = url.toLocalFile()
-                    if self.is_rsz_file(file_path):
-                        scn_files.append(file_path)
-            
-            if len(scn_files) == 1:
-                if not self.file1_path:
-                    self.load_file(1, scn_files[0])
-                elif not self.file2_path:
-                    self.load_file(2, scn_files[0])
-                else:
-                    self.load_file(1, scn_files[0])
-                    
-            elif len(scn_files) >= 2:
-                self.load_file(1, scn_files[0])
-                self.load_file(2, scn_files[1])
-                
-                if len(scn_files) > 2:
-                    QMessageBox.information(self, "Multiple Files", 
-                                          f"Loaded first 2 files out of {len(scn_files)} dropped files.")
-            
+        files = _collect_rsz_files(event)
+        if files:
             event.acceptProposedAction()
-    
-    def is_rsz_file(self, file_path: str) -> bool:
-        if not file_path:
-            return False
-        
-        file_lower = file_path.lower()
-        
-        if file_lower.endswith('.scn'):
-            return True
-                
-        parts = os.path.basename(file_path).split('.')
-        if len(parts) >= 2:
-            second_to_last = '.' + parts[-2]
-            if second_to_last == '.scn':
-                return True
-                
-        return False
+            if len(files) >= 2:
+                self.setStatusTip(f"Drop to load {min(2, len(files))} files")
+            else:
+                self.setStatusTip("Drop to load file")
+
+    def dropEvent(self, event):
+        files = _collect_rsz_files(event)
+        if not files:
+            return
+
+        if len(files) == 1:
+            if not self.file1_path:
+                self.load_file(1, files[0])
+            elif not self.file2_path:
+                self.load_file(2, files[0])
+            else:
+                self.load_file(1, files[0])
+
+        elif len(files) >= 2:
+            self.load_file(1, files[0])
+            self.load_file(2, files[1])
+
+            if len(files) > 2:
+                QMessageBox.information(
+                    self,
+                    "Multiple Files",
+                    f"Loaded first 2 files out of {len(files)} dropped files."
+                )
+
+        event.acceptProposedAction()
         
     def setup_ui(self):
         self.setWindowTitle("RSZ File Diff")

@@ -4,38 +4,37 @@ RSZ Field Value Finder Dialog
 This dialog provides a UI for searching RSZ field values across multiple files.
 """
 
-import os
-import sys
 import glob
+import os
 from pathlib import Path
+from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QComboBox,
     QListWidget,
     QListWidgetItem,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QGroupBox,
-    QSplitter,
-    QCheckBox,
-    QDialogButtonBox,
-    QFileDialog,
     QMessageBox,
     QProgressDialog,
-    QApplication,
+    QPushButton,
+    QSplitter,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
 )
 
-sys.path.append(str(Path(__file__).parent.parent))
-
+from tools.rsz_field_value_finder import format_value, scan_file
 from utils.type_registry import TypeRegistry
-from tools.rsz_field_value_finder import scan_file, format_value
+
 class SearchWorkerThread(QThread):
     progress_update = Signal(int, int)
     file_found = Signal(str, list)
@@ -76,14 +75,16 @@ class SearchWorkerThread(QThread):
                     
                 self.progress_update.emit(idx + 1, total_files)
                 
-                results = scan_file(filepath, self.type_id, None, 
-                                  self.type_registry, failures)
-                
+                results = scan_file(
+                    filepath,
+                    self.type_id,
+                    None,
+                    self.type_registry,
+                    failures,
+                )
+
                 if results:
-                    filtered_results = results
-                    
-                    if filtered_results:
-                        self.file_found.emit(str(filepath), filtered_results)
+                    self.file_found.emit(str(filepath), results)
             
             self.search_complete.emit()
             
@@ -99,7 +100,8 @@ class RszFieldValueFinderDialog(QDialog):
         self.results = {}
         self.all_results = {}
         self.last_selected_item = None
-        
+        self.progress_dialog: Optional[QProgressDialog] = None
+
         self.setWindowTitle("Find RSZ Field Value")
         self.setMinimumSize(900, 700)
         self.setup_ui()
@@ -244,27 +246,18 @@ class RszFieldValueFinderDialog(QDialog):
         
     def browse_json_path(self):
         current_path = self.json_path_edit.text()
-        
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select JSON Type Data File",
             os.path.dirname(current_path) if current_path else "",
             "JSON Files (*.json);;All Files (*.*)"
         )
-        
+
         if file_path:
             self.json_path_edit.setText(file_path)
             self.load_type_registry()
-        else:
-            dir_path = QFileDialog.getExistingDirectory(
-                self,
-                "Select JSON Type Data Directory",
-                current_path
-            )
-            if dir_path:
-                self.json_path_edit.setText(dir_path)
-                self.load_type_registry()
-            
+
     def browse_directory(self):
         path = QFileDialog.getExistingDirectory(
             self,
@@ -350,28 +343,33 @@ class RszFieldValueFinderDialog(QDialog):
     def on_type_changed(self, text):
         if not text or not self.type_registry:
             return
-            
-        type_id = None
-        
-        if text.startswith('0x'):
-            try:
-                type_id = int(text, 16)
-            except ValueError:
-                pass
-        else:
-            try:
-                type_id = int(text)
-            except ValueError:
-                for i in range(self.type_combo.count()):
-                    if self.type_combo.itemText(i) == text:
-                        type_id = self.type_combo.itemData(i)
-                        break
-                        
+
+        type_id = self._resolve_type_id(text)
+
         if type_id is not None:
             self.type_id_label.setText(f"ID: 0x{type_id:08X}")
             self.populate_fields(type_id)
         else:
             self.type_id_label.setText("ID: -")
+
+    def _resolve_type_id(self, text: str) -> Optional[int]:
+        text = text.strip()
+        if not text:
+            return None
+
+        if text.startswith('0x'):
+            try:
+                return int(text, 16)
+            except ValueError:
+                return None
+
+        try:
+            return int(text)
+        except ValueError:
+            for i in range(self.type_combo.count()):
+                if self.type_combo.itemText(i) == text:
+                    return self.type_combo.itemData(i)
+        return None
             
     def populate_fields(self, type_id):
         self.constraint_field_combo.clear()
@@ -412,7 +410,7 @@ class RszFieldValueFinderDialog(QDialog):
         
         self.constraint_value_edit.clear()
         
-        if hasattr(self, 'all_results') and self.all_results:
+        if self.all_results:
             self.apply_filters()
     
     def remove_constraint(self):
@@ -421,7 +419,7 @@ class RszFieldValueFinderDialog(QDialog):
             row = self.constraints_list.row(current_item)
             self.constraints_list.takeItem(row)
             
-            if hasattr(self, 'all_results') and self.all_results:
+            if self.all_results:
                 self.apply_filters()
     
     def get_constraints(self):
@@ -437,35 +435,38 @@ class RszFieldValueFinderDialog(QDialog):
         return constraints
     
     def on_display_fields_changed(self, item):
-        if hasattr(self, 'last_selected_item') and self.last_selected_item:
+        if self.last_selected_item:
             self.on_item_selected(self.last_selected_item, 0)
-    
+
     def apply_filters(self):
-        if not hasattr(self, 'all_results'):
+        if not self.all_results:
             return
-            
+
+        constraints = self.get_constraints()
+
         self.file_tree.clear()
         self.results.clear()
-        
+
         for filepath in self.all_results:
-            self.apply_filters_for_file(filepath)
-            
-        self.update_tree_display()
-    
-    def apply_filters_for_file(self, filepath):
+            self.apply_filters_for_file(filepath, constraints)
+
+        self.update_tree_display(constraints)
+
+    def apply_filters_for_file(self, filepath, constraints=None):
         if filepath not in self.all_results:
             return
-            
+
         all_results = self.all_results[filepath]
-        constraints = self.get_constraints()
-        
+        constraints = constraints if constraints is not None else self.get_constraints()
+
         instances = {}
         for file_path, instance_id, field_name, value in all_results:
             if instance_id not in instances:
                 instances[instance_id] = {}
             instances[instance_id][field_name] = value
-        
+
         filtered_results = []
+        self.results.pop(filepath, None)
         for instance_id, fields in instances.items():
             meets_all_constraints = True
             if constraints:
@@ -479,19 +480,15 @@ class RszFieldValueFinderDialog(QDialog):
                     else:
                         meets_all_constraints = False
                         break
-            
-
             if meets_all_constraints:
                 for field_name, value in fields.items():
                     filtered_results.append((filepath, instance_id, field_name, value))
-        
-
         if filtered_results:
             self.results[filepath] = filtered_results
-    
-    def update_tree_display(self):
+
+    def update_tree_display(self, constraints=None):
         self.file_tree.clear()
-        
+
         total_instances = 0
         for filepath, filtered_results in self.results.items():
             unique_instances = len(set(iid for _, iid, _, _ in filtered_results))
@@ -504,18 +501,15 @@ class RszFieldValueFinderDialog(QDialog):
             file_item.setText(0, os.path.basename(filepath))
             file_item.setText(1, str(unique_instances))
             file_item.setData(0, Qt.UserRole, filepath)
-            
-
-            
             placeholder = QTreeWidgetItem(file_item)
             placeholder.setText(0, "Loading...")
-        
-        if hasattr(self, 'status_bar'):
+
+        if constraints is None:
             constraints = self.get_constraints()
-            if constraints:
-                self.status_bar.setText(f"Filtered: {total_instances} instances in {len(self.results)} files")
-            else:
-                self.status_bar.setText(f"Total: {total_instances} instances in {len(self.results)} files")
+        if constraints:
+            self.status_bar.setText(f"Filtered: {total_instances} instances in {len(self.results)} files")
+        else:
+            self.status_bar.setText(f"Total: {total_instances} instances in {len(self.results)} files")
         
     def start_search(self):
         if not self.dir_edit.text():
@@ -526,23 +520,9 @@ class RszFieldValueFinderDialog(QDialog):
             QMessageBox.warning(self, "Warning", "Please select a type")
             return
             
-        type_id = None
         text = self.type_combo.currentText()
-        
-        if text.startswith('0x'):
-            try:
-                type_id = int(text, 16)
-            except ValueError:
-                pass
-        else:
-            try:
-                type_id = int(text)
-            except ValueError:
-                for i in range(self.type_combo.count()):
-                    if self.type_combo.itemText(i) == text:
-                        type_id = self.type_combo.itemData(i)
-                        break
-                        
+        type_id = self._resolve_type_id(text) if text else None
+
         if type_id is None:
             QMessageBox.warning(self, "Warning", "Invalid type selection")
             return
@@ -559,36 +539,47 @@ class RszFieldValueFinderDialog(QDialog):
             self.type_registry,
             self.recursive_check.isChecked()
         )
-        
+
         self.search_thread.progress_update.connect(self.update_progress)
         self.search_thread.file_found.connect(self.add_file_result)
         self.search_thread.search_complete.connect(self.search_complete)
         self.search_thread.error_occurred.connect(self.search_error)
-        
+
+        self._close_progress_dialog()
         self.progress_dialog = QProgressDialog("Searching files...", "Cancel", 0, 100, self)
         self.progress_dialog.setWindowTitle("Search Progress")
         self.progress_dialog.setWindowModality(Qt.WindowModal)
         self.progress_dialog.canceled.connect(self.cancel_search)
         self.progress_dialog.show()
-        
+
         self.search_thread.start()
-        
+
     def update_progress(self, current, total):
-        if hasattr(self, 'progress_dialog'):
-            self.progress_dialog.setMaximum(total)
-            self.progress_dialog.setValue(current)
-            self.progress_dialog.setLabelText(f"Searching files... ({current}/{total})")
+        dialog = self.progress_dialog
+        if not dialog or not dialog.isVisible():
+            return
+
+        dialog.setMaximum(total)
+        dialog.setValue(current)
+        dialog.setLabelText(f"Searching files... ({current}/{total})")
             
     def add_file_result(self, filepath, results):
         self.all_results[filepath] = results
+
+        constraints = self.get_constraints()
+        if constraints:
+            self.apply_filters_for_file(filepath, constraints)
+            self.update_tree_display(constraints)
+            return
+
         self.results[filepath] = results
-        
+
         unique_instances = len(set(r[1] for r in results))
         file_item = QTreeWidgetItem(self.file_tree)
         file_item.setText(0, os.path.basename(filepath))
         file_item.setText(1, str(unique_instances))
         file_item.setData(0, Qt.UserRole, filepath)
-        
+
         placeholder = QTreeWidgetItem(file_item)
         placeholder.setText(0, "Loading...")
         
@@ -645,31 +636,45 @@ class RszFieldValueFinderDialog(QDialog):
                         
         self.details_tree.resizeColumnToContents(0)
         
+    def _close_progress_dialog(self):
+        dialog = self.progress_dialog
+        if dialog:
+            self.progress_dialog = None
+            dialog.close()
+
     def cancel_search(self):
         if self.search_thread:
             self.search_thread.cancel()
-            
+        self._close_progress_dialog()
+
     def search_complete(self):
-        if hasattr(self, 'progress_dialog'):
-            self.progress_dialog.close()
-            
+        self._close_progress_dialog()
+
+        constraints = self.get_constraints()
+        result_source = self.results if constraints else self.all_results
 
         total_instances = 0
-        for results in self.all_results.values():
+        for results in result_source.values():
             unique_instances = len(set(r[1] for r in results))
             total_instances += unique_instances
-        
-        total_files = len(self.all_results)
-        
 
-        if hasattr(self, 'status_bar'):
+        total_files = len(result_source)
+
+        if constraints:
+            self.status_bar.setText(
+                f"Search complete (filtered): {total_instances} instances in {total_files} files"
+            )
+        else:
             self.status_bar.setText(f"Search complete: {total_instances} instances in {total_files} files")
-        
+
         if total_files == 0:
-            QMessageBox.information(self, "Search Complete", "No matching instances found.")
+            if constraints and self.all_results:
+                message = "No matches found for the current constraints."
+            else:
+                message = "No matching instances found."
+            QMessageBox.information(self, "Search Complete", message)
         
     def search_error(self, error_msg):
-        if hasattr(self, 'progress_dialog'):
-            self.progress_dialog.close()
-            
+        self._close_progress_dialog()
+
         QMessageBox.critical(self, "Search Error", f"An error occurred: {error_msg}")
