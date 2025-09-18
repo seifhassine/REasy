@@ -7,7 +7,7 @@ This file contains:
 """
 
 import functools
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 from utils.enum_manager import EnumManager
@@ -28,7 +28,7 @@ from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 from .rsz_file import RszFile, RszInstanceInfo
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
-from ..pyside.tree_model import ScnTreeBuilder, DataTreeBuilder
+from ..pyside.tree_model import DataTreeBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
 from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
@@ -42,6 +42,9 @@ from .utils.rsz_guid_utils import create_guid_data
 from .rsz_lazy_loading import RszLazyNodeBuilder
 
 RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot manually manage resources."
+
+ADVANCED_SECTION_TITLE = "Advanced Information"
+DATA_BLOCK_TITLE = "Data Block"
 
 class RszHandler(BaseFileHandler):
     """Handler for SCN/PFB/USR files"""
@@ -225,8 +228,6 @@ class RszHandler(BaseFileHandler):
         return self.component_clipboard.has_clipboard_data(widget)
 
 class RszViewer(QWidget):
-    INSTANCE_ID_ROLE = Qt.UserRole + 1
-    ROW_HEIGHT = 24
     modified_changed = Signal(bool)
 
     def __init__(self, parent=None):
@@ -239,8 +240,6 @@ class RszViewer(QWidget):
         self.show_advanced = False
         self.confirmation_prompt = False
         self._cleanup_pending = False
-        self._created_widgets = []
-        self._created_labels = []
         self.tree = AdvancedTreeView(self)
         layout = QVBoxLayout(self)
         layout.addWidget(self.tree)
@@ -280,8 +279,6 @@ class RszViewer(QWidget):
                 print(f"Error disconnecting modified_changed signal: {e}")
             if self.tree:
                 self.tree.setModel(None)
-            self._created_widgets.clear()
-            self._created_labels.clear()
         except Exception as e:
             print(f"Error during cleanup: {e}")
         self._cleanup_pending = False
@@ -317,292 +314,252 @@ class RszViewer(QWidget):
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         root_dict["type"] = "root"
-        if self.scn.is_usr:
-            file_type = "USR"
-        elif self.scn.is_pfb:
-            file_type = "PFB"
-        else:
-            file_type = "SCN"
+        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
-            advanced_node = ScnTreeBuilder.create_advanced_node()
-            root_dict["children"].append(advanced_node)
-            advanced_node["children"].extend(
-                [
-                    self._create_header_info(),
-                    self._create_gameobjects_info(),
-                ]
-            )
-            if not self.scn.is_pfb and not self.scn.is_usr:
-                advanced_node["children"].append(self._create_folders_info())
-                advanced_node["children"].append(self._create_prefabs_info())
-            if self.scn.is_pfb:
-                advanced_node["children"].append(self._create_gameobject_ref_infos())
-            advanced_node["children"].extend(
-                [
-                    self._create_resources_info(),
-                    self._create_rsz_header_info(),
-                    self._create_object_table_info(),
-                    self._create_instance_infos(),
-                    self._create_userdata_infos(),
-                ]
-            )
-        data_node = DataTreeBuilder.create_data_node(
-            ScnTreeBuilder.NODES["DATA_BLOCK"],
-        )
+            advanced_children = [
+                node for node in self._iter_advanced_sections() if node is not None
+            ]
+            if advanced_children:
+                advanced_node = DataTreeBuilder.create_data_node(
+                    ADVANCED_SECTION_TITLE, ""
+                )
+                advanced_node["children"].extend(advanced_children)
+                root_dict["children"].append(advanced_node)
+        data_node = DataTreeBuilder.create_data_node(DATA_BLOCK_TITLE, "")
         root_dict["children"].append(data_node)
         self._add_data_block(data_node)
         return root_dict
 
+    def _iter_advanced_sections(self):
+        yield self._create_header_info()
+        yield self._create_gameobjects_info()
+        if not self.scn.is_pfb and not self.scn.is_usr:
+            yield self._create_folders_info()
+            yield self._create_prefabs_info()
+        if self.scn.is_pfb:
+            yield self._create_gameobject_ref_infos()
+        yield self._create_resources_info()
+        yield self._create_rsz_header_info()
+        yield self._create_object_table_info()
+        yield self._create_instance_infos()
+        yield self._create_userdata_infos()
+
     def _create_header_info(self):
         """Create Header info section for self.scn.header"""
-        children = []
+        header = self.scn.header
+        signature = header.signature.decode("ascii", errors="replace").strip("\x00")
+
         if self.scn.is_pfb:
-            if self.scn.filepath.lower().endswith('.16'):
-                # PFB.16 has a different header structure without userdata fields
-                header_fields = [
-                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                    ("Info Count", lambda h: str(h.info_count)),
-                    ("Resource Count", lambda h: str(h.resource_count)),
-                    ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
-                    ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
-                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-                ]
-            else:
-                # Regular PFB format
-                header_fields = [
-                    ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                    ("Info Count", lambda h: str(h.info_count)),
-                    ("Resource Count", lambda h: str(h.resource_count)),
-                    ("GameObjectRefInfo Count", lambda h: str(h.gameobject_ref_info_count)),
-                    ("UserData Count", lambda h: str(h.userdata_count)),
-                    ("Reserved", lambda h: str(h.reserved)),
-                    ("GameObjectRefInfo Tbl", lambda h: f"0x{h.gameobject_ref_info_tbl:X}"),
-                    ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                    ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                    ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-                ]
+            header_pairs = [
+                ("Signature", signature),
+                ("Info Count", header.info_count),
+                ("Resource Count", header.resource_count),
+                ("GameObjectRefInfo Count", header.gameobject_ref_info_count),
+                ("GameObjectRefInfo Tbl", f"0x{header.gameobject_ref_info_tbl:X}"),
+                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+                ("Data Offset", f"0x{header.data_offset:X}"),
+            ]
+            if not self.scn.filepath.lower().endswith('.16'):
+                header_pairs.extend([
+                    ("UserData Count", header.userdata_count),
+                    ("Reserved", header.reserved),
+                    ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
+                ])
         elif self.scn.is_usr:
-            header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                ("Resource Count", lambda h: str(h.resource_count)),
-                ("UserData Count", lambda h: str(h.userdata_count)),
-                ("Info Count", lambda h: str(h.info_count)),
-                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
-                ("Reserved", lambda h: str(h.reserved)),
+            header_pairs = [
+                ("Signature", signature),
+                ("Resource Count", header.resource_count),
+                ("UserData Count", header.userdata_count),
+                ("Info Count", header.info_count),
+                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+                ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
+                ("Data Offset", f"0x{header.data_offset:X}"),
+                ("Reserved", header.reserved),
             ]
         elif self.scn.filepath.lower().endswith('.18'):
-            header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                ("Info Count", lambda h: str(h.info_count)),
-                ("Resource Count", lambda h: str(h.resource_count)),
-                ("Folder Count", lambda h: str(h.folder_count)),
-                ("Prefab Count", lambda h: str(h.prefab_count)),
-                ("UserData Count", lambda h: str(h.userdata_count)),
-                ("Folder Tbl", lambda h: f"0x{h.folder_tbl:X}"),
-                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+            header_pairs = [
+                ("Signature", signature),
+                ("Info Count", header.info_count),
+                ("Resource Count", header.resource_count),
+                ("Folder Count", header.folder_count),
+                ("Prefab Count", header.prefab_count),
+                ("UserData Count", header.userdata_count),
+                ("Folder Tbl", f"0x{header.folder_tbl:X}"),
+                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+                ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
+                ("Data Offset", f"0x{header.data_offset:X}"),
             ]
         else:
-            header_fields = [
-                ("Signature", lambda h: h.signature.decode("ascii", errors="replace").strip("\x00")),
-                ("Info Count", lambda h: str(h.info_count)),
-                ("Resource Count", lambda h: str(h.resource_count)),
-                ("Folder Count", lambda h: str(h.folder_count)),
-                ("Prefab Count", lambda h: str(h.prefab_count)),
-                ("UserData Count", lambda h: str(h.userdata_count)),
-                ("Folder Tbl", lambda h: f"0x{h.folder_tbl:X}"),
-                ("Resource Info Tbl", lambda h: f"0x{h.resource_info_tbl:X}"),
-                ("Prefab Info Tbl", lambda h: f"0x{h.prefab_info_tbl:X}"),
-                ("UserData Info Tbl", lambda h: f"0x{h.userdata_info_tbl:X}"),
-                ("Data Offset", lambda h: f"0x{h.data_offset:X}"),
+            header_pairs = [
+                ("Signature", signature),
+                ("Info Count", header.info_count),
+                ("Resource Count", header.resource_count),
+                ("Folder Count", header.folder_count),
+                ("Prefab Count", header.prefab_count),
+                ("UserData Count", header.userdata_count),
+                ("Folder Tbl", f"0x{header.folder_tbl:X}"),
+                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+                ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
+                ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
+                ("Data Offset", f"0x{header.data_offset:X}"),
             ]
-        for title, getter in header_fields:
-            children.append(
-                DataTreeBuilder.create_data_node(
-                    title
-                    + ": "
-                    + getter(
-                        self.scn.header,
-                    )
-                )
-            )
-        return DataTreeBuilder.create_data_node("Header", "", children=children)
+
+        return DataTreeBuilder.create_branch_from_pairs("Header", header_pairs)
 
     def _create_rsz_header_info(self):
         return DataTreeBuilder.create_data_node("RSZHeader", "")
 
     def _create_resources_info(self):
         """Create Resources info section for resource string references"""
-        node = DataTreeBuilder.create_data_node(
-            "Resources", f"{len(self.scn.resource_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "Resources", len(self.scn.resource_infos)
         )
-        
-        if hasattr(self.scn, '_pfb16_direct_strings'):
-            direct_strings = self.scn._pfb16_direct_strings
-            
-            for i, res in enumerate(self.scn.resource_infos):
-                res_string = ""
-                
-                if i < len(direct_strings):
-                    res_string = direct_strings[i]
-                    #print(f"PFB.16 resource {i}: Using direct string: '{res_string}'")
-                else:
-                    res_string = self.scn.get_resource_string(res) or ""
-                    #print(f"PFB.16 resource {i}: Using get_resource_string: '{res_string}'")
-                    
-                res_node = DataTreeBuilder.create_data_node(f"{res_string.rstrip('\0')}", "")
-                res_node["type"] = "resource"
-                res_node["resource_index"] = i
-                
-                node["children"].append(res_node)
-                
-        else:
-            for i, res in enumerate(self.scn.resource_infos):
+        direct_strings = getattr(self.scn, '_pfb16_direct_strings', None)
+
+        for i, res in enumerate(self.scn.resource_infos):
+            if direct_strings is not None and i < len(direct_strings):
+                res_string = direct_strings[i] or ""
+            else:
                 try:
                     res_string = self.scn.get_resource_string(res) or ""
                 except Exception as e:
                     print(f"Error reading resource {i}: {e}")
                     res_string = "[Error reading]"
-                    
-                res_node = DataTreeBuilder.create_data_node(f"{res_string.rstrip('\0')}", "")
-                res_node["type"] = "resource"
-                res_node["resource_index"] = i
-                
-                node["children"].append(res_node)
-        
+
+            res_node = DataTreeBuilder.create_text_node(res_string.rstrip('\0'))
+            res_node["type"] = "resource"
+            res_node["resource_index"] = i
+            node["children"].append(res_node)
+
         return node
 
     def _create_gameobject_ref_infos(self):
         """Create GameObjectRefInfo section for PFB files"""
-        node = DataTreeBuilder.create_data_node(
-            "GameObjectRefInfos", f"{len(self.scn.gameobject_ref_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "GameObjectRefInfos", len(self.scn.gameobject_ref_infos)
         )
-        for i, gori in enumerate(self.scn.gameobject_ref_infos):
-            ref_node = DataTreeBuilder.create_data_node(f"GameObjectRefInfo[{i}]", "")
-            ref_node["children"] = [
-                DataTreeBuilder.create_data_node(f"Object ID: {gori.object_id}", ""),
-                DataTreeBuilder.create_data_node(f"Property ID: {gori.property_id}", ""),
-                DataTreeBuilder.create_data_node(f"Array Index: {gori.array_index}", ""),
-                DataTreeBuilder.create_data_node(f"Target ID: {gori.target_id}", ""),
-            ]
-            node["children"].append(ref_node)
+        node["children"].extend(
+            DataTreeBuilder.create_branch_from_pairs(
+                f"GameObjectRefInfo[{i}]",
+                [
+                    ("Object ID", gori.object_id),
+                    ("Property ID", gori.property_id),
+                    ("Array Index", gori.array_index),
+                    ("Target ID", gori.target_id),
+                ],
+            )
+            for i, gori in enumerate(self.scn.gameobject_ref_infos)
+        )
         return node
 
     def _create_gameobjects_info(self):
         """Create GameObjects info section"""
-        node = ScnTreeBuilder.create_gameobjects_node(len(self.scn.gameobjects))
-        
+        node = DataTreeBuilder.create_count_node(
+            "GameObjects", len(self.scn.gameobjects)
+        )
+
         for i, go in enumerate(self.scn.gameobjects):
-            if self.scn.is_pfb:
-                # Normal PFB GameObject
-                instance_index = None
-                if go.id < len(self.scn.object_table):
-                    instance_index = self.scn.object_table[go.id]
-                instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
-                children = [
-                    DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
-                    DataTreeBuilder.create_data_node("Parent ID: " + str(go.parent_id), ""),
-                    DataTreeBuilder.create_data_node(
-                        "Component Count: " + str(go.component_count), ""
-                    ),
-                ]
-            else:
-                # Normal SCN GameObject
-                instance_index = None
-                if go.id < len(self.scn.object_table):
-                    instance_index = self.scn.object_table[go.id]
-                instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
-                children = [
-                    DataTreeBuilder.create_data_node("GUID: " + guid_le_to_str(go.guid), ""),
-                    DataTreeBuilder.create_data_node("ID: " + str(go.id), ""),
-                    DataTreeBuilder.create_data_node("Parent ID: " + str(go.parent_id), ""),
-                    DataTreeBuilder.create_data_node(
-                        "Component Count: " + str(go.component_count), ""
-                    ),
-                    DataTreeBuilder.create_data_node("Prefab ID: " + str(go.prefab_id), ""),
-                ]
-                
-            go_item = DataTreeBuilder.create_data_node(instance_name, "", children=children)
+            instance_index = None
+            if go.id < len(self.scn.object_table):
+                instance_index = self.scn.object_table[go.id]
+            instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
+            field_pairs = [
+                ("ID", go.id),
+                ("Parent ID", go.parent_id),
+                ("Component Count", go.component_count),
+            ]
+            if not self.scn.is_pfb:
+                field_pairs.insert(0, ("GUID", guid_le_to_str(go.guid)))
+                field_pairs.append(("Prefab ID", go.prefab_id))
+
+            go_item = DataTreeBuilder.create_data_node(
+                instance_name,
+                "",
+                children=DataTreeBuilder.create_children_from_pairs(field_pairs),
+            )
             node["children"].append(go_item)
-            
+
         return node
 
     def _create_folders_info(self):
-        node = DataTreeBuilder.create_data_node(
-            "Folder Infos", f"{len(self.scn.folder_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "Folder Infos", len(self.scn.folder_infos)
         )
         for i, folder in enumerate(self.scn.folder_infos):
-            if folder.id < len(self.scn.object_table):
-                folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")               
-                folder_node = DataTreeBuilder.create_data_node(folder_name, "")
-                folder_node["children"] = [
-                    DataTreeBuilder.create_data_node(f"ID: {folder.id}", ""),
-                    DataTreeBuilder.create_data_node(
-                        f"Instance ID: {self.scn.object_table[folder.id]}", ""
-                    ),
-                    DataTreeBuilder.create_data_node(f"Parent ID: {folder.parent_id}", ""),
-                ]
-                node["children"].append(folder_node)
+            if folder.id >= len(self.scn.object_table):
+                continue
+            folder_name = self.name_helper.get_folder_name(folder.id, f"FolderInfo[{i}]")
+            folder_node = DataTreeBuilder.create_branch_from_pairs(
+                folder_name,
+                [
+                    ("ID", folder.id),
+                    ("Instance ID", self.scn.object_table[folder.id]),
+                    ("Parent ID", folder.parent_id),
+                ],
+            )
+            node["children"].append(folder_node)
         return node
 
 
     def _create_prefabs_info(self):
-        node = DataTreeBuilder.create_data_node(
-            "Prefab Infos", f"{len(self.scn.prefab_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "Prefab Infos", len(self.scn.prefab_infos)
         )
         for i, prefab in enumerate(self.scn.prefab_infos):
-            prefab_node = DataTreeBuilder.create_data_node(f"{i}: {self.scn.get_prefab_string(prefab)}", "")
-            prefab_node["children"] = [
-                DataTreeBuilder.create_data_node(f"string_offset: {prefab.string_offset}", ""),
-                DataTreeBuilder.create_data_node(f"Parent ID: {prefab.parent_id}", ""),
-            ]
+            prefab_node = DataTreeBuilder.create_branch_from_pairs(
+                f"{i}: {self.scn.get_prefab_string(prefab)}",
+                [
+                    ("string_offset", prefab.string_offset),
+                    ("Parent ID", prefab.parent_id),
+                ],
+            )
             node["children"].append(prefab_node)
         return node
 
     def _create_object_table_info(self):
-        node = DataTreeBuilder.create_data_node(
-            "Object Table", f"{len(self.scn.object_table)} items"
+        node = DataTreeBuilder.create_count_node(
+            "Object Table", len(self.scn.object_table)
         )
-        for i, entry in enumerate(self.scn.object_table):
-            node["children"].append(DataTreeBuilder.create_data_node(f"Object {i} = Instance {entry}", ""))
+        node["children"].extend(
+            DataTreeBuilder.create_text_node(f"Object {i} = Instance {entry}")
+            for i, entry in enumerate(self.scn.object_table)
+        )
         return node
 
     def _create_instance_infos(self):
-        node = DataTreeBuilder.create_data_node(
-            "Instance Infos", f"{len(self.scn.instance_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "Instance Infos", len(self.scn.instance_infos)
         )
         for i, inst in enumerate(self.scn.instance_infos):
             if i == 0:
-                node["children"].append(DataTreeBuilder.create_data_node("NULL Entry", ""))
-            else:
-                type_name = f"Instance[{i}]"
-                if self.type_registry:
-                    info = self.type_registry.get_type_info(int(inst.type_id))
-                    if info and "name" in info:
-                        type_name = info["name"]
-                friendly = f"{i}: {type_name}"
-                children = [
-                    DataTreeBuilder.create_data_node(f"Type: 0x{inst.type_id:08X}", ""),
-                    DataTreeBuilder.create_data_node(f"CRC: 0x{inst.crc:08X}", ""),
-                ]
-                inst_node = DataTreeBuilder.create_data_node(friendly, "", children=children)
-                node["children"].append(inst_node)
+                node["children"].append(DataTreeBuilder.create_text_node("NULL Entry"))
+                continue
+            type_name = f"Instance[{i}]"
+            if self.type_registry:
+                info = self.type_registry.get_type_info(int(inst.type_id))
+                if info and "name" in info:
+                    type_name = info["name"]
+            friendly = f"{i}: {type_name}"
+            inst_node = DataTreeBuilder.create_branch_from_pairs(
+                friendly,
+                [
+                    ("Type", f"0x{inst.type_id:08X}"),
+                    ("CRC", f"0x{inst.crc:08X}"),
+                ],
+            )
+            node["children"].append(inst_node)
         return node
 
     def _create_userdata_infos(self):
-        node = DataTreeBuilder.create_data_node(
-            "RSZUserData Infos", f"{len(self.scn.rsz_userdata_infos)} items"
+        node = DataTreeBuilder.create_count_node(
+            "RSZUserData Infos", len(self.scn.rsz_userdata_infos)
         )
         if self.scn.filepath.lower().endswith('.18') and self.scn.is_scn:
             return node
-        
+
         is_scn19 = self.scn.filepath.lower().endswith('.19') or self.scn.filepath.lower().endswith('.16')
-        
+
         for i, rui in enumerate(self.scn.rsz_userdata_infos):
             if is_scn19:
                 # SCN.19 format - use existing user data string or build a descriptive one
@@ -611,20 +568,16 @@ class RszViewer(QWidget):
                     data_size = getattr(rui, 'data_size', 0)
                     type_id = getattr(rui, 'type_id', 0)
                     str_val = f"Binary UserData (Type: 0x{type_id:08X}, Size: {data_size} bytes)"
-                
-                node["children"].append(
-                    DataTreeBuilder.create_data_node(f"RSZUserDataInfo[{i}] : {str_val}", "")
-                )
             else:
                 # Standard format - check for string offset attribute
                 str_val = ""
                 if hasattr(rui, 'string_offset') and rui.string_offset != 0:
                     str_val = self.scn.get_rsz_userdata_string(rui)
-                
-                node["children"].append(
-                    DataTreeBuilder.create_data_node(f"RSZUserDataInfo[{i}] : {str_val}", "")
-                )
-        
+
+            node["children"].append(
+                DataTreeBuilder.create_text_node(f"RSZUserDataInfo[{i}] : {str_val}")
+            )
+
         return node
     
     def _create_id_adjustment_map(self, deleted_instance_ids):
