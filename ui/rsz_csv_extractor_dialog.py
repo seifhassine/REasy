@@ -313,7 +313,7 @@ class RszCsvExtractorDialog(QDialog):
         lay = QVBoxLayout()
 
         pat_lay = QHBoxLayout()
-        self.__dict__[f"pattern_{label}"] = QLineEdit("*" if label == "A" else "*")
+        self.__dict__[f"pattern_{label}"] = QLineEdit("*")
         pat_lay.addWidget(QLabel("Filename Pattern:"))
         pat_lay.addWidget(self.__dict__[f"pattern_{label}"])
         lay.addLayout(pat_lay)

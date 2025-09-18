@@ -1204,7 +1204,7 @@ class RszDiffer:
         if isinstance(value, bool):
             return str(value).lower()
         if isinstance(value, float):
-            if value == 0.0:
+            if abs(value) < 1e-12:
                 return "0"
             elif abs(value) < 0.0001 or abs(value) > 100000:
                 return f"{value:.6e}"
