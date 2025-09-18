@@ -1,4 +1,4 @@
-from file_handlers.uvar_handler import UvarHandler
+from file_handlers.uvar.uvar_handler import UvarHandler
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.cfil.cfil_handler import CfilHandler

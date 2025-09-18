@@ -291,26 +291,13 @@ class UvarHandler(BaseFileHandler):
         metadata_map[id(vars_item)] = {"type": "variables_section", "file": self.uvar_file}
         
         for i, var in enumerate(self.uvar_file.variables):
-            var_item = QTreeWidgetItem(vars_item)
-            
-            type_icon = self._get_type_icon(var.type)
-            var_item.setText(0, f"{type_icon} {var.name or f'Variable_{i}'}")
-            var_item.setText(1, self._format_variable_value(var))
-            
-            color = self._get_type_color(var.type)
-            var_item.setForeground(1, QBrush(QColor(color)))
-            
-            metadata_map[id(var_item)] = {
-                "type": "variable",
-                "file": self.uvar_file,
-                "variable": var,
-                "index": i
-            }
-            
-            self._add_variable_details(var_item, var, metadata_map)
-            
-            if var_item.childCount() > 0:
-                var_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+            self._create_variable_item(
+                vars_item,
+                self.uvar_file,
+                var,
+                i,
+                metadata_map
+            )
                 
         if self.uvar_file.embedded_uvars:
             embeds_item = QTreeWidgetItem(parent_item or tree)
@@ -412,26 +399,41 @@ class UvarHandler(BaseFileHandler):
             metadata_map[id(vars_item)] = {"type": "variables_section", "file": embed}
             
             for i, var in enumerate(embed.variables):
-                var_item = QTreeWidgetItem(vars_item)
-                
-                type_icon = self._get_type_icon(var.type)
-                var_item.setText(0, f"{type_icon} {var.name or f'Variable_{i}'}")
-                var_item.setText(1, self._format_variable_value(var))
-                
-                color = self._get_type_color(var.type)
-                var_item.setForeground(1, QBrush(QColor(color)))
-                
-                metadata_map[id(var_item)] = {
-                    "type": "variable",
-                    "file": embed,
-                    "variable": var,
-                    "index": i
-                }
-                
-                self._add_variable_details(var_item, var, metadata_map)
-                
-                if var_item.childCount() > 0:
-                    var_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+                self._create_variable_item(
+                    vars_item,
+                    embed,
+                    var,
+                    i,
+                    metadata_map
+                )
+
+    def _create_variable_item(self, parent_item: 'QTreeWidgetItem', file: UVarFile,
+                              var: Variable, index: int, metadata_map: Optional[Dict]) -> 'QTreeWidgetItem':
+        """Create a tree item for a variable and populate metadata."""
+        var_item = QTreeWidgetItem(parent_item)
+
+        type_icon = self._get_type_icon(var.type)
+        display_name = var.name or f'Variable_{index}'
+        var_item.setText(0, f"{type_icon} {display_name}")
+        var_item.setText(1, self._format_variable_value(var))
+
+        color = self._get_type_color(var.type)
+        var_item.setForeground(1, QBrush(QColor(color)))
+
+        if metadata_map is not None:
+            metadata_map[id(var_item)] = {
+                "type": "variable",
+                "file": file,
+                "variable": var,
+                "index": index
+            }
+
+        self._add_variable_details(var_item, var, metadata_map if metadata_map is not None else {})
+
+        if var_item.childCount() > 0:
+            var_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+
+        return var_item
                 
     def _format_variable_value(self, var: Variable) -> str:
         if var.value is None:
@@ -756,25 +758,14 @@ class UvarHandler(BaseFileHandler):
             if ok:
                 var_type = TypeKind[type_name]
                 var = file.add_variable(name, var_type)
-                
-                var_item = QTreeWidgetItem(item)
-                type_icon = self._get_type_icon(var.type)
-                var_item.setText(0, f"{type_icon} {name}")
-                var_item.setText(1, self._format_variable_value(var))
-                
-                color = self._get_type_color(var.type)
-                var_item.setForeground(1, QBrush(QColor(color)))
-                
-                tree._metadata_map[id(var_item)] = {
-                    "type": "variable",
-                    "file": file,
-                    "variable": var,
-                    "index": len(file.variables) - 1
-                }
-                
-                self._add_variable_details(var_item, var, tree._metadata_map)
-                if var_item.childCount() > 0:
-                    var_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+
+                self._create_variable_item(
+                    item,
+                    file,
+                    var,
+                    len(file.variables) - 1,
+                    tree._metadata_map
+                )
                 item.setText(1, f"{len(file.variables)} items")
                 parent_embed = item.parent()
                 if parent_embed is not None and hasattr(tree, '_metadata_map'):
@@ -867,23 +858,14 @@ class UvarHandler(BaseFileHandler):
                 name = f"{base_name}{num}"
                 
             var = file.add_variable(name, var_type)
-            
-            var_item = QTreeWidgetItem(item)
-            type_icon = self._get_type_icon(var.type)
-            var_item.setText(0, f"{type_icon} {name}")
-            var_item.setText(1, self._format_variable_value(var))
-            
-            color = self._get_type_color(var.type)
-            var_item.setForeground(1, QBrush(QColor(color)))
-            
-            tree._metadata_map[id(var_item)] = {
-                "type": "variable",
-                "file": file,
-                "variable": var,
-                "index": len(file.variables) - 1
-            }
-            
-            self._add_variable_details(var_item, var, tree._metadata_map)
+
+            self._create_variable_item(
+                item,
+                file,
+                var,
+                len(file.variables) - 1,
+                tree._metadata_map
+            )
         
         item.setText(1, f"{len(file.variables)} items")
         
