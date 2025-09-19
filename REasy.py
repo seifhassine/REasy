@@ -1155,25 +1155,23 @@ class REasyEditorApp(QMainWindow):
         if not dir_:
             return
 
-        rel   = os.path.relpath(dir_, PROJECTS_ROOT)
-        parts = rel.split(os.sep)
+        project_path = Path(dir_).resolve()
+        game = self.proj_dock.infer_project_game(project_path)
 
-        if len(parts) != 2 or parts[0] not in GAMES:
+        if not game:
             QMessageBox.warning(
                 self, "Invalid selection",
                 "Please pick a mod folder *directly* inside one of the game "
-                "directories (e.g. projects/RE4/YourMod).")
-            return
+                "directories (e.g. projects/RE4/YourMod)."
+            )
 
-        game = parts[0]
-
-        self.current_game            = game
-        self.proj_dock.current_game  = game
+        self.current_game = game
+        self.proj_dock.current_game = game
 
         self.settings["last_game"] = game
         self.save_settings()
 
-        self._activate_project(dir_)
+        self._activate_project(str(project_path))
 
     def close_project(self):
         if not self.current_project: 

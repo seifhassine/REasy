@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
 
-from .constants  import EXPECTED_NATIVE
+from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate   import _ActionsDelegate, _PakActionsDelegate
 from .trees      import _DndTree, _DropTree
 
@@ -230,9 +230,46 @@ class ProjectManager(QDockWidget):
         self._update_pak_controls_state()
         self._update_placeholders()
 
+    def infer_project_game(self, project_path: Path | str) -> str | None:
+        """Return the associated game for *project_path* if it can be inferred."""
+        path = Path(project_path).resolve()
+
+        try:
+            from REasy import GAMES
+        except Exception:
+            GAMES = []
+
+        parent_name = path.parent.name.upper()
+        if parent_name in GAMES:
+            return parent_name
+
+        try:
+            rel_parts = path.relative_to(PROJECTS_ROOT).parts
+        except ValueError:
+            rel_parts = ()
+        if len(rel_parts) == 2:
+            candidate = rel_parts[0].upper()
+            if candidate in GAMES:
+                return candidate
+
+        cfg_path = path / ".reasy_project.json"
+        if cfg_path.is_file():
+            try:
+                cfg = json.loads(cfg_path.read_text())
+            except Exception:
+                cfg = None
+            if isinstance(cfg, dict):
+                candidate = cfg.get("game")
+                if isinstance(candidate, str):
+                    candidate = candidate.upper()
+                    if candidate in GAMES:
+                        return candidate
+
+        return None
+
     def _schedule_column_resize(self):
         """Schedule a delayed column resize to avoid excessive updates."""
-        self._resize_timer.start(100) 
+        self._resize_timer.start(100)
 
     def _update_project_cfg(self, updates: dict):
         """Merge updates into per-project config file if a project is active."""
@@ -462,6 +499,12 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
         if proj_dir:
+            if not self.current_game:
+                inferred = self.infer_project_game(proj_dir)
+                if inferred:
+                    self.current_game = inferred
+            if self.current_game:
+                self._update_project_cfg({"game": self.current_game})
             self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
