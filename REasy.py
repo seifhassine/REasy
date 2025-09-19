@@ -293,9 +293,10 @@ class FileTab:
         self.dark_mode = self.app.dark_mode if self.app else False
         self.search_dialog = None
         self.result_list = None
+        self.initial_load_complete = False
 
         if data:
-            self.load_file(filename, data)
+            self.initial_load_complete = self.load_file(filename, data)
             if not self.app.dark_mode:
                 self.tree.setStyleSheet(
                     """
@@ -452,10 +453,12 @@ class FileTab:
                 layout.addWidget(self.tree)
                 layout.addWidget(self.status_label)
                 self.refresh_tree()
-                
+
+            self.initial_load_complete = True
             return True
 
         except Exception as e:
+            self.initial_load_complete = False
             self.handler = old_handler
             self.viewer = old_viewer
             self.original_data = old_data
@@ -1717,6 +1720,7 @@ class REasyEditorApp(QMainWindow):
                         self.notebook.setCurrentIndex(index)
                     return
 
+        tab = None
         try:
             handler = get_handler_for_data(data)
             if not handler:
@@ -1734,6 +1738,10 @@ class REasyEditorApp(QMainWindow):
                     return
 
             tab = FileTab(None, filename, data, app=self)
+            if data is not None and not getattr(tab, "initial_load_complete", True):
+                if tab.notebook_widget:
+                    tab.notebook_widget.deleteLater()
+                return
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else "Untitled"
             _ = self.notebook.addTab(tab.notebook_widget, tab_label)
