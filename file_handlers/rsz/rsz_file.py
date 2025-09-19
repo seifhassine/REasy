@@ -1,5 +1,7 @@
 import struct
 import uuid
+import sys
+from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
     StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
@@ -87,6 +89,9 @@ unpack_16float = _UNPACKERS["16float"]
 
 
 class ScnHeader:
+    __slots__ = ("signature","info_count","resource_count","folder_count","prefab_count",
+                 "userdata_count","folder_tbl","resource_info_tbl","prefab_info_tbl",
+                 "userdata_info_tbl","data_offset")
     SIZE = 64
     def __init__(self):
         self.signature = b""
@@ -115,6 +120,9 @@ class ScnHeader:
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
 class PfbHeader:
+    __slots__ = ("signature","info_count","resource_count","gameobject_ref_info_count",
+                "userdata_count","reserved","gameobject_ref_info_tbl","resource_info_tbl",
+                "userdata_info_tbl","data_offset")
     SIZE = 56
     def __init__(self):
         self.signature = b""
@@ -142,6 +150,8 @@ class PfbHeader:
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
 class UsrHeader:
+    __slots__ = ("signature","resource_count","userdata_count","info_count",
+                 "resource_info_tbl","userdata_info_tbl","data_offset","reserved")
     SIZE = 48
     def __init__(self):
         self.signature = b""
@@ -165,6 +175,7 @@ class UsrHeader:
          self.reserved) = struct.unpack_from(fmt, data, 0)
 
 class GameObjectRefInfo:
+    __slots__ = ("object_id","property_id","array_index","target_id")
     SIZE = 16
     def __init__(self):
         self.object_id = 0
@@ -179,6 +190,7 @@ class GameObjectRefInfo:
         return offset + self.SIZE
 
 class RszGameObject:
+    __slots__ = ("guid","id","parent_id","component_count","ukn","prefab_id")
     SIZE = 32
     def __init__(self):
         self.guid = b"\x00" * 16
@@ -206,6 +218,7 @@ class RszGameObject:
         return offset
 
 class PfbGameObject:
+    __slots__ = ("id","parent_id","component_count")
     SIZE = 12
     def __init__(self):
         self.id = 0
@@ -218,6 +231,7 @@ class PfbGameObject:
         return offset + self.SIZE
 
 class RszFolderInfo:
+    __slots__ = ("id","parent_id")
     SIZE = 8
     def __init__(self):
         self.id = 0
@@ -229,6 +243,7 @@ class RszFolderInfo:
         return offset + self.SIZE
 
 class RszResourceInfo:
+    __slots__ = ("string_offset","reserved")
     SIZE = 8
     def __init__(self):
         self.string_offset = 0
@@ -240,6 +255,8 @@ class RszResourceInfo:
         return offset + self.SIZE
 
 class RszPrefabInfo:
+    __slots__ = ("string_offset","parent_id")
+    SIZE = 8
     SIZE = 8
     def __init__(self):
         self.string_offset = 0
@@ -252,6 +269,7 @@ class RszPrefabInfo:
 
 # RSZUserDataInfos – each entry is 16 bytes.
 class RSZUserDataInfo:
+    __slots__ = ("instance_id","hash","string_offset")
     SIZE = 16
     def __init__(self):
         self.instance_id = 0   # 4 bytes: which instance this userdata is associated with
@@ -267,6 +285,8 @@ class RSZUserDataInfo:
         return offset + self.SIZE
 
 class RszRSZHeader:
+    __slots__ = ("magic","version","object_count","instance_count","userdata_count",
+                 "reserved","instance_offset","data_offset","userdata_offset")
     def parse(self, data: bytes, offset: int) -> int:
         self.magic, self.version = struct.unpack_from("<II", data, offset)
         offset += 8
@@ -300,6 +320,7 @@ class RszRSZHeader:
         return 32 if self.version < 4 else 48
     
 class RszInstanceInfo:
+    __slots__ = ("type_id","crc")
     SIZE = 8
     def __init__(self):
         self.type_id = 0
@@ -358,6 +379,15 @@ class RszFile:
         self._gameobject_instance_ids = set()  # Set of gameobject instance IDs 
         self._folder_instance_ids = set()      # Set of folder instance IDs
 
+        self._empty_fields = MappingProxyType({})
+        self._path_lower = ""
+        self._is_16 = False
+        self._is_18 = False
+        self._is_19 = False
+        self._is_scn_new = False   # scn.18 / scn.19
+        self._rsz_type_cache = {}  # (ftype,fsize,is_native,is_array,align,original_type)->cls
+
+
     def read(self, data: bytes, skip_data: bool = False):
         # Use memoryview for efficient slicing operations
         self.full_data = memoryview(data)
@@ -367,13 +397,19 @@ class RszFile:
         self.is_pfb = False
         self.is_pfb16 = False
         
+        self._path_lower = (self.filepath or "").lower()
+        self._is_16 = self._path_lower.endswith(".16")
+        self._is_18 = self._path_lower.endswith(".18")
+        self._is_19 = self._path_lower.endswith(".19")
+        self._is_scn_new = self._is_18 or self._is_19
+
         if data[:4] == b'USR\x00':
             self.is_usr = True
             self.header = UsrHeader()
         elif data[:4] == b'PFB\x00':
             self.is_pfb = True
             
-            if self.filepath.lower().endswith('.16'):
+            if self._is_16:
                 self.header = Pfb16Header()
                 self.is_pfb16 = True 
             else:
@@ -383,9 +419,9 @@ class RszFile:
             self.is_pfb = False
             self.is_scn = True
             
-            if self.filepath.lower().endswith('.19'):
+            if self._is_19:
                 self.header = Scn19Header()
-            elif self.filepath.lower().endswith('.18'):
+            elif self._is_18:
                 self.header = Scn18Header()
             else:
                 self.header = ScnHeader()
@@ -465,7 +501,7 @@ class RszFile:
                 self.gameobjects.append(go)
         else:
             # Regular SCN files use the 32-byte GameObject structure
-            is_scn19 = self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')
+            is_scn19 = self._is_scn_new
             for _ in range(self.header.info_count):
                 go = RszGameObject()
                 self._current_offset = go.parse(data, self._current_offset, is_scn19)
@@ -483,7 +519,7 @@ class RszFile:
             fi = RszFolderInfo()
             self._current_offset = fi.parse(data, self._current_offset)
             self.folder_infos.append(fi)
-        if not self.filepath.lower().endswith('.18'): 
+        if not self._is_18:
             self._current_offset = _align(self._current_offset, 16)
         else: 
             self._current_offset += 16
@@ -516,21 +552,24 @@ class RszFile:
         self._rsz_userdata_str_map.clear()
         
         # Batch process all strings instead of one-by-one
-        if not (self.filepath.lower().endswith('.18') and self.is_scn):
+        if not (self._is_18 and self.is_scn):
             self._resource_str_map.clear()
             for ri in self.resource_infos:
                 if (ri.string_offset != 0):
                     s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
+                    s = sys.intern(s)
                     self.set_resource_string(ri, s)
                 
         for pi in self.prefab_infos:
             if (pi.string_offset != 0):
                 s, _ = read_wstring(self.full_data, pi.string_offset, 1000)
+                s = sys.intern(s)
                 self.set_prefab_string(pi, s)
                 
         for ui in self.userdata_infos:
             if (ui.string_offset != 0):
                 s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
+                s = sys.intern(s)
                 self.set_userdata_string(ui, s)
 
     def _parse_rsz_section(self, data, skip_data = False):
@@ -540,9 +579,9 @@ class RszFile:
         self._current_offset = self.rsz_header.parse(data, self._current_offset)
 
         # Parse Object Table first
-        fmt = f"<{self.rsz_header.object_count}i"
-        self.object_table = list(struct.unpack_from(fmt, data, self._current_offset))
-        self._current_offset += self.rsz_header.object_count * 4
+        ot_bytes = self.rsz_header.object_count * 4
+        self.object_table = memoryview(data)[self._current_offset:self._current_offset + ot_bytes].cast('i')
+        self._current_offset += ot_bytes
 
         # Now we can create the gameobject and folder ID sets
         self._gameobject_instance_ids = {
@@ -570,9 +609,9 @@ class RszFile:
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
             self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
-            if self.filepath.lower().endswith('.19') or (self.filepath.lower().endswith('.18') and self.is_scn):
+            if self._is_19 or (self._is_18 and self.is_scn):
                 self._parse_scn19_rsz_userdata(data, skip_data)
-            elif self.filepath.lower().endswith('.16'):
+            elif self._is_16:
                 self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data)
             else:
                 self._parse_standard_rsz_userdata(data)
@@ -594,6 +633,7 @@ class RszFile:
             if rui.string_offset != 0:
                 abs_offset = self.header.data_offset + rui.string_offset
                 s, _ = read_wstring(self.full_data, abs_offset, 1000)
+                s = sys.intern(s)
                 self.set_rsz_userdata_string(rui, s)
             self.rsz_userdata_infos.append(rui)
             
@@ -601,6 +641,7 @@ class RszFile:
         if last_str_offset:
             abs_offset = self.header.data_offset + last_str_offset
             s, new_offset = read_wstring(self.full_data, abs_offset, 1000)
+            _ = sys.intern(s)
         else:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
@@ -615,9 +656,8 @@ class RszFile:
 
     def _parse_instances(self, data, skip = False):
         """Parse instance data with optimizations"""
-        if(skip):
+        if skip:
             return
-        self.parsed_instances = []
         current_offset = 0
         # Reset processed instances tracking
         self._processed_instances = set()
@@ -630,27 +670,41 @@ class RszFile:
 
         # Cache type registry for faster lookups
         type_registry = self.type_registry
-        
+        EMPTY = self._empty_fields
+
         # Process all instances
         for idx, inst in enumerate(self.instance_infos):
 
-            if inst.type_id == 0:
-                continue
-
-            if idx == 0:
-                self.parsed_elements[idx] = {}  # Initialize empty dict for NULL entry
-                continue
-
-            if idx in self._rsz_userdata_set or idx in self._processed_instances:
-                self.parsed_elements[idx] = {}
+            if idx == 0 or inst.type_id == 0 or idx in self._rsz_userdata_set or idx in self._processed_instances:
+                self.parsed_elements[idx] = EMPTY
                 continue
             
             type_info = type_registry.get_type_info(inst.type_id)
             fields_def = type_info.get("fields", [])
             
             if not fields_def:
-                self.parsed_elements[idx] = {}
+                self.parsed_elements[idx] = EMPTY
                 continue
+
+            for f in fields_def:
+                if "_rsz_type" not in f:
+                    key = (
+                        f.get("type","unknown").lower(),
+                        f.get("size",4),
+                        f.get("native",False),
+                        f.get("array",False),
+                        int(f.get("align",1)),
+                        f.get("original_type",""),
+                        f.get("name",""),
+                    )
+                    rsz_t = self._rsz_type_cache.get(key)
+                    if rsz_t is None:
+                        rsz_t = get_type_class(key[0], key[1], key[2], key[3], key[4], key[5], key[6])
+                        self._rsz_type_cache[key] = rsz_t
+                    f["_rsz_type"] = rsz_t
+                    f["_size"] = key[1]
+                    f["_align"] = key[4]
+                    f["_is_array"] = key[3]
 
             self.parsed_elements[idx] = {}
             new_offset = self.parse_instance_fields(
@@ -1809,7 +1863,8 @@ class RszFile:
         """Parse fields from raw data according to field definitions – optimized version."""
         children = []
 
-        rsz_userdata_infos = self.rsz_userdata_infos
+        rsz_userdata_infos = self.rsz_userdata_infos  # kept for embedded traversal
+        rsz_userdata_by_id = self._rsz_userdata_dict
         parsed_elements   = self.parsed_elements.setdefault(current_instance_index, {})
         instance_hierarchy = self.instance_hierarchy
         gameobject_ids    = self._gameobject_instance_ids
@@ -1850,7 +1905,7 @@ class RszFile:
             count = read_aligned_value(unpack_uint, 4, align=4)
             str_byte_count = count * 2
             segment = self.data[pos:pos+str_byte_count]
-            value = segment.decode('utf-16-le')
+            value = sys.intern(segment.decode('utf-16-le'))
             pos += str_byte_count
             return value
 
@@ -1859,7 +1914,7 @@ class RszFile:
             pos = _align(pos, 4)
             count = read_aligned_value(unpack_uint, 4, align=4)
             segment = self.data[pos:pos+count]
-            value = segment.decode('utf-8')
+            value = sys.intern(segment.decode('utf-8'))
             pos += count
             return value
 
@@ -1875,15 +1930,22 @@ class RszFile:
                     candidate not in folder_ids)
 
         for field in fields_def:
-            field_name  = field.get("name", "<unnamed>")
-            ftype       = field.get("type", "unknown").lower()
-            fsize       = field.get("size", 4)
-            is_native   = field.get("native", False)
-            is_array    = field.get("array", False)
+            field_name    = field.get("name", "<unnamed>")
+            # use cached values populated in _parse_instances
+            rsz_type      = field.get("_rsz_type") or get_type_class(
+                                field.get("type","unknown").lower(),
+                                field.get("size",4),
+                                field.get("native",False),
+                                field.get("array",False),
+                                int(field.get("align",1)),
+                                field.get("original_type",""),
+                                field_name
+                             )
+            fsize         = field.get("_size", field.get("size",4))
+            field_align   = field.get("_align", int(field.get("align",1)))
+            is_array      = field.get("_is_array", field.get("array",False))
             original_type = field.get("original_type", "")
-            field_align = int(field.get("align", 1))
-            rsz_type    = get_type_class(ftype, fsize, is_native, is_array,
-                                        field_align, original_type, field_name)
+
             data_obj = None
 
             if is_array:
@@ -1948,14 +2010,11 @@ class RszFile:
                     for _ in range(count):
                         pos = _align(pos, field_align)
                         candidate = read_aligned_value(unpack_uint, 4, align=field_align)
-                        userdatas.append(candidate)
-                        found = None
-                        for rui in rsz_userdata_infos:
-                            if rui.instance_id == candidate:
-                                found = rui
-                                userdata_values.append(rsz_userdata_map.get(rui, f"Empty Userdata {candidate}"))
-                                break
-                        if not found:
+                        userdatas.append(candidate)                       
+                        rui = rsz_userdata_by_id.get(candidate)
+                        if rui:
+                            userdata_values.append(rsz_userdata_map.get(rui, f"Empty Userdata {candidate}"))
+                        else:
                             userdata_values.append(f"Empty Userdata {candidate}")
                     data_obj = ArrayData(
                         [rsz_type(idx, val, original_type) for val, idx in zip(userdata_values, userdatas)],
@@ -2285,10 +2344,9 @@ class RszFile:
                 elif rsz_type == UserDataData:
                     instance_id = read_aligned_value(unpack_uint, 4, align=field_align)
                     value = ""
-                    for rui in rsz_userdata_infos:
-                        if rui.instance_id == instance_id:
-                            value = rsz_userdata_map.get(rui, "")
-                            break
+                    rui = rsz_userdata_by_id.get(instance_id)
+                    if rui:
+                        value = rsz_userdata_map.get(rui, "")
                     data_obj = rsz_type(instance_id, value, original_type)
                 elif rsz_type == ObjectData:
                     child_idx = read_aligned_value(unpack_uint, fsize, align=field_align)
