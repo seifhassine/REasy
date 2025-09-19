@@ -172,7 +172,14 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Add MESH file support along with 3D viewing."),
+            ("New", "Added MDF file editor for all games."),
+            ("New", "Ability to translate all gameobject names in one click (Data Block > Translate all..)."),
+            ("New", "Copy paste of more multi-value fields such as vec3, vec4.. (via.Transform, ..)."),
+            ("Improved", "RSZ file loading is now faster by 20-25%."),
+            ("Fixed", "Mod projects can now be opened from any drive, not only the drive containing REasy.exe."),
+            ("Fixed", "Visual bug sometimes causing other array elements to become empty when adding/removing an element."),
+            ("Fixed", "RSZ value finder (in Tools) was not applying search filters during search."),
+            ("Fixed", "Empty tab was appearing whenever an RSZ file failed to open."),
            
         ]
         for tag, text in changes:
