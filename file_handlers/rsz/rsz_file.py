@@ -269,19 +269,20 @@ class RszPrefabInfo:
 
 # RSZUserDataInfos – each entry is 16 bytes.
 class RSZUserDataInfo:
-    __slots__ = ("instance_id","hash","string_offset")
+    __slots__ = ("instance_id","hash","string_offset","crc")
     SIZE = 16
     def __init__(self):
         self.instance_id = 0   # 4 bytes: which instance this userdata is associated with
         self.hash = 0          # 4 bytes: hash
         self.string_offset = 0 # 8 bytes: offset for the userdata string (uint64)
+        self.crc = 0
     def parse(self, data: bytes, offset: int, is_rszuserdata: bool = True) -> int:
         if offset + self.SIZE > len(data):
             raise ValueError(f"Truncated RSZUserData info at 0x{offset:X}")
         if is_rszuserdata:
             self.instance_id, self.hash, self.string_offset = struct.unpack_from("<IIQ", data, offset)
         else:
-            self.hash, _, self.string_offset = struct.unpack_from("<IIQ", data, offset)
+            self.hash, self.crc, self.string_offset = struct.unpack_from("<IIQ", data, offset)
         return offset + self.SIZE
 
 class RszRSZHeader:
@@ -580,7 +581,8 @@ class RszFile:
 
         # Parse Object Table first
         ot_bytes = self.rsz_header.object_count * 4
-        self.object_table = memoryview(data)[self._current_offset:self._current_offset + ot_bytes].cast('i')
+        object_table_view = memoryview(data)[self._current_offset:self._current_offset + ot_bytes].cast('i')
+        self.object_table = object_table_view.tolist()
         self._current_offset += ot_bytes
 
         # Now we can create the gameobject and folder ID sets
