@@ -1,5 +1,5 @@
 import traceback
-from PySide6.QtWidgets import (QLabel, QTreeView, 
+from PySide6.QtWidgets import (QLabel, QTreeView,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog)
 from PySide6.QtGui import QCursor
@@ -18,7 +18,12 @@ import file_handlers.rsz.rsz_array_clipboard as _rsz_array_cb
 from .tree_widget_factory import TreeWidgetFactory
 
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-from utils.translate_utils import TranslationManager, show_translation_error, show_translation_result
+from utils.translate_utils import (
+    TranslationBatcher,
+    TranslationManager,
+    show_translation_error,
+    show_translation_result,
+)
                         
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -37,6 +42,7 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
         return size
 
 class AdvancedTreeView(QTreeView):
+    TRANSLATION_CHAR_LIMIT = 2500
     """
     A QTreeView that uses an advanced delegate or a simpler delegate,
     and supports expansions.
@@ -57,6 +63,12 @@ class AdvancedTreeView(QTreeView):
         self.label_width = 150
         self.translation_manager = TranslationManager(self)
         self.translation_manager.translation_completed.connect(self._on_translation_completed)
+        self._batch_translator = TranslationBatcher(
+            self.translation_manager,
+            parent=self,
+            char_limit=self.TRANSLATION_CHAR_LIMIT,
+        )
+        self._translation_in_progress = False
         self.setSelectionMode(QTreeView.ExtendedSelection)
 
     def keyPressEvent(self, event):
@@ -236,12 +248,15 @@ class AdvancedTreeView(QTreeView):
         if item.data and item.data[0] == "Data Block":
             exp_act = menu.addAction("Export Data Block")
             imp_act = menu.addAction("Import Data from Exports folder")
+            translate_all_act = menu.addAction("Translate All GameObject Names")
             action = menu.exec_(QCursor.pos())
             if action == exp_act:
                 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
                 RszGameObjectClipboard.export_datablock(self.parent())
             elif action == imp_act:
                 self._show_import_randomization_dialog(index)
+            elif action == translate_all_act:
+                self.translate_all_gameobject_names()
             return
 
         handlers = {
@@ -1898,65 +1913,216 @@ class AdvancedTreeView(QTreeView):
 
     def translate_node_text(self, index):
         """Translate the name of a GameObject or folder using Google Translate API"""
+        if self._translation_in_progress:
+            QMessageBox.information(self, "Translation", "A translation is already in progress.")
+            return
+
         item = index.internalPointer()
         name_text = item.data[0]
         if " (ID:" in name_text:
             name_text = name_text.split(" (ID:")[0]
-        
+
         if not name_text or name_text.strip() == "":
             show_translation_error(self, "No text to translate")
             return
-        
+
         parent_widget = self.parent()
         target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
-            
+
         original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""
-        
-        context = {"index": index, "original_id_part": original_id_part}
-        
+
+        context = {
+            "index": index,
+            "original_id_part": original_id_part,
+            "batch": False,
+            "show_result": True,
+        }
+
         self.setCursor(Qt.WaitCursor)
-        
+
         success = self.translation_manager.translate_text(
-            text=name_text, 
+            text=name_text,
             source_lang="auto",
-            target_lang=target_lang, 
+            target_lang=target_lang,
             context=context
         )
-        
+
         if not success:
             self.setCursor(Qt.ArrowCursor)
             show_translation_error(self, "Failed to start translation")
+            return
 
-    def _on_translation_completed(self, translated_text, context):
-        """Handle translation completion"""
-        self.setCursor(Qt.ArrowCursor)
-        
-        if not translated_text:
-            show_translation_error(self, "Unable to translate text")
-            return
-            
-        index = context.get("index")
-        original_id_part = context.get("original_id_part", "")
-        
+        self._translation_in_progress = True
+
+    def _apply_translated_text_to_item(self, index, translated_text, original_id_part):
         if not index or not index.isValid():
-            show_translation_error(self, "Invalid item index")
-            return
-        
+            return False
+
         item = index.internalPointer()
-        item.data[0] = translated_text + original_id_part
-        
+        if not item or not hasattr(item, "data") or not item.data:
+            return False
+
+        new_text = translated_text + original_id_part
+        item.data[0] = new_text
+
         model = self.model()
         if model:
             model.dataChanged.emit(index, index)
-            
+
             widget = self.indexWidget(index)
             if widget:
                 labels = widget.findChildren(QLabel)
                 if len(labels) >= 2:
                     text_label = labels[1]
-                    text_label.setText(translated_text + original_id_part)
-        
-        show_translation_result(self, translated_text)
+                    text_label.setText(new_text)
+
+        return True
+
+    def _on_translation_completed(self, translated_text, context):
+        """Handle translation completion"""
+        context = context or {}
+
+        if self._batch_translator.handle_response(translated_text, context):
+            return
+
+        self.setCursor(Qt.ArrowCursor)
+
+        if not translated_text:
+            self._translation_in_progress = False
+            show_translation_error(self, "Unable to translate text")
+            return
+
+        index = context.get("index")
+        original_id_part = context.get("original_id_part", "")
+
+        if not index or not index.isValid():
+            self._translation_in_progress = False
+            show_translation_error(self, "Invalid item index")
+            return
+
+        if not self._apply_translated_text_to_item(index, translated_text, original_id_part):
+            self._translation_in_progress = False
+            show_translation_error(self, "Invalid item")
+            return
+
+        if context.get("show_result", True):
+            show_translation_result(self, translated_text)
+
+        self._translation_in_progress = False
+
+    def translate_all_gameobject_names(self):
+        """Translate all GameObject names under the Data Block."""
+        if self._translation_in_progress:
+            QMessageBox.information(self, "Translation", "A translation is already in progress.")
+            return
+
+        model = self.model()
+        if not model:
+            return
+
+        parent_widget = self.parent()
+        if not parent_widget or not hasattr(parent_widget, "handler"):
+            return
+
+        target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
+        if not target_lang:
+            target_lang = self.translation_manager.default_target_language
+
+        game_objects_root = self._find_root_node_child("Data Block", "Game Objects")
+        if not game_objects_root:
+            QMessageBox.warning(self, "Translation", "Could not locate the Game Objects node.")
+            return
+        entries = []
+        skipped = 0
+
+        for display_text, index in self._iter_gameobject_nodes(model, game_objects_root):
+            name_text, original_id_part = self._split_display_name(display_text)
+            cleaned = name_text.strip()
+            if not cleaned or len(cleaned) > self.TRANSLATION_CHAR_LIMIT:
+                skipped += 1
+                continue
+            entries.append({"index": index, "original_id_part": original_id_part, "text": cleaned})
+
+        if not entries:
+            message = "No GameObject names available for translation."
+            if skipped:
+                message += f"\nSkipped {skipped} entries due to missing, invalid or oversized names."
+            QMessageBox.information(self, "Translation", message)
+            return
+
+        def apply_entry(entry, translated_value):
+            index = entry.get("index")
+            if not index or not index.isValid():
+                return False
+            return self._apply_translated_text_to_item(index, translated_value, entry.get("original_id_part", ""))
+
+        def finish_batch(stats):
+            stats = stats or {}
+            summary = [f"Translated {stats.get('success', 0)} of {stats.get('total', 0)} GameObject names."]
+            if stats.get("failed"):
+                summary.append(f"Failed: {stats['failed']}")
+            skipped_total = stats.get("skipped", 0)
+            if skipped_total:
+                summary.append(f"Skipped: {skipped_total} (missing, invalid or oversized names)")
+            if stats.get("requests"):
+                summary.append(f"Requests sent: {stats['requests']}")
+
+            QMessageBox.information(self, "Translation", "\n".join(summary))
+            self._translation_in_progress = False
+            self.setCursor(Qt.ArrowCursor)
+
+        started, info = self._batch_translator.start(
+            entries,
+            target_lang,
+            apply_entry,
+            finish_batch,
+            initial_skipped=skipped,
+        )
+
+        total_skipped = info.get("skipped", skipped)
+        if not started:
+            message = info.get("error") or "Unable to start translation."
+            if total_skipped:
+                message += f"\nSkipped: {total_skipped} (missing, invalid or oversized names)"
+            QMessageBox.warning(self, "Translation", message)
+            return
+
+        if self._batch_translator.is_running():
+            self._translation_in_progress = True
+            self.setCursor(Qt.WaitCursor)
+
+    def _iter_gameobject_nodes(self, model, root_item):
+        stack = [root_item]
+
+        while stack:
+            item = stack.pop()
+            for row in range(item.child_count()):
+                child = item.child(row)
+                if not child:
+                    continue
+
+                raw = child.raw if isinstance(child.raw, dict) else {}
+                node_type = raw.get("type", "")
+                label = child.data[0] if child.data else ""
+
+                if node_type == "gameobject":
+                    index = model.getIndexFromItem(child)
+                    if index and index.isValid():
+                        yield label, index
+
+                if node_type in {"gameobject", "folder"} or label in {"Game Objects", "Children"}:
+                    stack.append(child)
+
+    @staticmethod
+    def _split_display_name(display_text):
+        if not display_text:
+            return "", ""
+
+        if " (ID:" in display_text:
+            name, delim, rest = display_text.partition(" (ID:")
+            return name, delim + rest
+
+        return display_text, ""
 
     def delete_array_elements(self, parent_array_item, element_indices):
         """Delete multiple array elements with proper backend updates"""
