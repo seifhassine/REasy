@@ -1,9 +1,10 @@
-from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit, 
+from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
-                              QTreeView, QApplication, QSlider, QToolButton, QInputDialog)
+                              QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
 from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntValidator, QColor, QPalette, QFontMetrics
 import uuid
+import re
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
@@ -34,9 +35,107 @@ class BaseValueWidget(QWidget):
         self._data = data
         self.update_display()
 
-class Vec2Input(BaseValueWidget):
+
+class ClipboardContentError(ValueError):
+    """Error raised when clipboard content cannot be parsed for vector inputs."""
+
+    def __init__(self, reason, actual_count=None):
+        super().__init__(reason)
+        self.reason = reason
+        self.actual_count = actual_count
+
+
+class VectorClipboardMixin:
+    """Mixin that adds copy/paste helpers for vector-style inputs."""
+
+    clipboard_precision = 8
+
+    clipboard_button_width = 44
+
+    def _create_clipboard_button(self, text, tooltip, handler):
+        button = QToolButton(self)
+        button.setText(text)
+        button.setToolTip(tooltip)
+        button.setFixedWidth(self.clipboard_button_width)
+        button.clicked.connect(handler)
+        self.layout.addWidget(button)
+        return button
+
+    def _setup_clipboard_buttons(self):
+        self.copy_button = self._create_clipboard_button(
+            "Copy", "Copy values to clipboard", self._copy_values_to_clipboard
+        )
+        self.paste_button = self._create_clipboard_button(
+            "Paste", "Paste values from clipboard", self._paste_values_from_clipboard
+        )
+
+    def _format_clipboard_value(self, value):
+        if isinstance(value, float):
+            return f"{value:.{self.clipboard_precision}g}"
+        return str(value)
+
+    def _convert_clipboard_token(self, token):
+        return float(token)
+
+    def _copy_values_to_clipboard(self):
+        values = self.getValues()
+        if not values:
+            return
+
+        text = ", ".join(self._format_clipboard_value(value) for value in values)
+        QApplication.clipboard().setText(text)
+
+    def _parse_clipboard_values(self, text, expected_count):
+        if not text or not text.strip():
+            raise ClipboardContentError("empty")
+
+        tokens = [t for t in re.split(r"[\s,;]+", text.strip()) if t]
+        if len(tokens) != expected_count:
+            raise ClipboardContentError("length", len(tokens))
+
+        values = []
+        for token in tokens:
+            try:
+                values.append(self._convert_clipboard_token(token))
+            except ValueError:
+                raise ClipboardContentError("invalid", len(tokens))
+        return values
+
+    def _show_clipboard_error(self, error, expected_count):
+        if error.reason == "empty":
+            message = "Clipboard is empty. Copy values before pasting."
+        elif error.reason == "length":
+            message = (
+                f"Incompatible clipboard data length: expected {expected_count} "
+                f"values but found {error.actual_count or 0}."
+            )
+        else:
+            message = (
+                f"Incompatible clipboard data: expected {expected_count} numeric "
+                f"values but found non-numeric content among {error.actual_count or 0} "
+                "values."
+            )
+
+        QMessageBox.warning(self, "Paste Error", message)
+
+    def _paste_values_from_clipboard(self):
+        expected = len(self.inputs)
+        if expected == 0:
+            return
+
+        clipboard_text = QApplication.clipboard().text()
+        try:
+            values = self._parse_clipboard_values(clipboard_text, expected)
+        except ClipboardContentError as error:
+            self._show_clipboard_error(error, expected)
+            return
+
+        self.setValues(values)
+        self._on_value_changed()
+
+class Vec2Input(VectorClipboardMixin, BaseValueWidget):
     valueChanged = Signal(tuple)
-    
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
@@ -49,7 +148,8 @@ class Vec2Input(BaseValueWidget):
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
             self.inputs.append(line_edit)
-            
+
+        self._setup_clipboard_buttons()
         self.layout.addStretch()
             
         if data:
@@ -95,12 +195,12 @@ class Vec2Input(BaseValueWidget):
         except ValueError:
             pass
 
-class Vec3Input(BaseValueWidget):
+class Vec3Input(VectorClipboardMixin, BaseValueWidget):
     valueChanged = Signal(tuple)
-    
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
-        
+
         self.inputs = []
         for i, coord in enumerate(['x', 'y', 'z']):
             line_edit = QLineEdit()
@@ -110,8 +210,9 @@ class Vec3Input(BaseValueWidget):
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
             self.inputs.append(line_edit)
-            
-        # Add stretch at the end to push widgets left
+
+        # Add clipboard helpers and stretch to keep widgets left-aligned
+        self._setup_clipboard_buttons()
         self.layout.addStretch()
             
         if data:
@@ -158,9 +259,9 @@ class Vec3Input(BaseValueWidget):
         except ValueError:
             pass  # Ignore invalid input during typing
 
-class Vec4Input(BaseValueWidget):
+class Vec4Input(VectorClipboardMixin, BaseValueWidget):
     valueChanged = Signal(tuple)
-    
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
@@ -173,8 +274,9 @@ class Vec4Input(BaseValueWidget):
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
             self.inputs.append(line_edit)
-            
+
         # a stretch at the end to push widgets left
+        self._setup_clipboard_buttons()
         self.layout.addStretch()
             
         if data:
@@ -1804,13 +1906,15 @@ class ColorInput(BaseValueWidget):
         except ValueError:
             pass 
 
-class Vec3ColorInput(BaseValueWidget):
+class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     """Widget for editing Vec3 RGB color values as floats"""
     valueChanged = Signal(tuple)
-    
+
+    clipboard_precision = 6
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
-        
+
         self.color_button = QPushButton()
         self.color_button.setFixedSize(24, 24)
         self.color_button.clicked.connect(self._show_color_dialog)
@@ -1866,6 +1970,7 @@ class Vec3ColorInput(BaseValueWidget):
             self.inputs.append(line_edit)
         
         self.layout.addLayout(grid)
+        self._setup_clipboard_buttons()
         self.layout.addStretch()
         
         if data:
