@@ -12,6 +12,73 @@ from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19,
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
+_STRUCT_DEFINITIONS = {
+    "uint": "<I",
+    "int": "<i",
+    "float": "<f",
+    "4float": "<4f",
+    "3float": "<3f",
+    "3double": "<3d",
+    "2float": "<2f",
+    "2int": "<2i",
+    "3int": "<3i",
+    "sbyte": "<b",
+    "ubyte": "<B",
+    "4ubyte": "<4B",
+    "short": "<h",
+    "ushort": "<H",
+    "long": "<q",
+    "ulong": "<Q",
+    "double": "<d",
+    "20float": "<20f",
+    "16float": "<16f",
+    "bool": "<?",
+}
+
+_STRUCTS = {name: struct.Struct(fmt) for name, fmt in _STRUCT_DEFINITIONS.items()}
+_PACKERS = {name: s.pack for name, s in _STRUCTS.items()}
+_UNPACKERS = {name: s.unpack_from for name, s in _STRUCTS.items()}
+
+pack_uint = _PACKERS["uint"]
+pack_int = _PACKERS["int"]
+pack_float = _PACKERS["float"]
+pack_4float = _PACKERS["4float"]
+pack_3float = _PACKERS["3float"]
+pack_3double = _PACKERS["3double"]
+pack_2float = _PACKERS["2float"]
+pack_2int = _PACKERS["2int"]
+pack_3int = _PACKERS["3int"]
+pack_sbyte = _PACKERS["sbyte"]
+pack_ubyte = _PACKERS["ubyte"]
+pack_4ubyte = _PACKERS["4ubyte"]
+pack_short = _PACKERS["short"]
+pack_ushort = _PACKERS["ushort"]
+pack_long = _PACKERS["long"]
+pack_ulong = _PACKERS["ulong"]
+pack_double = _PACKERS["double"]
+pack_20float = _PACKERS["20float"]
+pack_16float = _PACKERS["16float"]
+pack_bool = _PACKERS["bool"]
+
+unpack_uint    = _UNPACKERS["uint"]
+unpack_int     = _UNPACKERS["int"]
+unpack_float   = _UNPACKERS["float"]
+unpack_4float  = _UNPACKERS["4float"]
+unpack_3float  = _UNPACKERS["3float"]
+unpack_3double = _UNPACKERS["3double"]
+unpack_2float  = _UNPACKERS["2float"]
+unpack_2int    = _UNPACKERS["2int"]
+unpack_3int    = _UNPACKERS["3int"]
+unpack_sbyte   = _UNPACKERS["sbyte"]
+unpack_ubyte   = _UNPACKERS["ubyte"]
+unpack_4ubyte  = _UNPACKERS["4ubyte"]
+unpack_short   = _UNPACKERS["short"]
+unpack_ushort  = _UNPACKERS["ushort"]
+unpack_long    = _UNPACKERS["long"]
+unpack_ulong   = _UNPACKERS["ulong"]
+unpack_double  = _UNPACKERS["double"]
+unpack_20float = _UNPACKERS["20float"]
+unpack_16float = _UNPACKERS["16float"]
 
 
 ########################################
@@ -596,16 +663,17 @@ class RszFile:
             current_offset = new_offset
             
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
-        
+
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
         base_mod = getattr(self, "_write_base_mod", 0)
+
         
         if isinstance(data_obj, StructData):
             while (len(out) - base_mod) % 4:
                 out.extend(b'\x00')
             count = len(data_obj.values)
-            out.extend(struct.pack("<I", count))
+            out.extend(pack_uint(count))
             if count:
                 original_type = getattr(data_obj, "orig_type", None)
                 if original_type and self.type_registry:
@@ -620,68 +688,68 @@ class RszFile:
         elif field_def.get("array", False):
 
             while (len(out) - base_mod) % 4:
-                out.extend(b'\x00') 
+                out.extend(b'\x00')
 
             count = len(data_obj.values)
-            out.extend(struct.pack("<I", count))
+            out.extend(pack_uint(count))
             
             for element in data_obj.values:
                 while (len(out) - base_mod) % field_align != 0:
                     out.extend(b'\x00')
 
                 if isinstance(element, S8Data):
-                    out.extend(struct.pack("<b", max(-128, min(127, element.value))))
+                    out.extend(pack_sbyte(max(-128, min(127, element.value))))
                 elif isinstance(element, U8Data):
-                    out.extend(struct.pack("<B", element.value))
+                    out.extend(pack_ubyte(element.value))
                 elif isinstance(element, BoolData):
-                    out.extend(struct.pack("<?", element.value))
+                    out.extend(pack_bool(bool(element.value)))
                 elif isinstance(element, S16Data):
-                    out.extend(struct.pack("<h", element.value))
+                    out.extend(pack_short(element.value))
                 elif isinstance(element, U16Data):
-                    out.extend(struct.pack("<H", element.value))
+                    out.extend(pack_ushort(element.value))
                 elif isinstance(element, S64Data):
-                    out.extend(struct.pack("<q", element.value))
+                    out.extend(pack_long(element.value))
                 elif isinstance(element, S32Data):
-                    out.extend(struct.pack("<i", element.value))
+                    out.extend(pack_int(element.value))
                 elif isinstance(element, U64Data):
-                    out.extend(struct.pack("<Q", element.value))
+                    out.extend(pack_ulong(element.value))
                 elif isinstance(element, F64Data):
-                    out.extend(struct.pack("<d", element.value))
+                    out.extend(pack_double(element.value))
                 elif isinstance(element, Vec2Data):
-                    out.extend(struct.pack("<4f", element.x, element.y, 0, 0))
+                    out.extend(pack_4float(element.x, element.y, 0, 0))
                 elif isinstance(element, Float2Data):
-                    out.extend(struct.pack("<2f", element.x, element.y))
+                    out.extend(pack_2float(element.x, element.y))
                 elif isinstance(element, RangeData):
-                    out.extend(struct.pack("<2f", element.min, element.max))
+                    out.extend(pack_2float(element.min, element.max))
                 elif isinstance(element, RangeIData):
-                    out.extend(struct.pack("<2i", element.min, element.max))
+                    out.extend(pack_2int(element.min, element.max))
                 elif isinstance(element, Float3Data):
-                    out.extend(struct.pack("<3f", element.x, element.y, element.z))
+                    out.extend(pack_3float(element.x, element.y, element.z))
                 elif isinstance(element, PositionData):
-                    out.extend(struct.pack("<3d", element.x, element.y, element.z))
+                    out.extend(pack_3double(element.x, element.y, element.z))
                 elif isinstance(element, Int3Data):
-                    out.extend(struct.pack("<3i", element.x, element.y, element.z))
+                    out.extend(pack_3int(element.x, element.y, element.z))
                 elif isinstance(element, Float4Data):
-                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                    out.extend(pack_4float(element.x, element.y, element.z, element.w))
                 elif isinstance(element, QuaternionData):
-                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                    out.extend(pack_4float(element.x, element.y, element.z, element.w))
                 elif isinstance(element, ColorData):
-                    out.extend(struct.pack("<4B", element.r, element.g, element.b, element.a))
+                    out.extend(pack_4ubyte(element.r, element.g, element.b, element.a))
                 elif isinstance(element, (ObjectData, U32Data, UserDataData)):
                     value = int(element.value) & 0xFFFFFFFF
-                    out.extend(struct.pack("<I", value))
+                    out.extend(pack_uint(value))
                 elif isinstance(element, Vec3Data) or isinstance(element, Vec3ColorData):
-                    out.extend(struct.pack("<4f", element.x, element.y, element.z, 0.00))
+                    out.extend(pack_4float(element.x, element.y, element.z, 0.00))
                 elif isinstance(element, Vec4Data):
-                    out.extend(struct.pack("<4f", element.x, element.y, element.z, element.w))
+                    out.extend(pack_4float(element.x, element.y, element.z, element.w))
                 elif isinstance(element, Mat4Data):
                     if isinstance(element.values, (list, tuple)):
                         float_values = [float(v) for v in element.values[:16]]
                         while len(float_values) < 16:
                             float_values.append(0.0)
-                        out.extend(struct.pack("<16f", *float_values))
+                        out.extend(pack_16float(*float_values))
                     else:
-                        out.extend(struct.pack("<16f", *([0.0] * 16)))
+                        out.extend(pack_16float(*([0.0] * 16)))
                 elif isinstance(element, (GameObjectRefData, GuidData)):
                     guid = uuid.UUID(element.guid_str)
                     out.extend(guid.bytes_le)
@@ -694,10 +762,10 @@ class RszFile:
                             value += '\x00'
                         str_bytes = value.encode('utf-16-le')
                         char_count = len(str_bytes) // 2
-                        out.extend(struct.pack("<I", char_count))
+                        out.extend(pack_uint(char_count))
                         out.extend(str_bytes)
                     else:
-                        out.extend(struct.pack("<I", 0))
+                        out.extend(pack_uint(0))
                 elif isinstance(element, RuntimeTypeData):
                     while (len(out) - base_mod) % 4:
                         out.extend(b'\x00')
@@ -707,28 +775,28 @@ class RszFile:
                         if element.value[-1] == '\x00':
                             char_count = len(element.value) 
                         else:
-                            char_count = len(element.value) + 1  
-                            str_bytes += b'\x00\x00' 
-                        out.extend(struct.pack("<I", char_count))
+                            char_count = len(element.value) + 1
+                            str_bytes += b'\x00\x00'
+                        out.extend(pack_uint(char_count))
                         out.extend(str_bytes)
                     else:
-                        out.extend(struct.pack("<I", 0))
+                        out.extend(pack_uint(0))
                 elif isinstance(element, OBBData):
                     if isinstance(element.values, (list, tuple)):
                         float_values = [float(v) for v in element.values[:20]]
                         while len(float_values) < 20:
                             float_values.append(0.0)
-                        out.extend(struct.pack("<20f", *float_values))
+                        out.extend(pack_20float(*float_values))
                     else:
                         # Fallback - write zeros
-                        out.extend(struct.pack("<20f", *([0.0] * 20)))
+                        out.extend(pack_20float(*([0.0] * 20)))
                 elif isinstance(element, RawBytesData):
                     out.extend(element.raw_bytes)
                     remaining_bytes = field_size - len(element.raw_bytes)
                     if remaining_bytes > 0:
                         out.extend(b'\x00' * remaining_bytes)
                 elif isinstance(element, F32Data):
-                    val_bits = struct.pack("<f", element.value)
+                    val_bits = pack_float(element.value)
                     out.extend(val_bits)
                 elif isinstance(element, GuidData):
                     if element.raw_bytes:
@@ -740,26 +808,26 @@ class RszFile:
                         except ValueError:
                             out.extend(b'\x00' * 16) 
                 elif isinstance(element, CapsuleData):
-                    out.extend(struct.pack("<3f", element.start.x, element.start.y, element.start.z))
-                    out.extend(struct.pack("<f", 0.0)) 
-                    out.extend(struct.pack("<3f", element.end.x, element.end.y, element.end.z))
-                    out.extend(struct.pack("<f", 0.0))
-                    out.extend(struct.pack("<f", element.radius))
+                    out.extend(pack_3float(element.start.x, element.start.y, element.start.z))
+                    out.extend(pack_float(0.0))
+                    out.extend(pack_3float(element.end.x, element.end.y, element.end.z))
+                    out.extend(pack_float(0.0))
+                    out.extend(pack_float(element.radius))
                     out.extend(b'\x00' * 12)
-                    
+
                 elif isinstance(element, AABBData):
-                    out.extend(struct.pack("<3f", element.min.x, element.min.y, element.min.z))
-                    out.extend(struct.pack("<f", 0.0)) 
-                    out.extend(struct.pack("<3f", element.max.x, element.max.y, element.max.z))
-                    out.extend(struct.pack("<f", 0.0))
+                    out.extend(pack_3float(element.min.x, element.min.y, element.min.z))
+                    out.extend(pack_float(0.0))
+                    out.extend(pack_3float(element.max.x, element.max.y, element.max.z))
+                    out.extend(pack_float(0.0))
 
                 elif isinstance(element, AreaData):
-                    out.extend(struct.pack("<2f", element.p0.x, element.p0.y))
-                    out.extend(struct.pack("<2f", element.p1.x, element.p1.y))
-                    out.extend(struct.pack("<2f", element.p2.x, element.p2.y))
-                    out.extend(struct.pack("<2f", element.p3.x, element.p3.y))
-                    out.extend(struct.pack("<f", element.height))
-                    out.extend(struct.pack("<f", element.bottom))
+                    out.extend(pack_2float(element.p0.x, element.p0.y))
+                    out.extend(pack_2float(element.p1.x, element.p1.y))
+                    out.extend(pack_2float(element.p2.x, element.p2.y))
+                    out.extend(pack_2float(element.p3.x, element.p3.y))
+                    out.extend(pack_float(element.height))
+                    out.extend(pack_float(element.bottom))
                     out.extend(b'\x00' * 8)
                 else:
                     val = getattr(element, 'value', 0)
@@ -770,48 +838,48 @@ class RszFile:
                 out.extend(b'\x00')
 
             if isinstance(data_obj, S8Data):
-                out.extend(struct.pack("<b", max(-128, min(127, data_obj.value))))
+                out.extend(pack_sbyte(max(-128, min(127, data_obj.value))))
             elif isinstance(data_obj, U8Data):
-                out.extend(struct.pack("<B", data_obj.value))
+                out.extend(pack_ubyte(data_obj.value))
             elif isinstance(data_obj, S16Data):
-                out.extend(struct.pack("<h", data_obj.value))
+                out.extend(pack_short(data_obj.value))
             elif isinstance(data_obj, U16Data):
-                out.extend(struct.pack("<H", data_obj.value))
+                out.extend(pack_ushort(data_obj.value))
             elif isinstance(data_obj, S64Data):
-                out.extend(struct.pack("<q", data_obj.value))
+                out.extend(pack_long(data_obj.value))
             elif isinstance(data_obj, S32Data):
-                out.extend(struct.pack("<i", data_obj.value))
+                out.extend(pack_int(data_obj.value))
             elif isinstance(data_obj, U64Data):
-                out.extend(struct.pack("<Q", data_obj.value))
+                out.extend(pack_ulong(data_obj.value))
             elif isinstance(data_obj, F64Data):
-                out.extend(struct.pack("<d", data_obj.value))
+                out.extend(pack_double(data_obj.value))
             elif isinstance(data_obj, Vec2Data):
-                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, 0, 0))
+                out.extend(pack_4float(data_obj.x, data_obj.y, 0, 0))
             elif isinstance(data_obj, Float2Data):
-                out.extend(struct.pack("<2f", data_obj.x, data_obj.y))
+                out.extend(pack_2float(data_obj.x, data_obj.y))
             elif isinstance(data_obj, RangeData):
-                out.extend(struct.pack("<2f", data_obj.min, data_obj.max))
+                out.extend(pack_2float(data_obj.min, data_obj.max))
             elif isinstance(data_obj, RangeIData):
-                out.extend(struct.pack("<2i", data_obj.min, data_obj.max))
+                out.extend(pack_2int(data_obj.min, data_obj.max))
             elif isinstance(data_obj, Float3Data):
-                out.extend(struct.pack("<3f", data_obj.x, data_obj.y, data_obj.z))
+                out.extend(pack_3float(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, PositionData):
-                out.extend(struct.pack("<3d", data_obj.x, data_obj.y, data_obj.z))
+                out.extend(pack_3double(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Int3Data):
-                out.extend(struct.pack("<3i", data_obj.x, data_obj.y, data_obj.z))
+                out.extend(pack_3int(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Float4Data):
-                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
+                out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, QuaternionData):
-                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
+                out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, ColorData):
-                out.extend(struct.pack("<4B", data_obj.r, data_obj.g, data_obj.b, data_obj.a))
+                out.extend(pack_4ubyte(data_obj.r, data_obj.g, data_obj.b, data_obj.a))
             elif isinstance(data_obj, (ObjectData, U32Data, UserDataData)):
                 value = int(data_obj.value) & 0xFFFFFFFF
-                out.extend(struct.pack("<I", value))
+                out.extend(pack_uint(value))
             elif isinstance(data_obj, Vec3Data) or isinstance(data_obj, Vec3ColorData):
-                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, 0.00))
+                out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, 0.00))
             elif isinstance(data_obj, Vec4Data):
-                out.extend(struct.pack("<4f", data_obj.x, data_obj.y, data_obj.z, data_obj.w))
+                out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, (GameObjectRefData, GuidData)):
                 guid = uuid.UUID(data_obj.guid_str)
                 out.extend(guid.bytes_le)
@@ -825,10 +893,10 @@ class RszFile:
                         value += '\x00'
                     str_bytes = value.encode('utf-16-le')
                     char_count = len(str_bytes) // 2
-                    out.extend(struct.pack("<I", char_count))
+                    out.extend(pack_uint(char_count))
                     out.extend(str_bytes)
                 else:
-                    out.extend(struct.pack("<I", 0))
+                    out.extend(pack_uint(0))
             elif isinstance(data_obj, (RuntimeTypeData)):
                 while (len(out) - base_mod) % 4:
                     out.extend(b'\x00')
@@ -837,65 +905,65 @@ class RszFile:
                     str_bytes = data_obj.value.encode('utf-8')
                     char_count = len(data_obj.value)
                     if data_obj.value[-1] == '\x00':
-                        char_count = len(data_obj.value)  
+                        char_count = len(data_obj.value)
                     else:
-                        char_count = len(data_obj.value) + 1  
-                        str_bytes += b'\x00\x00' 
-                    out.extend(struct.pack("<I", char_count))
+                        char_count = len(data_obj.value) + 1
+                        str_bytes += b'\x00\x00'
+                    out.extend(pack_uint(char_count))
                     out.extend(str_bytes)
                 else:
-                    out.extend(struct.pack("<I", 0))
+                    out.extend(pack_uint(0))
             elif isinstance(data_obj, BoolData):
-                out.extend(struct.pack("<?", bool(data_obj.value)))
+                out.extend(pack_bool(bool(data_obj.value)))
             elif isinstance(data_obj, F32Data):
-                val_bits = struct.pack("<f", data_obj.value)
+                val_bits = pack_float(data_obj.value)
                 out.extend(val_bits)
             elif isinstance(data_obj, OBBData):
                 if isinstance(data_obj.values, (list, tuple)):
-                    out.extend(struct.pack("<20f", *[float(v) for v in data_obj.values]))
+                    out.extend(pack_20float(*[float(v) for v in data_obj.values]))
                 else:
                     values = [float(x) for x in str(data_obj.values).strip('()').split(',')]
-                    out.extend(struct.pack("<20f", *values))
+                    out.extend(pack_20float(*values))
             elif isinstance(data_obj, Mat4Data):
                 if isinstance(data_obj.values, (list, tuple)):
-                    out.extend(struct.pack("<16f", *[float(v) for v in data_obj.values]))
+                    out.extend(pack_16float(*[float(v) for v in data_obj.values]))
                 else:
                     values = [float(x) for x in str(data_obj.values).strip('()').split(',')]
-                    out.extend(struct.pack("<16f", *values))
+                    out.extend(pack_16float(*values))
             elif isinstance(data_obj, RawBytesData):
                 out.extend(data_obj.raw_bytes)
                 remaining_bytes = field_size - len(data_obj.raw_bytes)
                 if remaining_bytes > 0:
                     out.extend(b'\x00' * remaining_bytes)
             elif isinstance(data_obj, CapsuleData):
-                out.extend(struct.pack("<3f", data_obj.start.x, data_obj.start.y, data_obj.start.z))
-                out.extend(struct.pack("<f", 0.0)) 
-                out.extend(struct.pack("<3f", data_obj.end.x, data_obj.end.y, data_obj.end.z))
-                out.extend(struct.pack("<f", 0.0))
-                out.extend(struct.pack("<f", data_obj.radius))
+                out.extend(pack_3float(data_obj.start.x, data_obj.start.y, data_obj.start.z))
+                out.extend(pack_float(0.0))
+                out.extend(pack_3float(data_obj.end.x, data_obj.end.y, data_obj.end.z))
+                out.extend(pack_float(0.0))
+                out.extend(pack_float(data_obj.radius))
                 out.extend(b'\x00' * 12)
 
             elif isinstance(data_obj, AABBData):
-                out.extend(struct.pack("<3f", data_obj.min.x, data_obj.min.y, data_obj.min.z))
-                out.extend(struct.pack("<f", 0.0)) 
-                out.extend(struct.pack("<3f", data_obj.max.x, data_obj.max.y, data_obj.max.z))
-                out.extend(struct.pack("<f", 0.0))
-                
+                out.extend(pack_3float(data_obj.min.x, data_obj.min.y, data_obj.min.z))
+                out.extend(pack_float(0.0))
+                out.extend(pack_3float(data_obj.max.x, data_obj.max.y, data_obj.max.z))
+                out.extend(pack_float(0.0))
+
             elif isinstance(data_obj, AreaData):
-                out.extend(struct.pack("<2f", data_obj.p0.x, data_obj.p0.y))
-                out.extend(struct.pack("<2f", data_obj.p1.x, data_obj.p1.y))
-                out.extend(struct.pack("<2f", data_obj.p2.x, data_obj.p2.y))
-                out.extend(struct.pack("<2f", data_obj.p3.x, data_obj.p3.y))
-                out.extend(struct.pack("<f", data_obj.height))
-                out.extend(struct.pack("<f", data_obj.bottom))
+                out.extend(pack_2float(data_obj.p0.x, data_obj.p0.y))
+                out.extend(pack_2float(data_obj.p1.x, data_obj.p1.y))
+                out.extend(pack_2float(data_obj.p2.x, data_obj.p2.y))
+                out.extend(pack_2float(data_obj.p3.x, data_obj.p3.y))
+                out.extend(pack_float(data_obj.height))
+                out.extend(pack_float(data_obj.bottom))
                 out.extend(b'\x00' * 8)
 
-                
+
             else:
                 #print("last is else")
                 val = getattr(data_obj, 'value', 0)
                 if isinstance(val, float):
-                    val_bits = struct.pack("<f", val)  
+                    val_bits = pack_float(val)
                     out.extend(val_bits)
                 else:
                     def write_raw_value(val):
@@ -1744,26 +1812,6 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
     """Parse fields from raw data according to field definitions – optimized version."""
     children = []
 
-    unpack_uint    = struct.Struct("<I").unpack_from
-    unpack_int     = struct.Struct("<i").unpack_from
-    unpack_float   = struct.Struct("<f").unpack_from
-    unpack_4float  = struct.Struct("<4f").unpack_from
-    unpack_3float  = struct.Struct("<3f").unpack_from
-    unpack_3double = struct.Struct("<3d").unpack_from
-    unpack_2float  = struct.Struct("<2f").unpack_from
-    unpack_2int    = struct.Struct("<2i").unpack_from
-    unpack_3int    = struct.Struct("<3i").unpack_from
-    unpack_sbyte   = struct.Struct("<b").unpack_from
-    unpack_ubyte   = struct.Struct("<B").unpack_from
-    unpack_4ubyte  = struct.Struct("<4B").unpack_from
-    unpack_short   = struct.Struct("<h").unpack_from
-    unpack_ushort  = struct.Struct("<H").unpack_from
-    unpack_long    = struct.Struct("<q").unpack_from
-    unpack_ulong   = struct.Struct("<Q").unpack_from
-    unpack_double  = struct.Struct("<d").unpack_from
-    unpack_20float = struct.Struct("<20f").unpack_from
-    unpack_16float = struct.Struct("<16f").unpack_from
-
     rsz_userdata_infos = rsz_file.rsz_userdata_infos
     parsed_elements   = rsz_file.parsed_elements.setdefault(current_instance_index, {})
     instance_hierarchy = rsz_file.instance_hierarchy
@@ -2044,7 +2092,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     pos += 16
                     end_vals = unpack_4float(raw, pos)
                     pos += 16
-                    radius, *_ = struct.unpack_from("<f", raw, pos)
+                    radius = unpack_float(raw, pos)[0]
                     pos += 16
                     start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
                     end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
@@ -2080,9 +2128,9 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                     pos += 8
                     p3_vals = unpack_2float(raw, pos)
                     pos += 8
-                    height, = struct.unpack_from("<f", raw, pos)
+                    height = unpack_float(raw, pos)[0]
                     pos += 4
-                    bottom, = struct.unpack_from("<f", raw, pos)
+                    bottom = unpack_float(raw, pos)[0]
                     pos += 12
                     p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
                     p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
@@ -2353,7 +2401,7 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 pos += 16
                 end_vals = unpack_4float(raw, pos)
                 pos += 16
-                radius, *_ = struct.unpack_from("<f", raw, pos)
+                radius = unpack_float(raw, pos)[0]
                 pos += 16
                 start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
                 end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
@@ -2373,9 +2421,9 @@ def parse_instance_fields(raw: bytes, offset: int, fields_def: list,
                 pos += 8
                 p3_vals = unpack_2float(raw, pos)
                 pos += 8
-                height, *_ = struct.unpack_from("<f", raw, pos)
+                height = unpack_float(raw, pos)[0]
                 pos += 4
-                bottom, *_ = struct.unpack_from("<f", raw, pos)
+                bottom = unpack_float(raw, pos)[0]
                 pos += 12
                 p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
                 p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
