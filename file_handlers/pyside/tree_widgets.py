@@ -2014,8 +2014,11 @@ class AdvancedTreeView(QTreeView):
 
         data_obj = array_item.raw.get('obj')
         embedded_context = self._find_embedded_context(array_item)
+        builder_context = (
+            None if embedded_context == "userdata_array_needs_embedded" else embedded_context
+        )
         node = builder.create_lazy_array_node(
-            array_item.data[0].split(':')[0], data_obj, embedded_context
+            array_item.data[0].split(':')[0], data_obj, builder_context
         )
         children_raw = []
         if node.get("deferred_builder"):

@@ -93,6 +93,8 @@ class RszLazyNodeBuilder:
         return DeferredChildBuilder(build_fields)
     
     def create_lazy_array_node(self, field_name: str, data_obj, embedded_context=None) -> dict:
+        if embedded_context == "userdata_array_needs_embedded":
+            embedded_context = None
         original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
         
         array_node = DataTreeBuilder.create_data_node(
