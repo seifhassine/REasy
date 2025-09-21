@@ -5,7 +5,7 @@ import uuid
 from file_handlers.pyside.value_widgets import (
     Vec2Input, Vec3Input, Vec4Input, F32Input, S32Input, U32Input, S16Input, U16Input, U64Input, S64Input, S8Input, U8Input,
     GuidInput, OBBInput, AABBInput, AreaInput, Mat4Input, HexBytesInput, StringInput, BoolInput, UserDataInput, RangeInput,
-    RangeIInput, ColorInput, Vec3ColorInput, CapsuleInput, Int3Input, EnumInput, F64Input
+    RangeIInput, ColorInput, Vec3ColorInput, CapsuleInput, Int3Input, EnumInput, F64Input, SizeInput
 )
 from utils.enum_manager import EnumManager
 
@@ -58,7 +58,7 @@ class TreeWidgetFactory:
         "CapsuleData": CapsuleInput,
         "Int3Data": Int3Input,
         "F64Data": F64Input, 
-        "SizeData": Vec2Input,
+        "SizeData": SizeInput,
         "PointData": Vec3Input,
     }
 

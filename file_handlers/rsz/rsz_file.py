@@ -1,7 +1,7 @@
 import struct
 import uuid
 import sys
-from types import MappingProxyType
+from types import MappingProxyType, SimpleNamespace
 from file_handlers.rsz.rsz_data_types import (
     StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
@@ -582,6 +582,7 @@ class RszFile:
         # Parse Object Table first
         ot_bytes = self.rsz_header.object_count * 4
         object_table_view = memoryview(data)[self._current_offset:self._current_offset + ot_bytes].cast('i')
+        # Convert to a mutable list so callers can freely modify the object table
         self.object_table = object_table_view.tolist()
         self._current_offset += ot_bytes
 
@@ -1960,18 +1961,26 @@ class RszFile:
                     if struct_type_info and count > 0:
                         struct_fields_def = struct_type_info.get("fields", [])
                         current_pos = pos
-                        for i in range(count):
+                        for _ in range(count):
                             struct_element = {}
-                            # Temporarily store current parsed_elements
-                            temp_parsed = self.parsed_elements.get(current_instance_index, {})
-                            self.parsed_elements[current_instance_index] = struct_element
-                            next_pos = self.parse_instance_fields(
+                            proxy = SimpleNamespace(
+                                data=self.data,
+                                parsed_elements={current_instance_index: struct_element},
+                                instance_hierarchy=instance_hierarchy,
+                                _gameobject_instance_ids=gameobject_ids,
+                                _folder_instance_ids=folder_ids,
+                                rsz_userdata_infos=rsz_userdata_infos,
+                                _rsz_userdata_dict=rsz_userdata_by_id,
+                                _rsz_userdata_str_map=rsz_userdata_map,
+                                type_registry=self.type_registry,
+                                _instance_base_mod=base_mod,
+                            )
+                            next_pos = type(self).parse_instance_fields(
+                                proxy,
                                 offset=current_pos,
                                 fields_def=struct_fields_def,
                                 current_instance_index=current_instance_index,
                             )
-                            # Restore the original parsed_elements
-                            self.parsed_elements[current_instance_index] = temp_parsed
                             if next_pos > current_pos and struct_element:
                                 struct_values.append(struct_element)
                                 current_pos = next_pos
