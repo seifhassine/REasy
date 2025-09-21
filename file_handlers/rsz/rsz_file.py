@@ -1,13 +1,13 @@
 import struct
 import uuid
 import sys
-from types import MappingProxyType, SimpleNamespace
+from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
     StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
-    ArrayData, MaybeObject, get_type_class
+    ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, get_type_class, NON_ARRAY_PARSERS
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
@@ -81,6 +81,172 @@ unpack_ulong   = _UNPACKERS["ulong"]
 unpack_double  = _UNPACKERS["double"]
 unpack_20float = _UNPACKERS["20float"]
 unpack_16float = _UNPACKERS["16float"]
+
+
+class _NonArrayFieldParser:
+    __slots__ = (
+        "file",
+        "data",
+        "pos",
+        "base_mod",
+        "field_size",
+        "field_align",
+        "original_type",
+        "current_children",
+        "set_parent",
+        "is_valid_ref",
+        "current_instance_index",
+        "rsz_userdata_by_id",
+        "rsz_userdata_map",
+        "unpack_uint",
+        "unpack_int",
+        "unpack_float",
+        "unpack_double",
+        "unpack_short",
+        "unpack_ushort",
+        "unpack_sbyte",
+        "unpack_ubyte",
+        "unpack_long",
+        "unpack_ulong",
+        "unpack_2float",
+        "unpack_3float",
+        "unpack_4float",
+        "unpack_3double",
+        "unpack_2int",
+        "unpack_3int",
+        "unpack_4ubyte",
+        "unpack_16float",
+        "unpack_20float",
+    )
+
+    def __init__(
+        self,
+        file_obj,
+        base_mod,
+        current_children,
+        set_parent,
+        is_valid_ref,
+        current_instance_index,
+        rsz_userdata_by_id,
+        rsz_userdata_map,
+    ):
+        self.file = file_obj
+        self.data = file_obj.data
+        self.base_mod = base_mod
+        self.pos = 0
+        self.field_size = 0
+        self.field_align = 1
+        self.original_type = ""
+        self.current_children = current_children
+        self.set_parent = set_parent
+        self.is_valid_ref = is_valid_ref
+        self.current_instance_index = current_instance_index
+        self.rsz_userdata_by_id = rsz_userdata_by_id
+        self.rsz_userdata_map = rsz_userdata_map
+        self.unpack_uint = unpack_uint
+        self.unpack_int = unpack_int
+        self.unpack_float = unpack_float
+        self.unpack_double = unpack_double
+        self.unpack_short = unpack_short
+        self.unpack_ushort = unpack_ushort
+        self.unpack_sbyte = unpack_sbyte
+        self.unpack_ubyte = unpack_ubyte
+        self.unpack_long = unpack_long
+        self.unpack_ulong = unpack_ulong
+        self.unpack_2float = unpack_2float
+        self.unpack_3float = unpack_3float
+        self.unpack_4float = unpack_4float
+        self.unpack_3double = unpack_3double
+        self.unpack_2int = unpack_2int
+        self.unpack_3int = unpack_3int
+        self.unpack_4ubyte = unpack_4ubyte
+        self.unpack_16float = unpack_16float
+        self.unpack_20float = unpack_20float
+
+    def configure(self, pos, field_size, field_align, original_type):
+        self.pos = pos
+        self.field_size = field_size
+        self.field_align = max(int(field_align or 1), 1)
+        self.original_type = original_type or ""
+        if self.field_align > 1:
+            remainder = (self.pos + self.base_mod) % self.field_align
+            if remainder:
+                self.pos += self.field_align - remainder
+
+    def _align_in_place(self, align):
+        align = int(align or 1)
+        if align <= 1:
+            return
+        remainder = (self.pos + self.base_mod) % align
+        if remainder:
+            self.pos += align - remainder
+
+    def align(self, align=None):
+        self._align_in_place(align or self.field_align or 1)
+        return self.pos
+
+    def _slice_bytes(self, start, end):
+        segment = self.data[start:end]
+        return segment.tobytes() if hasattr(segment, "tobytes") else segment
+
+    def read_value(self, unpack_func, size, align=None):
+        if align:
+            self._align_in_place(align)
+        value = unpack_func(self.data, self.pos)[0]
+        self.pos += size
+        return value
+
+    def read_value_with_raw(self, unpack_func, size, align=None):
+        if align:
+            self._align_in_place(align)
+        start = self.pos
+        value = unpack_func(self.data, self.pos)[0]
+        self.pos += size
+        raw = self._slice_bytes(start, self.pos)
+        return value, raw
+
+    def read_struct(self, unpack_func, size, align=None):
+        if align:
+            self._align_in_place(align)
+        values = unpack_func(self.data, self.pos)
+        self.pos += size
+        return values
+
+    def read_bytes(self, length, align=None):
+        if align:
+            self._align_in_place(align)
+        start = self.pos
+        end = start + length
+        self.pos = end
+        return self._slice_bytes(start, end)
+
+    def read_string_utf16(self):
+        count = self.read_value(self.unpack_uint, 4, align=4)
+        byte_count = count * 2
+        start = self.pos
+        end = start + byte_count
+        segment = self._slice_bytes(start, end)
+        value = sys.intern(segment.decode("utf-16-le")) if byte_count else ""
+        self.pos = end
+        return value
+
+    def read_string_utf8(self):
+        count = self.read_value(self.unpack_uint, 4, align=4)
+        start = self.pos
+        end = start + count
+        segment = self._slice_bytes(start, end)
+        value = sys.intern(segment.decode("utf-8")) if count else ""
+        self.pos = end
+        return value
+
+    def read_guid(self, size, align=None):
+        raw = self.read_bytes(size, align)
+        return guid_le_to_str(raw), raw
+
+    def skip(self, length, align=None):
+        if align is not None:
+            self.align(align)
+        self.pos += length
 
 
 ########################################
@@ -582,7 +748,6 @@ class RszFile:
         # Parse Object Table first
         ot_bytes = self.rsz_header.object_count * 4
         object_table_view = memoryview(data)[self._current_offset:self._current_offset + ot_bytes].cast('i')
-        # Convert to a mutable list so callers can freely modify the object table
         self.object_table = object_table_view.tolist()
         self._current_offset += ot_bytes
 
@@ -689,26 +854,6 @@ class RszFile:
                 self.parsed_elements[idx] = EMPTY
                 continue
 
-            for f in fields_def:
-                if "_rsz_type" not in f:
-                    key = (
-                        f.get("type","unknown").lower(),
-                        f.get("size",4),
-                        f.get("native",False),
-                        f.get("array",False),
-                        int(f.get("align",1)),
-                        f.get("original_type",""),
-                        f.get("name",""),
-                    )
-                    rsz_t = self._rsz_type_cache.get(key)
-                    if rsz_t is None:
-                        rsz_t = get_type_class(key[0], key[1], key[2], key[3], key[4], key[5], key[6])
-                        self._rsz_type_cache[key] = rsz_t
-                    f["_rsz_type"] = rsz_t
-                    f["_size"] = key[1]
-                    f["_align"] = key[4]
-                    f["_is_array"] = key[3]
-
             self.parsed_elements[idx] = {}
             new_offset = self.parse_instance_fields(
                 offset=current_offset,
@@ -716,7 +861,39 @@ class RszFile:
                 current_instance_index=idx
             )
             current_offset = new_offset
-            
+
+    def _prepare_field_definitions(self, fields_def):
+        """Populate cached parsing helpers for a list of field definitions."""
+        for field in fields_def:
+            if "_rsz_type" in field:
+                continue
+
+            field_name = field.get("name", "")
+            key = (
+                field.get("type", "unknown").lower(),
+                field.get("size", 4),
+                field.get("native", False),
+                field.get("array", False),
+                int(field.get("align", 1)),
+                field.get("original_type", ""),
+                field_name,
+            )
+
+            rsz_type = self._rsz_type_cache.get(key)
+            if rsz_type is None:
+                rsz_type = get_type_class(*key)
+                self._rsz_type_cache[key] = rsz_type
+
+            parser_func = NON_ARRAY_PARSERS.get(rsz_type, RawBytesData.parse)
+            default_element_cls = rsz_type if parser_func is not RawBytesData.parse else RawBytesData
+
+            field["_rsz_type"] = rsz_type
+            field["_size"] = key[1]
+            field["_align"] = key[4]
+            field["_is_array"] = key[3]
+            field["_non_array_parser"] = parser_func
+            field["_default_element_cls"] = default_element_cls
+
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
 
         field_size = field_def.get("size", 4)
@@ -774,16 +951,29 @@ class RszFile:
                     out.extend(pack_4float(element.x, element.y, 0, 0))
                 elif isinstance(element, Float2Data):
                     out.extend(pack_2float(element.x, element.y))
+                elif isinstance(element, PointData):
+                    out.extend(pack_2float(element.x, element.y))
+                elif isinstance(element, SizeData):
+                    out.extend(pack_2float(element.width, element.height))
                 elif isinstance(element, RangeData):
                     out.extend(pack_2float(element.min, element.max))
                 elif isinstance(element, RangeIData):
                     out.extend(pack_2int(element.min, element.max))
+                elif isinstance(element, Int2Data):
+                    out.extend(pack_2int(element.x, element.y))
+                elif isinstance(element, Uint2Data):
+                    out.extend(pack_uint(element.x))
+                    out.extend(pack_uint(element.y))
                 elif isinstance(element, Float3Data):
                     out.extend(pack_3float(element.x, element.y, element.z))
                 elif isinstance(element, PositionData):
                     out.extend(pack_3double(element.x, element.y, element.z))
                 elif isinstance(element, Int3Data):
                     out.extend(pack_3int(element.x, element.y, element.z))
+                elif isinstance(element, Uint3Data):
+                    out.extend(pack_uint(element.x))
+                    out.extend(pack_uint(element.y))
+                    out.extend(pack_uint(element.z))
                 elif isinstance(element, Float4Data):
                     out.extend(pack_4float(element.x, element.y, element.z, element.w))
                 elif isinstance(element, QuaternionData):
@@ -912,8 +1102,17 @@ class RszFile:
                 out.extend(pack_4float(data_obj.x, data_obj.y, 0, 0))
             elif isinstance(data_obj, Float2Data):
                 out.extend(pack_2float(data_obj.x, data_obj.y))
+            elif isinstance(data_obj, PointData):
+                out.extend(pack_2float(data_obj.x, data_obj.y))
+            elif isinstance(data_obj, SizeData):
+                out.extend(pack_2float(data_obj.width, data_obj.height))
             elif isinstance(data_obj, RangeData):
                 out.extend(pack_2float(data_obj.min, data_obj.max))
+            elif isinstance(data_obj, Int2Data):
+                out.extend(pack_2int(data_obj.x, data_obj.y))
+            elif isinstance(data_obj, Uint2Data):
+                out.extend(pack_uint(data_obj.x))
+                out.extend(pack_uint(data_obj.y))
             elif isinstance(data_obj, RangeIData):
                 out.extend(pack_2int(data_obj.min, data_obj.max))
             elif isinstance(data_obj, Float3Data):
@@ -922,6 +1121,10 @@ class RszFile:
                 out.extend(pack_3double(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Int3Data):
                 out.extend(pack_3int(data_obj.x, data_obj.y, data_obj.z))
+            elif isinstance(data_obj, Uint3Data):
+                out.extend(pack_3int(data_obj.x))
+                out.extend(pack_3int(data_obj.y))
+                out.extend(pack_3int(data_obj.z))
             elif isinstance(data_obj, Float4Data):
                 out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, QuaternionData):
@@ -1864,9 +2067,6 @@ class RszFile:
         
     def parse_instance_fields(self, offset: int, fields_def: list, current_instance_index=None):
         """Parse fields from raw data according to field definitions – optimized version."""
-        children = []
-
-        rsz_userdata_infos = self.rsz_userdata_infos  # kept for embedded traversal
         rsz_userdata_by_id = self._rsz_userdata_dict
         parsed_elements   = self.parsed_elements.setdefault(current_instance_index, {})
         instance_hierarchy = self.instance_hierarchy
@@ -1875,6 +2075,8 @@ class RszFile:
         rsz_userdata_map  = self._rsz_userdata_str_map
         current_hierarchy = instance_hierarchy[current_instance_index]
         current_children  = current_hierarchy["children"]
+
+        self._prepare_field_definitions(fields_def)
 
         def _align_rel(pos: int, align: int, base_mod: int) -> int:
             rem = (pos + base_mod) % align
@@ -1895,32 +2097,6 @@ class RszFile:
             pos += size
             return v
 
-        def read_aligned_bytes(length, align=1):
-            nonlocal pos
-            pos = _align(pos, align)
-            seg = self.data[pos:pos+length]
-            pos += length
-            return seg.tobytes() if hasattr(seg, "tobytes") else seg
-
-        def read_string_value():
-            nonlocal pos
-            pos = _align(pos, 4)
-            count = read_aligned_value(unpack_uint, 4, align=4)
-            str_byte_count = count * 2
-            segment = self.data[pos:pos+str_byte_count]
-            value = sys.intern(segment.decode('utf-16-le'))
-            pos += str_byte_count
-            return value
-
-        def read_string_value_utf8():
-            nonlocal pos
-            pos = _align(pos, 4)
-            count = read_aligned_value(unpack_uint, 4, align=4)
-            segment = self.data[pos:pos+count]
-            value = sys.intern(segment.decode('utf-8'))
-            pos += count
-            return value
-
         def set_parent(idx, parent_idx):
             if 0 <= idx < len(instance_hierarchy):
                 instance_hierarchy[idx]["parent"] = parent_idx
@@ -1928,22 +2104,25 @@ class RszFile:
                 print(f"Warning: Invalid instance index {idx} encountered (parent: {parent_idx})")
 
         def is_valid_ref(candidate):
-            return (0 < candidate < current_instance_index and 
-                    candidate not in gameobject_ids and 
+            return (0 < candidate < current_instance_index and
+                    candidate not in gameobject_ids and
                     candidate not in folder_ids)
+
+        non_array_parser = _NonArrayFieldParser(
+            self,
+            base_mod,
+            current_children,
+            set_parent,
+            is_valid_ref,
+            current_instance_index,
+            rsz_userdata_by_id,
+            rsz_userdata_map,
+        )
 
         for field in fields_def:
             field_name    = field.get("name", "<unnamed>")
             # use cached values populated in _parse_instances
-            rsz_type      = field.get("_rsz_type") or get_type_class(
-                                field.get("type","unknown").lower(),
-                                field.get("size",4),
-                                field.get("native",False),
-                                field.get("array",False),
-                                int(field.get("align",1)),
-                                field.get("original_type",""),
-                                field_name
-                             )
+            rsz_type      = field.get("_rsz_type")
             fsize         = field.get("_size", field.get("size",4))
             field_align   = field.get("_align", int(field.get("align",1)))
             is_array      = field.get("_is_array", field.get("array",False))
@@ -1958,29 +2137,20 @@ class RszFile:
                     struct_values = []
                     struct_type_info = None
                     struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
+                    current_pos = pos
                     if struct_type_info and count > 0:
                         struct_fields_def = struct_type_info.get("fields", [])
-                        current_pos = pos
-                        for _ in range(count):
+                        current_pos = _align(current_pos, field_align)
+                        for i in range(count):
                             struct_element = {}
-                            proxy = SimpleNamespace(
-                                data=self.data,
-                                parsed_elements={current_instance_index: struct_element},
-                                instance_hierarchy=instance_hierarchy,
-                                _gameobject_instance_ids=gameobject_ids,
-                                _folder_instance_ids=folder_ids,
-                                rsz_userdata_infos=rsz_userdata_infos,
-                                _rsz_userdata_dict=rsz_userdata_by_id,
-                                _rsz_userdata_str_map=rsz_userdata_map,
-                                type_registry=self.type_registry,
-                                _instance_base_mod=base_mod,
-                            )
-                            next_pos = type(self).parse_instance_fields(
-                                proxy,
+                            temp_parsed = self.parsed_elements.get(current_instance_index, {})
+                            self.parsed_elements[current_instance_index] = struct_element
+                            next_pos = self.parse_instance_fields(
                                 offset=current_pos,
                                 fields_def=struct_fields_def,
                                 current_instance_index=current_instance_index,
                             )
+                            self.parsed_elements[current_instance_index] = temp_parsed
                             if next_pos > current_pos and struct_element:
                                 struct_values.append(struct_element)
                                 current_pos = next_pos
@@ -1991,507 +2161,56 @@ class RszFile:
 
                 elif rsz_type == MaybeObject:
                     child_indexes = []
-                    all_values = []
+                    raw_values = []
                     already_ref = False
                     for i in range(count):
-                        pos = _align(pos, field_align)
-                        value = unpack_uint(self.data, pos)[0]
-                        raw_value = (self.data[pos:pos+fsize].tobytes() if hasattr(self.data[pos:pos+fsize], "tobytes")
-                                    else self.data[pos:pos+fsize])
-                        if is_valid_ref(value) and i == 0:
+                        non_array_parser.configure(pos, fsize, field_align, original_type)
+                        candidate, raw_value = non_array_parser.read_value_with_raw(
+                            non_array_parser.unpack_uint,
+                            fsize,
+                        )
+                        pos = non_array_parser.pos
+                        if i == 0 and non_array_parser.is_valid_ref(candidate):
                             already_ref = True
                         if already_ref:
-                            child_indexes.append(value)
-                            current_children.append(value)
-                            set_parent(value, current_instance_index)
-                            all_values.append(value)
+                            child_indexes.append(candidate)
+                            current_children.append(candidate)
+                            set_parent(candidate, current_instance_index)
                         else:
-                            all_values.append(raw_value)
-                        pos += fsize
+                            raw_values.append(raw_value)
                     data_obj = ArrayData(
-                        [ObjectData(x, original_type) for x in child_indexes] if already_ref else 
-                        [RawBytesData(x, fsize, original_type) for x in all_values],
+                        [ObjectData(idx, original_type) for idx in child_indexes] if already_ref else
+                        [RawBytesData(raw, fsize, original_type) for raw in raw_values],
                         ObjectData if already_ref else RawBytesData,
-                        original_type
+                        original_type,
                     )
-
-                elif rsz_type == UserDataData:
-                    userdata_values = []
-                    userdatas = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        candidate = read_aligned_value(unpack_uint, 4, align=field_align)
-                        userdatas.append(candidate)                       
-                        rui = rsz_userdata_by_id.get(candidate)
-                        if rui:
-                            userdata_values.append(rsz_userdata_map.get(rui, f"Empty Userdata {candidate}"))
-                        else:
-                            userdata_values.append(f"Empty Userdata {candidate}")
-                    data_obj = ArrayData(
-                        [rsz_type(idx, val, original_type) for val, idx in zip(userdata_values, userdatas)],
-                        rsz_type,
-                        original_type
-                    )
-
-                elif rsz_type == GameObjectRefData:
-                    guids = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        guid_bytes = read_aligned_bytes(fsize, align=field_align)
-                        guid_str = guid_le_to_str(guid_bytes)
-                        guids.append((guid_str, guid_bytes))
-                    data_obj = ArrayData([rsz_type(g, raw, original_type) for g, raw in guids], rsz_type, original_type)
-
-                elif rsz_type == ObjectData:
-                    child_indexes = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        idx = read_aligned_value(unpack_uint, fsize, align=field_align)
-                        child_indexes.append(idx)
-                        current_children.append(idx)
-                        set_parent(idx, current_instance_index)
-                    data_obj = ArrayData([rsz_type(idx, original_type) for idx in child_indexes],
-                                        rsz_type, original_type)
-
-                elif rsz_type in (Vec3Data, Vec3ColorData):
-                    vec3_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_4float(self.data, pos)
-                        vec3_objects.append(rsz_type(vals[0], vals[1], vals[2], original_type))
-                        pos += fsize
-                    data_obj = ArrayData(vec3_objects, rsz_type, original_type)
-
-                elif rsz_type in (Vec4Data, Float4Data, QuaternionData):
-                    vec4_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_4float(self.data, pos)
-                        vec4_objects.append(rsz_type(*vals, original_type))
-                        pos += fsize
-                    data_obj = ArrayData(vec4_objects, rsz_type, original_type)
-
-                elif rsz_type in (Vec2Data, Float2Data):
-                    vec2_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_2float(self.data, pos)
-                        vec2_objects.append(rsz_type(*vals, original_type))
-                        pos += fsize
-                    data_obj = ArrayData(vec2_objects, rsz_type, original_type)
-
-                elif rsz_type == Float3Data:
-                    f3_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_3float(self.data, pos)
-                        f3_objects.append(rsz_type(*vals, original_type))
-                        pos += fsize
-                    data_obj = ArrayData(f3_objects, rsz_type, original_type)
-
-                elif rsz_type == PositionData:
-                    pos_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_3double(self.data, pos)
-                        pos_objects.append(rsz_type(*vals, original_type))
-                        pos += fsize
-                    data_obj = ArrayData(pos_objects, rsz_type, original_type)
-
-                elif rsz_type == Int3Data:
-                    int3_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_3int(self.data, pos)
-                        int3_objects.append(rsz_type(*vals, original_type))
-                        pos += fsize
-                    data_obj = ArrayData(int3_objects, rsz_type, original_type)
-
-                elif rsz_type == Mat4Data:
-                    mat4_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        floats = unpack_16float(self.data, pos)
-                        mat4_objects.append(rsz_type(list(floats), original_type))
-                        pos += fsize
-                    data_obj = ArrayData(mat4_objects, rsz_type, original_type)
-
-                elif rsz_type == RangeData:
-                    range_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_2float(self.data, pos)
-                        range_objects.append(rsz_type(vals[0], vals[1], original_type))
-                        pos += fsize
-                    data_obj = ArrayData(range_objects, rsz_type, original_type)
-
-                elif rsz_type == RangeIData:
-                    range_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_2int(self.data, pos)
-                        range_objects.append(rsz_type(vals[0], vals[1], original_type))
-                        pos += fsize
-                    data_obj = ArrayData(range_objects, rsz_type, original_type)
-
-                elif rsz_type == OBBData:
-                    obb_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        floats = unpack_20float(self.data, pos)
-                        obb_objects.append(rsz_type(list(floats), original_type))
-                        pos += fsize
-                    data_obj = ArrayData(obb_objects, rsz_type, original_type)
-
-                elif rsz_type == CapsuleData:
-                    area_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                            
-                        start_vals = unpack_4float(self.data, pos)
-                        pos += 16
-                        end_vals = unpack_4float(self.data, pos)
-                        pos += 16
-                        radius = unpack_float(self.data, pos)[0]
-                        pos += 16
-                        start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
-                        end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
-                        
-                        area_objects.append(rsz_type(start_vec, end_vec, radius, original_type))
-
-                    data_obj = ArrayData(area_objects, rsz_type, original_type)
-
-                elif rsz_type == AABBData:
-                    area_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                            
-                        min_vals = unpack_4float(self.data, pos)
-                        pos += 16
-                        max_vals = unpack_4float(self.data, pos)
-                        pos += 16
-                        area_objects.append(rsz_type(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], original_type))
-
-                    data_obj = ArrayData(area_objects, rsz_type, original_type)
-
-                elif rsz_type == AreaData:
-                
-                    area_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                            
-                        p0_vals = unpack_2float(self.data, pos)
-                        pos += 8
-                        p1_vals = unpack_2float(self.data, pos)
-                        pos += 8
-                        p2_vals = unpack_2float(self.data, pos)
-                        pos += 8
-                        p3_vals = unpack_2float(self.data, pos)
-                        pos += 8
-                        height = unpack_float(self.data, pos)[0]
-                        pos += 4
-                        bottom = unpack_float(self.data, pos)[0]
-                        pos += 12
-                        p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
-                        p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
-                        p2 = Float2Data(p2_vals[0], p2_vals[1], "Float2")
-                        p3 = Float2Data(p3_vals[0], p3_vals[1], "Float2")
-                        
-                        area_objects.append(rsz_type(p0, p1, p2, p3, height, bottom, original_type))
-
-                    data_obj = ArrayData(area_objects, rsz_type, original_type)
-
-                elif rsz_type == StringData:
-                    children = []
-                    for _ in range(count):
-                        value = read_string_value()
-                        children.append(value)
-
-                    data_obj = ArrayData([StringData(s) for s in children], StringData, original_type)
-
-                elif rsz_type == ResourceData:
-                    children = []
-                    for _ in range(count):
-                        value = read_string_value()
-                        children.append(value)
-
-                    data_obj = ArrayData([ResourceData(s) for s in children], ResourceData, original_type)
-
-                elif rsz_type == RuntimeTypeData:
-                    children = []
-                    for _ in range(count):
-                        value = read_string_value_utf8()
-                        children.append(value)
-
-                    data_obj = ArrayData([RuntimeTypeData(s) for s in children], RuntimeTypeData, original_type)
-
-                elif rsz_type == S8Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_sbyte, 1, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == U8Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_ubyte, 1, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == BoolData:
-                    values = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        value = self.data[pos] != 0
-                        values.append(rsz_type(value, original_type))
-                        pos += 1
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == S32Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_int, fsize, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == U32Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_uint, fsize, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == S16Data:
-                    values = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        value = unpack_short(self.data, pos)[0]
-                        values.append(rsz_type(value, original_type))
-                        pos += 2
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == U16Data:
-                    values = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        value = unpack_ushort(self.data, pos)[0]
-                        values.append(rsz_type(value, original_type))
-                        pos += 2
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == S64Data:
-                    values = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        value = unpack_long(self.data, pos)[0]
-                        values.append(rsz_type(value, original_type))
-                        pos += 8
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == U64Data:
-                    values = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        value = unpack_ulong(self.data, pos)[0]
-                        values.append(rsz_type(value, original_type))
-                        pos += 8
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == F32Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_float, 4, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == F64Data:
-                    values = []
-                    for _ in range(count):
-                        value = read_aligned_value(unpack_double, 8, align=field_align)
-                        values.append(rsz_type(value, original_type))
-                    data_obj = ArrayData(values, rsz_type, original_type)
-
-                elif rsz_type == GuidData:
-                    guids = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        guid_bytes = read_aligned_bytes(fsize, align=field_align)
-                        guid_str = guid_le_to_str(guid_bytes)
-                        guids.append((guid_str, guid_bytes))
-                    data_obj = ArrayData([rsz_type(g[0], g[1], original_type) for g in guids],
-                                        rsz_type, original_type)
-
-                elif rsz_type == ColorData:
-                    color_objects = []
-                    for _ in range(count):
-                        pos = _align(pos, field_align)
-                        vals = unpack_4ubyte(self.data, pos)
-                        color_objects.append(rsz_type(vals[0], vals[1], vals[2], vals[3], original_type))
-                        pos += fsize
-                    pos = _align(pos, field_align) if color_objects else pos
-                    data_obj = ArrayData(color_objects, rsz_type, original_type)
 
                 else:
-                    children = []
+                    parser_func = field.get("_non_array_parser", RawBytesData.parse)
+                    default_element_class = field.get("_default_element_cls", RawBytesData)
+
+                    values = []
                     for _ in range(count):
-                        pos = _align(pos, field_align)
-                        raw_bytes = read_aligned_bytes(fsize, align=field_align)
-                        children.append(RawBytesData(raw_bytes, fsize, original_type))
-                    data_obj = ArrayData(children, RawBytesData, original_type)
+                        non_array_parser.configure(pos, fsize, field_align, original_type)
+                        values.append(parser_func(non_array_parser))
+                        pos = non_array_parser.pos
+
+                    if values:
+                        first_cls = type(values[0])
+                        if all(type(v) is first_cls for v in values[1:]):
+                            element_class = first_cls
+                        else:
+                            element_class = default_element_class
+                    else:
+                        element_class = default_element_class
+
+                    data_obj = ArrayData(values, element_class, original_type)
 
             else:  # Non-array field
-                pos = _align(pos, field_align)
-                if rsz_type == MaybeObject:
-                    candidate = read_aligned_value(unpack_uint, fsize, align=field_align)
-                    raw_candidate = (self.data[pos-fsize:pos].tobytes() if hasattr(self.data[pos-fsize:pos], "tobytes")
-                                    else self.data[pos-fsize:pos])
-                    if not is_valid_ref(candidate):
-                        data_obj = RawBytesData(raw_candidate, fsize, original_type)
-                    else:
-                        data_obj = ObjectData(candidate, original_type)
-                        current_children.append(candidate)
-                        set_parent(candidate, current_instance_index)
-                elif rsz_type == UserDataData:
-                    instance_id = read_aligned_value(unpack_uint, 4, align=field_align)
-                    value = ""
-                    rui = rsz_userdata_by_id.get(instance_id)
-                    if rui:
-                        value = rsz_userdata_map.get(rui, "")
-                    data_obj = rsz_type(instance_id, value, original_type)
-                elif rsz_type == ObjectData:
-                    child_idx = read_aligned_value(unpack_uint, fsize, align=field_align)
-                    data_obj = rsz_type(child_idx, original_type)
-                    current_children.append(child_idx)
-                    set_parent(child_idx, current_instance_index)
-                elif rsz_type in (Vec3Data, Vec3ColorData):
-                    vals = unpack_4float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals[0], vals[1], vals[2], original_type)
-                elif rsz_type in (Vec4Data, Float4Data, QuaternionData):
-                    vals = unpack_4float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(*vals, original_type)
-                elif rsz_type == OBBData:
-                    vals = unpack_20float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals, original_type)
-                elif rsz_type in (Vec2Data, Float2Data):
-                    vals = unpack_2float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(*vals, original_type)
-                elif rsz_type == Float3Data:
-                    vals = unpack_3float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(*vals, original_type)
-                elif rsz_type == PositionData:
-                    vals = unpack_3double(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(*vals, original_type)
-                elif rsz_type == Int3Data:
-                    vals = unpack_3int(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(*vals, original_type)
-                elif rsz_type == RangeIData:
-                    vals = unpack_2int(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals[0], vals[1], original_type)
-                elif rsz_type == StringData:
-                    value = read_string_value()
-                    children.append(value)
-                    data_obj = StringData(value, original_type)
-                elif rsz_type == ResourceData:
-                    value = read_string_value()
-                    children.append(value)
-                    data_obj = ResourceData(value, original_type)
-                elif rsz_type == RuntimeTypeData:
-                    value = read_string_value_utf8()
-                    children.append(value)
-                    data_obj = RuntimeTypeData(value, original_type)
-                elif rsz_type == BoolData:
-                    value = self.data[pos] != 0
-                    pos += fsize
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == S8Data:
-                    value = read_aligned_value(unpack_sbyte, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == U8Data:
-                    value = read_aligned_value(unpack_ubyte, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == U16Data:
-                    value = read_aligned_value(unpack_ushort, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == S16Data:
-                    value = read_aligned_value(unpack_short, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == S32Data:
-                    value = read_aligned_value(unpack_int, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == S64Data:
-                    value = read_aligned_value(unpack_long, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == U32Data:
-                    value = read_aligned_value(unpack_uint, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == U64Data:
-                    value = read_aligned_value(unpack_ulong, fsize, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type == F32Data:
-                    value = read_aligned_value(unpack_float, 4, align=field_align)
-                    data_obj = rsz_type(value, original_type)
-                elif rsz_type in (GameObjectRefData, GuidData):
-                    guid_bytes = read_aligned_bytes(fsize, align=field_align)
-                    guid_str = guid_le_to_str(guid_bytes)
-                    data_obj = rsz_type(guid_str, guid_bytes, original_type)
-                elif rsz_type == Mat4Data:
-                    vals = unpack_16float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals, original_type)
-                elif rsz_type == RangeData:
-                    vals = unpack_2float(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals[0], vals[1], original_type)
-                elif rsz_type == ColorData:
-                    vals = unpack_4ubyte(self.data, pos)
-                    pos += fsize
-                    data_obj = rsz_type(vals[0], vals[1], vals[2], vals[3], original_type)
-                elif rsz_type == CapsuleData:
-                    start_vals = unpack_4float(self.data, pos)
-                    pos += 16
-                    end_vals = unpack_4float(self.data, pos)
-                    pos += 16
-                    radius = unpack_float(self.data, pos)[0]
-                    pos += 16
-                    start_vec = Vec3Data(start_vals[0], start_vals[1], start_vals[2], "Vec3")
-                    end_vec = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
-                    data_obj = rsz_type(start_vec, end_vec, radius, original_type)
-                elif rsz_type == AABBData:
-                    min_vals = unpack_4float(self.data, pos)
-                    pos += 16
-                    max_vals = unpack_4float(self.data, pos)
-                    pos += 16
-                    data_obj = rsz_type(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], original_type)
-                elif rsz_type == AreaData:
-                    p0_vals = unpack_2float(self.data, pos)
-                    pos += 8
-                    p1_vals = unpack_2float(self.data, pos)
-                    pos += 8
-                    p2_vals = unpack_2float(self.data, pos)
-                    pos += 8
-                    p3_vals = unpack_2float(self.data, pos)
-                    pos += 8
-                    height = unpack_float(self.data, pos)[0]
-                    pos += 4
-                    bottom = unpack_float(self.data, pos)[0]
-                    pos += 12
-                    p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
-                    p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
-                    p2 = Float2Data(p2_vals[0], p2_vals[1], "Float2")
-                    p3 = Float2Data(p3_vals[0], p3_vals[1], "Float2")
-                    data_obj = rsz_type(p0, p1, p2, p3, height, bottom, original_type)
-                else:
-                    raw_bytes = read_aligned_bytes(fsize, align=field_align)
-                    data_obj = RawBytesData(raw_bytes, fsize, original_type)
+                non_array_parser.configure(pos, fsize, field_align, original_type)
+                parser_func = field.get("_non_array_parser", RawBytesData.parse)
+                data_obj = parser_func(non_array_parser)
+                pos = non_array_parser.pos
 
             parsed_elements[field_name] = data_obj
 
