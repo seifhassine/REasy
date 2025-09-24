@@ -956,7 +956,8 @@ class UvarHandler(BaseFileHandler):
                 
                 if var_item:
                     type_icon = self._get_type_icon(var.type)
-                    var_item.setText(0, f"{type_icon} {var.name or f'Variable_{meta.get("index", 0)}'}")
+                    str = meta.get("index", 0)
+                    var_item.setText(0, f"{type_icon} {var.name or f'Variable_{str}'}")
                     var_item.setText(1, self._format_variable_value(var))
                     
                     color = self._get_type_color(var.type)
