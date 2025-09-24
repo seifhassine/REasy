@@ -958,7 +958,6 @@ class RszFile:
         prepared_sets.add(fields_id)
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
-
         field_size = field_def.get("size", 4)
         field_align = field_def.get("align", 1)
         base_mod = getattr(self, "_write_base_mod", 0)
@@ -1185,9 +1184,9 @@ class RszFile:
             elif isinstance(data_obj, Int3Data):
                 out.extend(pack_3int(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Uint3Data):
-                out.extend(pack_3int(data_obj.x))
-                out.extend(pack_3int(data_obj.y))
-                out.extend(pack_3int(data_obj.z))
+                out.extend(pack_uint(data_obj.x))
+                out.extend(pack_uint(data_obj.y))
+                out.extend(pack_uint(data_obj.z))
             elif isinstance(data_obj, Float4Data):
                 out.extend(pack_4float(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, QuaternionData):
