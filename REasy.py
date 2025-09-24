@@ -699,6 +699,10 @@ class FileTab:
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
 
+            self.modified = False
+            self.viewer.modified = False
+            self.update_tab_title()
+
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Failed to reload file: {e}")
             import traceback
