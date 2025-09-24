@@ -17,6 +17,16 @@ class TypeRegistry:
             if isinstance(info, dict) and "name" in info:
                 self._name_to_info[info["name"]] = info
 
+        self._type_id_cache = {}
+
+    def _lookup_type_info(self, type_id: int):
+        """Internal helper to resolve a type ID without touching the cache."""
+        hex_key = format(type_id, "x")
+        info = self.registry.get(hex_key)
+        if info is None and len(hex_key) < 8:
+            info = self.registry.get(hex_key.zfill(8))
+        return info
+
     def get_type_info(self, type_id: int) -> dict:
         """
         Look up the type info for a given type_id.
@@ -24,10 +34,24 @@ class TypeRegistry:
         We try both the unpadded and 8-digit padded keys.
         Returns a dict (or None if not found).
         """
-        hex_key = format(type_id, "x")
-        if hex_key in self.registry:
-            return self.registry[hex_key]
-        return None
+        cache = self._type_id_cache
+        if type_id in cache:
+            return cache[type_id]
+
+        info = self._lookup_type_info(type_id)
+        cache[type_id] = info
+        return info
+
+    def pre_cache_types(self, type_ids):
+        if not type_ids:
+            return
+
+        cache = self._type_id_cache
+        lookup = self._lookup_type_info
+        for type_id in type_ids:
+            if type_id <= 0 or type_id in cache:
+                continue
+            cache[type_id] = lookup(type_id)
 
     def find_type_by_name(self, type_name: str) -> tuple:
         """

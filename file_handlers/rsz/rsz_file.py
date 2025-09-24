@@ -98,30 +98,25 @@ class _NonArrayFieldParser:
         "current_instance_index",
         "rsz_userdata_by_id",
         "rsz_userdata_map",
-        "unpack_uint",
-        "unpack_int",
-        "unpack_float",
-        "unpack_double",
-        "unpack_short",
-        "unpack_ushort",
-        "unpack_sbyte",
-        "unpack_ubyte",
-        "unpack_long",
-        "unpack_ulong",
-        "unpack_2float",
-        "unpack_3float",
-        "unpack_4float",
-        "unpack_3double",
-        "unpack_2int",
-        "unpack_3int",
-        "unpack_4ubyte",
-        "unpack_16float",
-        "unpack_20float",
     )
 
-    def __init__(
+    def __init__(self, file_obj):
+        self.file = file_obj
+        self.data = file_obj.data
+        self.base_mod = 0
+        self.pos = 0
+        self.field_size = 0
+        self.field_align = 1
+        self.original_type = ""
+        self.current_children = None
+        self.set_parent = None
+        self.is_valid_ref = None
+        self.current_instance_index = None
+        self.rsz_userdata_by_id = None
+        self.rsz_userdata_map = None
+
+    def reset_context(
         self,
-        file_obj,
         base_mod,
         current_children,
         set_parent,
@@ -130,56 +125,39 @@ class _NonArrayFieldParser:
         rsz_userdata_by_id,
         rsz_userdata_map,
     ):
-        self.file = file_obj
-        self.data = file_obj.data
+        self.data = self.file.data
         self.base_mod = base_mod
-        self.pos = 0
-        self.field_size = 0
-        self.field_align = 1
-        self.original_type = ""
         self.current_children = current_children
         self.set_parent = set_parent
         self.is_valid_ref = is_valid_ref
         self.current_instance_index = current_instance_index
         self.rsz_userdata_by_id = rsz_userdata_by_id
         self.rsz_userdata_map = rsz_userdata_map
-        self.unpack_uint = unpack_uint
-        self.unpack_int = unpack_int
-        self.unpack_float = unpack_float
-        self.unpack_double = unpack_double
-        self.unpack_short = unpack_short
-        self.unpack_ushort = unpack_ushort
-        self.unpack_sbyte = unpack_sbyte
-        self.unpack_ubyte = unpack_ubyte
-        self.unpack_long = unpack_long
-        self.unpack_ulong = unpack_ulong
-        self.unpack_2float = unpack_2float
-        self.unpack_3float = unpack_3float
-        self.unpack_4float = unpack_4float
-        self.unpack_3double = unpack_3double
-        self.unpack_2int = unpack_2int
-        self.unpack_3int = unpack_3int
-        self.unpack_4ubyte = unpack_4ubyte
-        self.unpack_16float = unpack_16float
-        self.unpack_20float = unpack_20float
+        self.pos = 0
+        self.field_size = 0
+        self.field_align = 1
+        self.original_type = ""
 
     def configure(self, pos, field_size, field_align, original_type):
+        align = field_align if field_align and field_align > 1 else 1
+        if align > 1:
+            base_mod = self.base_mod
+            remainder = (pos + base_mod) % align
+            if remainder:
+                pos += align - remainder
         self.pos = pos
         self.field_size = field_size
-        self.field_align = max(int(field_align or 1), 1)
+        self.field_align = align
         self.original_type = original_type or ""
-        if self.field_align > 1:
-            remainder = (self.pos + self.base_mod) % self.field_align
-            if remainder:
-                self.pos += self.field_align - remainder
 
     def _align_in_place(self, align):
-        align = int(align or 1)
-        if align <= 1:
+        if not align or align <= 1:
             return
-        remainder = (self.pos + self.base_mod) % align
+        base_mod = self.base_mod
+        pos = self.pos
+        remainder = (pos + base_mod) % align
         if remainder:
-            self.pos += align - remainder
+            self.pos = pos + (align - remainder)
 
     def align(self, align=None):
         self._align_in_place(align or self.field_align or 1)
@@ -247,6 +225,30 @@ class _NonArrayFieldParser:
         if align is not None:
             self.align(align)
         self.pos += length
+
+
+for _name, _func in (
+    ("unpack_uint", unpack_uint),
+    ("unpack_int", unpack_int),
+    ("unpack_float", unpack_float),
+    ("unpack_double", unpack_double),
+    ("unpack_short", unpack_short),
+    ("unpack_ushort", unpack_ushort),
+    ("unpack_sbyte", unpack_sbyte),
+    ("unpack_ubyte", unpack_ubyte),
+    ("unpack_long", unpack_long),
+    ("unpack_ulong", unpack_ulong),
+    ("unpack_2float", unpack_2float),
+    ("unpack_3float", unpack_3float),
+    ("unpack_4float", unpack_4float),
+    ("unpack_3double", unpack_3double),
+    ("unpack_2int", unpack_2int),
+    ("unpack_3int", unpack_3int),
+    ("unpack_4ubyte", unpack_4ubyte),
+    ("unpack_16float", unpack_16float),
+    ("unpack_20float", unpack_20float),
+):
+    setattr(_NonArrayFieldParser, _name, staticmethod(_func))
 
 
 ########################################
@@ -543,7 +545,7 @@ class RszFile:
         self._rsz_userdata_str_map = {}  # {RSZUserDataInfo: str}
         self.parsed_elements = {}
         self.instance_hierarchy = {}  # {instance_id: {children: [], parent: None}}
-        self._gameobject_instance_ids = set()  # Set of gameobject instance IDs 
+        self._gameobject_instance_ids = set()  # Set of gameobject instance IDs
         self._folder_instance_ids = set()      # Set of folder instance IDs
 
         self._empty_fields = MappingProxyType({})
@@ -553,13 +555,19 @@ class RszFile:
         self._is_19 = False
         self._is_scn_new = False   # scn.18 / scn.19
         self._rsz_type_cache = {}  # (ftype,fsize,is_native,is_array,align,original_type)->cls
+        self._parser_pool = []
+        self._prepared_field_defs = set()
+        self._type_info_cache = {}
 
 
     def read(self, data: bytes, skip_data: bool = False):
         # Use memoryview for efficient slicing operations
         self.full_data = memoryview(data)
         self._current_offset = 0
-        
+        self._parser_pool.clear()
+        self._prepared_field_defs.clear()
+        self._type_info_cache.clear()
+
         self.is_usr = False
         self.is_pfb = False
         self.is_pfb16 = False
@@ -774,6 +782,8 @@ class RszFile:
                 self._current_offset += 8
             self.instance_infos.append(ii)
 
+        self._warm_type_registry_cache()
+
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
             self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
@@ -791,6 +801,25 @@ class RszFile:
 
         file_offset_of_data = self._current_offset
         self._instance_base_mod = file_offset_of_data % 16
+
+    def _warm_type_registry_cache(self):
+        """Preload type information for all parsed instance infos."""
+        self._type_info_cache.clear()
+        type_registry = self.type_registry
+        if not type_registry:
+            return
+
+        type_ids = {inst.type_id for inst in self.instance_infos if getattr(inst, "type_id", 0)}
+        if not type_ids:
+            return
+
+        pre_cache = getattr(type_registry, "pre_cache_types", None)
+        if callable(pre_cache):
+            pre_cache(type_ids)
+
+        cache = self._type_info_cache
+        for type_id in type_ids:
+            cache[type_id] = type_registry.get_type_info(type_id)
 
     def _parse_standard_rsz_userdata(self, data):
         """Parse standard RSZ userdata entries (16 bytes each)"""
@@ -838,6 +867,7 @@ class RszFile:
 
         # Cache type registry for faster lookups
         type_registry = self.type_registry
+        type_cache = self._type_info_cache
         EMPTY = self._empty_fields
 
         # Process all instances
@@ -847,7 +877,10 @@ class RszFile:
                 self.parsed_elements[idx] = EMPTY
                 continue
             
-            type_info = type_registry.get_type_info(inst.type_id)
+            type_info = type_cache.get(inst.type_id)
+            if type_info is None and type_registry:
+                type_info = type_registry.get_type_info(inst.type_id)
+                type_cache[inst.type_id] = type_info
             fields_def = type_info.get("fields", [])
             
             if not fields_def:
@@ -864,35 +897,65 @@ class RszFile:
 
     def _prepare_field_definitions(self, fields_def):
         """Populate cached parsing helpers for a list of field definitions."""
+        if not fields_def:
+            return
+
+        prepared_sets = self._prepared_field_defs
+        fields_id = id(fields_def)
+        if fields_id in prepared_sets:
+            return
+
+        cache = self._rsz_type_cache
         for field in fields_def:
-            if "_rsz_type" in field:
+            if "_rsz_type" in field and "_parse_cache" in field:
                 continue
 
             field_name = field.get("name", "")
+            field_type = field.get("type", "unknown").lower()
+            field_size = field.get("size", 4)
+            is_native = field.get("native", False)
+            is_array = field.get("array", False)
+            field_align = int(field.get("align", 1) or 1)
+            if field_align <= 0:
+                field_align = 1
+            original_type = field.get("original_type", "") or ""
+
             key = (
-                field.get("type", "unknown").lower(),
-                field.get("size", 4),
-                field.get("native", False),
-                field.get("array", False),
-                int(field.get("align", 1)),
-                field.get("original_type", ""),
+                field_type,
+                field_size,
+                is_native,
+                is_array,
+                field_align,
+                original_type,
                 field_name,
             )
 
-            rsz_type = self._rsz_type_cache.get(key)
+            rsz_type = cache.get(key)
             if rsz_type is None:
                 rsz_type = get_type_class(*key)
-                self._rsz_type_cache[key] = rsz_type
+                cache[key] = rsz_type
 
             parser_func = NON_ARRAY_PARSERS.get(rsz_type, RawBytesData.parse)
             default_element_cls = rsz_type if parser_func is not RawBytesData.parse else RawBytesData
 
             field["_rsz_type"] = rsz_type
-            field["_size"] = key[1]
-            field["_align"] = key[4]
-            field["_is_array"] = key[3]
+            field["_size"] = field_size
+            field["_align"] = field_align
+            field["_is_array"] = is_array
             field["_non_array_parser"] = parser_func
             field["_default_element_cls"] = default_element_cls
+            field["_parse_cache"] = (
+                field_name or "<unnamed>",
+                rsz_type,
+                field_size,
+                field_align,
+                is_array,
+                original_type,
+                parser_func,
+                default_element_cls,
+            )
+
+        prepared_sets.add(fields_id)
 
     def _write_field_value(self, field_def: dict, data_obj, out: bytearray):
 
@@ -2089,7 +2152,7 @@ class RszFile:
 
         def _align(p: int, a: int) -> int:
             return _align_rel(p, a, base_mod)
-        
+
         def read_aligned_value(unpack_func, size, align=1):
             nonlocal pos
             pos = _align(pos, align)
@@ -2097,19 +2160,28 @@ class RszFile:
             pos += size
             return v
 
+        hierarchy_len = len(instance_hierarchy)
+
         def set_parent(idx, parent_idx):
-            if 0 <= idx < len(instance_hierarchy):
+            if 0 <= idx < hierarchy_len:
                 instance_hierarchy[idx]["parent"] = parent_idx
             else:
                 print(f"Warning: Invalid instance index {idx} encountered (parent: {parent_idx})")
 
         def is_valid_ref(candidate):
-            return (0 < candidate < current_instance_index and
-                    candidate not in gameobject_ids and
-                    candidate not in folder_ids)
+            return (
+                0 < candidate < current_instance_index and
+                candidate not in gameobject_ids and
+                candidate not in folder_ids
+            )
 
-        non_array_parser = _NonArrayFieldParser(
-            self,
+        parser_pool = self._parser_pool
+        if parser_pool:
+            non_array_parser = parser_pool.pop()
+        else:
+            non_array_parser = _NonArrayFieldParser(self)
+
+        non_array_parser.reset_context(
             base_mod,
             current_children,
             set_parent,
@@ -2119,99 +2191,120 @@ class RszFile:
             rsz_userdata_map,
         )
 
-        for field in fields_def:
-            field_name    = field.get("name", "<unnamed>")
-            # use cached values populated in _parse_instances
-            rsz_type      = field.get("_rsz_type")
-            fsize         = field.get("_size", field.get("size",4))
-            field_align   = field.get("_align", int(field.get("align",1)))
-            is_array      = field.get("_is_array", field.get("array",False))
-            original_type = field.get("original_type", "")
+        configure = non_array_parser.configure
+        read_value_with_raw = non_array_parser.read_value_with_raw
+        parser_unpack_uint = non_array_parser.unpack_uint
+        set_parsed = parsed_elements.__setitem__
+        append_child = current_children.append
+        check_valid_ref = non_array_parser.is_valid_ref
+        type_registry = self.type_registry
 
-            data_obj = None
-
-            if is_array:
-                count = read_aligned_value(unpack_uint, 4, align=4)
-
-                if rsz_type == StructData:
-                    struct_values = []
-                    struct_type_info = None
-                    struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
-                    current_pos = pos
-                    if struct_type_info and count > 0:
-                        struct_fields_def = struct_type_info.get("fields", [])
-                        current_pos = _align(current_pos, field_align)
-                        for i in range(count):
-                            struct_element = {}
-                            temp_parsed = self.parsed_elements.get(current_instance_index, {})
-                            self.parsed_elements[current_instance_index] = struct_element
-                            next_pos = self.parse_instance_fields(
-                                offset=current_pos,
-                                fields_def=struct_fields_def,
-                                current_instance_index=current_instance_index,
-                            )
-                            self.parsed_elements[current_instance_index] = temp_parsed
-                            if next_pos > current_pos and struct_element:
-                                struct_values.append(struct_element)
-                                current_pos = next_pos
-                            else:
-                                break
-                        pos = current_pos
-                    data_obj = StructData(struct_values, original_type)
-
-                elif rsz_type == MaybeObject:
-                    child_indexes = []
-                    raw_values = []
-                    already_ref = False
-                    for i in range(count):
-                        non_array_parser.configure(pos, fsize, field_align, original_type)
-                        candidate, raw_value = non_array_parser.read_value_with_raw(
-                            non_array_parser.unpack_uint,
-                            fsize,
-                        )
-                        pos = non_array_parser.pos
-                        if i == 0 and non_array_parser.is_valid_ref(candidate):
-                            already_ref = True
-                        if already_ref:
-                            child_indexes.append(candidate)
-                            current_children.append(candidate)
-                            set_parent(candidate, current_instance_index)
-                        else:
-                            raw_values.append(raw_value)
-                    data_obj = ArrayData(
-                        [ObjectData(idx, original_type) for idx in child_indexes] if already_ref else
-                        [RawBytesData(raw, fsize, original_type) for raw in raw_values],
-                        ObjectData if already_ref else RawBytesData,
+        try:
+            for field in fields_def:
+                cache_entry = field.get("_parse_cache")
+                if cache_entry:
+                    (
+                        field_name,
+                        rsz_type,
+                        fsize,
+                        field_align,
+                        is_array,
                         original_type,
-                    )
-
+                        parser_func,
+                        default_element_class,
+                    ) = cache_entry
                 else:
+                    field_name = field.get("name", "<unnamed>")
+                    rsz_type = field.get("_rsz_type")
+                    fsize = field.get("_size", field.get("size", 4))
+                    field_align = field.get("_align", int(field.get("align", 1)))
+                    is_array = field.get("_is_array", field.get("array", False))
+                    original_type = field.get("original_type", "") or ""
                     parser_func = field.get("_non_array_parser", RawBytesData.parse)
                     default_element_class = field.get("_default_element_cls", RawBytesData)
 
-                    values = []
-                    for _ in range(count):
-                        non_array_parser.configure(pos, fsize, field_align, original_type)
-                        values.append(parser_func(non_array_parser))
-                        pos = non_array_parser.pos
+                data_obj = None
 
-                    if values:
-                        first_cls = type(values[0])
-                        if all(type(v) is first_cls for v in values[1:]):
-                            element_class = first_cls
+                if is_array:
+                    count = read_aligned_value(unpack_uint, 4, align=4)
+
+                    if rsz_type == StructData:
+                        struct_values = []
+                        current_pos = pos
+                        if count > 0 and type_registry:
+                            struct_type_info, _ = type_registry.find_type_by_name(original_type)
+                            if struct_type_info:
+                                struct_fields_def = struct_type_info.get("fields", [])
+                                current_pos = _align(current_pos, field_align)
+                                for _ in range(count):
+                                    struct_element = {}
+                                    temp_parsed = self.parsed_elements.get(current_instance_index, {})
+                                    self.parsed_elements[current_instance_index] = struct_element
+                                    next_pos = self.parse_instance_fields(
+                                        offset=current_pos,
+                                        fields_def=struct_fields_def,
+                                        current_instance_index=current_instance_index,
+                                    )
+                                    self.parsed_elements[current_instance_index] = temp_parsed
+                                    if next_pos > current_pos and struct_element:
+                                        struct_values.append(struct_element)
+                                        current_pos = next_pos
+                                    else:
+                                        break
+                                pos = current_pos
+                        data_obj = StructData(struct_values, original_type)
+
+                    elif rsz_type == MaybeObject:
+                        child_indexes = []
+                        raw_values = []
+                        already_ref = False
+                        for i in range(count):
+                            configure(pos, fsize, field_align, original_type)
+                            candidate, raw_value = read_value_with_raw(
+                                parser_unpack_uint,
+                                fsize,
+                            )
+                            pos = non_array_parser.pos
+                            if i == 0 and check_valid_ref(candidate):
+                                already_ref = True
+                            if already_ref:
+                                child_indexes.append(candidate)
+                                append_child(candidate)
+                                set_parent(candidate, current_instance_index)
+                            else:
+                                raw_values.append(raw_value)
+                        data_obj = ArrayData(
+                            [ObjectData(idx, original_type) for idx in child_indexes] if already_ref else
+                            [RawBytesData(raw, fsize, original_type) for raw in raw_values],
+                            ObjectData if already_ref else RawBytesData,
+                            original_type,
+                        )
+
+                    else:
+                        values = []
+                        for _ in range(count):
+                            configure(pos, fsize, field_align, original_type)
+                            values.append(parser_func(non_array_parser))
+                            pos = non_array_parser.pos
+
+                        if values:
+                            first_cls = type(values[0])
+                            if all(type(v) is first_cls for v in values[1:]):
+                                element_class = first_cls
+                            else:
+                                element_class = default_element_class
                         else:
                             element_class = default_element_class
-                    else:
-                        element_class = default_element_class
 
-                    data_obj = ArrayData(values, element_class, original_type)
+                        data_obj = ArrayData(values, element_class, original_type)
 
-            else:  # Non-array field
-                non_array_parser.configure(pos, fsize, field_align, original_type)
-                parser_func = field.get("_non_array_parser", RawBytesData.parse)
-                data_obj = parser_func(non_array_parser)
-                pos = non_array_parser.pos
+                else:  # Non-array field
+                    configure(pos, fsize, field_align, original_type)
+                    data_obj = parser_func(non_array_parser)
+                    pos = non_array_parser.pos
 
-            parsed_elements[field_name] = data_obj
+                set_parsed(field_name, data_obj)
+        finally:
+            parser_pool.append(non_array_parser)
 
         return pos

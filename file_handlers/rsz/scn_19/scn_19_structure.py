@@ -224,6 +224,8 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         # Use the data portion for instance parsing
         mini_scn.data = rui.data[embedded_header.data_offset:]
         
+        mini_scn._warm_type_registry_cache()
+
         # Parse all instances at once using the proper method
         mini_scn._parse_instances(mini_scn.data, skip_data)
         

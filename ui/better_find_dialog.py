@@ -1,4 +1,5 @@
 import os
+from shiboken6 import isValid
 from PySide6.QtCore import Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
@@ -85,7 +86,12 @@ class BetterFindDialog(QDialog):
 
     def _index_from_rows(self, rows: list[int]) -> QModelIndex:
         cur = QModelIndex()
-        model = self._get_tree().model()
+        tree = self._get_tree()
+        if not tree or not isValid(tree):
+            return QModelIndex()
+        model = tree.model()
+        if not model:
+            return QModelIndex()
         for r in rows:
             cur = model.index(r, 0, cur)
             if not cur.isValid():
@@ -109,7 +115,10 @@ class BetterFindDialog(QDialog):
             self._tree_for_tab = None
         
         if self._tree_for_tab is not None:
-            return self._tree_for_tab
+            if not isValid(self._tree_for_tab):
+                self._tree_for_tab = None
+            else:
+                return self._tree_for_tab
         
         current_tab = self.file_tab
         if not current_tab:
@@ -117,9 +126,14 @@ class BetterFindDialog(QDialog):
             
         try:
             if current_tab.viewer and hasattr(current_tab.viewer, "tree"):
-                self._tree_for_tab = current_tab.viewer.tree
+                candidate = current_tab.viewer.tree
             else:
-                self._tree_for_tab = current_tab.tree
+                candidate = current_tab.tree
+
+            if candidate and isValid(candidate):
+                self._tree_for_tab = candidate
+            else:
+                self._tree_for_tab = None
         except Exception:
             self._tree_for_tab = None
         return self._tree_for_tab
@@ -217,10 +231,15 @@ class BetterFindDialog(QDialog):
             return
 
         tree = self._get_tree()
-        if not tree:
+        if not tree or not isValid(tree):
             self.status.setText("No tree view available")
             return
-        model = tree.model()
+        try:
+            model = tree.model()
+        except RuntimeError:
+            self.invalidate_cached_tree()
+            self.status.setText("Tree view unavailable")
+            return
         if not model:
             self.status.setText("Tree has no model")
             return
@@ -459,8 +478,12 @@ class BetterFindDialog(QDialog):
         idx = self._index_from_rows(res["rows"])
         if idx.isValid():
             tree = self._get_tree()
-            tree.setCurrentIndex(idx)
-            tree.scrollTo(idx, QAbstractItemView.PositionAtCenter)
+            if tree and isValid(tree):
+                try:
+                    tree.setCurrentIndex(idx)
+                    tree.scrollTo(idx, QAbstractItemView.PositionAtCenter)
+                except RuntimeError:
+                    self.invalidate_cached_tree()
 
         self.status.setText(f"Result {i+1} of {len(self.results)}")
 
@@ -480,7 +503,7 @@ class BetterFindDialog(QDialog):
         """Update the current file tab (for shared mode)"""
         if self.file_tab == file_tab:
             return  # No change needed
-            
+
         self.file_tab = file_tab
         self.app = file_tab.app if file_tab else None
         self._tree_for_tab = None
@@ -497,6 +520,20 @@ class BetterFindDialog(QDialog):
                 self.setWindowTitle(f"Find in Tree - {tab_name}")
             else:
                 self.setWindowTitle("Find in Tree")
+
+    def invalidate_cached_tree(self):
+        self._tree_for_tab = None
+        try:
+            self.results.clear()
+            self.current_index = -1
+            if self.result_list:
+                self.result_list.clear()
+            if self.preview:
+                self.preview.clear()
+            if self.status:
+                self.status.setText("Tree reloaded - search reset")
+        except RuntimeError:
+            pass
     
     def set_dark_mode(self, dark_mode):
         self.dark_mode = dark_mode

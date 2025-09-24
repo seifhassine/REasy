@@ -329,6 +329,25 @@ class FileTab:
             "tree_ref": None,
         }
 
+    def _invalidate_search_dialog_tree(self):
+        dialogs = []
+        if hasattr(self, "_find_dialog") and self._find_dialog:
+            dialogs.append(self._find_dialog)
+
+        shared_dialog = getattr(self.app, "_shared_find_dialog", None) if self.app else None
+        if shared_dialog and getattr(shared_dialog, "file_tab", None) is self:
+            dialogs.append(shared_dialog)
+
+        for dialog in dialogs:
+            try:
+                invalidate = getattr(dialog, "invalidate_cached_tree", None)
+                if callable(invalidate):
+                    invalidate()
+                else:
+                    setattr(dialog, "_tree_for_tab", None)
+            except RuntimeError:
+                pass
+
     def update_tab_title(self):
         if not self.filename:
             base_title = "Untitled"
@@ -412,7 +431,6 @@ class FileTab:
         try:
             old_handler = self.handler
             old_viewer = self.viewer
-            old_data = self.original_data
             old_status_text = self.status_label.text() if hasattr(self, "status_label") else NO_FILE_LOADED_STR
             
             self.filename = filename
@@ -461,7 +479,6 @@ class FileTab:
             self.initial_load_complete = False
             self.handler = old_handler
             self.viewer = old_viewer
-            self.original_data = old_data
             
             # Clean up layout and recreate it
             self._cleanup_layout(layout)
@@ -671,13 +688,13 @@ class FileTab:
                 return
             if ans == QMessageBox.Yes:
                 self.on_save()
+                
+        self._release_resources_before_reload()
 
         try:
             with open(self.filename, "rb") as f:
                 data = f.read()
 
-            if self.viewer:
-                self._cleanup_viewer()
             success = self.load_file(self.filename, data)
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
@@ -762,9 +779,18 @@ class FileTab:
             
     def _cleanup_viewer(self):
         try:
+            if self.viewer:
+                cleanup_fn = getattr(self.viewer, "cleanup", None)
+                if callable(cleanup_fn):
+                    try:
+                        cleanup_fn()
+                    except Exception as e:
+                        print(f"Warning: Error running viewer cleanup: {e}")
             if hasattr(self.viewer, "modified_changed"):
                 try:
-                    self.viewer.modified_changed.disconnect()
+                    self.viewer.modified_changed.disconnect(self._on_viewer_modified)
+                except (TypeError, RuntimeError):
+                    pass
                 except Exception as e:
                     print(f"Error disconnecting modified_changed signal: {e}")
 
@@ -776,11 +802,119 @@ class FileTab:
                         self.viewer.setParent(None)
                         break
             
-            self.viewer.deleteLater()
+            if self.viewer:
+                self.viewer.deleteLater()
+            self._invalidate_search_dialog_tree()
             self.viewer = None
         except Exception as e:
             print(f"Warning: Error cleaning up viewer: {e}")
+    def _release_resources_before_reload(self):
+        """Release heavy resources prior to reloading a file."""
+        try:
+            if self.viewer:
+                self._cleanup_viewer()
+        except Exception as e:
+            print(f"Warning: Error while releasing viewer resources: {e}")
 
+        if self.handler:
+            try:
+                cleanup_fn = getattr(self.handler, "cleanup", None)
+                if callable(cleanup_fn):
+                    cleanup_fn()
+            except Exception as e:
+                print(f"Warning: Error running handler cleanup before reload: {e}")
+            try:
+                delete_later = getattr(self.handler, "deleteLater", None)
+                if callable(delete_later):
+                    delete_later()
+            except Exception as e:
+                print(f"Warning: Error scheduling handler deletion before reload: {e}")
+
+    def cleanup(self):
+        """Release resources held by this tab to avoid lingering memory use."""
+        try:
+            if self.viewer:
+                self._cleanup_viewer()
+        except Exception as e:
+            print(f"Warning: Error cleaning up viewer during tab cleanup: {e}")
+
+        try:
+            if self.tree:
+                self.tree.setModel(None)
+        except Exception as e:
+            print(f"Warning: Error clearing tree model: {e}")
+
+        layout = self.notebook_widget.layout() if self.notebook_widget else None
+        if layout:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.setParent(None)
+                    widget.deleteLater()
+
+        if self.status_label:
+            try:
+                self.status_label.deleteLater()
+            except Exception:
+                pass
+            self.status_label = None
+
+        if self.tree:
+            try:
+                self.tree.deleteLater()
+            except Exception:
+                pass
+            self.tree = None
+
+        if self.handler:
+            try:
+                cleanup_fn = getattr(self.handler, "cleanup", None)
+                if callable(cleanup_fn):
+                    cleanup_fn()
+            except Exception as e:
+                print(f"Warning: Error running handler cleanup: {e}")
+            try:
+                delete_later = getattr(self.handler, "deleteLater", None)
+                if callable(delete_later):
+                    delete_later()
+            except Exception as e:
+                print(f"Warning: Error scheduling handler deletion: {e}")
+            self.handler = None
+
+        self._invalidate_search_dialog_tree()
+
+        self.metadata_map.clear()
+        self.search_results.clear()
+        self.search_state["results"] = []
+        self.search_state["current_index"] = 0
+        self.search_dialog = None
+        self.result_list = None
+        self.original_data = None
+        self.viewer = None
+
+        for key in list(self._search_widgets.keys()):
+            self._search_widgets[key] = None
+
+        if hasattr(self.notebook_widget, "parent_tab"):
+            self.notebook_widget.parent_tab = None
+
+        if self.notebook_widget:
+            try:
+                self.notebook_widget.deleteLater()
+            except Exception:
+                pass
+            self.notebook_widget = None
+
+        if hasattr(self, "_find_dialog") and self._find_dialog:
+            try:
+                self._find_dialog.close()
+            except RuntimeError:
+                pass
+            self._find_dialog = None
+
+        self.parent_notebook = None
+        self.app = None
 
 class REasyEditorApp(QMainWindow):
     def __init__(self):
@@ -1876,10 +2010,11 @@ class REasyEditorApp(QMainWindow):
         if widget in self.tabs:
             del self.tabs[widget]
             
-        if tab is not None:
-            tab.tree = None
-            
         self.notebook.removeTab(index)
+        if tab is not None:
+            tab.cleanup()
+        elif widget is not None:
+            widget.deleteLater()
         self._check_and_close_shared_find_dialog()
 
     def show_about(self):
