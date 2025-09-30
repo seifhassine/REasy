@@ -718,14 +718,16 @@ class FileTab:
             if hasattr(self, "_find_dialog") and self._find_dialog:
                 try:
                     if self._find_dialog.isVisible():
-                        self._find_dialog.raise_()
-                        self._find_dialog.activateWindow()
+                        if not self._find_dialog.isFloating():
+                            self._find_dialog.raise_()
+                            self._find_dialog.activateWindow()
+                            return
                         return
                     else:
                         self._find_dialog.close()
                 except RuntimeError:
                     pass
-            self._find_dialog = BetterFindDialog(self, parent=None, shared_mode=False)
+            self._find_dialog = BetterFindDialog(self, parent=parent_window, shared_mode=False)
             if self.app and hasattr(self.app, 'dark_mode'):
                 self._find_dialog.set_dark_mode(self.app.dark_mode)
             self._find_dialog.show()
@@ -1786,15 +1788,16 @@ class REasyEditorApp(QMainWindow):
                 active.open_find_dialog()
                 return
         if not self._shared_find_dialog or not isinstance(self._shared_find_dialog, BetterFindDialog):
-            self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=None, shared_mode=True)
+            self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=self, shared_mode=True)
             self._shared_find_dialog.set_dark_mode(self.dark_mode)
             self.notebook.currentChanged.connect(self._on_tab_changed_for_find)
         else:
             self._shared_find_dialog.set_file_tab(active)
             
         self._shared_find_dialog.show()
-        self._shared_find_dialog.raise_()
-        self._shared_find_dialog.activateWindow()
+        if not self._shared_find_dialog.isFloating():
+            self._shared_find_dialog.raise_()
+            self._shared_find_dialog.activateWindow()
 
     def _on_tab_changed_for_find(self):
         """Update the shared find dialog when tab changes"""

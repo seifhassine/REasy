@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QWidget, QToolButton, QTabBar, QMessageBox
 
@@ -60,6 +60,9 @@ class FloatingTabWindow(QMainWindow):
 			self.notebook.setCurrentIndex(idx)
 		if self in self.notebook._floating_windows:
 			self.notebook._floating_windows.remove(self)
+		main_window = self._get_main_window()
+		if main_window and hasattr(main_window, '_on_tab_changed_for_find'):
+			QTimer.singleShot(0, main_window._on_tab_changed_for_find)
 		super().closeEvent(event)
 
 	def _mirror_menubar_from(self, main_window: QMainWindow):
@@ -238,4 +241,3 @@ class CustomNotebook(QTabWidget):
 			bar.ensure_button(i)
 
  
-
