@@ -38,6 +38,7 @@ from PySide6.QtGui import (
     QStandardItem,
     QKeySequence,
     QDesktopServices,
+    QColor,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -46,7 +47,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QSizePolicy,
     QTabWidget,
-    QTreeView, 
+    QTreeView,
     QMessageBox,
     QFileDialog,
     QInputDialog,
@@ -63,6 +64,7 @@ from PySide6.QtWidgets import (
     QStyleFactory,
     QListWidget,
     QListWidgetItem,
+    QColorDialog,
 )
 
 from i18n.language_manager import LanguageManager
@@ -87,6 +89,7 @@ GAMES = [
 ]
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
+DEFAULT_THEME_COLOR = "#ff851b"
 
 def resource_path(relative_path):
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -698,10 +701,11 @@ class FileTab:
             success = self.load_file(self.filename, data)
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
-
+                
             self.modified = False
             self.viewer.modified = False
             self.update_tab_title()
+
 
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Failed to reload file: {e}")
@@ -1351,31 +1355,50 @@ class REasyEditorApp(QMainWindow):
         self.settings["dark_mode"] = state
         self.save_settings()
 
-        if state:
-            colors = {
-                "bg": "#2b2b2b", "tree_bg": "#2b2b2b", "fg": "white",
-                "highlight": "rgba(255, 133, 51, 0.5)", "input_bg": "#3b3b3b",
-                "disabled_bg": "#404040", "border": "#555555"
-            }
-        else:
-            colors = {
-                "bg": "#ffffff", "tree_bg": "#ffffff", "fg": "#000000",
-                "highlight": "#ff851b", "input_bg": "#ffffff",
-                "disabled_bg": "#f0f0f0", "border": "#cccccc"
-            }
-
+        colors = self._build_theme_colors(state)
         self._apply_style(colors)
-        
+
         self.notebook.set_dark_mode(state)
         self._update_tab_viewers(state)
-        
+
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
             self._shared_find_dialog.set_dark_mode(state)
 
+    def _theme_accent_color(self) -> QColor:
+        color_value = self.settings.get("tree_highlight_color", DEFAULT_THEME_COLOR)
+        color = QColor(color_value)
+        if not color.isValid():
+            color = QColor(DEFAULT_THEME_COLOR)
+        return color
+
+    def _build_theme_colors(self, dark_mode: bool) -> dict:
+        accent = self._theme_accent_color()
+        highlight_light = accent.name()
+        highlight_dark = f"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.5)"
+        if dark_mode:
+            return {
+                "bg": "#2b2b2b",
+                "tree_bg": "#2b2b2b",
+                "fg": "white",
+                "highlight": highlight_dark,
+                "input_bg": "#3b3b3b",
+                "disabled_bg": "#404040",
+                "border": "#555555",
+            }
+        return {
+            "bg": "#ffffff",
+            "tree_bg": "#ffffff",
+            "fg": "#000000",
+            "highlight": highlight_light,
+            "input_bg": "#ffffff",
+            "disabled_bg": "#f0f0f0",
+            "border": "#cccccc",
+        }
+
     def _apply_style(self, colors):
         self.setStyleSheet(f"""
-            QMainWindow, QDialog, QWidget {{ 
-                background-color: {colors['bg']}; color: {colors['fg']}; 
+            QMainWindow, QDialog, QWidget {{
+                background-color: {colors['bg']}; color: {colors['fg']};
             }}
             QTreeView {{
                 background-color: {colors['tree_bg']}; color: {colors['fg']};
@@ -1590,6 +1613,43 @@ class REasyEditorApp(QMainWindow):
         translation_layout.addWidget(translation_combo)
         general_layout.addLayout(translation_layout)
 
+        theme_color_layout = QHBoxLayout()
+        theme_color_layout.setContentsMargins(0, 0, 0, 0)
+        theme_color_label = QLabel("Theme Color:")
+        theme_color_layout.addWidget(theme_color_label)
+
+        selected_theme_color = self.settings.get("tree_highlight_color", DEFAULT_THEME_COLOR)
+
+        theme_color_button = QPushButton()
+        theme_color_button.setFixedWidth(140)
+
+        def update_theme_color_button(color_value: str):
+            theme_color_button.setText(color_value.upper())
+            color = QColor(color_value)
+            text_color = "#000000"
+            if color.isValid():
+                brightness = 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue()
+                if brightness < 186:
+                    text_color = "#ffffff"
+            theme_color_button.setStyleSheet(
+                f"background-color: {color_value}; border: 1px solid #555555; color: {text_color};"
+            )
+
+        update_theme_color_button(selected_theme_color)
+
+        def choose_theme_color():
+            nonlocal selected_theme_color
+            initial = QColor(selected_theme_color)
+            color = QColorDialog.getColor(initial, dialog, "Select Theme Color")
+            if color.isValid():
+                selected_theme_color = color.name()
+                update_theme_color_button(selected_theme_color)
+
+        theme_color_button.clicked.connect(choose_theme_color)
+        theme_color_layout.addWidget(theme_color_button)
+        theme_color_layout.addStretch()
+        general_layout.addLayout(theme_color_layout)
+
         dark_box = QCheckBox("Dark Mode")
         dark_box.setChecked(self.dark_mode)
         general_layout.addWidget(dark_box)
@@ -1667,7 +1727,8 @@ class REasyEditorApp(QMainWindow):
             self.settings["backup_on_save"] = backup_box.isChecked()
             self.settings["confirmation_prompt"] = confirmation_prompt_box.isChecked()
             self.settings["keyboard_shortcuts"] = shortcuts
-            
+            self.settings["tree_highlight_color"] = selected_theme_color
+
             new_version = game_version_combo.currentText()
             self.settings["game_version"] = new_version
             
@@ -1680,9 +1741,11 @@ class REasyEditorApp(QMainWindow):
                 self.set_dark_mode(dark_box.isChecked())
 
             self.toggle_debug_console(debug_box.isChecked())
-            
+
+            self._apply_style(self._build_theme_colors(self.dark_mode))
+
             self.update_from_app_settings()
-            
+
             self.apply_keyboard_shortcuts()
 
             new_ui_lang = ui_lang_combo.currentData()
