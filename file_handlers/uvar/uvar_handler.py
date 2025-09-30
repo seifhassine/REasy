@@ -481,8 +481,8 @@ class UvarHandler(BaseFileHandler):
         type_item.setForeground(1, QBrush(QColor("#9CDCFE")))
         metadata_map[id(type_item)] = {"type": "variable_type", "variable": var}
         
-        guid_mem_item = QTreeWidgetItem(parent)
-        guid_mem_item.setText(0, "🔐 GUID (Memory)")
+        guid_item = QTreeWidgetItem(parent)
+        guid_item.setText(0, "🔑 GUID")
         guid_bytes = var.guid.bytes_le
         guid_mem_str = '-'.join([
             guid_bytes[0:4].hex(),
@@ -491,14 +491,8 @@ class UvarHandler(BaseFileHandler):
             guid_bytes[8:10].hex(),
             guid_bytes[10:16].hex()
         ])
-        guid_mem_item.setText(1, guid_mem_str)
-        guid_mem_item.setForeground(1, QBrush(QColor("#CE9178"))) 
-        metadata_map[id(guid_mem_item)] = {"type": "variable_guid_memory", "variable": var}
-        
-        guid_item = QTreeWidgetItem(parent)
-        guid_item.setText(0, "🔑 GUID (Normal)")
-        guid_item.setText(1, str(var.guid))
-        guid_item.setForeground(1, QBrush(QColor("#F44747")))
+        guid_item.setText(1, guid_mem_str)
+        guid_item.setForeground(1, QBrush(QColor("#CE9178")))
         metadata_map[id(guid_item)] = {"type": "variable_guid", "variable": var}
         
         hash_item = QTreeWidgetItem(parent)
@@ -693,16 +687,11 @@ class UvarHandler(BaseFileHandler):
 
         elif meta_type == "variable_guid":
             action = QAction("Copy GUID", menu)
-            action.triggered.connect(lambda: self._copy_to_clipboard(str(meta["variable"].guid)))
+            action.triggered.connect(lambda: self._copy_to_clipboard(item.text(1)))
             menu.addAction(action)
-            
+
             action = QAction("Generate New GUID", menu)
             action.triggered.connect(lambda: self._generate_new_guid(tree, item, meta))
-            menu.addAction(action)
-            
-        elif meta_type == "variable_guid_memory":
-            action = QAction("Copy GUID (Memory)", menu)
-            action.triggered.connect(lambda: self._copy_to_clipboard(item.text(1)))
             menu.addAction(action)
             
         elif meta_type == "variable_hash":
@@ -956,8 +945,7 @@ class UvarHandler(BaseFileHandler):
                 
                 if var_item:
                     type_icon = self._get_type_icon(var.type)
-                    str = meta.get("index", 0)
-                    var_item.setText(0, f"{type_icon} {var.name or f'Variable_{str}'}")
+                    var_item.setText(0, f"{type_icon} {var.name or f'Variable_{meta.get("index", 0)}'}")
                     var_item.setText(1, self._format_variable_value(var))
                     
                     color = self._get_type_color(var.type)
@@ -1020,7 +1008,15 @@ class UvarHandler(BaseFileHandler):
     def _generate_new_guid(self, tree: QTreeWidget, item: QTreeWidgetItem, meta: Dict):
         var = meta["variable"]
         var.guid = uuid.uuid4()
-        item.setText(1, str(var.guid))
+        guid_bytes = var.guid.bytes_le
+        guid_mem_str = '-'.join([
+            guid_bytes[0:4].hex(),
+            guid_bytes[4:6].hex(),
+            guid_bytes[6:8].hex(),
+            guid_bytes[8:10].hex(),
+            guid_bytes[10:16].hex()
+        ])
+        item.setText(1, guid_mem_str)
         self.modified = True
         
     def create_viewer(self):
