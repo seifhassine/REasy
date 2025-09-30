@@ -10,6 +10,7 @@ class MdfHandler(BaseFileHandler):
         super().__init__()
         self.mdf: Optional[MdfFile] = None
         self.raw_data: bytes | bytearray = b""
+        self.filepath: str = ""
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
@@ -24,7 +25,7 @@ class MdfHandler(BaseFileHandler):
     def read(self, data: bytes):
         self.raw_data = data
         f = MdfFile()
-        file_path = getattr(self, 'filepath', '') if hasattr(self, 'filepath') else ''
+        file_path = self.filepath
         if not f.read(data, file_path):
             raise ValueError("Failed to parse MDF file")
         self.mdf = f

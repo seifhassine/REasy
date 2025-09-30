@@ -1,11 +1,17 @@
+import os
+
 from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QComboBox,
-	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy, QColorDialog
+	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy, QColorDialog,
+	QMessageBox, QToolButton, QStyle
 )
-from PySide6.QtGui import QColor
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
+from PySide6.QtCore import Qt, Signal, QSize, QPoint
 from utils.hash_util import murmur3_hash_utf16le
+from .mdf_clipboard import MdfClipboard
+from .mdf_template_manager import MdfTemplateManager
+from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 
 
 class MdfViewer(QWidget):
@@ -38,8 +44,10 @@ class MdfViewer(QWidget):
 		head.addWidget(QLabel("MDF Version:"))
 		self.version_edit = QLineEdit()
 		self.version_edit.setReadOnly(False)
+		self.version_edit.setMaximumWidth(80)
 		self.version_edit.textChanged.connect(self._on_version_changed)
 		head.addWidget(self.version_edit)
+		head.addStretch(1)
 		layout.addLayout(head)
 
 		splitter = QSplitter()
@@ -49,27 +57,71 @@ class MdfViewer(QWidget):
 		left_panel = QWidget()
 		left_v = QVBoxLayout(left_panel)
 		flt = QHBoxLayout()
-		flt.addWidget(QLabel("Filter:"))
+		flt.setSpacing(6)
 		self.filter_edit = QLineEdit()
 		self.filter_edit.setPlaceholderText("Filter materials...")
 		self.filter_edit.textChanged.connect(self._on_filter_changed)
-		flt.addWidget(self.filter_edit)
+		flt.addWidget(self.filter_edit, 1)
+		flt.addStretch()
 		left_v.addLayout(flt)
+
+		toolbar = QHBoxLayout()
+		toolbar.setSpacing(4)
+		self.add_btn = self._create_material_tool_button(
+			self._make_toolbar_icon("add", QColor(74, 144, 226)),
+			"Add a new material",
+			"Add",
+			self._on_add_material,
+		)
+		self.del_btn = self._create_material_tool_button(
+			QStyle.SP_TrashIcon,
+			"Delete selected material(s)",
+			"Delete",
+			self._on_delete_material,
+		)
+		self.copy_btn = self._create_material_tool_button(
+			self._make_toolbar_icon("copy", QColor(95, 185, 125)),
+			"Copy selected material(s) to clipboard",
+			"Copy",
+			self._on_copy_materials,
+		)
+		self.paste_btn = self._create_material_tool_button(
+			self._make_toolbar_icon("paste", QColor(255, 193, 79)),
+			"Paste material(s) from clipboard",
+			"Paste",
+			self._on_paste_materials,
+		)
+		self.export_btn = self._create_material_tool_button(
+			self._make_toolbar_icon("export", QColor(153, 102, 255)),
+			"Export selected material as template",
+			"Export",
+			self._on_export_material,
+		)
+		self.template_btn = self._create_material_tool_button(
+			self._make_toolbar_icon("templates", QColor(233, 89, 80)),
+			"Open the MDF template manager",
+			"Templates",
+			self._open_template_manager,
+		)
+		for btn in (
+			self.add_btn,
+			self.del_btn,
+			self.copy_btn,
+			self.paste_btn,
+			self.export_btn,
+			self.template_btn,
+		):
+			toolbar.addWidget(btn)
+		toolbar.addStretch(1)
+		left_v.addLayout(toolbar)
 		self.materials_table = QTableWidget(0, 1)
 		self.materials_table.setHorizontalHeaderLabels(["Materials"])
 		self.materials_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
 		self.materials_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+		self.materials_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+		self.materials_table.setSelectionMode(QAbstractItemView.ExtendedSelection)
 		self.materials_table.itemChanged.connect(self._on_material_changed)
 		left_v.addWidget(self.materials_table)
-		mrow = QHBoxLayout()
-		self.add_btn = QPushButton("Add")
-		self.add_btn.clicked.connect(self._on_add_material)
-		self.del_btn = QPushButton("Delete")
-		self.del_btn.clicked.connect(self._on_delete_material)
-		mrow.addWidget(self.add_btn)
-		mrow.addWidget(self.del_btn)
-		mrow.addStretch()
-		left_v.addLayout(mrow)
 		splitter.addWidget(left_panel)
 
 		self.tabs = QTabWidget()
@@ -190,7 +242,7 @@ class MdfViewer(QWidget):
 		self.gpbf_del_btn.clicked.connect(self._on_delete_gpbf)
 		gg.addWidget(self.gpbf_add_btn, 1, 1)
 		gg.addWidget(self.gpbf_del_btn, 1, 2)
-		self.tabs.addTab(gpbf_tab, "GPU Buffers")
+		self.gpbf_tab_idx = self.tabs.addTab(gpbf_tab, "GPU Buffers")
 
 		self.texids_tab = QWidget()
 		tx = QGridLayout(self.texids_tab)
@@ -210,17 +262,98 @@ class MdfViewer(QWidget):
 
 		self.materials_table.itemSelectionChanged.connect(self._on_select_material)
 
+	def _make_toolbar_icon(self, kind: str, color: QColor) -> QIcon:
+		size = 24
+		pix = QPixmap(size, size)
+		pix.fill(Qt.transparent)
+		painter = QPainter(pix)
+		painter.setRenderHint(QPainter.Antialiasing)
+		painter.setBrush(color)
+		painter.setPen(Qt.NoPen)
+		radius = 6
+		painter.drawRoundedRect(1, 1, size - 2, size - 2, radius, radius)
+
+		painter.setBrush(Qt.white)
+		painter.setPen(Qt.NoPen)
+		center = pix.rect().center()
+
+		if kind == "add":
+			thickness = 3
+			painter.fillRect(center.x() - thickness // 2, 6, thickness, size - 12, Qt.white)
+			painter.fillRect(6, center.y() - thickness // 2, size - 12, thickness, Qt.white)
+		elif kind == "copy":
+			painter.setOpacity(0.85)
+			painter.drawRoundedRect(6, 6, 11, 13, 2, 2)
+			painter.setOpacity(1.0)
+			painter.drawRoundedRect(9, 9, 11, 13, 2, 2)
+		elif kind == "paste":
+			painter.drawRoundedRect(7, 9, 10, 11, 2, 2)
+			painter.drawRect(9, 11, 6, 2)
+			painter.drawRect(9, 14, 6, 2)
+			painter.drawRect(9, 17, 6, 2)
+			painter.drawRoundedRect(8, 5, 8, 5, 2, 2)
+			painter.setBrush(color)
+			painter.drawRect(10, 5, 4, 2)
+			painter.setBrush(Qt.white)
+			painter.drawRect(11, 4, 2, 2)
+		elif kind == "export":
+			painter.drawRoundedRect(7, 9, 10, 9, 2, 2)
+			points = [
+				QPoint(center.x(), center.y() - 6),
+				QPoint(center.x() - 5, center.y() - 1),
+				QPoint(center.x() - 1, center.y() - 1),
+				QPoint(center.x() - 1, center.y() + 5),
+				QPoint(center.x() + 1, center.y() + 5),
+				QPoint(center.x() + 1, center.y() - 1),
+				QPoint(center.x() + 5, center.y() - 1),
+			]
+			painter.drawPolygon(QPolygon(points))
+		elif kind == "templates":
+			gap = 3
+			cell = 4
+			for row in range(2):
+				for col in range(2):
+					x = 6 + col * (cell + gap)
+					y = 6 + row * (cell + gap)
+					painter.drawRoundedRect(x, y, cell, cell, 1, 1)
+			painter.setOpacity(0.8)
+			painter.drawRoundedRect(12, 14, 6, 6, 1, 1)
+		else:
+			painter.drawEllipse(center, 4, 4)
+
+		painter.end()
+		return QIcon(pix)
+
+	def _create_material_tool_button(self, icon, tooltip: str, text: str, callback):
+		btn = QToolButton()
+		if isinstance(icon, QIcon):
+			btn.setIcon(icon)
+		else:
+			btn.setIcon(self.style().standardIcon(icon))
+		btn.setAutoRaise(True)
+		btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
+		btn.setIconSize(QSize(20, 20))
+		btn.setToolTip(tooltip)
+		btn.setText(text)
+		btn.clicked.connect(callback)
+		return btn
+
 	def _populate(self):
 		m = self.handler.mdf
 		if m is None:
 			raise RuntimeError("MdfViewer: handler.mdf is None")
 		self.version_edit.blockSignals(True)
-		self.version_edit.setText(str(m.header.version))
+		self.version_edit.setText(str(self._current_file_version()))
 		self.version_edit.blockSignals(False)
+		self._update_version_dependent_tabs()
 		self._refresh_materials_list()
-		self.materials_table.selectRow(0)
-		self._current_index = 0
-		self._populate_details(0)
+		if self.materials_table.rowCount() > 0:
+			self.materials_table.selectRow(0)
+			self._current_index = 0
+			self._populate_details(0)
+		else:
+			self._current_index = -1
+			self._populate_details(-1)
 
 	def _refresh_materials_list(self):
 		m = self.handler.mdf
@@ -245,10 +378,20 @@ class MdfViewer(QWidget):
 		m = self.handler.mdf
 		if not m:
 			return
-		m.header.version = int(text)
+		try:
+			ver = int(text)
+		except ValueError:
+			return
+		m.header.version = ver
+		m.file_version = ver
+		self._update_version_dependent_tabs()
 		self.modified = True
-		if self.materials_table.currentRow() >= 0:
-			self._refresh_material_row(self.materials_table.currentRow())
+		current_row = self.materials_table.currentRow()
+		if current_row >= 0:
+			self._refresh_material_row(current_row)
+			self._populate_details(current_row)
+		else:
+			self._populate_details(-1)
 
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
@@ -288,7 +431,7 @@ class MdfViewer(QWidget):
 		self.modified = True
 
 	def _update_flags_ui(self, h):
-		alpha = int(getattr(h, 'alpha_flags', 0))
+		alpha = int(h.alpha_flags)
 		for bit, cb in enumerate(self.flags1_checks):
 			cb.blockSignals(True)
 			cb.setChecked(bool((alpha >> bit) & 1))
@@ -327,13 +470,103 @@ class MdfViewer(QWidget):
 			self._current_index = rows[0].row()
 		return self._current_index
 
+	def _current_file_version(self) -> int:
+		m = self.handler.mdf
+		if not m:
+			return 0
+		return int(m.file_version)
+
+	def _current_file_name(self) -> str:
+		path = self.handler.filepath
+		return os.path.basename(path) if path else ''
+
+	def _update_version_dependent_tabs(self):
+		version = self._current_file_version()
+		has_gpu = version >= 19
+		self.tabs.setTabVisible(self.gpbf_tab_idx, has_gpu)
+		if not has_gpu:
+			self.gpbf_table.blockSignals(True)
+			self.gpbf_table.setRowCount(0)
+			self.gpbf_table.blockSignals(False)
+		has_tex_ids = version >= 31
+		self.tabs.setTabVisible(self.texids_tab_idx, has_tex_ids)
+		if not has_tex_ids:
+			self.texids_table.blockSignals(True)
+			self.texids_table.setRowCount(0)
+			self.texids_table.blockSignals(False)
+			self.texid_count_spin.blockSignals(True)
+			self.texid_count_spin.setValue(0)
+			self.texid_count_spin.blockSignals(False)
+
+	def _insert_materials(self, materials, insert_at=None):
+		m = self.handler.mdf
+		if not m or not materials:
+			return 0
+		if insert_at is None:
+			selected = self.materials_table.selectionModel().selectedRows()
+			if selected:
+				insert_at = min(len(m.materials), max(idx.row() for idx in selected) + 1)
+			else:
+				insert_at = len(m.materials)
+		insert_at = max(0, min(insert_at, len(m.materials)))
+		for offset, mat in enumerate(materials):
+			m.materials.insert(insert_at + offset, mat)
+		self._refresh_materials_list()
+		if self.materials_table.rowCount() > 0:
+			target_row = min(insert_at, self.materials_table.rowCount() - 1)
+			if target_row >= 0:
+				self.materials_table.selectRow(target_row)
+				self._populate_details(target_row)
+				self._current_index = target_row
+		self.modified = True
+		return len(materials)
+
+	def get_material_export_context(self):
+		m = self.handler.mdf
+		idx = self._get_current_index()
+		mat = None
+		if m and 0 <= idx < len(m.materials):
+			mat = m.materials[idx]
+		return mat, self._current_file_version(), self._current_file_name()
+
+	def get_target_version(self) -> int:
+		return self._current_file_version()
+
+	def _open_template_manager(self):
+		try:
+			from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
+		except ImportError:
+			QMessageBox.warning(self, "Template Manager", "Template manager UI is unavailable.")
+			return
+		dlg = MdfTemplateManagerDialog(self, viewer=self)
+		dlg.template_imported.connect(self._on_template_imported)
+		dlg.exec()
+
+	def _on_template_imported(self, material, metadata):
+		if material is None:
+			return
+		inserted = self._insert_materials([material])
+		if inserted:
+			name = "Template"
+			if isinstance(metadata, dict):
+				name = metadata.get("name") or metadata.get("id") or name
+			QMessageBox.information(self, "Import Template", f"Imported template '{name}'.")
+
 	def _populate_details(self, mat_index: int):
 		m = self.handler.mdf
+		self._update_version_dependent_tabs()
 		if not m or not (0 <= mat_index < len(m.materials)):
 			self.mmtr_edit.setText("")
 			self.textures_table.setRowCount(0)
 			self.params_table.setRowCount(0)
 			self.gpbf_table.setRowCount(0)
+			self.texids_table.blockSignals(True)
+			self.texids_table.setRowCount(0)
+			self.texids_table.blockSignals(False)
+			self.texid_count_spin.blockSignals(True)
+			self.texid_count_spin.setValue(0)
+			self.texid_count_spin.blockSignals(False)
+			self._update_version_dependent_tabs()
 			return
 		md = m.materials[mat_index]
 		self.mmtr_edit.blockSignals(True)
@@ -344,7 +577,7 @@ class MdfViewer(QWidget):
 		self.matname_edit.blockSignals(False)
 		self.matname_hash_label.setText(f"0x{murmur3_hash_utf16le(md.header.mat_name):08x}")
 		self.shader_combo.blockSignals(True)
-		sh = int(getattr(md.header, 'shader_type', 0))
+		sh = int(md.header.shader_type)
 		if 0 <= sh < self.shader_combo.count():
 			self.shader_combo.setCurrentIndex(sh)
 		self.shader_combo.blockSignals(False)
@@ -365,18 +598,23 @@ class MdfViewer(QWidget):
 		self._update_params_info(md)
 		self._apply_layercolor_spans(md)
 
-		self.gpbf_table.blockSignals(True)
-		self.gpbf_table.setRowCount(len(md.gpu_buffers))
-		for r, (n,d) in enumerate(md.gpu_buffers):
-			self.gpbf_table.setItem(r, 0, QTableWidgetItem(n.name))
-			self.gpbf_table.setItem(r, 1, QTableWidgetItem(d.name))
-		self.gpbf_table.blockSignals(False)
+		version = self._current_file_version()
+		if version >= 19:
+			self.gpbf_table.blockSignals(True)
+			self.gpbf_table.setRowCount(len(md.gpu_buffers))
+			for r, (n, d) in enumerate(md.gpu_buffers):
+				self.gpbf_table.setItem(r, 0, QTableWidgetItem(n.name))
+				self.gpbf_table.setItem(r, 1, QTableWidgetItem(d.name))
+			self.gpbf_table.blockSignals(False)
+		else:
+			self.gpbf_table.blockSignals(True)
+			self.gpbf_table.setRowCount(0)
+			self.gpbf_table.blockSignals(False)
 
-		if int(getattr(self.handler.mdf, 'file_version', 0)) >= 31:
-			self.tabs.setTabVisible(self.texids_tab_idx, True)
+		if version >= 31:
 			self.texids_table.blockSignals(True)
 			self.texid_count_spin.blockSignals(True)
-			count = int(getattr(md.header, 'texID_count', 0))
+			count = int(md.header.texID_count)
 			self.texid_count_spin.setValue(count)
 			rows = count
 			self.texids_table.setRowCount(rows)
@@ -387,7 +625,9 @@ class MdfViewer(QWidget):
 			self.texid_count_spin.blockSignals(False)
 			self.texids_table.blockSignals(False)
 		else:
-			self.tabs.setTabVisible(self.texids_tab_idx, False)
+			self.texids_table.blockSignals(True)
+			self.texids_table.setRowCount(0)
+			self.texids_table.blockSignals(False)
 
 	def _on_add_texture(self):
 		from .mdf_file import TexHeader
@@ -892,7 +1132,7 @@ class MdfViewer(QWidget):
 			self.materials_table.setItem(r, c, QTableWidgetItem(txt))
 		self.materials_table.blockSignals(False)
 		self.modified = True
-
+	
 	def _on_delete_material(self):
 		rows = sorted({i.row() for i in self.materials_table.selectedIndexes()}, reverse=True)
 		m = self.handler.mdf
@@ -905,3 +1145,79 @@ class MdfViewer(QWidget):
 		if rows:
 			self.modified = True
 
+	def _on_copy_materials(self):
+		m = self.handler.mdf
+		if not m:
+			return
+		selected = self.materials_table.selectionModel().selectedRows()
+		if not selected:
+			QMessageBox.information(self, "Copy Materials", "Select at least one material to copy.")
+			return
+		indices = sorted(idx.row() for idx in selected)
+		materials = [m.materials[i] for i in indices if 0 <= i < len(m.materials)]
+		if not materials:
+			QMessageBox.warning(self, "Copy Materials", "No valid materials selected for copying.")
+			return
+		MdfClipboard.copy_materials(
+			materials,
+			self._current_file_version(),
+			self._current_file_name(),
+		)
+		QMessageBox.information(self, "Copy Materials", f"Copied {len(materials)} material(s) to clipboard.")
+
+	def _on_export_material(self):
+		material, file_version, source_name = self.get_material_export_context()
+		if material is None:
+			QMessageBox.information(self, "Export Template", "Select a material to export.")
+			return
+		default_name = material.header.mat_name
+		mmtr_path = material.header.mmtr_path
+		dlg = MdfTemplateExportDialog(self, default_name=default_name, mmtr_path=mmtr_path)
+		if not dlg.exec():
+			return
+		data = dlg.export_data()
+		result = MdfTemplateManager.export_material(
+			material,
+			file_version,
+			data["name"],
+			data["description"],
+			data["tags"],
+			source_name,
+		)
+		if not result.get("success"):
+			QMessageBox.warning(
+				self,
+				"Export Template",
+				result.get("message", "Failed to export template."),
+			)
+			return
+		QMessageBox.information(
+			self,
+			"Export Template",
+			f"Template '{data['name']}' exported successfully.",
+		)
+
+	def _on_paste_materials(self):
+		m = self.handler.mdf
+		if not m:
+			return
+		target_version = self._current_file_version()
+		materials, metadata = MdfClipboard.load_materials(target_version)
+		if not materials:
+			QMessageBox.warning(self, "Paste Materials", "Clipboard does not contain MDF material data.")
+			return
+		selected = self.materials_table.selectionModel().selectedRows()
+		insert_at = len(m.materials)
+		if selected:
+			insert_at = min(len(m.materials), max(idx.row() for idx in selected) + 1)
+		inserted = self._insert_materials(materials, insert_at)
+		source_name = metadata.get("source_file_name") if isinstance(metadata, dict) else ""
+		source_version = metadata.get("source_file_version") if isinstance(metadata, dict) else None
+		if not source_name:
+			source_name = "Unknown file"
+		msg_version = str(source_version) if source_version else "unknown"
+		QMessageBox.information(
+			self,
+			"Paste Materials",
+			f"Pasted {inserted} material(s) from {source_name} (version {msg_version}).",
+		)
