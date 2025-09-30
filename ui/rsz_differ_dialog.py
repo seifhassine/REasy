@@ -100,7 +100,17 @@ class DiffWorker(QThread):
     finished = Signal(DiffResult)
     error = Signal(str)
     
-    def __init__(self, file1_data: bytes, file2_data: bytes, file1_path: str, file2_path: str, game_version: str, json_path: Optional[str] = None):
+    def __init__(
+        self,
+        file1_data: bytes,
+        file2_data: bytes,
+        file1_path: str,
+        file2_path: str,
+        game_version: str,
+        json_path: Optional[str] = None,
+        file1_json_path: Optional[str] = None,
+        file2_json_path: Optional[str] = None,
+    ):
         super().__init__()
         self.file1_data = file1_data
         self.file2_data = file2_data
@@ -108,10 +118,12 @@ class DiffWorker(QThread):
         self.file2_path = file2_path
         self.game_version = game_version
         self.json_path = json_path
-        
+        self.file1_json_path = file1_json_path
+        self.file2_json_path = file2_json_path
+
     def run(self):
         try:
-            differ = RszDiffer(self.json_path)
+            differ = RszDiffer(self.json_path, self.file1_json_path, self.file2_json_path)
             differ.set_game_version(self.game_version)
             result = differ.compare(self.file1_data, self.file2_data, self.file1_path, self.file2_path)
             self.finished.emit(result)
@@ -130,6 +142,8 @@ class RszDifferDialog(QDialog):
         self.file2_data = None
         self.file1_path = None
         self.file2_path = None
+        self.file1_json_path = None
+        self.file2_json_path = None
         self.diff_result = None
         self.worker = None
         
@@ -220,7 +234,7 @@ class RszDifferDialog(QDialog):
         layout.addWidget(instructions)
         
         json_layout = QHBoxLayout()
-        json_layout.addWidget(QLabel("JSON File:"))
+        json_layout.addWidget(QLabel("JSON File (Default):"))
         self.json_path_input = QLineEdit()
         self.json_path_input.setText(self.json_path or "")
         self.json_path_input.setPlaceholderText("Path to type definitions JSON file...")
@@ -245,7 +259,18 @@ class RszDifferDialog(QDialog):
         self.file1_button.clicked.connect(lambda: self.select_file(1))
         file1_layout.addWidget(self.file1_button)
         layout.addLayout(file1_layout)
-        
+
+        file1_json_layout = QHBoxLayout()
+        file1_json_layout.addWidget(QLabel("File 1 JSON Override:"))
+        self.file1_json_input = QLineEdit()
+        self.file1_json_input.setPlaceholderText("Optional JSON file for File 1...")
+        self.file1_json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(1, text))
+        file1_json_layout.addWidget(self.file1_json_input, 1)
+        self.file1_json_button = QPushButton("Browse...")
+        self.file1_json_button.clicked.connect(lambda: self.browse_file_json_path(1))
+        file1_json_layout.addWidget(self.file1_json_button)
+        layout.addLayout(file1_json_layout)
+
         file2_layout = QHBoxLayout()
         file2_layout.addWidget(QLabel("File 2:"))
         self.file2_label = DropLabel("Drop SCN file here or click Browse...")
@@ -255,7 +280,18 @@ class RszDifferDialog(QDialog):
         self.file2_button.clicked.connect(lambda: self.select_file(2))
         file2_layout.addWidget(self.file2_button)
         layout.addLayout(file2_layout)
-        
+
+        file2_json_layout = QHBoxLayout()
+        file2_json_layout.addWidget(QLabel("File 2 JSON Override:"))
+        self.file2_json_input = QLineEdit()
+        self.file2_json_input.setPlaceholderText("Optional JSON file for File 2...")
+        self.file2_json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(2, text))
+        file2_json_layout.addWidget(self.file2_json_input, 1)
+        self.file2_json_button = QPushButton("Browse...")
+        self.file2_json_button.clicked.connect(lambda: self.browse_file_json_path(2))
+        file2_json_layout.addWidget(self.file2_json_button)
+        layout.addLayout(file2_json_layout)
+
         group.setLayout(layout)
         return group
         
@@ -317,7 +353,18 @@ class RszDifferDialog(QDialog):
         if self.file1_data and self.file2_data:
             self.diff_result = None
             self.update_results()
-    
+
+    def on_file_json_path_changed(self, file_number: int, text: str):
+        path = text if text else None
+        if file_number == 1:
+            self.file1_json_path = path
+        else:
+            self.file2_json_path = path
+
+        if self.file1_data and self.file2_data:
+            self.diff_result = None
+            self.update_results()
+
     def browse_json_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -328,7 +375,24 @@ class RszDifferDialog(QDialog):
         if file_path:
             self.json_path_input.setText(file_path)
             self.json_path = file_path
-        
+
+    def browse_file_json_path(self, file_number: int):
+        current_path = self.file1_json_path if file_number == 1 else self.file2_json_path
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Select JSON Override for File {file_number}",
+            current_path or "",
+            "JSON Files (*.json);;All Files (*.*)"
+        )
+
+        if file_path:
+            if file_number == 1:
+                self.file1_json_input.setText(file_path)
+                self.file1_json_path = file_path
+            else:
+                self.file2_json_input.setText(file_path)
+                self.file2_json_path = file_path
+
     def select_file(self, file_number: int):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -376,7 +440,16 @@ class RszDifferDialog(QDialog):
         self.compare_button.setEnabled(False)
         self.compare_button.setText("Comparing...")
         
-        self.worker = DiffWorker(self.file1_data, self.file2_data, self.file1_path, self.file2_path, self.game_version, self.json_path)
+        self.worker = DiffWorker(
+            self.file1_data,
+            self.file2_data,
+            self.file1_path,
+            self.file2_path,
+            self.game_version,
+            self.json_path,
+            self.file1_json_path,
+            self.file2_json_path,
+        )
         self.worker.finished.connect(self.on_comparison_finished)
         self.worker.error.connect(self.on_comparison_error)
         self.worker.start()

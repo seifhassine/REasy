@@ -28,20 +28,30 @@ class DiffResult:
     summary: Dict[str, int]
 
 class RszDiffer:
-    def __init__(self, json_path: Optional[str] = None):
+    def __init__(
+        self,
+        json_path: Optional[str] = None,
+        file1_json_path: Optional[str] = None,
+        file2_json_path: Optional[str] = None,
+    ):
         self.handler1 = RszHandler()
         self.handler2 = RszHandler()
         self.export_dir = tempfile.gettempdir()
         self.json_path = json_path
+        self.file1_json_path = file1_json_path
+        self.file2_json_path = file2_json_path
 
         class MockApp:
-            def __init__(self, json_path):
-                self.settings = {"rcol_json_path": json_path}
+            def __init__(self, json_path: Optional[str] = None):
+                self.settings = {}
+                if json_path:
+                    self.settings["rcol_json_path"] = json_path
 
-        if json_path:
-            mock_app = MockApp(json_path)
-            self.handler1.app = mock_app
-            self.handler2.app = mock_app
+        handler1_json = file1_json_path or json_path
+        handler2_json = file2_json_path or json_path
+
+        self.handler1.app = MockApp(handler1_json)
+        self.handler2.app = MockApp(handler2_json)
 
     def set_game_version(self, version: str):
         self.handler1.game_version = version
