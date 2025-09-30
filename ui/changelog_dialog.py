@@ -172,14 +172,20 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added MDF file editor for all games."),
-            ("New", "Ability to translate all gameobject names in one click (Data Block > Translate all..)."),
-            ("New", "Copy paste of more multi-value fields such as vec3, vec4.. (via.Transform, ..)."),
-            ("Improved", "RSZ file loading is now faster by 20-25%."),
-            ("Fixed", "Mod projects can now be opened from any drive, not only the drive containing REasy.exe."),
-            ("Fixed", "Visual bug sometimes causing other array elements to become empty when adding/removing an element."),
-            ("Fixed", "RSZ value finder (in Tools) was not applying search filters during search."),
-            ("Fixed", "Empty tab was appearing whenever an RSZ file failed to open."),
+            ("New", "Support for MHWilds TU3."),
+            ("New", "MDF Template Manager and material import/export."),
+            ("New", "UI support for some RSZ types such as Size, Point, UInt3.."),
+            ("New", "Legacy support for Python 3.11 (not recommended)"),
+            ("New", "Ability to change REasy theme accent color in settings."),
+            ("Improved", "You can now CTRL+V (paste) GUIDs, as well as undo/redo changes."),
+            ("Improved", "RSZ parser refactoring and minor optimizations."),
+            ("Improved", "Tree Find Dialog is now dockable."),
+            ("Improved", "Added option to select a separate RSZ JSON per file in RSZ Diff Viewer."),
+            ("Fixed", "Memory leak when closing tabs, leading to infinitely growing memory usage."),
+            ("Fixed", "An issue in RE7 RSZ template."),
+            ("Fixed", "In UVAR UI, GUID (memory) was the actual GUID (normal). Unified them into normal representation"),
+            ("Fixed", "MDF files were not visible in file browser."),
+            ("Fixed", "Auto-Updater failure on some specific Powershell versions."),
            
         ]
         for tag, text in changes:

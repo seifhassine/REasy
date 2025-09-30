@@ -82,7 +82,7 @@ from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
 
-CURRENT_VERSION = "0.5.4"
+CURRENT_VERSION = "0.5.5"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
     "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"
