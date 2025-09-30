@@ -2,7 +2,15 @@ from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
                               QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
 from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
-from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QIntValidator, QColor, QPalette, QFontMetrics
+from PySide6.QtGui import (
+    QDoubleValidator,
+    QRegularExpressionValidator,
+    QIntValidator,
+    QColor,
+    QPalette,
+    QFontMetrics,
+    QKeySequence,
+)
 import uuid
 import re
 
@@ -397,10 +405,13 @@ class GuidInput(BaseValueWidget):
         self.layout.addWidget(self.line_edit)
         self.line_edit.textEdited.connect(self._on_text_edited)
 
+        self._PENDING_ATTR = "__pending_guid_state"
+        self._history_anchor = None
+
         self.gen_button = QToolButton()
         self.gen_button.setText("Generate")
         self.gen_button.setToolTip("Generate a random GUID")
-        self.gen_button.setFixedWidth(60) 
+        self.gen_button.setFixedWidth(60)
         self.layout.addWidget(self.gen_button)
         self.gen_button.clicked.connect(self._generate_guid)
         
@@ -415,25 +426,59 @@ class GuidInput(BaseValueWidget):
         """Generate a new random GUID"""
         if not self._data:
             return
-        
+
         new_guid = str(uuid.uuid4())
-        self.line_edit.setText(new_guid)
-        self._data.guid_str = new_guid
-        self.valueChanged.emit(new_guid)
-        self.mark_modified()
-        self.line_edit.setStyleSheet("")
-        
+        self._apply_programmatic_guid(new_guid)
+
     def _reset_guid(self):
         """Reset to null GUID (all zeros)"""
         if not self._data:
             return
-        
+
         null_guid = "00000000-0000-0000-0000-000000000000"
-        self.line_edit.setText(null_guid)
-        self._data.guid_str = null_guid
-        self.valueChanged.emit(null_guid)
+        self._apply_programmatic_guid(null_guid)
+
+    def _apply_programmatic_guid(self, text):
+        if not self._data:
+            return
+
+        self.line_edit.apply_text(text)
+        self._data.guid_str = text
+        self.valueChanged.emit(text)
         self.mark_modified()
         self.line_edit.setStyleSheet("")
+        self._clear_pending_guid()
+        self._history_anchor = ("valid", text)
+
+    def _pending_state(self):
+        if not self._data:
+            return None
+        return getattr(self._data, self._PENDING_ATTR, None)
+
+    def _remember_pending_guid(self, text, cursor):
+        if not self._data:
+            return
+
+        if text is None:
+            self._clear_pending_guid()
+            return
+
+        base_guid = getattr(self._data, "guid_str", "") or ""
+        pending_state = {
+            "text": text,
+            "base": base_guid,
+            "cursor": cursor,
+        }
+        setattr(self._data, self._PENDING_ATTR, pending_state)
+        self._history_anchor = ("pending", base_guid, text)
+
+    def _clear_pending_guid(self):
+        if not self._data:
+            return
+        if hasattr(self._data, self._PENDING_ATTR):
+            delattr(self._data, self._PENDING_ATTR)
+        base_guid = getattr(self._data, "guid_str", "") or ""
+        self._history_anchor = ("valid", base_guid)
 
     def _format_guid(self, text):
         """Format text as UUID, removing invalid chars and adding hyphens"""
@@ -452,82 +497,175 @@ class GuidInput(BaseValueWidget):
         ]
         return '-'.join(part for part in parts if part)
 
-    def _on_text_edited(self, text):
+    def _cursor_for_hex_count(self, formatted_text, hex_count):
+        if hex_count <= 0:
+            return 0
+
+        seen = 0
+        for index, char in enumerate(formatted_text):
+            if char == '-':
+                continue
+            seen += 1
+            if seen >= hex_count:
+                return min(index + 1, len(formatted_text))
+        return len(formatted_text)
+
+    def _on_text_edited(self, text, *, from_history=False):
         if not self._data:
             return
-            
+
         cursor_pos = self.line_edit.cursorPosition()
-        hyphens_before = text[:cursor_pos].count('-')
-        
+        hex_before_cursor = sum(1 for c in text[:cursor_pos] if c in '0123456789abcdefABCDEF')
+
         formatted = self._format_guid(text)
-        
+
         if formatted != text:
-            new_hyphens = formatted[:cursor_pos].count('-')
-            new_pos = cursor_pos + (new_hyphens - hyphens_before)
-            
-            self.line_edit.setText(formatted)
-            self.line_edit.setCursorPosition(min(new_pos, len(formatted)))
-            
+            new_pos = self._cursor_for_hex_count(formatted, hex_before_cursor)
+            self.line_edit.apply_text(
+                formatted,
+                cursor=new_pos,
+                record_history=not from_history,
+            )
+        elif not from_history:
+            self.line_edit.finalize_user_edit()
+
+        is_valid = False
+
         if len(formatted) == 36:
             try:
                 uuid.UUID(formatted)
-                self._data.guid_str = formatted
-                self.valueChanged.emit(formatted)
-                self.mark_modified()
-                self.line_edit.setStyleSheet("")
+                is_valid = True
             except ValueError:
-                self.line_edit.setStyleSheet("border: 1px solid red;")
+                is_valid = False
+
+        if is_valid:
+            self._data.guid_str = formatted
+            self.valueChanged.emit(formatted)
+            self.mark_modified()
+            self.line_edit.setStyleSheet("")
+            self._clear_pending_guid()
+            self._history_anchor = ("valid", formatted)
         else:
+            cursor_snapshot = self.line_edit.cursorPosition()
+            self._remember_pending_guid(formatted, cursor_snapshot)
             self.line_edit.setStyleSheet("border: 1px solid red;")
 
     def update_display(self):
         if not self._data:
             return
-        self.line_edit.blockSignals(True)
-        self.line_edit.setText(self._data.guid_str)
-        self.line_edit.blockSignals(False)
+        pending_state = self._pending_state()
+        base_guid = getattr(self._data, "guid_str", "") or ""
+
+        if pending_state and pending_state.get("base") == base_guid:
+            display_text = pending_state.get("text", "")
+            cursor_pos = pending_state.get("cursor", len(display_text))
+            is_valid = False
+            anchor = ("pending", base_guid, display_text)
+        else:
+            if pending_state and pending_state.get("base") != base_guid:
+                self._clear_pending_guid()
+            display_text = base_guid
+            cursor_pos = len(display_text)
+            is_valid = True
+            anchor = ("valid", base_guid)
+
+        if self._history_anchor != anchor:
+            self.line_edit.reset_history(display_text, cursor_pos)
+            self._history_anchor = anchor
+        else:
+            self.line_edit.apply_text(display_text, cursor=cursor_pos, record_history=False)
+
+        if is_valid:
+            self.line_edit.setStyleSheet("")
+        else:
+            self.line_edit.setStyleSheet("border: 1px solid red;")
 
 class OverwriteGuidLineEdit(QLineEdit):
     def __init__(self, guid_widget, parent=None):
         super().__init__(parent)
         self.guid_widget = guid_widget
-        
+        self._history = []
+        self._history_index = -1
+        self._suspend_history = False
+        self._restoring_history = False
+
+    def reset_history(self, text, cursor=None):
+        if cursor is None:
+            cursor = len(text)
+
+        self._history[:] = [(text, cursor)]
+        self._history_index = 0
+        self.apply_text(text, cursor=cursor, record_history=False)
+
+    def apply_text(self, text, cursor=None, record_history=True):
+        if cursor is None:
+            cursor = len(text)
+
+        cursor = max(0, min(cursor, len(text)))
+
+        self._suspend_history = True
+        try:
+            super().setText(text)
+            self.setCursorPosition(cursor)
+        finally:
+            self._suspend_history = False
+
+        if record_history:
+            self._record_history_entry(text, cursor)
+
+    def finalize_user_edit(self):
+        if not (self._suspend_history or self._restoring_history):
+            self._record_history_entry()
+
+    def _record_history_entry(self, text=None, cursor=None):
+        if text is None:
+            text = self.text()
+        if cursor is None:
+            cursor = self.cursorPosition()
+
+        state = (text, cursor)
+        if self._history_index >= 0 and self._history[self._history_index] == state:
+            return
+
+        del self._history[self._history_index + 1 :]
+        self._history.append(state)
+        self._history_index = len(self._history) - 1
+
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A and event.modifiers() & Qt.ControlModifier:
-            self.selectAll()
+        if event.matches(QKeySequence.Cut):
+            self.copy()
             return
-            
+
+        if event.key() in (Qt.Key_Backspace, Qt.Key_Delete):
+            return
+
         if event.modifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_C:
-                super().keyPressEvent(event)
-            elif event.key() == Qt.Key_V:
-                self.guid_widget._on_text_edited(QApplication.clipboard().text())
+            if event.key() == Qt.Key_Z:
+                self._step_history(-1)
+                return
+            if event.key() == Qt.Key_Y:
+                self._step_history(1)
+                return
+
+        super().keyPressEvent(event)
+
+    def cut(self):
+        self.copy()
+
+    def _step_history(self, offset):
+        new_index = self._history_index + offset
+        if not (0 <= new_index < len(self._history)):
             return
-            
-        if event.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End):
-            super().keyPressEvent(event)
-            return
-            
-        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            return
-        
-        text = event.text().lower()
-        if text and text in "0123456789abcdef":
-            pos = self.cursorPosition()
-            current_text = self.text()
-            
-            if pos < len(current_text):
-                if current_text[pos] == '-':
-                    pos += 1
-                
-                if pos < len(current_text):
-                    new_text = current_text[:pos] + text + current_text[pos+1:]
-                    self.setText(new_text)
-                    new_pos = pos + 1
-                    if new_pos < len(new_text) and new_text[new_pos] == '-':
-                        new_pos += 1
-                    self.setCursorPosition(new_pos)
-                    self.guid_widget._on_text_edited(new_text)
+
+        self._history_index = new_index
+        text, cursor = self._history[self._history_index]
+        self._restoring_history = True
+        try:
+            self.apply_text(text, cursor=cursor, record_history=False)
+        finally:
+            self._restoring_history = False
+
+        self.guid_widget._on_text_edited(text, from_history=True)
 
 class NumberInput(BaseValueWidget):
     """Base class for numeric inputs"""
