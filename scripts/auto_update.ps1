@@ -158,6 +158,7 @@ else {
     } catch { throw "Failed to download release archive: $($_.Exception.Message)" }
 
     $unpackDir = Join-Path $tmpDir 'unpacked'; New-Item -ItemType Directory -Path $unpackDir | Out-Null
+    $unpackDir = Join-Path $tmpDir 'unpacked'
     Write-Log "Extracting archive..."; Expand-Archive -Path $zipPath -DestinationPath $unpackDir -Force
 
     $entries = Get-ChildItem -Path $unpackDir
