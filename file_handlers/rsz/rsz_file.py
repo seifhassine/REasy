@@ -2140,24 +2140,18 @@ class RszFile:
 
         self._prepare_field_definitions(fields_def)
 
-        def _align_rel(pos: int, align: int, base_mod: int) -> int:
-            rem = (pos + base_mod) % align
-            return pos if rem == 0 else pos + (align - rem)
-
         pos = offset
 
-        # compute how the file’s data-block was aligned (0 for v4+, 8 for v3, etc.)
+        # compute how the file's data-block was aligned (0 for v4+, 8 for v3, etc.)
         base_mod = getattr(self, "_instance_base_mod", 0)
 
+        # Inline alignment for better performance
         def _align(p: int, a: int) -> int:
-            return _align_rel(p, a, base_mod)
+            if a <= 1:
+                return p
+            rem = (p + base_mod) % a
+            return p if rem == 0 else p + (a - rem)
 
-        def read_aligned_value(unpack_func, size, align=1):
-            nonlocal pos
-            pos = _align(pos, align)
-            v = unpack_func(self.data, pos)[0]
-            pos += size
-            return v
 
         hierarchy_len = len(instance_hierarchy)
 
@@ -2199,33 +2193,22 @@ class RszFile:
         type_registry = self.type_registry
 
         try:
+            # Direct cache access - _prepare_field_definitions guarantees _parse_cache exists
             for field in fields_def:
-                cache_entry = field.get("_parse_cache")
-                if cache_entry:
-                    (
-                        field_name,
-                        rsz_type,
-                        fsize,
-                        field_align,
-                        is_array,
-                        original_type,
-                        parser_func,
-                        default_element_class,
-                    ) = cache_entry
-                else:
-                    field_name = field.get("name", "<unnamed>")
-                    rsz_type = field.get("_rsz_type")
-                    fsize = field.get("_size", field.get("size", 4))
-                    field_align = field.get("_align", int(field.get("align", 1)))
-                    is_array = field.get("_is_array", field.get("array", False))
-                    original_type = field.get("original_type", "") or ""
-                    parser_func = field.get("_non_array_parser", RawBytesData.parse)
-                    default_element_class = field.get("_default_element_cls", RawBytesData)
-
-                data_obj = None
+                cache_entry = field["_parse_cache"]
+                field_name = cache_entry[0]
+                rsz_type = cache_entry[1]
+                fsize = cache_entry[2]
+                field_align = cache_entry[3]
+                is_array = cache_entry[4]
+                original_type = cache_entry[5]
+                parser_func = cache_entry[6]
+                default_element_class = cache_entry[7]
 
                 if is_array:
-                    count = read_aligned_value(unpack_uint, 4, align=4)
+                    pos = _align(pos, 4)
+                    count = unpack_uint(self.data, pos)[0]
+                    pos += 4
 
                     if rsz_type == StructData:
                         struct_values = []
@@ -2235,21 +2218,21 @@ class RszFile:
                             if struct_type_info:
                                 struct_fields_def = struct_type_info.get("fields", [])
                                 current_pos = _align(current_pos, field_align)
+                                temp_parsed = parsed_elements
                                 for _ in range(count):
                                     struct_element = {}
-                                    temp_parsed = self.parsed_elements.get(current_instance_index, {})
                                     self.parsed_elements[current_instance_index] = struct_element
                                     next_pos = self.parse_instance_fields(
                                         offset=current_pos,
                                         fields_def=struct_fields_def,
                                         current_instance_index=current_instance_index,
                                     )
-                                    self.parsed_elements[current_instance_index] = temp_parsed
                                     if next_pos > current_pos and struct_element:
                                         struct_values.append(struct_element)
                                         current_pos = next_pos
                                     else:
                                         break
+                                self.parsed_elements[current_instance_index] = temp_parsed
                                 pos = current_pos
                         data_obj = StructData(struct_values, original_type)
 
@@ -2272,30 +2255,43 @@ class RszFile:
                                 set_parent(candidate, current_instance_index)
                             else:
                                 raw_values.append(raw_value)
-                        data_obj = ArrayData(
-                            [ObjectData(idx, original_type) for idx in child_indexes] if already_ref else
-                            [RawBytesData(raw, fsize, original_type) for raw in raw_values],
-                            ObjectData if already_ref else RawBytesData,
-                            original_type,
-                        )
+                        if already_ref:
+                            data_obj = ArrayData(
+                                [ObjectData(idx, original_type) for idx in child_indexes],
+                                ObjectData,
+                                original_type,
+                            )
+                        else:
+                            data_obj = ArrayData(
+                                [RawBytesData(raw, fsize, original_type) for raw in raw_values],
+                                RawBytesData,
+                                original_type,
+                            )
 
                     else:
-                        values = []
-                        for _ in range(count):
+                        if count == 0:
+                            data_obj = ArrayData([], default_element_class, original_type)
+                        elif count == 1:
                             configure(pos, fsize, field_align, original_type)
-                            values.append(parser_func(non_array_parser))
+                            value = parser_func(non_array_parser)
                             pos = non_array_parser.pos
-
-                        if values:
-                            first_cls = type(values[0])
-                            if all(type(v) is first_cls for v in values[1:]):
-                                element_class = first_cls
-                            else:
-                                element_class = default_element_class
+                            data_obj = ArrayData([value], type(value), original_type)
                         else:
-                            element_class = default_element_class
-
-                        data_obj = ArrayData(values, element_class, original_type)
+                            values = []
+                            values_append = values.append
+                            for _ in range(count):
+                                configure(pos, fsize, field_align, original_type)
+                                values_append(parser_func(non_array_parser))
+                                pos = non_array_parser.pos
+                            
+                            element_class = type(values[0])
+                            if count > 2 and element_class not in (U32Data, F32Data, S32Data, U64Data, BoolData):
+                                for v in values[1:]:
+                                    if type(v) is not element_class:
+                                        element_class = default_element_class
+                                        break
+                            
+                            data_obj = ArrayData(values, element_class, original_type)
 
                 else:  # Non-array field
                     configure(pos, fsize, field_align, original_type)
