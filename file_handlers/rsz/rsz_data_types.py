@@ -81,7 +81,7 @@ class BoolData:
     @classmethod
     def parse(cls, ctx):
         raw = ctx.read_bytes(ctx.field_size)
-        value = bool(raw[0]) if raw else False
+        value = bool(raw[0]) if len(raw) > 0 else False
         return cls(value, ctx.original_type)
 
 class S8Data:
@@ -202,9 +202,8 @@ class Uint2Data:
 
     @classmethod
     def parse(cls, ctx):
-        x = ctx.read_value(ctx.unpack_uint, 4)
-        y = ctx.read_value(ctx.unpack_uint, 4)
-        return cls(x, y, ctx.original_type)
+        vals = ctx.read_struct(ctx.unpack_2int, 8)
+        return cls(vals[0], vals[1], ctx.original_type)
 
 class Uint3Data:
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, orig_type: str = ""):
@@ -215,10 +214,8 @@ class Uint3Data:
 
     @classmethod
     def parse(cls, ctx):
-        x = ctx.read_value(ctx.unpack_uint, 4)
-        y = ctx.read_value(ctx.unpack_uint, 4)
-        z = ctx.read_value(ctx.unpack_uint, 4)
-        return cls(x, y, z, ctx.original_type)
+        vals = ctx.read_struct(ctx.unpack_3int, 12)
+        return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
 class Int2Data:
     def __init__(self, x: int = 0, y: int = 0, orig_type: str = ""):
@@ -228,9 +225,8 @@ class Int2Data:
 
     @classmethod
     def parse(cls, ctx):
-        x = ctx.read_value(ctx.unpack_int, 4)
-        y = ctx.read_value(ctx.unpack_int, 4)
-        return cls(x, y, ctx.original_type)
+        vals = ctx.read_struct(ctx.unpack_2int, 8)
+        return cls(vals[0], vals[1], ctx.original_type)
 
 class Int3Data:
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, orig_type: str = ""):
