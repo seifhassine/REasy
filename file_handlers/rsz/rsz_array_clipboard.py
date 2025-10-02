@@ -416,9 +416,13 @@ class RszArrayClipboard:
                             if (userdata_rui and hasattr(userdata_rui, 'embedded_instances') and 
                                 userdata_rui.embedded_instances and hasattr(viewer.scn, 'has_embedded_rsz') and 
                                 viewer.scn.has_embedded_rsz):
-                                instance_data["fields"][field_name] = RszArrayClipboard._serialize_userdata_with_graph(
+                                userdata_serialized = RszArrayClipboard._serialize_userdata_with_graph(
                                     field_data, viewer, None
                                 )
+                                if field_data.value in id_mapping:
+                                    userdata_serialized["value"] = id_mapping[field_data.value]
+                                    userdata_serialized["in_graph"] = True
+                                instance_data["fields"][field_name] = userdata_serialized
                                 continue
                         
                         instance_data["fields"][field_name] = RszArrayClipboard._serialize_field_with_mapping(
@@ -2235,6 +2239,37 @@ class RszArrayClipboard:
             fields_data = instance_data.get("fields", {})
             
             for field_name, field_data in fields_data.items():
+                if (field_data.get("type") == "UserDataData" and 
+                    field_data.get("has_full_content") and 
+                    field_data.get("object_graph")):
+                    userdata_value = field_data.get("value", 0)
+                    
+                    if userdata_value in relative_to_new_id:
+                        new_userdata_id = relative_to_new_id[userdata_value]
+                        
+                        field_obj = UserDataData(
+                            new_userdata_id,
+                            field_data.get("string", ""),
+                            field_data.get("orig_type", "")
+                        )
+                        viewer.scn.parsed_elements[new_id][field_name] = field_obj
+                        
+                        userdata_info = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, new_userdata_id)
+                        
+                        if userdata_info:
+                            if new_userdata_id < len(viewer.scn.instance_infos):
+                                userdata_info.type_id = viewer.scn.instance_infos[new_userdata_id].type_id
+                            
+                            RszArrayClipboard._populate_userdata_from_object_graph(
+                                userdata_info, field_data.get("object_graph"), viewer
+                            )
+                            
+                            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
+                            userdata_info.data = build_embedded_rsz(userdata_info, viewer.type_registry)
+                            userdata_info.data_size = len(userdata_info.data)
+                            userdata_info.modified = True
+                        continue
+                
                 field_obj = RszArrayClipboard._deserialize_field_with_relative_mapping(
                     field_data, relative_to_new_id, guid_mapping, randomize_guids=True
                 )

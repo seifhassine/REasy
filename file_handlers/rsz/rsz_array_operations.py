@@ -972,6 +972,21 @@ class RszArrayOperations:
                         
                         # Recursively explore this reference to find its nested objects
                         explore_instance(ref_id)
+                
+                elif (isinstance(field_data, UserDataData) and field_data.value > 0 and 
+                      self.scn.has_embedded_rsz):
+                    ref_id = field_data.value
+                    
+                    if ref_id in excluded_ids:
+                        continue
+                    
+                    if (ref_id != instance_id and 
+                            ref_id not in processed_ids and 
+                            ref_id < len(self.scn.instance_infos)):
+                        
+                        nested_objects.add(ref_id)
+                        
+                        explore_instance(ref_id)
                         
                 # Check array elements
                 elif isinstance(field_data, ArrayData):
@@ -996,6 +1011,23 @@ class RszArrayOperations:
                                     nested_objects.add(ref_id)
                                     
                                     # Recursively explore this reference
+                                    explore_instance(ref_id)
+                        
+                        elif (isinstance(element, UserDataData) and element.value > 0 and
+                              self.scn.has_embedded_rsz):
+                            ref_id = element.value
+                            
+                            if ref_id in excluded_ids:
+                                continue
+                            
+                            if (ref_id != instance_id and 
+                                    ref_id not in processed_ids and 
+                                    ref_id < len(self.scn.instance_infos)):
+                                
+                                is_exclusive = self._is_exclusively_referenced_from(ref_id, instance_id)
+                                
+                                if is_exclusive:
+                                    nested_objects.add(ref_id)
                                     explore_instance(ref_id)
             
             # Add position-based nested objects last (after checking fields)
