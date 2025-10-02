@@ -1294,6 +1294,13 @@ class StringInput(BaseValueWidget):
         self.line_edit.textChanged.connect(self._on_text_changed)
         
         self.minimum_width = 150
+        self.resource_indicator = None
+        self.open_button = None
+        self.add_open_button = None
+        
+        self._update_timer = QTimer(self)
+        self._update_timer.timeout.connect(self._update_button_states)
+        self._update_timer.setInterval(1000)
 
     def update_display(self):
         if self._data:
@@ -1306,13 +1313,166 @@ class StringInput(BaseValueWidget):
             self.line_edit.setFixedWidth(new_width)
         
         if isinstance(self._data, ResourceData):
-            self.resource_indicator = QLabel("Resource")
-            self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
-            self.layout.addWidget(self.resource_indicator)
+            if self.resource_indicator is None:
+                self.resource_indicator = QLabel("Resource")
+                self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
+                self.layout.addWidget(self.resource_indicator)
+            
+            if self.open_button is None:
+                self.open_button = QToolButton()
+                self.open_button.setText("Open")
+                self.open_button.setToolTip("Open resource file")
+                self.open_button.setFixedWidth(60)
+                self.open_button.clicked.connect(self._on_open_clicked)
+                self.layout.addWidget(self.open_button)
+            
+            if self.add_open_button is None:
+                self.add_open_button = QToolButton()
+                self.add_open_button.setText("Add & Open")
+                self.add_open_button.setToolTip("Add resource file to project and open it")
+                self.add_open_button.setFixedWidth(85)
+                self.add_open_button.clicked.connect(self._on_add_open_clicked)
+                self.layout.addWidget(self.add_open_button)
+            
+            self.layout.addStretch()
+            
+            self._update_button_states()
+            self._update_timer.start()
 
+    def _update_button_states(self):
+        if self.open_button is None:
+            return
+        
+        self.open_button.setToolTip("Open resource file")
+        
+        if self.add_open_button:
+            self.add_open_button.setToolTip("Add resource file to project and open it")
+
+    def _get_app_window(self):
+        widget = self
+        while widget:
+            if hasattr(widget, 'handler') and hasattr(widget.handler, 'app'):
+                return widget.handler.app
+            widget = widget.parent()
+        return None
+
+    def _on_open_clicked(self):
+        if not isinstance(self._data, ResourceData):
+            return
+        
+        resource_path = self._data.value.rstrip('\x00')
+        if not resource_path:
+            QMessageBox.information(self, "Open Resource", "Resource path is empty")
+            return
+        
+        app_window = self._get_app_window()
+        if not app_window:
+            QMessageBox.warning(self, "Open Resource", "Unable to access application window")
+            return
+        
+        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
+            QMessageBox.information(self, "Open Resource", 
+                'You are not in project mode. Please open a project ("File" > "New Mod/Open Project")')
+            return
+        
+        self._open_resource_file(app_window, resource_path, add_to_project=False)
+    
+    def _on_add_open_clicked(self):
+        if not isinstance(self._data, ResourceData):
+            return
+        
+        resource_path = self._data.value.rstrip('\x00')
+        if not resource_path:
+            QMessageBox.information(self, "Add & Open Resource", "Resource path is empty")
+            return
+        
+        app_window = self._get_app_window()
+        if not app_window:
+            QMessageBox.warning(self, "Add & Open Resource", "Unable to access application window")
+            return
+        
+        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
+            QMessageBox.information(self, "Add & Open Resource", 
+                'You are not in project mode. Please open a project ("File" > "New Mod/Open Project")')
+            return
+        
+        self._open_resource_file(app_window, resource_path, add_to_project=True)
+
+    def _open_resource_file(self, app_window, resource_path, add_to_project=False):
+        from utils.resource_file_utils import (
+            find_resource_in_paks, 
+            find_resource_in_filesystem,
+            get_path_prefix_for_game,
+            copy_resource_to_project
+        )
+        
+        proj_dock = app_window.proj_dock
+        
+        if add_to_project:
+            project_dir = proj_dock.project_dir
+            if not project_dir:
+                QMessageBox.information(self, "Add & Open Resource", 
+                    "No project is currently open.")
+                return
+            
+            path_prefix = get_path_prefix_for_game(app_window.current_game)
+            
+            dest_path = copy_resource_to_project(
+                resource_path, 
+                project_dir,
+                proj_dock.unpacked_dir,
+                path_prefix,
+                proj_dock._pak_cached_reader,
+                proj_dock._pak_selected_paks
+            )
+            
+            if dest_path:
+                try:
+                    with open(dest_path, "rb") as f:
+                        data = f.read()
+                    app_window.add_tab(dest_path, data)
+                    
+                    if hasattr(proj_dock, '_refresh_proj'):
+                        proj_dock._refresh_proj()
+                    
+                    QMessageBox.information(self, "Add & Open Resource", 
+                        f"File added to project and opened:\n{dest_path}")
+                except Exception as e:
+                    QMessageBox.critical(self, "Add & Open Resource", 
+                        f"File was added but failed to open:\n{str(e)}")
+            else:
+                QMessageBox.critical(self, "Add & Open Resource", 
+                    f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
+            return
+        
+        file_data = None
+        file_path = None
+        
+        pak_result = find_resource_in_paks(
+            resource_path,
+            proj_dock._pak_cached_reader,
+            proj_dock._pak_selected_paks
+        )
+        if pak_result:
+            file_path, file_data = pak_result
+        
+        if not file_data:
+            path_prefix = get_path_prefix_for_game(app_window.current_game)
+            fs_result = find_resource_in_filesystem(
+                resource_path,
+                proj_dock.unpacked_dir,
+                path_prefix
+            )
+            if fs_result:
+                file_path, file_data = fs_result
+        
+        if file_data:
+            app_window.add_tab(file_path, file_data)
+        else:
+            QMessageBox.critical(self, "Open Resource", 
+                f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
 
     def _on_text_changed(self, text):
-        """Update data when text changes and resize the line edit"""
         if self._data:
             self._data.value = text
             self.valueChanged.emit(text)
@@ -1322,7 +1482,6 @@ class StringInput(BaseValueWidget):
             text_width = fm.horizontalAdvance(text) + 10
             new_width = max(text_width, self.minimum_width)
             self.line_edit.setFixedWidth(new_width)
-            
             
             if hasattr(self._data, "is_gameobject_or_folder_name") and self._data.is_gameobject_or_folder_name:
                 if isinstance(self._data.is_gameobject_or_folder_name, dict):
