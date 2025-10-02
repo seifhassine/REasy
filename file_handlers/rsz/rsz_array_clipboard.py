@@ -6,7 +6,7 @@ from file_handlers.rsz.rsz_data_types import (
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
     ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
     Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, RectData, LineSegmentData,
-    PointData, StructData, RawBytesData, PositionData, is_reference_type
+    PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, is_reference_type
 )
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.utils.rsz_embedded_utils import (
@@ -1669,9 +1669,24 @@ class RszArrayClipboard:
                 "y": element.y,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, Uint2Data):
+            return {
+                "type": "Uint2Data",
+                "x": element.x,
+                "y": element.y,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, Vec3Data):
             return {
                 "type": "Vec3Data",
+                "x": element.x,
+                "y": element.y,
+                "z": element.z,
+                "orig_type": element.orig_type
+            }
+        elif isinstance(element, Uint3Data):
+            return {
+                "type": "Uint3Data",
                 "x": element.x,
                 "y": element.y,
                 "z": element.z,
@@ -2522,12 +2537,27 @@ class RszArrayClipboard:
                 element_data.get("y", 0.0),
                 orig_type
             )
+        
+        elif element_type == "Uint2Data":
+            return Uint2Data(
+                element_data.get("x", 0),
+                element_data.get("y", 0),
+                orig_type
+            )
             
         elif element_type == "Vec3Data":
             return Vec3Data(
                 element_data.get("x", 0.0),
                 element_data.get("y", 0.0),
                 element_data.get("z", 0.0),
+                orig_type
+            )
+        
+        elif element_type == "Uint3Data":
+            return Uint3Data(
+                element_data.get("x", 0),
+                element_data.get("y", 0),
+                element_data.get("z", 0),
                 orig_type
             )
             
