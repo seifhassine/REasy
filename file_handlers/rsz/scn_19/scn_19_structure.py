@@ -215,15 +215,15 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
                 # Calculate the absolute offset within this RSZ block
                 abs_embedded_offset = embedded_rui.rsz_offset
                 
-                embedded_rui.data = rui.data[abs_embedded_offset:abs_embedded_offset + embedded_rui.data_size]
+                embedded_rui.data = memoryview(rui.data[abs_embedded_offset:abs_embedded_offset + embedded_rui.data_size])
         
             # Initialize userdata lookup structures
             mini_scn._rsz_userdata_dict = {rui.instance_id: rui for rui in mini_scn.rsz_userdata_infos}
             mini_scn._rsz_userdata_set = set(mini_scn._rsz_userdata_dict.keys())
         
         # Use the data portion for instance parsing
-        mini_scn.data = rui.data[embedded_header.data_offset:]
-        
+        mini_scn.data = memoryview(rui.data[embedded_header.data_offset:])
+
         mini_scn._warm_type_registry_cache()
 
         # Parse all instances at once using the proper method
@@ -494,7 +494,7 @@ def build_embedded_rsz(rui, type_registry=None):
                 nested_rui.instance_id = old_to_new_idx[nested_rui.instance_id]
             
             if hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
-                nested_rui.data = build_embedded_rsz(nested_rui, type_registry)
+                nested_rui.data = memoryview(build_embedded_rsz(nested_rui, type_registry))
             
             has_data = False
             if hasattr(nested_rui, 'data') and nested_rui.data and len(nested_rui.data) > 0:
@@ -756,7 +756,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
-                rui.data = build_embedded_rsz(rui, rsz_file.type_registry)
+                rui.data = memoryview(build_embedded_rsz(rui, rsz_file.type_registry))
             except Exception as e:
                 print(f"Error rebuilding embedded RSZ: {str(e)}")
                 traceback.print_exc()
@@ -842,7 +842,7 @@ def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
     for i, rui in enumerate(rsz_file.rsz_userdata_infos):
         try:
             if rui.rsz_offset <= 0 or rui.data_size <= 0:
-                rui.data = b""
+                rui.data = memoryview(b"")
                 rsz_file.set_rsz_userdata_string(rui, "Empty UserData")
                 continue
             
@@ -852,12 +852,12 @@ def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
             version = 0
             
             if abs_data_offset < rsz_base_offset or abs_data_offset >= len(data):
-                rui.data = b""
+                rui.data = memoryview(b"")
                 rsz_file.set_rsz_userdata_string(rui, "Invalid UserData offset")
                 continue
                 
             if abs_data_offset + rui.data_size <= len(data):
-                rui.data = data[abs_data_offset:abs_data_offset + rui.data_size]
+                rui.data = memoryview(data)[abs_data_offset:abs_data_offset + rui.data_size]
                 
                 if len(rui.data) >= 8:
                     magic, version = struct.unpack_from("<II", rui.data, 0)
@@ -879,10 +879,10 @@ def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
                     # Not a valid RSZ block, too small
                     rsz_file.set_rsz_userdata_string(rui, f"Not RSZ data - too small ({rui.data_size} bytes)")
             else:
-                rui.data = b""
+                rui.data = memoryview(b"")
                 rsz_file.set_rsz_userdata_string(rui, "Invalid UserData (out of bounds)")
         except Exception as e:
-            rui.data = b""
+            rui.data = memoryview(b"")
             rsz_file.set_rsz_userdata_string(rui, f"Error: {str(e)[:50]}...")
     
     # Find the end of userdata section by finding the highest offset + size

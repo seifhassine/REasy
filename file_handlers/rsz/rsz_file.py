@@ -217,9 +217,7 @@ class _NonArrayFieldParser:
         byte_count = count * 2
         start = self.pos
         end = start + byte_count
-        segment = self.data[start:end]
-        if hasattr(segment, "tobytes"):
-            segment = segment.tobytes()
+        segment = self.data[start:end].tobytes()
         value = sys.intern(segment.decode("utf-16-le")) if byte_count else ""
         self.pos = end
         return value
@@ -228,9 +226,7 @@ class _NonArrayFieldParser:
         count = self.read_value(self.unpack_uint, 4, align=4)
         start = self.pos
         end = start + count
-        segment = self.data[start:end]
-        if hasattr(segment, "tobytes"):
-            segment = segment.tobytes()
+        segment = self.data[start:end].tobytes()
         value = sys.intern(segment.decode("utf-8")) if count else ""
         self.pos = end
         return value
