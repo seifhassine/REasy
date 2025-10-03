@@ -1,24 +1,11 @@
 import os
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QPixmap, QPainter, QLinearGradient, QColor
-from PySide6.QtWidgets import (
-    QDialog,
-    QWidget,
-    QLabel,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFrame,
-    QPushButton,
-    QScrollArea,
-    QSpacerItem,
-    QSizePolicy,
-)
+from PySide6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QDesktopServices
+from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, 
+                               QScrollArea, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect)
 import sys
 from pathlib import Path
 from ui.styles import get_color_scheme
-from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QGraphicsDropShadowEffect
-
 
 def _get_base_dir() -> Path:
     if getattr(sys, "frozen", False):
@@ -172,21 +159,12 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Support for MHWilds TU3."),
-            ("New", "MDF Template Manager and material import/export."),
-            ("New", "UI support for some RSZ types such as Size, Point, UInt3.."),
-            ("New", "Legacy support for Python 3.11 (not recommended)"),
-            ("New", "Ability to change REasy theme accent color in settings."),
-            ("Improved", "You can now CTRL+V (paste) GUIDs, as well as undo/redo changes."),
-            ("Improved", "RSZ parser refactoring and minor optimizations."),
-            ("Improved", "Tree Find Dialog is now dockable."),
-            ("Improved", "Added option to select a separate RSZ JSON per file in RSZ Diff Viewer."),
-            ("Fixed", "Memory leak when closing tabs, leading to infinitely growing memory usage."),
-            ("Fixed", "An issue in RE7 RSZ template."),
-            ("Fixed", "In UVAR UI, GUID (memory) was the actual GUID (normal). Unified them into normal representation"),
-            ("Fixed", "MDF files were not visible in file browser."),
-            ("Fixed", "Auto-Updater failure on some specific Powershell versions."),
-           
+            ("New", "RSZ: Ability to highlight node texts in the UI."),
+            ("New", "RSZ: Added buttons for adding and opening referenced resources in RSZ files (Project Mode required)."),
+            ("Improved", "Slightly improved performance of RSZ parsing."),
+            ("Fixed", "Copy/Paste was failing when there are Uint3/Uint2 fields."),
+            ("Fixed", "Auto-updater failure when REasy folder path contains special characters."),
+            ("Fixed", "Copy/Paste corruptions in some cases for RSZ files with embedded RSZ.\nEmbedded RSZ are now fully supported (DMC5, RE2, RE3, RE7, RE Resistance)."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
