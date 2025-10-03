@@ -72,6 +72,9 @@ from i18n.language_manager import LanguageManager
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
+from ui.highlight_manager import HighlightManager
+from ui.highlight_menu_controller import HighlightMenuController
+from ui.highlight_delegate import HighlightDelegate
 from tools.hash_calculator import HashCalculator
 
 from utils.native_build import ensure_fast_pakresolve, ensure_fastmesh
@@ -291,9 +294,16 @@ class FileTab:
         self.tree.doubleClicked.connect(
             self.on_double_click
         )
+        self.tree.clicked.connect(
+            self.on_tree_click
+        )
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
 
         self.dark_mode = self.app.dark_mode if self.app else False
+        
+        self.highlight_manager = HighlightManager()
+        self.highlight_delegate = HighlightDelegate(self.highlight_manager, self.tree)
+        self.tree.setItemDelegate(self.highlight_delegate)
         self.search_dialog = None
         self.result_list = None
         self.initial_load_complete = False
@@ -419,6 +429,7 @@ class FileTab:
             
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
+            handler.highlight_manager = self.highlight_manager
             
             if hasattr(handler, "setup_tree"):
                 handler.setup_tree(self.tree)
@@ -547,6 +558,29 @@ class FileTab:
                 self.tree.setModel(model)
             except Exception as e:
                 print(f"Error populating tree: {e}")
+
+    def on_tree_click(self, index):
+        if not self.highlight_manager.enabled:
+            return
+        if not index.isValid():
+            return
+            
+        item_id = self._get_index_identifier(index)
+        
+        if self.highlight_manager.is_item_highlighted(item_id):
+            self.highlight_manager.remove_highlighted_item(item_id)
+        else:
+            self.highlight_manager.add_highlighted_item(item_id)
+        
+        self.tree.viewport().update()
+    
+    def _get_index_identifier(self, index):
+        path = []
+        current = index
+        while current.isValid():
+            path.append(current.row())
+            current = current.parent()
+        return tuple(reversed(path))
 
     def on_double_click(self, index):
         if not self.tree:
@@ -972,7 +1006,13 @@ class REasyEditorApp(QMainWindow):
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
+        
+        self.highlight_menu_controller = HighlightMenuController(self)
+        
         self._create_menus()
+        self._create_toolbar()
+        
+        self.notebook.currentChanged.connect(self._update_highlight_menu_visibility)
 
         self.status_bar = QStatusBar()
         self.status_bar.setContentsMargins(0, 0, 0, 0)
@@ -1221,6 +1261,18 @@ class REasyEditorApp(QMainWindow):
         donate_act = QAction(self.tr("Support REasy"), self)
         donate_act.triggered.connect(self.show_donate_dialog)
         donate_menu.addAction(donate_act)
+        
+        self.highlight_menu_controller.create_menu(menubar)
+
+    def _create_toolbar(self):
+        pass
+    
+    def _update_highlight_menu_visibility(self):
+        current_tab = self.get_active_tab()
+        is_rsz = False
+        if current_tab and hasattr(current_tab, 'handler'):
+            is_rsz = isinstance(current_tab.handler, RszHandler)
+        self.highlight_menu_controller.update_menu_visibility(is_rsz)
 
     def new_project(self):
         name, ok = QInputDialog.getText(self, "New Project", "Project name:")
@@ -1863,7 +1915,8 @@ class REasyEditorApp(QMainWindow):
             self._shared_find_dialog.activateWindow()
 
     def _on_tab_changed_for_find(self):
-        """Update the shared find dialog when tab changes"""
+        self._update_highlight_menu_visibility()
+        
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog and self._shared_find_dialog.isVisible():
             active = self.get_active_tab()
             if active:
@@ -1949,6 +2002,7 @@ class REasyEditorApp(QMainWindow):
             _ = self.notebook.addTab(tab.notebook_widget, tab_label)
             self.tabs[tab.notebook_widget] = tab
             self.notebook.setCurrentWidget(tab.notebook_widget)
+            self._update_highlight_menu_visibility()
             
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")

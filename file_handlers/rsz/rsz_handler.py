@@ -121,6 +121,9 @@ class RszHandler(BaseFileHandler):
         viewer.game_version = self.game_version
         viewer.show_advanced = self.show_advanced
         
+        if hasattr(self, 'highlight_manager') and self.highlight_manager:
+            viewer.tree.highlight_manager = self.highlight_manager
+
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)

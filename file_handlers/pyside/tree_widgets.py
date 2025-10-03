@@ -1,11 +1,9 @@
 import traceback
-from PySide6.QtWidgets import (QLabel, QTreeView,
-                               QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
-                               QLineEdit, QInputDialog, QApplication, QDialog)
+from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
+                               QHeaderView, QMenu, QMessageBox, QStyledItemDelegate, QHBoxLayout,
+                               QLineEdit, QInputDialog, QPalette, QApplication, QDialog, QPushButton)
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QWidget, QHBoxLayout
 from PySide6.QtCore import Qt, QModelIndex, QEvent
-
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
@@ -30,6 +28,33 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self.default_row_height = 24 
         
+    def paint(self, painter, option, index):
+        tree_view = self.parent()
+        should_highlight = False
+        
+        if tree_view and hasattr(tree_view, 'highlight_manager') and index.isValid():
+            highlight_manager = tree_view.highlight_manager
+            if highlight_manager:
+                item_id = self._get_index_identifier(index)
+                should_highlight = highlight_manager.is_item_highlighted(item_id)
+        
+        if should_highlight:
+            modified_option = option
+            modified_option.palette.setColor(QPalette.Text, tree_view.highlight_manager.highlight_color)
+            modified_option.palette.setColor(QPalette.HighlightedText, tree_view.highlight_manager.highlight_color)
+            super().paint(painter, modified_option, index)
+        else:
+            super().paint(painter, option, index)
+    
+    def _get_index_identifier(self, index):
+        """Create a unique identifier for a tree index"""
+        path = []
+        current = index
+        while current.isValid():
+            path.append(current.row())
+            current = current.parent()
+        return tuple(reversed(path))
+        
     def sizeHint(self, option, index):
         """Ensure consistent row height for all items"""
         size = super().sizeHint(option, index)
@@ -50,7 +75,8 @@ class AdvancedTreeView(QTreeView):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setItemDelegate(AdvancedStyledDelegate()) 
+        self.highlight_manager = None
+        self.setItemDelegate(AdvancedStyledDelegate(self))
         self.setUniformRowHeights(False)
         self.setExpandsOnDoubleClick(True)
         self.setHeaderHidden(True)  
@@ -70,6 +96,7 @@ class AdvancedTreeView(QTreeView):
         )
         self._translation_in_progress = False
         self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.clicked.connect(self._on_item_click)
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
@@ -111,6 +138,70 @@ class AdvancedTreeView(QTreeView):
     def keyReleaseEvent(self, event):
         """Track shift key release"""
         super().keyReleaseEvent(event)
+
+    def _on_item_click(self, index):
+        if not self.highlight_manager or not self.highlight_manager.enabled:
+            return
+        if not index.isValid():
+            return
+            
+        item_id = self._get_index_identifier(index)
+        
+        if self.highlight_manager.is_item_highlighted(item_id):
+            self.highlight_manager.remove_highlighted_item(item_id)
+            self._update_widget_highlight(index, False)
+        else:
+            self.highlight_manager.add_highlighted_item(item_id)
+            self._update_widget_highlight(index, True)
+        
+        self.viewport().update()
+    
+    def _get_index_identifier(self, index):
+        """Create a unique identifier for a tree index"""
+        path = []
+        current = index
+        while current.isValid():
+            path.append(current.row())
+            current = current.parent()
+        return tuple(reversed(path))
+    
+    def _update_widget_highlight(self, index, highlight):
+        if not self.highlight_manager:
+            return
+        
+        widget = self.indexWidget(index)
+        if not widget:
+            return
+        
+        self.setIndexWidget(index, None)
+        
+        item = index.internalPointer()
+        if not item:
+            return
+        
+        name_text = item.data[0] if item.data else ""
+        node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
+        data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
+        
+        new_widget = TreeWidgetFactory.create_widget(
+            node_type, data_obj, name_text, self, self.parent_modified_callback
+        )
+        
+        if new_widget:
+            if highlight:
+                labels = new_widget.findChildren(QLabel)
+                color = self.highlight_manager.highlight_color
+                color_str = f"rgb({color.red()}, {color.green()}, {color.blue()})"
+                
+                for label in labels:
+                    if label.textFormat() == Qt.RichText:
+                        original_text = label.text()
+                        highlighted_text = f'<span style="color: {color_str};">{original_text}</span>'
+                        label.setText(highlighted_text)
+                    else:
+                        label.setStyleSheet(f"QLabel {{ color: {color_str}; }}")
+            
+            self.setIndexWidget(index, new_widget)
 
     def setModelData(self, root_data):
         """
@@ -196,6 +287,12 @@ class AdvancedTreeView(QTreeView):
             )
             if widget:
                 self.setIndexWidget(index0, widget)
+                
+                if self.highlight_manager:
+                    item_id = self._get_index_identifier(index0)
+                    if self.highlight_manager.is_item_highlighted(item_id):
+                        self._update_widget_highlight(index0, True)
+                
                 if self.parent().handler.auto_resource_management and node_type == "ResourceData":
                     from file_handlers.pyside.value_widgets import StringInput
                     widget.findChild(StringInput).valueChanged.connect(
@@ -719,7 +816,6 @@ class AdvancedTreeView(QTreeView):
                 is_userdata_array = False
             is_normal_rsz = not parent.scn.has_embedded_rsz
             if is_userdata_array and is_normal_rsz:
-                from PySide6.QtWidgets import QInputDialog, QLineEdit
                 from file_handlers.pyside.component_selector import ComponentSelectorDialog
                 default_text = element_type or ""
                 text, ok = QInputDialog.getText(
@@ -1008,6 +1104,10 @@ class AdvancedTreeView(QTreeView):
                                                 self, self.parent_modified_callback)
         if widget:
             self.setIndexWidget(folder_index, widget)
+            if self.highlight_manager:
+                item_id = self._get_index_identifier(folder_index)
+                if self.highlight_manager.is_item_highlighted(item_id):
+                    self._update_widget_highlight(folder_index, True)
         self.expand(model.getIndexFromItem(parent_node))
         self.scrollTo(folder_index)
         return folder_index
@@ -1331,6 +1431,10 @@ class AdvancedTreeView(QTreeView):
             widget = TreeWidgetFactory.create_widget("resource", None, path, self, self.parent_modified_callback)
             if widget:
                 self.setIndexWidget(child_index, widget)
+                if self.highlight_manager:
+                    item_id = self._get_index_identifier(child_index)
+                    if self.highlight_manager.is_item_highlighted(item_id):
+                        self._update_widget_highlight(child_index, True)
             
             self.expand(resources_index)
             self.scrollTo(child_index)
@@ -1665,6 +1769,10 @@ class AdvancedTreeView(QTreeView):
         )
         if widget:
             self.setIndexWidget(go_index, widget)
+            if self.highlight_manager:
+                item_id = self._get_index_identifier(go_index)
+                if self.highlight_manager.is_item_highlighted(item_id):
+                    self._update_widget_highlight(go_index, True)
 
     def _add_children_recursively(self, go_index, children_data, model):
         go_item = go_index.internalPointer()
@@ -1714,7 +1822,6 @@ class AdvancedTreeView(QTreeView):
             return None
         
         try:
-            from PySide6.QtCore import QModelIndex
             
             # Find Data Block node
             data_block_item = None
@@ -1796,6 +1903,10 @@ class AdvancedTreeView(QTreeView):
             "component", None, name_text, self, self.parent_modified_callback
         )
         self.setIndexWidget(component_index, widget)
+        if self.highlight_manager:
+            item_id = self._get_index_identifier(component_index)
+            if self.highlight_manager.is_item_highlighted(item_id):
+                self._update_widget_highlight(component_index, True)
                         
         self.expand(components_index)
         self.scrollTo(component_index)
@@ -2502,7 +2613,6 @@ class AdvancedTreeView(QTreeView):
 
     def _show_import_randomization_dialog(self, parent_index):
         """Show dialog for import randomization options"""
-        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QCheckBox, QPushButton, QLabel
         
         dialog = QDialog(self)
         dialog.setWindowTitle("Import Options")
