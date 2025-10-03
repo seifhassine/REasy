@@ -1,9 +1,10 @@
 import traceback
 from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
-                               QHeaderView, QMenu, QMessageBox, QStyledItemDelegate, QHBoxLayout,
-                               QLineEdit, QInputDialog, QPalette, QApplication, QDialog, QPushButton)
-from PySide6.QtGui import QCursor
+                               QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
+                               QLineEdit, QInputDialog, QApplication, QDialog, QPushButton)
+from PySide6.QtGui import QCursor, QPalette
 from PySide6.QtCore import Qt, QModelIndex, QEvent
+
 
 from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
