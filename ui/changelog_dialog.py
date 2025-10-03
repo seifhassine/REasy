@@ -165,6 +165,8 @@ class ChangelogDialog(QDialog):
             ("Fixed", "Copy/Paste was failing when there are Uint3/Uint2 fields."),
             ("Fixed", "Auto-updater failure when REasy folder path contains special characters."),
             ("Fixed", "Copy/Paste corruptions in some cases for RSZ files with embedded RSZ.\nEmbedded RSZ are now fully supported (DMC5, RE2, RE3, RE7, RE Resistance)."),
+            ("Planned", "Mod Updater (Attempts to update as many files as possible)."),
+            ("Planned", "Support for PFB and USER files in RSZ Diff Viewer."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
