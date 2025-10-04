@@ -1,6 +1,6 @@
 import struct
 from typing import Optional, Dict, Any
-
+import os
 from file_handlers.base_handler import BaseFileHandler
 from .cfil_file import CfilFile, CFIL_MAGIC
 
@@ -9,6 +9,7 @@ class CfilHandler(BaseFileHandler):
     def __init__(self):
         super().__init__()
         self.cfil: Optional[CfilFile] = None
+        self.filepath = None
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
@@ -22,7 +23,8 @@ class CfilHandler(BaseFileHandler):
 
     def read(self, data: bytes):
         f = CfilFile()
-        if not f.read(data):
+        version = int(os.path.splitext(self.filepath.lower())[1][1:]) if self.filepath else 0
+        if not f.read(data, version):
             raise ValueError("Failed to parse CFIL")
         self.cfil = f
         self.modified = False
@@ -35,8 +37,7 @@ class CfilHandler(BaseFileHandler):
         return result
 
     def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        if hasattr(tree, '__class__') and tree.__class__.__name__ == 'QTreeView':
-            return
+        pass
 
     def get_context_menu(self, tree, item, meta: dict):
         return None

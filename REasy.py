@@ -15,6 +15,7 @@ from file_handlers.factory import get_handler_for_data
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.rsz.rsz_handler import RszHandler  
 from file_handlers.mdf.mdf_handler import MdfHandler  
+from file_handlers.cfil.cfil_handler import CfilHandler
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
@@ -427,6 +428,9 @@ class FileTab:
             if isinstance(handler, MdfHandler):
                 handler.filepath = self.filename or ""
             
+            if isinstance(handler, CfilHandler):
+                handler.filepath = self.filename or ""
+                
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
             handler.highlight_manager = self.highlight_manager

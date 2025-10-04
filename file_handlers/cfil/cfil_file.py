@@ -11,8 +11,10 @@ class CfilFile:
 
     def __init__(self):
         self.version: int = 7
-        self.ukn_offset: int = 0
-        self.layer_guid: uuid.UUID = uuid.UUID(int=0)
+        self.status: int = 0
+        self.layerGuid: uuid.UUID = uuid.UUID(int=0)
+        self.materialIdGuid: uuid.UUID = uuid.UUID(int=0)
+        self.materialAttributeGuids: List[uuid.UUID] = []
         self.mask_guids: List[uuid.UUID] = []
         self.layer_index: int = 0
         self.mask_ids: List[int] = []
@@ -25,7 +27,7 @@ class CfilFile:
     def _write_uuid_le(handler: BinaryHandler, value: uuid.UUID):
         handler.write_bytes(value.bytes_le)
 
-    def read(self, data: bytes) -> bool:
+    def read(self, data: bytes, version: int = 0) -> bool:
         handler = BinaryHandler(bytearray(data))
 
         if len(data) < 4:
@@ -35,32 +37,37 @@ class CfilFile:
         if magic != CFIL_MAGIC:
             raise ValueError("Invalid CFIL magic")
 
-        with handler.seek_temp(4):
-            try:
-                mask_count = handler.read('<i')
-                reserved8 = handler.read('<Q')
-                layer_guid = self._read_uuid_le(handler)
-                handler.skip(16)
-                guid_list_off = handler.read('<Q')
-                ukn_off = handler.read('<Q')
-
-                if mask_count >= 0 and guid_list_off >= 0x40 and guid_list_off % 8 == 0:
-                    data_len = len(handler.data)
-                    guid_bytes = mask_count * 16
-                    if guid_list_off + guid_bytes <= data_len:
-                        self.version = 7
-                        self.layer_guid = layer_guid
-                        self.ukn_offset = ukn_off
-                        self.mask_guids = []
-                        handler.seek(guid_list_off)
-                        for _ in range(mask_count):
-                            self.mask_guids.append(self._read_uuid_le(handler))
-                        return True
-            except Exception:
-                pass
+        if version == 0:
+            version = 7
+        
+        self.version = version
+        
+        if version == 7:
+            numMaskGuids = handler.read('<i')
+            numMaterialAttributeGuids = handler.read('<i')
+            status = handler.read('<I')
+            layerGuid = self._read_uuid_le(handler)
+            materialIdGuid = self._read_uuid_le(handler)
+            maskGuidsTblOffset = handler.read('<Q')
+            materialAttributeGuidsOffset = handler.read('<Q')
+            
+            self.status = status
+            self.layerGuid = layerGuid
+            self.materialIdGuid = materialIdGuid
+            
+            handler.seek(maskGuidsTblOffset)
+            self.mask_guids = []
+            for _ in range(numMaskGuids):
+                self.mask_guids.append(self._read_uuid_le(handler))
+            
+            handler.seek(materialAttributeGuidsOffset)
+            self.materialAttributeGuids = []
+            for _ in range(numMaterialAttributeGuids):
+                self.materialAttributeGuids.append(self._read_uuid_le(handler))
+            
+            return True
 
         handler.seek(4)
-        self.version = 3
         self.layer_index = handler.read('<B')
         mask_count_b = handler.read('<B')
         handler.skip(2)
@@ -97,14 +104,22 @@ class CfilFile:
             return bytes(handler.data)
 
         mask_count = len(self.mask_guids or [])
+        mat_attr_count = len(self.materialAttributeGuids or [])
+        maskGuidsTblOffset = 64
+        materialAttributeGuidsOffset = maskGuidsTblOffset + mask_count * 16
+        
         handler.write('<i', mask_count)
-        handler.write('<Q', 0)
-        self._write_uuid_le(handler, self.layer_guid or uuid.UUID(int=0))
-        handler.write_bytes(b"\x00" * 16)
-        guid_list_off = 64
-        handler.write('<Q', guid_list_off)
-        handler.write('<Q', guid_list_off + mask_count * 16)
+        handler.write('<i', mat_attr_count)
+        handler.write('<I', self.status)
+        self._write_uuid_le(handler, self.layerGuid or uuid.UUID(int=0))
+        self._write_uuid_le(handler, self.materialIdGuid or uuid.UUID(int=0))
+        handler.write('<Q', maskGuidsTblOffset)
+        handler.write('<Q', materialAttributeGuidsOffset)
+        
         for g in (self.mask_guids or []):
             self._write_uuid_le(handler, g)
+        for g in (self.materialAttributeGuids or []):
+            self._write_uuid_le(handler, g)
+        
         return bytes(handler.data)
 
