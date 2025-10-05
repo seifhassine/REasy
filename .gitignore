@@ -39,3 +39,4 @@ Thumbs.db
 !/tests/test_scn_parser.py
 !/tests/test_motbank_roundtrip.py
 resources/i18n/REasy_zh-CN.qm
+secrets
