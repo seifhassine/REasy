@@ -159,12 +159,14 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "RSZ: Ability to highlight node texts in the UI."),
-            ("New", "RSZ: Added buttons for adding and opening referenced resources in RSZ files (Project Mode required)."),
-            ("Improved", "Slightly improved performance of RSZ parsing."),
-            ("Fixed", "Copy/Paste was failing when there are Uint3/Uint2 fields."),
-            ("Fixed", "Auto-updater failure when REasy folder path contains special characters."),
-            ("Fixed", "Copy/Paste corruptions in some cases for RSZ files with embedded RSZ.\nEmbedded RSZ are now fully supported (DMC5, RE2, RE3, RE7, RE Resistance)."),
+            ("New", "Auto resource management for MHWilds (Use the latest rszmhwilds.json)."),
+            ("Improved", "Full support for CFIL files."),
+            ("Improved", "Full support for MDF files."),
+            ("Improved", "Full support for MSG files (support for RE7 as well as PS2 RE4 versions."),
+            ("Improved", "Identified more fields in MHWilds RSZ template."),
+            ("Improved", "Updated MHWilds enums."),
+            ("Fixed", "'Ignore Mod Paks' in PAK Scanner was causing subsequent legitimate PAKs to be skipped. Conditions are now also relaxed at the cost of accuracy."),
+            ("Planned", "CDEF support."),
             ("Planned", "Mod Updater (Attempts to update as many files as possible)."),
             ("Planned", "Support for PFB and USER files in RSZ Diff Viewer."),
         ]

@@ -1,4 +1,4 @@
-# REasy Editor v0.5.6 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
+# REasy Editor v0.5.7 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
