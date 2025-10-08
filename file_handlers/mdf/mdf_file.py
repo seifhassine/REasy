@@ -230,7 +230,7 @@ class TexHeader:
     hash: int = 0
     ascii_hash: int = 0
     tex_path: str = ""
-    locked: int = 0  # TODO: version >= 13, after tex_path 32bit and before last reserved 32 bits
+    locked: int = 0
 
     def read(self, h: BinaryHandler, version: int):
         type_off = h.read_int64()
@@ -246,12 +246,8 @@ class TexHeader:
             with h.seek_jump_back(path_off):
                 self.tex_path = h.read_wstring()
         if version >= 13:
-            try:
-                data_len = len(h.data)
-            except Exception:
-                data_len = None
-            if data_len is None or (h.tell + 8) <= data_len:
-                h.skip(8)
+            self.locked = h.read_int32()
+            h.skip(4)
 
     def write(self, h: BinaryHandler, version: int):
         if self.tex_type:
@@ -269,7 +265,8 @@ class TexHeader:
         else:
             h.write_uint64(0)
         if version >= 13:
-            h.write_bytes(b"\x00" * 8)
+            h.write_int32(self.locked)
+            h.write_int32(0)
 
 
 @dataclass

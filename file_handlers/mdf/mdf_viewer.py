@@ -214,10 +214,11 @@ class MdfViewer(QWidget):
 
 		textures_tab = QWidget()
 		tg = QGridLayout(textures_tab)
-		self.textures_table = QTableWidget(0, 2)
-		self.textures_table.setHorizontalHeaderLabels(["Type", "Path"])
+		self.textures_table = QTableWidget(0, 3)
+		self.textures_table.setHorizontalHeaderLabels(["Type", "Path", "Locked"])
 		self.textures_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 		self.textures_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+		self.textures_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 		self.textures_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.textures_table.itemChanged.connect(self._on_texture_changed)
 		tg.addWidget(self.textures_table, 0, 0, 1, 3)
@@ -234,11 +235,12 @@ class MdfViewer(QWidget):
 		self.params_info_label = QLabel("")
 		self.params_info_label.setWordWrap(True)
 		pg.addWidget(self.params_info_label, 0, 0, 1, 3)
-		self.params_table = QTableWidget(0, 7)
-		self.params_table.setHorizontalHeaderLabels(["Name", "CompCount", "X", "Y", "Z", "W", "Color"])
+		self.params_table = QTableWidget(0, 8)
+		self.params_table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked", "X", "Y", "Z", "W", "Color"])
 		self.params_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 		self.params_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-		for c in range(2, 7): self.params_table.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
+		self.params_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+		for c in range(3, 8): self.params_table.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
 		self.params_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.params_table.itemChanged.connect(self._on_param_changed)
 		self.params_table.itemClicked.connect(self._on_param_clicked)
@@ -708,6 +710,11 @@ class MdfViewer(QWidget):
 		for r, t in enumerate(md.textures):
 			self.textures_table.setItem(r, 0, QTableWidgetItem(t.tex_type))
 			self.textures_table.setItem(r, 1, QTableWidgetItem(t.tex_path))
+			locked_item = QTableWidgetItem()
+			locked_item.setFlags(locked_item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+			locked_item.setCheckState(Qt.Checked if t.locked else Qt.Unchecked)
+			locked_item.setFlags(locked_item.flags() & ~Qt.ItemIsEditable)
+			self.textures_table.setItem(r, 2, locked_item)
 		self.textures_table.blockSignals(False)
 
 		self.params_table.blockSignals(True)
@@ -903,13 +910,21 @@ class MdfViewer(QWidget):
 							if "red" in nl: R = val
 							elif "green" in nl: G = val
 							elif "blue" in nl: B = val
-					qcol = QColor(int(max(0.0, min(1.0, R)) * 255), int(max(0.0, min(1.0, G)) * 255), int(max(0.0, min(1.0, B)) * 255))
-					if span_len > 1:
-						self.params_table.setSpan(start, 6, span_len, 1)
-					item = self.params_table.item(start, 6)
+				qcol = QColor(int(max(0.0, min(1.0, R)) * 255), int(max(0.0, min(1.0, G)) * 255), int(max(0.0, min(1.0, B)) * 255))
+				if span_len > 1:
+					self.params_table.setSpan(start, 7, span_len, 1)
+				item = self.params_table.item(start, 7)
+				if item is None:
+					item = QTableWidgetItem("")
+					self.params_table.setItem(start, 7, item)
+					item.setBackground(qcol)
+					item.setToolTip(f"LayerColor RGB: {R:.3f},{G:.3f},{B:.3f} (click to change)")
+					item.setFlags((item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
+				else:
+					item = self.params_table.item(start, 7)
 					if item is None:
 						item = QTableWidgetItem("")
-						self.params_table.setItem(start, 6, item)
+						self.params_table.setItem(start, 7, item)
 					item.setBackground(qcol)
 					item.setToolTip(f"LayerColor RGB: {R:.3f},{G:.3f},{B:.3f} (click to change)")
 					item.setFlags((item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
@@ -1023,11 +1038,12 @@ class MdfViewer(QWidget):
 		if not (0 <= tmi < len(m.materials[mi].textures)):
 			return
 		tex = m.materials[mi].textures[tmi]
-		val = item.text()
 		if item.column() == 0:
-			tex.tex_type = val
-		else:
-			tex.tex_path = val
+			tex.tex_type = item.text()
+		elif item.column() == 1:
+			tex.tex_path = item.text()
+		elif item.column() == 2:
+			tex.locked = 1 if item.checkState() == Qt.Checked else 0
 		self.modified = True
 
 	def _on_param_changed(self, item):
@@ -1058,8 +1074,10 @@ class MdfViewer(QWidget):
 				self._refresh_param_row(mi, pi)
 				self._update_params_info(m.materials[mi])
 				self._apply_layercolor_spans(m.materials[mi])
-		elif c >= 2 and c <= 5:
-			idx = c - 2
+		elif c == 2:
+			p.component_locked = 1 if item.checkState() == Qt.Checked else 0
+		elif c >= 3 and c <= 6:
+			idx = c - 3
 			if idx < 0 or idx >= p.component_count:
 				return
 			arr = list(p.parameter)
@@ -1074,7 +1092,7 @@ class MdfViewer(QWidget):
 			if (p.name or "").lower().startswith("layercolor_"):
 				self._apply_layercolor_spans(md_local)
 			self._update_params_info(md_local)
-		elif c == 6:
+		elif c == 7:
 			pass
 		self.modified = True
 
@@ -1088,6 +1106,11 @@ class MdfViewer(QWidget):
 	def _refresh_param_row_internal(self, row: int, p):
 		self.params_table.setItem(row, 0, QTableWidgetItem(p.name))
 		self.params_table.setItem(row, 1, QTableWidgetItem(str(p.component_count)))
+		comp_locked_item = QTableWidgetItem()
+		comp_locked_item.setFlags(comp_locked_item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+		comp_locked_item.setCheckState(Qt.Checked if p.component_locked else Qt.Unchecked)
+		comp_locked_item.setFlags(comp_locked_item.flags() & ~Qt.ItemIsEditable)
+		self.params_table.setItem(row, 2, comp_locked_item)
 		x, y, z, w = p.parameter
 		values = [x, y, z, w]
 		for i in range(4):
@@ -1098,7 +1121,7 @@ class MdfViewer(QWidget):
 			else:
 				item.setText("")
 				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-			self.params_table.setItem(row, 2 + i, item)
+			self.params_table.setItem(row, 3 + i, item)
 		color_item = QTableWidgetItem("")
 		name_lower = (p.name or "").lower()
 		is_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
@@ -1125,10 +1148,10 @@ class MdfViewer(QWidget):
 		else:
 			color_item.setFlags((color_item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
 			color_item.setText("")
-		self.params_table.setItem(row, 6, color_item)
+		self.params_table.setItem(row, 7, color_item)
 
 	def _on_param_clicked(self, item):
-		if item.column() != 6:
+		if item.column() != 7:
 			return
 		m = self.handler.mdf
 		mi = self._get_current_index()
@@ -1157,11 +1180,11 @@ class MdfViewer(QWidget):
 					p.parameter = (picked.redF(), picked.greenF(), picked.blueF(), 0.0)
 				self.params_table.blockSignals(True)
 				vx, vy, vz, vw = p.parameter
-				self.params_table.setItem(pi, 2, QTableWidgetItem(str(vx)))
-				self.params_table.setItem(pi, 3, QTableWidgetItem(str(vy)))
-				self.params_table.setItem(pi, 4, QTableWidgetItem(str(vz)))
+				self.params_table.setItem(pi, 3, QTableWidgetItem(str(vx)))
+				self.params_table.setItem(pi, 4, QTableWidgetItem(str(vy)))
+				self.params_table.setItem(pi, 5, QTableWidgetItem(str(vz)))
 				if p.component_count == 4:
-					self.params_table.setItem(pi, 5, QTableWidgetItem(str(vw)))
+					self.params_table.setItem(pi, 6, QTableWidgetItem(str(vw)))
 				self.params_table.blockSignals(False)
 				self._refresh_param_row(mi, pi)
 				self.modified = True
