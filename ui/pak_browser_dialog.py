@@ -35,8 +35,9 @@ class PakBrowserDialog(QDialog):
 		self.dir_edit.setPlaceholderText(self.tr("Game directory (optional, for scan)"))
 		top.addWidget(self.dir_edit, 1)
 		top.addWidget(QPushButton(self.tr("Browse…"), clicked=self._choose_dir))
-		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs"), self)
+		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"), self)
 		self.ignore_mods_cb.setChecked(True)
+		self.ignore_mods_cb.toggled.connect(self._on_ignore_mods_toggled)
 		top.addWidget(self.ignore_mods_cb)
 		top.addWidget(QPushButton(self.tr("Scan"), clicked=self._scan_dir))
 
@@ -135,7 +136,23 @@ class PakBrowserDialog(QDialog):
 		for p in paks:
 			self.pak_list.addItem(p)
 		self._refresh_index()
+		if not self._base_paths and not self.ignore_mods_cb.isChecked():
+			manifest_only = self._auto_merge_manifest()
+			if manifest_only:
+				self._base_paths = manifest_only
+				self._refresh_index()
 		self._recompute_display()
+
+	def _on_ignore_mods_toggled(self, checked: bool):
+		root = self.dir_edit.text().strip()
+		if root and os.path.isdir(root):
+			self._scan_dir()
+			return
+		if not checked and not self._base_paths:
+			manifest_only = self._auto_merge_manifest()
+			if manifest_only:
+				self._base_paths = manifest_only
+		self._refresh_index()
 
 	def _add_paks(self):
 		files, _ = QFileDialog.getOpenFileNames(self, self.tr("Add PAK files"), filter=self.tr("PAK files (*.pak)"))
@@ -144,6 +161,11 @@ class PakBrowserDialog(QDialog):
 				self.pak_list.addItem(f)
 		if files:
 			self._refresh_index()
+			if not self._base_paths and not self.ignore_mods_cb.isChecked():
+				manifest_only = self._auto_merge_manifest()
+				if manifest_only:
+					self._base_paths = manifest_only
+					self._refresh_index()
 
 	def _remove_paks(self):
 		for it in self.pak_list.selectedItems():
@@ -330,8 +352,7 @@ class PakBrowserDialog(QDialog):
 		try:
 
 			known = list(set(self._base_paths)) if self._base_paths else []
-			if not known:
-
+			if not known and not self.ignore_mods_cb.isChecked():
 				manifest_only = self._auto_merge_manifest()
 				if manifest_only:
 					known = manifest_only

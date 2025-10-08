@@ -82,7 +82,7 @@ class ProjectManager(QDockWidget):
         self.path_label.setMinimumSize(20, 20)
         bar.addWidget(QPushButton("Browse…", clicked=self._browse))
         # PAK-specific controls
-        self.pak_ignore_mods_cb = QCheckBox("Ignore mod PAKs")
+        self.pak_ignore_mods_cb = QCheckBox("Ignore mod PAKs (not 100% accurate)")
         self.pak_ignore_mods_cb.setChecked(True)
         self.btn_scan_paks = QPushButton("Scan PAKs", clicked=self._scan_paks)
         bar.addWidget(self.pak_ignore_mods_cb)
