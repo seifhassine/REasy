@@ -75,15 +75,13 @@ class MdfClipboard:
             "mat_name": header.mat_name,
             "mmtr_path": header.mmtr_path,
             "shader_type": int(header.shader_type),
-            "alpha_flags": int(header.alpha_flags),
+            "material_flags": int(header.material_flags),
         }
         if file_version == 6:
             header_data["ukn_re7"] = int(header.ukn_re7)
         if file_version >= 31:
-            header_data["ukn"] = int(header.ukn)
-            header_data["ukn1"] = int(header.ukn1)
-        if header.texID_count > 0:
-            header_data["texID_count"] = int(header.texID_count)
+            header_data["BakeTextureArraySize"] = int(header.BakeTextureArraySize)
+            header_data["shaderLODNum"] = int(header.shaderLODNum)
 
         textures = [
             {
@@ -97,7 +95,7 @@ class MdfClipboard:
             {
                 "name": param.name,
                 "component_count": int(param.component_count),
-                "component_ukn": int(param.component_ukn),
+                "component_locked": int(param.component_locked),
                 "gap_size": int(param.gap_size),
                 "parameter": [float(v) for v in param.parameter],
             }
@@ -112,10 +110,10 @@ class MdfClipboard:
             for name_hdr, data_hdr in mat.gpu_buffers
         ]
 
-        tex_id_arrays: List[Dict[str, Any]] = []
-        if file_version >= 31 and header.texID_count > 0:
-            for counts, elems in mat.tex_id_arrays:
-                tex_id_arrays.append(
+        shader_lod_redirects: List[Dict[str, Any]] = []
+        if file_version >= 31 and header.shaderLODNum > 0:
+            for counts, elems in mat.shader_lod_redirects:
+                shader_lod_redirects.append(
                     {
                         "counts": [int(v) for v in counts],
                         "elements": [int(v) for v in elems],
@@ -127,7 +125,7 @@ class MdfClipboard:
             "textures": textures,
             "parameters": parameters,
             "gpu_buffers": gpu_buffers,
-            "tex_id_arrays": tex_id_arrays,
+            "shader_lod_redirects": shader_lod_redirects,
         }
 
     @classmethod
@@ -137,12 +135,12 @@ class MdfClipboard:
         header.mat_name = str(header_info.get("mat_name", ""))
         header.mmtr_path = str(header_info.get("mmtr_path", ""))
         header.shader_type = int(header_info.get("shader_type", 0))
-        header.alpha_flags = int(header_info.get("alpha_flags", 0))
+        header.material_flags = int(header_info.get("material_flags", 0))
         if target_version == 6:
             header.ukn_re7 = int(header_info.get("ukn_re7", 0))
         if target_version >= 31:
-            header.ukn = int(header_info.get("ukn", 0))
-            header.ukn1 = int(header_info.get("ukn1", 0))
+            header.BakeTextureArraySize = int(header_info.get("BakeTextureArraySize", 0))
+            header.shaderLODNum = int(header_info.get("shaderLODNum", 0))
 
         textures: List[TexHeader] = []
         for tex_info in data.get("textures", []):
@@ -160,7 +158,7 @@ class MdfClipboard:
             param = ParamHeader()
             param.name = str(par_info.get("name", ""))
             param.component_count = int(par_info.get("component_count", 0))
-            param.component_ukn = int(par_info.get("component_ukn", 0))
+            param.component_locked = int(par_info.get("component_locked", 0))
             param.gap_size = int(par_info.get("gap_size", 0))
             raw_values = par_info.get("parameter", [0.0, 0.0, 0.0, 0.0])
             values = list(raw_values) if isinstance(raw_values, (list, tuple)) else [raw_values]
@@ -180,25 +178,25 @@ class MdfClipboard:
                 data_hdr.name = str(gpbf_info.get("data", ""))
                 gpu_buffers.append((name_hdr, data_hdr))
 
-        tex_id_arrays: List[tuple[List[int], List[int]]] = []
+        shader_lod_redirects: List[tuple[List[int], List[int]]] = []
         if target_version >= 31:
-            for arr_info in data.get("tex_id_arrays", []):
+            for arr_info in data.get("shader_lod_redirects", []):
                 if not isinstance(arr_info, dict):
                     continue
                 counts = [int(v) for v in arr_info.get("counts", [])]
                 elems = [int(v) for v in arr_info.get("elements", [])]
-                tex_id_arrays.append((counts, elems))
-            header.texID_count = max(len(tex_id_arrays), int(header_info.get("texID_count", 0)))
-            while len(tex_id_arrays) < header.texID_count:
-                tex_id_arrays.append(([], []))
+                shader_lod_redirects.append((counts, elems))
+            header.shaderLODNum = max(len(shader_lod_redirects), int(header_info.get("shaderLODNum", 0)))
+            while len(shader_lod_redirects) < header.shaderLODNum:
+                shader_lod_redirects.append(([], []))
         else:
-            header.texID_count = 0
+            header.shaderLODNum = 0
 
         mat = MatData()
         mat.header = header
         mat.textures = textures
         mat.parameters = parameters
         mat.gpu_buffers = gpu_buffers if target_version >= 19 else []
-        mat.tex_id_arrays = tex_id_arrays if target_version >= 31 else []
+        mat.shader_lod_redirects = shader_lod_redirects if target_version >= 31 else []
         return mat
 

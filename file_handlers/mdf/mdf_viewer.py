@@ -153,7 +153,13 @@ class MdfViewer(QWidget):
 		self.shader_combo.addItems(self._shader_names)
 		self.shader_combo.currentIndexChanged.connect(self._on_shader_changed)
 		ov.addWidget(self.shader_combo, 2, 1)
-		self.flags_group = QGroupBox("Alpha Flags")
+		self.bake_texture_label = QLabel("BakeTextureArraySize")
+		ov.addWidget(self.bake_texture_label, 3, 0)
+		self.bake_texture_spin = QSpinBox()
+		self.bake_texture_spin.setRange(0, 2147483647)
+		self.bake_texture_spin.valueChanged.connect(self._on_bake_texture_changed)
+		ov.addWidget(self.bake_texture_spin, 3, 1)
+		self.flags_group = QGroupBox("Material Flags")
 		fg = QGridLayout(self.flags_group)
 		self._flags1_names = [
 			"BaseTwoSideEnable","BaseAlphaTestEnable","ShadowCastDisable","VertexShaderUsed",
@@ -164,16 +170,19 @@ class MdfViewer(QWidget):
 		for i, cb in enumerate(self.flags1_checks):
 			cb.stateChanged.connect(self._on_flags_changed)
 			fg.addWidget(cb, 0 + (i // 5), i % 5)
-		fg.addWidget(QLabel("Tessellation"), 2, 0)
+		self.transparent_zpostpass_check = QCheckBox("TransparentZPostPassEnable")
+		self.transparent_zpostpass_check.stateChanged.connect(self._on_flags_changed)
+		fg.addWidget(self.transparent_zpostpass_check, 2, 0, 1, 2)
+		fg.addWidget(QLabel("Tessellation"), 3, 0)
 		self.tess_spin = QSpinBox()
 		self.tess_spin.setRange(0, 63)
 		self.tess_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.tess_spin, 2, 1)
-		fg.addWidget(QLabel("Phong"), 2, 2)
+		fg.addWidget(self.tess_spin, 3, 1)
+		fg.addWidget(QLabel("Phong"), 3, 2)
 		self.phong_spin = QSpinBox()
 		self.phong_spin.setRange(0, 255)
 		self.phong_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.phong_spin, 2, 3)
+		fg.addWidget(self.phong_spin, 3, 3)
 		self._flags2_names = [
 			"RoughTransparentEnable","ForcedAlphaTestEnable","AlphaTestEnable","SSSProfileUsed",
 			"EnableStencilPriority","RequireDualQuaternion","PixelDepthOffsetUsed","NoRayTracing"
@@ -181,8 +190,26 @@ class MdfViewer(QWidget):
 		self.flags2_checks = [QCheckBox(n) for n in self._flags2_names]
 		for i, cb in enumerate(self.flags2_checks):
 			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 3 + (i // 4), i % 4)
-		ov.addWidget(self.flags_group, 3, 0, 1, 4)
+			fg.addWidget(cb, 4 + (i // 4), i % 4)
+		
+		self._flags3_names = [
+			"TransparentDistortionEnable","AlphaUsed","BakeTextureUseSecondaryUV","ForwardPrepassEnabled",
+			"ForcedAlphaTestEnableShadow","TessellationZPrepassDisable","DitheredLodTransitionEnable","reserved0"
+		]
+		self.flags3_checks = [QCheckBox(n) for n in self._flags3_names]
+		for i, cb in enumerate(self.flags3_checks):
+			cb.stateChanged.connect(self._on_flags_changed)
+			fg.addWidget(cb, 6 + (i // 4), i % 4)
+		
+		self.transparent_priority_bias_label = QLabel("TransparentPriorityBias")
+		fg.addWidget(self.transparent_priority_bias_label, 8, 0)
+		self.transparent_priority_bias_spin = QSpinBox()
+		self.transparent_priority_bias_spin.setRange(-128, 127)
+		self.transparent_priority_bias_spin.valueChanged.connect(self._on_flags_changed)
+		fg.addWidget(self.transparent_priority_bias_spin, 8, 1)
+		
+		ov.addWidget(self.flags_group, 4, 0, 1, 4)
+		ov.setRowStretch(5, 1)
 		self.tabs.addTab(overview, "Overview")
 
 		textures_tab = QWidget()
@@ -244,21 +271,21 @@ class MdfViewer(QWidget):
 		gg.addWidget(self.gpbf_del_btn, 1, 2)
 		self.gpbf_tab_idx = self.tabs.addTab(gpbf_tab, "GPU Buffers")
 
-		self.texids_tab = QWidget()
-		tx = QGridLayout(self.texids_tab)
-		tx.addWidget(QLabel("TexID Count"), 0, 0)
-		self.texid_count_spin = QSpinBox()
-		self.texid_count_spin.setRange(0, 2048)
-		self.texid_count_spin.valueChanged.connect(self._on_texid_count_changed)
-		tx.addWidget(self.texid_count_spin, 0, 1)
-		self.texids_table = QTableWidget(0, 2)
-		self.texids_table.setHorizontalHeaderLabels(["Texture IDs", "Uknown IDs (?)"])
-		self.texids_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-		self.texids_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-		self.texids_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
-		self.texids_table.itemChanged.connect(self._on_texids_changed)
-		tx.addWidget(self.texids_table, 1, 0, 1, 3)
-		self.texids_tab_idx = self.tabs.addTab(self.texids_tab, "Tex IDs")
+		self.shaderLODRedirects_tab = QWidget()
+		tx = QGridLayout(self.shaderLODRedirects_tab)
+		tx.addWidget(QLabel("ShaderLOD Count"), 0, 0)
+		self.shaderLOD_count_spin = QSpinBox()
+		self.shaderLOD_count_spin.setRange(0, 2048)
+		self.shaderLOD_count_spin.valueChanged.connect(self._on_shaderLOD_count_changed)
+		tx.addWidget(self.shaderLOD_count_spin, 0, 1)
+		self.shaderLODRedirects_table = QTableWidget(0, 2)
+		self.shaderLODRedirects_table.setHorizontalHeaderLabels(["Texture Table", "Byte Buffer Table"])
+		self.shaderLODRedirects_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+		self.shaderLODRedirects_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+		self.shaderLODRedirects_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+		self.shaderLODRedirects_table.itemChanged.connect(self._on_shaderLODRedirects_changed)
+		tx.addWidget(self.shaderLODRedirects_table, 1, 0, 1, 3)
+		self.shaderLODRedirects_tab_idx = self.tabs.addTab(self.shaderLODRedirects_tab, "Shader LOD Redirects")
 
 		self.materials_table.itemSelectionChanged.connect(self._on_select_material)
 
@@ -411,6 +438,15 @@ class MdfViewer(QWidget):
 		m.materials[i].header.shader_type = idx
 		self.modified = True
 		self._update_params_info(m.materials[i])
+
+	def _on_bake_texture_changed(self, value: int):
+		rows = self.materials_table.selectionModel().selectedRows()
+		m = self.handler.mdf
+		if not m or not rows:
+			return
+		i = rows[0].row()
+		m.materials[i].header.BakeTextureArraySize = value
+		self.modified = True
 	def _on_flags_changed(self, *_):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
@@ -418,34 +454,100 @@ class MdfViewer(QWidget):
 			return
 		i = rows[0].row()
 		h = m.materials[i].header
+		version = self._current_file_version()
+		
 		alpha = 0
 		for bit, cb in enumerate(self.flags1_checks):
 			if cb.isChecked():
 				alpha |= (1 << bit)
-		alpha |= (self.tess_spin.value() & 0x3F) << 10
+		
+		if version >= 31:
+			if self.transparent_zpostpass_check.isChecked():
+				alpha |= (1 << 10)
+			alpha |= (self.tess_spin.value() & 0x1F) << 11
+		else:
+			alpha |= (self.tess_spin.value() & 0x3F) << 10
+		
 		alpha |= (self.phong_spin.value() & 0xFF) << 16
+		
 		for bit, cb in enumerate(self.flags2_checks):
 			if cb.isChecked():
 				alpha |= (1 << (24 + bit))
-		h.alpha_flags = alpha
+		
+		if version >= 31:
+			for bit, cb in enumerate(self.flags3_checks):
+				if cb.isChecked():
+					alpha |= (1 << (32 + bit))
+			
+			bias = self.transparent_priority_bias_spin.value()
+			if bias < 0:
+				bias = (1 << 8) + bias
+			alpha |= (bias & 0xFF) << 40
+		
+		h.material_flags = alpha
 		self.modified = True
 
 	def _update_flags_ui(self, h):
-		alpha = int(h.alpha_flags)
+		alpha = int(h.material_flags)
+		version = self._current_file_version()
+		
 		for bit, cb in enumerate(self.flags1_checks):
 			cb.blockSignals(True)
 			cb.setChecked(bool((alpha >> bit) & 1))
 			cb.blockSignals(False)
+		
+		self.transparent_zpostpass_check.blockSignals(True)
+		if version >= 31:
+			self.transparent_zpostpass_check.setChecked(bool((alpha >> 10) & 1))
+			self.transparent_zpostpass_check.setVisible(True)
+		else:
+			self.transparent_zpostpass_check.setChecked(False)
+			self.transparent_zpostpass_check.setVisible(False)
+		self.transparent_zpostpass_check.blockSignals(False)
+		
 		self.tess_spin.blockSignals(True)
-		self.tess_spin.setValue((alpha >> 10) & 0x3F)
+		if version >= 31:
+			self.tess_spin.setRange(0, 31)
+			self.tess_spin.setValue((alpha >> 11) & 0x1F)
+		else:
+			self.tess_spin.setRange(0, 63)
+			self.tess_spin.setValue((alpha >> 10) & 0x3F)
 		self.tess_spin.blockSignals(False)
+		
 		self.phong_spin.blockSignals(True)
 		self.phong_spin.setValue((alpha >> 16) & 0xFF)
 		self.phong_spin.blockSignals(False)
+		
 		for bit, cb in enumerate(self.flags2_checks):
 			cb.blockSignals(True)
 			cb.setChecked(bool((alpha >> (24 + bit)) & 1))
 			cb.blockSignals(False)
+		
+		for bit, cb in enumerate(self.flags3_checks):
+			cb.blockSignals(True)
+			if version >= 31:
+				cb.setChecked(bool((alpha >> (32 + bit)) & 1))
+				cb.setVisible(True)
+			else:
+				cb.setChecked(False)
+				cb.setVisible(False)
+			cb.blockSignals(False)
+		
+		self.transparent_priority_bias_spin.blockSignals(True)
+		if version >= 31:
+			bias_unsigned = (alpha >> 40) & 0xFF
+			if bias_unsigned >= 128:
+				bias_signed = bias_unsigned - 256
+			else:
+				bias_signed = bias_unsigned
+			self.transparent_priority_bias_spin.setValue(bias_signed)
+			self.transparent_priority_bias_label.setVisible(True)
+			self.transparent_priority_bias_spin.setVisible(True)
+		else:
+			self.transparent_priority_bias_spin.setValue(0)
+			self.transparent_priority_bias_label.setVisible(False)
+			self.transparent_priority_bias_spin.setVisible(False)
+		self.transparent_priority_bias_spin.blockSignals(False)
 
 	def _on_mmtr_changed(self, text: str):
 		m = self.handler.mdf
@@ -488,15 +590,15 @@ class MdfViewer(QWidget):
 			self.gpbf_table.blockSignals(True)
 			self.gpbf_table.setRowCount(0)
 			self.gpbf_table.blockSignals(False)
-		has_tex_ids = version >= 31
-		self.tabs.setTabVisible(self.texids_tab_idx, has_tex_ids)
-		if not has_tex_ids:
-			self.texids_table.blockSignals(True)
-			self.texids_table.setRowCount(0)
-			self.texids_table.blockSignals(False)
-			self.texid_count_spin.blockSignals(True)
-			self.texid_count_spin.setValue(0)
-			self.texid_count_spin.blockSignals(False)
+		has_shader_lods = version >= 31
+		self.tabs.setTabVisible(self.shaderLODRedirects_tab_idx, has_shader_lods)
+		if not has_shader_lods:
+			self.shaderLODRedirects_table.blockSignals(True)
+			self.shaderLODRedirects_table.setRowCount(0)
+			self.shaderLODRedirects_table.blockSignals(False)
+			self.shaderLOD_count_spin.blockSignals(True)
+			self.shaderLOD_count_spin.setValue(0)
+			self.shaderLOD_count_spin.blockSignals(False)
 
 	def _insert_materials(self, materials, insert_at=None):
 		m = self.handler.mdf
@@ -557,18 +659,22 @@ class MdfViewer(QWidget):
 		self._update_version_dependent_tabs()
 		if not m or not (0 <= mat_index < len(m.materials)):
 			self.mmtr_edit.setText("")
+			self.bake_texture_label.setVisible(False)
+			self.bake_texture_spin.setVisible(False)
 			self.textures_table.setRowCount(0)
 			self.params_table.setRowCount(0)
 			self.gpbf_table.setRowCount(0)
-			self.texids_table.blockSignals(True)
-			self.texids_table.setRowCount(0)
-			self.texids_table.blockSignals(False)
-			self.texid_count_spin.blockSignals(True)
-			self.texid_count_spin.setValue(0)
-			self.texid_count_spin.blockSignals(False)
+			self.shaderLODRedirects_table.blockSignals(True)
+			self.shaderLODRedirects_table.setRowCount(0)
+			self.shaderLODRedirects_table.blockSignals(False)
+			self.shaderLOD_count_spin.blockSignals(True)
+			self.shaderLOD_count_spin.setValue(0)
+			self.shaderLOD_count_spin.blockSignals(False)
 			self._update_version_dependent_tabs()
 			return
 		md = m.materials[mat_index]
+		version = self._current_file_version()
+		
 		self.mmtr_edit.blockSignals(True)
 		self.mmtr_edit.setText(md.header.mmtr_path)
 		self.mmtr_edit.blockSignals(False)
@@ -581,6 +687,20 @@ class MdfViewer(QWidget):
 		if 0 <= sh < self.shader_combo.count():
 			self.shader_combo.setCurrentIndex(sh)
 		self.shader_combo.blockSignals(False)
+		
+		if version >= 31:
+			self.bake_texture_spin.blockSignals(True)
+			self.bake_texture_spin.setValue(md.header.BakeTextureArraySize)
+			self.bake_texture_label.setVisible(True)
+			self.bake_texture_spin.setVisible(True)
+			self.bake_texture_spin.blockSignals(False)
+		else:
+			self.bake_texture_spin.blockSignals(True)
+			self.bake_texture_spin.setValue(0)
+			self.bake_texture_label.setVisible(False)
+			self.bake_texture_spin.setVisible(False)
+			self.bake_texture_spin.blockSignals(False)
+		
 		self._update_flags_ui(md.header)
 
 		self.textures_table.blockSignals(True)
@@ -612,22 +732,22 @@ class MdfViewer(QWidget):
 			self.gpbf_table.blockSignals(False)
 
 		if version >= 31:
-			self.texids_table.blockSignals(True)
-			self.texid_count_spin.blockSignals(True)
-			count = int(md.header.texID_count)
-			self.texid_count_spin.setValue(count)
+			self.shaderLODRedirects_table.blockSignals(True)
+			self.shaderLOD_count_spin.blockSignals(True)
+			count = int(md.header.shaderLODNum)
+			self.shaderLOD_count_spin.setValue(count)
 			rows = count
-			self.texids_table.setRowCount(rows)
+			self.shaderLODRedirects_table.setRowCount(rows)
 			for i in range(rows):
-				counts, elems = (md.tex_id_arrays[i] if i < len(md.tex_id_arrays) else ([], []))
-				self.texids_table.setItem(i, 0, QTableWidgetItem(",".join(str(v) for v in counts)))
-				self.texids_table.setItem(i, 1, QTableWidgetItem(",".join(str(v) for v in elems)))
-			self.texid_count_spin.blockSignals(False)
-			self.texids_table.blockSignals(False)
+				counts, elems = (md.shader_lod_redirects[i] if i < len(md.shader_lod_redirects) else ([], []))
+				self.shaderLODRedirects_table.setItem(i, 0, QTableWidgetItem(",".join(str(v) for v in counts)))
+				self.shaderLODRedirects_table.setItem(i, 1, QTableWidgetItem(",".join(str(v) for v in elems)))
+			self.shaderLOD_count_spin.blockSignals(False)
+			self.shaderLODRedirects_table.blockSignals(False)
 		else:
-			self.texids_table.blockSignals(True)
-			self.texids_table.setRowCount(0)
-			self.texids_table.blockSignals(False)
+			self.shaderLODRedirects_table.blockSignals(True)
+			self.shaderLODRedirects_table.setRowCount(0)
+			self.shaderLODRedirects_table.blockSignals(False)
 
 	def _on_add_texture(self):
 		from .mdf_file import TexHeader
@@ -853,22 +973,22 @@ class MdfViewer(QWidget):
 			return
 		self._populate_details(rows[0].row())
 
-	def _on_texid_count_changed(self, val: int):
+	def _on_shaderLOD_count_changed(self, val: int):
 		m = self.handler.mdf
 		rows = self.materials_table.selectionModel().selectedRows()
 		if not m or not rows:
 			return
 		i = rows[0].row()
 		md = m.materials[i]
-		md.header.texID_count = max(0, int(val))
-		while len(md.tex_id_arrays) < md.header.texID_count:
-			md.tex_id_arrays.append(([], []))
-		while len(md.tex_id_arrays) > md.header.texID_count:
-			md.tex_id_arrays.pop()
+		md.header.shaderLODNum = max(0, int(val))
+		while len(md.shader_lod_redirects) < md.header.shaderLODNum:
+			md.shader_lod_redirects.append(([], []))
+		while len(md.shader_lod_redirects) > md.header.shaderLODNum:
+			md.shader_lod_redirects.pop()
 		self._populate_details(i)
 		self.modified = True
 
-	def _on_texids_changed(self, item):
+	def _on_shaderLODRedirects_changed(self, item):
 		m = self.handler.mdf
 		rows = self.materials_table.selectionModel().selectedRows()
 		if not m or not rows:
@@ -877,9 +997,9 @@ class MdfViewer(QWidget):
 		md = m.materials[i]
 		r = item.row()
 		c = item.column()
-		if not (0 <= r < len(md.tex_id_arrays)):
+		if not (0 <= r < len(md.shader_lod_redirects)):
 			return
-		counts, elems = md.tex_id_arrays[r]
+		counts, elems = md.shader_lod_redirects[r]
 		text = item.text() or ""
 		parts = [p.strip() for p in text.split(',') if p.strip()]
 		vals = []
@@ -889,9 +1009,9 @@ class MdfViewer(QWidget):
 			except ValueError:
 				return
 		if c == 0:
-			md.tex_id_arrays[r] = (vals, elems)
+			md.shader_lod_redirects[r] = (vals, elems)
 		elif c == 1:
-			md.tex_id_arrays[r] = (counts, vals)
+			md.shader_lod_redirects[r] = (counts, vals)
 		self.modified = True
 
 	def _on_texture_changed(self, item):
@@ -1114,7 +1234,7 @@ class MdfViewer(QWidget):
 			elif c == 3:
 				h.param_count = int(val)
 			elif c == 4:
-				h.alpha_flags = int(val)
+				h.material_flags = int(val)
 			self.modified = True
 		except ValueError:
 			pass

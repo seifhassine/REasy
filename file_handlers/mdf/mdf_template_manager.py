@@ -239,7 +239,7 @@ class MdfTemplateManager:
         gpu_buffers = material.get("gpu_buffers")
         if not isinstance(gpu_buffers, list):
             gpu_buffers = []
-        tex_arrays = material.get("tex_id_arrays")
+        tex_arrays = material.get("shader_lod_redirects")
         if not isinstance(tex_arrays, list):
             tex_arrays = []
         preview = {

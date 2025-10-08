@@ -382,12 +382,12 @@ class MdfTemplateManagerDialog(QDialog):
         if tex_types:
             lines.append("Texture Types: " + ", ".join(tex_types))
         gpu_buffers = preview.get("gpu_buffer_count", 0)
-        tex_ids = preview.get("tex_id_count", 0)
+        shader_lod_redirects = preview.get("tex_id_count", 0)
         extra_bits = []
         if gpu_buffers:
             extra_bits.append(f"GPU Buffers: {gpu_buffers}")
-        if tex_ids:
-            extra_bits.append(f"Tex ID Arrays: {tex_ids}")
+        if shader_lod_redirects:
+            extra_bits.append(f"Shader LOD Redirects: {shader_lod_redirects}")
         if extra_bits:
             lines.append(" | ".join(extra_bits))
         self.preview_label.setText("\n".join(lines))
