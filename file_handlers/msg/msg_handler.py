@@ -56,11 +56,11 @@ class MsgHandler(BaseFileHandler):
         super().__init__()
         self.__class__._load_language_names()
         self.header: Dict[str, Any] = {}
-        self.entry_offsets: List[int] = []
+        self.messageTbl: List[int] = []
         self.entries: List[Dict[str, Any]] = []
-        self.languages: List[int] = []
-        self.attribute_value_types: List[int] = []
-        self.attribute_names: List[str] = []
+        self.useLanguages: List[int] = []
+        self.userParamTypes: List[int] = []
+        self.userParamNames: List[str] = []
         self._pool: Optional[bytes] = None
         self.raw_data: bytes | bytearray = b""
         self.is_encrypted = False
@@ -79,7 +79,8 @@ class MsgHandler(BaseFileHandler):
         self.raw_data = data
         self.header = self._parse_header()
         self.is_encrypted = self._is_encrypted(self.header["version"])
-        self._decrypt_string_pool()
+        if self.is_encrypted:
+            self._decrypt_string_pool()
         self._parse_content()
         self._pool = None
         
@@ -89,21 +90,22 @@ class MsgHandler(BaseFileHandler):
     def _rebuild_structure(self) -> bytes:
         self.raw_data = bytearray(self.raw_data)
         struct.pack_into("<I", self.raw_data, 16, len(self.entries))
-        struct.pack_into("<I", self.raw_data, 20, len(self.attribute_value_types))
-        self.header["entry_count"] = len(self.entries)
-        self.header["attribute_count"] = len(self.attribute_value_types)
+        struct.pack_into("<I", self.raw_data, 20, len(self.userParamTypes))
+        self.header["messageCount"] = len(self.entries)
+        self.header["userParamCount"] = len(self.userParamTypes)
         
         if self._by_hash(self.header["version"]):
             for entry in self.entries:
                 if entry.get("name"):
                     name_bytes = entry["name"].encode("utf-16le")
-                    entry["hash"] = murmur3_hash(name_bytes)
+                    entry["nameHash"] = murmur3_hash(name_bytes)
                 else:
-                    entry["hash"] = 0
+                    entry["nameHash"] = 0
         
         sorted_entries = sorted(self.entries, key=lambda e: e.get("name", "").lower())
         
-        entry_table_start = 72
+        is_v12 = not self.is_encrypted
+        entry_table_start = 64 if is_v12 else 72
         entry_offsets_size = len(sorted_entries) * 8
         entry_offsets_end = entry_table_start + entry_offsets_size
 
@@ -111,15 +113,15 @@ class MsgHandler(BaseFileHandler):
         unkn_zero_off = metadata_start
         lang_off = unkn_zero_off + 8
 
-        after_langs = lang_off + len(self.languages) * 4
+        after_langs = lang_off + len(self.useLanguages) * 4
         pad1 = (8 - (after_langs % 8)) % 8
         
         attr_off = after_langs + pad1
-        if self.attribute_value_types:
-            after_attr_types = attr_off + len(self.attribute_value_types) * 4
+        if self.userParamTypes:
+            after_attr_types = attr_off + len(self.userParamTypes) * 4
             pad2 = (8 - (after_attr_types % 8)) % 8
             attr_name_off = after_attr_types + pad2
-            after_attr_names = attr_name_off + len(self.attribute_value_types) * 8
+            after_attr_names = attr_name_off + len(self.userParamTypes) * 8
             metadata_size = after_attr_names - metadata_start
         else:
             attr_name_off = attr_off
@@ -131,9 +133,9 @@ class MsgHandler(BaseFileHandler):
             entry_data_start += 8 - (entry_data_start % 8)
 
         entry_base_size = 40
-        entry_size = entry_base_size + len(self.languages) * 8
+        entry_size = entry_base_size + len(self.useLanguages) * 8
 
-        if self.attribute_value_types:
+        if self.userParamTypes:
             all_entries_size = len(sorted_entries) * entry_size
             attr_data_start = entry_data_start + all_entries_size
             if attr_data_start % 8:
@@ -141,8 +143,8 @@ class MsgHandler(BaseFileHandler):
         else:
             attr_data_start = entry_data_start + len(sorted_entries) * entry_size
 
-        if self.attribute_value_types:
-            string_data_start = attr_data_start + len(sorted_entries) * len(self.attribute_value_types) * 8
+        if self.userParamTypes:
+            string_data_start = attr_data_start + len(sorted_entries) * len(self.userParamTypes) * 8
         else:
             string_data_start = attr_data_start
         if string_data_start % 8:
@@ -151,13 +153,15 @@ class MsgHandler(BaseFileHandler):
         file_size_guess = max(
             string_data_start,
             after_attr_names,
-            attr_name_off + (len(self.attribute_value_types) * 8 if self.attribute_value_types else 0),
-            attr_off + (len(self.attribute_value_types) * 4 + pad2 if self.attribute_value_types else 0),
-            lang_off + len(self.languages) * 4 + pad1,
+            attr_name_off + (len(self.userParamTypes) * 8 if self.userParamTypes else 0),
+            attr_off + (len(self.userParamTypes) * 4 + pad2 if self.userParamTypes else 0),
+            lang_off + len(self.useLanguages) * 4 + pad1,
             entry_data_start + len(sorted_entries) * entry_size
         ) + 0x1000
         new_file = bytearray(file_size_guess)
-        new_file[:72] = self.raw_data[:72]
+        
+        header_size = 64 if is_v12 else 72
+        new_file[:header_size] = self.raw_data[:header_size]
 
         new_entry_offsets = []
         current_entry_pos = entry_data_start
@@ -167,74 +171,81 @@ class MsgHandler(BaseFileHandler):
             current_entry_pos += entry_size
 
         struct.pack_into("<Q", new_file, unkn_zero_off, 0)
-        for i, lang in enumerate(self.languages):
+        for i, lang in enumerate(self.useLanguages):
             struct.pack_into("<I", new_file, lang_off + i * 4, lang)
         for i in range(pad1):
             new_file[after_langs + i] = 0
-        if self.attribute_value_types:
-            for i, attr_type in enumerate(self.attribute_value_types):
+        if self.userParamTypes:
+            for i, attr_type in enumerate(self.userParamTypes):
                 struct.pack_into("<i", new_file, attr_off + i * 4, attr_type)
             for i in range(pad2):
                 new_file[after_attr_types + i] = 0
-            for i in range(len(self.attribute_value_types)):
+            for i in range(len(self.userParamTypes)):
                 struct.pack_into("<Q", new_file, attr_name_off + i * 8, 0)
         
-        shared_offset = 0xA98
+        if is_v12:
+            new_file = new_file[:string_data_start]
+        
+        string_cache = {}
+        
+        def write_string(text):
+            if not text:
+                if "" not in string_cache:
+                    offset = string_data_start + len(new_file[string_data_start:])
+                    new_file.extend(b"\x00\x00")
+                    string_cache[""] = offset
+                return string_cache[""]
+            
+            if text in string_cache:
+                return string_cache[text]
+            
+            offset = string_data_start + len(new_file[string_data_start:])
+            string_data = text.encode("utf-16le") + b"\x00\x00"
+            new_file.extend(string_data)
+            string_cache[text] = offset
+            return offset
+        
         attr_offsets = []
         current_attr_pos = attr_data_start
         for i, entry in enumerate(sorted_entries):
             eoff = new_entry_offsets[i]
             new_file[eoff:eoff+16] = self._guid_to_bytes(entry["uuid"])
             pos = eoff + 16
-            struct.pack_into("<I", new_file, pos, entry.get("unknown", 0))
+            struct.pack_into("<I", new_file, pos, entry.get("SoundID", 0))
             pos += 4
             if self._by_hash(self.header["version"]):
-                struct.pack_into("<I", new_file, pos, entry.get("hash", 0))
+                struct.pack_into("<I", new_file, pos, entry.get("nameHash", 0))
             else:
                 struct.pack_into("<I", new_file, pos, entry.get("index", i))
             pos += 4
 
-            if entry["name"]:
-                name_offset = string_data_start + len(new_file[string_data_start:])
-                name_data = entry["name"].encode("utf-16le") + b"\x00\x00"
-                new_file.extend(name_data)
-            else:
-                name_offset = 0
+            name_offset = write_string(entry["name"])
             struct.pack_into("<Q", new_file, pos, name_offset)
             pos += 8
 
-            if self.attribute_value_types:
+            if self.userParamTypes:
                 struct.pack_into("<Q", new_file, pos, current_attr_pos)
                 attr_offsets.append(current_attr_pos)
-                current_attr_pos += len(self.attribute_value_types) * 8
+                current_attr_pos += len(self.userParamTypes) * 8
             else:
-                struct.pack_into("<Q", new_file, pos, shared_offset)
-                attr_offsets.append(shared_offset)
+                attr_offset_val = write_string("")
+                struct.pack_into("<Q", new_file, pos, attr_offset_val)
+                attr_offsets.append(attr_offset_val)
             pos += 8
 
             for content in entry["content"]:
-                if content:
-                    content_offset = string_data_start + len(new_file[string_data_start:])
-                    content_data = content.encode("utf-16le") + b"\x00\x00"
-                    new_file.extend(content_data)
-                else:
-                    content_offset = shared_offset
+                content_offset = write_string(content)
                 struct.pack_into("<Q", new_file, pos, content_offset)
                 pos += 8
 
-        if self.attribute_value_types:
+        if self.userParamTypes:
             for i, entry in enumerate(sorted_entries):
                 attr_pos = attr_offsets[i]
-                for j, (atype, aval) in enumerate(zip(self.attribute_value_types, entry["attributes"])):
+                for j, (atype, aval) in enumerate(zip(self.userParamTypes, entry["attributes"])):
                     apos = attr_pos + j * 8
                     if atype in (-1, 2):
-                        if aval:
-                            attr_string_offset = string_data_start + len(new_file[string_data_start:])
-                            attr_string_data = aval.encode("utf-16le") + b"\x00\x00"
-                            new_file.extend(attr_string_data)
-                            struct.pack_into("<Q", new_file, apos, attr_string_offset)
-                        else:
-                            struct.pack_into("<Q", new_file, apos, 0)
+                        attr_string_offset = write_string(str(aval) if aval else "")
+                        struct.pack_into("<Q", new_file, apos, attr_string_offset)
                     elif atype == 0:
                         struct.pack_into("<q", new_file, apos, int(aval) if aval else 0)
                     elif atype == 1:
@@ -242,25 +253,50 @@ class MsgHandler(BaseFileHandler):
                     else:
                         struct.pack_into("<Q", new_file, apos, 0)
 
-        new_file = new_file[:string_data_start]
+        if is_v12 and self.userParamNames:
+            for i, name in enumerate(self.userParamNames):
+                name_str_offset = write_string(name)
+                struct.pack_into("<Q", new_file, attr_name_off + i * 8, name_str_offset)
+        
+        if not is_v12:
+            new_file = new_file[:string_data_start]
 
         struct.pack_into("<Q", new_file, 8, 16)
-        struct.pack_into("<Q", new_file, 32, string_data_start)
-        struct.pack_into("<Q", new_file, 40, unkn_zero_off)
-        struct.pack_into("<Q", new_file, 48, lang_off)
-        struct.pack_into("<Q", new_file, 56, attr_off)
-        struct.pack_into("<Q", new_file, 64, attr_name_off)
+        
+        if is_v12:
+            struct.pack_into("<Q", new_file, 32, unkn_zero_off)
+            struct.pack_into("<Q", new_file, 40, lang_off)
+            struct.pack_into("<Q", new_file, 48, attr_off)
+            struct.pack_into("<Q", new_file, 56, attr_name_off)
+        else:
+            struct.pack_into("<Q", new_file, 32, string_data_start)
+            struct.pack_into("<Q", new_file, 40, unkn_zero_off)
+            struct.pack_into("<Q", new_file, 48, lang_off)
+            struct.pack_into("<Q", new_file, 56, attr_off)
+            struct.pack_into("<Q", new_file, 64, attr_name_off)
         
         self.entries = sorted_entries
         self.raw_data = new_file
-        self.entry_offsets = new_entry_offsets
-        self.header.update({
-            "header_offset": 16,
-            "data_offset": string_data_start,
-            "lang_offset": lang_off,
-            "attribute_offset": attr_off,
-            "attribute_name_offset": attr_name_off
-        })
+        self.messageTbl = new_entry_offsets
+        
+        if is_v12:
+            self.header.update({
+                "header_offset": 16,
+                "data_offset": None,
+                "unknown_offset": unkn_zero_off,
+                "lang_offset": lang_off,
+                "attribute_offset": attr_off,
+                "attribute_name_offset": attr_name_off
+            })
+        else:
+            self.header.update({
+                "header_offset": 16,
+                "data_offset": string_data_start,
+                "unknown_offset": unkn_zero_off,
+                "lang_offset": lang_off,
+                "attribute_offset": attr_off,
+                "attribute_name_offset": attr_name_off
+            })
 
         self._update_strings()
         return self._encrypt()
@@ -274,9 +310,14 @@ class MsgHandler(BaseFileHandler):
 
     def validate_edit(self, meta: Dict[str, Any], new: str, _old: str = "") -> bool:
         idx = meta.get("entry_index")
+        ftype = meta.get("field_type")
+        
+        if ftype == "attribute_name":
+            return bool(new)
+            
         if idx is None or idx >= len(self.entries):
             return False
-        ftype = meta.get("field_type")
+            
         if ftype == "uuid":
             try:
                 uuid.UUID(new)
@@ -285,11 +326,17 @@ class MsgHandler(BaseFileHandler):
                 return False
         if ftype == "name":
             return bool(new)
+        if ftype == "SoundID":
+            try:
+                int(new)
+                return True
+            except ValueError:
+                return False
         if ftype == "attribute":
             aidx = meta.get("attr_index", -1)
-            if not (0 <= aidx < len(self.attribute_value_types)):
+            if not (0 <= aidx < len(self.userParamTypes)):
                 return False
-            atype = self.attribute_value_types[aidx]
+            atype = self.userParamTypes[aidx]
             try:
                 return atype == 0 and int(new) or atype == 1 and float(new) or True
             except ValueError:
@@ -307,39 +354,56 @@ class MsgHandler(BaseFileHandler):
             if self._by_hash(self.header["version"]):
                 if new:
                     name_bytes = new.encode("utf-16le")
-                    entry["hash"] = murmur3_hash(name_bytes)
+                    entry["nameHash"] = murmur3_hash(name_bytes)
                 else:
-                    entry["hash"] = 0
+                    entry["nameHash"] = 0
+        elif ftype == "SoundID":
+            entry["SoundID"] = int(new) if new else 0
         elif ftype == "content":
             entry["content"][meta.get("lang_index", 0)] = new
         elif ftype == "attribute":
             aidx = meta["attr_index"]
-            atype = self.attribute_value_types[aidx]
+            atype = self.userParamTypes[aidx]
             if atype == 0:
                 entry["attributes"][aidx] = int(new)
             elif atype == 1:
                 entry["attributes"][aidx] = float(new)
             else:
                 entry["attributes"][aidx] = new
+        elif ftype == "attribute_name":
+            aidx = meta.get("attr_index")
+            if aidx is not None and 0 <= aidx < len(self.userParamNames):
+                self.userParamNames[aidx] = new
 
     def _parse_header(self) -> Dict[str, Any]:
         r = self.raw_data
         ver, magic = struct.unpack_from("<I4s", r, 0)
         if magic != b"GMSG":
             raise ValueError("Missing GMSG magic")
-        if not self._is_encrypted(ver):
-            raise ValueError("Only encrypted >v12 supported for editing")
+        
+        is_v12 = not self._is_encrypted(ver)
+        
         hdr = {
             "version": ver,
             "header_offset": struct.unpack_from("<Q", r, 8)[0],
-            "entry_count": struct.unpack_from("<I", r, 16)[0],
-            "attribute_count": struct.unpack_from("<I", r, 20)[0],
-            "lang_count": struct.unpack_from("<I", r, 24)[0],
-            "data_offset": struct.unpack_from("<Q", r, 32)[0],
-            "lang_offset": struct.unpack_from("<Q", r, 48)[0],
-            "attribute_offset": struct.unpack_from("<Q", r, 56)[0],
-            "attribute_name_offset": struct.unpack_from("<Q", r, 64)[0],
+            "messageCount": struct.unpack_from("<I", r, 16)[0],
+            "userParamCount": struct.unpack_from("<I", r, 20)[0],
+            "languageDataCount": struct.unpack_from("<I", r, 24)[0],
         }
+        
+        if is_v12:
+            hdr["data_offset"] = None
+            hdr["unknown_offset"] = struct.unpack_from("<Q", r, 32)[0]
+            hdr["lang_offset"] = struct.unpack_from("<Q", r, 40)[0]
+            hdr["attribute_offset"] = struct.unpack_from("<Q", r, 48)[0]
+            hdr["attribute_name_offset"] = struct.unpack_from("<Q", r, 56)[0]
+        else:
+            hdr["data_offset"] = struct.unpack_from("<Q", r, 32)[0]
+            hdr["unknown_offset"] = struct.unpack_from("<Q", r, 40)[0]
+            hdr["lang_offset"] = struct.unpack_from("<Q", r, 48)[0]
+            hdr["attribute_offset"] = struct.unpack_from("<Q", r, 56)[0]
+            hdr["attribute_name_offset"] = struct.unpack_from("<Q", r, 64)[0]
+        
         return hdr
 
     @staticmethod
@@ -351,7 +415,7 @@ class MsgHandler(BaseFileHandler):
         return version > 15 and version != 0x2022033D
 
     def _decrypt_string_pool(self):
-        if not self.is_encrypted:
+        if not self.is_encrypted or self.header["data_offset"] is None:
             return
         off = self.header["data_offset"]
         enc = self.raw_data[off:]
@@ -363,7 +427,7 @@ class MsgHandler(BaseFileHandler):
         self._pool = bytes(dec)
 
     def _encrypt(self) -> bytes:
-        if not self.is_encrypted:
+        if not self.is_encrypted or self.header["data_offset"] is None:
             return bytes(self.raw_data)
         off = self.header["data_offset"]
         plain = self.raw_data[off:]
@@ -377,7 +441,7 @@ class MsgHandler(BaseFileHandler):
     def _read_wstr(self, abs_off: int) -> str:
         if abs_off == 0:
             return ""
-        if self._pool and abs_off >= self.header["data_offset"]:
+        if self._pool and self.header["data_offset"] is not None and abs_off >= self.header["data_offset"]:
             data = self._pool[abs_off - self.header["data_offset"]:]
         else:
             data = self.raw_data[abs_off:]
@@ -389,36 +453,36 @@ class MsgHandler(BaseFileHandler):
     def _parse_content(self):
         r = self.raw_data
         hdr = self.header
-        self.languages = list(struct.unpack_from(f"<{hdr['lang_count']}I", r, hdr["lang_offset"]))
-        
-        if hdr['attribute_count'] > 0 and hdr["attribute_offset"] > 0:
-            self.attribute_value_types = list(struct.unpack_from(f"<{hdr['attribute_count']}i", r, hdr["attribute_offset"]))
+        self.useLanguages = list(struct.unpack_from(f"<{hdr['languageDataCount']}I", r, hdr["lang_offset"]))
+        if hdr['userParamCount'] > 0 and hdr["attribute_offset"] > 0:
+            self.userParamTypes = list(struct.unpack_from(f"<{hdr['userParamCount']}i", r, hdr["attribute_offset"]))
         else:
-            self.attribute_value_types = []
+            self.userParamTypes = []
             
-        if hdr['attribute_count'] > 0 and hdr["attribute_name_offset"] > 0:
-            name_offs = struct.unpack_from(f"<{hdr['attribute_count']}Q", r, hdr["attribute_name_offset"])
-            self.attribute_names = [self._read_wstr(o) for o in name_offs]
+        if hdr['userParamCount'] > 0 and hdr["attribute_name_offset"] > 0:
+            name_offs = struct.unpack_from(f"<{hdr['userParamCount']}Q", r, hdr["attribute_name_offset"])
+            self.userParamNames = [self._read_wstr(o) for o in name_offs]
         else:
-            self.attribute_names = []
+            self.userParamNames = []
             
-        base = 72
-        self.entry_offsets = list(struct.unpack_from(f"<{hdr['entry_count']}Q", r, base))
-        for eoff in self.entry_offsets:
+        is_v12 = not self.is_encrypted
+        base = 64 if is_v12 else 72
+        self.messageTbl = list(struct.unpack_from(f"<{hdr['messageCount']}Q", r, base))
+        for eoff in self.messageTbl:
             cur = {}
             cur_off = eoff
             uuid_bytes = r[cur_off:cur_off + 16]
             cur["uuid"] = self._format_guid(uuid_bytes)
             cur_off += 16
-            cur["unknown"], cur_off = struct.unpack_from("<I", r, cur_off)[0], cur_off + 4
+            cur["SoundID"], cur_off = struct.unpack_from("<I", r, cur_off)[0], cur_off + 4
             if self._by_hash(hdr["version"]):
-                cur["hash"] = struct.unpack_from("<I", r, cur_off)[0]
+                cur["nameHash"] = struct.unpack_from("<I", r, cur_off)[0]
             else:
                 cur["index"] = struct.unpack_from("<I", r, cur_off)[0]
             cur_off += 4
             name_ptr, attr_ptr = struct.unpack_from("<QQ", r, cur_off)
             cur_off += 16
-            lang_ptrs = struct.unpack_from(f"<{hdr['lang_count']}Q", r, cur_off)
+            lang_ptrs = struct.unpack_from(f"<{hdr['languageDataCount']}Q", r, cur_off)
             cur["name"] = self._read_wstr(name_ptr)
             cur["content"] = [self._read_wstr(p) for p in lang_ptrs]
             cur["attributes"] = self._parse_attributes(attr_ptr)
@@ -426,9 +490,9 @@ class MsgHandler(BaseFileHandler):
 
     def _parse_attributes(self, ptr: int) -> List[Any]:
         if ptr == 0:
-            return ["" for _ in self.attribute_value_types]
+            return ["" for _ in self.userParamTypes]
         vals: List[Any] = []
-        for atype in self.attribute_value_types:
+        for atype in self.userParamTypes:
             if atype in (-1, 2):
                 vals.append(self._read_wstr(struct.unpack_from("<Q", self.raw_data, ptr)[0]))
             elif atype == 0:
@@ -447,18 +511,18 @@ class MsgHandler(BaseFileHandler):
                   attrs: Optional[List[Any]] = None):
 
         uuid_str = uuid_str or str(uuid.uuid4())
-        contents = contents or ["" for _ in self.languages]
-        attrs    = attrs    or ["" for _ in self.attribute_value_types]
+        contents = contents or ["" for _ in self.useLanguages]
+        attrs    = attrs    or ["" for _ in self.userParamTypes]
         
-        new = {"uuid": uuid_str, "unknown": 0,  
+        new = {"uuid": uuid_str, "SoundID": 0,  
                "name": name, "content": contents, "attributes": attrs}
                
         if self._by_hash(self.header["version"]):
             if name:
                 name_bytes = name.encode("utf-16le")
-                new["hash"] = murmur3_hash(name_bytes)
+                new["nameHash"] = murmur3_hash(name_bytes)
             else:
-                new["hash"] = 0
+                new["nameHash"] = 0
         else:
             new["index"] = len(self.entries)
             
@@ -470,17 +534,49 @@ class MsgHandler(BaseFileHandler):
             if not self._by_hash(self.header["version"]):
                 for i, entry in enumerate(self.entries):
                     entry["index"] = i
+    
+    def add_user_param(self, name: str = "NewParam", param_type: int = 2):
+        """Add a new user parameter (attribute)
+        
+        Args:
+            name: Name of the parameter
+            param_type: Type of parameter (-1 or 2 for string, 0 for int, 1 for float)
+        """
+        self.userParamNames.append(name)
+        self.userParamTypes.append(param_type)
+        
+        default_value = "" if param_type in (-1, 2) else (0 if param_type == 0 else 0.0)
+        for entry in self.entries:
+            entry["attributes"].append(default_value)
+    
+    def remove_user_param(self, idx: int):
+        """Remove a user parameter at the given index
+        
+        Args:
+            idx: Index of the parameter to remove
+        """
+        if 0 <= idx < len(self.userParamTypes):
+            self.userParamNames.pop(idx)
+            self.userParamTypes.pop(idx)
+            
+            for entry in self.entries:
+                if idx < len(entry["attributes"]):
+                    entry["attributes"].pop(idx)
 
     def _update_strings(self):
         pool_base = self.header["data_offset"]
+        
+        if pool_base is None:
+            return
+            
         self.raw_data = bytearray(self.raw_data)
         
         new_pool = bytearray(b"\x00\x00")
         
         string_refs = []
         
-        if self.attribute_names:
-            for i, txt in enumerate(self.attribute_names):
+        if self.userParamNames:
+            for i, txt in enumerate(self.userParamNames):
                 ptr_pos = self.header["attribute_name_offset"] + i * 8
                 if txt:
                     original_ptr = struct.unpack_from("<Q", self.raw_data, ptr_pos)[0]
@@ -489,7 +585,7 @@ class MsgHandler(BaseFileHandler):
                 else:
                     struct.pack_into("<Q", self.raw_data, ptr_pos, pool_base)
 
-        for eoff, ent in zip(self.entry_offsets, self.entries):
+        for eoff, ent in zip(self.messageTbl, self.entries):
             name_ptr_pos = eoff + 24
             if ent["name"]:
                 original_ptr = struct.unpack_from("<Q", self.raw_data, name_ptr_pos)[0]
@@ -510,7 +606,7 @@ class MsgHandler(BaseFileHandler):
             attr_ptr = struct.unpack_from("<Q", self.raw_data, eoff + 32)[0]
             if attr_ptr:
                 for ai, (atype, aval) in enumerate(
-                        zip(self.attribute_value_types, ent["attributes"])):
+                        zip(self.userParamTypes, ent["attributes"])):
                     if atype in (-1, 2):
                         str_off_pos = attr_ptr + ai * 8
                         if aval:
