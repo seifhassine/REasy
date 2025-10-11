@@ -4,7 +4,7 @@ Use this tool when you want to make any changes to the RSZ dumps (in parent dire
 
 ## When to use this tool
 
-- Title Updates: Use Praydog's dumper to dump the RSZ template (don't forget to use the include_parents flag in the non_native_dumper), then use this tool to strip it, then patch it with the rsz[gamename]_strip.json using the `rsz_template_patcher` script in `/tools`, then propagate the result to obtain the final RSZ dump in the `dumps` folder. 
+- Title Updates: Use Praydog's dumper to dump the RSZ template (don't forget to use the include_parents flag in the non_native_dumper), then use this tool to strip it, then patch it with the old rsz[gamename]_strip.json (which was working before the update) using the `rsz_template_patcher` script in `/tools`, then propagate the result to obtain the final RSZ dump in the `dumps` folder. 
 - RSZ Dump improvements: If you want to identify more fields or make corrections, always make your changes in `rsz[gamename]_strip.json` (NOT `rsz[gamename].json`), then propagate and commit both the stripped json and the full json.
 
 ## Commands
