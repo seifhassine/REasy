@@ -1149,8 +1149,10 @@ class HexBytesInput(BaseValueWidget):
         try:
             raw_bytes = self.raw_data.raw_bytes
 
-            if raw_bytes is None or not isinstance(raw_bytes, bytes):
-                raw_bytes = bytes(self.max_size) 
+            if raw_bytes is None:
+                raw_bytes = bytes(self.max_size)
+            elif not isinstance(raw_bytes, bytes):
+                raw_bytes = bytes(raw_bytes)
             
             hex_string = raw_bytes.hex().upper()
             formatted_hex = ' '.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
