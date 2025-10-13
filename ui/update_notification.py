@@ -1,13 +1,21 @@
 import threading
 import requests
 import os
-import platform
 import subprocess
 import sys
 from PySide6.QtCore import QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
+
+def is_windows() -> bool:
+    return os.name == "nt"
+
+def windows_version_str() -> str:
+    if not is_windows():
+        return ""
+    v = sys.getwindowsversion()
+    return f"{v.major}.{v.minor}.{v.build}"
 
 class UpdateNotificationManager:
     def __init__(self, main_window, current_version):
@@ -58,6 +66,7 @@ class UpdateNotificationManager:
         threading.Thread(target=self.check_for_updates, daemon=True).start()
         QTimer.singleShot(2000, self.update_update_menu)
             
+            
     def update_update_menu(self, force=False, menubar=None):
         if menubar is None:
             menubar = self.main_window.menuBar()
@@ -80,7 +89,7 @@ class UpdateNotificationManager:
             update_action.triggered.connect(self.open_latest_release_page)
             update_menu.addAction(update_action)
 
-            if platform.system() == "Windows" and getattr(sys, 'frozen', False):
+            if is_windows() and getattr(sys, 'frozen', False):
                 auto_update_action = QAction("Auto-Download and Update", self.main_window)
                 auto_update_action.triggered.connect(self._confirm_and_start_auto_update)
                 update_menu.addAction(auto_update_action)
@@ -88,13 +97,13 @@ class UpdateNotificationManager:
             menubar.addMenu(update_menu)
             self._update_menu = update_menu
 
-            if not self._auto_update_prompted and platform.system() == "Windows" and getattr(sys, 'frozen', False):
+            if not self._auto_update_prompted and is_windows() and getattr(sys, 'frozen', False):
                 self._auto_update_prompted = True
                 QTimer.singleShot(500, self._prompt_auto_update_dialog)
 
     def _prompt_auto_update_dialog(self):
         try:
-            if platform.system() != "Windows" or not getattr(sys, 'frozen', False):
+            if not is_windows() or not getattr(sys, 'frozen', False):
                 return
             version_str = self.latest_version or "a new version"
             reply = QMessageBox.question(
