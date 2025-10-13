@@ -159,16 +159,16 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Auto resource management for MHWilds (Use the latest rszmhwilds.json)."),
-            ("Improved", "Full support for CFIL files."),
-            ("Improved", "Full support for MDF files."),
-            ("Improved", "Full support for MSG files (support for RE7 as well as PS2 RE4 versions."),
-            ("Improved", "Identified more fields in MHWilds RSZ template."),
-            ("Improved", "Updated MHWilds enums."),
-            ("Fixed", "'Ignore Mod Paks' in PAK Scanner was causing subsequent legitimate PAKs to be skipped. Conditions are now also relaxed at the cost of accuracy."),
-            ("Planned", "CDEF support."),
-            ("Planned", "Mod Updater (Attempts to update as many files as possible)."),
-            ("Planned", "Support for PFB and USER files in RSZ Diff Viewer."),
+            ("New", ".mcambank file support."),
+            ("New", "RSZ diff tool now supports .pfb and .user files (highly experimental)."),
+            ("New", "UI support for Uint3Data, Uint2Data and Int2Data."),
+
+            ("Improved", "Fully identified unknown data fields in RE2. The RE2 RSZ template is now complete."),
+            ("Improved", "DMC5, RE3 RSZ templates."),
+
+            ("Fixed", "RawBytes fields (Hex bytes widgets) were always showing null bytes regardless of value."),
+            ("Fixed", "Rare hanging issue caused by user platform check."),
+            ("Fixed", "Fixed a rare userdata corruption case when reading/saving some files edited with 010 editor."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
