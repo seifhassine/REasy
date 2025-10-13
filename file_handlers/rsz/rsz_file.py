@@ -714,6 +714,7 @@ class RszFile:
             self._current_offset += 16
 
     def _parse_resource_infos(self, data):
+        self._current_offset = self.header.resource_info_tbl
         for _ in range(self.header.resource_count):
             ri = RszResourceInfo()
             self._current_offset = ri.parse(data, self._current_offset)
@@ -721,6 +722,7 @@ class RszFile:
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_prefab_infos(self, data):
+        self._current_offset = self.header.prefab_info_tbl
         for _ in range(self.header.prefab_count):
             pi = RszPrefabInfo()
             self._current_offset = pi.parse(data, self._current_offset)
@@ -728,6 +730,7 @@ class RszFile:
         self._current_offset = _align(self._current_offset, 16)
 
     def _parse_userdata_infos(self, data):
+        self._current_offset = self.header.userdata_info_tbl
         for _ in range(self.header.userdata_count):
             ui = RSZUserDataInfo()
             self._current_offset = ui.parse(data, self._current_offset, is_rszuserdata=False)
