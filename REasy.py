@@ -19,7 +19,7 @@ from file_handlers.cfil.cfil_handler import CfilHandler
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
-from ui.about_dialog import create_about_dialog
+from ui.about_dialog import AboutDialog
 from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
@@ -2146,7 +2146,8 @@ class REasyEditorApp(QMainWindow):
         self._check_and_close_shared_find_dialog()
 
     def show_about(self):
-        create_about_dialog(self)
+        dialog = AboutDialog(self)
+        dialog.exec()
 
     def show_wiki(self):
         QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy-Wiki"))
