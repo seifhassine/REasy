@@ -3,6 +3,7 @@ from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.cfil.cfil_handler import CfilHandler
 from file_handlers.motbank.motbank_handler import MotbankHandler
+from file_handlers.mcambank.mcambank_handler import McambankHandler
 from file_handlers.tex.tex_handler import TexHandler
 from file_handlers.tex.dds_handler import DdsHandler
 from file_handlers.mesh.mesh_handler import MeshHandler
@@ -17,6 +18,7 @@ def get_handler_for_data(data: bytes) -> FileHandler:
         UvarHandler,
         CfilHandler,
         MotbankHandler,
+        McambankHandler,
         MdfHandler,
         TexHandler,
         DdsHandler,
