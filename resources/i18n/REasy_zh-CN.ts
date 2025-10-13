@@ -138,44 +138,44 @@
         <translation>未找到 .pak 文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="161"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="158"/>
         <source>Add PAK files</source>
         <translation>添加 PAK 文件</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="161"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="158"/>
         <source>PAK files (*.pak)</source>
         <translation>PAK 文件 (*.pak)</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="196"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="192"/>
         <source>Select Output Directory</source>
         <translation>选择输出目录</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="214"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="245"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="210"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="241"/>
         <source>Paths</source>
         <translation>路径</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="223"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="219"/>
         <source>Search Results</source>
         <translation>搜索结果</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="404"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="398"/>
         <source>Open list file</source>
         <translation>打开列表文件</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="404"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="398"/>
         <source>List files (*.list *.txt);;All files (*)</source>
         <translation>列表文件 (*.list *.txt);;所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="551"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="604"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="545"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="598"/>
         <source>Done</source>
         <translation type="unfinished"></translation>
     </message>
@@ -184,35 +184,35 @@
         <translation type="vanished">读取失败</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="451"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="445"/>
         <source>Profile – Load .list</source>
         <translation>性能分析 – 载入 .list</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="482"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="486"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="490"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="476"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="480"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="484"/>
         <source>Extract</source>
         <translation>提取</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="482"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="476"/>
         <source>No files selected.</source>
         <translation>未选择文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="486"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="480"/>
         <source>Add one or more PAK files first.</source>
         <translation>请先添加一个或多个 PAK 文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="490"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="484"/>
         <source>Choose an output directory.</source>
         <translation>请选择输出目录。</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="372"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="507"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="366"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="501"/>
         <source>Index failed</source>
         <translation>索引失败</translation>
     </message>
@@ -222,25 +222,25 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="538"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="591"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="532"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="585"/>
         <source>Extract failed</source>
         <translation>提取失败</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="542"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="595"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="536"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="589"/>
         <source>Cancelled</source>
         <translation>已取消</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="542"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="595"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="536"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="589"/>
         <source>Extraction was cancelled</source>
         <translation>提取已取消</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="546"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="540"/>
         <source>Extracted {count} file(s) to:
 {dest}</source>
         <translation>已提取 {count} 个文件到：
@@ -515,148 +515,148 @@ PAK file saved to:
 <context>
     <name>REasyEditorApp</name>
     <message>
-        <location filename="../../REasy.py" line="1105"/>
+        <location filename="../../REasy.py" line="1101"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1107"/>
+        <location filename="../../REasy.py" line="1103"/>
         <source>Open File...</source>
         <translation>打开文件...</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1112"/>
+        <location filename="../../REasy.py" line="1108"/>
         <source>New Project (Create Mod)...</source>
         <translation>新建项目（创建模组）...</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1113"/>
+        <location filename="../../REasy.py" line="1109"/>
         <source>Open Project...</source>
         <translation>打开项目...</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1114"/>
+        <location filename="../../REasy.py" line="1110"/>
         <source>Close Project</source>
         <translation>关闭项目</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1127"/>
+        <location filename="../../REasy.py" line="1123"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1133"/>
+        <location filename="../../REasy.py" line="1129"/>
         <source>Save As...</source>
         <translation>另存为...</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1139"/>
+        <location filename="../../REasy.py" line="1135"/>
         <source>Restore Backup...</source>
         <translation>恢复备份...</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1143"/>
+        <location filename="../../REasy.py" line="1139"/>
         <source>Reload</source>
         <translation>重新加载</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1149"/>
+        <location filename="../../REasy.py" line="1145"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1157"/>
+        <location filename="../../REasy.py" line="1153"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1161"/>
+        <location filename="../../REasy.py" line="1157"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1165"/>
-        <location filename="../../REasy.py" line="1167"/>
+        <location filename="../../REasy.py" line="1161"/>
+        <location filename="../../REasy.py" line="1163"/>
         <source>Find</source>
         <translation>查找</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1173"/>
+        <location filename="../../REasy.py" line="1169"/>
         <source>Search Directory for GUID</source>
         <translation>在目录中搜索 GUID</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1179"/>
+        <location filename="../../REasy.py" line="1175"/>
         <source>Search Directory for Text</source>
         <translation>在目录中搜索文本</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1185"/>
+        <location filename="../../REasy.py" line="1181"/>
         <source>Search Directory for Number</source>
         <translation>在目录中搜索数字</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1191"/>
+        <location filename="../../REasy.py" line="1187"/>
         <source>Search Directory for Hex</source>
         <translation>在目录中搜索十六进制</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1203"/>
+        <location filename="../../REasy.py" line="1199"/>
         <source>View</source>
         <translation>视图</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1205"/>
+        <location filename="../../REasy.py" line="1201"/>
         <source>Toggle Dark Mode</source>
         <translation>切换深色模式</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1211"/>
+        <location filename="../../REasy.py" line="1207"/>
         <source>Previous Tab</source>
         <translation>上一标签页</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1217"/>
+        <location filename="../../REasy.py" line="1213"/>
         <source>Next Tab</source>
         <translation>下一标签页</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1223"/>
+        <location filename="../../REasy.py" line="1219"/>
         <source>Toggle Debug Console</source>
         <translation>切换调试控制台</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1233"/>
+        <location filename="../../REasy.py" line="1229"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1234"/>
+        <location filename="../../REasy.py" line="1230"/>
         <source>GUID Converter</source>
         <translation>GUID 转换器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1238"/>
+        <location filename="../../REasy.py" line="1234"/>
         <source>Hash Calculator</source>
         <translation>哈希计算器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1246"/>
+        <location filename="../../REasy.py" line="1242"/>
         <source>RSZ Diff Viewer</source>
         <translation>RSZ 差异查看器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="2053"/>
+        <location filename="../../REasy.py" line="2049"/>
         <source>RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1242"/>
+        <location filename="../../REasy.py" line="1238"/>
         <source>Outdated Files Detector</source>
         <translation>过时文件检测器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="2051"/>
+        <location filename="../../REasy.py" line="2047"/>
         <source>Open File</source>
         <translation>打开文件</translation>
     </message>
@@ -665,37 +665,37 @@ PAK file saved to:
         <translation type="vanished">RE 文件 (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN 文件 (*.scn*);;User 文件 (*.user*);;UVAR 文件 (*.uvar*);;PFB 文件 (*.pfb*);;MSG 文件 (*.msg*);;EFX 文件 (*.efx*);;所有文件 (*.*)</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1260"/>
+        <location filename="../../REasy.py" line="1256"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1261"/>
+        <location filename="../../REasy.py" line="1257"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1262"/>
+        <location filename="../../REasy.py" line="1258"/>
         <source>REasy Wiki</source>
         <translation>REasy 维基</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1268"/>
+        <location filename="../../REasy.py" line="1264"/>
         <source>Donate</source>
         <translation>捐助</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1269"/>
+        <location filename="../../REasy.py" line="1265"/>
         <source>Support REasy</source>
         <translation>支持 REasy</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1254"/>
+        <location filename="../../REasy.py" line="1250"/>
         <source>PAK Browser</source>
         <translation>PAK 浏览器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="1250"/>
+        <location filename="../../REasy.py" line="1246"/>
         <source>REF Script Creator</source>
         <translation>REF 脚本创建器</translation>
     </message>
