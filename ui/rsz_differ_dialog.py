@@ -38,17 +38,22 @@ DROP_LABEL_ACCEPT_STYLE = """
 """
 
 
+RSZ_EXTENSIONS = {'.scn', '.pfb', '.user'}
+
+
 def _is_rsz_file(file_path: str) -> bool:
     if not file_path:
         return False
 
     file_lower = file_path.lower()
-    if file_lower.endswith('.scn'):
+    if any(file_lower.endswith(ext) for ext in RSZ_EXTENSIONS):
         return True
 
-    parts = os.path.basename(file_path).split('.')
-    if len(parts) >= 2 and ('.' + parts[-2]).lower() == '.scn':
-        return True
+    parts = os.path.basename(file_lower).split('.')
+    if len(parts) >= 2:
+        ext = '.' + parts[-2]
+        if ext in RSZ_EXTENSIONS:
+            return True
 
     return False
 
@@ -228,7 +233,7 @@ class RszDifferDialog(QDialog):
         group = QGroupBox("This diff viewer is still highly EXPERIMENTAL. Results might not be accurate.")
         layout = QVBoxLayout()
         
-        instructions = QLabel("Tip: You can drag and drop 2 SCN files at once onto this dialog")
+        instructions = QLabel("Tip: You can drag and drop 2 RSZ files (SCN/PFB/USER) at once onto this dialog")
         instructions.setWordWrap(True)
         instructions.setStyleSheet("QLabel { font-style: italic; padding: 5px; }")
         layout.addWidget(instructions)
@@ -252,7 +257,7 @@ class RszDifferDialog(QDialog):
         
         file1_layout = QHBoxLayout()
         file1_layout.addWidget(QLabel("File 1:"))
-        self.file1_label = DropLabel("Drop SCN file here or click Browse...")
+        self.file1_label = DropLabel("Drop RSZ file here or click Browse...")
         self.file1_label.file_dropped.connect(lambda path: self.load_file(1, path))
         file1_layout.addWidget(self.file1_label, 1)
         self.file1_button = QPushButton("Browse...")
@@ -273,7 +278,7 @@ class RszDifferDialog(QDialog):
 
         file2_layout = QHBoxLayout()
         file2_layout.addWidget(QLabel("File 2:"))
-        self.file2_label = DropLabel("Drop SCN file here or click Browse...")
+        self.file2_label = DropLabel("Drop RSZ file here or click Browse...")
         self.file2_label.file_dropped.connect(lambda path: self.load_file(2, path))
         file2_layout.addWidget(self.file2_label, 1)
         self.file2_button = QPushButton("Browse...")
@@ -333,11 +338,13 @@ class RszDifferDialog(QDialog):
         <html>
         <body style="font-family: 'Segoe UI', Arial, sans-serif;">
             <h3 style="color: #666;">No Comparison Performed</h3>
-            <p style="color: #888;">Select two SCN files and click "Compare Files" to begin.</p>
+            <p style="color: #888;">Select two RSZ files (SCN, PFB, or USER) and click "Compare Files" to begin.</p>
             <hr style="border: 1px solid #e0e0e0;">
             <p style="color: #888; font-size: 10pt;">
                 Supported file types:<br>
                 • SCN files (Scene)<br>
+                • PFB files (Prefab)<br>
+                • USER files (User data)<br>
             </p>
         </body>
         </html>
@@ -396,9 +403,9 @@ class RszDifferDialog(QDialog):
     def select_file(self, file_number: int):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            f"Select SCN File {file_number}",
+            f"Select RSZ File {file_number}",
             "",
-            "SCN Files (*.scn *.scn.*);;All Files (*.*)"
+            "RSZ Files (*.scn *.scn.* *.pfb *.pfb.* *.user *.user.*);;All Files (*.*)"
         )
         
         if file_path:

@@ -94,11 +94,16 @@ class RszDiffer:
 
         if hasattr(rsz_file, 'gameobjects'):
             for go in rsz_file.gameobjects:
-                guid_str = guid_le_to_str(go.guid)
-                if guid_str == "00000000-0000-0000-0000-000000000000":
-                    continue
+                if hasattr(go, 'guid'):
+                    guid_str = guid_le_to_str(go.guid)
+                    if guid_str == "00000000-0000-0000-0000-000000000000":
+                        continue
+                    key = guid_str
+                else:
+                    key = f"pfb-{go.id}"
+
                 name = self._get_gameobject_name(rsz_file, go)
-                gameobjects[guid_str] = (go, name)
+                gameobjects[key] = (go, name)
 
         return gameobjects
 
@@ -111,8 +116,15 @@ class RszDiffer:
             type_registry = self.handler1.type_registry if rsz_file == self.handler1.rsz_file else self.handler2.type_registry
             name_helper = RszViewerNameHelper(rsz_file, type_registry)
         
-        guid_str = guid_le_to_str(gameobject.guid)
-        default_name = f"GameObject_{guid_str[:8]}"
+        if hasattr(gameobject, 'guid'):
+            guid_str = guid_le_to_str(gameobject.guid)
+            default_name = f"GameObject_{guid_str[:8]}"
+        elif getattr(rsz_file, 'is_pfb', False):
+            default_name = f"PrefabObject_{gameobject.id}"
+        elif getattr(rsz_file, 'is_usr', False):
+            default_name = "UserRoot"
+        else:
+            default_name = f"GameObject_{gameobject.id}"
         
         if gameobject.id < len(rsz_file.object_table):
             instance_id = rsz_file.object_table[gameobject.id]
@@ -861,9 +873,23 @@ class RszDiffer:
             return instance_diffs
 
         go_instance_ids = set()
+        user_root_ids = set()
+
+        if rsz1.is_usr and rsz2.is_usr:
+            if getattr(rsz1, 'object_table', None):
+                root_id = next((obj_id for obj_id in rsz1.object_table if obj_id > 0), None)
+                if root_id is not None:
+                    user_root_ids.add(root_id)
+            if getattr(rsz2, 'object_table', None):
+                root_id = next((obj_id for obj_id in rsz2.object_table if obj_id > 0), None)
+                if root_id is not None:
+                    user_root_ids.add(root_id)
+
         for rsz in [rsz1, rsz2]:
             if hasattr(rsz, 'object_table'):
-                go_instance_ids.update(obj_id for obj_id in rsz.object_table if obj_id > 0)
+                for obj_id in rsz.object_table:
+                    if obj_id > 0 and obj_id not in user_root_ids:
+                        go_instance_ids.add(obj_id)
 
         if not hasattr(self, 'general_offset'):
             self.general_offset = getattr(self, 'instance_offset', 0)
@@ -1376,10 +1402,10 @@ class RszDiffer:
             go1, name1 = go_map1[guid]
             go2, name2 = go_map2[guid]
 
-            guid1_str = guid_le_to_str(go1.guid)
-            guid2_str = guid_le_to_str(go2.guid)
-
-            assert guid == guid1_str == guid2_str, f"GUID mismatch: key={guid}, go1={guid1_str}, go2={guid2_str}"
+            if hasattr(go1, 'guid') and hasattr(go2, 'guid'):
+                guid1_str = guid_le_to_str(go1.guid)
+                guid2_str = guid_le_to_str(go2.guid)
+                assert guid == guid1_str == guid2_str, f"GUID mismatch: key={guid}, go1={guid1_str}, go2={guid2_str}"
 
             self.instance_offset = 0
 
@@ -1468,6 +1494,21 @@ class RszDiffer:
         export_path1, export_path2 = self.export_files(file1_data, file2_data)
 
         rsz1, rsz2 = self.load_rsz_files(file1_data, file2_data, file1_path, file2_path)
+
+        type1 = 'USR' if rsz1.is_usr else 'PFB' if rsz1.is_pfb else 'SCN'
+        type2 = 'USR' if rsz2.is_usr else 'PFB' if rsz2.is_pfb else 'SCN'
+
+        if type1 != type2:
+            raise ValueError(f"Mismatched RSZ file types: {type1} vs {type2}")
+
+        if hasattr(self, 'general_offset'):
+            del self.general_offset
+        self.instance_offset = 0
+
+        if rsz1.is_usr and rsz2.is_usr:
+            root1 = next((obj_id for obj_id in rsz1.object_table if obj_id > 0), 0) if hasattr(rsz1, 'object_table') else 0
+            root2 = next((obj_id for obj_id in rsz2.object_table if obj_id > 0), 0) if hasattr(rsz2, 'object_table') else 0
+            self.instance_offset = root2 - root1
 
         go_map1 = self.get_gameobjects_map(rsz1)
         go_map2 = self.get_gameobjects_map(rsz2)
