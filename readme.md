@@ -45,6 +45,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | PAK       | ✅       | Most titles      |
 | CFIL       | ✅       | Most titles      |
 | MOTBANK       | ✅       | Most titles      |
+| MCAMBANK       | ✅       | Most titles      |
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
 | CDEF       | Coming Soon       |       |
