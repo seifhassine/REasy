@@ -1065,7 +1065,7 @@ class RszDiffer:
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, OBBData, AABBData, CapsuleData,
-            AreaData, ConeData, LineSegmentData, PointData, SizeData, SphereData,
+            AreaData, AreaDataOld, ConeData, LineSegmentData, PointData, SizeData, SphereData,
             CylinderData, RectData, RuntimeTypeData, RawBytesData
         )
 
@@ -1162,7 +1162,7 @@ class RszDiffer:
                 val1.end.x != val2.end.x or val1.end.y != val2.end.y or val1.end.z != val2.end.z):
                 changes.append(f"{path}: LineSegment changed")
                 
-        elif isinstance(val1, AreaData):
+        elif isinstance(val1, AreaData) or isinstance(val1, AreaDataOld):
             if (val1.p0.x != val2.p0.x or val1.p0.y != val2.p0.y or
                 val1.p1.x != val2.p1.x or val1.p1.y != val2.p1.y or
                 val1.p2.x != val2.p2.x or val1.p2.y != val2.p2.y or
@@ -1265,7 +1265,7 @@ class RszDiffer:
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, AABBData, OBBData, CapsuleData,
-            SphereData, CylinderData, ConeData, LineSegmentData, AreaData,
+            SphereData, CylinderData, ConeData, LineSegmentData, AreaDataOld, AreaData,
             RectData, PointData, SizeData, RuntimeTypeData, RawBytesData, Mat4Data
         )
 
@@ -1308,7 +1308,7 @@ class RszDiffer:
             return f"Cone[pos:({value.position.x:.2f}, {value.position.y:.2f}, {value.position.z:.2f}), angle={value.angle:.2f}, dist={value.distance:.2f}]"
         elif isinstance(value, LineSegmentData):
             return f"LineSegment[({value.start.x:.2f}, {value.start.y:.2f}, {value.start.z:.2f})-({value.end.x:.2f}, {value.end.y:.2f}, {value.end.z:.2f})]"
-        elif isinstance(value, AreaData):
+        elif isinstance(value, AreaData) or isinstance(value, AreaDataOld):
             return f"Area[p0:({value.p0.x:.2f}, {value.p0.y:.2f}), p1:({value.p1.x:.2f}, {value.p1.y:.2f}), h={value.height:.2f}]"
         elif isinstance(value, RectData):
             return f"Rect[({value.min_x:.2f}, {value.min_y:.2f})-({value.max_x:.2f}, {value.max_y:.2f})]"

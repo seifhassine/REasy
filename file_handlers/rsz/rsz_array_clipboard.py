@@ -5,7 +5,7 @@ from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
     ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
-    Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, RectData, LineSegmentData,
+    Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, AreaDataOld, RectData, LineSegmentData,
     PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, is_reference_type
 )
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -1914,6 +1914,17 @@ class RszArrayClipboard:
                 "bottom": element.bottom,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, AreaDataOld):
+            return {
+                "type": "AreaDataOld",
+                "p0": RszArrayClipboard._serialize_element(element.p0),
+                "p1": RszArrayClipboard._serialize_element(element.p1),
+                "p2": RszArrayClipboard._serialize_element(element.p2),
+                "p3": RszArrayClipboard._serialize_element(element.p3),
+                "height": element.height,
+                "bottom": element.bottom,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, RectData):
             return {
                 "type": "RectData",
@@ -2778,6 +2789,21 @@ class RszArrayClipboard:
             p3_deserialized = RszArrayClipboard._deserialize_element(p3, Float2Data) if isinstance(p3, dict) else Float2Data()
             
             return AreaData(p0_deserialized, p1_deserialized, p2_deserialized, p3_deserialized, height, bottom, orig_type)
+
+        elif element_type == "AreaDataOld":
+            p0 = element_data.get("p0", Vec2Data())
+            p1 = element_data.get("p1", Vec2Data())
+            p2 = element_data.get("p2", Vec2Data())
+            p3 = element_data.get("p3", Vec2Data())
+            height = element_data.get("height", 0.0)
+            bottom = element_data.get("bottom", 0.0)
+
+            p0_deserialized = RszArrayClipboard._deserialize_element(p0, Vec2Data) if isinstance(p0, dict) else Vec2Data()
+            p1_deserialized = RszArrayClipboard._deserialize_element(p1, Vec2Data) if isinstance(p1, dict) else Vec2Data()
+            p2_deserialized = RszArrayClipboard._deserialize_element(p2, Vec2Data) if isinstance(p2, dict) else Vec2Data()
+            p3_deserialized = RszArrayClipboard._deserialize_element(p3, Vec2Data) if isinstance(p3, dict) else Vec2Data()
+            
+            return AreaDataOld(p0_deserialized, p1_deserialized, p2_deserialized, p3_deserialized, height, bottom, orig_type)
 
         elif element_type == "RectData":
             return RectData(

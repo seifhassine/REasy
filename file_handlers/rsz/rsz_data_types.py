@@ -451,13 +451,38 @@ class AreaData:
         p1_vals = ctx.read_struct(ctx.unpack_2float, 8)
         p2_vals = ctx.read_struct(ctx.unpack_2float, 8)
         p3_vals = ctx.read_struct(ctx.unpack_2float, 8)
-        height = ctx.read_value(ctx.unpack_float, 4)
-        bottom = ctx.read_value(ctx.unpack_float, 4)
-        ctx.skip(8)
         p0 = Float2Data(p0_vals[0], p0_vals[1], "Float2")
         p1 = Float2Data(p1_vals[0], p1_vals[1], "Float2")
         p2 = Float2Data(p2_vals[0], p2_vals[1], "Float2")
         p3 = Float2Data(p3_vals[0], p3_vals[1], "Float2")
+        height = ctx.read_value(ctx.unpack_float, 4)
+        bottom = ctx.read_value(ctx.unpack_float, 4)
+        ctx.skip(8)
+        return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
+
+class AreaDataOld:
+    def __init__(self, p0: Vec2Data = Vec2Data(0,0, ""), p1: Vec2Data = Vec2Data(0,0, ""), p2: Vec2Data = Vec2Data(0,0, ""), p3: Vec2Data = Vec2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
+        self.p0 = p0
+        self.p1 = p1
+        self.p2 = p2
+        self.p3 = p3
+        self.height = height
+        self.bottom = bottom
+        self.orig_type = orig_type
+
+    @classmethod
+    def parse(cls, ctx):
+        p0_vals = ctx.read_struct(ctx.unpack_4float, 16)
+        p1_vals = ctx.read_struct(ctx.unpack_4float, 16)
+        p2_vals = ctx.read_struct(ctx.unpack_4float, 16)
+        p3_vals = ctx.read_struct(ctx.unpack_4float, 16)
+        p0 = Vec2Data(p0_vals[0], p0_vals[1], "Vec2")
+        p1 = Vec2Data(p1_vals[0], p1_vals[1], "Vec2")
+        p2 = Vec2Data(p2_vals[0], p2_vals[1], "Vec2")
+        p3 = Vec2Data(p3_vals[0], p3_vals[1], "Vec2")
+        height = ctx.read_value(ctx.unpack_float, 4)
+        bottom = ctx.read_value(ctx.unpack_float, 4)
+        ctx.skip(8)
         return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
 
 class ConeData:
@@ -766,6 +791,7 @@ NON_ARRAY_PARSERS = MappingProxyType({
     CapsuleData: CapsuleData.parse,
     AABBData: AABBData.parse,
     AreaData: AreaData.parse,
+    AreaDataOld: AreaDataOld.parse,
     Uint2Data: Uint2Data.parse,
     Uint3Data: Uint3Data.parse,
     Int2Data: Int2Data.parse,
@@ -810,7 +836,11 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
     if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
         return MaybeObject
 
-    return TYPE_MAPPING.get(field_type, RawBytesData)
+    matchedType = TYPE_MAPPING.get(field_type, RawBytesData)
+
+    if(matchedType == AreaData and field_size == 80):
+        return AreaDataOld
+    return matchedType
 
 def is_reference_type(obj):
     return isinstance(obj, (ObjectData, UserDataData))

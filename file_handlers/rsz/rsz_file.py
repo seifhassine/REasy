@@ -7,7 +7,8 @@ from file_handlers.rsz.rsz_data_types import (
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
-    ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, get_type_class, NON_ARRAY_PARSERS
+    ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
+    NON_ARRAY_PARSERS
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
@@ -1149,6 +1150,15 @@ class RszFile:
                     out.extend(pack_float(element.height))
                     out.extend(pack_float(element.bottom))
                     out.extend(b'\x00' * 8)
+
+                elif isinstance(element, AreaDataOld):
+                    out.extend(pack_4float(element.p0.x, element.p0.y, 0, 0))
+                    out.extend(pack_4float(element.p1.x, element.p1.y, 0, 0))
+                    out.extend(pack_4float(element.p2.x, element.p2.y, 0, 0))
+                    out.extend(pack_4float(element.p3.x, element.p3.y, 0, 0))
+                    out.extend(pack_float(element.height))
+                    out.extend(pack_float(element.bottom))
+                    out.extend(b'\x00' * 8)
                 else:
                     val = getattr(element, 'value', 0)
                     raw_bytes = val.to_bytes(field_size, byteorder='little')
@@ -1291,6 +1301,14 @@ class RszFile:
                 out.extend(pack_float(data_obj.bottom))
                 out.extend(b'\x00' * 8)
 
+            elif isinstance(data_obj, AreaDataOld):
+                out.extend(pack_4float(data_obj.p0.x, data_obj.p0.y, 0, 0))
+                out.extend(pack_4float(data_obj.p1.x, data_obj.p1.y, 0, 0))
+                out.extend(pack_4float(data_obj.p2.x, data_obj.p2.y, 0, 0))
+                out.extend(pack_4float(data_obj.p3.x, data_obj.p3.y, 0, 0))
+                out.extend(pack_float(data_obj.height))
+                out.extend(pack_float(data_obj.bottom))
+                out.extend(b'\x00' * 8)
 
             else:
                 #print("last is else")

@@ -36,6 +36,7 @@ class TreeWidgetFactory:
         "OBBData": OBBInput,
         "AABBData": AABBInput,
         "AreaData": AreaInput,
+        "AreaDataOld": AreaInput,
         "Mat4Data": Mat4Input,
         "RawBytesData": HexBytesInput,
         "StringData": StringInput,
