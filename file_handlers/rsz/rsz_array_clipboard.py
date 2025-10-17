@@ -6,7 +6,7 @@ from file_handlers.rsz.rsz_data_types import (
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
     ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
     Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, AreaDataOld, RectData, LineSegmentData,
-    PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, is_reference_type
+    PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, SizeData, is_reference_type
 )
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.utils.rsz_embedded_utils import (
@@ -1934,6 +1934,13 @@ class RszArrayClipboard:
                 "max_y": element.max_y,
                 "orig_type": element.orig_type
             }
+        elif isinstance(element, SizeData):
+            return {
+                "type": "SizeData",
+                "width": element.width,
+                "height": element.height,
+                "orig_type": element.orig_type
+            }
         elif isinstance(element, LineSegmentData):
             return {
                 "type": "LineSegmentData",
@@ -2811,6 +2818,13 @@ class RszArrayClipboard:
                 element_data.get("min_y", 0.0),
                 element_data.get("max_x", 0.0),
                 element_data.get("max_y", 0.0),
+                orig_type
+            )
+        
+        elif element_type == "SizeData":
+            return SizeData(
+                element_data.get("width", 0.0),
+                element_data.get("height", 0.0),
                 orig_type
             )
         
