@@ -118,7 +118,9 @@ REasy GUI is currently available in English and Chinese (limited)
 
 - Run build.bat
 
-- Dependencies in requirements.txt
+- Python dependencies are listed in requirements.txt
+
+- Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
 - Python 3.12+ is required.
 
