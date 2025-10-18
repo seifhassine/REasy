@@ -102,7 +102,12 @@ class MsgHandler(BaseFileHandler):
                 else:
                     entry["nameHash"] = 0
         
-        sorted_entries = sorted(self.entries, key=lambda e: e.get("name", "").lower())
+        if self._by_hash(self.header["version"]):
+            sorted_entries = sorted(self.entries, key=lambda e: e.get("name", "").lower())
+        else:
+            sorted_entries = sorted(self.entries, key=lambda e: e.get("index", 0))
+            for i, entry in enumerate(sorted_entries):
+                entry["index"] = i
         
         is_v12 = not self.is_encrypted
         entry_table_start = 64 if is_v12 else 72
