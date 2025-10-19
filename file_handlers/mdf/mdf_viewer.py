@@ -216,7 +216,12 @@ class MdfViewer(QWidget):
 		textures_tab = QWidget()
 		tg = QGridLayout(textures_tab)
 		self.textures_table = QTableWidget(0, 3)
-		self.textures_table.setHorizontalHeaderLabels(["Type", "Path", "Locked"])
+		self.textures_table.setHorizontalHeaderLabels(["Type", "Path", "Locked 🔒"])
+		self._set_header_tooltip(self.textures_table, 2, 
+			"Write-Protection Flag\n\n"
+			"• Locked = 0 (Unchecked): Texture CAN be modified at runtime via setTexture()\n"
+			"• Locked ≠ 0 (Checked): Texture CANNOT be modified at runtime\n\n"
+			"When locked, the engine will skip texture updates and keep the original value.")
 		self.textures_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 		self.textures_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 		self.textures_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -286,6 +291,13 @@ class MdfViewer(QWidget):
 
 		self.materials_table.itemSelectionChanged.connect(self._on_select_material)
 
+	def _set_header_tooltip(self, table: QTableWidget, column: int, tooltip: str):
+		"""Set a tooltip for a specific column header."""
+		header = table.horizontalHeader()
+		model = table.model()
+		if model:
+			model.setHeaderData(column, Qt.Horizontal, tooltip, Qt.ToolTipRole)
+	
 	def _make_toolbar_icon(self, kind: str, color: QColor) -> QIcon:
 		size = 24
 		pix = QPixmap(size, size)
@@ -660,7 +672,12 @@ class MdfViewer(QWidget):
 		while self.params_stack.count() <= mat_index:
 			idx = self.params_stack.count()
 			table = QTableWidget(0, 8)
-			table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked", "X", "Y", "Z", "W", "Color"])
+			table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked 🔒", "X", "Y", "Z", "W", "Color"])
+			self._set_header_tooltip(table, 2, 
+				"Write-Protection Flag\n\n"
+				"• Locked = 0 (Unchecked): Parameter CAN be modified at runtime via setFloat()\n"
+				"• Locked ≠ 0 (Checked): Parameter CANNOT be modified at runtime\n\n"
+				"When locked, the engine will skip parameter updates and keep the original value.")
 			table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 			table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
 			table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
