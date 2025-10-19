@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QComboBox,
 	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy, QColorDialog,
-	QMessageBox, QToolButton, QStyle
+	QMessageBox, QToolButton, QStyle, QStackedWidget
 )
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
 from PySide6.QtCore import Qt, Signal, QSize, QPoint
@@ -21,7 +21,7 @@ class MdfViewer(QWidget):
 		super().__init__()
 		self.handler = handler
 		self._modified = False
-		self._current_index = 0
+		self._current_index = -1  # Currently displayed material index
 		self._setup_ui()
 		self._populate()
 
@@ -125,6 +125,7 @@ class MdfViewer(QWidget):
 		splitter.addWidget(left_panel)
 
 		self.tabs = QTabWidget()
+		self.tabs.currentChanged.connect(self._on_tab_changed)
 		splitter.addWidget(self.tabs)
 		splitter.setStretchFactor(0, 1)
 		splitter.setStretchFactor(1, 3)
@@ -235,16 +236,10 @@ class MdfViewer(QWidget):
 		self.params_info_label = QLabel("")
 		self.params_info_label.setWordWrap(True)
 		pg.addWidget(self.params_info_label, 0, 0, 1, 3)
-		self.params_table = QTableWidget(0, 8)
-		self.params_table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked", "X", "Y", "Z", "W", "Color"])
-		self.params_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-		self.params_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-		self.params_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-		for c in range(3, 8): self.params_table.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
-		self.params_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
-		self.params_table.itemChanged.connect(self._on_param_changed)
-		self.params_table.itemClicked.connect(self._on_param_clicked)
-		pg.addWidget(self.params_table, 1, 0, 1, 3)
+		
+		self.params_stack = QStackedWidget()
+		pg.addWidget(self.params_stack, 1, 0, 1, 3)
+		
 		self.par_add_btn = QPushButton("Add")
 		self.par_add_above_btn = QPushButton("Add Above")
 		self.par_del_btn = QPushButton("Delete")
@@ -379,10 +374,10 @@ class MdfViewer(QWidget):
 		if self.materials_table.rowCount() > 0:
 			self.materials_table.selectRow(0)
 			self._current_index = 0
-			self._populate_details(0)
+			self._refresh_details_for_current_material()
 		else:
 			self._current_index = -1
-			self._populate_details(-1)
+			self._refresh_details_for_current_material()
 
 	def _refresh_materials_list(self):
 		m = self.handler.mdf
@@ -418,9 +413,7 @@ class MdfViewer(QWidget):
 		current_row = self.materials_table.currentRow()
 		if current_row >= 0:
 			self._refresh_material_row(current_row)
-			self._populate_details(current_row)
-		else:
-			self._populate_details(-1)
+		self._refresh_details_for_current_material(force_full_refresh=True)
 
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
@@ -620,8 +613,8 @@ class MdfViewer(QWidget):
 			target_row = min(insert_at, self.materials_table.rowCount() - 1)
 			if target_row >= 0:
 				self.materials_table.selectRow(target_row)
-				self._populate_details(target_row)
 				self._current_index = target_row
+				self._refresh_details_for_current_material()
 		self.modified = True
 		return len(materials)
 
@@ -656,34 +649,71 @@ class MdfViewer(QWidget):
 				name = metadata.get("name") or metadata.get("id") or name
 			QMessageBox.information(self, "Import Template", f"Imported template '{name}'.")
 
-	def _populate_details(self, mat_index: int):
+	def _get_or_create_params_table(self, mat_index):
 		m = self.handler.mdf
-		self._update_version_dependent_tabs()
+		if not m or not (0 <= mat_index < len(m.materials)):
+			return None
+		
+		if mat_index < self.params_stack.count():
+			return self.params_stack.widget(mat_index)
+		
+		while self.params_stack.count() <= mat_index:
+			idx = self.params_stack.count()
+			table = QTableWidget(0, 8)
+			table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked", "X", "Y", "Z", "W", "Color"])
+			table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+			table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+			table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+			for c in range(3, 8):
+				table.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
+			table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+			table.itemChanged.connect(self._on_param_changed)
+			table.itemClicked.connect(self._on_param_clicked)
+			
+			if idx < len(m.materials):
+				md = m.materials[idx]
+				table.blockSignals(True)
+				self._update_table_rows(table, len(md.parameters))
+				for r, p in enumerate(md.parameters):
+					self._populate_param_row_in_table(table, r, p)
+				table.blockSignals(False)
+			
+			self.params_stack.addWidget(table)
+		
+		return self.params_stack.widget(mat_index)
+
+	def _refresh_details_for_current_material(self):
+		m = self.handler.mdf
+		mat_index = self._current_index
+		
+		if not hasattr(self, 'textures_table'):
+			return
+		
 		if not m or not (0 <= mat_index < len(m.materials)):
 			self.mmtr_edit.setText("")
+			self.matname_edit.setText("")
+			self.matname_hash_label.setText("0x00000000")
 			self.bake_texture_label.setVisible(False)
 			self.bake_texture_spin.setVisible(False)
-			self.textures_table.setRowCount(0)
-			self.params_table.setRowCount(0)
-			self.gpbf_table.setRowCount(0)
-			self.shaderLODRedirects_table.blockSignals(True)
-			self.shaderLODRedirects_table.setRowCount(0)
-			self.shaderLODRedirects_table.blockSignals(False)
-			self.shaderLOD_count_spin.blockSignals(True)
-			self.shaderLOD_count_spin.setValue(0)
-			self.shaderLOD_count_spin.blockSignals(False)
-			self._update_version_dependent_tabs()
+			self._update_table_rows(self.textures_table, 0)
+			if self.params_stack.count() > 0:
+				self.params_stack.setCurrentIndex(0)
+			self._update_table_rows(self.gpbf_table, 0)
+			self._update_table_rows(self.shaderLODRedirects_table, 0)
 			return
+		
 		md = m.materials[mat_index]
 		version = self._current_file_version()
 		
 		self.mmtr_edit.blockSignals(True)
 		self.mmtr_edit.setText(md.header.mmtr_path)
 		self.mmtr_edit.blockSignals(False)
+		
 		self.matname_edit.blockSignals(True)
 		self.matname_edit.setText(md.header.mat_name)
 		self.matname_edit.blockSignals(False)
 		self.matname_hash_label.setText(f"0x{murmur3_hash_utf16le(md.header.mat_name):08x}")
+		
 		self.shader_combo.blockSignals(True)
 		sh = int(md.header.shader_type)
 		if 0 <= sh < self.shader_combo.count():
@@ -704,57 +734,97 @@ class MdfViewer(QWidget):
 			self.bake_texture_spin.blockSignals(False)
 		
 		self._update_flags_ui(md.header)
+		
+		self._get_or_create_params_table(mat_index)
+		self.params_stack.setCurrentIndex(mat_index)
+		self._update_params_info(md)
+		
+		current_tab = self.tabs.currentIndex()
+		if current_tab == 1:
+			self._refresh_textures_table(md)
+		elif current_tab == self.gpbf_tab_idx and version >= 19:
+			self._refresh_gpbf_table(md)
+		elif current_tab == self.shaderLODRedirects_tab_idx and version >= 31:
+			self._refresh_shader_lod_table(md)
 
+	def _refresh_textures_table(self, md):
 		self.textures_table.blockSignals(True)
-		self.textures_table.setRowCount(len(md.textures))
+		self._update_table_rows(self.textures_table, len(md.textures))
 		for r, t in enumerate(md.textures):
-			self.textures_table.setItem(r, 0, QTableWidgetItem(t.tex_type))
-			self.textures_table.setItem(r, 1, QTableWidgetItem(t.tex_path))
-			locked_item = QTableWidgetItem()
-			locked_item.setFlags(locked_item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-			locked_item.setCheckState(Qt.Checked if t.locked else Qt.Unchecked)
-			locked_item.setFlags(locked_item.flags() & ~Qt.ItemIsEditable)
-			self.textures_table.setItem(r, 2, locked_item)
+			self._update_texture_row(r, t)
 		self.textures_table.blockSignals(False)
 
-		self.params_table.blockSignals(True)
-		self.params_table.setRowCount(len(md.parameters))
-		for r, p in enumerate(md.parameters):
-			self._refresh_param_row_internal(r, p)
-		self.params_table.blockSignals(False)
-		self._update_params_info(md)
-		self._apply_layercolor_spans(md)
-
-		version = self._current_file_version()
-		if version >= 19:
-			self.gpbf_table.blockSignals(True)
-			self.gpbf_table.setRowCount(len(md.gpu_buffers))
-			for r, (n, d) in enumerate(md.gpu_buffers):
-				self.gpbf_table.setItem(r, 0, QTableWidgetItem(n.name))
-				self.gpbf_table.setItem(r, 1, QTableWidgetItem(d.name))
-			self.gpbf_table.blockSignals(False)
+	def _populate_param_row_in_table(self, table, row, p):
+		table.setItem(row, 0, QTableWidgetItem(p.name))
+		table.setItem(row, 1, QTableWidgetItem(str(p.component_count)))
+		
+		comp_locked_item = QTableWidgetItem()
+		comp_locked_item.setFlags(comp_locked_item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+		comp_locked_item.setCheckState(Qt.Checked if p.component_locked else Qt.Unchecked)
+		comp_locked_item.setFlags(comp_locked_item.flags() & ~Qt.ItemIsEditable)
+		table.setItem(row, 2, comp_locked_item)
+		
+		x, y, z, w = p.parameter
+		values = [x, y, z, w]
+		for i in range(4):
+			item = QTableWidgetItem("")
+			if 0 <= i < p.component_count:
+				item.setText(str(values[i]))
+				item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+			else:
+				item.setText("")
+				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
+			table.setItem(row, 3 + i, item)
+		
+		name_lower = (p.name or "").lower()
+		is_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
+				  or name_lower.endswith("color3")) and p.component_count in (3, 4)
+		
+		color_item = QTableWidgetItem("")
+		if is_color:
+			rgb = [values[0], values[1], values[2]]
+			alpha = values[3] if p.component_count == 4 else 1.0
+			def clamp01(v):
+				try:
+					return max(0.0, min(1.0, float(v)))
+				except Exception:
+					return 0.0
+			R = int(clamp01(rgb[0]) * 255)
+			G = int(clamp01(rgb[1]) * 255)
+			B = int(clamp01(rgb[2]) * 255)
+			A = int(clamp01(alpha) * 255)
+			qcol = QColor(R, G, B, A)
+			color_item.setBackground(qcol)
+			if p.component_count == 4:
+				color_item.setToolTip(f"RGBA: {R},{G},{B},{A}")
+			else:
+				color_item.setToolTip(f"RGB: {R},{G},{B}")
+			color_item.setFlags((color_item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
 		else:
-			self.gpbf_table.blockSignals(True)
-			self.gpbf_table.setRowCount(0)
-			self.gpbf_table.blockSignals(False)
+			color_item.setFlags((color_item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
+		table.setItem(row, 7, color_item)
 
-		if version >= 31:
-			self.shaderLODRedirects_table.blockSignals(True)
-			self.shaderLOD_count_spin.blockSignals(True)
-			count = int(md.header.shaderLODNum)
-			self.shaderLOD_count_spin.setValue(count)
-			rows = count
-			self.shaderLODRedirects_table.setRowCount(rows)
-			for i in range(rows):
-				counts, elems = (md.shader_lod_redirects[i] if i < len(md.shader_lod_redirects) else ([], []))
-				self.shaderLODRedirects_table.setItem(i, 0, QTableWidgetItem(",".join(str(v) for v in counts)))
-				self.shaderLODRedirects_table.setItem(i, 1, QTableWidgetItem(",".join(str(v) for v in elems)))
-			self.shaderLOD_count_spin.blockSignals(False)
-			self.shaderLODRedirects_table.blockSignals(False)
-		else:
-			self.shaderLODRedirects_table.blockSignals(True)
-			self.shaderLODRedirects_table.setRowCount(0)
-			self.shaderLODRedirects_table.blockSignals(False)
+	def _refresh_gpbf_table(self, md):
+		self.gpbf_table.blockSignals(True)
+		self._update_table_rows(self.gpbf_table, len(md.gpu_buffers))
+		for r, (n, d) in enumerate(md.gpu_buffers):
+			self._update_gpbf_row(r, n.name, d.name)
+		self.gpbf_table.blockSignals(False)
+
+	def _refresh_shader_lod_table(self, md):
+		self.shaderLODRedirects_table.blockSignals(True)
+		self.shaderLOD_count_spin.blockSignals(True)
+		count = int(md.header.shaderLODNum)
+		self.shaderLOD_count_spin.setValue(count)
+		self._update_table_rows(self.shaderLODRedirects_table, count)
+		for i in range(count):
+			counts, elems = (md.shader_lod_redirects[i] if i < len(md.shader_lod_redirects) else ([], []))
+			self._update_shader_lod_row(i, counts, elems)
+		self.shaderLOD_count_spin.blockSignals(False)
+		self.shaderLODRedirects_table.blockSignals(False)
+
+	def _on_tab_changed(self, index):
+		self._refresh_details_for_current_material()
 
 	def _on_add_texture(self):
 		from .mdf_file import TexHeader
@@ -765,8 +835,8 @@ class MdfViewer(QWidget):
 		i = rows[0].row()
 		md = m.materials[i]
 		md.textures.append(TexHeader())
-		self._populate_details(i)
 		self._refresh_material_row(i)
+		self._refresh_details_for_current_material()
 		self.modified = True
 
 	def _on_delete_texture(self):
@@ -780,54 +850,75 @@ class MdfViewer(QWidget):
 		for r in sel:
 			if 0 <= r < len(md.textures):
 				del md.textures[r]
-		self._populate_details(i)
 		self._refresh_material_row(i)
+		self._refresh_details_for_current_material()
 		if sel:
 			self.modified = True
 
 	def _on_add_param(self):
 		from .mdf_file import ParamHeader
 		m = self.handler.mdf
-		rows = self.materials_table.selectionModel().selectedRows()
-		if not m or not rows:
+		if not m or self._current_index < 0:
 			return
-		i = rows[0].row()
+		i = self._current_index
 		md = m.materials[i]
+		table = self._get_or_create_params_table(i)
+		if not table:
+			return
+		
 		ph = ParamHeader()
 		ph.name = "Param"
 		ph.component_count = 1
 		ph.parameter = (0.0, 0.0, 0.0, 0.0)
 		ph.gap_size = 0
-		row_idx = self.params_table.currentRow()
+		
+		row_idx = table.currentRow()
 		if 0 <= row_idx < len(md.parameters):
 			before = md.parameters[max(0, row_idx-1)].name if row_idx > 0 else ""
 			is_layer, cidx = self._is_layercolor_name(before)
 			if is_layer and cidx is not None and cidx < 2:
 				ph.name = ["LayerColor_Red","LayerColor_Green","LayerColor_Blue"][cidx+1]
+		
 		md.parameters.append(ph)
-		self._populate_details(i)
+		table.blockSignals(True)
+		new_row = table.rowCount()
+		table.insertRow(new_row)
+		self._populate_param_row_in_table(table, new_row, ph)
+		table.blockSignals(False)
 		self._refresh_material_row(i)
+		self._update_params_info(md)
 		self.modified = True
 
 	def _on_add_param_above(self):
 		from .mdf_file import ParamHeader
 		m = self.handler.mdf
-		rows = self.materials_table.selectionModel().selectedRows()
-		if not m or not rows:
+		if not m or self._current_index < 0:
 			return
-		i = rows[0].row()
+		i = self._current_index
 		md = m.materials[i]
+		table = self._get_or_create_params_table(i)
+		if not table:
+			return
+		
 		insert_at = 0
-		if self.params_table.currentRow() >= 0:
-			insert_at = max(0, min(self.params_table.currentRow(), len(md.parameters)))
+		if table.currentRow() >= 0:
+			insert_at = max(0, min(table.currentRow(), len(md.parameters)))
+		
 		ph = ParamHeader()
 		ph.name = "Param"
 		ph.component_count = 1
 		ph.parameter = (0.0, 0.0, 0.0, 0.0)
 		ph.gap_size = 0
 		md.parameters.insert(insert_at, ph)
-		self._populate_details(i)
+		
+		table.blockSignals(True)
+		table.insertRow(insert_at)
+		for r in range(insert_at, len(md.parameters)):
+			self._populate_param_row_in_table(table, r, md.parameters[r])
+		table.blockSignals(False)
+		
 		self._refresh_material_row(i)
+		self._update_params_info(md)
 		self.modified = True
 
 	def _update_params_info(self, md):
@@ -880,55 +971,6 @@ class MdfViewer(QWidget):
 			self.params_info_label.setStyleSheet("")
 			self.params_info_label.setText("")
 
-	def _apply_layercolor_spans(self, md):
-		rows = self.params_table.rowCount()
-		if rows <= 0:
-			return
-		try:
-			self.params_table.clearSpans()
-		except Exception:
-			pass
-		start = None
-		end = None
-		for r in range(rows+1):
-			if r < rows:
-				name = md.parameters[r].name or ""
-				is_layer = name.lower().startswith("layercolor_")
-			else:
-				is_layer = False
-			if is_layer and start is None:
-				start = r
-			elif (not is_layer or r == rows) and start is not None:
-				end = r - 1
-				if end >= start:
-					span_len = end - start + 1
-					R, G, B = 1.0, 1.0, 1.0
-					for rr in range(start, end + 1):
-						nl = (md.parameters[rr].name or "").lower()
-						val = float(md.parameters[rr].parameter[0]) if md.parameters[rr].component_count >= 1 else 0.0
-						if nl.startswith("layercolor_"):
-							if "red" in nl: R = val
-							elif "green" in nl: G = val
-							elif "blue" in nl: B = val
-				qcol = QColor(int(max(0.0, min(1.0, R)) * 255), int(max(0.0, min(1.0, G)) * 255), int(max(0.0, min(1.0, B)) * 255))
-				if span_len > 1:
-					self.params_table.setSpan(start, 7, span_len, 1)
-				item = self.params_table.item(start, 7)
-				if item is None:
-					item = QTableWidgetItem("")
-					self.params_table.setItem(start, 7, item)
-					item.setBackground(qcol)
-					item.setToolTip(f"LayerColor RGB: {R:.3f},{G:.3f},{B:.3f} (click to change)")
-					item.setFlags((item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
-				else:
-					item = self.params_table.item(start, 7)
-					if item is None:
-						item = QTableWidgetItem("")
-						self.params_table.setItem(start, 7, item)
-					item.setBackground(qcol)
-					item.setToolTip(f"LayerColor RGB: {R:.3f},{G:.3f},{B:.3f} (click to change)")
-					item.setFlags((item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
-				start = None
 
 	def _is_layercolor_name(self, name: str) -> tuple[bool, int | None]:
 		ln = (name or "").lower()
@@ -941,19 +983,28 @@ class MdfViewer(QWidget):
 
 	def _on_delete_param(self):
 		m = self.handler.mdf
-		rows = self.materials_table.selectionModel().selectedRows()
-		if not m or not rows:
+		if not m or self._current_index < 0:
 			return
-		i = rows[0].row()
+		i = self._current_index
 		md = m.materials[i]
-		sel = sorted({r.row() for r in self.params_table.selectedIndexes()}, reverse=True)
+		table = self._get_or_create_params_table(i)
+		if not table:
+			return
+		
+		sel = sorted({r.row() for r in table.selectedIndexes()}, reverse=True)
+		if not sel:
+			return
+		
+		table.blockSignals(True)
 		for r in sel:
 			if 0 <= r < len(md.parameters):
 				del md.parameters[r]
-		self._populate_details(i)
+				table.removeRow(r)
+		table.blockSignals(False)
+		
 		self._refresh_material_row(i)
-		if sel:
-			self.modified = True
+		self._update_params_info(md)
+		self.modified = True
 
 	def _on_add_gpbf(self):
 		from .mdf_file import GpbfHeader
@@ -964,7 +1015,7 @@ class MdfViewer(QWidget):
 		i = rows[0].row()
 		md = m.materials[i]
 		md.gpu_buffers.append((GpbfHeader("Name"), GpbfHeader("Data")))
-		self._populate_details(i)
+		self._refresh_details_for_current_material()
 		self.modified = True
 
 	def _on_delete_gpbf(self):
@@ -978,7 +1029,7 @@ class MdfViewer(QWidget):
 		for r in sel:
 			if 0 <= r < len(md.gpu_buffers):
 				del md.gpu_buffers[r]
-		self._populate_details(i)
+		self._refresh_details_for_current_material()
 		if sel:
 			self.modified = True
 
@@ -986,7 +1037,11 @@ class MdfViewer(QWidget):
 		rows = self.materials_table.selectionModel().selectedRows()
 		if not rows:
 			return
-		self._populate_details(rows[0].row())
+		new_index = rows[0].row()
+		if new_index == self._current_index:
+			return
+		self._current_index = new_index
+		self._refresh_details_for_current_material()
 
 	def _on_shaderLOD_count_changed(self, val: int):
 		m = self.handler.mdf
@@ -1000,7 +1055,7 @@ class MdfViewer(QWidget):
 			md.shader_lod_redirects.append(([], []))
 		while len(md.shader_lod_redirects) > md.header.shaderLODNum:
 			md.shader_lod_redirects.pop()
-		self._populate_details(i)
+		self._refresh_details_for_current_material()
 		self.modified = True
 
 	def _on_shaderLODRedirects_changed(self, item):
@@ -1047,20 +1102,26 @@ class MdfViewer(QWidget):
 		self.modified = True
 
 	def _on_param_changed(self, item):
+		table = item.tableWidget()
+		mat_index = self.params_stack.indexOf(table)
+		if mat_index < 0:
+			return
+		
 		m = self.handler.mdf
-		mi = self._get_current_index()
-		if not (0 <= mi < len(m.materials)):
+		if not (0 <= mat_index < len(m.materials)):
 			return
+		
 		pi = item.row()
-		if not (0 <= pi < len(m.materials[mi].parameters)):
+		if not (0 <= pi < len(m.materials[mat_index].parameters)):
 			return
-		p = m.materials[mi].parameters[pi]
+		
+		p = m.materials[mat_index].parameters[pi]
 		val = item.text()
 		c = item.column()
+		
 		if c == 0:
-				p.name = val
-				self._update_params_info(m.materials[mi])
-				self._apply_layercolor_spans(m.materials[mi])
+			p.name = val
+			self._update_params_info(m.materials[mat_index])
 		elif c == 1:
 			new_cc = max(1, min(4, int(val)))
 			old_cc = p.component_count
@@ -1071,9 +1132,10 @@ class MdfViewer(QWidget):
 					if i >= new_cc:
 						arr[i] = 0.0
 				p.parameter = tuple(arr)
-				self._refresh_param_row(mi, pi)
-				self._update_params_info(m.materials[mi])
-				self._apply_layercolor_spans(m.materials[mi])
+				table.blockSignals(True)
+				self._populate_param_row_in_table(table, pi, p)
+				table.blockSignals(False)
+				self._update_params_info(m.materials[mat_index])
 		elif c == 2:
 			p.component_locked = 1 if item.checkState() == Qt.Checked else 0
 		elif c >= 3 and c <= 6:
@@ -1084,91 +1146,111 @@ class MdfViewer(QWidget):
 			arr[idx] = float(val)
 			p.parameter = tuple(arr)
 			name_lower = (p.name or "").lower()
-			if (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
-				or name_lower.endswith("color3")) and p.component_count in (3, 4):
-				self._refresh_param_row(mi, pi)
-				self._apply_layercolor_spans(m.materials[mi])
-			md_local = m.materials[mi]
-			if (p.name or "").lower().startswith("layercolor_"):
-				self._apply_layercolor_spans(md_local)
-			self._update_params_info(md_local)
-		elif c == 7:
-			pass
+			if ((name_lower.endswith("color") or name_lower.endswith("color1") or 
+				 name_lower.endswith("color2") or name_lower.endswith("color3")) 
+				and p.component_count in (3, 4)):
+				table.blockSignals(True)
+				self._populate_param_row_in_table(table, pi, p)
+				table.blockSignals(False)
+			self._update_params_info(m.materials[mat_index])
+		
 		self.modified = True
 
-	def _refresh_param_row(self, mat_index: int, row: int):
-		m = self.handler.mdf
-		p = m.materials[mat_index].parameters[row]
-		self.params_table.blockSignals(True)
-		self._refresh_param_row_internal(row, p)
-		self.params_table.blockSignals(False)
-
-	def _refresh_param_row_internal(self, row: int, p):
-		self.params_table.setItem(row, 0, QTableWidgetItem(p.name))
-		self.params_table.setItem(row, 1, QTableWidgetItem(str(p.component_count)))
-		comp_locked_item = QTableWidgetItem()
-		comp_locked_item.setFlags(comp_locked_item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-		comp_locked_item.setCheckState(Qt.Checked if p.component_locked else Qt.Unchecked)
-		comp_locked_item.setFlags(comp_locked_item.flags() & ~Qt.ItemIsEditable)
-		self.params_table.setItem(row, 2, comp_locked_item)
-		x, y, z, w = p.parameter
-		values = [x, y, z, w]
-		for i in range(4):
-			item = QTableWidgetItem("")
-			if 0 <= i < p.component_count:
-				item.setText(str(values[i]))
-				item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-			else:
-				item.setText("")
-				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-			self.params_table.setItem(row, 3 + i, item)
-		color_item = QTableWidgetItem("")
-		name_lower = (p.name or "").lower()
-		is_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
-				  or name_lower.endswith("color3")) and p.component_count in (3, 4)
-		if is_color:
-			rgb = [values[0], values[1], values[2]]
-			alpha = values[3] if p.component_count == 4 else 1.0
-			def clamp01(v):
-				try:
-					return max(0.0, min(1.0, float(v)))
-				except Exception:
-					return 0.0
-			R = int(clamp01(rgb[0]) * 255)
-			G = int(clamp01(rgb[1]) * 255)
-			B = int(clamp01(rgb[2]) * 255)
-			A = int(clamp01(alpha) * 255)
-			qcol = QColor(R, G, B, A)
-			color_item.setBackground(qcol)
-			if p.component_count == 4:
-				color_item.setToolTip(f"RGBA: {R},{G},{B},{A}")
-			else:
-				color_item.setToolTip(f"RGB: {R},{G},{B}")
-			color_item.setFlags((color_item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
+	def _update_table_rows(self, table: QTableWidget, target_count: int):
+		current_count = table.rowCount()
+		if current_count == target_count:
+			return
+		if current_count < target_count:
+			for _ in range(target_count - current_count):
+				table.insertRow(table.rowCount())
 		else:
-			color_item.setFlags((color_item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-			color_item.setText("")
-		self.params_table.setItem(row, 7, color_item)
+			for _ in range(current_count - target_count):
+				table.removeRow(table.rowCount() - 1)
+
+	def _update_texture_row(self, row: int, texture):
+		item = self.textures_table.item(row, 0)
+		if item is None:
+			item = QTableWidgetItem(texture.tex_type)
+			self.textures_table.setItem(row, 0, item)
+		else:
+			item.setText(texture.tex_type)
+		
+		item = self.textures_table.item(row, 1)
+		if item is None:
+			item = QTableWidgetItem(texture.tex_path)
+			self.textures_table.setItem(row, 1, item)
+		else:
+			item.setText(texture.tex_path)
+		
+		item = self.textures_table.item(row, 2)
+		if item is None:
+			item = QTableWidgetItem()
+			item.setFlags(item.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+			item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+			self.textures_table.setItem(row, 2, item)
+		item.setCheckState(Qt.Checked if texture.locked else Qt.Unchecked)
+
+	def _update_gpbf_row(self, row: int, name_str: str, data_str: str):
+		item = self.gpbf_table.item(row, 0)
+		if item is None:
+			item = QTableWidgetItem(name_str)
+			self.gpbf_table.setItem(row, 0, item)
+		else:
+			item.setText(name_str)
+		
+		item = self.gpbf_table.item(row, 1)
+		if item is None:
+			item = QTableWidgetItem(data_str)
+			self.gpbf_table.setItem(row, 1, item)
+		else:
+			item.setText(data_str)
+
+	def _update_shader_lod_row(self, row: int, counts, elems):
+		counts_str = ",".join(str(v) for v in counts)
+		item = self.shaderLODRedirects_table.item(row, 0)
+		if item is None:
+			item = QTableWidgetItem(counts_str)
+			self.shaderLODRedirects_table.setItem(row, 0, item)
+		else:
+			item.setText(counts_str)
+		
+		elems_str = ",".join(str(v) for v in elems)
+		item = self.shaderLODRedirects_table.item(row, 1)
+		if item is None:
+			item = QTableWidgetItem(elems_str)
+			self.shaderLODRedirects_table.setItem(row, 1, item)
+		else:
+			item.setText(elems_str)
+
 
 	def _on_param_clicked(self, item):
 		if item.column() != 7:
 			return
+		
+		table = item.tableWidget()
+		mat_index = self.params_stack.indexOf(table)
+		if mat_index < 0:
+			return
+		
 		m = self.handler.mdf
-		mi = self._get_current_index()
-		if not (0 <= mi < len(m.materials)):
+		if not (0 <= mat_index < len(m.materials)):
 			return
+		
 		pi = item.row()
-		if not (0 <= pi < len(m.materials[mi].parameters)):
+		if not (0 <= pi < len(m.materials[mat_index].parameters)):
 			return
-		md = m.materials[mi]
+		
+		md = m.materials[mat_index]
 		p = md.parameters[pi]
 		name_lower = (p.name or "").lower()
 		is_layer = name_lower.startswith("layercolor_")
-		is_normal_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") or name_lower.endswith("color3")) and p.component_count in (3, 4)
+		is_normal_color = (name_lower.endswith("color") or name_lower.endswith("color1") or 
+						   name_lower.endswith("color2") or name_lower.endswith("color3")) and p.component_count in (3, 4)
 
 		if is_normal_color and not is_layer:
 			x, y, z, w = p.parameter
-			col = QColor(int(max(0.0, min(1.0, x)) * 255), int(max(0.0, min(1.0, y)) * 255), int(max(0.0, min(1.0, z)) * 255), int(max(0.0, min(1.0, w if p.component_count == 4 else 1.0)) * 255))
+			col = QColor(int(max(0.0, min(1.0, x)) * 255), int(max(0.0, min(1.0, y)) * 255), 
+						 int(max(0.0, min(1.0, z)) * 255), int(max(0.0, min(1.0, w if p.component_count == 4 else 1.0)) * 255))
 			dlg = QColorDialog(self)
 			dlg.setOption(QColorDialog.ShowAlphaChannel, p.component_count == 4)
 			dlg.setCurrentColor(col)
@@ -1178,20 +1260,14 @@ class MdfViewer(QWidget):
 					p.parameter = (picked.redF(), picked.greenF(), picked.blueF(), picked.alphaF())
 				else:
 					p.parameter = (picked.redF(), picked.greenF(), picked.blueF(), 0.0)
-				self.params_table.blockSignals(True)
-				vx, vy, vz, vw = p.parameter
-				self.params_table.setItem(pi, 3, QTableWidgetItem(str(vx)))
-				self.params_table.setItem(pi, 4, QTableWidgetItem(str(vy)))
-				self.params_table.setItem(pi, 5, QTableWidgetItem(str(vz)))
-				if p.component_count == 4:
-					self.params_table.setItem(pi, 6, QTableWidgetItem(str(vw)))
-				self.params_table.blockSignals(False)
-				self._refresh_param_row(mi, pi)
+				table.blockSignals(True)
+				self._populate_param_row_in_table(table, pi, p)
+				table.blockSignals(False)
 				self.modified = True
 			return
 
 		if is_layer:
-			rows = self.params_table.rowCount()
+			rows = table.rowCount()
 			start = pi
 			while start > 0 and (md.parameters[start-1].name or "").lower().startswith("layercolor_"):
 				start -= 1
@@ -1219,9 +1295,10 @@ class MdfViewer(QWidget):
 						md.parameters[rr].parameter = (picked.greenF(), 0.0, 0.0, 0.0)
 					elif "blue" in nl:
 						md.parameters[rr].parameter = (picked.blueF(), 0.0, 0.0, 0.0)
+				table.blockSignals(True)
 				for rr in range(start, end + 1):
-					self._refresh_param_row(mi, rr)
-				self._apply_layercolor_spans(md)
+					self._populate_param_row_in_table(table, rr, md.parameters[rr])
+				table.blockSignals(False)
 				self.modified = True
 
 	def _on_gpbf_changed(self, item):
