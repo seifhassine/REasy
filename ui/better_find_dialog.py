@@ -670,8 +670,9 @@ class BetterFindDialog(QDockWidget):
         def focus_entry():
             if not hasattr(self, 'search_entry'):
                 return
-            if not self.isFloating() or self.isActiveWindow():
-                self.search_entry.setFocus()
+            self.search_entry.setFocus()
+            self.activateWindow()
+            self.raise_()
 
         QTimer.singleShot(20, focus_entry)
     
