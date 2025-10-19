@@ -620,6 +620,9 @@ class MdfViewer(QWidget):
 		insert_at = max(0, min(insert_at, len(m.materials)))
 		for offset, mat in enumerate(materials):
 			m.materials.insert(insert_at + offset, mat)
+		
+		self._clear_params_cache()
+		
 		self._refresh_materials_list()
 		if self.materials_table.rowCount() > 0:
 			target_row = min(insert_at, self.materials_table.rowCount() - 1)
@@ -660,6 +663,13 @@ class MdfViewer(QWidget):
 			if isinstance(metadata, dict):
 				name = metadata.get("name") or metadata.get("id") or name
 			QMessageBox.information(self, "Import Template", f"Imported template '{name}'.")
+
+	def _clear_params_cache(self):
+		"""Clear all cached parameter tables. Called when materials list is mutated."""
+		while self.params_stack.count() > 0:
+			widget = self.params_stack.widget(0)
+			self.params_stack.removeWidget(widget)
+			widget.deleteLater()
 
 	def _get_or_create_params_table(self, mat_index):
 		m = self.handler.mdf
@@ -1362,6 +1372,9 @@ class MdfViewer(QWidget):
 			return
 		from .mdf_file import MatData
 		m.materials.append(MatData())
+		
+		self._clear_params_cache()
+		
 		self.materials_table.blockSignals(True)
 		r = self.materials_table.rowCount()
 		self.materials_table.insertRow(r)
@@ -1380,6 +1393,7 @@ class MdfViewer(QWidget):
 				del m.materials[r]
 				self.materials_table.removeRow(r)
 		if rows:
+			self._clear_params_cache()
 			self.modified = True
 
 	def _on_copy_materials(self):
