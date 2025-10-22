@@ -159,16 +159,17 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", ".mcambank file support."),
-            ("New", "RSZ diff tool now supports .pfb and .user files (highly experimental)."),
-            ("New", "UI support for Uint3Data, Uint2Data and Int2Data."),
+            ("New", "Support for 'Area' type from older games."),
 
-            ("Improved", "Fully identified unknown data fields in RE2. The RE2 RSZ template is now complete."),
-            ("Improved", "DMC5, RE3 RSZ templates."),
+            ("Improved", "Identified all unknown Data fields in RE3 RSZ dump."),
+            ("Improved", "When opening CTRL+F search, the text search box will now be auto-focused."),
+            ("Improved", "Navigating between materials was slow in MDF files. Refactored relevant code to improve performance."),
+            ("Improved", "Identified all unknown Data fields in DMC5 RSZ dump."),
+            ("Improved", "Added over 15.000 entries to SF6 file list thanks to @ShangLi, @BrewedVFX, @Nanden and @Sleepy Scrub"), 
 
-            ("Fixed", "RawBytes fields (Hex bytes widgets) were always showing null bytes regardless of value."),
-            ("Fixed", "Rare hanging issue caused by user platform check."),
-            ("Fixed", "Fixed a rare userdata corruption case when reading/saving some files edited with 010 editor."),
+            ("Fixed", "Onimusha 2 RSZ dump."),
+            ("Fixed", "Saving of .msg files from older games was corrupting messages."),
+            ("Fixed", "RSZ: 'Size' data type was not supported in copy/paste operations."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
