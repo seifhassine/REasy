@@ -425,7 +425,7 @@ class MdfViewer(QWidget):
 		current_row = self.materials_table.currentRow()
 		if current_row >= 0:
 			self._refresh_material_row(current_row)
-		self._refresh_details_for_current_material(force_full_refresh=True)
+		self._refresh_details_for_current_material()
 
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
