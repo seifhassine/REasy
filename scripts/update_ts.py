@@ -34,14 +34,10 @@ def main() -> None:
     ts_dir.mkdir(parents=True, exist_ok=True)
     
     source_files = []
-    main_file = project_root / "REasy.py"
-    if main_file.exists():
-        source_files.append(str(main_file))
-    
-    ui_dir = project_root / "ui"
-    if ui_dir.exists():
-        for py_file in ui_dir.rglob("*.py"):
-            source_files.append(str(py_file))
+    for py_file in sorted(project_root.rglob("*.py")):
+        if "__pycache__" in py_file.parts:
+            continue
+        source_files.append(str(py_file))
     
     if not source_files:
         print("No source files found.")
