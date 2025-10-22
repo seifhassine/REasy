@@ -13,22 +13,71 @@ s32  = lambda b,i: struct.unpack_from("<i", b, i)[0]
 def map_pe(path):
     pe = pefile.PE(path, fast_load=True)
     base = pe.OPTIONAL_HEADER.ImageBase
-    img  = pe.get_memory_mapped_image()
     secs = []
     for s in pe.sections:
         n  = s.Name.rstrip(b"\0").decode("latin-1","ignore").lower()
         va = base + s.VirtualAddress
         sz = max(s.SizeOfRawData, s.Misc_VirtualSize)
         execy = (s.Characteristics & EXEC) != 0 or n in (".text",".code",".xcode",".didata",".srdata",".data2")
-        secs.append({"name": n, "va": va, "end": va + sz, "exec": execy})
-    return base, img, secs
+        secs.append({"name": n, "va": va, "end": va + sz, "exec": execy, "pe_section": s})
+    # Create a wrapper with section cache for memory-efficient reading
+    reader = PEReader(pe, base, secs)
+    return base, reader, secs
 
-def rd(img, base, va, n):
-    off = va - base
-    return None if off < 0 or off + n > len(img) else img[off:off+n]
+class PEReader:
+    """Memory-efficient PE reader with section caching."""
+    def __init__(self, pe, base, secs):
+        self.pe = pe
+        self.base = base
+        self.secs = secs
+        self.cache = {}  # Cache sections as they're read
+    
+    def get_section_for_va(self, va):
+        """Find which section contains this VA."""
+        for s in self.secs:
+            if s["va"] <= va < s["end"]:
+                return s
+        return None
+    
+    def get_section_data(self, sec):
+        """Get cached section data or read it."""
+        key = sec["va"]
+        if key not in self.cache:
+            pe_sec = sec["pe_section"]
+            # Read raw data and pad to virtual size if needed
+            data = pe_sec.get_data()
+            vsize = sec["end"] - sec["va"]
+            if len(data) < vsize:
+                # Pad with zeros to match virtual size
+                data = data + b"\x00" * (vsize - len(data))
+            self.cache[key] = data
+        return self.cache[key]
 
-def u32(img, base, va): b = rd(img, base, va, 4); return None if b is None else struct.unpack_from("<I", b)[0]
-def u64(img, base, va): b = rd(img, base, va, 8); return None if b is None else struct.unpack_from("<Q", b)[0]
+def rd(reader, base, va, n):
+    """Read n bytes at virtual address va from PE file (memory-efficient with caching)."""
+    sec = reader.get_section_for_va(va)
+    if not sec:
+        return None
+    
+    sec_data = reader.get_section_data(sec)
+    offset = va - sec["va"]
+    
+    if offset < 0 or offset >= len(sec_data):
+        return None
+    
+    # Allow partial reads at section boundaries
+    end = min(offset + n, len(sec_data))
+    result = sec_data[offset:end]
+    
+    # Return None if we got less than requested (strict mode for most operations)
+    # But allow partial reads for larger requests (like string scanning)
+    if len(result) < n and n <= 10:
+        return None
+    
+    return result
+
+def u32(pe, base, va): b = rd(pe, base, va, 4); return None if b is None else struct.unpack_from("<I", b)[0]
+def u64(pe, base, va): b = rd(pe, base, va, 8); return None if b is None else struct.unpack_from("<Q", b)[0]
 
 def in_data(secs, va):
     for s in secs:
@@ -38,24 +87,35 @@ def in_data(secs, va):
 
 # --- UTF-16 anchors (extension names) ------------------------------------------------------------
 
-def utf16_at(img, base, secs, va, maxlen=1024):
+def utf16_at(reader, base, secs, va, maxlen=1024):
     """Return the UTF-16 string at VA if it looks valid; else None."""
     if va & 1: return None
-    off = va - base
-    if off < 0 or off + 2 > len(img): return None
-    out = bytearray(); i = off; lim = min(len(img)-1, off + 2*maxlen)
-    while i + 1 < lim:
-        lo, hi = img[i], img[i+1]
+    
+    # Read up to maxlen UTF-16 chars (2 bytes each)
+    data = rd(reader, base, va, 2 * maxlen)
+    if not data or len(data) < 2: return None
+    
+    # Find null terminator
+    out = bytearray()
+    for i in range(0, len(data) - 1, 2):
+        lo, hi = data[i], data[i+1]
         if lo == 0 and hi == 0: break
-        out += img[i:i+2]; i += 2
+        out += data[i:i+2]
+    
     if not out: return None
+    
     try: s = out.decode("utf-16le")
     except: return None
+    
     if len(s) > MAXS: return None
+    
     # mostly printable ASCII?
     if sum(1 for ch in s if 32 <= ord(ch) < 127 or ord(ch) in (9,10,13)) / max(1, len(s)) < 0.80: return None
+    
     # has a terminator nearby?
-    if img.find(b"\x00\x00", off, off + 1024) < 0: return None
+    check_data = rd(reader, base, va, 1024)
+    if not check_data or check_data.find(b"\x00\x00") < 0: return None
+    
     return s
 
 def find_anchors(img, base, secs, text):
@@ -153,6 +213,7 @@ def _next_call(img, base, s, off):
 
 def discover_callee(img, base, secs, anchors):
     """Find RCX<-anchor or RDX<-anchor (LEA/MOV), then take the next CALL as the callee."""
+    callees = []
     for s in secs:
         if not s["exec"]: continue
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""; L = len(b)
@@ -166,7 +227,7 @@ def discover_callee(img, base, secs, anchors):
             ptr = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
             if ptr in anchors:
                 r = _next_call(img, base, s, i + 7)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
         # MOV RCX, imm64 -> 48 B9 imm64
         i = 0
@@ -175,7 +236,7 @@ def discover_callee(img, base, secs, anchors):
             if i < 0 or i + 10 > L: break
             if struct.unpack_from("<Q", b, i+2)[0] in anchors:
                 r = _next_call(img, base, s, i + 10)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
         # MOV RCX, [RIP+disp] -> 48 8B 0D disp32
         i = 0
@@ -186,7 +247,7 @@ def discover_callee(img, base, secs, anchors):
             v = u64(img, base, slot)
             if v in anchors:
                 r = _next_call(img, base, s, i + 7)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
 
         # ---- RDX patterns (older builds use RDX for the string) ----
@@ -197,7 +258,7 @@ def discover_callee(img, base, secs, anchors):
             ptr = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
             if ptr in anchors:
                 r = _next_call(img, base, s, i + 7)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
 
         i = 0  # MOV RDX, imm64 -> 48 BA imm64
@@ -206,7 +267,7 @@ def discover_callee(img, base, secs, anchors):
             if i < 0 or i + 10 > L: break
             if struct.unpack_from("<Q", b, i+2)[0] in anchors:
                 r = _next_call(img, base, s, i + 10)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
 
         i = 0  # MOV RDX, [RIP+disp] -> 48 8B 15 disp32
@@ -217,10 +278,10 @@ def discover_callee(img, base, secs, anchors):
             v = u64(img, base, slot)
             if v in anchors:
                 r = _next_call(img, base, s, i + 7)
-                if r: return r
+                if r and r not in callees: callees.append(r)
             i += 1
 
-    return None
+    return callees
 
 def resolve_thunk(img, base, cal):
     """Follow simple JMP thunks (rel32 or [RIP+disp]) to the final near target."""
@@ -236,6 +297,54 @@ def resolve_thunk(img, base, cal):
         t2 = u64(img, base, slot)
         if t2: return ("near", int(t2)), [cal, ("ind", slot), ("near", int(t2))]
     return cal, [cal]
+
+def validate_callee(img, base, cal, allow_4_args=False):
+    k, t = cal
+    if k != "near": return False
+    b = rd(img, base, t, 60)
+    if not b or len(b) < 20: return False
+    
+    if not allow_4_args:
+        has_conditional = False
+        for i in range(min(40, len(b) - 1)):
+            if 0x70 <= b[i] <= 0x7F:
+                has_conditional = True
+                break
+            if i + 1 < len(b) and b[i] == 0x0F and 0x80 <= b[i+1] <= 0x8F:
+                has_conditional = True
+                break
+        if not has_conditional:
+            return False
+    
+    prologue_end = min(30, len(b) - 2)
+    for i in range(prologue_end):
+        if i + 1 < len(b) and b[i] == 0x8B:
+            modrm = b[i+1]
+            if ((modrm >> 6) & 3) == 3 and (modrm & 7) == 2:
+                return True
+            if (modrm & 0xF8) == 0xD0:
+                return True
+        if i + 2 < len(b) and b[i] == 0x44 and b[i+1] == 0x8B:
+            return True
+        if i + 2 < len(b) and b[i] == 0x45 and b[i+1] in (0x8B, 0x89):
+            return True
+        if i + 1 < len(b) and b[i] == 0x41 and b[i+1] == 0xB8:
+            return True
+    
+    if allow_4_args:
+        for i in range(prologue_end):
+            if i + 2 < len(b) and b[i] in (0x44, 0x4C) and b[i+1] in (0x88, 0x89, 0x8B):
+                if ((b[i+2] >> 3) & 7) == 1:
+                    return True
+            if i + 2 < len(b) and b[i] == 0x45 and b[i+1] in (0x88, 0x89, 0x8B, 0x84, 0x85):
+                modrm = b[i+2]
+                if ((modrm >> 3) & 7) == 1 or (modrm & 7) == 1:
+                    return True
+            if i + 1 < len(b) and b[i] == 0x41 and b[i+1] == 0xB9:
+                return True
+        return False
+    
+    return False
 
 # --- tiny block emulator & some tail fallbacks -------------------------------------
 
@@ -514,19 +623,33 @@ def main():
     base, img, secs = map_pe(a.pe)
     near_map, ind_map = index_calls(img, base, secs)
 
-    # callee = next call after RCX <- any anchor (extension string)
     aliases = set()
     for ext in exts:
         anchors = find_anchors(img, base, secs, ext)
         if not anchors: continue
-        cal = discover_callee(img, base, secs, anchors)
-        if not cal: continue
-        cal, chain = resolve_thunk(img, base, cal)
-        aliases.update(chain)
+        callees = discover_callee(img, base, secs, anchors)
+        if not callees: continue
+        for cal in callees:
+            cal, chain = resolve_thunk(img, base, cal)
+            if not validate_callee(img, base, cal, allow_4_args=False):
+                continue
+            aliases.update(chain)
+    
+    if not aliases:
+        for ext in exts:
+            anchors = find_anchors(img, base, secs, ext)
+            if not anchors: continue
+            callees = discover_callee(img, base, secs, anchors)
+            if not callees: continue
+            for cal in callees:
+                cal, chain = resolve_thunk(img, base, cal)
+                if not validate_callee(img, base, cal, allow_4_args=True):
+                    continue
+                aliases.update(chain)
+    
     if not aliases:
         print(json.dumps({"error":"no callees resolved from provided -ext strings"})); return
 
-    # unique callsites of that callee
     sites = {}
     for kind, tgt in aliases:
         for s, off in (near_map.get(tgt, []) if kind == "near" else ind_map.get(tgt, [])):
@@ -539,6 +662,7 @@ def main():
         if rcx is None or edx is None: continue
         txt = utf16_at(img, base, secs, rcx)
         if not txt: continue
+        if txt in out: continue
         out[txt] = edx
 
     js = json.dumps(out, indent="\t", ensure_ascii=False)
