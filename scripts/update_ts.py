@@ -3,6 +3,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -37,7 +38,7 @@ def main() -> None:
     for py_file in sorted(project_root.rglob("*.py")):
         if "__pycache__" in py_file.parts:
             continue
-        source_files.append(str(py_file))
+        source_files.append(str(py_file.relative_to(project_root)))
     
     if not source_files:
         print("No source files found.")
@@ -51,15 +52,29 @@ def main() -> None:
         lupdate_options.append("-verbose")
     
     ts_files = list(ts_dir.glob("*.ts"))
-    if ts_files:
+    if not ts_files:
+        ts_files = [ts_dir / "REasy_zh-CN.ts"]
+
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".lst", delete=False, dir=project_root
+    ) as tmp:
+        for file_path in source_files:
+            tmp.write(f"{file_path}\n")
+        file_list_name = Path(tmp.name).name
+
+    try:
         for ts_file in ts_files:
             print(f"Updating {ts_file.name}...")
-            cmd = [exe] + lupdate_options + source_files + ["-ts", str(ts_file)]
-            subprocess.check_call(cmd)
-    else:
-        ts_file = ts_dir / "REasy_zh-CN.ts"
-        cmd = [exe] + lupdate_options + source_files + ["-ts", str(ts_file)]
-        subprocess.check_call(cmd)
+            cmd = [
+                exe,
+                *lupdate_options,
+                f"@{file_list_name}",
+                "-ts",
+                str(ts_file.relative_to(project_root)),
+            ]
+            subprocess.check_call(cmd, cwd=project_root)
+    finally:
+        Path(project_root / file_list_name).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
