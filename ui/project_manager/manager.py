@@ -64,10 +64,6 @@ class ProjectManager(QDockWidget):
         self._active_tab   = "sys"
         self._pak_list_path: str | None = None
 
-        self._resize_timer = QTimer()
-        self._resize_timer.setSingleShot(True)
-        self._resize_timer.timeout.connect(self._delayed_column_resize)
-
         # -- UI scaffold -----------------------------------------------------
         c = QWidget(self)
         self.setWidget(c)
@@ -153,6 +149,7 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setHeaderHidden(True)
         self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tree_pak.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree_pak.setIndentation(8)
         self.tree_pak.hide()
         self._pak_tree_model = None
         self._pak_all_paths: list[str] = []
@@ -164,7 +161,6 @@ class ProjectManager(QDockWidget):
         self._pak_filter_proxy = QSortFilterProxyModel(self)
         self._pak_filter_proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self._pak_filter_proxy.setFilterKeyColumn(0)
-        # Header behavior to match other trees
         hdr_p = self.tree_pak.header()
         hdr_p.setSectionResizeMode(0, QHeaderView.Interactive)
         hdr_p.setMinimumSectionSize(160)
@@ -173,16 +169,16 @@ class ProjectManager(QDockWidget):
         for tree, model in ((self.tree_sys, self.model_sys), (self.tree_proj, self.model_proj)):
             tree.setModel(model)
             tree.setContextMenuPolicy(Qt.CustomContextMenu)
-            tree.hideColumn(1) 
+            tree.setIndentation(8)
+            tree.hideColumn(1)
             tree.hideColumn(2)
             
-            model.directoryLoaded.connect(lambda: self._schedule_column_resize())
-            model.rowsInserted.connect(lambda: self._schedule_column_resize())
-            model.rowsRemoved.connect(lambda: self._schedule_column_resize())
-            
             hdr = tree.header()
-            hdr.setSectionResizeMode(0, QHeaderView.Interactive)
-            hdr.setMinimumSectionSize(160) 
+            hdr.setSectionResizeMode(0, QHeaderView.Stretch)
+            hdr.setSectionResizeMode(3, QHeaderView.Fixed)
+            hdr.resizeSection(3, 100)
+            hdr.setStretchLastSection(False)
+            hdr.setMinimumSectionSize(100)
             hdr.sectionResized.connect(self._on_section_resized)
 
         # icon delegate
@@ -235,7 +231,7 @@ class ProjectManager(QDockWidget):
         path = Path(project_path).resolve()
 
         try:
-            from REasy import GAMES
+            from REasy import GAMES  # Local import to avoid circular dependency
         except Exception:
             GAMES = []
 
@@ -267,10 +263,6 @@ class ProjectManager(QDockWidget):
 
         return None
 
-    def _schedule_column_resize(self):
-        """Schedule a delayed column resize to avoid excessive updates."""
-        self._resize_timer.start(100)
-
     def _update_project_cfg(self, updates: dict):
         """Merge updates into per-project config file if a project is active."""
         if not self.project_dir or not updates:
@@ -287,82 +279,6 @@ class ProjectManager(QDockWidget):
             cfg_path.write_text(json.dumps(cfg, indent=2))
         except Exception:
             pass
-
-    def _delayed_column_resize(self):
-        """Perform the actual column resize after delay."""
-        if self._active_tab == "sys":
-            self._adjust_column_widths(self.tree_sys)
-        elif self._active_tab == "proj":
-            self._adjust_column_widths(self.tree_proj)
-        else:
-            self._adjust_column_widths(self.tree_pak)
-    
-    def force_column_resize(self):
-        """Force an immediate column resize - useful for very long filenames."""
-        if self._active_tab == "sys":
-            active_tree = self.tree_sys
-        elif self._active_tab == "proj":
-            active_tree = self.tree_proj
-        else:
-            active_tree = self.tree_pak
-        self._adjust_column_widths_aggressive(active_tree)
-    
-    def _adjust_column_widths_aggressive(self, tree):
-        """More aggressive column width calculation for edge cases."""
-        if tree.model() is None:
-            return
-        
-        fm = tree.fontMetrics()
-        min_width = 160
-        max_width = 800
-        
-        root_idx = tree.rootIndex()
-        if not root_idx.isValid():
-            model = tree.model()
-            try:
-                root_path = getattr(model, "rootPath", None)
-                if callable(root_path):
-                    root_idx = model.index(model.rootPath())
-                elif isinstance(root_path, str):
-                    root_idx = model.index(root_path)
-                else:
-                    if model.rowCount() > 0:
-                        root_idx = model.index(0, 0)
-            except Exception:
-                if model and model.rowCount() > 0:
-                    root_idx = model.index(0, 0)
-        
-        def check_all_items(parent_idx, depth=0):
-            if depth > 5:
-                return min_width
-            
-            current_max = min_width
-            row_count = tree.model().rowCount(parent_idx)
-            
-            for i in range(row_count):
-                idx = tree.model().index(i, 0, parent_idx)
-                text = tree.model().data(idx, Qt.DisplayRole) or ""
-                
-                base_ui_space = 50 + 25 + 25 + 40 
-                indentation_space = depth * 30    
-                text_width = fm.horizontalAdvance(text)
-                
-                total_width = text_width + base_ui_space + indentation_space
-                current_max = max(current_max, total_width)
-                
-                if tree.model().hasChildren(idx):
-                    child_max = check_all_items(idx, depth + 1)
-                    current_max = max(current_max, child_max)
-            
-            return min(current_max, max_width)
-        
-        optimal_width = check_all_items(root_idx)
-        
-        optimal_width = min(optimal_width + 60, max_width)
-        
-        tree.header().setMinimumSectionSize(min_width)
-        tree.header().resizeSection(0, optimal_width)
-        tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
 
     def _update_path_label(self):
         if self._active_tab == "pak":
@@ -389,7 +305,6 @@ class ProjectManager(QDockWidget):
         if ok:
             self.model_sys.setRootPath(self.unpacked_dir)
             self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
-            self._schedule_column_resize()
             self._update_project_cfg({"unpacked_dir": self.unpacked_dir})
         else:
             QMessageBox.warning(self, self.tr("Invalid folder"),
@@ -455,7 +370,6 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setVisible(tab == "pak")
         self._update_pak_controls_state()
         self._update_path_label()
-        self._schedule_column_resize()
         self._update_placeholders()
 
     def switch_tab(self, tab: str):
@@ -508,8 +422,7 @@ class ProjectManager(QDockWidget):
             self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
-            self._schedule_column_resize()
-            
+
             self._pak_base_paths = []
             self._pak_list_path = None
             self.pak_list_edit.setText("")
@@ -531,7 +444,6 @@ class ProjectManager(QDockWidget):
                         self.unpacked_dir = udir
                         self.model_sys.setRootPath(self.unpacked_dir)
                         self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
-                        self._schedule_column_resize()
                         
                     self._update_path_label()
                     gdir = cfg.get("pak_game_dir")
@@ -699,7 +611,6 @@ class ProjectManager(QDockWidget):
         build(model.invisibleRootItem(), root, "")
         self.tree_pak.setModel(model)
         self._pak_tree_model = model
-        self._schedule_column_resize()
 
     def _apply_pak_filter(self):
         """Immediate application for external triggers; debounced during typing."""
@@ -717,7 +628,6 @@ class ProjectManager(QDockWidget):
             if self._pak_tree_model is not None:
                 self.tree_pak.setModel(self._pak_tree_model)
                 self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
-                self._schedule_column_resize()
             return
 
         if self._pak_flat_model is None:
@@ -735,7 +645,6 @@ class ProjectManager(QDockWidget):
         proxy.setFilterRegularExpression(pat)
         self.tree_pak.setModel(proxy)
         self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self._schedule_column_resize()
 
     def _collect_selected_pak_paths(self) -> list[str]:
         paths: list[str] = []
@@ -992,25 +901,23 @@ class ProjectManager(QDockWidget):
         self.model_proj.setRootPath(self.project_dir or "")
         if self.project_dir:
             self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
-            self._schedule_column_resize()
 
     def _refresh_proj(self):
         self.model_proj = QFileSystemModel()
         self.model_proj.setRootPath(self.project_dir or "")
         
-        self.model_proj.directoryLoaded.connect(lambda: self._schedule_column_resize())
-        self.model_proj.rowsInserted.connect(lambda: self._schedule_column_resize())
-        self.model_proj.rowsRemoved.connect(lambda: self._schedule_column_resize())
-        
         self.tree_proj.setModel(self.model_proj)
         self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
+        self.tree_proj.setIndentation(8)
         self.tree_proj.hideColumn(1)
         self.tree_proj.hideColumn(2)
-        self.tree_proj.header().setSectionResizeMode(0, QHeaderView.Interactive)
-        self.tree_proj.header().setMinimumSectionSize(160)
+        self.tree_proj.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.tree_proj.header().setSectionResizeMode(3, QHeaderView.Fixed)
+        self.tree_proj.header().resizeSection(3, 100)
+        self.tree_proj.header().setStretchLastSection(False)
+        self.tree_proj.header().setMinimumSectionSize(100)
         if self.project_dir:
             self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
-            self._schedule_column_resize()
 
     def _open_in_editor(self, path):
         if os.path.isfile(path):
@@ -1056,62 +963,6 @@ class ProjectManager(QDockWidget):
 
         return combo.currentText() if dlg.exec() == QDialog.Accepted else None
     
-    def _adjust_column_widths(self, tree):
-        """Adjust column widths to fit content with minimum constraints."""
-        if tree.model() is None:
-            return
-        
-        fm = tree.fontMetrics()
-        min_width = 160 
-        max_width = 600 
-        
-        root_idx = tree.rootIndex()
-        if not root_idx.isValid():
-            model = tree.model()
-            try:
-                root_path = getattr(model, "rootPath", None)
-                if callable(root_path):
-                    root_idx = model.index(model.rootPath())
-                elif isinstance(root_path, str):
-                    root_idx = model.index(root_path)
-                else:
-                    if model.rowCount() > 0:
-                        root_idx = model.index(0, 0)
-            except Exception:
-                if model and model.rowCount() > 0:
-                    root_idx = model.index(0, 0)
-        
-        def check_items(parent_idx, depth=0):
-            if depth > 3:
-                return min_width
-            
-            current_max = min_width
-            for i in range(min(tree.model().rowCount(parent_idx), 50)): 
-                idx = tree.model().index(i, 0, parent_idx)
-                text = tree.model().data(idx, Qt.DisplayRole) or ""
-                
-                base_ui_space = 40 + 20 + 20 + 30 
-                indentation_space = depth * 25
-                text_width = fm.horizontalAdvance(text)
-                
-                total_width = text_width + base_ui_space + indentation_space
-                current_max = max(current_max, total_width)
-                
-                if tree.isExpanded(idx):
-                    child_max = check_items(idx, depth + 1)
-                    current_max = max(current_max, child_max)
-            
-            return min(current_max, max_width)
-        
-        optimal_width = check_items(root_idx)
-        
-        if optimal_width > 300:
-            optimal_width = min(optimal_width + 50, max_width)
-        
-        tree.header().setMinimumSectionSize(min_width)
-        tree.header().resizeSection(0, optimal_width)
-        tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
-
     def _on_section_resized(self, logical_index: int, old_size: int, new_size: int):
         """Handle manual column resizing with minimum width enforcement."""
         if logical_index != 0:

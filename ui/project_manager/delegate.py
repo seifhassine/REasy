@@ -30,7 +30,7 @@ class _ActionsDelegate(QStyledItemDelegate):
         is_dir = index.model().isDir(index)
         available_width = min(option.rect.width(), self.column_width)
 
-        ICON_W, PAD, LEFT = 16, 4, 2
+        ICON_W, PAD, LEFT = 14, 0, 2
         icon_space_needed = LEFT + ICON_W + (PAD + ICON_W if not is_dir else 0)
         text_min_space = 60
 
@@ -55,7 +55,7 @@ class _ActionsDelegate(QStyledItemDelegate):
         
         available_width = min(option.rect.width(), self.column_width)
         is_dir = model.isDir(index)
-        ICON_W, PAD, LEFT = 16, 4, 2
+        ICON_W, PAD, LEFT = 14, 0, 2
         icon_space_needed = LEFT + ICON_W + (PAD + ICON_W if not is_dir else 0)
         text_min_space = 60
         
@@ -105,7 +105,7 @@ class _PakActionsDelegate(QStyledItemDelegate):
         model = index.model()
         is_leaf = not model.hasChildren(index)
         available_width = min(option.rect.width(), self.column_width)
-        ICON_W, PAD, LEFT = 16, 4, 2
+        ICON_W, PAD, LEFT = 14, 0, 2
         icon_space_needed = (LEFT + ICON_W + (PAD + ICON_W if is_leaf else 0))
         text_min_space = 60
         draw_icons = available_width >= (icon_space_needed + text_min_space)
@@ -127,7 +127,7 @@ class _PakActionsDelegate(QStyledItemDelegate):
             return False
         is_leaf = not model.hasChildren(index)
         available_width = min(option.rect.width(), self.column_width)
-        ICON_W, PAD, LEFT = 16, 4, 2
+        ICON_W, PAD, LEFT = 14, 0, 2
         icon_space_needed = (LEFT + ICON_W + (PAD + ICON_W if is_leaf else 0))
         text_min_space = 60
         if available_width < (icon_space_needed + text_min_space):
