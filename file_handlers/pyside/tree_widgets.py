@@ -425,7 +425,7 @@ class AdvancedTreeView(QTreeView):
         go_has_prefab = self._get_prefab_info(parent_widget, item_info, item)
         menu.addAction("Modify Prefab Path" if go_has_prefab else "Associate with Prefab")
         
-        menu.addAction("Delete GameObject")
+        menu.addAction(self.tr("Delete GameObject"))
         action = menu.exec_(QCursor.pos())
         if(action): 
             self._process_gameobject_action(action, index)
@@ -554,15 +554,15 @@ class AdvancedTreeView(QTreeView):
     def _process_gameobject_action(self, action, index):
         # Map action text to handler methods
         action_handlers = {
-            "Add Component": lambda: self.add_component_to_gameobject(index),
-            "Paste Component": lambda: self.paste_component(index),
-            "Create Child GameObject": lambda: self.create_child_gameobject(index),
-            "Copy GameObject": lambda: self.copy_gameobject(index),
-            "Paste GameObject as Child": lambda: self.paste_gameobject_as_child(index),
-            "Export as Template": lambda: self.export_gameobject_as_template(index),
-            "Template Manager": lambda: self.open_template_manager(index),
-            "Translate Name": lambda: self.translate_node_text(index),
-            "Delete GameObject": lambda: self.delete_gameobject(index),
+            self.tr("Add Component"): lambda: self.add_component_to_gameobject(index),
+            self.tr("Paste Component"): lambda: self.paste_component(index),
+            self.tr("Create Child GameObject"): lambda: self.create_child_gameobject(index),
+            self.tr("Copy GameObject"): lambda: self.copy_gameobject(index),
+            self.tr("Paste GameObject as Child"): lambda: self.paste_gameobject_as_child(index),
+            self.tr("Export as Template"): lambda: self.export_gameobject_as_template(index),
+            self.tr("Template Manager"): lambda: self.open_template_manager(index),
+            self.tr("Translate Name"): lambda: self.translate_node_text(index),
+            self.tr("Delete GameObject"): lambda: self.delete_gameobject(index),
             "Modify Prefab Path": lambda: self.manage_gameobject_prefab(index, True, ""),
             "Associate with Prefab": lambda: self.manage_gameobject_prefab(index, False, "")
         }
@@ -572,11 +572,11 @@ class AdvancedTreeView(QTreeView):
 
     def _process_folder_action(self, action, index):
         action_handlers = {
-            "Create GameObject": self.create_gameobject_in_folder,
-            "Create Sub-Folder": self.create_subfolder,
-            "Paste GameObject": self.paste_gameobject_in_folder,
-            "Delete Folder": self.delete_folder,
-            "Translate Name": self.translate_node_text
+            self.tr("Create GameObject"): self.create_gameobject_in_folder,
+            self.tr("Create Sub-Folder"): self.create_subfolder,
+            self.tr("Paste GameObject"): self.paste_gameobject_in_folder,
+            self.tr("Delete Folder"): self.delete_folder,
+            self.tr("Translate Name"): self.translate_node_text
         }
         handler = action_handlers.get(action.text())
         if handler:
@@ -584,10 +584,10 @@ class AdvancedTreeView(QTreeView):
 
     def _process_root_action(self, action, index):
         action_handlers = {
-            "Create GameObject": self.create_root_gameobject,
-            "Create Folder": self.create_root_folder,     
-            "Paste GameObject": self.paste_gameobject_at_root,
-            "Template Manager": self.open_template_manager
+            self.tr("Create GameObject"): self.create_root_gameobject,
+            self.tr("Create Folder"): self.create_root_folder,     
+            self.tr("Paste GameObject"): self.paste_gameobject_at_root,
+            self.tr("Template Manager"): self.open_template_manager
         }
         handler = action_handlers.get(action.text())
         if handler:

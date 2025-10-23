@@ -43,26 +43,31 @@
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="412"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="557"/>
         <source>Add Component</source>
         <translation>新增组件</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="414"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="558"/>
         <source>Paste Component</source>
         <translation>粘贴组件</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="415"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="559"/>
         <source>Create Child GameObject</source>
         <translation>创建子游戏对象</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="416"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="560"/>
         <source>Copy GameObject</source>
         <translation>复制游戏对象</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="418"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="561"/>
         <source>Paste GameObject as Child</source>
         <translation>粘贴游戏对象</translation>
     </message>
@@ -70,11 +75,14 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="419"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="437"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="448"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="563"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="590"/>
         <source>Template Manager</source>
         <translation>模板管理</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="420"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="562"/>
         <source>Export as Template</source>
         <translation>导出为模板</translation>
     </message>
@@ -82,13 +90,23 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="421"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="439"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="465"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="564"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="579"/>
         <source>Translate Name</source>
         <translation>翻译该名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="428"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="565"/>
+        <source>Delete GameObject</source>
+        <translation>删除游戏对象</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="434"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="445"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="460"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="575"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="587"/>
         <source>Create GameObject</source>
         <translation>创建游戏对象</translation>
     </message>
@@ -96,22 +114,27 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="436"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="447"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="463"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="577"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="589"/>
         <source>Paste GameObject</source>
         <translation>粘贴游戏对象</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="438"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="464"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="578"/>
         <source>Delete Folder</source>
         <translation>删除目录</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="454"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="588"/>
         <source>Create Folder</source>
         <translation>创建目录</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="461"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="576"/>
         <source>Create Sub-Folder</source>
         <translation>创建子目录</translation>
     </message>
@@ -274,7 +297,7 @@
         <location filename="../../ui/pak_browser_dialog.py" line="545"/>
         <location filename="../../ui/pak_browser_dialog.py" line="598"/>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>完成</translation>
     </message>
     <message>
         <source>Read failed</source>
@@ -366,7 +389,7 @@
     <message>
         <location filename="../../ui/project_manager/manager.py" line="291"/>
         <source>Select Game Directory (contains .pak)</source>
-        <translation type="unfinished"></translation>
+        <translation>选择游戏根目录</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="295"/>
@@ -377,12 +400,12 @@
         <location filename="../../ui/project_manager/manager.py" line="310"/>
         <location filename="../../ui/project_manager/manager.py" line="327"/>
         <source>Invalid folder</source>
-        <translation type="unfinished"></translation>
+        <translation>未知目录</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="327"/>
         <source>No .pak files found in the selected directory.</source>
-        <translation type="unfinished"></translation>
+        <translation>所选目录未包含.pak文件</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="389"/>
