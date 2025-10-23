@@ -24,6 +24,7 @@ from ui.keyboard_shortcuts import create_shortcuts_tab
 from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
 from ui.rsz_differ_dialog import RszDifferDialog
+from ui.file_list_generator_dialog import FileListGeneratorDialog
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 from ui.changelog_dialog import ChangelogDialog
 
@@ -1250,6 +1251,10 @@ class REasyEditorApp(QMainWindow):
         pak_browser_act = QAction(self.tr("PAK Browser"), self)
         pak_browser_act.triggered.connect(self.open_pak_browser)
         tools_menu.addAction(pak_browser_act)
+        
+        file_list_gen_act = QAction(self.tr("File List Generator"), self)
+        file_list_gen_act.triggered.connect(self.open_file_list_generator)
+        tools_menu.addAction(file_list_gen_act)
 
         tools_menu.addSeparator()
 
@@ -1404,6 +1409,11 @@ class REasyEditorApp(QMainWindow):
     
     def open_pak_browser(self):
         dialog = PakBrowserDialog(self)
+        dialog.exec()
+    
+    def open_file_list_generator(self):
+        """Open the File List Generator dialog."""
+        dialog = FileListGeneratorDialog(self)
         dialog.exec()
 
     def set_dark_mode(self, state):
