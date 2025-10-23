@@ -400,8 +400,8 @@ class AdvancedTreeView(QTreeView):
             self._rebuild_resources_list()
 
     def _handle_component_menu(self, menu, index, item_info):
-        copy_action = menu.addAction("Copy Component")
-        delete_action = menu.addAction("Delete Component")
+        copy_action = menu.addAction(self.tr("Copy Component"))
+        delete_action = menu.addAction(self.tr("Delete Component"))
         action = menu.exec_(QCursor.pos())
         if action == delete_action:
             self.delete_component(index, item_info['component_instance_id'])
@@ -409,16 +409,16 @@ class AdvancedTreeView(QTreeView):
             self.copy_component(item_info['component_instance_id'])
 
     def _handle_gameobject_menu(self, menu, index, item_info, has_go_clipboard, has_component_clipboard, item):
-        menu.addAction("Add Component")
+        menu.addAction(self.tr("Add Component"))
         if has_component_clipboard:
-            menu.addAction("Paste Component")
-        menu.addAction("Create Child GameObject")
-        menu.addAction("Copy GameObject")
+            menu.addAction(self.tr("Paste Component"))
+        menu.addAction(self.tr("Create Child GameObject"))
+        menu.addAction(self.tr("Copy GameObject"))
         if has_go_clipboard:
-            menu.addAction("Paste GameObject as Child")
-        menu.addAction("Template Manager")
-        menu.addAction("Export as Template")
-        menu.addAction("Translate Name")
+            menu.addAction(self.tr("Paste GameObject as Child"))
+        menu.addAction(self.tr("Template Manager"))
+        menu.addAction(self.tr("Export as Template"))
+        menu.addAction(self.tr("Translate Name"))
         
         # Prefab handling
         parent_widget = self.parent()
@@ -431,38 +431,38 @@ class AdvancedTreeView(QTreeView):
             self._process_gameobject_action(action, index)
 
     def _handle_folder_menu(self, menu, index, has_go_clipboard):
-        menu.addAction("Create GameObject")
+        menu.addAction(self.tr("Create GameObject"))
         if has_go_clipboard:
-            menu.addAction("Paste GameObject")
-        menu.addAction("Template Manager")
-        menu.addAction("Delete Folder")
-        menu.addAction("Translate Name")
+            menu.addAction(self.tr("Paste GameObject"))
+        menu.addAction(self.tr("Template Manager"))
+        menu.addAction(self.tr("Delete Folder"))
+        menu.addAction(self.tr("Translate Name"))
         action = menu.exec_(QCursor.pos())
         if(action): 
             self._process_folder_action(action, index)
 
     def _handle_root_menu(self, menu, index, has_go_clipboard):
-        menu.addAction("Create GameObject")
+        menu.addAction(self.tr("Create GameObject"))
         if has_go_clipboard:
-            menu.addAction("Paste GameObject")
-        menu.addAction("Template Manager")
+            menu.addAction(self.tr("Paste GameObject"))
+        menu.addAction(self.tr("Template Manager"))
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_root_action(action, index)
 
     def _handle_root_folders_menu(self, menu, index, has_go_clipboard):
-        menu.addAction("Create Folder")          
+        menu.addAction(self.tr("Create Folder"))          
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_root_action(action, index)
 
     def _handle_folder_menu(self, menu, index, has_go_clipboard):
-        menu.addAction("Create GameObject")
-        menu.addAction("Create Sub-Folder")         
+        menu.addAction(self.tr("Create GameObject"))
+        menu.addAction(self.tr("Create Sub-Folder"))         
         if has_go_clipboard:
-            menu.addAction("Paste GameObject")
-        menu.addAction("Delete Folder")
-        menu.addAction("Translate Name")
+            menu.addAction(self.tr("Paste GameObject"))
+        menu.addAction(self.tr("Delete Folder"))
+        menu.addAction(self.tr("Translate Name"))
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_folder_action(action, index)
@@ -472,7 +472,7 @@ class AdvancedTreeView(QTreeView):
             return
             
         actions = {}
-        add_action = menu.addAction("Add Element...")
+        add_action = menu.addAction(self.tr("Add Element..."))
         actions[add_action] = lambda: self.add_array_element(
             index, item_info['array_type'], item_info['data_obj'], item
         )
@@ -489,7 +489,7 @@ class AdvancedTreeView(QTreeView):
                     index, item_info['array_type'], item_info['data_obj'], item
                 )
             else: 
-                paste_action = menu.addAction("Paste Element")
+                paste_action = menu.addAction(self.tr("Paste Element"))
                 actions[paste_action] = lambda: self.paste_array_element(
                     index, item_info['data_obj'], item
                 )

@@ -30,6 +30,103 @@
     </message>
 </context>
 <context>
+    <name>AdvancedTreeView</name>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="403"/>
+        <source>Copy Component</source>
+        <translation>复制组件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="404"/>
+        <source>Delete Component</source>
+        <translation>删除组件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="412"/>
+        <source>Add Component</source>
+        <translation>新增组件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="414"/>
+        <source>Paste Component</source>
+        <translation>粘贴组件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="415"/>
+        <source>Create Child GameObject</source>
+        <translation>创建子游戏对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="416"/>
+        <source>Copy GameObject</source>
+        <translation>复制游戏对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="418"/>
+        <source>Paste GameObject as Child</source>
+        <translation>粘贴游戏对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="419"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="437"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="448"/>
+        <source>Template Manager</source>
+        <translation>模板管理</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="420"/>
+        <source>Export as Template</source>
+        <translation>导出为模板</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="421"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="439"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="465"/>
+        <source>Translate Name</source>
+        <translation>翻译该名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="434"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="445"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="460"/>
+        <source>Create GameObject</source>
+        <translation>创建游戏对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="436"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="447"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="463"/>
+        <source>Paste GameObject</source>
+        <translation>粘贴游戏对象</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="438"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="464"/>
+        <source>Delete Folder</source>
+        <translation>删除目录</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="454"/>
+        <source>Create Folder</source>
+        <translation>创建目录</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="461"/>
+        <source>Create Sub-Folder</source>
+        <translation>创建子目录</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="475"/>
+        <source>Add Element...</source>
+        <translation>新增元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="492"/>
+        <source>Paste Element</source>
+        <translation>粘贴元素</translation>
+    </message>
+</context>
+<context>
     <name>PakBrowserDialog</name>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="26"/>
@@ -250,264 +347,264 @@
 <context>
     <name>ProjectManager</name>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="569"/>
-        <location filename="../../ui/project_manager/manager.py" line="577"/>
+        <location filename="../../ui/project_manager/manager.py" line="481"/>
+        <location filename="../../ui/project_manager/manager.py" line="489"/>
         <source>Scan</source>
         <translation>扫描</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="569"/>
+        <location filename="../../ui/project_manager/manager.py" line="481"/>
         <source>Select a game directory first.</source>
         <translation>请先选择游戏目录。</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="409"/>
-        <location filename="../../ui/project_manager/manager.py" line="574"/>
+        <location filename="../../ui/project_manager/manager.py" line="324"/>
+        <location filename="../../ui/project_manager/manager.py" line="486"/>
         <source>Scan failed</source>
         <translation>扫描失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="375"/>
+        <location filename="../../ui/project_manager/manager.py" line="291"/>
         <source>Select Game Directory (contains .pak)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="379"/>
+        <location filename="../../ui/project_manager/manager.py" line="295"/>
         <source>Select unpacked Game folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="395"/>
-        <location filename="../../ui/project_manager/manager.py" line="412"/>
+        <location filename="../../ui/project_manager/manager.py" line="310"/>
+        <location filename="../../ui/project_manager/manager.py" line="327"/>
         <source>Invalid folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="412"/>
+        <location filename="../../ui/project_manager/manager.py" line="327"/>
         <source>No .pak files found in the selected directory.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="475"/>
+        <location filename="../../ui/project_manager/manager.py" line="389"/>
         <source>Please choose game directory (contains .pak) using the Browse button above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="479"/>
+        <location filename="../../ui/project_manager/manager.py" line="393"/>
         <source>Please load a list using the Load .list… button above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="550"/>
+        <location filename="../../ui/project_manager/manager.py" line="462"/>
         <source>&lt;i&gt;No project open&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="577"/>
+        <location filename="../../ui/project_manager/manager.py" line="489"/>
         <source>No .pak files found.</source>
         <translation>未找到 .pak 文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="588"/>
+        <location filename="../../ui/project_manager/manager.py" line="500"/>
         <source>Open list file</source>
         <translation>打开列表文件</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="588"/>
+        <location filename="../../ui/project_manager/manager.py" line="500"/>
         <source>List files (*.list *.txt);;All files (*)</source>
         <translation>列表文件 (*.list *.txt);;所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="599"/>
+        <location filename="../../ui/project_manager/manager.py" line="511"/>
         <source>Read failed</source>
         <translation>读取失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="654"/>
+        <location filename="../../ui/project_manager/manager.py" line="566"/>
         <source>Index failed</source>
         <translation>索引失败</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="661"/>
+        <location filename="../../ui/project_manager/manager.py" line="573"/>
         <source>Paths</source>
         <translation>路径</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="792"/>
-        <location filename="../../ui/project_manager/manager.py" line="941"/>
+        <location filename="../../ui/project_manager/manager.py" line="701"/>
+        <location filename="../../ui/project_manager/manager.py" line="850"/>
         <source>Confirm Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="793"/>
+        <location filename="../../ui/project_manager/manager.py" line="702"/>
         <source>Add entire folder
 &quot;{base_name}&quot; and all its contents?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="809"/>
-        <location filename="../../ui/project_manager/manager.py" line="908"/>
+        <location filename="../../ui/project_manager/manager.py" line="718"/>
+        <location filename="../../ui/project_manager/manager.py" line="817"/>
         <source>Add failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="819"/>
-        <location filename="../../ui/project_manager/manager.py" line="883"/>
-        <location filename="../../ui/project_manager/manager.py" line="886"/>
-        <location filename="../../ui/project_manager/manager.py" line="916"/>
+        <location filename="../../ui/project_manager/manager.py" line="728"/>
+        <location filename="../../ui/project_manager/manager.py" line="792"/>
+        <location filename="../../ui/project_manager/manager.py" line="795"/>
+        <location filename="../../ui/project_manager/manager.py" line="825"/>
         <source>Add to project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="820"/>
-        <location filename="../../ui/project_manager/manager.py" line="866"/>
+        <location filename="../../ui/project_manager/manager.py" line="729"/>
+        <location filename="../../ui/project_manager/manager.py" line="775"/>
         <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="877"/>
-        <location filename="../../ui/project_manager/manager.py" line="1022"/>
+        <location filename="../../ui/project_manager/manager.py" line="786"/>
+        <location filename="../../ui/project_manager/manager.py" line="929"/>
         <source>Open failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="883"/>
-        <location filename="../../ui/project_manager/manager.py" line="1142"/>
+        <location filename="../../ui/project_manager/manager.py" line="792"/>
+        <location filename="../../ui/project_manager/manager.py" line="993"/>
         <source>Open a project first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="886"/>
+        <location filename="../../ui/project_manager/manager.py" line="795"/>
         <source>Scan for .pak files first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="905"/>
+        <location filename="../../ui/project_manager/manager.py" line="814"/>
         <source>Missing paths (not found in PAKs):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="906"/>
-        <location filename="../../ui/project_manager/manager.py" line="1167"/>
-        <location filename="../../ui/project_manager/manager.py" line="1228"/>
+        <location filename="../../ui/project_manager/manager.py" line="815"/>
+        <location filename="../../ui/project_manager/manager.py" line="1018"/>
+        <location filename="../../ui/project_manager/manager.py" line="1079"/>
         <source>Done</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="928"/>
+        <location filename="../../ui/project_manager/manager.py" line="837"/>
         <source>Remove</source>
         <translation type="unfinished">删除</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="941"/>
+        <location filename="../../ui/project_manager/manager.py" line="850"/>
         <source>Add entire folder
 &quot;{os.path.basename(src)}&quot; and all its contents?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="946"/>
+        <location filename="../../ui/project_manager/manager.py" line="855"/>
         <source>Confirm Overwrite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="946"/>
+        <location filename="../../ui/project_manager/manager.py" line="855"/>
         <source>&quot;{rel}&quot; already exists — overwrite?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="956"/>
+        <location filename="../../ui/project_manager/manager.py" line="865"/>
         <source>Added</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="958"/>
+        <location filename="../../ui/project_manager/manager.py" line="867"/>
         <source>Copy failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="982"/>
+        <location filename="../../ui/project_manager/manager.py" line="891"/>
         <source>Remove failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1031"/>
+        <location filename="../../ui/project_manager/manager.py" line="938"/>
         <source>Select Game</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1142"/>
+        <location filename="../../ui/project_manager/manager.py" line="993"/>
         <source>Export Fluffy ZIP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1149"/>
+        <location filename="../../ui/project_manager/manager.py" line="1000"/>
         <source>Missing info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1150"/>
+        <location filename="../../ui/project_manager/manager.py" line="1001"/>
         <source>Project settings not configured yet.
 Open the settings dialog now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1168"/>
+        <location filename="../../ui/project_manager/manager.py" line="1019"/>
         <source>Fluffy mod ZIP created.
 Saved to:
 {zip_path}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1171"/>
+        <location filename="../../ui/project_manager/manager.py" line="1022"/>
         <source>ZIP failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1179"/>
+        <location filename="../../ui/project_manager/manager.py" line="1030"/>
         <source>The REE.PAK packer ({tag_txt}) is not downloaded yet
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1181"/>
+        <location filename="../../ui/project_manager/manager.py" line="1032"/>
         <source>A newer packer release ({tag_txt}) is available
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1182"/>
+        <location filename="../../ui/project_manager/manager.py" line="1033"/>
         <source>Do you want to download it now?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1183"/>
+        <location filename="../../ui/project_manager/manager.py" line="1034"/>
         <source>Download packer?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1189"/>
+        <location filename="../../ui/project_manager/manager.py" line="1040"/>
         <source>Download failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1203"/>
+        <location filename="../../ui/project_manager/manager.py" line="1054"/>
         <source>REE.Packer output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1229"/>
+        <location filename="../../ui/project_manager/manager.py" line="1080"/>
         <source>Export completed.
 PAK file saved to:
 {dest_path}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1232"/>
+        <location filename="../../ui/project_manager/manager.py" line="1083"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1233"/>
+        <location filename="../../ui/project_manager/manager.py" line="1084"/>
         <source>PAK packer returned an error.</source>
         <translation type="unfinished"></translation>
     </message>
