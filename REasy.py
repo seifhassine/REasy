@@ -1786,7 +1786,7 @@ class REasyEditorApp(QMainWindow):
                 try:
                     with open(new_json_path, "r") as f:
                         data = json.load(f)
-                    if not isinstance(data, dict) or not data or "name" not in list(data.values())[0]:
+                    if not isinstance(data, dict) or not data or "fields" not in list(data.values())[0]:
                         QMessageBox.critical(dialog, "Error", "Invalid RSZ type registry JSON file.")
                         return
                 except Exception as _:
