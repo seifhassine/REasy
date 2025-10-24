@@ -7,7 +7,7 @@ import time
 from PySide6.QtCore import Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
 
 
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 	QMessageBox, QTreeView, QAbstractItemView
 )
 
+from settings import load_settings
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from ui.widgets_utils import create_list_file_help_widget
@@ -27,6 +28,9 @@ class PakBrowserDialog(QDialog):
 		self.resize(900, 600)
 		lay = QVBoxLayout(self)
 
+		settings = getattr(parent, 'settings', None) or load_settings()
+		highlight_color = settings.get("tree_highlight_color", "#ff851b")
+		self._highlight_color = QColor(highlight_color)
 
 		top = QHBoxLayout()
 		lay.addLayout(top)
@@ -96,6 +100,10 @@ class PakBrowserDialog(QDialog):
 		out.addWidget(self.out_edit, 1)
 		out.addWidget(QPushButton(self.tr("Choose…"), clicked=self._choose_out))
 		out.addStretch(1)
+		self.dump_valid_btn = QPushButton(self.tr("Dump Valid Paths"), clicked=self._dump_valid_files)
+		self.dump_valid_btn.setVisible(False)
+		self.dump_valid_btn.setStyleSheet(f"QPushButton {{ background-color: {self._highlight_color.name()}; color: white; }}")
+		out.addWidget(self.dump_valid_btn)
 		out.addWidget(QPushButton(self.tr("Extract Selected"), clicked=self._extract_selected))
 		out.addWidget(QPushButton(self.tr("Extract All"), clicked=self._extract_all))
 
@@ -194,6 +202,7 @@ class PakBrowserDialog(QDialog):
 			self.out_edit.setText(d)
 	
 	def _on_show_only_valid_toggled(self):
+		self._update_dump_button_visibility()
 		self._apply_filter_now()
 
 	def _on_filter_text_changed(self, _=None):
@@ -307,6 +316,7 @@ class PakBrowserDialog(QDialog):
 		if self._flat_model_valid_only is None:
 			self._flat_model_valid_only = QStringListModel(self)
 		self._flat_model_valid_only.setStringList(valid_only)
+		self._update_dump_button_visibility()
 
 	def _selected_paks(self) -> List[str]:
 		return [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
@@ -471,6 +481,28 @@ class PakBrowserDialog(QDialog):
 					paths.append(data)
 		return paths
 
+	def _update_dump_button_visibility(self):
+		show = (self.show_only_valid_cb.isChecked() and 
+				self._flat_model_valid_only is not None and 
+				self._flat_model_valid_only.rowCount() > 0)
+		self.dump_valid_btn.setVisible(bool(show))
+	
+	def _dump_valid_files(self):
+		if not self._flat_model_valid_only or self._flat_model_valid_only.rowCount() == 0:
+			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
+			return
+		path, _ = QFileDialog.getSaveFileName(self, self.tr("Save valid paths list"), "valid_paths.list", self.tr("List files (*.list *.txt);;All files (*)"))
+		if not path:
+			return
+		try:
+			valid_paths = self._flat_model_valid_only.stringList()
+			with open(path, "w", encoding="utf-8") as f:
+				for p in valid_paths:
+					f.write(p + "\n")
+			QMessageBox.information(self, self.tr("Success"), self.tr("Dumped {count} valid path(s) to:\n{path}").format(count=len(valid_paths), path=path))
+		except Exception as e:
+			QMessageBox.critical(self, self.tr("Write failed"), str(e))
+	
 	def _extract(self, targets: List[str]):
 		if not targets:
 			QMessageBox.information(self, self.tr("Extract"), self.tr("No files selected."))
