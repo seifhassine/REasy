@@ -691,7 +691,7 @@ class FileTab:
     def direct_save(self):
         """Save directly to the current file without prompting"""
         if not self.handler:
-            QMessageBox.critical(None, "Error", NO_FILE_LOADED_STR)
+            QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
             return False
         if not self.filename:
             return self.on_save()
@@ -699,7 +699,7 @@ class FileTab:
         
     def on_save(self):
         if not self.handler:
-            QMessageBox.critical(None, "Error", NO_FILE_LOADED_STR)
+            QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
             return False
 
         file_path, _ = QFileDialog.getSaveFileName(
@@ -715,7 +715,7 @@ class FileTab:
 
     def reload_file(self):
         if not self.filename:
-            QMessageBox.critical(None, "Error", "No file currently loaded.")
+            QMessageBox.critical(None, self.tr("Error"), self.tr("No file currently loaded."))
             return
 
         if self.modified:
@@ -746,14 +746,14 @@ class FileTab:
 
 
         except Exception as e:
-            QMessageBox.critical(None, "Error", f"Failed to reload file: {e}")
+            QMessageBox.critical(None, self.tr("Error"), f"Failed to reload file: {e}")
             import traceback
 
             traceback.print_exc()
 
     def open_find_dialog(self):
         if isinstance(self.handler, MsgHandler):
-                QMessageBox.information(self.notebook_widget, "Search in MSG", "MSG files have a built-in search at the top of the editor. Please use that search bar.")
+                QMessageBox.information(self.notebook_widget, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
                 return
         parent_window = self.notebook_widget.window()
         if isinstance(parent_window, QMainWindow) and parent_window.__class__.__name__ == 'FloatingTabWindow':
@@ -822,7 +822,7 @@ class FileTab:
             return success
             
         except Exception as e:
-            QMessageBox.critical(None, "Error", f"Failed to restore backup: {e}")
+            QMessageBox.critical(None, self.tr("Error"), f"Failed to restore backup: {e}")
             return False
             
     def _cleanup_viewer(self):
@@ -1189,8 +1189,8 @@ class REasyEditorApp(QMainWindow):
         hex_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_search_hex", "Ctrl+H")))
         hex_act.triggered.connect(self.search_directory_for_hex)
         find_menu.addAction(hex_act)
-        
-        rsz_field_act = QAction("Find RSZ Field Value", self)
+
+        rsz_field_act = QAction(self.tr("Find RSZ Field Value"), self)
         rsz_field_act.setObjectName("find_rsz_field_value")
         rsz_field_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("find_rsz_field_value", "Ctrl+Shift+F")))
         rsz_field_act.triggered.connect(self.open_rsz_field_value_finder)
@@ -1279,7 +1279,7 @@ class REasyEditorApp(QMainWindow):
         self.highlight_menu_controller.update_menu_visibility(is_rsz)
 
     def new_project(self):
-        name, ok = QInputDialog.getText(self, "New Project", "Project name:")
+        name, ok = QInputDialog.getText(self, self.tr("New Project"), self.tr("Project name:"))
         if not ok or not name.strip():
             return
 
@@ -1309,7 +1309,7 @@ class REasyEditorApp(QMainWindow):
                 test = os.path.join(folder, *expected)
                 if not os.path.isdir(test):
                     QMessageBox.warning(
-                        self, "Invalid unpacked folder",
+                        self, self.tr("Invalid unpacked folder"),
                         f"The folder you selected doesn't contain:\n"
                         f"  {os.path.join(*expected)}\n"
                         f"Please select the correct unpacked game directory.")
@@ -1321,7 +1321,7 @@ class REasyEditorApp(QMainWindow):
             start_dir = str(self.settings.get("unpacked_path", ""))
             folder = QFileDialog.getExistingDirectory(
                 self,
-                "Locate game directory (contains .pak)",
+                self.tr("Locate game directory (contains .pak)"),
                 start_dir,
                 QFileDialog.ShowDirsOnly
             )
@@ -1329,7 +1329,7 @@ class REasyEditorApp(QMainWindow):
                 return
             
             if not self.proj_dock.has_valid_paks(folder, ignore_mod_paks=True):
-                QMessageBox.warning(self, "Invalid game folder", "No .pak files found in the selected directory.")
+                QMessageBox.warning(self, self.tr("Invalid game folder"), self.tr("No .pak files found in the selected directory."))
                 return
 
         mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
@@ -1348,7 +1348,7 @@ class REasyEditorApp(QMainWindow):
         start_root = str(PROJECTS_ROOT)
         dir_ = QFileDialog.getExistingDirectory(
             self,
-            "Open REasy Project",
+            self.tr("Open REasy Project"),
             start_root,
             QFileDialog.ShowDirsOnly
         )
@@ -1360,9 +1360,9 @@ class REasyEditorApp(QMainWindow):
 
         if not game:
             QMessageBox.warning(
-                self, "Invalid selection",
-                "Please pick a mod folder *directly* inside one of the game "
-                "directories (e.g. projects/RE4/YourMod)."
+                self, self.tr("Invalid selection"),
+                self.tr("Please pick a mod folder *directly* inside one of the game "
+                        "directories (e.g. projects/RE4/YourMod).")
             )
 
         self.current_game = game
@@ -1597,7 +1597,7 @@ class REasyEditorApp(QMainWindow):
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
     def open_settings_dialog(self):
-        dialog, _ = create_standard_dialog(self, "Settings", "500x400")
+        dialog, _ = create_standard_dialog(self, self.tr("Settings"), "500x400")
         
         main_layout = QVBoxLayout(dialog)
         
@@ -1605,12 +1605,12 @@ class REasyEditorApp(QMainWindow):
         main_layout.addWidget(tab_widget)
         
         general_tab = QWidget()
-        tab_widget.addTab(general_tab, "General")
+        tab_widget.addTab(general_tab, self.tr("General"))
         
         general_layout = QVBoxLayout(general_tab)
         general_layout.setSpacing(15)
 
-        label = QLabel("RSZ JSON Path:")
+        label = QLabel(self.tr("RSZ JSON Path:"))
         general_layout.addWidget(label, 0, Qt.AlignBottom)
 
         json_path_layout = QHBoxLayout()
@@ -1618,14 +1618,14 @@ class REasyEditorApp(QMainWindow):
         json_entry = QLineEdit(self.settings.get("rcol_json_path", ""))
         json_path_layout.addWidget(json_entry)
 
-        browse_btn = QPushButton("Browse...")
+        browse_btn = QPushButton(self.tr("Browse..."))
         json_path_layout.addWidget(browse_btn)
         general_layout.addLayout(json_path_layout)
 
         # Game Version selection
         game_version_layout = QHBoxLayout()
         game_version_layout.setContentsMargins(0, 0, 0, 0)
-        game_version_label = QLabel("Game Version (Reload Required):")
+        game_version_label = QLabel(self.tr("Game Version (Reload Required):"))
         game_version_layout.addWidget(game_version_label)
         
         game_version_combo = QComboBox()
@@ -1638,7 +1638,7 @@ class REasyEditorApp(QMainWindow):
         
         translation_layout = QHBoxLayout()
         translation_layout.setContentsMargins(0, 0, 0, 0)
-        translation_label = QLabel("Translation Target Language:")
+        translation_label = QLabel(self.tr("Translation Target Language:"))
         translation_layout.addWidget(translation_label)
         
         translation_combo = QComboBox()
@@ -1653,8 +1653,8 @@ class REasyEditorApp(QMainWindow):
             ("ko", "Korean"),
             ("pt", "Portuguese"),
             ("ru", "Russian"),
-            ("zh-CN", "Chinese (Simplified)"),
-            ("zh-TW", "Chinese (Traditional)")
+            ("zh-CN", self.tr("Chinese (Simplified)")),
+            ("zh-TW", self.tr("Chinese (Traditional)"))
         ]
         
         for code, name in languages:
@@ -1671,7 +1671,7 @@ class REasyEditorApp(QMainWindow):
 
         theme_color_layout = QHBoxLayout()
         theme_color_layout.setContentsMargins(0, 0, 0, 0)
-        theme_color_label = QLabel("Theme Color:")
+        theme_color_label = QLabel(self.tr("Theme Color:"))
         theme_color_layout.addWidget(theme_color_label)
 
         selected_theme_color = self.settings.get("tree_highlight_color", DEFAULT_THEME_COLOR)
@@ -1696,7 +1696,7 @@ class REasyEditorApp(QMainWindow):
         def choose_theme_color():
             nonlocal selected_theme_color
             initial = QColor(selected_theme_color)
-            color = QColorDialog.getColor(initial, dialog, "Select Theme Color")
+            color = QColorDialog.getColor(initial, dialog, self.tr("Select Theme Color"))
             if color.isValid():
                 selected_theme_color = color.name()
                 update_theme_color_button(selected_theme_color)
@@ -1706,29 +1706,29 @@ class REasyEditorApp(QMainWindow):
         theme_color_layout.addStretch()
         general_layout.addLayout(theme_color_layout)
 
-        dark_box = QCheckBox("Dark Mode")
+        dark_box = QCheckBox(self.tr("Dark Mode"))
         dark_box.setChecked(self.dark_mode)
         general_layout.addWidget(dark_box)
 
-        debug_box = QCheckBox("Show Debug Console")
+        debug_box = QCheckBox(self.tr("Show Debug Console"))
         debug_box.setChecked(self.settings.get("show_debug_console", True))
         general_layout.addWidget(debug_box)
-        
-        rsz_advanced_box = QCheckBox("Show advanced settings for RSZ files (Reload Required)")
+
+        rsz_advanced_box = QCheckBox(self.tr("Show advanced settings for RSZ files (Reload Required)"))
         rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
         general_layout.addWidget(rsz_advanced_box)
-        
-        backup_box = QCheckBox("Create backup on save")
+
+        backup_box = QCheckBox(self.tr("Create backup on save"))
         backup_box.setChecked(self.settings.get("backup_on_save", True))
         general_layout.addWidget(backup_box)
 
-        confirmation_prompt_box = QCheckBox("Show confirmation prompts for RSZ actions")
+        confirmation_prompt_box = QCheckBox(self.tr("Show confirmation prompts for RSZ actions"))
         confirmation_prompt_box.setChecked(self.settings.get("confirmation_prompt", True))
         general_layout.addWidget(confirmation_prompt_box)
 
         ui_lang_layout = QHBoxLayout()
         ui_lang_layout.setContentsMargins(0, 0, 0, 0)
-        ui_lang_label = QLabel("UI Language (Restart Recommended):")
+        ui_lang_label = QLabel(self.tr("UI Language (Restart Recommended):"))
         ui_lang_layout.addWidget(ui_lang_label)
 
         ui_lang_combo = QComboBox()
@@ -1746,7 +1746,7 @@ class REasyEditorApp(QMainWindow):
         general_layout.addStretch()
         
         shortcuts_tab = create_shortcuts_tab()
-        tab_widget.addTab(shortcuts_tab, "Keyboard Shortcuts")
+        tab_widget.addTab(shortcuts_tab, self.tr("Keyboard Shortcuts"))
         
         shortcuts = self.settings.get("keyboard_shortcuts", {}).copy()
         for key in shortcuts_tab.shortcut_names:
@@ -1772,7 +1772,7 @@ class REasyEditorApp(QMainWindow):
             new_json_path = json_entry.text().strip()
             if new_json_path and not os.path.exists(new_json_path):
                 QMessageBox.critical(
-                    dialog, "Error", "The specified JSON file does not exist."
+                    dialog, self.tr("Error"), self.tr("The specified JSON file does not exist.")
                 )
                 return
 
@@ -1813,8 +1813,8 @@ class REasyEditorApp(QMainWindow):
             if lang_changed:
                 QMessageBox.information(
                     dialog,
-                    "Language Changed",
-                    "UI language will be applied after restart."
+                    self.tr("Language Changed"),
+                    self.tr("UI language will be applied after restart.")
                 )
             dialog.accept()
 
@@ -1824,7 +1824,7 @@ class REasyEditorApp(QMainWindow):
         def browse():
             file_path, _ = QFileDialog.getOpenFileName(
                 dialog,
-                "Select JSON file",
+                self.tr("Select JSON file"),
                 os.path.dirname(json_entry.text()) if json_entry.text() else "",
                 "JSON Files (*.json)",
             )
@@ -1895,11 +1895,11 @@ class REasyEditorApp(QMainWindow):
     def open_find_dialog(self):
         active = self.get_active_tab()
         if not active:
-            QMessageBox.critical(self, "Error", "No active tab for searching.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab for searching."))
             return
         
         if isinstance(active.handler, MsgHandler):
-            QMessageBox.information(self, "Search in MSG", "MSG files have a built-in search at the top of the editor. Please use that search bar.")
+            QMessageBox.information(self, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
             return
             
         for window in self.notebook._floating_windows:
@@ -1983,14 +1983,14 @@ class REasyEditorApp(QMainWindow):
         try:
             handler = get_handler_for_data(data)
             if not handler:
-                QMessageBox.critical(self, "Error", "Unsupported file type")
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Unsupported file type"))
                 return
             
             if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
                 if not self.settings.get("rcol_json_path"):
                     msg = QMessageBox(QMessageBox.Warning, 
-                        "JSON Path Not Set",
-                        "RSZ type registry JSON path is not set.\nWould you like to set it now?",
+                        self.tr("JSON Path Not Set"),
+                        self.tr("RSZ type registry JSON path is not set.\nWould you like to set it now?"),
                         QMessageBox.Yes | QMessageBox.No)
                     if msg.exec() == QMessageBox.Yes:
                         self.open_settings_dialog()
@@ -2009,7 +2009,7 @@ class REasyEditorApp(QMainWindow):
             self._update_highlight_menu_visibility()
             
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")
+            QMessageBox.critical(self, self.tr("Error"), f"Failed to open file: {str(e)}")
             if tab and hasattr(tab, 'notebook_widget') and tab.notebook_widget:
                 try:
                     tab.notebook_widget.deleteLater()
@@ -2046,7 +2046,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            self.tr("RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;All Files (*.*)")
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;All Files (*.*)"
         )
         if not fn:
             return
@@ -2058,31 +2058,31 @@ class REasyEditorApp(QMainWindow):
             if handler:
                 self.add_tab(fn, data) 
             else:
-                QMessageBox.critical(self, "Error", "Unsupported file type")
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Unsupported file type"))
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+            QMessageBox.critical(self, self.tr("Error"), str(e))
 
     def on_direct_save(self):
         active = self.get_active_tab()
         if active:
             active.direct_save()
         else:
-            QMessageBox.critical(self, "Error", "No active tab to save.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to save."))
 
     def on_save(self):
         active = self.get_active_tab()
         if active:
             active.on_save()
         else:
-            QMessageBox.critical(self, "Error", "No active tab to save.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to save."))
 
     def reload_file(self):
         active = self.get_active_tab()
         if active:
             active.reload_file()
         else:
-            QMessageBox.critical(self, "Error", "No active tab to reload.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to reload."))
 
     def close_current_tab(self):
         aw = QApplication.activeWindow()
@@ -2154,10 +2154,10 @@ class REasyEditorApp(QMainWindow):
 
     def show_donate_dialog(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Support REasy Editor")
+        dialog.setWindowTitle(self.tr("Support REasy Editor"))
         layout = QVBoxLayout(dialog)
-        
-        thank_you_label = QLabel("Thank you for your feedback and support!\nYour contributions help keep this project going.")
+
+        thank_you_label = QLabel(self.tr("Thank you for your feedback and support!\nYour contributions help keep this project going."))
         thank_you_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(thank_you_label)
         
@@ -2181,16 +2181,16 @@ class REasyEditorApp(QMainWindow):
         """Show dialog with available backups for the current file"""
         active = self.get_active_tab()
         if not active:
-            QMessageBox.critical(self, "Error", "No active tab to restore the backup of.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to restore the backup of."))
             return
             
         if not active.filename:
-            QMessageBox.critical(self, "Error", "File has not been saved yet.")
+            QMessageBox.critical(self, self.tr("Error"), self.tr("File has not been saved yet."))
             return
             
         backups = active.find_matching_backups()
         if not backups:
-            QMessageBox.information(self, "No Backups", "No backup files found for this file.")
+            QMessageBox.information(self, self.tr("No Backups"), self.tr("No backup files found for this file."))
             return
             
         dialog = QDialog(self)
@@ -2205,8 +2205,8 @@ class REasyEditorApp(QMainWindow):
             item.setData(Qt.UserRole, path) 
             item.setToolTip(filename)
             backup_list.addItem(item)
-            
-        layout.addWidget(QLabel("Select a backup to restore:"))
+
+        layout.addWidget(QLabel(self.tr("Select a backup to restore:")))
         layout.addWidget(backup_list)
         
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -2218,7 +2218,7 @@ class REasyEditorApp(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             selected = backup_list.currentItem()
             if not selected:
-                QMessageBox.critical(self, "Error", "No backup selected.")
+                QMessageBox.critical(self, self.tr("Error"), self.tr("No backup selected."))
                 return
                 
             backup_path = selected.data(Qt.UserRole)
@@ -2227,7 +2227,7 @@ class REasyEditorApp(QMainWindow):
             confirm_msg = f"Are you sure you want to restore the backup from:\n{friendly_time}?\n\nCurrent changes will be lost."
             confirm = QMessageBox.question(
                 self, 
-                "Confirm Restore", 
+                self.tr("Confirm Restore"), 
                 confirm_msg,
                 QMessageBox.Yes | QMessageBox.No
             )
@@ -2235,7 +2235,7 @@ class REasyEditorApp(QMainWindow):
             if confirm == QMessageBox.Yes:
                 success = active.restore_backup(backup_path)
                 if success:
-                    QMessageBox.information(self, "Success", "Backup restored successfully")
+                    QMessageBox.information(self, self.tr("Success"), self.tr("Backup restored successfully"))
 
     def goto_previous_tab(self):
         current_index = self.notebook.currentIndex()

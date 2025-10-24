@@ -344,9 +344,9 @@ class AdvancedTreeView(QTreeView):
 
 
         if item.data and item.data[0] == "Data Block":
-            exp_act = menu.addAction("Export Data Block")
-            imp_act = menu.addAction("Import Data from Exports folder")
-            translate_all_act = menu.addAction("Translate All GameObject Names")
+            exp_act = menu.addAction(self.tr("Export Data Block"))
+            imp_act = menu.addAction(self.tr("Import Data from Exports folder"))
+            translate_all_act = menu.addAction(self.tr("Translate All GameObject Names"))
             action = menu.exec_(QCursor.pos())
             if action == exp_act:
                 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
@@ -378,8 +378,8 @@ class AdvancedTreeView(QTreeView):
             return
 
     def _handle_resource_menu(self, menu, index, item_info):
-        edit_action = menu.addAction("Edit Resource Path")
-        delete_sel    = menu.addAction("Delete Selected Resources…")
+        edit_action = menu.addAction(self.tr("Edit Resource Path"))
+        delete_sel    = menu.addAction(self.tr("Delete Selected Resources…"))
         action = menu.exec_(QCursor.pos())
         if action == edit_action:
             self.edit_resource(index, item_info['resource_index'])
@@ -389,10 +389,10 @@ class AdvancedTreeView(QTreeView):
             self.delete_resources(sel)
 
     def _handle_resources_section_menu(self, menu):
-        add_action = menu.addAction("Add New Resource")
+        add_action = menu.addAction(self.tr("Add New Resource"))
         rebuild_action = None
         if(self.parent().handler.auto_resource_management):
-            rebuild_action = menu.addAction("Refresh Resources List")
+            rebuild_action = menu.addAction(self.tr("Refresh Resources List"))
         action = menu.exec_(QCursor.pos())
         if action == add_action:
             self.add_resource()
@@ -423,7 +423,7 @@ class AdvancedTreeView(QTreeView):
         # Prefab handling
         parent_widget = self.parent()
         go_has_prefab = self._get_prefab_info(parent_widget, item_info, item)
-        menu.addAction("Modify Prefab Path" if go_has_prefab else "Associate with Prefab")
+        menu.addAction(self.tr("Modify Prefab Path") if go_has_prefab else self.tr("Associate with Prefab"))
         
         menu.addAction(self.tr("Delete GameObject"))
         action = menu.exec_(QCursor.pos())
@@ -484,7 +484,7 @@ class AdvancedTreeView(QTreeView):
             
             elements_count = clipboard.get_elements_count_from_clipboard(self)
             if elements_count > 1:
-                paste_action = menu.addAction(f"Paste Group ({elements_count} elements)")
+                paste_action = menu.addAction(self.tr(f"Paste Group ({elements_count} elements)"))
                 actions[paste_action] = lambda: self.paste_array_elements(
                     index, item_info['array_type'], item_info['data_obj'], item
                 )
@@ -512,21 +512,21 @@ class AdvancedTreeView(QTreeView):
         selected_indices = self.get_selected_array_elements(item_info['parent_array_item'])
         
         if len(selected_indices) > 1:
-            copy_action = menu.addAction(f"Copy Group ({len(selected_indices)} elements)")
+            copy_action = menu.addAction(self.tr(f"Copy Group ({len(selected_indices)} elements)"))
             actions[copy_action] = lambda: self.copy_array_elements(
                 item_info['parent_array_item'], selected_indices, index
             )
-            
-            delete_action = menu.addAction(f"Delete Group ({len(selected_indices)} elements)")
+
+            delete_action = menu.addAction(self.tr(f"Delete Group ({len(selected_indices)} elements)"))
             actions[delete_action] = lambda: self.delete_array_elements(
                 item_info['parent_array_item'], selected_indices
             )
         else:
             item = index.internalPointer()
-            copy_action = menu.addAction("Copy Element")
+            copy_action = menu.addAction(self.tr("Copy Element"))
             actions[copy_action] = lambda: self.copy_array_element(item)
-            
-            delete_action = menu.addAction("Delete Element")
+
+            delete_action = menu.addAction(self.tr("Delete Element"))
             actions[delete_action] = lambda: self.delete_array_element(
                 item_info['parent_array_item'], item_info['element_index']
             )
@@ -563,8 +563,8 @@ class AdvancedTreeView(QTreeView):
             self.tr("Template Manager"): lambda: self.open_template_manager(index),
             self.tr("Translate Name"): lambda: self.translate_node_text(index),
             self.tr("Delete GameObject"): lambda: self.delete_gameobject(index),
-            "Modify Prefab Path": lambda: self.manage_gameobject_prefab(index, True, ""),
-            "Associate with Prefab": lambda: self.manage_gameobject_prefab(index, False, "")
+            self.tr("Modify Prefab Path"): lambda: self.manage_gameobject_prefab(index, True, ""),
+            self.tr("Associate with Prefab"): lambda: self.manage_gameobject_prefab(index, False, "")
         }
         handler = action_handlers.get(action.text())
         if handler:

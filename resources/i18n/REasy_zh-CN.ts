@@ -32,6 +32,41 @@
 <context>
     <name>AdvancedTreeView</name>
     <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="347"/>
+        <source>Export Data Block</source>
+        <translation>导出数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="348"/>
+        <source>Import Data from Exports folder</source>
+        <translation>导入数据</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="349"/>
+        <source>Translate All GameObject Names</source>
+        <translation>翻译所有游戏对象名称</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="381"/>
+        <source>Edit Resource Path</source>
+        <translation>编辑Resource路径</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="382"/>
+        <source>Delete Selected Resources…</source>
+        <translation>删除所选Resources</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="392"/>
+        <source>Add New Resource</source>
+        <translation>添加新的Resources</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="395"/>
+        <source>Refresh Resources List</source>
+        <translation>刷新Resources列表</translation>
+    </message>
+    <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="403"/>
         <source>Copy Component</source>
         <translation>复制组件</translation>
@@ -96,6 +131,18 @@
         <translation>翻译该名称</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="426"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="566"/>
+        <source>Modify Prefab Path</source>
+        <translation>修改Prefab路径</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="426"/>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="567"/>
+        <source>Associate with Prefab</source>
+        <translation>与Prefab关联</translation>
+    </message>
+    <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="428"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="565"/>
         <source>Delete GameObject</source>
@@ -144,9 +191,186 @@
         <translation>新增元素</translation>
     </message>
     <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="487"/>
+        <source>Paste Group ({elements_count} elements)</source>
+        <translation>成组粘贴 {elements_count} 个元素</translation>
+    </message>
+    <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="492"/>
         <source>Paste Element</source>
         <translation>粘贴元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="515"/>
+        <source>Copy Group ({len(selected_indices)} elements)</source>
+        <translation>成组复制 {len(selected_indices)} 个元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="520"/>
+        <source>Delete Group ({len(selected_indices)} elements)</source>
+        <translation>成组删除 {len(selected_indices)} 个元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="526"/>
+        <source>Copy Element</source>
+        <translation>复制元素</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/tree_widgets.py" line="529"/>
+        <source>Delete Element</source>
+        <translation>删除元素</translation>
+    </message>
+</context>
+<context>
+    <name>BetterFindDialog</name>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="182"/>
+        <source>Search:</source>
+        <translation>搜索：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="183"/>
+        <source>Enter text…</source>
+        <translation>输入文本…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="190"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="191"/>
+        <source>Value</source>
+        <translation>值</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="192"/>
+        <source>Both</source>
+        <translation>两者</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="197"/>
+        <source>Case sensitive</source>
+        <translation>区分大小写</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="206"/>
+        <source>Results:</source>
+        <translation>结果：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="215"/>
+        <source>Preview:</source>
+        <translation>预览：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="226"/>
+        <source>Find All</source>
+        <translation>查找所有</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="228"/>
+        <source>Previous</source>
+        <translation>上一个</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="229"/>
+        <source>Next</source>
+        <translation>下一个</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="231"/>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="243"/>
+        <source>Please enter search text</source>
+        <translation>请输入搜索文本</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="248"/>
+        <source>No tree view available</source>
+        <translation>没有可用的文件视图</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="254"/>
+        <source>Tree view unavailable</source>
+        <translation>文件视图不可用</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="257"/>
+        <source>Tree has no model</source>
+        <translation>文件没有模型</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="476"/>
+        <source>No matches found</source>
+        <translation>没有找到匹配项</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="533"/>
+        <source>Find in Tree</source>
+        <translation>在文件中查找</translation>
+    </message>
+    <message>
+        <location filename="../../ui/better_find_dialog.py" line="545"/>
+        <source>Tree reloaded - search reset</source>
+        <translation>文件已重新加载 - 搜索已重置</translation>
+    </message>
+</context>
+<context>
+    <name>FileTab</name>
+    <message>
+        <location filename="../../REasy.py" line="694"/>
+        <location filename="../../REasy.py" line="702"/>
+        <location filename="../../REasy.py" line="718"/>
+        <location filename="../../REasy.py" line="749"/>
+        <location filename="../../REasy.py" line="825"/>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <source>Save File As</source>
+        <translation type="vanished">另存为</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="718"/>
+        <source>No file currently loaded.</source>
+        <translation>当前没有加载文件。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="756"/>
+        <source>Search in MSG</source>
+        <translation>在MSG中搜索</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="756"/>
+        <source>MSG files have a built-in search at the top of the editor. Please use that search bar.</source>
+        <translation>MSG文件在编辑器顶部有内置搜索。请使用该搜索栏。</translation>
+    </message>
+</context>
+<context>
+    <name>GuidInput</name>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="412"/>
+        <source>Generate</source>
+        <translation>生成</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="413"/>
+        <source>Generate a random GUID</source>
+        <translation>生成随机GUID</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="419"/>
+        <source>Reset</source>
+        <translation>重置</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="420"/>
+        <source>Reset to null GUID (all zeros)</source>
+        <translation>重置为由0000组成的GUID</translation>
     </message>
 </context>
 <context>
@@ -210,7 +434,7 @@
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="61"/>
         <source>Search (supports regex) - shows flat list; clear for tree view</source>
-        <translation>搜索（支持正则）- 显示扁平列表；清空以显示树形视图</translation>
+        <translation>搜索（支持正则）- 搜索结果以列表显示, 清空以树形结构查看</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="67"/>
@@ -339,7 +563,7 @@
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="38"/>
         <source>Ignore mod PAKs (not 100% accurate)</source>
-        <translation type="unfinished"></translation>
+        <translation>忽略模组的PAK文件（不完全准确）</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="532"/>
@@ -387,6 +611,71 @@
         <translation>扫描失败</translation>
     </message>
     <message>
+        <location filename="../../ui/project_manager/manager.py" line="58"/>
+        <source>Project Browser</source>
+        <translation>项目浏览器</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="79"/>
+        <source>Browse…</source>
+        <translation>浏览</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="81"/>
+        <source>Ignore mod PAKs (not 100% accurate)</source>
+        <translation>忽略模组的PAK文件（不完全准确）</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="83"/>
+        <source>Scan PAKs</source>
+        <translation>扫描PAK文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="86"/>
+        <source>Load .list…</source>
+        <translation>加载解包list</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="89"/>
+        <source>List file (.list/.txt)</source>
+        <translation>.list文件(.list/.txt)</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="105"/>
+        <source>Fluffy Settings…</source>
+        <translation>Fluffy 设置</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="107"/>
+        <source>Export .PAK</source>
+        <translation>导出为 .PAK</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="116"/>
+        <source>System Files</source>
+        <translation>系统文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="117"/>
+        <source>Project Files</source>
+        <translation>项目文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="118"/>
+        <source>PAK Files</source>
+        <translation>PAK 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="128"/>
+        <source>Filter:</source>
+        <translation>过滤：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="131"/>
+        <source>Search (regex) – shows flat list; clear for tree view</source>
+        <translation>搜索（支持正则）- 搜索结果以列表显示, 清空以树形结构查看</translation>
+    </message>
+    <message>
         <location filename="../../ui/project_manager/manager.py" line="291"/>
         <source>Select Game Directory (contains .pak)</source>
         <translation>选择游戏根目录</translation>
@@ -394,7 +683,7 @@
     <message>
         <location filename="../../ui/project_manager/manager.py" line="295"/>
         <source>Select unpacked Game folder</source>
-        <translation type="unfinished"></translation>
+        <translation>选择解包后的游戏文件夹</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="310"/>
@@ -410,17 +699,17 @@
     <message>
         <location filename="../../ui/project_manager/manager.py" line="389"/>
         <source>Please choose game directory (contains .pak) using the Browse button above</source>
-        <translation type="unfinished"></translation>
+        <translation>请使用上面的浏览按钮选择游戏目录(包含.pak)</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="393"/>
         <source>Please load a list using the Load .list… button above</source>
-        <translation type="unfinished"></translation>
+        <translation>请使用上面的加载 .list… 按钮加载列表</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="462"/>
         <source>&lt;i&gt;No project open&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>未打开任何项目</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="489"/>
@@ -456,19 +745,20 @@
         <location filename="../../ui/project_manager/manager.py" line="701"/>
         <location filename="../../ui/project_manager/manager.py" line="850"/>
         <source>Confirm Add</source>
-        <translation type="unfinished"></translation>
+        <translation>确认添加</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="702"/>
         <source>Add entire folder
 &quot;{base_name}&quot; and all its contents?</source>
-        <translation type="unfinished"></translation>
+        <translation>添加整个文件夹
+&quot;{base_name}&quot;及其所有内容？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="718"/>
         <location filename="../../ui/project_manager/manager.py" line="817"/>
         <source>Add failed</source>
-        <translation type="unfinished"></translation>
+        <translation>添加失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="728"/>
@@ -476,160 +766,231 @@
         <location filename="../../ui/project_manager/manager.py" line="795"/>
         <location filename="../../ui/project_manager/manager.py" line="825"/>
         <source>Add to project</source>
-        <translation type="unfinished"></translation>
+        <translation>添加到项目</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="729"/>
         <location filename="../../ui/project_manager/manager.py" line="775"/>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>打开</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="786"/>
         <location filename="../../ui/project_manager/manager.py" line="929"/>
         <source>Open failed</source>
-        <translation type="unfinished"></translation>
+        <translation>打开失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="792"/>
         <location filename="../../ui/project_manager/manager.py" line="993"/>
         <source>Open a project first.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先打开一个项目。</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="795"/>
         <source>Scan for .pak files first.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先扫描 .pak 文件。</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="814"/>
         <source>Missing paths (not found in PAKs):</source>
-        <translation type="unfinished"></translation>
+        <translation>缺失路径(在 PAK 中未找到)：</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="815"/>
         <location filename="../../ui/project_manager/manager.py" line="1018"/>
         <location filename="../../ui/project_manager/manager.py" line="1079"/>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>完成</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="837"/>
         <source>Remove</source>
-        <translation type="unfinished">删除</translation>
+        <translation>删除</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="850"/>
         <source>Add entire folder
 &quot;{os.path.basename(src)}&quot; and all its contents?</source>
-        <translation type="unfinished"></translation>
+        <translation>添加整个文件夹
+&quot;{os.path.basename(src)}&quot;及其所有内容？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="855"/>
         <source>Confirm Overwrite</source>
-        <translation type="unfinished"></translation>
+        <translation>确认覆盖</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="855"/>
         <source>&quot;{rel}&quot; already exists — overwrite?</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;{rel}&quot; 已存在 - 是否覆盖？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="865"/>
         <source>Added</source>
-        <translation type="unfinished"></translation>
+        <translation>已添加</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="867"/>
         <source>Copy failed</source>
-        <translation type="unfinished"></translation>
+        <translation>复制失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="891"/>
         <source>Remove failed</source>
-        <translation type="unfinished"></translation>
+        <translation>删除失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="938"/>
         <source>Select Game</source>
-        <translation type="unfinished"></translation>
+        <translation>选择游戏</translation>
     </message>
     <message>
+        <location filename="../../ui/project_manager/manager.py" line="106"/>
         <location filename="../../ui/project_manager/manager.py" line="993"/>
         <source>Export Fluffy ZIP</source>
-        <translation type="unfinished"></translation>
+        <translation>导出为 Fluffy ZIP</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1000"/>
         <source>Missing info</source>
-        <translation type="unfinished"></translation>
+        <translation>缺失信息</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1001"/>
         <source>Project settings not configured yet.
 Open the settings dialog now?</source>
-        <translation type="unfinished"></translation>
+        <translation>项目设置尚未配置。
+现在进行设置吗？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1019"/>
         <source>Fluffy mod ZIP created.
 Saved to:
 {zip_path}</source>
-        <translation type="unfinished"></translation>
+        <translation>Fluffy mod ZIP 已创建。
+保存到：
+{zip_path}</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1022"/>
         <source>ZIP failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ZIP 失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1030"/>
         <source>The REE.PAK packer ({tag_txt}) is not downloaded yet
 </source>
-        <translation type="unfinished"></translation>
+        <translation>REE.PAK packer ({tag_txt}) 尚未下载</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1032"/>
         <source>A newer packer release ({tag_txt}) is available
 </source>
-        <translation type="unfinished"></translation>
+        <translation>有一个更新的打包工具版本可用（{tag_txt}）
+</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1033"/>
         <source>Do you want to download it now?</source>
-        <translation type="unfinished"></translation>
+        <translation>您想现在下载吗？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1034"/>
         <source>Download packer?</source>
-        <translation type="unfinished"></translation>
+        <translation>下载打包工具？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1040"/>
         <source>Download failed</source>
-        <translation type="unfinished"></translation>
+        <translation>下载失败</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1054"/>
         <source>REE.Packer output</source>
-        <translation type="unfinished"></translation>
+        <translation>REE.Packer 输出</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1080"/>
         <source>Export completed.
 PAK file saved to:
 {dest_path}</source>
-        <translation type="unfinished"></translation>
+        <translation>导出完成。
+PAK 文件已保存到：
+{dest_path}</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1083"/>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>错误</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1084"/>
         <source>PAK packer returned an error.</source>
-        <translation type="unfinished"></translation>
+        <translation>PAK 打包工具返回了一个错误。</translation>
+    </message>
+</context>
+<context>
+    <name>ProjectSettingsDialog</name>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="17"/>
+        <source>Fluffy Settings</source>
+        <translation>Fluffy 设置</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="35"/>
+        <source>Mod Name:</source>
+        <translation>模组名称：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="38"/>
+        <source>Description:</source>
+        <translation>描述：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="41"/>
+        <source>Author:</source>
+        <translation>作者：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="44"/>
+        <source>Version:</source>
+        <translation>版本：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="47"/>
+        <source>PAK File Name:</source>
+        <translation>PAK 文件名：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="49"/>
+        <source>Build PAK instead of loose folders in Fluffy ZIP</source>
+        <translation>在 Fluffy ZIP 中构建为 .PAK 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="59"/>
+        <source>Screenshot:</source>
+        <translation>截图：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="69"/>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="71"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="79"/>
+        <source>Select Screenshot</source>
+        <translation>选择截图</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/project_settings_dialog.py" line="113"/>
+        <source>Save failed</source>
+        <translation>保存失败</translation>
     </message>
 </context>
 <context>
@@ -686,6 +1047,7 @@ PAK file saved to:
     </message>
     <message>
         <location filename="../../REasy.py" line="1153"/>
+        <location filename="../../REasy.py" line="1600"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
@@ -719,6 +1081,11 @@ PAK file saved to:
         <location filename="../../REasy.py" line="1187"/>
         <source>Search Directory for Hex</source>
         <translation>在目录中搜索十六进制</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1193"/>
+        <source>Find RSZ Field Value</source>
+        <translation>查找 RSZ 字段值</translation>
     </message>
     <message>
         <location filename="../../REasy.py" line="1199"/>
@@ -766,9 +1133,266 @@ PAK file saved to:
         <translation>RSZ 差异查看器</translation>
     </message>
     <message>
-        <location filename="../../REasy.py" line="2049"/>
-        <source>RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;All Files (*.*)</source>
-        <translation type="unfinished"></translation>
+        <location filename="../../REasy.py" line="1282"/>
+        <source>New Project</source>
+        <translation>新建项目</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1282"/>
+        <source>Project name:</source>
+        <translation>项目名称：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1312"/>
+        <source>Invalid unpacked folder</source>
+        <translation>无效的解包文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1324"/>
+        <source>Locate game directory (contains .pak)</source>
+        <translation>定位游戏目录 (包含.pak文件)</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1332"/>
+        <source>Invalid game folder</source>
+        <translation>无效的游戏文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1332"/>
+        <source>No .pak files found in the selected directory.</source>
+        <translation>所选目录未包含.pak文件</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1351"/>
+        <source>Open REasy Project</source>
+        <translation>打开 REasy 项目</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1363"/>
+        <source>Invalid selection</source>
+        <translation>无效的选择</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1364"/>
+        <source>Please pick a mod folder *directly* inside one of the game directories (e.g.&#x202f;projects/RE4/YourMod).</source>
+        <translation>请选择一个*直接*位于游戏目录中的mod文件夹 (例如:projects/RE4/YourMod)。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1608"/>
+        <source>General</source>
+        <translation>常规</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1613"/>
+        <source>RSZ JSON Path:</source>
+        <translation>RSZ JSON 路径：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1621"/>
+        <source>Browse...</source>
+        <translation>浏览</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1628"/>
+        <source>Game Version (Reload Required):</source>
+        <translation>游戏版本 (需要重新加载)：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1641"/>
+        <source>Translation Target Language:</source>
+        <translation>一键翻译的目标语言：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1656"/>
+        <source>Chinese (Simplified)</source>
+        <translation>简体中文</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1657"/>
+        <source>Chinese (Traditional)</source>
+        <translation>繁體中文</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1674"/>
+        <source>Theme Color:</source>
+        <translation>主题颜色：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1699"/>
+        <source>Select Theme Color</source>
+        <translation>选择主题颜色</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1709"/>
+        <source>Dark Mode</source>
+        <translation>深色模式</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1713"/>
+        <source>Show Debug Console</source>
+        <translation>显示Debug控制台</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1717"/>
+        <source>Show advanced settings for RSZ files (Reload Required)</source>
+        <translation>显示RSZ文件的高级设置 (需要重新加载)</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1721"/>
+        <source>Create backup on save</source>
+        <translation>保存时创建备份</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1725"/>
+        <source>Show confirmation prompts for RSZ actions</source>
+        <translation>显示RSZ操作的确认提示</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1731"/>
+        <source>UI Language (Restart Recommended):</source>
+        <translation>UI界面语言 (需要重启)：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1749"/>
+        <source>Keyboard Shortcuts</source>
+        <translation>键盘快捷键</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1775"/>
+        <location filename="../../REasy.py" line="1898"/>
+        <location filename="../../REasy.py" line="1986"/>
+        <location filename="../../REasy.py" line="2012"/>
+        <location filename="../../REasy.py" line="2061"/>
+        <location filename="../../REasy.py" line="2064"/>
+        <location filename="../../REasy.py" line="2071"/>
+        <location filename="../../REasy.py" line="2078"/>
+        <location filename="../../REasy.py" line="2085"/>
+        <location filename="../../REasy.py" line="2184"/>
+        <location filename="../../REasy.py" line="2188"/>
+        <location filename="../../REasy.py" line="2221"/>
+        <source>Error</source>
+        <translation>错误</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1775"/>
+        <source>The specified JSON file does not exist.</source>
+        <translation>指定的JSON文件不存在。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1816"/>
+        <source>Language Changed</source>
+        <translation>语言已更改</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1817"/>
+        <source>UI language will be applied after restart.</source>
+        <translation>UI语言将在重启后应用。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1827"/>
+        <source>Select JSON file</source>
+        <translation>选择JSON文件</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1898"/>
+        <source>No active tab for searching.</source>
+        <translation>至少打开一个文件执行搜索</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1902"/>
+        <source>Search in MSG</source>
+        <translation>在MSG中搜索</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1902"/>
+        <source>MSG files have a built-in search at the top of the editor. Please use that search bar.</source>
+        <translation>MSG文件在编辑器顶部有内置搜索。请使用该搜索栏。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1986"/>
+        <location filename="../../REasy.py" line="2061"/>
+        <source>Unsupported file type</source>
+        <translation>不支持的文件类型</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1992"/>
+        <source>JSON Path Not Set</source>
+        <translation>JSON路径未设置</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="1993"/>
+        <source>RSZ type registry JSON path is not set.
+Would you like to set it now?</source>
+        <translation>RSZ JSON路径未设置。
+您想现在设置吗？</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2071"/>
+        <location filename="../../REasy.py" line="2078"/>
+        <source>No active tab to save.</source>
+        <translation>至少打开一个文件执行保存。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2085"/>
+        <source>No active tab to reload.</source>
+        <translation>至少打开一个文件执行重新加载。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2157"/>
+        <source>Support REasy Editor</source>
+        <translation>支持REasy编辑器</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2160"/>
+        <source>Thank you for your feedback and support!
+Your contributions help keep this project going.</source>
+        <translation>感谢您的反馈和支持！
+您的贡献帮助这个项目持续发展。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2184"/>
+        <source>No active tab to restore the backup of.</source>
+        <translation>至少打开一个文件执行恢复备份。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2188"/>
+        <source>File has not been saved yet.</source>
+        <translation>文件尚未保存。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2193"/>
+        <source>No Backups</source>
+        <translation>没有备份可用</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2193"/>
+        <source>No backup files found for this file.</source>
+        <translation>未找到此文件的备份文件。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2209"/>
+        <source>Select a backup to restore:</source>
+        <translation>选择要恢复的备份：</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2221"/>
+        <source>No backup selected.</source>
+        <translation>未选择备份。</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2230"/>
+        <source>Confirm Restore</source>
+        <translation>确认恢复</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2238"/>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <location filename="../../REasy.py" line="2238"/>
+        <source>Backup restored successfully</source>
+        <translation>备份恢复成功</translation>
     </message>
     <message>
         <location filename="../../REasy.py" line="1238"/>
@@ -818,6 +1442,132 @@ PAK file saved to:
         <location filename="../../REasy.py" line="1246"/>
         <source>REF Script Creator</source>
         <translation>REF 脚本创建器</translation>
+    </message>
+</context>
+<context>
+    <name>StringInput</name>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1532"/>
+        <source>Open</source>
+        <translation>打开</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1533"/>
+        <source>Open resource file</source>
+        <translation>打开Resource文件</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1540"/>
+        <source>Add &amp; Open</source>
+        <translation>添加并打开</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1541"/>
+        <source>Add resource file to project and open it</source>
+        <translation>将Resource文件添加到项目并打开</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1574"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1579"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1583"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1681"/>
+        <source>Open Resource</source>
+        <translation>打开Resource</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1574"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1595"/>
+        <source>Resource path is empty</source>
+        <translation>Resource路径为空</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1579"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1600"/>
+        <source>Unable to access application window</source>
+        <translation>无法访问应用程序窗口</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1584"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1605"/>
+        <source>You are not in project mode. Please open a project (&quot;File&quot; &gt; &quot;New Mod/Open Project&quot;)</source>
+        <translation>您不在项目模式中。请打开一个项目（&quot;文件&quot; &gt; &quot;新建项目/打开项目&quot;）</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1595"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1600"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1604"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1623"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1647"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1650"/>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1653"/>
+        <source>Add &amp; Open Resource</source>
+        <translation>添加并打开Resource</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1624"/>
+        <source>No project is currently open.</source>
+        <translation>当前没有打开的项目</translation>
+    </message>
+</context>
+<context>
+    <name>UserDataInput</name>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1739"/>
+        <source>Modify…</source>
+        <translation>修改</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1740"/>
+        <source>Edit userdata string and instance type</source>
+        <translation>编辑Userdata和Instance类型</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1798"/>
+        <source>Modify UserData String</source>
+        <translation>修改UserData</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1799"/>
+        <source>Enter new UserData string:</source>
+        <translation>输入新的UserData:</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="1807"/>
+        <source>Select UserData Instance Type</source>
+        <translation>选择UserData Instance类型</translation>
+    </message>
+</context>
+<context>
+    <name>VectorClipboardMixin</name>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="74"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="74"/>
+        <source>Copy values to clipboard</source>
+        <translation>将值复制到剪贴板</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="77"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="77"/>
+        <source>Paste values from clipboard</source>
+        <translation>从剪贴板粘贴值</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="114"/>
+        <source>Clipboard is empty. Copy values before pasting.</source>
+        <translation>剪贴板为空。请在粘贴之前复制值。</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/pyside/value_widgets.py" line="127"/>
+        <source>Paste Error</source>
+        <translation>粘贴错误</translation>
     </message>
 </context>
 </TS>
