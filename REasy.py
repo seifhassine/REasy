@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 import PySide6
 import subprocess
+import json
 
 from file_handlers.factory import get_handler_for_data 
 from file_handlers.msg.msg_handler import MsgHandler
@@ -1781,10 +1782,18 @@ class REasyEditorApp(QMainWindow):
 
         def on_ok():
             new_json_path = json_entry.text().strip()
-            if new_json_path and not os.path.exists(new_json_path):
-                QMessageBox.critical(
-                    dialog, self.tr("Error"), self.tr("The specified JSON file does not exist.")
-                )
+            if new_json_path and os.path.exists(new_json_path):
+                try:
+                    with open(new_json_path, "r") as f:
+                        data = json.load(f)
+                    if not isinstance(data, dict) or not data or "name" not in list(data.values())[0]:
+                        QMessageBox.critical(dialog, "Error", "Invalid RSZ type registry JSON file.")
+                        return
+                except Exception as _:
+                    QMessageBox.critical(dialog, "Error", "Invalid JSON file.")
+                    return
+            elif new_json_path:
+                QMessageBox.critical(dialog, self.tr("Error"), self.tr("The specified JSON file does not exist."))
                 return
 
             self.settings["rcol_json_path"] = new_json_path
