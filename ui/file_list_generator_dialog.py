@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame,
     QLineEdit, QInputDialog
 )
-from tools.file_list_generator import ExtensionAnalyzer, validate_game_executable, PathCollector
+from tools.file_list_generator import ExtensionAnalyzer, validate_game_executable, PathCollector, ExePathExtractor
 
 
 class ExtensionDumperThread(QThread):
@@ -32,6 +32,7 @@ class FileListGeneratorDialog(QDialog):
         self.game_exe_path = None
         self.list_file_path = None
         self.path_collector = None
+        self.exe_path_extractor = None
         self.path_prefix = "natives/stm/"
         
         self._create_ui()
@@ -101,6 +102,8 @@ class FileListGeneratorDialog(QDialog):
         layout.addWidget(config_group)
     
     def _create_run_button(self, layout):
+        buttons_layout = QHBoxLayout()
+        
         self.run_btn = QPushButton("Run Analysis")
         self.run_btn.setMinimumHeight(40)
         font = self.run_btn.font()
@@ -108,7 +111,19 @@ class FileListGeneratorDialog(QDialog):
         self.run_btn.setFont(font)
         self.run_btn.clicked.connect(self._run_analysis)
         self.run_btn.setEnabled(False)
-        layout.addWidget(self.run_btn)
+        buttons_layout.addWidget(self.run_btn)
+        
+        self.extract_exe_btn = QPushButton("Extract Paths from EXE")
+        self.extract_exe_btn.setMinimumHeight(40)
+        extract_font = self.extract_exe_btn.font()
+        extract_font.setBold(True)
+        self.extract_exe_btn.setFont(extract_font)
+        self.extract_exe_btn.clicked.connect(self._extract_paths_from_exe)
+        self.extract_exe_btn.setEnabled(False)
+        self.extract_exe_btn.setStyleSheet("QPushButton { background-color: #2E7D32; color: white; } QPushButton:disabled { background-color: #BDBDBD; color: #666; }")
+        buttons_layout.addWidget(self.extract_exe_btn)
+        
+        layout.addLayout(buttons_layout)
     
     def _create_results_section(self, layout):
         results_group = QGroupBox("Extension Analysis Results")
@@ -173,7 +188,8 @@ class FileListGeneratorDialog(QDialog):
         self.clear_list_btn.setEnabled(False)
     
     def _update_run_button(self):
-        self.run_btn.setEnabled(self.game_exe_path is not None)
+        has_exe = self.game_exe_path is not None
+        self.run_btn.setEnabled(has_exe)
     
     def _on_prefix_changed(self, text):
         self.path_prefix = text
@@ -270,6 +286,7 @@ class FileListGeneratorDialog(QDialog):
         
         QMessageBox.information(self, "Analysis Complete", summary_msg)
         self.collect_paths_btn.setVisible(True)
+        self.extract_exe_btn.setEnabled(True)
     
     def _on_item_double_clicked(self, item, column):
         if column != 1:
@@ -408,6 +425,68 @@ class FileListGeneratorDialog(QDialog):
             final_count = len(validated_paths) if validated_paths else total_collected
             status = "validated" if validated_paths else "collected"
             QMessageBox.information(self, "Export Complete", f"Successfully exported {final_count} {status} paths!\n\nOutput: lowercase, sorted\nSaved to: {output_path}")
+        else:
+            QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
+    
+    def _extract_paths_from_exe(self):
+        if not self.game_exe_path or not self.analyzer.combined_extensions:
+            QMessageBox.warning(self, "Error", "Please run the analysis first.")
+            return
+        
+        self.exe_path_extractor = ExePathExtractor(
+            list(self.analyzer.combined_extensions.keys()),
+            self.analyzer.combined_extensions,
+            self.path_prefix
+        )
+        
+        progress = QProgressDialog("Extracting paths from executable...", "Stop", 0, 100, self)
+        progress.setWindowTitle("Extracting File Paths")
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+        
+        stopped = False
+        def update_progress(msg, cur, total):
+            nonlocal stopped
+            if progress.wasCanceled():
+                stopped = True
+                return True
+            if total > 0:
+                progress.setValue(int((cur / total) * 100))
+            progress.setLabelText(msg)
+            QApplication.processEvents()
+            return False
+        
+        success, error, count = self.exe_path_extractor.extract_paths_from_exe(
+            self.game_exe_path, update_progress
+        )
+        progress.close()
+        
+        if stopped or not success or count == 0:
+            if not stopped:
+                msg = error or "No file paths were found in the executable."
+                QMessageBox.warning(self, "Extraction Failed", msg)
+            return
+        
+        output_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Extracted Paths", "exe_paths.txt",
+            "Text Files (*.txt);;List Files (*.list);;All Files (*.*)"
+        )
+        if not output_path:
+            return
+        
+        success, error = self.exe_path_extractor.export_to_file(output_path)
+        
+        if success:
+            stats = self.analyzer.get_statistics()
+            QMessageBox.information(
+                self, "Extraction Complete",
+                f"Successfully extracted {count} unique file paths!\n\n"
+                f"- {stats['total']} extensions analyzed\n"
+                f"- All version combinations included\n"
+                f"- Prefix '{self.path_prefix}' applied\n\n"
+                f"Saved to: {output_path}"
+            )
         else:
             QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
     

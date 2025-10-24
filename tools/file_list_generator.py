@@ -172,6 +172,124 @@ def validate_list_file(list_path):
     return True, None
 
 
+class ExePathExtractor:
+    def __init__(self, extensions, extension_versions, path_prefix="natives/stm/"):
+        self.extensions = [ext.lower() for ext in extensions]
+        self.extension_versions = {ext.lower(): {v.lower() for v in versions} 
+                                    for ext, versions in extension_versions.items()}
+        self.path_prefix = path_prefix.rstrip('/') + '/'
+        self.collected_paths = set()
+    
+    def _extract_strings(self, data, min_len=10):
+        strings = []
+        data_len = len(data)
+        
+        i = 0
+        while i < data_len - min_len * 2:
+            if data[i] != 0 and 32 <= data[i] <= 126 and data[i+1] == 0:
+                j = i
+                s = bytearray()
+                while j < data_len - 1 and data[j] != 0 and 32 <= data[j] <= 126 and data[j+1] == 0:
+                    s.append(data[j])
+                    j += 2
+                if len(s) >= min_len:
+                    try:
+                        strings.append(s.decode('ascii'))
+                    except:
+                        pass
+                i = j
+            else:
+                i += 2
+        
+        i = 0
+        while i < data_len - min_len:
+            if 32 <= data[i] <= 126:
+                j = i
+                s = bytearray()
+                while j < data_len and 32 <= data[j] <= 126:
+                    s.append(data[j])
+                    j += 1
+                if len(s) >= min_len:
+                    try:
+                        strings.append(s.decode('utf-8'))
+                    except:
+                        pass
+                i = j
+            else:
+                i += 1
+        
+        return strings
+    
+    def extract_paths_from_exe(self, exe_path, progress_callback=None):
+        self.collected_paths.clear()
+        
+        if progress_callback:
+            progress_callback("Reading executable...", 0, 100)
+        
+        try:
+            with open(exe_path, 'rb') as f:
+                strings = self._extract_strings(f.read())
+        except:
+            return True, None, 0
+        
+        if progress_callback:
+            progress_callback("Processing strings...", 30, 100)
+        
+        base_paths = set()
+        for s in strings:
+            path = s.replace('\\', '/').lstrip('@')
+            if ':' in path:
+                path = path.split(':')[-1]
+            path = path.lstrip('@')
+            
+            parts = path.split('.')
+            version_idx = None
+            for i in range(len(parts) - 1, 0, -1):
+                try:
+                    int(parts[i])
+                    version_idx = i
+                except ValueError:
+                    if version_idx:
+                        break
+            
+            base = '.'.join(parts[:version_idx]) if version_idx and version_idx > 1 else path
+            if any(base.lower().endswith(f'.{ext}') for ext in self.extensions):
+                base_paths.add(base.lower())
+        
+        if progress_callback:
+            progress_callback("Generating version combinations...", 60, 100)
+        
+        for base in base_paths:
+            if not base.startswith('natives/'):
+                base = self.path_prefix + base
+            
+            parts = base.split('.')
+            if len(parts) >= 2:
+                ext = parts[-1]
+                versions = self.extension_versions.get(ext, set())
+                if versions:
+                    for v in versions:
+                        self.collected_paths.add(f"{base}.{v}")
+                else:
+                    self.collected_paths.add(base)
+            else:
+                self.collected_paths.add(base)
+        
+        if progress_callback:
+            progress_callback("Extraction complete!", 100, 100)
+        
+        return True, None, len(self.collected_paths)
+    
+    def export_to_file(self, output_path):
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                for path in sorted(self.collected_paths):
+                    f.write(path + '\n')
+            return True, None
+        except Exception as e:
+            return False, f"Failed to write output file: {e}"
+
+
 class PathCollector:
     def __init__(self, extensions, extension_versions=None, path_prefix="natives/stm/"):
         self.extensions = [ext.lower() for ext in extensions]
