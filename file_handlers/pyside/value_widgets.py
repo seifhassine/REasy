@@ -71,10 +71,10 @@ class VectorClipboardMixin:
 
     def _setup_clipboard_buttons(self):
         self.copy_button = self._create_clipboard_button(
-            "Copy", "Copy values to clipboard", self._copy_values_to_clipboard
+            self.tr("Copy"), self.tr("Copy values to clipboard"), self._copy_values_to_clipboard
         )
         self.paste_button = self._create_clipboard_button(
-            "Paste", "Paste values from clipboard", self._paste_values_from_clipboard
+            self.tr("Paste"), self.tr("Paste values from clipboard"), self._paste_values_from_clipboard
         )
 
     def _format_clipboard_value(self, value):
@@ -111,7 +111,7 @@ class VectorClipboardMixin:
 
     def _show_clipboard_error(self, error, expected_count):
         if error.reason == "empty":
-            message = "Clipboard is empty. Copy values before pasting."
+            message = self.tr("Clipboard is empty. Copy values before pasting.")
         elif error.reason == "length":
             message = (
                 f"Incompatible clipboard data length: expected {expected_count} "
@@ -124,7 +124,7 @@ class VectorClipboardMixin:
                 "values."
             )
 
-        QMessageBox.warning(self, "Paste Error", message)
+        QMessageBox.warning(self, self.tr("Paste Error"), message)
 
     def _paste_values_from_clipboard(self):
         expected = len(self.inputs)
@@ -409,16 +409,16 @@ class GuidInput(BaseValueWidget):
         self._history_anchor = None
 
         self.gen_button = QToolButton()
-        self.gen_button.setText("Generate")
-        self.gen_button.setToolTip("Generate a random GUID")
+        self.gen_button.setText(self.tr("Generate"))
+        self.gen_button.setToolTip(self.tr("Generate a random GUID"))
         self.gen_button.setFixedWidth(60)
         self.layout.addWidget(self.gen_button)
         self.gen_button.clicked.connect(self._generate_guid)
         
         self.reset_button = QToolButton()
-        self.reset_button.setText("Reset")
-        self.reset_button.setToolTip("Reset to null GUID (all zeros)")
-        self.reset_button.setFixedWidth(40) 
+        self.reset_button.setText(self.tr("Reset"))
+        self.reset_button.setToolTip(self.tr("Reset to null GUID (all zeros)"))
+        self.reset_button.setFixedWidth(40)
         self.layout.addWidget(self.reset_button)
         self.reset_button.clicked.connect(self._reset_guid)
 
@@ -1529,16 +1529,16 @@ class StringInput(BaseValueWidget):
             
             if self.open_button is None:
                 self.open_button = QToolButton()
-                self.open_button.setText("Open")
-                self.open_button.setToolTip("Open resource file")
+                self.open_button.setText(self.tr("Open"))
+                self.open_button.setToolTip(self.tr("Open resource file"))
                 self.open_button.setFixedWidth(60)
                 self.open_button.clicked.connect(self._on_open_clicked)
                 self.layout.addWidget(self.open_button)
             
             if self.add_open_button is None:
                 self.add_open_button = QToolButton()
-                self.add_open_button.setText("Add & Open")
-                self.add_open_button.setToolTip("Add resource file to project and open it")
+                self.add_open_button.setText(self.tr("Add & Open"))
+                self.add_open_button.setToolTip(self.tr("Add resource file to project and open it"))
                 self.add_open_button.setFixedWidth(85)
                 self.add_open_button.clicked.connect(self._on_add_open_clicked)
                 self.layout.addWidget(self.add_open_button)
@@ -1571,17 +1571,17 @@ class StringInput(BaseValueWidget):
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, "Open Resource", "Resource path is empty")
+            QMessageBox.information(self, self.tr("Open Resource"), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, "Open Resource", "Unable to access application window")
+            QMessageBox.warning(self, self.tr("Open Resource"), self.tr("Unable to access application window"))
             return
         
         if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, "Open Resource", 
-                'You are not in project mode. Please open a project ("File" > "New Mod/Open Project")')
+            QMessageBox.information(self, self.tr("Open Resource"),
+                self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
         self._open_resource_file(app_window, resource_path, add_to_project=False)
@@ -1592,17 +1592,17 @@ class StringInput(BaseValueWidget):
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, "Add & Open Resource", "Resource path is empty")
+            QMessageBox.information(self, self.tr("Add & Open Resource"), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, "Add & Open Resource", "Unable to access application window")
+            QMessageBox.warning(self, self.tr("Add & Open Resource"), self.tr("Unable to access application window"))
             return
         
         if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, "Add & Open Resource", 
-                'You are not in project mode. Please open a project ("File" > "New Mod/Open Project")')
+            QMessageBox.information(self, self.tr("Add & Open Resource"),
+                self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
         self._open_resource_file(app_window, resource_path, add_to_project=True)
@@ -1620,8 +1620,8 @@ class StringInput(BaseValueWidget):
         if add_to_project:
             project_dir = proj_dock.project_dir
             if not project_dir:
-                QMessageBox.information(self, "Add & Open Resource", 
-                    "No project is currently open.")
+                QMessageBox.information(self, self.tr("Add & Open Resource"), 
+                    self.tr("No project is currently open."))
                 return
             
             path_prefix = get_path_prefix_for_game(app_window.current_game)
@@ -1644,13 +1644,13 @@ class StringInput(BaseValueWidget):
                     if hasattr(proj_dock, '_refresh_proj'):
                         proj_dock._refresh_proj()
                     
-                    QMessageBox.information(self, "Add & Open Resource", 
+                    QMessageBox.information(self, self.tr("Add & Open Resource"), 
                         f"File added to project and opened:\n{dest_path}")
                 except Exception as e:
-                    QMessageBox.critical(self, "Add & Open Resource", 
+                    QMessageBox.critical(self, self.tr("Add & Open Resource"), 
                         f"File was added but failed to open:\n{str(e)}")
             else:
-                QMessageBox.critical(self, "Add & Open Resource", 
+                QMessageBox.critical(self, self.tr("Add & Open Resource"), 
                     f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
             return
         
@@ -1678,7 +1678,7 @@ class StringInput(BaseValueWidget):
         if file_data:
             app_window.add_tab(file_path, file_data)
         else:
-            QMessageBox.critical(self, "Open Resource", 
+            QMessageBox.critical(self, self.tr("Open Resource"),
                 f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
 
     def _on_text_changed(self, text):
@@ -1736,8 +1736,8 @@ class UserDataInput(BaseValueWidget):
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         self.modify_button = QToolButton()
-        self.modify_button.setText("Modify…")
-        self.modify_button.setToolTip("Edit userdata string and instance type")
+        self.modify_button.setText(self.tr("Modify…"))
+        self.modify_button.setToolTip(self.tr("Edit userdata string and instance type"))
         self.modify_button.clicked.connect(self._on_modify_clicked)
         self.layout.addWidget(self.modify_button)
         self.layout.addStretch()
@@ -1795,8 +1795,8 @@ class UserDataInput(BaseValueWidget):
 
         new_string, ok = QInputDialog.getText(
             self,
-            "Modify UserData String",
-            "Enter new UserData string:",
+            self.tr("Modify UserData String"),
+            self.tr("Enter new UserData string:"),
             QLineEdit.Normal,
             default_string
         )
@@ -1804,7 +1804,7 @@ class UserDataInput(BaseValueWidget):
             return
 
         type_dialog = ComponentSelectorDialog(self, viewer.type_registry, required_parent_name="via.UserData")
-        type_dialog.setWindowTitle("Select UserData Instance Type")
+        type_dialog.setWindowTitle(self.tr("Select UserData Instance Type"))
         if default_type_name:
             try:
                 type_dialog.search_input.setText(default_type_name)

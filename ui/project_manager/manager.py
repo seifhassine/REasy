@@ -55,7 +55,7 @@ class ProjectManager(QDockWidget):
         return EXPECTED_NATIVE.get(self.current_game or "", ())
     
     def __init__(self, app_window, unpacked_root: str | None = None):
-        super().__init__("Project Browser", app_window)
+        super().__init__(self.tr("Project Browser"), app_window)
         self.app_win       = app_window
         self.current_game  = getattr(app_window, "current_game", None)
         self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
@@ -76,17 +76,17 @@ class ProjectManager(QDockWidget):
         self.path_label = QLabel()
         bar.addWidget(self.path_label, 1)
         self.path_label.setMinimumSize(20, 20)
-        bar.addWidget(QPushButton("Browse…", clicked=self._browse))
+        bar.addWidget(QPushButton(self.tr("Browse…"), clicked=self._browse))
         # PAK-specific controls
-        self.pak_ignore_mods_cb = QCheckBox("Ignore mod PAKs (not 100% accurate)")
+        self.pak_ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"))
         self.pak_ignore_mods_cb.setChecked(True)
-        self.btn_scan_paks = QPushButton("Scan PAKs", clicked=self._scan_paks)
+        self.btn_scan_paks = QPushButton(self.tr("Scan PAKs"), clicked=self._scan_paks)
         bar.addWidget(self.pak_ignore_mods_cb)
         bar.addWidget(self.btn_scan_paks)
-        self.btn_load_list = QPushButton("Load .list…", clicked=self._choose_pak_list)
+        self.btn_load_list = QPushButton(self.tr("Load .list…"), clicked=self._choose_pak_list)
         bar.addWidget(self.btn_load_list)
         self.pak_list_edit = QLineEdit(self)
-        self.pak_list_edit.setPlaceholderText("List file (.list/.txt)")
+        self.pak_list_edit.setPlaceholderText(self.tr("List file (.list/.txt)"))
         self.pak_list_edit.setReadOnly(True)
         bar.addWidget(self.pak_list_edit, 1)
         self._update_path_label()
@@ -102,9 +102,9 @@ class ProjectManager(QDockWidget):
         actions = QHBoxLayout()
         lay.addLayout(actions)    
 
-        self.btn_conf = QPushButton("Fluffy Settings…", clicked=self._proj_settings)
-        self.btn_zip  = QPushButton("Export Fluffy ZIP", clicked=self._export_zip)
-        self.btn_pak  = QPushButton("Export .PAK",       clicked=self._export_mod)
+        self.btn_conf = QPushButton(self.tr("Fluffy Settings…"), clicked=self._proj_settings)
+        self.btn_zip  = QPushButton(self.tr("Export Fluffy ZIP"), clicked=self._export_zip)
+        self.btn_pak  = QPushButton(self.tr("Export .PAK"),       clicked=self._export_mod)
 
         actions.addWidget(self.btn_conf)
         actions.addWidget(self.btn_zip)
@@ -113,9 +113,9 @@ class ProjectManager(QDockWidget):
         toggles = QHBoxLayout()
         lay.addLayout(toggles)
 
-        self.btn_sys       = QToolButton(text="System Files",  checkable=True, checked=True)
-        self.btn_proj      = QToolButton(text="Project Files", checkable=True)
-        self.btn_pak_files = QToolButton(text="PAK Files",     checkable=True)
+        self.btn_sys       = QToolButton(text=self.tr("System Files"),  checkable=True, checked=True)
+        self.btn_proj      = QToolButton(text=self.tr("Project Files"), checkable=True)
+        self.btn_pak_files = QToolButton(text=self.tr("PAK Files"),     checkable=True)
 
         toggles.addWidget(self.btn_sys)
         toggles.addWidget(self.btn_proj)
@@ -125,10 +125,10 @@ class ProjectManager(QDockWidget):
         # PAK search bar (visible only on PAK tab)
         pak_search = QHBoxLayout()
         lay.addLayout(pak_search)
-        self.pak_filter_label = QLabel("Filter:")
+        self.pak_filter_label = QLabel(self.tr("Filter:"))
         pak_search.addWidget(self.pak_filter_label)
         self.pak_filter_edit = QLineEdit(self)
-        self.pak_filter_edit.setPlaceholderText("Search (regex) – shows flat list; clear for tree view")
+        self.pak_filter_edit.setPlaceholderText(self.tr("Search (regex) – shows flat list; clear for tree view"))
         self._pak_filter_timer = QTimer(self)
         self._pak_filter_timer.setSingleShot(True)
         self._pak_filter_timer.timeout.connect(self._apply_pak_filter_now)

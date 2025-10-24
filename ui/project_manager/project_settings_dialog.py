@@ -14,7 +14,7 @@ class ProjectSettingsDialog(QDialog):
 
     def __init__(self, project_dir: Path, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Fluffy Settings")
+        self.setWindowTitle(self.tr("Fluffy Settings"))
         self.setModal(True)
         self.project_dir = project_dir
         self.cfg_path    = project_dir / self.CONFIG_NAME
@@ -32,21 +32,21 @@ class ProjectSettingsDialog(QDialog):
         layout.addLayout(form)
 
         self.name_edit = QLineEdit(self.cfg.get("name", project_dir.name))
-        form.addRow("Mod Name:", self.name_edit)
+        form.addRow(self.tr("Mod Name:"), self.name_edit)
 
         self.desc_edit = QLineEdit(self.cfg.get("description", ""))
-        form.addRow("Description:", self.desc_edit)
+        form.addRow(self.tr("Description:"), self.desc_edit)
 
         self.auth_edit = QLineEdit(self.cfg.get("author", ""))
-        form.addRow("Author:", self.auth_edit)
+        form.addRow(self.tr("Author:"), self.auth_edit)
 
         self.ver_edit  = QLineEdit(self.cfg.get("version", "v1.0"))
-        form.addRow("Version:", self.ver_edit)
+        form.addRow(self.tr("Version:"), self.ver_edit)
 
         self.pak_edit = QLineEdit(self.cfg.get("pak_name", project_dir.name))
-        form.addRow("PAK File Name:", self.pak_edit)
-                
-        self.bundle_chk = QCheckBox("Build PAK instead of loose folders in Fluffy ZIP")
+        form.addRow(self.tr("PAK File Name:"), self.pak_edit)
+
+        self.bundle_chk = QCheckBox(self.tr("Build PAK instead of loose folders in Fluffy ZIP"))
         self.bundle_chk.setChecked(self.cfg.get("bundle_pak", False))
         form.addRow(self.bundle_chk)
 
@@ -56,7 +56,7 @@ class ProjectSettingsDialog(QDialog):
         self.pic_btn.clicked.connect(self._choose_image)
         pic_layout.addWidget(self.pic_edit)
         pic_layout.addWidget(self.pic_btn)
-        form.addRow("Screenshot:", pic_layout)
+        form.addRow(self.tr("Screenshot:"), pic_layout)
 
         self.preview = QLabel(alignment=Qt.AlignCenter)
         self.preview.setFixedSize(160, 90)
@@ -66,9 +66,9 @@ class ProjectSettingsDialog(QDialog):
         # Buttons
         btns = QHBoxLayout()
         layout.addLayout(btns)
-        btn_ok = QPushButton("OK")
+        btn_ok = QPushButton(self.tr("OK"))
         btn_ok.clicked.connect(self._save)
-        btn_cancel = QPushButton("Cancel")
+        btn_cancel = QPushButton(self.tr("Cancel"))
         btn_cancel.clicked.connect(self.reject)
         btns.addStretch(1)
         btns.addWidget(btn_ok)
@@ -76,7 +76,7 @@ class ProjectSettingsDialog(QDialog):
 
     def _choose_image(self):
         fn, _ = QFileDialog.getOpenFileName(
-            self, "Select Screenshot",
+            self, self.tr("Select Screenshot"),
             str(self.project_dir),
             "Images (*.png *.jpg *.jpeg *.bmp)")
         if not fn:
@@ -110,6 +110,6 @@ class ProjectSettingsDialog(QDialog):
         try:
             self.cfg_path.write_text(json.dumps(self.cfg, indent=2))
         except Exception as e:
-            QMessageBox.critical(self, "Save failed", str(e))
+            QMessageBox.critical(self, self.tr("Save failed"), str(e))
             return
         self.accept()

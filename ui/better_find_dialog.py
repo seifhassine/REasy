@@ -179,22 +179,22 @@ class BetterFindDialog(QDockWidget):
 
         # search bar
         srow = QHBoxLayout()
-        srow.addWidget(QLabel("Search:"))
-        self.search_entry = QLineEdit(placeholderText="Enter text…")
+        srow.addWidget(QLabel(self.tr("Search:")))
+        self.search_entry = QLineEdit(placeholderText=self.tr("Enter text…"))
         self.search_entry.returnPressed.connect(self.find_all)
         srow.addWidget(self.search_entry)
         root.addLayout(srow)
 
         # options
         opts = QHBoxLayout()
-        self.opt_name = QRadioButton("Name")
-        self.opt_value = QRadioButton("Value")
-        self.opt_both = QRadioButton("Both")
+        self.opt_name = QRadioButton(self.tr("Name"))
+        self.opt_value = QRadioButton(self.tr("Value"))
+        self.opt_both = QRadioButton(self.tr("Both"))
         self.opt_both.setChecked(True)
         opts.addWidget(self.opt_name)
         opts.addWidget(self.opt_value)
         opts.addWidget(self.opt_both)
-        self.case_box = QCheckBox("Case sensitive")
+        self.case_box = QCheckBox(self.tr("Case sensitive"))
         opts.addWidget(self.case_box)
         opts.addStretch()
         root.addLayout(opts)
@@ -203,7 +203,7 @@ class BetterFindDialog(QDockWidget):
         splitter = QSplitter(Qt.Vertical)
 
         res_col = QVBoxLayout()
-        res_col.addWidget(QLabel("Results:"))
+        res_col.addWidget(QLabel(self.tr("Results:")))
         self.result_list = QListWidget()
         self.result_list.itemDoubleClicked.connect(lambda _: self._select(self.result_list.currentRow()))
         res_col.addWidget(self.result_list)
@@ -212,7 +212,7 @@ class BetterFindDialog(QDockWidget):
         splitter.addWidget(rwidget)
 
         prev_col = QVBoxLayout()
-        prev_col.addWidget(QLabel("Preview:"))
+        prev_col.addWidget(QLabel(self.tr("Preview:")))
         self.preview = QPlainTextEdit(readOnly=True)
         prev_col.addWidget(self.preview)
         pwidget = QWidget()
@@ -223,12 +223,12 @@ class BetterFindDialog(QDockWidget):
 
         # nav buttons
         nav = QHBoxLayout()
-        nav.addWidget(QPushButton("Find All", clicked=self.find_all))
+        nav.addWidget(QPushButton(self.tr("Find All"), clicked=self.find_all))
         nav.addStretch()
-        nav.addWidget(QPushButton("Previous", clicked=self.find_previous))
-        nav.addWidget(QPushButton("Next", clicked=self.find_next))
+        nav.addWidget(QPushButton(self.tr("Previous"), clicked=self.find_previous))
+        nav.addWidget(QPushButton(self.tr("Next"), clicked=self.find_next))
         nav.addStretch()
-        nav.addWidget(QPushButton("Close", clicked=self.close))
+        nav.addWidget(QPushButton(self.tr("Close"), clicked=self.close))
         root.addLayout(nav)
 
         self.status = QLabel("")
@@ -240,21 +240,21 @@ class BetterFindDialog(QDockWidget):
     def find_all(self):
         search_text = self.search_entry.text().strip()
         if not search_text:
-            self.status.setText("Please enter search text")
+            self.status.setText(self.tr("Please enter search text"))
             return
 
         tree = self._get_tree()
         if not tree or not isValid(tree):
-            self.status.setText("No tree view available")
+            self.status.setText(self.tr("No tree view available"))
             return
         try:
             model = tree.model()
         except RuntimeError:
             self.invalidate_cached_tree()
-            self.status.setText("Tree view unavailable")
+            self.status.setText(self.tr("Tree view unavailable"))
             return
         if not model:
-            self.status.setText("Tree has no model")
+            self.status.setText(self.tr("Tree has no model"))
             return
 
         case  = self.case_box.isChecked()
@@ -473,7 +473,7 @@ class BetterFindDialog(QDockWidget):
             self.status.setText(f"Found {len(self.results)} matches")
             self._select(0)
         else:
-            self.status.setText("No matches found")
+            self.status.setText(self.tr("No matches found"))
 
     def _select(self, i):
         if not (0 <= i < len(self.results)):
@@ -530,7 +530,7 @@ class BetterFindDialog(QDockWidget):
                 tab_name = os.path.basename(file_tab.filename) if file_tab.filename else "Untitled"
                 self.setWindowTitle(f"Find in Tree - {tab_name}")
             else:
-                self.setWindowTitle("Find in Tree")
+                self.setWindowTitle(self.tr("Find in Tree"))
 
     def invalidate_cached_tree(self):
         self._tree_for_tab = None
@@ -542,7 +542,7 @@ class BetterFindDialog(QDockWidget):
             if self.preview:
                 self.preview.clear()
             if self.status:
-                self.status.setText("Tree reloaded - search reset")
+                self.status.setText(self.tr("Tree reloaded - search reset"))
         except RuntimeError:
             pass
     
