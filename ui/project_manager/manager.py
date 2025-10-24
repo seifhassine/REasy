@@ -702,7 +702,7 @@ class ProjectManager(QDockWidget):
             if QMessageBox.question(
                 self,
                 self.tr("Confirm Add"),
-                self.tr(f"Add entire folder\n\"{base_name}\" and all its contents?"),
+                self.tr("Add entire folder\n\"{}\" and all its contents?").format(base_name),
                 QMessageBox.Yes | QMessageBox.No
             ) != QMessageBox.Yes:
                 return
@@ -850,12 +850,12 @@ class ProjectManager(QDockWidget):
         dst = os.path.join(self.project_dir, rel)
 
         if os.path.isdir(src) and QMessageBox.question(
-                self, self.tr("Confirm Add"), self.tr(f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?"),
+                self, self.tr("Confirm Add"), self.tr("Add entire folder\n\"{}\" and all its contents?").format(os.path.basename(src)),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
         if os.path.exists(dst) and QMessageBox.question(
-                self, self.tr("Confirm Overwrite"), self.tr(f"""\"{rel}\" already exists — overwrite?"""),
+                self, self.tr("Confirm Overwrite"), self.tr("\"{}\" already exists — overwrite?").format(rel),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
@@ -1019,7 +1019,7 @@ class ProjectManager(QDockWidget):
             create_fluffy_zip(proj, zip_path)
             QMessageBox.information(
                 self, self.tr("Done"),
-                self.tr(f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}")
+                self.tr("Fluffy mod ZIP created.\nSaved to:\n{}").format(zip_path)
             )
         except Exception as e:
             QMessageBox.critical(self, self.tr("ZIP failed"), str(e))
@@ -1030,9 +1030,9 @@ class ProjectManager(QDockWidget):
         if need:
             tag_txt = latest or "latest"
             msg = (
-                self.tr(f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n")
+                self.tr("The REE.PAK packer ({}) is not downloaded yet\n").format(tag_txt)
                 if not _EXE_PATH.exists()
-                else self.tr(f"A newer packer release ({tag_txt}) is available\n")
+                else self.tr("A newer packer release ({}) is available\n").format(tag_txt)
             ) + self.tr("Do you want to download it now?")
             if QMessageBox.question(self, self.tr("Download packer?"), msg,
                                     QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
@@ -1080,7 +1080,7 @@ class ProjectManager(QDockWidget):
                 if code == 0:
                     QMessageBox.information(
                         self, self.tr("Done"),
-                        self.tr(f"Export completed.\nPAK file saved to:\n{dest_path}")
+                        self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path)
                     )
                 else:
                     QMessageBox.critical(self, self.tr("Error"),

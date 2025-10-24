@@ -484,7 +484,7 @@ class AdvancedTreeView(QTreeView):
             
             elements_count = clipboard.get_elements_count_from_clipboard(self)
             if elements_count > 1:
-                paste_action = menu.addAction(self.tr(f"Paste Group ({elements_count} elements)"))
+                paste_action = menu.addAction(self.tr("Paste Group ({} elements)").format(elements_count))
                 actions[paste_action] = lambda: self.paste_array_elements(
                     index, item_info['array_type'], item_info['data_obj'], item
                 )
@@ -512,12 +512,12 @@ class AdvancedTreeView(QTreeView):
         selected_indices = self.get_selected_array_elements(item_info['parent_array_item'])
         
         if len(selected_indices) > 1:
-            copy_action = menu.addAction(self.tr(f"Copy Group ({len(selected_indices)} elements)"))
+            copy_action = menu.addAction(self.tr("Copy Group ({} elements)").format(len(selected_indices)))
             actions[copy_action] = lambda: self.copy_array_elements(
                 item_info['parent_array_item'], selected_indices, index
             )
 
-            delete_action = menu.addAction(self.tr(f"Delete Group ({len(selected_indices)} elements)"))
+            delete_action = menu.addAction(self.tr("Delete Group ({} elements)").format(len(selected_indices)))
             actions[delete_action] = lambda: self.delete_array_elements(
                 item_info['parent_array_item'], selected_indices
             )

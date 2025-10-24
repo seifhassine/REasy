@@ -192,8 +192,8 @@
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="487"/>
-        <source>Paste Group ({elements_count} elements)</source>
-        <translation>成组粘贴 {elements_count} 个元素</translation>
+        <source>Paste Group ({} elements)</source>
+        <translation>成组粘贴 {} 个元素</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="492"/>
@@ -202,13 +202,13 @@
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="515"/>
-        <source>Copy Group ({len(selected_indices)} elements)</source>
-        <translation>成组复制 {len(selected_indices)} 个元素</translation>
+        <source>Copy Group ({} elements)</source>
+        <translation>成组复制 {} 个元素</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="520"/>
-        <source>Delete Group ({len(selected_indices)} elements)</source>
-        <translation>成组删除 {len(selected_indices)} 个元素</translation>
+        <source>Delete Group ({} elements)</source>
+        <translation>成组删除 {} 个元素</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="526"/>
@@ -331,10 +331,6 @@
         <translation>错误</translation>
     </message>
     <message>
-        <source>Save File As</source>
-        <translation type="vanished">另存为</translation>
-    </message>
-    <message>
         <location filename="../../REasy.py" line="719"/>
         <source>No file currently loaded.</source>
         <translation>当前没有加载文件。</translation>
@@ -449,10 +445,6 @@
         <location filename="../../ui/pak_browser_dialog.py" line="37"/>
         <source>Browse…</source>
         <translation>浏览…</translation>
-    </message>
-    <message>
-        <source>Ignore mod PAKs</source>
-        <translation type="vanished">忽略模组 PAK</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="42"/>
@@ -582,10 +574,6 @@
         <location filename="../../ui/pak_browser_dialog.py" line="598"/>
         <source>Done</source>
         <translation>完成</translation>
-    </message>
-    <message>
-        <source>Read failed</source>
-        <translation type="vanished">读取失败</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="445"/>
@@ -833,11 +821,34 @@
         <translation>确认添加</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="705"/>
-        <source>Add entire folder
-&quot;{base_name}&quot; and all its contents?</source>
-        <translation>添加整个文件夹
-&quot;{base_name}&quot;及其所有内容？</translation>
+        <location filename="../../ui/project_manager/manager.py" line="1022"/>
+        <source>Fluffy mod ZIP created.
+Saved to:
+{}</source>
+        <translation>Fluffy 模组 ZIP 创建成功。
+已保存到:
+{}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1033"/>
+        <source>The REE.PAK packer ({}) is not downloaded yet
+</source>
+        <translation>REE.PAK 打包工具({})尚未下载</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1035"/>
+        <source>A newer packer release ({}) is available
+</source>
+        <translation>有可用的更新版打包工具({})</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1083"/>
+        <source>Export completed.
+PAK file saved to:
+{}</source>
+        <translation>导出完成。
+PAK 文件已保存到:
+{}</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="721"/>
@@ -894,21 +905,9 @@
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="853"/>
-        <source>Add entire folder
-&quot;{os.path.basename(src)}&quot; and all its contents?</source>
-        <translation>添加整个文件夹
-&quot;{os.path.basename(src)}&quot;及其所有内容？</translation>
-    </message>
-    <message>
         <location filename="../../ui/project_manager/manager.py" line="858"/>
         <source>Confirm Overwrite</source>
         <translation>确认覆盖</translation>
-    </message>
-    <message>
-        <location filename="../../ui/project_manager/manager.py" line="858"/>
-        <source>&quot;{rel}&quot; already exists — overwrite?</source>
-        <translation>&quot;{rel}&quot; 已存在 - 是否覆盖？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="868"/>
@@ -937,6 +936,19 @@
         <translation>导出为 Fluffy ZIP</translation>
     </message>
     <message>
+        <location filename="../../ui/project_manager/manager.py" line="705"/>
+        <location filename="../../ui/project_manager/manager.py" line="853"/>
+        <source>Add entire folder
+&quot;{}&quot; and all its contents?</source>
+        <translation>添加整个文件夹
+&quot;{}&quot;及其所有内容？</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="858"/>
+        <source>&quot;{}&quot; already exists — overwrite?</source>
+        <translation>“{}”已存在 - 是否覆盖？</translation>
+    </message>
+    <message>
         <location filename="../../ui/project_manager/manager.py" line="1003"/>
         <source>Missing info</source>
         <translation>缺失信息</translation>
@@ -949,31 +961,9 @@ Open the settings dialog now?</source>
 现在进行设置吗？</translation>
     </message>
     <message>
-        <location filename="../../ui/project_manager/manager.py" line="1022"/>
-        <source>Fluffy mod ZIP created.
-Saved to:
-{zip_path}</source>
-        <translation>Fluffy mod ZIP 已创建。
-保存到:
-{zip_path}</translation>
-    </message>
-    <message>
         <location filename="../../ui/project_manager/manager.py" line="1025"/>
         <source>ZIP failed</source>
         <translation>ZIP 失败</translation>
-    </message>
-    <message>
-        <location filename="../../ui/project_manager/manager.py" line="1033"/>
-        <source>The REE.PAK packer ({tag_txt}) is not downloaded yet
-</source>
-        <translation>REE.PAK packer ({tag_txt}) 尚未下载</translation>
-    </message>
-    <message>
-        <location filename="../../ui/project_manager/manager.py" line="1035"/>
-        <source>A newer packer release ({tag_txt}) is available
-</source>
-        <translation>有一个更新的打包工具版本可用({tag_txt})
-</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1036"/>
@@ -994,15 +984,6 @@ Saved to:
         <location filename="../../ui/project_manager/manager.py" line="1057"/>
         <source>REE.Packer output</source>
         <translation>REE.Packer 输出</translation>
-    </message>
-    <message>
-        <location filename="../../ui/project_manager/manager.py" line="1083"/>
-        <source>Export completed.
-PAK file saved to:
-{dest_path}</source>
-        <translation>导出完成。
-PAK 文件已保存到:
-{dest_path}</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1086"/>
@@ -1585,10 +1566,6 @@ Your contributions help keep this project going.</source>
         <location filename="../../REasy.py" line="2048"/>
         <source>Open File</source>
         <translation>打开文件</translation>
-    </message>
-    <message>
-        <source>RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;All Files (*.*)</source>
-        <translation type="vanished">RE 文件 (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx*);;SCN 文件 (*.scn*);;User 文件 (*.user*);;UVAR 文件 (*.uvar*);;PFB 文件 (*.pfb*);;MSG 文件 (*.msg*);;EFX 文件 (*.efx*);;所有文件 (*.*)</translation>
     </message>
     <message>
         <location filename="../../REasy.py" line="1257"/>
