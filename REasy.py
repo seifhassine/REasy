@@ -31,6 +31,7 @@ from PySide6.QtCore import (
     Qt,
     QTimer,
     QUrl,
+    QObject
 )
 from PySide6.QtGui import (
     QIcon,
@@ -189,9 +190,9 @@ def create_search_dialog(parent, search_type):
         return create_integer_search_dialog(parent)
     
     prompts = {
-        'text': ('Text Search', 'Enter text to search (UTF-16LE):'),
-        'guid': ('GUID Search', 'Enter GUID (standard format):'),
-        'hex': ('Hex Search', 'Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):')
+        'text': (QObject.tr('Text Search'), QObject.tr('Enter text to search (UTF-16LE):')),
+        'guid': (QObject.tr('GUID Search'), QObject.tr('Enter GUID (standard format):')),
+        'hex': (QObject.tr('Hex Search'), QObject.tr('Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):'))
     }
     
     title, msg = prompts[search_type]
@@ -221,7 +222,7 @@ def create_search_patterns(search_type, value):
             
             return patterns
         except Exception as e:
-            raise ValueError(f"Could not convert number: {e}")
+            raise ValueError(QObject.tr("Could not convert number: {}").format(e))
     elif search_type == 'text':
         p1 = value.encode('utf-16le')
         p2 = p1 + b'\x00\x00'
@@ -231,7 +232,7 @@ def create_search_patterns(search_type, value):
             gobj = uuid.UUID(value.strip())
             return [gobj.bytes_le, gobj.bytes, gobj.bytes_le.hex().encode('utf-8')]
         except Exception as e:
-            raise ValueError(f"Invalid GUID: {value}\n{e}")
+            raise ValueError(QObject.tr("Invalid GUID: {}\n{}").format(value, e))
     elif search_type == 'hex':
         try:
             from ui.directory_search import validate_hex_string, hex_string_to_bytes
@@ -240,14 +241,14 @@ def create_search_patterns(search_type, value):
                 hex_str = validate_hex_string(hex_text)
                 
                 pattern = hex_string_to_bytes(hex_str, reverse_bytes)
-                print(f"Searching for hex pattern: {pattern.hex().upper()} (reversed={reverse_bytes})")
+                print(QObject.tr("Searching for hex pattern: {} (reversed={})").format(pattern.hex().upper(), reverse_bytes))
                 return [pattern]
             else:
                 hex_str = validate_hex_string(value)
                 return [hex_string_to_bytes(hex_str)]
                 
         except Exception as e:
-            raise ValueError(f"Invalid hex value: {str(e)}")
+            raise ValueError(QObject.tr("Invalid hex value: {}").format(str(e)))
 
 class FileTab:
 

@@ -200,7 +200,7 @@ class ProjectManager(QDockWidget):
         lay.addWidget(self.tree_proj)
         lay.addWidget(self.tree_pak)
         # Placeholders for missing configuration
-        self.sys_placeholder = QLabel("Please choose unpacked game directory using the Browse button above")
+        self.sys_placeholder = QLabel(self.tr("Please choose unpacked game directory using the Browse button above"))
         self.sys_placeholder.setAlignment(Qt.AlignCenter)
         self.sys_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pak_placeholder = QLabel("")
@@ -284,7 +284,7 @@ class ProjectManager(QDockWidget):
         if self._active_tab == "pak":
             self.path_label.setText(f"Game folder (PAKs): {self.pak_dir or '<i>not set</i>'}")
         else:
-            self.path_label.setText(f"Unpacked Game folder: {self.unpacked_dir or '<i>not set</i>'}")
+            self.path_label.setText(self.tr("Unpacked Game folder: {}").format(self.unpacked_dir or self.tr('<i>not set</i>')))
 
     def _browse(self):
         if self._active_tab == "pak":
@@ -300,15 +300,18 @@ class ProjectManager(QDockWidget):
         self.unpacked_dir = os.path.abspath(path)
         ok = self._check_folder(path)
         tick,color = ("✓","green") if ok else ("✗","red")
-        self.path_label.setText(f"Unpacked Game folder: <span style='color:{color}'>{tick}</span> {self.unpacked_dir}")
+        self.path_label.setText(self.tr("Unpacked Game folder: <span style='color:{color}'>{tick}</span> {dir}").format(color=color, tick=tick, dir=self.unpacked_dir))
 
         if ok:
             self.model_sys.setRootPath(self.unpacked_dir)
             self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
             self._update_project_cfg({"unpacked_dir": self.unpacked_dir})
         else:
-            QMessageBox.warning(self, self.tr("Invalid folder"),
-                                f"Expected sub‑folder \"{'/'.join(self._expected_native())}\".")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid folder"),
+                self.tr("Expected sub‑folder \"{}\".").format('/'.join(self._expected_native()))
+            )
         self._update_placeholders()
 
     # Public wrapper for use by by main window

@@ -5,7 +5,10 @@ import concurrent.futures
 import mmap
 import re
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import (
+    Qt,
+    QObject
+)
 from PySide6.QtGui import (
     QKeyEvent,
     QKeySequence
@@ -29,8 +32,8 @@ def ask_max_size_bytes(parent):
     """Get maximum file size from user"""
     val, ok = QInputDialog.getDouble(
         parent,
-        "Max File Size",
-        "Enter maximum file size in MB (0 for no limit):",
+        QObject.tr("Max File Size"),
+        QObject.tr("Enter maximum file size in MB (0 for no limit):"),
         0.0,
         0.0,
         10000.0,
@@ -71,16 +74,16 @@ def hex_string_to_bytes(hex_str, reverse_bytes=False):
 def create_hex_search_dialog(parent):
     """Custom dialog for hex search with byte order option"""
     dialog = QDialog(parent)
-    dialog.setWindowTitle("Hex Search")
+    dialog.setWindowTitle(QObject.tr("Hex Search"))
     layout = QVBoxLayout(dialog)
-    
-    label = QLabel("Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):")
+
+    label = QLabel(QObject.tr("Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):"))
     layout.addWidget(label)
     
     hex_input = QLineEdit()
     layout.addWidget(hex_input)
-    
-    byte_order_check = QCheckBox("Reverse Byte Order")
+
+    byte_order_check = QCheckBox(QObject.tr("Reverse Byte Order"))
     layout.addWidget(byte_order_check)
     
     button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -112,7 +115,7 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
     progress.show()
 
     results_dialog = QDialog(parent, Qt.Window)
-    results_dialog.setWindowTitle("Search Results")
+    results_dialog.setWindowTitle(QObject.tr("Search Results"))
     results_dialog.resize(600, 400)
     layout = QVBoxLayout(results_dialog)
 
@@ -208,7 +211,7 @@ def search_directory_common(parent, dpath, patterns, ptitle, rtext, max_bytes):
 
 def search_directory_for_type(parent, search_type, create_search_dialog_fn, create_search_patterns_fn):
     """Unified directory search method"""
-    directory = QFileDialog.getExistingDirectory(parent, f"Select Directory for {search_type.title()} Search")
+    directory = QFileDialog.getExistingDirectory(parent, QObject.tr("Select Directory for {search_type} Search").format(search_type=search_type.title()))
     if not directory:
         return
 
@@ -230,18 +233,18 @@ def search_directory_for_type(parent, search_type, create_search_dialog_fn, crea
         if search_type == 'hex':
             hex_text, reverse_bytes = value
             byte_order_text = "reversed byte order" if reverse_bytes else "normal byte order"
-            rtext = f"Files containing hex {hex_text} ({byte_order_text}):"
+            rtext = QObject.tr("Files containing hex {} ({}):").format(hex_text, byte_order_text)
             
             for i, pattern in enumerate(patterns):
                 print(f"Search pattern {i+1}: {pattern.hex().upper()}")
         elif search_type == 'number' and isinstance(value, tuple):
             int_type, actual_value = value
-            rtext = f"Files containing {int_type} value {actual_value}:"
+            rtext = QObject.tr("Files containing {} value {}:").format(int_type, actual_value)
             
             for pattern in patterns:
                 print(f"Search pattern: {pattern.hex().upper()}")
         else:
-            rtext = f"Files containing {search_type} {value}:"
+            rtext = QObject.tr("Files containing {} {}:").format(search_type, value)
             
         search_directory_common(parent, directory, patterns, f"{search_type.title()} Search Progress", rtext, max_bytes)
     except Exception as e:
