@@ -2,15 +2,67 @@ from __future__ import annotations
 
 from io import BytesIO
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtCore import Qt, Signal, QPoint, QTimer
+from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QScrollArea,
-    QFileDialog, QMessageBox, QInputDialog
+    QFileDialog, QMessageBox, QInputDialog, QSlider
 )
 
 from PIL import Image
 PIL_OK = True
+
+class DraggableLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMouseTracking(True)
+        self.dragging = False
+        self.last_global_pos = QPoint()
+        self.scroll_area = None
+        self.viewer = None
+    
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.last_global_pos = event.globalPosition().toPoint()
+            self.setCursor(QCursor(Qt.ClosedHandCursor))
+        super().mousePressEvent(event)
+    
+    def mouseMoveEvent(self, event: QMouseEvent):
+        if self.dragging and self.scroll_area:
+            current_global_pos = event.globalPosition().toPoint()
+            delta = current_global_pos - self.last_global_pos
+            self.last_global_pos = current_global_pos
+            h_bar = self.scroll_area.horizontalScrollBar()
+            v_bar = self.scroll_area.verticalScrollBar()
+            h_bar.setValue(h_bar.value() - delta.x())
+            v_bar.setValue(v_bar.value() - delta.y())
+        super().mouseMoveEvent(event)
+    
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
+            self.setCursor(QCursor(Qt.OpenHandCursor))
+        super().mouseReleaseEvent(event)
+    
+    def wheelEvent(self, event: QWheelEvent):
+        if self.viewer:
+            current = self.viewer.zoom_slider.value()
+            delta = 10 if event.angleDelta().y() > 0 else -10
+            self.viewer.zoom_slider.setValue(max(10, min(500, current + delta)))
+            event.accept()
+        else:
+            super().wheelEvent(event)
+    
+    def enterEvent(self, event):
+        self.setCursor(QCursor(Qt.OpenHandCursor))
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event):
+        if not self.dragging:
+            self.setCursor(QCursor(Qt.ArrowCursor))
+        super().leaveEvent(event)
+
 
 class TexViewer(QWidget):
     modified_changed = Signal(bool)
@@ -19,6 +71,9 @@ class TexViewer(QWidget):
         super().__init__()
         self.handler = handler
         self._modified = False
+        self.zoom_level = 1.0
+        self.original_pixmap = None
+        self.is_initial_load = True
         self._setup_ui()
         self._populate()
 
@@ -60,13 +115,39 @@ class TexViewer(QWidget):
         top.addStretch()
         layout.addLayout(top)
 
+        zoom_layout = QHBoxLayout()
+        zoom_layout.addWidget(QLabel("Zoom:"))
+        self.zoom_slider = QSlider(Qt.Horizontal)
+        self.zoom_slider.setMinimum(10)
+        self.zoom_slider.setMaximum(500)
+        self.zoom_slider.setValue(100)
+        self.zoom_slider.setTickPosition(QSlider.TicksBelow)
+        self.zoom_slider.setTickInterval(50)
+        self.zoom_slider.valueChanged.connect(self._on_zoom_changed)
+        zoom_layout.addWidget(self.zoom_slider)
+        self.zoom_label = QLabel("100%")
+        self.zoom_label.setMinimumWidth(50)
+        zoom_layout.addWidget(self.zoom_label)
+        self.fit_btn = QPushButton("Fit to Window")
+        self.fit_btn.clicked.connect(self._fit_to_window)
+        zoom_layout.addWidget(self.fit_btn)
+        self.reset_zoom_btn = QPushButton("100%")
+        self.reset_zoom_btn.clicked.connect(self._reset_zoom)
+        zoom_layout.addWidget(self.reset_zoom_btn)
+        zoom_layout.addStretch()
+        layout.addLayout(zoom_layout)
+
         self.info_label = QLabel("")
         layout.addWidget(self.info_label)
 
         self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.img_label = QLabel()
+        self.scroll.setWidgetResizable(False)
+        self.scroll.setAlignment(Qt.AlignCenter)
+        self.img_label = DraggableLabel()
+        self.img_label.scroll_area = self.scroll
+        self.img_label.viewer = self
         self.img_label.setAlignment(Qt.AlignCenter)
+        self.img_label.setScaledContents(False)
         self.scroll.setWidget(self.img_label)
         layout.addWidget(self.scroll)
 
@@ -182,7 +263,13 @@ class TexViewer(QWidget):
                 elif ch == 'BA':
                     rgba = Image.merge('RGBA', (b, a, b, a))
             qimg = QImage(rgba.tobytes(), rgba.width, rgba.height, QImage.Format_RGBA8888)
-            self.img_label.setPixmap(QPixmap.fromImage(qimg))
+            self.original_pixmap = QPixmap.fromImage(qimg)
+            if self.is_initial_load:
+                self.is_initial_load = False
+                QTimer.singleShot(0, self._fit_to_window)
+            else:
+                self._apply_zoom()
+            
             if hasattr(self, 'export_dds_btn') and hasattr(self, 'export_tex_btn'):
                 t = getattr(self.handler, 'tex', None)
                 raw = getattr(self.handler, 'raw_data', b"")
@@ -191,6 +278,53 @@ class TexViewer(QWidget):
         except Exception as e:
             self.info_label.setText(f"Failed to decode: {e}")
             self.img_label.clear()
+            self.original_pixmap = None
+
+    def _on_zoom_changed(self, value):
+        self.zoom_level = value / 100.0
+        self.zoom_label.setText(f"{value}%")
+        self._apply_zoom()
+
+    def _apply_zoom(self):
+        if not self.original_pixmap:
+            return
+        if self.zoom_level == 1.0:
+            pixmap = self.original_pixmap
+        else:
+            pixmap = self.original_pixmap.scaled(
+                int(self.original_pixmap.width() * self.zoom_level),
+                int(self.original_pixmap.height() * self.zoom_level),
+                Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+        self.img_label.setPixmap(pixmap)
+        self.img_label.setFixedSize(pixmap.size())
+
+    def _fit_to_window(self):
+        if not self.original_pixmap:
+            return
+        viewport = self.scroll.viewport().size()
+        w = max(100, viewport.width() - 30)
+        h = max(100, viewport.height() - 30)
+        img_w = self.original_pixmap.width()
+        img_h = self.original_pixmap.height()
+        if img_w == 0 or img_h == 0:
+            return
+        fit_ratio = min(w / img_w, h / img_h, 1.0)
+        scaled = self.original_pixmap.scaled(
+            int(img_w * fit_ratio), int(img_h * fit_ratio),
+            Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        self.img_label.setPixmap(scaled)
+        self.img_label.setFixedSize(scaled.size())
+        zoom_percent = int(fit_ratio * 100)
+        self.zoom_slider.blockSignals(True)
+        self.zoom_slider.setValue(zoom_percent)
+        self.zoom_label.setText(f"{zoom_percent}%")
+        self.zoom_slider.blockSignals(False)
+        self.zoom_level = fit_ratio
+
+    def _reset_zoom(self):
+        self.zoom_slider.setValue(100)
 
     def _export_dds(self):
         try:
