@@ -288,7 +288,7 @@ class TexViewer(QWidget):
     def _apply_zoom(self):
         if not self.original_pixmap:
             return
-        if self.zoom_level == 1.0:
+        if abs(self.zoom_level - 1.0) < 0.0001:
             pixmap = self.original_pixmap
         else:
             pixmap = self.original_pixmap.scaled(
