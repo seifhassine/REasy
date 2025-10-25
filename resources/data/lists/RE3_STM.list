@@ -1118,7 +1118,6 @@ natives/stm/escape/character/player/common/joint/pl_male_dummy_joint.jcns.12
 natives/stm/escape/character/player/pl0000/animation/bank/barehand.motbank.3
 natives/stm/escape/character/player/pl0000/animation/bank/wp0200.motbank.3
 natives/stm/escape/character/player/pl0000/animation/bank/wp0300.motbank.3
-natives/stm/escape/character/player/pl0000/animati
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_climbdown.bhvt.34
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_climbup.bhvt.34
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_passthrough.bhvt.34
