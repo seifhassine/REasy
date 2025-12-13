@@ -24,8 +24,8 @@ class MotfsmHandler(BaseFileHandler):
         return MotfsmFile.can_handle(data)
 
     def supports_editing(self) -> bool:
-        """MOTFSM files are read-only for now"""
-        return False
+        """MOTFSM files support editing (in-place modification)"""
+        return True
 
     def read(self, data: bytes):
         """Parse MOTFSM file data"""
@@ -38,8 +38,8 @@ class MotfsmHandler(BaseFileHandler):
         self.motfsm.read(data)
 
     def rebuild(self) -> bytes:
-        """Rebuild is not supported for MOTFSM files"""
-        raise NotImplementedError("MOTFSM rebuild not yet supported")
+        """Rebuild MOTFSM file with modifications"""
+        return self.motfsm.rebuild()
 
     def create_viewer(self):
         """Create and return a viewer for MOTFSM files"""

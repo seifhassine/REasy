@@ -28,6 +28,12 @@ class BHVTId:
         for _ in range(self.count):
             self.values.append(handler.read_int32())
 
+    def write(self, handler: BinaryHandler):
+        """Write BHVTId to binary"""
+        handler.write_int32(self.count)
+        for value in self.values:
+            handler.write_int32(value)
+
     @property
     def size(self) -> int:
         return 4 + self.count * 4
@@ -136,6 +142,13 @@ class BHVTNode:
     def read(self, handler: BinaryHandler, string_pool_offset: int):
         start_pos = handler.tell
 
+        # Store field offsets for later modification
+        self._id_hash_offset = start_pos
+        self._ex_id_offset = start_pos + 4
+        self._name_index_offset = start_pos + 8
+        self._parent_offset = start_pos + 12
+        self._parent_ex_offset = start_pos + 16
+
         # Basic fields
         self.id_hash = handler.read_uint32()
         self.ex_id = handler.read_uint32()
@@ -181,8 +194,10 @@ class BHVTNode:
             for i in range(actions_count):
                 self.actions.append(Action(id_hash=action_ids[i], index=action_indices[i]))
 
-        # Priority and attributes
+        # Store priority offset before reading
+        self._priority_offset = handler.tell
         self.priority = handler.read_int32()
+
         self.node_attribute = handler.read_uint16()
         self.work_flags = handler.read_uint16()
 
@@ -349,6 +364,143 @@ class BHVTNode:
                 'field5': field5[i],
             })
         return all_states
+
+    def write(self, handler: BinaryHandler):
+        """Write BHVTNode to binary (must match read format exactly)"""
+        # Basic fields
+        handler.write_uint32(self.id_hash)
+        handler.write_uint32(self.ex_id)
+        handler.write_uint32(self.name_index)
+        handler.write_int32(self.parent)
+        handler.write_uint32(self.parent_ex)
+
+        # Child nodes (interleaved)
+        handler.write_int32(len(self.children))
+        if self.children:
+            # All IDs
+            for child in self.children:
+                handler.write_uint32(child.id_hash)
+            # All exIDs
+            for child in self.children:
+                handler.write_uint32(child.ex_id)
+            # All indices
+            for child in self.children:
+                handler.write_int32(child.index)
+
+        # Selector
+        handler.write_int32(self.selector_id)
+
+        # Selector callers
+        handler.write_int32(len(self.selector_callers))
+        for caller in self.selector_callers:
+            handler.write_int32(caller)
+
+        handler.write_int32(self.selector_caller_condition_id)
+
+        # Actions (interleaved)
+        handler.write_int32(len(self.actions))
+        if self.actions:
+            # All IDs
+            for action in self.actions:
+                handler.write_uint32(action.id_hash)
+            # All indices
+            for action in self.actions:
+                handler.write_int32(action.index)
+
+        # Priority and attributes
+        handler.write_int32(self.priority)
+        handler.write_uint16(self.node_attribute)
+        handler.write_uint16(self.work_flags)
+
+        # FSM-specific fields
+        if self.is_fsm:
+            handler.write_uint32(self.name_hash)
+            handler.write_uint32(self.fullname_hash)
+
+            # Tags
+            handler.write_int32(len(self.tags))
+            for tag in self.tags:
+                handler.write_uint32(tag)
+
+            handler.write_uint8(self.is_branch)
+            handler.write_uint8(self.is_end)
+
+        # States (interleaved)
+        handler.write_int32(len(self.states))
+        if self.states:
+            self._write_states_interleaved(handler, self.states)
+
+        # Transitions (interleaved)
+        handler.write_int32(len(self.transitions))
+        if self.transitions:
+            self._write_transitions_interleaved(handler, self.transitions)
+
+        # AllStates (only if not HasReferenceTree)
+        if not self.has_reference_tree:
+            handler.write_int32(len(self.all_states))
+            if self.all_states:
+                self._write_all_states_interleaved(handler, self.all_states)
+
+        # Reference tree index
+        handler.write_int32(self.reference_tree_index)
+
+    def _write_states_interleaved(self, handler: BinaryHandler, states: List[State]):
+        """Write States using interleaved array storage"""
+        # First: all mStates arrays
+        for state in states:
+            state.mStates.write(handler)
+
+        # Second: all mTransitions
+        for state in states:
+            handler.write_uint32(state.mTransitions)
+
+        # Third: all TransitionConditions
+        for state in states:
+            handler.write_int32(state.TransitionConditions)
+
+        # Fourth: all TransitionMaps
+        for state in states:
+            handler.write_uint32(state.TransitionMaps)
+
+        # Fifth: all mTransitionAttributes
+        for state in states:
+            handler.write_uint32(state.mTransitionAttributes)
+
+        # Sixth: all mStatesEx
+        for state in states:
+            handler.write_uint32(state.mStatesEx)
+
+    def _write_transitions_interleaved(self, handler: BinaryHandler, transitions: List[Transition]):
+        """Write Transitions using interleaved array storage"""
+        # First: all mStartTransitionEvent
+        for trans in transitions:
+            trans.mStartTransitionEvent.write(handler)
+
+        # Second: all mStartState
+        for trans in transitions:
+            handler.write_uint32(trans.mStartState)
+
+        # Third: all mStartStateTransition
+        for trans in transitions:
+            handler.write_int32(trans.mStartStateTransition)
+
+        # Fourth: all mStartStateEx
+        for trans in transitions:
+            handler.write_uint32(trans.mStartStateEx)
+
+    def _write_all_states_interleaved(self, handler: BinaryHandler, all_states: List[dict]):
+        """Write AllStates using interleaved array storage"""
+        # Write all 5 arrays
+        for state in all_states:
+            handler.write_uint32(state['field1'])
+        for state in all_states:
+            handler.write_uint32(state['field2'])
+        for state in all_states:
+            handler.write_int32(state['field3'])
+        for state in all_states:
+            handler.write_uint32(state['field4'])
+        for state in all_states:
+            handler.write_uint32(state['field5'])
 
 
 @dataclass
@@ -628,3 +780,56 @@ class MotfsmFile:
     def node_count(self) -> int:
         """Get total node count"""
         return len(self.bhvt.nodes) if self.bhvt else 0
+
+    def rebuild(self) -> bytes:
+        """
+        Rebuild MOTFSM file with modifications.
+        Uses in-place modification strategy - only modifies field values, keeps file structure intact.
+        """
+        if not self._data:
+            raise ValueError("No original data to rebuild from")
+
+        # Create a mutable copy of the original data
+        output_data = bytearray(self._data)
+        handler = BinaryHandler(output_data)
+
+        # Write back modified Node fields
+        if self.bhvt:
+            for node in self.bhvt.nodes:
+                # Write basic node fields if they have offset tracking
+                if hasattr(node, '_id_hash_offset'):
+                    handler.seek(node._id_hash_offset)
+                    handler.write_uint32(node.id_hash)
+
+                if hasattr(node, '_ex_id_offset'):
+                    handler.seek(node._ex_id_offset)
+                    handler.write_uint32(node.ex_id)
+
+                if hasattr(node, '_parent_offset'):
+                    handler.seek(node._parent_offset)
+                    handler.write_int32(node.parent)
+
+                if hasattr(node, '_priority_offset'):
+                    handler.seek(node._priority_offset)
+                    handler.write_int32(node.priority)
+
+                # Write back modified State fields (mTransitions, mStatesEx, etc.)
+                # These need more complex offset tracking, skip for now
+
+        # Write back modified RSZ field values
+        blocks = self.rsz_blocks
+        if blocks:
+            # Iterate through all blocks
+            for block_name in ['actions', 'selectors', 'conditions', 'static_conditions',
+                              'static_actions', 'transition_events', 'static_transition_events']:
+                block = getattr(blocks, block_name, None)
+                if block:
+                    # Iterate through all instances
+                    for i in range(block.instance_count):
+                        instance = block.get_instance(i)
+                        if instance and instance.fields:
+                            # Write each modified field
+                            for field in instance.fields:
+                                field.write_value_to_buffer(handler)
+
+        return bytes(output_data)
