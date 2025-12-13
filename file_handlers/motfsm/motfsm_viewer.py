@@ -649,23 +649,26 @@ class MotfsmViewer(QWidget):
                 })
                 QTreeWidgetItem(view_target, ["Loading...", "", ""])
 
-                # mStartStateTransition (condition hash, -1 means no condition)
-                if trans.mStartStateTransition == -1:
-                    QTreeWidgetItem(t_item, ["mStartStateTransition (Condition)", "None (unconditional)", "int32"])
-                else:
-                    cond_item = QTreeWidgetItem(t_item, [
-                        f"mStartStateTransition: Condition[{trans.mStartStateTransition}]",
+                # mStartStateTransition (condition index, editable)
+                self._updating_tree = True
+                mStartStateTransition_item = self._create_editable_item(t_item, "mStartStateTransition", trans.mStartStateTransition, "int32", trans)
+                self._updating_tree = False
+
+                # Add expandable child to view condition RSZ instance (if not -1)
+                if trans.mStartStateTransition >= 0:
+                    view_cond = QTreeWidgetItem(mStartStateTransition_item, [
+                        f"→ View Condition[{trans.mStartStateTransition}]",
                         "(expand to load)",
-                        "int32"
+                        ""
                     ])
                     # Add lazy loading for RSZ instance
                     # NOTE: RSZ instance[0] is NULL, so actual index = condition_idx + 1
-                    cond_item.setData(0, Qt.UserRole, {
+                    view_cond.setData(0, Qt.UserRole, {
                         "type": "rsz_instance",
                         "block_name": "conditions",
                         "instance_index": trans.mStartStateTransition + 1
                     })
-                    QTreeWidgetItem(cond_item, ["Loading...", "", ""])
+                    QTreeWidgetItem(view_cond, ["Loading...", "", ""])
 
                 # mStartStateEx (editable)
                 self._updating_tree = True
@@ -951,23 +954,26 @@ class MotfsmViewer(QWidget):
         })
         QTreeWidgetItem(view_target, ["Loading...", "", ""])
 
-        # 3. TransitionConditions (condition index)
+        # 3. TransitionConditions (condition index, editable)
+        self._updating_tree = True
+        TransitionConditions_item = self._create_editable_item(parent, "TransitionConditions", state.TransitionConditions, "int32", state)
+        self._updating_tree = False
+
+        # Add expandable child to view condition RSZ instance
         if state.TransitionConditions >= 0:
-            cond_item = QTreeWidgetItem(parent, [
-                f"TransitionConditions: Condition[{state.TransitionConditions}]",
+            view_cond = QTreeWidgetItem(TransitionConditions_item, [
+                f"→ View Condition[{state.TransitionConditions}]",
                 "(expand to load)",
-                "int32"
+                ""
             ])
             # Add lazy loading for RSZ instance
             # NOTE: RSZ instance[0] is NULL, so actual index = condition_idx + 1
-            cond_item.setData(0, Qt.UserRole, {
+            view_cond.setData(0, Qt.UserRole, {
                 "type": "rsz_instance",
                 "block_name": "conditions",
                 "instance_index": state.TransitionConditions + 1
             })
-            QTreeWidgetItem(cond_item, ["Loading...", "", ""])
-        else:
-            QTreeWidgetItem(parent, ["TransitionConditions", "None", "int32"])
+            QTreeWidgetItem(view_cond, ["Loading...", "", ""])
 
         # 4-6. Other state fields (editable)
         self._updating_tree = True

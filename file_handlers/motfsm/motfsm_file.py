@@ -294,22 +294,20 @@ class BHVTNode:
             bhvt_id.read(handler)
             mstates_list.append(bhvt_id)
 
-        # Record offset for mTransitions array start
+        # Record offsets for all state field arrays
         mTransitions_offset_base = handler.tell
-
-        # Second: all mTransitions
         transitions = [handler.read_uint32() for _ in range(count)]
 
-        # Third: all TransitionConditions
+        TransitionConditions_offset_base = handler.tell
         trans_conds = [handler.read_int32() for _ in range(count)]
 
-        # Fourth: all TransitionMaps
+        TransitionMaps_offset_base = handler.tell
         trans_maps = [handler.read_uint32() for _ in range(count)]
 
-        # Fifth: all mTransitionAttributes
+        mTransitionAttributes_offset_base = handler.tell
         trans_attrs = [handler.read_uint32() for _ in range(count)]
 
-        # Sixth: all mStatesEx
+        mStatesEx_offset_base = handler.tell
         states_ex = [handler.read_uint32() for _ in range(count)]
 
         # Combine into State objects with offset tracking
@@ -324,8 +322,12 @@ class BHVTNode:
                 mTransitionAttributes=trans_attrs[i],
                 mStatesEx=states_ex[i],
             )
-            # Store offset for this state's mTransitions field
+            # Store offsets for all editable fields
             state._mTransitions_offset = mTransitions_offset_base + (i * 4)
+            state._TransitionConditions_offset = TransitionConditions_offset_base + (i * 4)
+            state._TransitionMaps_offset = TransitionMaps_offset_base + (i * 4)
+            state._mTransitionAttributes_offset = mTransitionAttributes_offset_base + (i * 4)
+            state._mStatesEx_offset = mStatesEx_offset_base + (i * 4)
             states.append(state)
         return states
 
@@ -345,16 +347,14 @@ class BHVTNode:
             bhvt_id.read(handler)
             trans_events.append(bhvt_id)
 
-        # Record offset for mStartState array start
+        # Record offsets for all transition field arrays
         mStartState_offset_base = handler.tell
-
-        # Second: all mStartState
         start_states = [handler.read_uint32() for _ in range(count)]
 
-        # Third: all mStartStateTransition
+        mStartStateTransition_offset_base = handler.tell
         start_state_trans = [handler.read_int32() for _ in range(count)]
 
-        # Fourth: all mStartStateEx
+        mStartStateEx_offset_base = handler.tell
         start_state_ex = [handler.read_uint32() for _ in range(count)]
 
         # Combine into Transition objects with offset tracking
@@ -367,8 +367,10 @@ class BHVTNode:
                 mStartStateTransition=start_state_trans[i],
                 mStartStateEx=start_state_ex[i],
             )
-            # Store offset for this transition's mStartState field
+            # Store offsets for all editable fields
             trans._mStartState_offset = mStartState_offset_base + (i * 4)
+            trans._mStartStateTransition_offset = mStartStateTransition_offset_base + (i * 4)
+            trans._mStartStateEx_offset = mStartStateEx_offset_base + (i * 4)
             transitions.append(trans)
         return transitions
 
@@ -879,12 +881,30 @@ class MotfsmFile:
                     if hasattr(state, '_mTransitions_offset'):
                         handler.seek(state._mTransitions_offset)
                         handler.write_uint32(state.mTransitions)
+                    if hasattr(state, '_TransitionConditions_offset'):
+                        handler.seek(state._TransitionConditions_offset)
+                        handler.write_int32(state.TransitionConditions)
+                    if hasattr(state, '_TransitionMaps_offset'):
+                        handler.seek(state._TransitionMaps_offset)
+                        handler.write_uint32(state.TransitionMaps)
+                    if hasattr(state, '_mTransitionAttributes_offset'):
+                        handler.seek(state._mTransitionAttributes_offset)
+                        handler.write_uint32(state.mTransitionAttributes)
+                    if hasattr(state, '_mStatesEx_offset'):
+                        handler.seek(state._mStatesEx_offset)
+                        handler.write_uint32(state.mStatesEx)
 
                 # Write back modified Transition fields
                 for trans in node.transitions:
                     if hasattr(trans, '_mStartState_offset'):
                         handler.seek(trans._mStartState_offset)
                         handler.write_uint32(trans.mStartState)
+                    if hasattr(trans, '_mStartStateTransition_offset'):
+                        handler.seek(trans._mStartStateTransition_offset)
+                        handler.write_int32(trans.mStartStateTransition)
+                    if hasattr(trans, '_mStartStateEx_offset'):
+                        handler.seek(trans._mStartStateEx_offset)
+                        handler.write_uint32(trans.mStartStateEx)
 
         # Write back modified RSZ field values (ONLY those marked as modified)
         blocks = self.rsz_blocks
