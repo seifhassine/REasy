@@ -1065,6 +1065,12 @@ class MotfsmViewer(QWidget):
             # Write back to the data structure
             setattr(field_owner, field_name, new_value)
 
+            # CRITICAL: Mark RSZ fields as modified for safe writing
+            from file_handlers.motfsm.rsz_parser import RSZFieldValue
+            if isinstance(field_owner, RSZFieldValue):
+                field_owner._modified = True
+                print(f"[DEBUG] Marked RSZ field {field_owner.name} as modified")
+
             # Update the stored old_value
             data["old_value"] = new_value
 

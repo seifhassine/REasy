@@ -273,6 +273,9 @@ class BHVTNode:
             bhvt_id.read(handler)
             mstates_list.append(bhvt_id)
 
+        # Record offset for mTransitions array start
+        mTransitions_offset_base = handler.tell
+
         # Second: all mTransitions
         transitions = [handler.read_uint32() for _ in range(count)]
 
@@ -288,7 +291,7 @@ class BHVTNode:
         # Sixth: all mStatesEx
         states_ex = [handler.read_uint32() for _ in range(count)]
 
-        # Combine into State objects
+        # Combine into State objects with offset tracking
         states = []
         for i in range(count):
             state = State(
@@ -300,6 +303,8 @@ class BHVTNode:
                 mTransitionAttributes=trans_attrs[i],
                 mStatesEx=states_ex[i],
             )
+            # Store offset for this state's mTransitions field
+            state._mTransitions_offset = mTransitions_offset_base + (i * 4)
             states.append(state)
         return states
 
@@ -319,6 +324,9 @@ class BHVTNode:
             bhvt_id.read(handler)
             trans_events.append(bhvt_id)
 
+        # Record offset for mStartState array start
+        mStartState_offset_base = handler.tell
+
         # Second: all mStartState
         start_states = [handler.read_uint32() for _ in range(count)]
 
@@ -328,7 +336,7 @@ class BHVTNode:
         # Fourth: all mStartStateEx
         start_state_ex = [handler.read_uint32() for _ in range(count)]
 
-        # Combine into Transition objects
+        # Combine into Transition objects with offset tracking
         transitions = []
         for i in range(count):
             trans = Transition(
@@ -338,6 +346,8 @@ class BHVTNode:
                 mStartStateTransition=start_state_trans[i],
                 mStartStateEx=start_state_ex[i],
             )
+            # Store offset for this transition's mStartState field
+            trans._mStartState_offset = mStartState_offset_base + (i * 4)
             transitions.append(trans)
         return transitions
 
@@ -813,10 +823,19 @@ class MotfsmFile:
                     handler.seek(node._priority_offset)
                     handler.write_int32(node.priority)
 
-                # Write back modified State fields (mTransitions, mStatesEx, etc.)
-                # These need more complex offset tracking, skip for now
+                # Write back modified State fields
+                for state in node.states:
+                    if hasattr(state, '_mTransitions_offset'):
+                        handler.seek(state._mTransitions_offset)
+                        handler.write_uint32(state.mTransitions)
 
-        # Write back modified RSZ field values
+                # Write back modified Transition fields
+                for trans in node.transitions:
+                    if hasattr(trans, '_mStartState_offset'):
+                        handler.seek(trans._mStartState_offset)
+                        handler.write_uint32(trans.mStartState)
+
+        # Write back modified RSZ field values (ONLY those marked as modified)
         blocks = self.rsz_blocks
         if blocks:
             # Iterate through all blocks
@@ -828,7 +847,7 @@ class MotfsmFile:
                     for i in range(block.instance_count):
                         instance = block.get_instance(i)
                         if instance and instance.fields:
-                            # Write each modified field
+                            # Write each field (write_value_to_buffer checks _modified flag)
                             for field in instance.fields:
                                 field.write_value_to_buffer(handler)
 

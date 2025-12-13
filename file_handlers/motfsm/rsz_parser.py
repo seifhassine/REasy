@@ -80,9 +80,14 @@ class RSZFieldValue:
     size: int = 0
     is_array: bool = False
     array_count: int = 0
+    _modified: bool = False  # Track if this field was modified by user
 
     def write_value_to_buffer(self, handler: BinaryHandler):
         """Write the field value back to the buffer at its original offset"""
+        # CRITICAL: ONLY write if explicitly marked as modified
+        if not self._modified:
+            return
+
         if self.is_array:
             # Arrays are complex, skip for now
             return
