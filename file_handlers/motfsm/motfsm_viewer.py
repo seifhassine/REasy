@@ -529,19 +529,26 @@ class MotfsmViewer(QWidget):
                 child_node_name = self._get_node_name_by_hash(child.id_hash)
                 child_display = f"[{i}] {child_node_name}"
 
-                child_item = QTreeWidgetItem(children_item, [
-                    child_display,
-                    f"hash=0x{child.id_hash:08X}, ex_id=0x{child.ex_id:08X}, index={child.index}",
-                    "ChildNode (expand to view)"
-                ])
+                child_item = QTreeWidgetItem(children_item, [child_display, "", "ChildNode"])
 
-                # Store child hash for expandable viewing
-                child_item.setData(0, Qt.UserRole, {
+                # Make child fields editable
+                self._updating_tree = True
+                self._create_editable_item(child_item, "id_hash", child.id_hash, "uint32", child)
+                self._create_editable_item(child_item, "ex_id", child.ex_id, "uint32", child)
+                self._create_editable_item(child_item, "index", child.index, "int32", child)
+                self._updating_tree = False
+
+                # Add expandable view to target node
+                view_target = QTreeWidgetItem(child_item, [
+                    f"→ View Target Node",
+                    "(expand to load)",
+                    ""
+                ])
+                view_target.setData(0, Qt.UserRole, {
                     "type": "target_node_from_hash",
                     "target_hash": child.id_hash
                 })
-                # Add placeholder for lazy loading
-                QTreeWidgetItem(child_item, ["Loading...", "", ""])
+                QTreeWidgetItem(view_target, ["Loading...", "", ""])
 
         # Actions with RSZ class names (using hash)
         if node.actions:
@@ -551,11 +558,13 @@ class MotfsmViewer(QWidget):
                 class_name = self._get_action_class_name_by_hash(action.id_hash)
                 action_display = f"[{i}] {class_name}"
 
-                action_item = QTreeWidgetItem(actions_item, [
-                    action_display,
-                    f"hash=0x{action.id_hash:08X}, index={action.index}",
-                    "Action"
-                ])
+                action_item = QTreeWidgetItem(actions_item, [action_display, "", "Action"])
+
+                # Make action fields editable
+                self._updating_tree = True
+                self._create_editable_item(action_item, "id_hash", action.id_hash, "uint32", action)
+                self._create_editable_item(action_item, "index", action.index, "int32", action)
+                self._updating_tree = False
 
                 # Add RSZ instance reference (lazy) - use hash to find instance
                 rsz_ref = QTreeWidgetItem(action_item, ["RSZ Instance Details", "(expand to load)", ""])
@@ -567,10 +576,11 @@ class MotfsmViewer(QWidget):
                 QTreeWidgetItem(rsz_ref, ["Loading...", "", ""])
 
         # Selector
-        if node.selector_id >= 0:
-            QTreeWidgetItem(parent, ["SelectorID", f"[{node.selector_id}]", "int32"])
-        else:
-            QTreeWidgetItem(parent, ["SelectorID", str(node.selector_id), "int32"])
+        selector_item = QTreeWidgetItem(parent, ["Selector", "", ""])
+        self._updating_tree = True
+        self._create_editable_item(selector_item, "selector_id", node.selector_id, "int32", node)
+        self._create_editable_item(selector_item, "selector_caller_condition_id", node.selector_caller_condition_id, "int32", node)
+        self._updating_tree = False
 
         # States with resolved node names
         if node.states:

@@ -164,16 +164,28 @@ class BHVTNode:
         child_count = handler.read_int32()
         if child_count > 0:
             self.children = []
+            # Record offsets for child node arrays
+            child_ids_offset = handler.tell
             # All IDs
             ids = [handler.read_uint32() for _ in range(child_count)]
+            # Record offset for ex_ids
+            child_ex_ids_offset = handler.tell
             # All exIDs
             ex_ids = [handler.read_uint32() for _ in range(child_count)]
+            # Record offset for indices
+            child_indices_offset = handler.tell
             # All indices
             indices = [handler.read_int32() for _ in range(child_count)]
             for i in range(child_count):
-                self.children.append(ChildNode(id_hash=ids[i], ex_id=ex_ids[i], index=indices[i]))
+                child = ChildNode(id_hash=ids[i], ex_id=ex_ids[i], index=indices[i])
+                # Store offsets for this child's fields
+                child._id_hash_offset = child_ids_offset + (i * 4)
+                child._ex_id_offset = child_ex_ids_offset + (i * 4)
+                child._index_offset = child_indices_offset + (i * 4)
+                self.children.append(child)
 
         # Selector
+        self._selector_id_offset = handler.tell
         self.selector_id = handler.read_int32()
 
         # Selector callers
@@ -181,18 +193,27 @@ class BHVTNode:
         if selector_callers_count > 0:
             self.selector_callers = [handler.read_int32() for _ in range(selector_callers_count)]
 
+        self._selector_caller_condition_id_offset = handler.tell
         self.selector_caller_condition_id = handler.read_int32()
 
         # Actions (interleaved storage)
         actions_count = handler.read_int32()
         if actions_count > 0:
             self.actions = []
+            # Record offset for action IDs and indices
+            action_ids_offset = handler.tell
             # All IDs
             action_ids = [handler.read_uint32() for _ in range(actions_count)]
+            # Record offset for action indices
+            action_indices_offset = handler.tell
             # All indices
             action_indices = [handler.read_int32() for _ in range(actions_count)]
             for i in range(actions_count):
-                self.actions.append(Action(id_hash=action_ids[i], index=action_indices[i]))
+                action = Action(id_hash=action_ids[i], index=action_indices[i])
+                # Store offsets for this action's fields
+                action._id_hash_offset = action_ids_offset + (i * 4)
+                action._index_offset = action_indices_offset + (i * 4)
+                self.actions.append(action)
 
         # Store priority offset before reading
         self._priority_offset = handler.tell
@@ -822,6 +843,36 @@ class MotfsmFile:
                 if hasattr(node, '_priority_offset'):
                     handler.seek(node._priority_offset)
                     handler.write_int32(node.priority)
+
+                # Write back Children fields
+                for child in node.children:
+                    if hasattr(child, '_id_hash_offset'):
+                        handler.seek(child._id_hash_offset)
+                        handler.write_uint32(child.id_hash)
+                    if hasattr(child, '_ex_id_offset'):
+                        handler.seek(child._ex_id_offset)
+                        handler.write_uint32(child.ex_id)
+                    if hasattr(child, '_index_offset'):
+                        handler.seek(child._index_offset)
+                        handler.write_int32(child.index)
+
+                # Write back Selector fields
+                if hasattr(node, '_selector_id_offset'):
+                    handler.seek(node._selector_id_offset)
+                    handler.write_int32(node.selector_id)
+
+                if hasattr(node, '_selector_caller_condition_id_offset'):
+                    handler.seek(node._selector_caller_condition_id_offset)
+                    handler.write_int32(node.selector_caller_condition_id)
+
+                # Write back Action fields
+                for action in node.actions:
+                    if hasattr(action, '_id_hash_offset'):
+                        handler.seek(action._id_hash_offset)
+                        handler.write_uint32(action.id_hash)
+                    if hasattr(action, '_index_offset'):
+                        handler.seek(action._index_offset)
+                        handler.write_int32(action.index)
 
                 # Write back modified State fields
                 for state in node.states:
