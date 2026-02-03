@@ -1351,6 +1351,37 @@ class RszFile:
         """Get resources dynamically based on resource fields"""
         resources = []
 
+        def _add_resource(value):
+            val = value.rstrip("\0")
+            if val and val not in resources:
+                resources.append(val)
+
+        def _collect_from_fields(fields, fields_def):
+            for field_def in fields_def:
+                field_name = field_def["name"]
+                data_obj = fields.get(field_name)
+                if not data_obj:
+                    continue
+                _collect_from_field(data_obj, field_def)
+
+        def _collect_from_field(data_obj, field_def):
+            if field_def["type"] == "Resource":
+                if not field_def.get("array", False):
+                    _add_resource(data_obj.value)
+                else:
+                    for elem in data_obj.values:
+                        _add_resource(elem.value)
+                return
+
+            if field_def["type"] == "Struct" and isinstance(data_obj, StructData):
+                struct_type_name = field_def.get("original_type") or getattr(data_obj, "orig_type", "")
+                if struct_type_name and self.type_registry:
+                    struct_info, _ = self.type_registry.find_type_by_name(struct_type_name)
+                    if struct_info:
+                        struct_fields_def = struct_info.get("fields", [])
+                        for struct_fields in data_obj.values:
+                            _collect_from_fields(struct_fields, struct_fields_def)
+                            
         def _collect_segment(parsed_elements, instance_infos, userdata_infos):
             by_instance = {}
             for rui in userdata_infos or []:
@@ -1374,26 +1405,10 @@ class RszFile:
                     elif name == "via.Folder":
                         f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
                         if fields[f4].value:
-                            val = fields[f5].value.rstrip("\0")
-                            if val and val not in resources:
-                                resources.append(val)
+                            _add_resource(fields[f5].value)
 
                     else:
-                        for fd in fields_def:
-                            if fd["type"] == "Resource":
-                                fn = fd["name"]
-                                data_obj = fields.get(fn)
-                                if not data_obj:
-                                    continue
-                                if not fd.get("array", False):
-                                    val = data_obj.value.rstrip("\0")
-                                    if val and val not in resources:
-                                        resources.append(val)
-                                else:
-                                    for elem in data_obj.values:
-                                        val = elem.value.rstrip("\0")
-                                        if val and val not in resources:
-                                            resources.append(val)
+                        _collect_from_fields(fields, fields_def)
 
                 for rui in by_instance.get(instance_id, []):
                     _collect_segment(
