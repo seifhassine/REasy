@@ -25,10 +25,12 @@ from file_handlers.rsz.rsz_file import RszFile
 # ───────────────────────── game‑table ─────────────────────────
 GAME_CONFIGS = {
     "mhwilds":{"registry_json": "rszmhwilds.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
+    "pragmata":{"registry_json": "rszpragmata.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "re7":    {"registry_json": "rszre7.json",       "scn_exts": [".18"], "usr_exts": [".-1"], "pfb_exts": [".16"]},
     "re3":    {"registry_json": "rszre3.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "re3rt":  {"registry_json": "rszre3rt.json",     "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "re8":    {"registry_json": "rszre8.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
+    "o2":    {"registry_json": "rszo2.json",       "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "mhr":    {"registry_json": "rszmhrise.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "sf6":    {"registry_json": "rszsf6.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
         "usr_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"],

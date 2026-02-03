@@ -757,7 +757,7 @@ class CommunityTemplatesDialog(QDialog):
         "RE7", "RE7 RT", "RE8", "RE Resistance",
         "RE4", "Onimusha 2",
         "Street Fighter 6", "Devil May Cry 5",
-        "Monster Hunter Rise", "Monster Hunter Wilds",
+        "Monster Hunter Rise", "Monster Hunter Wilds", "Pragmata"
         "Dragon Dogma 2",
     ]
     

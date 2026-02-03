@@ -92,7 +92,7 @@ from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_ro
 CURRENT_VERSION = "0.5.9-R2"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
-    "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2"
+    "RE7", "RE7RT", "MHWilds", "MHRise", "DMC5", "SF6", "O2", "DD2", "Pragmata"
 ]
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"

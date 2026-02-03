@@ -53,6 +53,7 @@ copy "resources\data\dumps\rszmhwilds.json" "dist\rszmhwilds.json"
 copy "resources\data\dumps\rszo2.json" "dist\rszo2.json"
 copy "resources\data\dumps\rszdd2.json" "dist\rszdd2.json"
 copy "resources\data\dumps\rszmhrise.json" "dist\rszmhrise.json"
+copy "resources\data\dumps\rszpragmata.json" "dist\rszpragmata.json"
 
 
 
