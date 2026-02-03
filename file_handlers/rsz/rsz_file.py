@@ -1364,7 +1364,7 @@ class RszFile:
                     name = type_info.get("name", [])
                     fields_def = type_info.get("fields", [])
 
-                    if name == "via.Prefab":
+                    if name == "via.Prefab" or name == "app.global.ResourcePrefab":
                         f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
                         if fields[f0].value:
                             val = fields[f1].value.rstrip("\0")
