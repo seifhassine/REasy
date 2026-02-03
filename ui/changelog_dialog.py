@@ -159,17 +159,9 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Support for 'Area' type from older games."),
-
-            ("Improved", "Identified all unknown Data fields in RE3 RSZ dump."),
-            ("Improved", "When opening CTRL+F search, the text search box will now be auto-focused."),
-            ("Improved", "Navigating between materials was slow in MDF files. Refactored relevant code to improve performance."),
-            ("Improved", "Identified all unknown Data fields in DMC5 RSZ dump."),
-            ("Improved", "Added over 15.000 entries to SF6 file list thanks to @ShangLi, @BrewedVFX, @Nanden and @Sleepy Scrub"), 
-
-            ("Fixed", "Onimusha 2 RSZ dump."),
-            ("Fixed", "Saving of .msg files from older games was corrupting messages."),
-            ("Fixed", "RSZ: 'Size' data type was not supported in copy/paste operations."),
+            ("New", "Added support for Pragmata."),
+            ("Fixed", "Updated MHWilds, RE4, RE8 RSZ dumps to work with the latest version of the games."),
+            ("Fixed", "Resources inside Struct fields in RSZ files were not being detected and saved when auto resource management is active."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
