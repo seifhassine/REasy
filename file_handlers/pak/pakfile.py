@@ -51,7 +51,7 @@ class PakFile:
         if magic != MAGIC:
             raise IOError("File is not a valid PAK file")
 
-        if (maj, minr) not in {(4, 0), (4, 1), (2, 0)}:
+        if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
             raise IOError(f"Unsupported PAK version {maj}.{minr}")
 
         if features not in (0, 8, 24, 16):

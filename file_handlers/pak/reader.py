@@ -342,7 +342,7 @@ class CachedPakReader(PakReader):
                         continue
                     
 
-                    if (maj, minr) not in {(4, 0), (4, 1), (2, 0)}:
+                    if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
                         continue
                     
 

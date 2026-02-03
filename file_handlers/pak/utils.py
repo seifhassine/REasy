@@ -68,7 +68,7 @@ def is_mod_pak(pak_path: str) -> bool:
         magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBhII", header)
         if magic != 0x414B504B:
             return False
-        if (maj, minr) not in {(4, 0), (4, 1), (2, 0)}:
+        if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
             return False
 
         entry_size = 48 if maj == 4 else 24
