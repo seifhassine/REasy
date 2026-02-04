@@ -196,6 +196,9 @@ class BetterFindDialog(QDockWidget):
         opts.addWidget(self.opt_both)
         self.case_box = QCheckBox(self.tr("Case sensitive"))
         opts.addWidget(self.case_box)
+        self.include_advanced_box = QCheckBox("Include Advanced Information")
+        self.include_advanced_box.setChecked(True)
+        opts.addWidget(self.include_advanced_box)
         opts.addStretch()
         root.addLayout(opts)
 
@@ -260,6 +263,7 @@ class BetterFindDialog(QDockWidget):
         case  = self.case_box.isChecked()
         mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
         needle= search_text if case else search_text.lower()
+        include_advanced = self.include_advanced_box.isChecked()
 
         self.results.clear()
         self.result_list.clear()
@@ -291,6 +295,8 @@ class BetterFindDialog(QDockWidget):
                 if item is None:
                     return
                 name = str(item.text(0) or "")
+                if not include_advanced and not names_path and name == "Advanced Information":
+                    return
                 cmp_name = name if case else name.lower()
 
                 raw_val = str(item.text(1) or "")
@@ -353,6 +359,8 @@ class BetterFindDialog(QDockWidget):
 
                 def walk_items(item, rows_path, names_path):
                     name = get_item_name(item)
+                    if not include_advanced and not names_path and name == "Advanced Information":
+                        return
                     cmp_name = name if case else name.lower()
 
                     match_name = (mode in ("both", "name")) and (needle in cmp_name)
@@ -424,6 +432,8 @@ class BetterFindDialog(QDockWidget):
                             continue
 
                         name = str(idx0.data(Qt.DisplayRole) or "")
+                        if not include_advanced and not path and name == "Advanced Information":
+                            continue
                         item = idx0.internalPointer()
 
                         cmp_name = name if case else name.lower()
