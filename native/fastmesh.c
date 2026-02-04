@@ -3,9 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 
-extern int PyFloat_Pack2(double, char*, int);
-extern double PyFloat_Unpack2(const char*, int);
-
 static double half_to_float(uint16_t h) {
     char buf[2];
     memcpy(buf, &h, 2);
