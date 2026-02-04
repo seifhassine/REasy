@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QComboBox,
     QLabel, QPushButton, QLineEdit, QMessageBox, QSplitter,
-    QTextEdit, QGroupBox, QFrame, QCheckBox,
+    QTextEdit, QGroupBox, QFrame, QCheckBox, QFileDialog,
     QSpinBox, QFormLayout, QHeaderView, QScrollArea
 )
 from PySide6.QtCore import Qt, Signal
@@ -84,6 +84,20 @@ class MsgViewer(QWidget):
         self.duplicate_btn.clicked.connect(self._on_duplicate_entry)
         entry_group.addWidget(self.duplicate_btn)
         controls_row.addLayout(entry_group)
+
+        controls_row.addWidget(self._create_separator())
+
+        io_group = QHBoxLayout()
+        self.import_btn = QPushButton("📥 Import JSON")
+        self.import_btn.setToolTip("Import entries from JSON")
+        self.import_btn.clicked.connect(self._on_import_json)
+        io_group.addWidget(self.import_btn)
+
+        self.export_btn = QPushButton("📤 Export JSON")
+        self.export_btn.setToolTip("Export entries to JSON")
+        self.export_btn.clicked.connect(self._on_export_json)
+        io_group.addWidget(self.export_btn)
+        controls_row.addLayout(io_group)
 
         controls_row.addWidget(self._create_separator())
 
@@ -365,6 +379,58 @@ class MsgViewer(QWidget):
         text = self.content_edit.toPlainText()
         char_count = len(text)
         self.char_count_label.setText(f"{char_count} chars")
+
+    def _on_export_json(self):
+        default_name = "messages.json"
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export MSG to JSON",
+            default_name,
+            "JSON Files (*.json);;All Files (*)",
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".json"):
+            path += ".json"
+        try:
+            self.handler.export_json(path)
+            QMessageBox.information(self, "Export JSON", f"Exported to:\n{path}")
+        except Exception as exc:
+            QMessageBox.critical(self, "Export JSON Failed", str(exc))
+
+    def _on_import_json(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import JSON to MSG",
+            "",
+            "JSON Files (*.json);;All Files (*)",
+        )
+        if not path:
+            return
+        try:
+            self.handler.import_json(path)
+            self._refresh_after_import()
+            self._set_modified(True)
+            QMessageBox.information(self, "Import JSON", f"Imported from:\n{path}")
+        except Exception as exc:
+            QMessageBox.critical(self, "Import JSON Failed", str(exc))
+
+    def _refresh_after_import(self):
+        self.language_combo.blockSignals(True)
+        self.language_combo.clear()
+        for i, lang_code in enumerate(self.handler.useLanguages):
+            lang_name = self.handler.get_language_name(lang_code)
+            self.language_combo.addItem(f"{lang_name} ({lang_code})", i)
+        if self.handler.useLanguages:
+            self.current_language = min(self.current_language, len(self.handler.useLanguages) - 1)
+        else:
+            self.current_language = 0
+        self.language_combo.setCurrentIndex(self.current_language)
+        self.language_combo.blockSignals(False)
+        self.entry_count_label.setText(f"📊 {len(self.handler.entries)}")
+        self.lang_count_label.setText(f"🌍 {len(self.handler.useLanguages)}")
+        self._populate_tree()
+        self._update_details_panel()
 
     def _on_language_changed(self, idx):
         self.current_language = idx

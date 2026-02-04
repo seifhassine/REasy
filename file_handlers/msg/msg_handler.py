@@ -533,6 +533,108 @@ class MsgHandler(BaseFileHandler):
             
         self.entries.append(new)
 
+    def to_json_dict(self) -> Dict[str, Any]:
+        return {
+            "version": self.header.get("version"),
+            "languages": [{"code": code, "name": self.get_language_name(code)} for code in self.useLanguages],
+            "user_params": [
+                {"name": name, "type": param_type}
+                for name, param_type in zip(self.userParamNames, self.userParamTypes)
+            ],
+            "entries": [
+                {
+                    "uuid": entry.get("uuid", ""),
+                    "name": entry.get("name", ""),
+                    "SoundID": entry.get("SoundID", 0),
+                    "content": list(entry.get("content", [])),
+                    "attributes": list(entry.get("attributes", [])),
+                }
+                for entry in self.entries
+            ],
+        }
+
+    def export_json(self, path: str) -> None:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.to_json_dict(), f, ensure_ascii=False, indent=2)
+
+    def import_json(self, path: str) -> None:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.load_json_dict(data)
+
+    def load_json_dict(self, data: Dict[str, Any]) -> None:
+        languages = data.get("languages")
+        if languages is not None:
+            self.useLanguages = [lang["code"] if isinstance(lang, dict) else lang for lang in languages]
+
+        user_params = data.get("user_params")
+        if user_params is not None:
+            self.userParamNames = [param.get("name", "") for param in user_params]
+            self.userParamTypes = [param.get("type", 2) for param in user_params]
+
+        entries = data.get("entries", [])
+        normalized_entries: List[Dict[str, Any]] = []
+        for idx, entry in enumerate(entries):
+            entry_name = entry.get("name", "")
+            content = entry.get("content", [])
+            attrs = entry.get("attributes", [])
+            normalized_content = self._normalize_content(content)
+            normalized_attrs = self._normalize_attributes(attrs)
+
+            new_entry = {
+                "uuid": entry.get("uuid", str(uuid.uuid4())).lower(),
+                "SoundID": int(entry.get("SoundID", 0)) if entry.get("SoundID", 0) else 0,
+                "name": entry_name,
+                "content": normalized_content,
+                "attributes": normalized_attrs,
+            }
+
+            if self._by_hash(self.header["version"]):
+                if entry_name:
+                    name_bytes = entry_name.encode("utf-16le")
+                    new_entry["nameHash"] = murmur3_hash(name_bytes)
+                else:
+                    new_entry["nameHash"] = 0
+            else:
+                new_entry["index"] = idx
+
+            normalized_entries.append(new_entry)
+
+        self.entries = normalized_entries
+        self.header["messageCount"] = len(self.entries)
+        self.header["userParamCount"] = len(self.userParamTypes)
+        self.header["languageDataCount"] = len(self.useLanguages)
+
+    def _normalize_content(self, content: List[Any]) -> List[str]:
+        normalized = [str(item) if item is not None else "" for item in content]
+        target_len = len(self.useLanguages)
+        if len(normalized) < target_len:
+            normalized.extend([""] * (target_len - len(normalized)))
+        return normalized[:target_len]
+
+    def _normalize_attributes(self, attrs: List[Any]) -> List[Any]:
+        normalized = []
+        for atype, aval in zip(self.userParamTypes, attrs):
+            if atype in (-1, 2):
+                normalized.append("" if aval is None else str(aval))
+            elif atype == 0:
+                normalized.append(int(aval) if aval not in (None, "") else 0)
+            elif atype == 1:
+                normalized.append(float(aval) if aval not in (None, "") else 0.0)
+            else:
+                normalized.append(None)
+        if len(normalized) < len(self.userParamTypes):
+            for atype in self.userParamTypes[len(normalized):]:
+                if atype in (-1, 2):
+                    normalized.append("")
+                elif atype == 0:
+                    normalized.append(0)
+                elif atype == 1:
+                    normalized.append(0.0)
+                else:
+                    normalized.append(None)
+        return normalized
+
     def remove_entry(self, idx: int):
         if 0 <= idx < len(self.entries):
             self.entries.pop(idx)
