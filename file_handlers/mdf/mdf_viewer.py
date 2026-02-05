@@ -26,6 +26,30 @@ class MdfViewer(QWidget):
 		self._setup_ui()
 		self._populate()
 
+	def _get_existing_material_names(self, exclude_index: int = -1) -> set:
+		m = self.handler.mdf
+		if not m:
+			return set()
+		names = set()
+		for i, mat in enumerate(m.materials):
+			if i != exclude_index:
+				names.add(mat.header.mat_name or "")
+		return names
+
+	def _generate_unique_material_name(self, base_name: str, existing_names: set) -> str:
+		if base_name not in existing_names:
+			return base_name
+		counter = 1
+		while True:
+			new_name = f"{base_name} ({counter})"
+			if new_name not in existing_names:
+				return new_name
+			counter += 1
+
+	def _check_duplicate_material_name(self, name: str, exclude_index: int = -1) -> bool:
+		existing_names = self._get_existing_material_names(exclude_index)
+		return name in existing_names
+
 	@property
 	def modified(self):
 		return self._modified
@@ -569,9 +593,19 @@ class MdfViewer(QWidget):
 		idx = self._get_current_index()
 		if not m or not (0 <= idx < len(m.materials)):
 			return
+		
+		if self._check_duplicate_material_name(text, exclude_index=idx):
+			QMessageBox.warning(
+				self,
+				"Duplicate Material Name",
+				f"A material with the name '{text}' already exists.\n"
+				"Please use a unique name for each material."
+			)
+		
 		h = m.materials[idx].header
 		h.mat_name = text
 		self.matname_hash_label.setText(f"0x{murmur3_hash_utf16le(text):08x}")
+		self._refresh_material_row(idx)
 		self.modified = True
 
 	def _get_current_index(self) -> int:
@@ -658,6 +692,17 @@ class MdfViewer(QWidget):
 	def _on_template_imported(self, material, metadata):
 		if material is None:
 			return
+		
+		material_name = material.header.mat_name or ""
+		if self._check_duplicate_material_name(material_name):
+			QMessageBox.warning(
+				self,
+				"Import Template",
+				f"Cannot import template: A material with the name '{material_name}' already exists.\n"
+				"Please rename the existing material first or use a different template."
+			)
+			return
+		
 		inserted = self._insert_materials([material])
 		if inserted:
 			name = "Template"
@@ -1354,6 +1399,13 @@ class MdfViewer(QWidget):
 		val = item.text()
 		try:
 			if c == 0:
+				if self._check_duplicate_material_name(val, exclude_index=r):
+					QMessageBox.warning(
+						self,
+						"Duplicate Material Name",
+						f"A material with the name '{val}' already exists.\n"
+						"Please use a unique name for each material."
+					)
 				h.mat_name = val
 			elif c == 1:
 				h.shader_type = int(val)
@@ -1372,14 +1424,20 @@ class MdfViewer(QWidget):
 		if not m:
 			return
 		from .mdf_file import MatData
-		m.materials.append(MatData())
+		
+		existing_names = self._get_existing_material_names()
+		new_name = self._generate_unique_material_name("Material", existing_names)
+		
+		mat = MatData()
+		mat.header.mat_name = new_name
+		m.materials.append(mat)
 		
 		self._clear_params_cache()
 		
 		self.materials_table.blockSignals(True)
 		r = self.materials_table.rowCount()
 		self.materials_table.insertRow(r)
-		for c, txt in enumerate(["", "0", "0", "0", "0"]):
+		for c, txt in enumerate([new_name, "0", "0", "0", "0"]):
 			self.materials_table.setItem(r, c, QTableWidgetItem(txt))
 		self.materials_table.blockSignals(False)
 		self.modified = True
@@ -1458,6 +1516,17 @@ class MdfViewer(QWidget):
 		if not materials:
 			QMessageBox.warning(self, "Paste Materials", "Clipboard does not contain MDF material data.")
 			return
+		
+		existing_names = self._get_existing_material_names()
+		renamed_count = 0
+		for mat in materials:
+			original_name = mat.header.mat_name or ""
+			unique_name = self._generate_unique_material_name(original_name, existing_names)
+			if unique_name != original_name:
+				mat.header.mat_name = unique_name
+				renamed_count += 1
+			existing_names.add(unique_name)
+		
 		selected = self.materials_table.selectionModel().selectedRows()
 		insert_at = len(m.materials)
 		if selected:
@@ -1468,8 +1537,9 @@ class MdfViewer(QWidget):
 		if not source_name:
 			source_name = "Unknown file"
 		msg_version = str(source_version) if source_version else "unknown"
-		QMessageBox.information(
-			self,
-			"Paste Materials",
-			f"Pasted {inserted} material(s) from {source_name} (version {msg_version}).",
-		)
+		
+		msg = f"Pasted {inserted} material(s) from {source_name} (version {msg_version})."
+		if renamed_count > 0:
+			msg += f"\n\n{renamed_count} material(s) were renamed to avoid duplicate names."
+		
+		QMessageBox.information(self, "Paste Materials", msg)
