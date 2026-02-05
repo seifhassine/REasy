@@ -12,6 +12,7 @@ from utils.hash_util import murmur3_hash_utf16le
 from .mdf_clipboard import MdfClipboard
 from .mdf_template_manager import MdfTemplateManager
 from ui.mdf_template_export_dialog import MdfTemplateExportDialog
+from ui.widgets_utils import get_color_preview_brush
 
 
 class MdfViewer(QWidget):
@@ -820,8 +821,8 @@ class MdfViewer(QWidget):
 			G = int(clamp01(rgb[1]) * 255)
 			B = int(clamp01(rgb[2]) * 255)
 			A = int(clamp01(alpha) * 255)
-			qcol = QColor(R, G, B, A)
-			color_item.setBackground(qcol)
+   
+			color_item.setBackground(get_color_preview_brush(R, G, B, A))
 			if p.component_count == 4:
 				color_item.setToolTip(f"RGBA: {R},{G},{B},{A}")
 			else:

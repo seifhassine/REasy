@@ -16,6 +16,7 @@ import re
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
+from ui.widgets_utils import ColorPreviewButton
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -2231,8 +2232,9 @@ class ColorInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.color_button = QPushButton()
+        self.color_button = ColorPreviewButton()
         self.color_button.setFixedSize(24, 24)
+        self.color_button.setHasAlpha(True)
         self.color_button.clicked.connect(self._show_color_dialog)
         
         grid = QGridLayout()
@@ -2360,11 +2362,7 @@ class ColorInput(BaseValueWidget):
         b = int(self._data.b)
         a = int(self._data.a)
         
-        alpha_normalized = a / 255.0
-        
-        self.color_button.setStyleSheet(
-            f"background-color: rgba({r}, {g}, {b}, {alpha_normalized}); border: 1px solid #888888;"
-        )
+        self.color_button.setColor(r, g, b, a)
     
     def _show_color_dialog(self):
             if not self._data:
@@ -2483,8 +2481,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
 
-        self.color_button = QPushButton()
+        self.color_button = ColorPreviewButton()
         self.color_button.setFixedSize(24, 24)
+        self.color_button.setHasAlpha(False)
         self.color_button.clicked.connect(self._show_color_dialog)
         
         grid = QGridLayout()
@@ -2610,9 +2609,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         g = max(0, min(1, float(self._data.y))) * 255
         b = max(0, min(1, float(self._data.z))) * 255
         
-        self.color_button.setStyleSheet(
-            f"background-color: rgb({int(r)}, {int(g)}, {int(b)}); border: 1px solid #888888;"
-        )
+        self.color_button.setColor(int(r), int(g), int(b), 255)
     
     def _show_color_dialog(self):
         """Open color picker dialog and update values if user selects a color"""
