@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import gc
 import os
 import sys
 import uuid
@@ -2269,6 +2270,16 @@ class REasyEditorApp(QMainWindow):
 
 
 def main():
+    
+    #Credit to Michael Kennedy: https://mkennedy.codes/posts/python-gc-settings-change-this-and-make-your-app-go-20pc-faster/
+    gc.collect(2)
+    gc.freeze()
+    allocs, gen1, gen2 = gc.get_threshold()
+    allocs = 50_000  # Start the GC sequence every 50K not 700 allocations.
+    gen1 = gen1 * 2
+    gen2 = gen2 * 2
+    gc.set_threshold(allocs, gen1, gen2)
+    
     app = QApplication(sys.argv)
 
     app.setStyle(QStyleFactory.create("Fusion"))
