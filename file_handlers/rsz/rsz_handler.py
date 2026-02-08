@@ -1012,7 +1012,7 @@ class RszViewer(QWidget):
             for fn, fd in scn.parsed_elements[ref_id].items():
                 children.append(self._create_field_dict(fn, fd))
         return DataTreeBuilder.create_data_node(
-            f"{field_name}: ({type_name})", "", None, None, children
+            f"{field_name}: ({type_name})", "", "ObjectData", data_obj, children
         )
             
     def _create_direct_embedded_usr_node(self, field_name, rui):

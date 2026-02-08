@@ -366,7 +366,8 @@ class AdvancedTreeView(QTreeView):
             'is_gameobjects_root': lambda: self._handle_root_menu(menu, index, has_go_clipboard),
             'is_folders_root': lambda: self._handle_root_folders_menu(menu, index, has_go_clipboard),
             'is_array': lambda: self._handle_array_menu(menu, index, item_info, item),
-            'is_array_element': lambda: self._handle_array_element_menu(menu, index, item_info)
+            'is_array_element': lambda: self._handle_array_element_menu(menu, index, item_info),
+            'is_object_ref_non_array': lambda: self._handle_object_reference_menu(menu, index, item_info),
         }
 
         for key, handler in handlers.items():
@@ -531,9 +532,124 @@ class AdvancedTreeView(QTreeView):
                 item_info['parent_array_item'], item_info['element_index']
             )
         
+        element_obj = array_data.values[item_info['element_index']]
+        if element_obj.__class__.__name__ == "ObjectData" and not item_info.get("is_embedded"):
+            menu.addSeparator()
+            if element_obj.value == 0:
+                init_action = menu.addAction(self.tr("Initialize Object..."))
+                actions[init_action] = lambda: self._process_object_reference_action(
+                    index, element_obj, action="initialize"
+                )
+            else:
+                change_action = menu.addAction(self.tr("Change Object Type..."))
+                actions[change_action] = lambda: self._process_object_reference_action(
+                    index, element_obj, action="change"
+                )
+                delete_action = menu.addAction(self.tr("Delete Object"))
+                actions[delete_action] = lambda: self._process_object_reference_action(
+                    index, element_obj, action="delete"
+                )
+
         action = menu.exec_(QCursor.pos())
         if action in actions:
             actions[action]()
+
+    def _handle_object_reference_menu(self, menu, index, item_info):
+        object_data = item_info.get("object_data")
+        if not object_data or item_info.get("is_embedded"):
+            return
+
+        actions = {}
+        if object_data.value == 0:
+            init_action = menu.addAction(self.tr("Initialize Object..."))
+            actions[init_action] = lambda: self._process_object_reference_action(
+                index, object_data, action="initialize"
+            )
+        else:
+            change_action = menu.addAction(self.tr("Change Object Type..."))
+            actions[change_action] = lambda: self._process_object_reference_action(
+                index, object_data, action="change"
+            )
+            delete_action = menu.addAction(self.tr("Delete Object"))
+            actions[delete_action] = lambda: self._process_object_reference_action(
+                index, object_data, action="delete"
+            )
+
+        action = menu.exec_(QCursor.pos())
+        if action in actions:
+            actions[action]()
+
+    def _process_object_reference_action(self, index, object_data, action: str):
+        parent = self.parent()
+        if not parent or not hasattr(parent, "object_operations"):
+            return
+
+        selected_type = None
+        if action in {"initialize", "change"}:
+            default_type = getattr(object_data, "orig_type", "") or ""
+            if object_data.value > 0:
+                try:
+                    default_type = parent.name_helper.get_type_name_for_instance(object_data.value) or default_type
+                except Exception:
+                    pass
+            type_dialog = ComponentSelectorDialog(self, parent.type_registry)
+            type_dialog.setWindowTitle(self.tr("Select Object Instance Type"))
+            if default_type:
+                try:
+                    type_dialog.search_input.setText(default_type)
+                except Exception:
+                    pass
+            if not type_dialog.exec_():
+                return
+            selected_type = type_dialog.get_selected_component()
+            if not selected_type:
+                return
+
+        success = parent.object_operations.modify_object_field(
+            object_data, selected_type=selected_type, action=action
+        )
+        if success:
+            self._refresh_object_reference_node(index, object_data)
+            QApplication.beep()
+        else:
+            QMessageBox.warning(self, "Error", "Failed to update object reference")
+
+    def _refresh_object_reference_node(self, index, object_data):
+        model = self.model()
+        if not model or not index.isValid():
+            return
+        item = index.internalPointer()
+        if not item or not isinstance(item.raw, dict):
+            return
+
+        parent_widget = self.parent()
+        field_label = item.data[0].split(":", 1)[0].strip()
+        embedded_context = item.raw.get("embedded_context")
+        new_node = parent_widget._create_field_dict(field_label, object_data, embedded_context)
+        if not isinstance(new_node, dict):
+            return
+
+        was_expanded = self.isExpanded(index)
+        child_count = item.child_count()
+        if child_count:
+            model.removeRows(0, child_count, index)
+
+        item.raw = new_node
+        item.data = new_node.get("data", item.data)
+        item.raw["children"] = new_node.get("children", [])
+
+        widget = self.indexWidget(index)
+        if widget:
+            for label in widget.findChildren(QLabel):
+                label.setText(item.data[0])
+
+        model.dataChanged.emit(index, index)
+        children_raw = new_node.get("children", [])
+        if children_raw:
+            model.addChildren(item, children_raw)
+            if was_expanded:
+                self.expand(index)
+            self.create_widgets_for_children(index)
 
     def _get_prefab_info(self, parent_widget, item_info, item):
         if not parent_widget.scn.is_scn:
@@ -699,6 +815,7 @@ class AdvancedTreeView(QTreeView):
             'is_folder': False, 'is_gameobjects_root': False, 'is_resource': False,
             'resource_index': -1, 'is_resources_section': False,
             'is_array_group': False,
+            'is_object_ref': False, 'object_data': None, 'is_object_ref_non_array': False,
         }
         
         result.update({
@@ -745,6 +862,13 @@ class AdvancedTreeView(QTreeView):
                     'is_array_element': True,
                     'element_index': elem_index,
                 })
+
+        if isinstance(item.raw, dict):
+            obj = item.raw.get("obj")
+            if obj is not None and obj.__class__.__name__ == "ObjectData":
+                result["is_object_ref"] = True
+                result["object_data"] = obj
+                result["is_object_ref_non_array"] = not result["is_array_element"]
         
         return result
     

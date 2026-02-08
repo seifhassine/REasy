@@ -653,17 +653,17 @@ class RszObjectOperations:
     # -------------------------------
     # UserData modifications (non-embedded RSZ)
     # -------------------------------
-    def _find_userdata_parent_info(self, userdata_field):
-        """Locate parent instance/field and array context for a given UserDataData field object."""
+    def _find_reference_parent_info(self, field_obj):
+        """Locate parent instance/field and array context for a given field object."""
         parent_instance_id = None
         parent_field_name = None
         is_array = False
         array_data = None
         element_index = -1
 
-        if hasattr(userdata_field, '_container_array') and getattr(userdata_field, '_container_array') is not None:
-            array_data = getattr(userdata_field, '_container_array')
-            element_index = getattr(userdata_field, '_container_index', -1)
+        if hasattr(field_obj, '_container_array') and getattr(field_obj, '_container_array') is not None:
+            array_data = getattr(field_obj, '_container_array')
+            element_index = getattr(field_obj, '_container_index', -1)
             for inst_id, fields in self.scn.parsed_elements.items():
                 for fname, fval in fields.items():
                     if fval is array_data:
@@ -677,7 +677,7 @@ class RszObjectOperations:
         if parent_instance_id is None:
             for inst_id, fields in self.scn.parsed_elements.items():
                 for fname, fval in fields.items():
-                    if fval is userdata_field:
+                    if fval is field_obj:
                         parent_instance_id = inst_id
                         parent_field_name = fname
                         is_array = False
@@ -686,6 +686,184 @@ class RszObjectOperations:
                     break
 
         return parent_instance_id, parent_field_name, is_array, array_data, element_index
+
+    def _compute_object_insertion_index(self, parent_instance_id, parent_field_name, is_array, element_index=None):
+        """Compute insertion index for creating a new object instance based on its parent position."""
+        from .rsz_array_operations import RszArrayOperations
+        if not self.viewer.array_operations:
+            self.viewer.array_operations = RszArrayOperations(self.viewer)
+        if parent_instance_id is None or parent_field_name is None:
+            return len(self.scn.instance_infos)
+        if is_array:
+            array_data = None
+            if parent_instance_id in self.scn.parsed_elements:
+                array_data = self.scn.parsed_elements[parent_instance_id].get(parent_field_name)
+            if array_data and isinstance(array_data, ArrayData) and element_index is not None:
+                next_refs = [
+                    elem.value for elem in array_data.values[element_index + 1:]
+                    if isinstance(elem, ObjectData) and elem.value > 0
+                ]
+                if next_refs:
+                    candidate_ids = []
+                    for ref_id in next_refs:
+                        candidate_ids.append(ref_id)
+                        nested_ids = self.viewer.array_operations._collect_all_nested_objects(ref_id)
+                        if nested_ids:
+                            candidate_ids.append(min(nested_ids))
+                    return min(candidate_ids)
+            return self.viewer.array_operations._calculate_array_element_insertion_index(
+                parent_instance_id, parent_field_name
+            )
+        return self.viewer.array_operations._calculate_insertion_index(parent_instance_id, parent_field_name)
+
+    def _is_object_reference_shared(self, instance_id, parent_instance_id, parent_field_name, is_array, element_index):
+        if instance_id <= 0:
+            return False
+        if instance_id in self.scn.object_table:
+            return True
+        refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, instance_id)
+        if not refs:
+            return False
+        total_refs = sum(len(v) for v in refs.values())
+        if total_refs == 1 and parent_instance_id in refs:
+            entries = refs[parent_instance_id]
+            if is_array:
+                expected = f"{parent_field_name}[{element_index}]"
+                return not any(name == expected for name, _ in entries)
+            return not any(name == parent_field_name and kind == "direct" for name, kind in entries)
+        return True
+
+    def _create_object_instance_with_nested_objects(self, type_info, type_id, insertion_index, parent_instance_id=None):
+        """Create an instance with nested ObjectData children ensuring children IDs come first."""
+        next_insertion_index = insertion_index
+        created_instance_ids = []
+
+        def _create_instance_for_type(current_type_info, current_type_id):
+            nonlocal next_insertion_index
+
+            instance_fields = {}
+            self.viewer._initialize_fields_from_type_info(instance_fields, current_type_info)
+
+            for field_def in current_type_info.get("fields", []):
+                field_name = field_def.get("name", "")
+                if not field_name:
+                    continue
+                field_obj = instance_fields.get(field_name)
+                if field_obj is None:
+                    continue
+
+                if isinstance(field_obj, ObjectData) and getattr(field_obj, 'orig_type', ''):
+                    child_type_info, child_type_id = self.type_registry.find_type_by_name(field_obj.orig_type)
+                    if child_type_info and child_type_id:
+                        child_id = _create_instance_for_type(child_type_info, child_type_id)
+                        field_obj.value = child_id
+                elif isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
+                    if getattr(self.scn, 'has_embedded_rsz', False):
+                        userdata_id = self._create_userdata_instance_for_field(
+                            field_obj.orig_type, next_insertion_index, None
+                        )
+                        if userdata_id is not None:
+                            field_obj.value = userdata_id
+                            field_obj.string = field_obj.orig_type
+                            next_insertion_index += 1
+                elif isinstance(field_obj, ArrayData) and getattr(field_obj, 'element_class', None) == UserDataData:
+                    field_obj._needs_userdata_creation = True
+                    field_obj._userdata_type = field_obj.orig_type
+
+            if not current_type_id:
+                return 0
+            new_inst = self.viewer._initialize_new_instance(current_type_id, current_type_info)
+            if not new_inst:
+                return 0
+
+            self.viewer._insert_instance_and_update_references(next_insertion_index, new_inst)
+            self.viewer.handler.id_manager.register_instance(next_insertion_index)
+            this_id = next_insertion_index
+            self.scn.parsed_elements[this_id] = instance_fields
+            next_insertion_index += 1
+            created_instance_ids.append(this_id)
+
+            for field_obj in instance_fields.values():
+                if isinstance(field_obj, ObjectData) and field_obj.value > 0:
+                    self._update_instance_hierarchy(field_obj.value, this_id)
+
+            return this_id
+
+        root_id = _create_instance_for_type(type_info, type_id)
+        if root_id > 0 and parent_instance_id is not None:
+            adjusted_parent_id = parent_instance_id
+            if insertion_index <= parent_instance_id:
+                adjusted_parent_id = parent_instance_id + len(created_instance_ids)
+            self._update_instance_hierarchy(root_id, adjusted_parent_id)
+        return root_id
+
+    def modify_object_field(self, object_field, selected_type: str | None = None, action: str = "initialize") -> bool:
+        """Modify an ObjectData field (initialize, change type, or delete)."""
+        if not isinstance(object_field, ObjectData):
+            return False
+
+        parent_instance_id, parent_field_name, is_array, _, element_index = self._find_reference_parent_info(object_field)
+        if parent_instance_id is None or parent_field_name is None:
+            return False
+
+        current_instance_id = getattr(object_field, 'value', 0) or 0
+
+        if action == "delete":
+            if current_instance_id <= 0:
+                return True
+            if self._is_object_reference_shared(
+                current_instance_id, parent_instance_id, parent_field_name, is_array, element_index
+            ):
+                object_field.value = 0
+                self.viewer.mark_modified()
+                return True
+
+            if not self.viewer.array_operations:
+                from .rsz_array_operations import RszArrayOperations
+                self.viewer.array_operations = RszArrayOperations(self.viewer)
+            self.viewer.array_operations._delete_instance_and_children(current_instance_id)
+            object_field.value = 0
+            self.viewer.mark_modified()
+            return True
+
+        if not selected_type:
+            return False
+
+        if action == "change" and current_instance_id > 0:
+            if not self._is_object_reference_shared(
+                current_instance_id, parent_instance_id, parent_field_name, is_array, element_index
+            ):
+                if not self.viewer.array_operations:
+                    from .rsz_array_operations import RszArrayOperations
+                    self.viewer.array_operations = RszArrayOperations(self.viewer)
+                self.viewer.array_operations._delete_instance_and_children(current_instance_id)
+                object_field.value = 0
+                parent_instance_id, parent_field_name, is_array, _, element_index = self._find_reference_parent_info(
+                    object_field
+                )
+                current_instance_id = 0
+
+        insertion_index = self._compute_object_insertion_index(
+            parent_instance_id, parent_field_name, is_array, element_index
+        )
+
+        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
+        if not type_info or not type_id:
+            return False
+
+        new_id = self._create_object_instance_with_nested_objects(
+            type_info, type_id, insertion_index, parent_instance_id
+        )
+        if new_id <= 0:
+            return False
+
+        object_field.value = new_id
+        self.viewer.mark_modified()
+        return True
+
+    def _find_userdata_parent_info(self, userdata_field):
+        """Locate parent instance/field and array context for a given UserDataData field object."""
+        return self._find_reference_parent_info(userdata_field)
 
     def _compute_userdata_insertion_index(self, parent_instance_id, parent_field_name, is_array):
         """Compute insertion index for creating a new userdata instance based on its parent position."""
