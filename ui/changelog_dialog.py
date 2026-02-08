@@ -159,9 +159,16 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added support for Pragmata."),
-            ("Fixed", "Updated MHWilds, RE4, RE8 RSZ dumps to work with the latest version of the games."),
-            ("Fixed", "Resources inside Struct fields in RSZ files were not being detected and saved when auto resource management is active."),
+            ("New", "Object references can now be edited and deleted in RSZ files."),
+            ("New", "Added file lists for Pragmata Demo and Monster Hunter Stories 3 Demo."),
+            ("New", "JSON import/export for MSG files."),
+            ("New", "UI support for rectange data type in RSZ files."),
+            ("New", "Added option to include Advanced Information in RSZ search."),
+            ("Improved", "Color preview bars now have a checkboard background. Previously, colors with low alpha values would get mixed with REasy's grey background."),
+            ("Improved", "Updated SF6, RE4, RE8 file lists."),
+            ("Improved", "A warning is issued in MDF files when you try to add a material with an existing name."),
+            ("Improved", "Upgraded project to Python 3.14 and improved overall execution speed by adjusting garbage collector settings."),
+            ("Fixed", "A case where RSZUserdataInfo would not be deleted when you delete UserData."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
