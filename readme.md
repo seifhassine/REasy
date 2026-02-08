@@ -126,6 +126,9 @@ REasy GUI is currently available in English and Chinese (limited)
 
 - If build.bat complains about not having 3.12+, then run python --version to check which version is being used by default.
 
+- If you want to run REasy.py, make sure you either use the build batch script or `python setup.py build_ext --inplace
+` beforehand.
+
 If you want to run REasy on Linux and encounter the error "Aborted" on launch, try installing libxcb-cursor0 using apt-get. 
 
 ## Credits:
