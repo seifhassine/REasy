@@ -723,7 +723,7 @@ TYPE_MAPPING = {
     "s16": S16Data,
     "s64": S64Data,
     "runtimetype": RuntimeTypeData,
-    #"rect": RectData,
+    "rect": RectData,
     "range": RangeData,
     "rangei": RangeIData,
     "quaternion": QuaternionData,

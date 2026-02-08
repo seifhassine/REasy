@@ -1232,6 +1232,87 @@ class AABBInput(BaseValueWidget):
             pass  
 
 
+class RectInput(BaseValueWidget):
+    valueChanged = Signal(tuple)
+
+    _LABEL_W = 33
+    _FIELD_W = 75
+
+    def __init__(self, data=None, parent=None):
+        super().__init__(parent)
+
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(2)
+        grid.setVerticalSpacing(2)
+        grid.setAlignment(Qt.AlignLeft)
+        self.layout.addLayout(grid)
+
+        for i, name in enumerate("XY", 1):
+            hdr = QLabel(name)
+            hdr.setAlignment(Qt.AlignCenter)
+            grid.addWidget(hdr, 0, i)
+
+        def make_row(row_idx: int, title: str):
+            lbl = QLabel(title)
+            lbl.setFixedWidth(self._LABEL_W)
+            lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            grid.addWidget(lbl, row_idx, 0)
+
+            edits = []
+            for col in range(1, 3):
+                le = QLineEdit()
+                le.setValidator(QDoubleValidator())
+                le.setFixedWidth(self._FIELD_W)
+                le.setAlignment(Qt.AlignLeft)
+                grid.addWidget(le, row_idx, col)
+                edits.append(le)
+            return edits
+
+        self.min_edits = make_row(1, "Min:")
+        self.max_edits = make_row(2, "Max:")
+
+        self.layout.addStretch()
+
+        for le in (*self.min_edits, *self.max_edits):
+            le.textEdited.connect(self._on_value_changed)
+
+        if data:
+            self.set_data(data)
+
+    def update_display(self):
+        if not self._data:
+            return
+        mins = (self._data.min_x, self._data.min_y)
+        maxs = (self._data.max_x, self._data.max_y)
+        for le, val in zip(self.min_edits, mins):
+            le.setText(f"{val:.8g}")
+        for le, val in zip(self.max_edits, maxs):
+            le.setText(f"{val:.8g}")
+
+    def setValues(self, values):
+        if len(values) != 4:
+            return
+        for le, v in zip(self.min_edits + self.max_edits, values):
+            le.setText(str(v))
+
+    def getValues(self):
+        try:
+            return tuple(float(le.text() or "0") for le in (self.min_edits + self.max_edits))
+        except ValueError:
+            return (0.0, 0.0, 0.0, 0.0)
+
+    def _on_value_changed(self):
+        if not self._data:
+            return
+        try:
+            vals = [float(le.text() or "0") for le in (self.min_edits + self.max_edits)]
+            self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y = vals
+            self.valueChanged.emit(tuple(vals))
+            self.mark_modified()
+        except ValueError:
+            pass
+
 class OBBInput(BaseValueWidget):
     valueChanged = Signal(list)
     

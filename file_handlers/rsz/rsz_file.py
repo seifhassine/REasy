@@ -8,7 +8,7 @@ from file_handlers.rsz.rsz_data_types import (
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
     ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
-    NON_ARRAY_PARSERS
+    RectData, NON_ARRAY_PARSERS
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
@@ -1141,6 +1141,9 @@ class RszFile:
                     out.extend(pack_float(0.0))
                     out.extend(pack_3float(element.max.x, element.max.y, element.max.z))
                     out.extend(pack_float(0.0))
+                    
+                elif isinstance(element, RectData):
+                    out.extend(pack_4float(element.min_x, element.min_y, element.max_x, element.max_y))
 
                 elif isinstance(element, AreaData):
                     out.extend(pack_2float(element.p0.x, element.p0.y))
@@ -1291,6 +1294,9 @@ class RszFile:
                 out.extend(pack_float(0.0))
                 out.extend(pack_3float(data_obj.max.x, data_obj.max.y, data_obj.max.z))
                 out.extend(pack_float(0.0))
+
+            elif isinstance(data_obj, RectData):
+                out.extend(pack_4float(data_obj.min_x, data_obj.min_y, data_obj.max_x, data_obj.max_y))
 
             elif isinstance(data_obj, AreaData):
                 out.extend(pack_2float(data_obj.p0.x, data_obj.p0.y))
