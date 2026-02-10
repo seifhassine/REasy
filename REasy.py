@@ -1634,6 +1634,18 @@ class REasyEditorApp(QMainWindow):
         browse_btn = QPushButton(self.tr("Browse..."))
         json_path_layout.addWidget(browse_btn)
         general_layout.addLayout(json_path_layout)
+        
+        vgmstream_label = QLabel("VGMStream CLI Path:")
+        general_layout.addWidget(vgmstream_label, 0, Qt.AlignBottom)
+
+        vgmstream_layout = QHBoxLayout()
+        vgmstream_layout.setContentsMargins(0, 0, 0, 0)
+        vgmstream_entry = QLineEdit(self.settings.get("vgmstream_cli_path", ""))
+        vgmstream_layout.addWidget(vgmstream_entry)
+
+        vgmstream_browse_btn = QPushButton("Browse...")
+        vgmstream_layout.addWidget(vgmstream_browse_btn)
+        general_layout.addLayout(vgmstream_layout)
 
         # Game Version selection
         game_version_layout = QHBoxLayout()
@@ -1798,6 +1810,7 @@ class REasyEditorApp(QMainWindow):
                 return
 
             self.settings["rcol_json_path"] = new_json_path
+            self.settings["vgmstream_cli_path"] = vgmstream_entry.text().strip()
             self.settings["dark_mode"] = dark_box.isChecked()
             self.settings["show_debug_console"] = debug_box.isChecked()
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
@@ -1851,10 +1864,21 @@ class REasyEditorApp(QMainWindow):
             )
             if file_path:
                 json_entry.setText(file_path)
+                
+        def browse_vgmstream():
+            file_path, _ = QFileDialog.getOpenFileName(
+                dialog,
+                "Select VGMStream CLI",
+                os.path.dirname(vgmstream_entry.text()) if vgmstream_entry.text() else "",
+                "Executable Files (*)",
+            )
+            if file_path:
+                vgmstream_entry.setText(file_path)
 
         button_box.accepted.connect(on_ok)
         button_box.rejected.connect(on_cancel)
-        browse_btn.clicked.connect(browse)
+        browse_btn.clicked.connect(browse)        
+        vgmstream_browse_btn.clicked.connect(browse_vgmstream)
 
         dialog.exec()
 
@@ -2067,7 +2091,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;All Files (*.*)"
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2* *.sbnk* *.spck*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;All Files (*.*)"
         )
         if not fn:
             return

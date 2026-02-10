@@ -12,6 +12,7 @@ DEFAULT_SETTINGS = {
     "ui_language": "system",
     "translation_target_language": "en",
     "tree_highlight_color": "#ff851b",
+    "vgmstream_cli_path": "",
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",
         "file_save": "Ctrl+S",
