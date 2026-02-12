@@ -212,11 +212,6 @@ jobs:
         FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
-    - name: Attest Build Provenance
-      uses: actions/attest-build-provenance@v2.4.0
-      with:
-        subject-path: dist/REasy.exe
-
     - name: Upload unsigned artifact (for SignPath)
       id: upload_unsigned
       uses: actions/upload-artifact@v4
