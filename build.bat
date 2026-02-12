@@ -19,6 +19,31 @@ REM Clean up previous build artifacts if any
 if exist build rmdir /S /Q build
 if exist dist rmdir /S /Q dist
 
+set "HELPER_PROJ=tools\reasy_tex_gdeflate_helper\reasy_tex_gdeflate_helper.csproj"
+set "HELPER_OUT=tools\reasy_tex_gdeflate_helper\bin\Release\net9.0\win-x64\publish"
+
+echo Building gdeflate helper...
+dotnet publish "%HELPER_PROJ%" -c Release -r win-x64 --self-contained false -o "%HELPER_OUT%"
+if errorlevel 1 (
+    echo Failed to build gdeflate helper.
+    pause
+    exit /b 1
+)
+
+for %%F in (
+    "reasy_tex_gdeflate_helper.exe"
+    "reasy_tex_gdeflate_helper.dll"
+    "reasy_tex_gdeflate_helper.runtimeconfig.json"
+    "reasy_tex_gdeflate_helper.deps.json"
+    "runtimes\win-x64\native\libGDeflate.dll"
+) do (
+    if not exist "%HELPER_OUT%\%%~F" (
+        echo Missing helper artifact: %%~F
+        pause
+        exit /b 1
+    )
+)
+
 REM Build using PyInstaller with version file
 pip install -r requirements.txt
 
@@ -28,11 +53,16 @@ python scripts\compile_qm.py
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
+  --add-binary "%HELPER_OUT%\reasy_tex_gdeflate_helper.exe;tools" ^
+  --add-binary "%HELPER_OUT%\reasy_tex_gdeflate_helper.dll;tools" ^
+  --add-binary "%HELPER_OUT%\runtimes\win-x64\native\libGDeflate.dll;tools" ^
+  --add-data "%HELPER_OUT%\reasy_tex_gdeflate_helper.runtimeconfig.json;tools" ^
+  --add-data "%HELPER_OUT%\reasy_tex_gdeflate_helper.deps.json;tools" ^
   REasy.py
   
 xcopy /E /I /Y resources dist\resources
-rmdir /S /Q dist\resources\data\dumps
-rmdir /S /Q dist\resources\patches
+if exist dist\resources\data\dumps rmdir /S /Q dist\resources\data\dumps
+if exist dist\resources\patches rmdir /S /Q dist\resources\patches
 if not exist dist\resources\i18n mkdir dist\resources\i18n
 xcopy /Y /I resources\i18n\ dist\resources\i18n\
 copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"

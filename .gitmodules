@@ -1,0 +1,3 @@
+[submodule "GDeflateNet"]
+	path = GDeflateNet
+	url = https://github.com/neptuwunium/GDeflateNet.git

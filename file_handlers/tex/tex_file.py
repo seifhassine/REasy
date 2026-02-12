@@ -10,6 +10,8 @@ def get_internal_version(version: int) -> int:
 
 
 TEX_MAGIC = 0x00584554 
+GDEFLATE_MAGIC = 0xFB04
+MHWILDS_TEX_VERSION = 241106027
 
 
 @dataclass
@@ -56,11 +58,36 @@ class MipHeader:
     size: int
 
 
+@dataclass
+class PackedMipHeader:
+    size: int
+    offset: int
+
+
 class TexFile:
     def __init__(self) -> None:
         self.header = TexHeader()
         self.mips: List[MipHeader] = []
+        self.packed_mips: List[PackedMipHeader] = []
         self._data: bytes = b""
+
+    @property
+    def uses_packed_mips(self) -> bool:
+        return self.header.version >= MHWILDS_TEX_VERSION
+
+    @property
+    def _packed_payload_offset(self) -> int:
+        if not self.mips:
+            return 0
+        return self.mips[0].offset + (len(self.packed_mips) * 8)
+
+    @property
+    def _mip_span_size(self) -> int:
+        if not self.mips:
+            return 0
+        first = self.mips[0]
+        last = self.mips[-1]
+        return (last.offset + last.size) - first.offset
 
     def read(self, data: bytes) -> bool:
         self._data = data
@@ -94,12 +121,54 @@ class TexFile:
 
         total = self.header.mip_count * self.header.image_count
         self.mips.clear()
+        self.packed_mips.clear()
         for _ in range(total):
             offset = h.read_int64()
             pitch = h.read_int32()
             size = h.read_int32()
             self.mips.append(MipHeader(offset, pitch, size))
+
+        if self.uses_packed_mips and self.mips:
+            h.seek(self.mips[0].offset)
+            for _ in range(total):
+                self.packed_mips.append(PackedMipHeader(
+                    size=h.read_int32(),
+                    offset=h.read_int32(),
+                ))
+            self._expand_packed_mips()
+
         return True
+
+    def _expand_packed_mips(self) -> None:
+        if not self.packed_mips:
+            return
+
+        raw = self._data
+        compressed_region_start = self._packed_payload_offset
+        decompressed_size = self._mip_span_size
+        decompressed = bytearray(decompressed_size)
+
+        for i, (mip, cmip) in enumerate(zip(self.mips, self.packed_mips)):
+            src_start = compressed_region_start + cmip.offset
+            src_end = src_start + cmip.size
+            dst_start = mip.offset - self.mips[0].offset
+            chunk = raw[src_start:src_end]
+
+            if len(chunk) >= 2 and int.from_bytes(chunk[:2], "little") == GDEFLATE_MAGIC:
+                raise RuntimeError(
+                    f"TEX file contains gdeflate-compressed mip data (mip {i}); external helper required"
+                )
+
+            decompressed[dst_start:dst_start + mip.size] = chunk[:mip.size]
+
+        base = bytearray(raw)
+        dst_start_abs = self.mips[0].offset
+        dst_end_abs = dst_start_abs + decompressed_size
+        if dst_end_abs > len(base):
+            base.extend(b"\x00" * (dst_end_abs - len(base)))
+        base[dst_start_abs:dst_end_abs] = decompressed
+        self._data = bytes(base)
+        self.packed_mips.clear()
 
     def export_header_dict(self) -> dict:
         h = self.header

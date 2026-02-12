@@ -1,10 +1,82 @@
+import os
+import shlex
 import struct
+import subprocess
+import sys
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 from file_handlers.base_handler import BaseFileHandler
 
 from .tex_file import TexFile, TEX_MAGIC
 from .dds import build_dds_dx10, convert_dds_for_pil_compatibility
+
+
+_HELPER_CMD_CACHE: list[str] | None = None
+
+
+def _resolve_helper_command() -> list[str]:
+    global _HELPER_CMD_CACHE
+
+    if _HELPER_CMD_CACHE:
+        return _HELPER_CMD_CACHE
+
+    env_cmd = os.environ.get("REASY_TEX_GDEFLATE_HELPER_CMD", "").strip()
+    if env_cmd:
+        _HELPER_CMD_CACHE = shlex.split(env_cmd)
+        return _HELPER_CMD_CACHE
+
+    if getattr(sys, "frozen", False):
+        helper_path = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent)).resolve() / "tools" / "reasy_tex_gdeflate_helper.exe"
+    else:
+        helper_root = Path(__file__).resolve().parents[2] / "tools" / "reasy_tex_gdeflate_helper" / "bin" / "Release"
+        candidates = list(helper_root.glob("**/reasy_tex_gdeflate_helper.exe"))
+        if not candidates:
+            raise FileNotFoundError(f"Could not find reasy_tex_gdeflate_helper.exe in expected location: {helper_root}")
+        helper_path = candidates[0]
+
+    _HELPER_CMD_CACHE = [str(helper_path)]
+    return _HELPER_CMD_CACHE
+
+
+def _run_external_unpacker(data: bytes) -> tuple[bytes | None, str]:
+    cmd = _resolve_helper_command() + ["--stdin", "--stdout", "--mode", "decompress-tex"]
+    helper_path = Path(cmd[0])
+    helper_dir = helper_path.parent
+
+    if not helper_path.exists():
+        return None, f"missing:{helper_path}"
+
+    env = os.environ.copy()
+    env["PATH"] = f"{helper_dir}{os.pathsep}{env.get('PATH', '')}"
+
+    kwargs = {
+        "input": data,
+        "capture_output": True,
+        "check": False,
+        "timeout": 30,
+        "cwd": str(helper_dir),
+        "env": env,
+    }
+    if os.name == "nt":
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+    try:
+        proc = subprocess.run(cmd, **kwargs)
+    except (FileNotFoundError, PermissionError, subprocess.SubprocessError) as ex:
+        return None, f"exec-failed:{helper_path}:{type(ex).__name__}:{ex}"
+
+    if proc.returncode != 0:
+        err = proc.stderr.decode(errors="replace").strip().replace("\n", " ")
+        return None, f"ret={proc.returncode}:{helper_path}:{err[:240]}"
+
+    if len(proc.stdout) < 4:
+        return None, f"short-output:{helper_path}:{len(proc.stdout)}"
+
+    if struct.unpack_from('<I', proc.stdout, 0)[0] != TEX_MAGIC:
+        return None, f"bad-magic:{helper_path}"
+
+    return proc.stdout, ""
 
 
 class TexHandler(BaseFileHandler):
@@ -27,7 +99,22 @@ class TexHandler(BaseFileHandler):
     def read(self, data: bytes):
         self.raw_data = data
         tex = TexFile()
-        if not tex.read(data):
+
+        try:
+            ok = tex.read(data)
+        except RuntimeError as ex:
+            if "gdeflate" not in str(ex).lower():
+                raise
+            unpacked, helper_diag = _run_external_unpacker(data)
+            if unpacked is None:
+                raise RuntimeError(
+                    "TEX file contains gdeflate-compressed mip data and helper execution failed. "
+                    f"Helper diagnostics: {helper_diag}"
+                ) from ex
+            ok = tex.read(unpacked)
+            self.raw_data = unpacked
+
+        if not ok:
             raise ValueError("Failed to parse TEX file")
         self.tex = tex
         self.modified = False
@@ -67,7 +154,7 @@ class TexHandler(BaseFileHandler):
 
         if header.format_is_block_compressed() and not self.tex.header_is_power_of_two():
             for level in range(header.mip_count):
-                data, w, h = self.tex.read_non_pot_level(level, image_index)
+                data, _, _ = self.tex.read_non_pot_level(level, image_index)
                 mip_bytes.append(data)
         else:
             for level in range(header.mip_count):

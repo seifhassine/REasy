@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>preview</LangVersion>
+    <AssemblyName>reasy_tex_gdeflate_helper</AssemblyName>
+    <RootNamespace>ReasyTexGDeflateHelper</RootNamespace>
+    <GDeflateNetDir>$(MSBuildThisFileDirectory)..\..\GDeflateNet\GDeflateNet</GDeflateNetDir>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(GDeflateNetDir)')">
+    <Compile Include="$(GDeflateNetDir)\*.cs" LinkBase="GDeflateNet" />
+
+    <Content Include="$(GDeflateNetDir)\runtimes\win-x64\native\libGDeflate.dll" Link="runtimes/win-x64/native/libGDeflate.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(GDeflateNetDir)\runtimes\linux-x64\native\libGDeflate.so" Link="runtimes/linux-x64/native/libGDeflate.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(GDeflateNetDir)\runtimes\linux-arm64\native\libGDeflate.so" Link="runtimes/linux-arm64/native/libGDeflate.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(GDeflateNetDir)\runtimes\osx-x64\native\libGDeflate.dylib" Link="runtimes/osx-x64/native/libGDeflate.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(GDeflateNetDir)\runtimes\osx-arm64\native\libGDeflate.dylib" Link="runtimes/osx-arm64/native/libGDeflate.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="EnsureGDeflateNetPresent" BeforeTargets="PrepareForBuild">
+    <Error
+      Condition="!Exists('$(GDeflateNetDir)')"
+      Text="Missing GDeflateNet submodule. Run: git submodule update --init --recursive" />
+  </Target>
+</Project>
