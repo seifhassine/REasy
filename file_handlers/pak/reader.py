@@ -14,7 +14,17 @@ from concurrent.futures import ThreadPoolExecutor, wait, as_completed
 
 from .utils import filepath_hash, guess_extension_from_header
 from utils.native_build import ensure_fast_pakresolve
-from .pakfile import PakFile, PakEntry, _read_entry_raw, _decrypt_pak_entry_data, _decrypt_resource
+from .pakfile import (
+    PakFile,
+    PakEntry,
+    _read_entry_raw,
+    _decrypt_pak_entry_data,
+    _decrypt_resource,
+    _read_chunk_table,
+    FEATURE_EXTRA_DATA,
+    FEATURE_CHUNKED_RESOURCES,
+    _is_chunked_entry,
+)
 
 def _normalize_for_hash(path: str) -> str:
     s = path.strip().replace("\\", "/").lower()
@@ -118,7 +128,7 @@ class PakReader:
                         dest.parent.mkdir(parents=True, exist_ok=True)
                         created_dirs.add(parent)
                     with open(dest, "wb") as f:
-                        _read_entry_raw(e, fs, f)
+                        _read_entry_raw(e, fs, f, chunk_table=ctx.file.chunk_table)
                     ctx.found_hashes.append(h)
                     ctx.file_count += 1
 
@@ -217,7 +227,7 @@ class PakReader:
                     raise RuntimeError("PAK entry size exceeds int range")
                 buf = io.BytesIO()
 
-                _read_entry_raw(e, fs, buf)
+                _read_entry_raw(e, fs, buf, chunk_table=ctx.file.chunk_table)
 
                 ctx.found_hashes.append(h)
                 ctx.file_count += 1
@@ -298,7 +308,7 @@ class CachedPakReader(PakReader):
         with open(pak.filepath, "rb") as fs:
             buf = io.BytesIO()
 
-            _read_entry_raw(e, fs, buf)
+            _read_entry_raw(e, fs, buf, chunk_table=pak.chunk_table)
             buf.seek(0)
             return buf
 
@@ -349,13 +359,14 @@ class CachedPakReader(PakReader):
                     entry_table_size = file_count * (48 if maj == 4 else 24)
                     entry_table = bytearray(f.read(entry_table_size))
                     
-                    if (features & 16) != 0:
+                    if (features & FEATURE_EXTRA_DATA) != 0:
                         f.seek(4, 1)
                     
                     if features != 0:
                         key = bytearray(f.read(128))
                         _decrypt_pak_entry_data(entry_table, key)
-                    
+
+                    chunk_table = _read_chunk_table(f) if (features & FEATURE_CHUNKED_RESOURCES) != 0 else ()
 
                     off = 0
                     for _ in range(file_count):
@@ -382,11 +393,12 @@ class CachedPakReader(PakReader):
                                     compression=compression,
                                     encryption=encryption,
                                     checksum=checksum,
+                                    attributes=attrib,
                                     path=manifest_path
                                 )
                                 
                                 stream = io.BytesIO()
-                                _read_entry_raw(e, f, stream)
+                                _read_entry_raw(e, f, stream, chunk_table=chunk_table)
                                 stream.seek(0)
                                 content = stream.read().decode('utf-8')
                                 
@@ -415,7 +427,7 @@ class CachedPakReader(PakReader):
                                 )
                                 
                                 stream = io.BytesIO()
-                                _read_entry_raw(e, f, stream)
+                                _read_entry_raw(e, f, stream, chunk_table=chunk_table)
                                 stream.seek(0)
                                 content = stream.read().decode('utf-8')
                                 
@@ -444,7 +456,7 @@ class CachedPakReader(PakReader):
         out_base = Path(output_directory)
 
 
-        groups: Dict[str, List[tuple[PakEntry, Path]]] = {}
+        groups: Dict[str, tuple[PakFile, List[tuple[PakEntry, Path]]]] = {}
         missing_local: List[str] = []
         
         for p in paths:
@@ -460,7 +472,11 @@ class CachedPakReader(PakReader):
             pak, e = hit
             out_name = e.path or p
             outp = out_base / out_name
-            groups.setdefault(pak.filepath, []).append((e, outp))
+            bucket = groups.get(pak.filepath)
+            if bucket is None:
+                bucket = (pak, [])
+                groups[pak.filepath] = bucket
+            bucket[1].append((e, outp))
 
         thread_local = threading.local()
         
@@ -475,7 +491,8 @@ class CachedPakReader(PakReader):
                     thread_local.zstd_decompressor = None
             return thread_local
         
-        def extract_from_pak(pak_path: str, entries: List[tuple[PakEntry, Path]]) -> int:
+        def extract_from_pak(pak: PakFile, entries: List[tuple[PakEntry, Path]]) -> int:
+            pak_path = pak.filepath
             count = 0
             resources = get_thread_resources()
             
@@ -487,7 +504,25 @@ class CachedPakReader(PakReader):
                         is_unknown = (e.path is None)
                         target_outp = outp
                         
-                        if e.compression == 0 and e.encryption == 0:
+                        if _is_chunked_entry(e, pak.chunk_table):
+                            parent = target_outp.parent
+                            if parent not in resources.created_dirs:
+                                parent.mkdir(parents=True, exist_ok=True)
+                                resources.created_dirs.add(parent)
+                            if is_unknown:
+                                stream = io.BytesIO()
+                                _read_entry_raw(e, pak_file, stream, chunk_table=pak.chunk_table)
+                                data = stream.getvalue()
+                                if data:
+                                    ext = guess_extension_from_header(data[:64])
+                                    if ext and not target_outp.suffix:
+                                        target_outp = target_outp.with_suffix("." + ext)
+                                with open(target_outp, "wb") as out_file:
+                                    out_file.write(data)
+                            else:
+                                with open(target_outp, "wb") as out_file:
+                                    _read_entry_raw(e, pak_file, out_file, chunk_table=pak.chunk_table)
+                        elif e.compression == 0 and e.encryption == 0:
                             size = int(e.decompressed_size)
                             header = b""
                             if is_unknown:
@@ -549,21 +584,21 @@ class CachedPakReader(PakReader):
 
         extracted = 0
         
-        total_files = sum(len(entries) for entries in groups.values())
+        total_files = sum(len(entries) for _pak, entries in groups.values())
         num_cores = os.cpu_count() or 4
         
         if total_files < 10:
-            for pak_path, entries in groups.items():
-                count = extract_from_pak(pak_path, entries)
+            for _pak_path, (pak, entries) in groups.items():
+                count = extract_from_pak(pak, entries)
                 extracted += count
         else:
             work_items = []
             
-            for pak_path, entries in groups.items():
+            for pak_path, (pak, entries) in groups.items():
                 entries.sort(key=lambda t: int(t[0].offset))
                 
                 if len(entries) <= 50:
-                    work_items.append((pak_path, entries))
+                    work_items.append((pak, entries))
                 else:
                     if len(groups) > 1:
                         batch_size = max(20, len(entries) // (num_cores * 2))
@@ -572,7 +607,7 @@ class CachedPakReader(PakReader):
                     
                     for i in range(0, len(entries), batch_size):
                         batch = entries[i:i + batch_size]
-                        work_items.append((pak_path, batch))
+                        work_items.append((pak, batch))
             
             max_workers = min(num_cores, len(work_items), 16)
             if max_workers > 8 and total_files < 1000:
@@ -580,9 +615,9 @@ class CachedPakReader(PakReader):
             
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_info = {}
-                for pak_path, batch in work_items:
-                    future = executor.submit(extract_from_pak, pak_path, batch)
-                    future_to_info[future] = (pak_path, len(batch))
+                for pak, batch in work_items:
+                    future = executor.submit(extract_from_pak, pak, batch)
+                    future_to_info[future] = (pak.filepath, len(batch))
                 
                 for future in as_completed(future_to_info):
                     pak_path, batch_size = future_to_info[future]

@@ -2,10 +2,22 @@ from __future__ import annotations
 import io
 import struct
 from dataclasses import dataclass
-from typing import Optional, BinaryIO, List
+import zstandard as zstd
+from typing import Optional, BinaryIO, List, Sequence
 
 
 MAGIC = 0x414B504B
+FEATURE_EXTRA_DATA = 0x10
+FEATURE_CHUNKED_RESOURCES = 0x20
+CHUNK_SIZE_SHIFT = 10
+CHUNK_UNCOMPRESSED_SIZE = 512 * 1024
+CHUNKED_ATTRIBS = {0x1000000, 0x1000400}
+
+
+@dataclass(frozen=True)
+class PakChunkEntry:
+    offset: int
+    size: int
 
 
 @dataclass
@@ -26,6 +38,7 @@ class PakEntry:
     compressed_size: int = 0
     decompressed_size: int = 0
     checksum: int = 0
+    attributes: int = 0
     compression: int = 0
     encryption: int = 0
     path: Optional[str] = None
@@ -41,6 +54,7 @@ class PakFile:
         self.entries: List[PakEntry] = []
         self.filepath: str = ""
         self._fs: Optional[BinaryIO] = None
+        self.chunk_table: tuple[PakChunkEntry, ...] = ()
 
 
     def read_contents(self, f: BinaryIO, expected_paths: Optional[dict[int, str]] = None) -> None:
@@ -69,7 +83,7 @@ class PakFile:
             raise IOError("Unexpected EOF reading PAK entry table")
 
 
-        if (features & 16) != 0:
+        if (features & FEATURE_EXTRA_DATA) != 0:
             f.seek(4, io.SEEK_CUR)
 
 
@@ -78,6 +92,8 @@ class PakFile:
             if len(key) != 128:
                 raise IOError("Unexpected EOF reading PAK key")
             _decrypt_pak_entry_data(entry_table, bytearray(key))
+
+        self.chunk_table = _read_chunk_table(f) if (features & FEATURE_CHUNKED_RESOURCES) != 0 else ()
 
         buf = memoryview(entry_table)
         off = 0
@@ -97,6 +113,7 @@ class PakFile:
                     compressed_size=csize,
                     decompressed_size=dsize,
                     checksum=checksum,
+                    attributes=attrib,
                     compression=compression,
                     encryption=encryption,
                 )
@@ -127,9 +144,47 @@ class PakFile:
     def read_entry(self, entry: PakEntry, out_stream: BinaryIO) -> None:
         if self._fs is None:
             self._fs = open(self.filepath, "rb")
-        _read_entry_raw(entry, self._fs, out_stream)
+        _read_entry_raw(entry, self._fs, out_stream, chunk_table=self.chunk_table)
 
 
+def _read_chunk_table(f: BinaryIO) -> tuple[PakChunkEntry, ...]:
+    header = f.read(8)
+    if len(header) != 8:
+        raise IOError("Unexpected EOF reading PAK chunk table header")
+
+    _, chunk_count = struct.unpack("<ii", header)
+    if chunk_count <= 0:
+        return ()
+
+    table_raw = f.read(chunk_count * 8)
+    if len(table_raw) != chunk_count * 8:
+        raise IOError("Unexpected EOF reading PAK chunk table")
+
+    chunks: List[PakChunkEntry] = []
+    high = 0
+    prev_offset = 0
+    for i in range(chunk_count):
+        offset32, size = struct.unpack_from("<II", table_raw, i * 8)
+        if i > 0 and offset32 < prev_offset:
+            high += 1 << 32
+        chunks.append(PakChunkEntry(offset=high | offset32, size=size >> CHUNK_SIZE_SHIFT))
+        prev_offset = offset32
+    return tuple(chunks)
+
+def _is_chunked_entry(entry: PakEntry, chunk_table: Sequence[PakChunkEntry]) -> bool:
+    if not chunk_table or entry.compression != 0 or entry.encryption != 0:
+        return False
+
+    chunk_id = int(entry.offset)
+    if chunk_id < 0 or chunk_id >= len(chunk_table) or int(entry.compressed_size) <= 0:
+        return False
+
+    attrib = int(entry.attributes)
+    if attrib in CHUNKED_ATTRIBS:
+        return True
+
+    # 4.2 chunked entries may carry additional high-bit flags; keep known marker bit check.
+    return (attrib & 0x1000000) == 0x1000000
 
 
 def _decrypt_key(key: bytearray) -> None:
@@ -219,7 +274,41 @@ def _decrypt_pak_entry_data(entry_table: bytearray, key: bytearray) -> None:
         entry_table[i] ^= (i + key[i % 32] * key[i % 29]) & 0xFF
 
 
-def _read_entry_raw(entry: PakEntry, read_stream: BinaryIO, out_stream: BinaryIO) -> None:
+def _read_entry_raw(
+    entry: PakEntry,
+    read_stream: BinaryIO,
+    out_stream: BinaryIO,
+    *,
+    chunk_table: Sequence[PakChunkEntry] = (),
+) -> None:
+    if _is_chunked_entry(entry, chunk_table):
+        remaining = int(entry.compressed_size)
+        chunk_id = int(entry.offset)
+        try:
+            # Keep chunk-path decompressor instance local (chunk extraction is parallelized).
+            zstd_dctx = zstd.ZstdDecompressor()
+        except Exception:
+            zstd_dctx = None
+
+        while remaining > 0:
+            chunk = chunk_table[chunk_id]
+            read_stream.seek(chunk.offset)
+            payload = read_stream.read(chunk.size)
+            if len(payload) != chunk.size:
+                raise IOError("Unexpected EOF reading chunk payload")
+            if chunk.size == CHUNK_UNCOMPRESSED_SIZE:
+                out_stream.write(payload)
+            else:
+                if zstd_dctx is None:
+                    raise RuntimeError("zstandard module is required for chunked resource decompression")
+                out_stream.write(zstd_dctx.decompress(payload))
+            remaining -= chunk.size
+            chunk_id += 1
+
+        out_stream.truncate(int(entry.decompressed_size))
+        out_stream.seek(0, io.SEEK_END)
+        return
+
     read_stream.seek(entry.offset)
     if entry.compression == 0:
         size = int(entry.decompressed_size)
@@ -278,8 +367,6 @@ def _read_entry_raw(entry: PakEntry, read_stream: BinaryIO, out_stream: BinaryIO
             if tail:
                 out_stream.write(tail)
     elif entry.compression == 2:  # Zstd
-        import zstandard as zstd
-
         dctx = _ZSTD_CTX or zstd.ZstdDecompressor()
         bio = io.BytesIO(bytes(comp_view))
         dctx.copy_stream(bio, out_stream)
@@ -293,4 +380,3 @@ try:
     _ZSTD_CTX = _zstd_mod.ZstdDecompressor()
 except Exception:
     _ZSTD_CTX = None
-
