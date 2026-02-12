@@ -575,6 +575,7 @@ class SoundViewer(QWidget):
             return
         self._parsed_tracks = res.tracks
         self._populate(res.tracks)
+        self.exp_pck.setVisible((res.container_type or "").lower() == "pck")
         ver = f" version: {res.bank_version}." if res.bank_version is not None else ""
         self.status.setText(f"Analyze complete. {res.container_type.upper()}{ver} Tracks: {len(res.tracks)}")
 
