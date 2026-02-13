@@ -33,6 +33,7 @@ class EnumManager:
             "SF6": "resources/data/enums/sf6_enums.json",
             "O2": "resources/data/enums/o2_enums.json",
             "DD2": "resources/data/enums/dd2_enums.json",
+            "KunitsuGami": "resources/data/enums/kunitsugami_enums.json",
         }
         
     @property
