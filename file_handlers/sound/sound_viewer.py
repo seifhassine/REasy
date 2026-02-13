@@ -10,9 +10,11 @@ from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QComboBox, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QMessageBox, QPushButton, QFileDialog, QSlider, QSpinBox, QStyle,
+    QMessageBox, QPushButton, QFileDialog, QInputDialog, QSlider, QSpinBox, QStyle,
     QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
+
+from tools.wem_converter import POPULAR_WEM_CODECS, convert_file_to_wem
 
 from .bnk_parser import (
     export_non_streaming_pck, extract_embedded_wem,
@@ -196,7 +198,7 @@ class SoundViewer(QWidget):
         self.exp_wav = mk("Export WAV", QStyle.SP_DialogSaveButton, self._on_export_wav)
         self.exp_wem = mk("Export WEM", QStyle.SP_DialogSaveButton, self._on_export_wem)
         self.exp_pck = mk("Export Non-Streaming PCK", QStyle.SP_DialogSaveButton, self._on_export_pck)
-        self.rep_wem = mk("Replace WEM", QStyle.SP_BrowserReload, self._on_replace)
+        self.rep_wem = mk("Replace Sound", QStyle.SP_BrowserReload, self._on_replace)
         for b in (self.play_btn, self.analyze_btn, self.stop_btn, self.skip_btn,
                   self.exp_wav, self.exp_wem, self.exp_pck, self.rep_wem):
             row.addWidget(b)
@@ -508,7 +510,7 @@ class SoundViewer(QWidget):
             return
         try:
             shutil.copyfile(twv, p)
-            self.status.setText(f"WAV exported to: {p}")
+            self.status.setText(f"WAV exported to: {p} (vgmstream decode)")
         except OSError as e:
             QMessageBox.warning(self, "Export Error", f"Failed to export WAV:\n{e}")
             self.status.setText("WAV export failed.")
@@ -522,29 +524,67 @@ class SoundViewer(QWidget):
         if p:
             self._write_export(p, export_non_streaming_pck(self.handler.raw_data), "Non-streaming PCK")
 
+    def _choose_wav_codec_tag(self) -> int | None:
+        items = [f"{name} (0x{tag:04X})" for name, tag in POPULAR_WEM_CODECS]
+        choice, ok = QInputDialog.getItem(
+            self,
+            "WAV Import Codec",
+            "Choose target codec (name + hex):",
+            items,
+            0,
+            False,
+        )
+        if not ok:
+            return None
+        for _, tag in POPULAR_WEM_CODECS:
+            if f"0x{tag:04X}" in choice:
+                return tag
+        return None
+
     def _on_replace(self):
         r = self._require_track("Replace")
         if not r:
             return
         s, t = r
-        src, _ = QFileDialog.getOpenFileName(self, "Select Replacement WEM", f"subsong_{s:04d}.wem",
-                                             "WEM Files (*.wem);;All Files (*.*)")
+        src, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Replacement WEM/WAV",
+            f"subsong_{s:04d}.wem",
+            "Audio Files (*.wem *.wav);;WEM Files (*.wem);;WAV Files (*.wav)",
+        )
         if not src:
             return
+        src_name = os.path.basename(src)
         try:
-            with open(src, "rb") as f:
-                d = f.read()
+            low = src.lower()
+            if low.endswith(".wem"):
+                with open(src, "rb") as f:
+                    d = f.read()
+            elif low.endswith(".wav"):
+                codec_tag = self._choose_wav_codec_tag()
+                if codec_tag is None:
+                    return
+                d = convert_file_to_wem(src, codec_tag=codec_tag)
+            else:
+                QMessageBox.warning(self, "Replace Error", "Only WEM and WAV files are supported.")
+                return
         except OSError as e:
-            QMessageBox.warning(self, "Replace Error", f"Failed to read replacement WEM:\n{e}")
+            QMessageBox.warning(self, "Replace Error", f"Failed to read replacement file\n{e}")
+            return
+        except Exception as e:
+            QMessageBox.warning(self, "Replace Error", f"Failed to convert replacement file\n{e}")
             return
         if not d:
-            QMessageBox.warning(self, "Replace Error", "Replacement WEM file is empty.")
+            QMessageBox.warning(self, "Replace Error", "Replacement file is empty.")
             return
         self.handler.replace_track_data(t.source_id, d)
         self.handler.raw_data = self.handler.rebuild()
         self._parsed_tracks = parse_soundbank(self.handler.raw_data).tracks
         self._populate(self._parsed_tracks)
-        self.status.setText(f"Replaced source ID {t.source_id} using {os.path.basename(src)}.")
+        codec_note = ""
+        if src.lower().endswith(".wav"):
+            codec_note = f" (codec 0x{codec_tag:04X})"
+        self.status.setText(f"Replaced source ID {t.source_id} using {src_name}{codec_note}.")
 
     def _on_play(self):
         self._stop()
