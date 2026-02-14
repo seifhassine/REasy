@@ -3,7 +3,7 @@ import uuid
 import sys
 from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
-    StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
+    Int4Data, Int4ColorData, StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
@@ -25,6 +25,7 @@ _STRUCT_DEFINITIONS = {
     "2float": "<2f",
     "2int": "<2i",
     "3int": "<3i",
+    "4int": "<4i",
     "sbyte": "<b",
     "ubyte": "<B",
     "4ubyte": "<4B",
@@ -51,6 +52,7 @@ pack_3double = _PACKERS["3double"]
 pack_2float = _PACKERS["2float"]
 pack_2int = _PACKERS["2int"]
 pack_3int = _PACKERS["3int"]
+pack_4int = _PACKERS["4int"]
 pack_sbyte = _PACKERS["sbyte"]
 pack_ubyte = _PACKERS["ubyte"]
 pack_4ubyte = _PACKERS["4ubyte"]
@@ -72,6 +74,7 @@ unpack_3double = _UNPACKERS["3double"]
 unpack_2float  = _UNPACKERS["2float"]
 unpack_2int    = _UNPACKERS["2int"]
 unpack_3int    = _UNPACKERS["3int"]
+unpack_4int    = _UNPACKERS["4int"]
 unpack_sbyte   = _UNPACKERS["sbyte"]
 unpack_ubyte   = _UNPACKERS["ubyte"]
 unpack_4ubyte  = _UNPACKERS["4ubyte"]
@@ -259,6 +262,7 @@ for _name, _func in (
     ("unpack_3double", unpack_3double),
     ("unpack_2int", unpack_2int),
     ("unpack_3int", unpack_3int),
+    ("unpack_4int", unpack_4int),
     ("unpack_4ubyte", unpack_4ubyte),
     ("unpack_16float", unpack_16float),
     ("unpack_20float", unpack_20float),
@@ -1046,6 +1050,8 @@ class RszFile:
                     out.extend(pack_3double(element.x, element.y, element.z))
                 elif isinstance(element, Int3Data):
                     out.extend(pack_3int(element.x, element.y, element.z))
+                elif isinstance(element, Int4Data) or isinstance(element, Int4ColorData):
+                    out.extend(pack_4int(element.x, element.y, element.z, element.w))
                 elif isinstance(element, Uint3Data):
                     out.extend(pack_uint(element.x))
                     out.extend(pack_uint(element.y))
@@ -1209,6 +1215,8 @@ class RszFile:
                 out.extend(pack_3double(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Int3Data):
                 out.extend(pack_3int(data_obj.x, data_obj.y, data_obj.z))
+            elif isinstance(data_obj, Int4Data) or isinstance(data_obj, Int4ColorData):
+                out.extend(pack_4int(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, Uint3Data):
                 out.extend(pack_uint(data_obj.x))
                 out.extend(pack_uint(data_obj.y))

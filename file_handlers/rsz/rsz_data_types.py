@@ -253,6 +253,19 @@ class Int4Data:
         values = [ctx.read_value(ctx.unpack_int, 4) for _ in range(4)]
         return cls(values[0], values[1], values[2], values[3], ctx.original_type)
 
+class Int4ColorData:
+    def __init__(self, x: int = 0, y: int = 0, z: int = 0, w: int = 0, orig_type: str = ""):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
+        self.orig_type = orig_type
+
+    @classmethod
+    def parse(cls, ctx):
+        values = [ctx.read_value(ctx.unpack_int, 4) for _ in range(4)]
+        return cls(values[0], values[1], values[2], values[3], ctx.original_type)
+
 class Float2Data:
     def __init__(self, x: float = 0, y: float = 0, orig_type: str = ""):
         self.x = x
@@ -754,6 +767,7 @@ NON_ARRAY_PARSERS = MappingProxyType({
     ObjectData: ObjectData.parse,
     Vec3Data: Vec3Data.parse,
     Vec3ColorData: Vec3ColorData.parse,
+    Int4ColorData: Int4ColorData.parse,
     Vec4Data: Vec4Data.parse,
     Float4Data: Float4Data.parse,
     QuaternionData: QuaternionData.parse,
@@ -832,6 +846,9 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
     
     if field_type == "vec3" and "color" in field_name.lower():
         return Vec3ColorData
+    
+    if field_type == "int4" and "color" in field_name.lower():
+        return Int4ColorData
         
     if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
         return MaybeObject

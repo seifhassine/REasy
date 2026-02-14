@@ -1061,7 +1061,7 @@ class RszDiffer:
             ArrayData, StructData, ObjectData, ResourceData, UserDataData,
             BoolData, StringData, Float2Data, Float3Data, Float4Data,
             Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData, Mat4Data,
-            Int2Data, Int3Data, Int4Data, Uint2Data, Uint3Data,
+            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, OBBData, AABBData, CapsuleData,
@@ -1108,7 +1108,7 @@ class RszDiffer:
             if val1.x != val2.x or val1.y != val2.y or val1.z != val2.z:
                 changes.append(f"{path}: ({val1.x}, {val1.y}, {val1.z}) → ({val2.x}, {val2.y}, {val2.z})")
 
-        elif isinstance(val1, (Float4Data, Vec4Data, QuaternionData, Int4Data)):
+        elif isinstance(val1, (Float4Data, Vec4Data, QuaternionData, Int4Data, Int4ColorData)):
             if val1.x != val2.x or val1.y != val2.y or val1.z != val2.z or val1.w != val2.w:
                 changes.append(f"{path}: ({val1.x}, {val1.y}, {val1.z}, {val1.w}) → ({val2.x}, {val2.y}, {val2.z}, {val2.w})")
                 
@@ -1261,7 +1261,7 @@ class RszDiffer:
             ArrayData, StructData, ObjectData, ResourceData, UserDataData,
             BoolData, StringData, Float2Data, Float3Data, Float4Data,
             Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData,
-            Int2Data, Int3Data, Int4Data, Uint2Data, Uint3Data,
+            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, AABBData, OBBData, CapsuleData,
@@ -1288,7 +1288,7 @@ class RszDiffer:
             return f"({value.x}, {value.y})"
         elif isinstance(value, (Float3Data, Vec3Data, PositionData, Int3Data, Uint3Data)):
             return f"({value.x}, {value.y}, {value.z})"
-        elif isinstance(value, (Float4Data, Vec4Data, QuaternionData, Int4Data)):
+        elif isinstance(value, (Float4Data, Vec4Data, QuaternionData, Int4Data, Int4ColorData)):
             return f"({value.x}, {value.y}, {value.z}, {value.w})"
         elif isinstance(value, ColorData):
             return f"Color({value.r}, {value.g}, {value.b}, {value.a})"

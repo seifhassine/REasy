@@ -5,7 +5,7 @@ from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
     ColorData, RangeData, RangeIData, GuidData, GameObjectRefData, ArrayData, CapsuleData, OBBData, Mat4Data, Int2Data,
-    Int3Data, Int4Data, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, AreaDataOld, RectData, LineSegmentData,
+    Int3Data, Int4Data, Int4ColorData, Float2Data, Float3Data, AABBData, SphereData, CylinderData, AreaData, AreaDataOld, RectData, LineSegmentData,
     PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, SizeData, is_reference_type
 )
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -1857,7 +1857,7 @@ class RszArrayClipboard:
                 "z": element.z,
                 "orig_type": element.orig_type
             }
-        elif isinstance(element, Int4Data):
+        elif isinstance(element, Int4Data) or isinstance(element, Int4ColorData):
             return {
                 "type": "Int4Data",
                 "x": element.x,
@@ -2732,7 +2732,7 @@ class RszArrayClipboard:
                 orig_type
             )
             
-        elif element_type == "Int4Data":
+        elif element_type == "Int4Data" or element_type == "Int4ColorData":
             return Int4Data(
                 element_data.get("x", 0),
                 element_data.get("y", 0),
