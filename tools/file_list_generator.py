@@ -1,10 +1,68 @@
 import os
-import json
-import subprocess
-import sys
 import io
-from pathlib import Path
 from collections import defaultdict
+
+
+VARIATION_SUFFIXES = [
+    ".x64",
+    ".stm",
+    ".ar",
+    ".de",
+    ".en",
+    ".es419",
+    ".es",
+    ".fr",
+    ".it",
+    ".ja",
+    ".hi",
+    ".ko",
+    ".th",
+    ".pl",
+    ".ptbr",
+    ".ru",
+    ".zhcn",
+    ".zhtw",
+    ".x64.stm",
+    ".x64.ar",
+    ".x64.de",
+    ".x64.en",
+    ".x64.es419",
+    ".x64.es",
+    ".x64.fr",
+    ".x64.it",
+    ".x64.ja",
+    ".x64.hi",
+    ".x64.ko",
+    ".x64.th",
+    ".x64.pl",
+    ".x64.ptbr",
+    ".x64.ru",
+    ".x64.zhcn",
+    ".x64.zhtw",
+]
+
+
+def expand_with_variations(paths):
+    expanded = set()
+    for path in paths:
+        normalized = path.lower()
+        expanded.add(normalized)
+        for suffix in VARIATION_SUFFIXES:
+            if not normalized.endswith(suffix):
+                expanded.add(f"{normalized}{suffix}")
+    return expanded
+
+
+def expand_with_streaming(paths, path_prefix):
+    expanded = set()
+    prefix = (path_prefix.rstrip('/') + '/').lower()
+    streaming_prefix = f"{prefix}streaming/"
+    for path in paths:
+        normalized = path.lower()
+        expanded.add(normalized)
+        if normalized.startswith(prefix) and not normalized.startswith(streaming_prefix):
+            expanded.add(f"{streaming_prefix}{normalized[len(prefix):]}")
+    return expanded
 
 
 class ExtensionAnalyzer:
@@ -16,35 +74,15 @@ class ExtensionAnalyzer:
     
     def run_extension_dumper(self, exe_path):
         try:
-            script_dir = Path(__file__).parent.parent
-            dumper_path = script_dir / "reversing" / "extension_info" / "extension_dumper.py"
-            
-            if not dumper_path.exists():
-                return False, f"Extension dumper not found at: {dumper_path}"
-            
-            cmd = [sys.executable, str(dumper_path), exe_path]
-            for ext in self.target_extensions:
-                cmd.extend(["-ext", ext])
-            
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            
-            if result.returncode != 0:
-                return False, f"Extension dumper failed: {result.stderr}"
-            
-            try:
-                output = json.loads(result.stdout)
-                if "error" in output:
-                    return False, f"Dumper error: {output['error']}"
-                self.dumped_extensions = output
-                return True, None
-            except json.JSONDecodeError as e:
-                return False, f"Failed to parse dumper output: {e}\nOutput: {result.stdout}"
-                
-        except subprocess.TimeoutExpired:
-            return False, "Extension dumper timed out after 60 seconds"
+            from reversing.extension_info import extension_dumper as dumper
+            output = dumper.extract_extensions(exe_path, self.target_extensions)
+            if "error" in output:
+                return False, f"Dumper error: {output['error']}"
+            self.dumped_extensions = output
+            return True, None
         except Exception as e:
-            return False, f"Unexpected error: {e}"
-    
+            return False, f"Failed to run extension dumper: {e}"
+
     def parse_list_file(self, list_file_path):
         if not os.path.exists(list_file_path):
             return False, f"List file not found: {list_file_path}"
@@ -173,12 +211,21 @@ def validate_list_file(list_path):
 
 
 class ExePathExtractor:
-    def __init__(self, extensions, extension_versions, path_prefix="natives/stm/"):
+    def __init__(
+        self,
+        extensions,
+        extension_versions,
+        path_prefix="natives/stm/",
+        include_variations=False,
+        include_streaming=False
+    ):
         self.extensions = [ext.lower() for ext in extensions]
         self.extension_versions = {ext.lower(): {v.lower() for v in versions} 
                                     for ext, versions in extension_versions.items()}
         self.path_prefix = path_prefix.rstrip('/') + '/'
         self.collected_paths = set()
+        self.include_variations = include_variations
+        self.include_streaming = include_streaming
     
     def _extract_strings(self, data, min_len=10):
         strings = []
@@ -278,6 +325,13 @@ class ExePathExtractor:
         if progress_callback:
             progress_callback("Extraction complete!", 100, 100)
         
+        paths = self.collected_paths
+        if self.include_streaming:
+            paths = expand_with_streaming(paths, self.path_prefix)
+        if self.include_variations:
+            paths = expand_with_variations(paths)
+        self.collected_paths = paths
+        
         return True, None, len(self.collected_paths)
     
     def export_to_file(self, output_path):
@@ -291,7 +345,14 @@ class ExePathExtractor:
 
 
 class PathCollector:
-    def __init__(self, extensions, extension_versions=None, path_prefix="natives/stm/"):
+    def __init__(
+        self,
+        extensions,
+        extension_versions=None,
+        path_prefix="natives/stm/",
+        include_variations=False,
+        include_streaming=False
+    ):
         self.extensions = [ext.lower() for ext in extensions]
         self.extension_versions = {}
         if extension_versions:
@@ -299,6 +360,8 @@ class PathCollector:
                 self.extension_versions[ext.lower()] = {v.lower() for v in versions}
         self.path_prefix = path_prefix.rstrip('/') + '/'
         self.collected_paths = set()
+        self.include_variations = include_variations
+        self.include_streaming = include_streaming
     
     def filter_path_by_extensions(self, path):
         path_lower = path.lower()
@@ -538,13 +601,15 @@ class PathCollector:
             if not pak_hashes:
                 return False, "No hashes found in PAK files", set()
             
+            paths_to_validate = self._get_paths_for_validation()
+
             if progress_callback:
-                progress_callback("Validating collected paths...", 0, len(self.collected_paths))
+                progress_callback("Validating collected paths...", 0, len(paths_to_validate))
             
             validated_paths = set()
-            total_paths = len(self.collected_paths)
+            total_paths = len(paths_to_validate)
             
-            for idx, path in enumerate(self.collected_paths, 1):
+            for idx, path in enumerate(paths_to_validate, 1):
                 if progress_callback and idx % 1000 == 0:
                     progress_callback(f"Validating paths...\nChecked: {idx}/{total_paths}\nValid: {len(validated_paths)}", idx, total_paths)
                 
@@ -561,7 +626,7 @@ class PathCollector:
     
     def export_to_file(self, output_path, paths=None):
         try:
-            paths_to_export = paths if paths is not None else self.collected_paths
+            paths_to_export = paths if paths is not None else self._get_paths_for_validation()
             sorted_paths = sorted(p.lower() for p in paths_to_export)
             with open(output_path, 'w', encoding='utf-8') as f:
                 for path in sorted_paths:
@@ -571,7 +636,15 @@ class PathCollector:
             return False, f"Failed to write output file: {e}"
     
     def get_path_count(self):
-        return len(self.collected_paths)
+        return len(self._get_paths_for_validation())
+
+    def _get_paths_for_validation(self):
+        paths = self.collected_paths
+        if self.include_streaming:
+            paths = expand_with_streaming(paths, self.path_prefix)
+        if self.include_variations:
+            paths = expand_with_variations(paths)
+        return paths
     
     def clear(self):
         self.collected_paths.clear()

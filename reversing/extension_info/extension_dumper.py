@@ -604,23 +604,11 @@ def eval_block(img, base, secs, s, start_va, call_off, m):
 
 # --- CLI ----------------------------------------------------------------------
 
-def main():
-    p = argparse.ArgumentParser(description="Extract {UTF-16 string:number} via known -ext anchors")
-    p.add_argument("pe")
-    p.add_argument("-ext", action="append", default=[], help="known extension string (repeatable)")
-    p.add_argument("-F","--ext-file", help="file with one extension per line (# comments ok)")
-    p.add_argument("-o","--output", help="output JSON path")
-    a = p.parse_args()
-
-    exts = list(a.ext)
-    if a.ext_file:
-        for ln in open(a.ext_file, "r", encoding="utf-8"):
-            t = ln.strip()
-            if t and not t.startswith("#"): exts.append(t)
+def extract_extensions(pe_path, exts):
     if not exts:
-        print(json.dumps({"error":"no -ext provided"})); return
+        return {"error": "no -ext provided"}
 
-    base, img, secs = map_pe(a.pe)
+    base, img, secs = map_pe(pe_path)
     near_map, ind_map = index_calls(img, base, secs)
 
     aliases = set()
@@ -648,7 +636,7 @@ def main():
                 aliases.update(chain)
     
     if not aliases:
-        print(json.dumps({"error":"no callees resolved from provided -ext strings"})); return
+        return {"error": "no callees resolved from provided -ext strings"}
 
     sites = {}
     for kind, tgt in aliases:
@@ -664,6 +652,29 @@ def main():
         if not txt: continue
         if txt in out: continue
         out[txt] = edx
+
+    return out
+
+
+def main():
+    p = argparse.ArgumentParser(description="Extract {UTF-16 string:number} via known -ext anchors")
+    p.add_argument("pe")
+    p.add_argument("-ext", action="append", default=[], help="known extension string (repeatable)")
+    p.add_argument("-F","--ext-file", help="file with one extension per line (# comments ok)")
+    p.add_argument("-o","--output", help="output JSON path")
+    a = p.parse_args()
+
+    exts = list(a.ext)
+    if a.ext_file:
+        for ln in open(a.ext_file, "r", encoding="utf-8"):
+            t = ln.strip()
+            if t and not t.startswith("#"):
+                exts.append(t)
+
+    out = extract_extensions(a.pe, exts)
+    if "error" in out:
+        print(json.dumps(out, ensure_ascii=False))
+        return
 
     js = json.dumps(out, indent="\t", ensure_ascii=False)
     out_path = a.output or f"{os.path.splitext(os.path.basename(a.pe))[0]}_extensions.json"

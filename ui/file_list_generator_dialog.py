@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView,
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame,
-    QLineEdit, QInputDialog
+    QLineEdit, QInputDialog, QCheckBox
 )
 from tools.file_list_generator import ExtensionAnalyzer, validate_game_executable, PathCollector, ExePathExtractor
 
@@ -34,6 +34,8 @@ class FileListGeneratorDialog(QDialog):
         self.path_collector = None
         self.exe_path_extractor = None
         self.path_prefix = "natives/stm/"
+        self.include_variations = False
+        self.include_streaming = False
         
         self._create_ui()
     
@@ -98,6 +100,14 @@ class FileListGeneratorDialog(QDialog):
         prefix_layout.addWidget(prefix_label)
         prefix_layout.addWidget(self.prefix_input)
         config_layout.addLayout(prefix_layout)
+
+        self.variation_checkbox = QCheckBox("Add extra x64/language variations to each entry")
+        self.variation_checkbox.toggled.connect(self._on_variations_toggled)
+        config_layout.addWidget(self.variation_checkbox)
+
+        self.streaming_checkbox = QCheckBox("Add streaming/ variant after the prefix for each entry")
+        self.streaming_checkbox.toggled.connect(self._on_streaming_toggled)
+        config_layout.addWidget(self.streaming_checkbox)
         
         layout.addWidget(config_group)
     
@@ -190,9 +200,17 @@ class FileListGeneratorDialog(QDialog):
     def _update_run_button(self):
         has_exe = self.game_exe_path is not None
         self.run_btn.setEnabled(has_exe)
+        # Extract button is only enabled after analysis
+        # (will be enabled in _display_results)
     
     def _on_prefix_changed(self, text):
         self.path_prefix = text
+
+    def _on_variations_toggled(self, checked):
+        self.include_variations = checked
+
+    def _on_streaming_toggled(self, checked):
+        self.include_streaming = checked
     
     def _run_analysis(self):
         if not self.game_exe_path:
@@ -333,7 +351,13 @@ class FileListGeneratorDialog(QDialog):
             return
         
         pak_directory = os.path.dirname(self.game_exe_path)
-        self.path_collector = PathCollector(extensions, extension_versions=self.analyzer.combined_extensions, path_prefix=self.path_prefix)
+        self.path_collector = PathCollector(
+            extensions,
+            extension_versions=self.analyzer.combined_extensions,
+            path_prefix=self.path_prefix,
+            include_variations=self.include_variations,
+            include_streaming=self.include_streaming
+        )
         
         progress = QProgressDialog("Initializing...", "Stop", 0, 100, self)
         progress.setWindowTitle("Collecting Paths from PAK Files")
@@ -436,7 +460,9 @@ class FileListGeneratorDialog(QDialog):
         self.exe_path_extractor = ExePathExtractor(
             list(self.analyzer.combined_extensions.keys()),
             self.analyzer.combined_extensions,
-            self.path_prefix
+            self.path_prefix,
+            include_variations=self.include_variations,
+            include_streaming=self.include_streaming
         )
         
         progress = QProgressDialog("Extracting paths from executable...", "Stop", 0, 100, self)
