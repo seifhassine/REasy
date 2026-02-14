@@ -285,7 +285,7 @@ class RszCommunityTemplateManager:
         "RE7", "RE7 RT", "RE8", "RE Resistance",
         "RE4", "Onimusha 2",
         "Street Fighter 6", "Devil May Cry 5",
-        "Monster Hunter Rise", "Monster Hunter Wilds", "Pragmata",
+        "Monster Hunter Rise", "Monster Hunter Wilds", "Monster Hunter Stories 3", "Pragmata",
         "Dragon Dogma 2"}
         if game not in ALLOWED:
             return {"success": False, "message": "Unknown game id."}

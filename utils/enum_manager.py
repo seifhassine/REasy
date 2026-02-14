@@ -28,6 +28,7 @@ class EnumManager:
             "RE7RT": "resources/data/enums/re7rt_enums.json",
             "MHWilds": "resources/data/enums/mhws_enums.json",
             "MHRise": "resources/data/enums/mhrise_enums.json",
+            "MHST3": "resources/data/enums/mhst3_enums.json",
             "Pragmata": "resources/data/enums/pragmata_enums.json",
             "DMC5": "resources/data/enums/dmc5_enums.json",
             "SF6": "resources/data/enums/sf6_enums.json",

@@ -85,6 +85,7 @@ copy "resources\data\dumps\rszo2.json" "dist\rszo2.json"
 copy "resources\data\dumps\rszdd2.json" "dist\rszdd2.json"
 copy "resources\data\dumps\rszmhrise.json" "dist\rszmhrise.json"
 copy "resources\data\dumps\rszpragmata.json" "dist\rszpragmata.json"
+copy "resources\data\dumps\rszmhst3.json" "dist\rszmhst3.json"
 
 
 

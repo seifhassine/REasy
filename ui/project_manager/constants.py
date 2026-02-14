@@ -32,7 +32,7 @@ def ensure_projects_root() -> None:
 EXPECTED_NATIVE: dict[str, tuple[str, ...]] = {
     **{g: ("natives", "stm") for g in (
         "RE4","RE8","RE2RT","RE3RT","RE7RT","RE3","DD2",
-        "REResistance","SF6","MHWilds","MHRise","O2", "Pragmata","KunitsuGami")},
+        "REResistance","SF6","MHWilds","MHRise","MHST3","O2", "Pragmata","KunitsuGami")},
     **{g: ("natives", "x64") for g in ("RE2", "RE7", "DMC5")},
 }
 
