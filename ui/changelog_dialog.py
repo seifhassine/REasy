@@ -159,10 +159,11 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "BNK/PCK file read and limited write support."),
-            ("New", "Support for GDeflate compressed textures. (inspired by <a href=https://github.com/kagenocookie>shadowcookie</a>)"),
-            ("Improved", "Added more paths to Monster Hunter Stories 3 Demo file list."),
-            ("Fixed", "PAK extraction failed for some files in Pragmata Demo and Monster Hunter Stories 3 Demo. (credit to <a href=https://github.com/Ekey>Ekey</a>)")
+            ("New", "Added support for Monster Hunter Stories 3 Demo and Kunitsu-Gami."),
+            ("New", "Ability to directly import .wav sounds into BNK/PCK files (only PCM encoding is supported for wav -> wem)."),
+            ("New", "RSZ: Int4 data and Int4 colors UI support."),
+            ("Improved", "More options in File List Generator, resulting in more accurate file lists."),
+            ("Fixed", "File list generator was not working when running under REasy.exe.")
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
