@@ -4,7 +4,6 @@ from pathlib import Path
 # PCM-only codec options.
 POPULAR_WEM_CODECS: list[tuple[str, int]] = [
     ("PCM S16LE (sample/default)", 0xFFFE),
-    ("PCM S16LE (classic PCM tag)", 0x0001),
 ]
 
 
@@ -16,11 +15,29 @@ def get_codec_profile(codec_tag: int) -> tuple[str, int]:
     return POPULAR_WEM_CODECS[0]
 
 
-_WEM_JUNK = bytes([
-    0x06, 0x00, 0x00, 0x00, 0x01, 0x41, 0x00, 0x00,
+_WEM_JUNK_CHUNK = bytes([
     0x4A, 0x55, 0x4E, 0x4B, 0x04, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00,
 ])
+_PCM_SUBFORMAT_GUID = bytes([
+    0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00,
+    0x10, 0x00,
+    0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71,
+])
+
+
+def _default_channel_mask(channels: int) -> int:
+    return {
+        1: 0x00000004,
+        2: 0x00000003,
+        3: 0x00000007,
+        4: 0x00000033,
+        5: 0x00000037,
+        6: 0x0000003F,
+        7: 0x00000013F,
+        8: 0x0000063F,
+    }.get(channels, 0)
 
 
 def _riff_chunks(blob: bytes) -> list[tuple[bytes, bytes]]:
@@ -53,15 +70,37 @@ def _wav_to_wem_bytes(wav_data: bytes, *, codec_tag: int) -> bytes:
     if fmt is None or pcm is None or len(fmt) < 16:
         raise ValueError("WAV must contain valid fmt and data chunks.")
 
-    audio_format, bits = struct.unpack_from("<H12xH", fmt, 0)
-    if audio_format != 0x0001 or bits != 16:
+    audio_format, channels, sample_rate, byte_rate, block_align, bits = struct.unpack_from("<HHIIHH", fmt, 0)
+    if bits != 16:
+        raise ValueError("Only PCM s16le WAV input is supported.")
+    if audio_format == 0xFFFE:
+        if len(fmt) < 40:
+            raise ValueError("Extensible WAV input is missing required fields.")
+        source_channel_mask = struct.unpack_from("<I", fmt, 20)[0]
+        subformat = fmt[24:40]
+        if subformat != _PCM_SUBFORMAT_GUID:
+            raise ValueError("Only PCM s16le WAV input is supported.")
+    elif audio_format == 0x0001:
+        source_channel_mask = _default_channel_mask(channels)
+    else:
         raise ValueError("Only PCM s16le WAV input is supported.")
 
-    wem_fmt = bytearray(fmt)
-    wem_fmt[0:2] = struct.pack("<H", codec_tag & 0xFFFF)
+    wem_fmt = struct.pack(
+        "<HHIIHHHHI16s",
+        codec_tag & 0xFFFF,
+        channels,
+        sample_rate,
+        byte_rate,
+        block_align,
+        bits,
+        22,
+        bits,
+        source_channel_mask,
+        _PCM_SUBFORMAT_GUID,
+    )
 
     wem = bytearray(b"RIFF\x00\x00\x00\x00WAVE")
-    wem += b"fmt " + struct.pack("<I", len(wem_fmt) + 8) + bytes(wem_fmt) + _WEM_JUNK
+    wem += b"fmt " + struct.pack("<I", len(wem_fmt)) + wem_fmt + _WEM_JUNK_CHUNK
     wem += b"data" + struct.pack("<I", len(pcm)) + pcm
     if len(pcm) & 1:
         wem += b"\x00"
