@@ -435,6 +435,9 @@ class FileTab:
             if isinstance(handler, CfilHandler):
                 handler.filepath = self.filename or ""
                 
+            if isinstance(handler, UvsHandler):
+                handler.filepath = self.filename or ""
+                
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
             handler.highlight_manager = self.highlight_manager

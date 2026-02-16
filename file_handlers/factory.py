@@ -10,6 +10,7 @@ from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.base_handler import FileHandler
 from file_handlers.sound.sound_handler import SoundHandler
+from file_handlers.uvs.uvs_handler import UvsHandler
 
 
 def get_handler_for_data(data: bytes) -> FileHandler:
@@ -25,6 +26,7 @@ def get_handler_for_data(data: bytes) -> FileHandler:
         DdsHandler,
         MeshHandler,        
         SoundHandler,
+        UvsHandler,
     ]:
         if handler_class.can_handle(data):
             return handler_class()
