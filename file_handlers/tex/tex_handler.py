@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List
 from file_handlers.base_handler import BaseFileHandler
 
 from .tex_file import TexFile, TEX_MAGIC
-from .dds import build_dds_dx10, convert_dds_for_pil_compatibility
+from .dds import build_dds_dx10
 
 
 _HELPER_CMD_CACHE: list[str] | None = None
@@ -138,13 +138,10 @@ class TexHandler(BaseFileHandler):
         pass
 
     def create_viewer(self):
-        try:
-            from .tex_viewer import TexViewer
-            v = TexViewer(self)
-            v.modified_changed.connect(self.modified_changed.emit)
-            return v
-        except Exception:
-            return None
+        from .tex_viewer import TexViewer
+        v = TexViewer(self)
+        v.modified_changed.connect(self.modified_changed.emit)
+        return v
 
     def build_dds_bytes(self, image_index: int = 0) -> bytes:
         if not self.tex:
@@ -169,8 +166,4 @@ class TexHandler(BaseFileHandler):
             array_size=max(1, getattr(header, 'image_count', 1)),
         )
         return dds_header + b"".join(mip_bytes)
-
-    def build_dds_bytes_for_viewing(self, image_index: int = 0) -> bytes:
-        dds_data = self.build_dds_bytes(image_index)
-        return convert_dds_for_pil_compatibility(dds_data)
 

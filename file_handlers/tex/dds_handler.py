@@ -46,14 +46,8 @@ class DdsHandler(BaseFileHandler):
         pass
 
     def create_viewer(self):
-        try:
-            from .tex_viewer import TexViewer
-            v = TexViewer(self)
-            v.modified_changed.connect(self.modified_changed.emit)
-            return v
-        except Exception:
-            return None
+        from .tex_viewer import TexViewer
+        v = TexViewer(self)
+        v.modified_changed.connect(self.modified_changed.emit)
+        return v
 
-    def build_dds_bytes_for_viewing(self, image_index: int = 0) -> bytes:
-        from .dds import convert_dds_for_pil_compatibility
-        return convert_dds_for_pil_compatibility(self.raw_data)

@@ -7,6 +7,6 @@ requests
 firebase-admin
 #NodeGraphQt
 zstandard
-Pillow
+texture2ddecoder
 PyOpenGL
 numpy
