@@ -162,7 +162,7 @@ class ChangelogDialog(QDialog):
             ("New", "Full UVS file support."),
             ("New", "BNK/PCK: Support for more import formats (.mp3, .ogg, and more)."),
             ("Improved", "Tex: Support for more texture formats."),
-            ("Fixed", "Tex: Channel behavior was incorrect.")
+            ("Fixed", "Tex: Channel behavior was incorrect."),
             ("Fixed", "BNK/PCK: Bad wav->wem conversion leading to jittery/high pitch imported sounds.")
         ]
         for tag, text in changes:
