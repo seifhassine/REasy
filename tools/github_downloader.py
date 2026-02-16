@@ -24,6 +24,38 @@ def _http_json(url: str, timeout: int = 20) -> dict:
         return json.load(r)
 
 
+def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str, *, parent_window=None):
+    from ui.project_manager.pak_status_dialog import run_with_progress
+
+    def _do_download(br):
+        br.text.emit(f"Connecting to {display_name}…")
+        with requests.get(asset_url, stream=True, timeout=60) as r:
+            r.raise_for_status()
+            total = int(r.headers.get("content-length", 0))
+            got, buf = 0, io.BytesIO()
+            for chunk in r.iter_content(chunk_size=8192):
+                buf.write(chunk)
+                got += len(chunk)
+                if total:
+                    pct = int(got * 100 / total)
+                    br.prog.emit(pct)
+                    br.text.emit(f"Downloading {display_name}… {pct}%")
+        br.text.emit("Extracting…")
+        buf.seek(0)
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        if asset_url.endswith(".tar.gz"):
+            import tarfile
+            with tarfile.open(fileobj=buf, mode="r:gz") as tf:
+                tf.extractall(cache_dir)
+        else:
+            with zipfile.ZipFile(buf) as zf:
+                zf.extractall(cache_dir)
+
+    run_with_progress(parent_window, f"Download {display_name}", _do_download)
+
+
 class GitHubToolDownloader:
     def __init__(self, owner_repo: str, cache_subdir: str, exe_name: str,
                  asset_url_fn: Callable[[Optional[str], list[dict]], str],
@@ -72,39 +104,48 @@ class GitHubToolDownloader:
 
     def _download(self, tag: Optional[str], *, parent_window=None) -> Path:
         asset_url = self._resolve_asset_url(tag)
-        display, cache_dir = self.display_name, self.cache_dir
-        exe_path, version_file = self.exe_path, self._version_file
-
-        from ui.project_manager.pak_status_dialog import run_with_progress
-
-        def _do_download(br):
-            br.text.emit(f"Connecting to {display} release {tag or 'latest'}…")
-            with requests.get(asset_url, stream=True, timeout=60) as r:
-                r.raise_for_status()
-                total = int(r.headers.get("content-length", 0))
-                got, buf = 0, io.BytesIO()
-                for chunk in r.iter_content(chunk_size=8192):
-                    buf.write(chunk)
-                    got += len(chunk)
-                    if total:
-                        pct = int(got * 100 / total)
-                        br.prog.emit(pct)
-                        br.text.emit(f"Downloading {display}… {pct}%")
-            br.text.emit("Extracting…")
-            buf.seek(0)
-            if cache_dir.exists():
-                shutil.rmtree(cache_dir)
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            if asset_url.endswith(".tar.gz"):
-                import tarfile
-                with tarfile.open(fileobj=buf, mode="r:gz") as tf:
-                    tf.extractall(cache_dir)
-            else:
-                with zipfile.ZipFile(buf) as zf:
-                    zf.extractall(cache_dir)
-            if exe_path.exists() and os.name != "nt":
-                exe_path.chmod(exe_path.stat().st_mode | 0o755)
-            version_file.write_text(tag or "latest")
-
-        run_with_progress(parent_window, f"Download {display} {tag or 'latest'}", _do_download)
+        _download_and_extract_archive(
+            asset_url,
+            self.cache_dir,
+            f"{self.display_name} {tag or 'latest'}",
+            parent_window=parent_window,
+        )
+        if self.exe_path.exists() and os.name != "nt":
+            self.exe_path.chmod(self.exe_path.stat().st_mode | 0o755)
+        self._version_file.write_text(tag or "latest")
         return self.exe_path
+
+
+class StaticToolDownloader:
+    def __init__(self, *, asset_url: str, cache_subdir: str, exe_name: str, display_name: str = ""):
+        self.asset_url = asset_url
+        self.display_name = display_name or exe_name
+        self.cache_dir = _get_base_dir() / "downloads" / cache_subdir
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.exe_name = exe_name
+
+    @property
+    def exe_path(self) -> Path:
+        direct = self.cache_dir / self.exe_name
+        if direct.exists():
+            return direct
+        for p in self.cache_dir.rglob(self.exe_name):
+            if p.is_file():
+                return p
+        return direct
+
+    def status(self) -> Tuple[bool, Optional[str]]:
+        return (not self.exe_path.exists(), None)
+
+    def ensure(self, *, auto_download: bool = True, parent_window=None) -> Path:
+        if self.exe_path.exists():
+            return self.exe_path
+        if not auto_download:
+            raise RuntimeError(f"{self.display_name} is not present")
+        _download_and_extract_archive(self.asset_url, self.cache_dir, self.display_name, parent_window=parent_window)
+        exe = self.exe_path
+        if not exe.exists():
+            raise RuntimeError(f"{self.display_name} download completed but executable was not found")
+        if os.name != "nt":
+            exe.chmod(exe.stat().st_mode | 0o755)
+        return exe

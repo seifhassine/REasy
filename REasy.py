@@ -29,6 +29,7 @@ from ui.update_notification import UpdateNotificationManager
 from ui.rsz_differ_dialog import RszDifferDialog
 from ui.file_list_generator_dialog import FileListGeneratorDialog
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
+from tools.ffmpeg_downloader import ensure_ffmpeg, ffmpeg_status
 from ui.changelog_dialog import ChangelogDialog
 
 from PySide6.QtCore import (
@@ -1613,6 +1614,18 @@ class REasyEditorApp(QMainWindow):
                     tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
+    def _refresh_ffmpeg_status_label(self, label):
+        need, _ = ffmpeg_status()
+        label.setText("Not downloaded" if need else "Installed")
+
+    def _download_ffmpeg_from_settings(self, dialog, status_label):
+        try:
+            ensure_ffmpeg(auto_download=True, parent_window=dialog)
+            self._refresh_ffmpeg_status_label(status_label)
+            QMessageBox.information(dialog, "FFmpeg", "FFmpeg download complete.")
+        except Exception as e:
+            QMessageBox.critical(dialog, "FFmpeg", f"Failed to download FFmpeg\n{e}")
+
     def open_settings_dialog(self):
         dialog, _ = create_standard_dialog(self, self.tr("Settings"), "500x400")
         
@@ -1650,6 +1663,17 @@ class REasyEditorApp(QMainWindow):
         vgmstream_browse_btn = QPushButton("Browse...")
         vgmstream_layout.addWidget(vgmstream_browse_btn)
         general_layout.addLayout(vgmstream_layout)
+
+        ffmpeg_layout = QHBoxLayout()
+        ffmpeg_layout.setContentsMargins(0, 0, 0, 0)
+        ffmpeg_label = QLabel("FFmpeg (Auto-download):")
+        ffmpeg_layout.addWidget(ffmpeg_label)
+        ffmpeg_status_label = QLabel("")
+        ffmpeg_layout.addWidget(ffmpeg_status_label)
+        ffmpeg_layout.addStretch()
+        ffmpeg_download_btn = QPushButton("Downlaod")
+        ffmpeg_layout.addWidget(ffmpeg_download_btn)
+        general_layout.addLayout(ffmpeg_layout)
 
         # Game Version selection
         game_version_layout = QHBoxLayout()
@@ -1878,11 +1902,14 @@ class REasyEditorApp(QMainWindow):
             )
             if file_path:
                 vgmstream_entry.setText(file_path)
+                
+        self._refresh_ffmpeg_status_label(ffmpeg_status_label)
 
         button_box.accepted.connect(on_ok)
         button_box.rejected.connect(on_cancel)
         browse_btn.clicked.connect(browse)        
         vgmstream_browse_btn.clicked.connect(browse_vgmstream)
+        ffmpeg_download_btn.clicked.connect(lambda: self._download_ffmpeg_from_settings(dialog, ffmpeg_status_label))
 
         dialog.exec()
 

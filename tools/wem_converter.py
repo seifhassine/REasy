@@ -1,4 +1,9 @@
 import struct
+import subprocess
+import tempfile
+from shutil import which
+
+from tools.ffmpeg_downloader import ensure_ffmpeg
 from pathlib import Path
 
 # PCM-only codec options.
@@ -138,8 +143,87 @@ def convert_wav_to_wem(wav_path: str | Path, *, codec_tag: int = 0xFFFE) -> byte
         return _wav_to_wem_bytes(f.read(), codec_tag=codec_tag)
 
 
+def _resolve_ffmpeg_executable(*, parent_window=None) -> str | None:
+    try:
+        exe = ensure_ffmpeg(auto_download=False, parent_window=parent_window)
+        if exe.exists() and exe.is_file():
+            return str(exe)
+    except Exception:
+        pass
+
+    path_ffmpeg = which("ffmpeg")
+    if path_ffmpeg:
+        return path_ffmpeg
+
+    return None
+
+
+def _prompt_and_download_ffmpeg(parent_window=None) -> str | None:
+    if parent_window is None:
+        return None
+
+    from PySide6.QtWidgets import QMessageBox
+
+    answer = QMessageBox.question(
+        parent_window,
+        "FFmpeg Required",
+        "FFmpeg is required to import this audio format.\n\nDownload FFmpeg now?",
+        QMessageBox.Yes | QMessageBox.No,
+    )
+    if answer != QMessageBox.Yes:
+        return None
+
+    exe = ensure_ffmpeg(auto_download=True, parent_window=parent_window)
+    if exe.exists() and exe.is_file():
+        return str(exe)
+    return None
+
+
+def _transcode_to_pcm16_wav(src_path: str | Path, *, parent_window=None, auto_download: bool = True) -> bytes:
+    ffmpeg = _resolve_ffmpeg_executable(parent_window=parent_window)
+    if not ffmpeg and auto_download:
+        try:
+            ffmpeg = _prompt_and_download_ffmpeg(parent_window=parent_window)
+        except Exception as e:
+            raise ValueError(f"ffmpeg download failed: {e}") from e
+    if not ffmpeg:
+        raise ValueError("ffmpeg is required to import non-PCM WAV or other audio formats. Download FFmpeg from Settings or add ffmpeg to PATH.")
+
+    src_path = Path(src_path)
+    with tempfile.TemporaryDirectory(prefix="reasy_ffmpeg_") as td:
+        out_wav = Path(td) / "input_pcm16.wav"
+        proc = subprocess.run(
+            [
+                ffmpeg,
+                "-y",
+                "-v",
+                "error",
+                "-i",
+                str(src_path),
+                "-vn",
+                "-acodec",
+                "pcm_s16le",
+                str(out_wav),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if proc.returncode != 0 or not out_wav.exists():
+            msg = (proc.stderr or proc.stdout or "Unknown ffmpeg error").strip()
+            raise ValueError(f"ffmpeg conversion failed: {msg}")
+        return out_wav.read_bytes()
+
+
 def convert_file_to_wem(src_path: str | Path, *, parent_window=None, auto_download=True, codec_tag: int = 0xFFFE) -> bytes:
     src_path = Path(src_path)
-    if src_path.suffix.lower() != ".wav":
-        raise ValueError("Only WAV imports are supported in PCM-only mode.")
-    return convert_wav_to_wem(src_path, codec_tag=codec_tag)
+    _, codec_tag = get_codec_profile(codec_tag)
+    if src_path.suffix.lower() == ".wav":
+        try:
+            with open(src_path, "rb") as f:
+                return _wav_to_wem_bytes(f.read(), codec_tag=codec_tag)
+        except ValueError:
+            pass
+
+    wav_data = _transcode_to_pcm16_wav(src_path, parent_window=parent_window, auto_download=auto_download)
+    return _wav_to_wem_bytes(wav_data, codec_tag=codec_tag)

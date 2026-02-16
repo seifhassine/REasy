@@ -198,7 +198,7 @@ class SoundViewer(QWidget):
         self.exp_wav = mk("Export WAV", QStyle.SP_DialogSaveButton, self._on_export_wav)
         self.exp_wem = mk("Export WEM", QStyle.SP_DialogSaveButton, self._on_export_wem)
         self.exp_pck = mk("Export Non-Streaming PCK", QStyle.SP_DialogSaveButton, self._on_export_pck)
-        self.rep_wem = mk("Replace Sound", QStyle.SP_BrowserReload, self._on_replace)
+        self.rep_wem = mk("Replace WEM/WAV", QStyle.SP_BrowserReload, self._on_replace)
         for b in (self.play_btn, self.analyze_btn, self.stop_btn, self.skip_btn,
                   self.exp_wav, self.exp_wem, self.exp_pck, self.rep_wem):
             row.addWidget(b)
@@ -548,9 +548,9 @@ class SoundViewer(QWidget):
         s, t = r
         src, _ = QFileDialog.getOpenFileName(
             self,
-            "Select Replacement WEM/WAV",
+            "Select Replacement Audio",
             f"subsong_{s:04d}.wem",
-            "Audio Files (*.wem *.wav);;WEM Files (*.wem);;WAV Files (*.wav)",
+            "Audio Files (*.wem *.wav *.mp3 *.ogg *.flac *.m4a *.aac *.wma *.aiff *.aif *.opus);;WEM Files (*.wem);;All Files (*)",
         )
         if not src:
             return
@@ -560,14 +560,11 @@ class SoundViewer(QWidget):
             if low.endswith(".wem"):
                 with open(src, "rb") as f:
                     d = f.read()
-            elif low.endswith(".wav"):
+            else:
                 codec_tag = self._choose_wav_codec_tag()
                 if codec_tag is None:
                     return
-                d = convert_file_to_wem(src, codec_tag=codec_tag)
-            else:
-                QMessageBox.warning(self, "Replace Error", "Only WEM and WAV files are supported.")
-                return
+                d = convert_file_to_wem(src, parent_window=self, codec_tag=codec_tag)
         except OSError as e:
             QMessageBox.warning(self, "Replace Error", f"Failed to read replacement file\n{e}")
             return
@@ -582,7 +579,7 @@ class SoundViewer(QWidget):
         self._parsed_tracks = parse_soundbank(self.handler.raw_data).tracks
         self._populate(self._parsed_tracks)
         codec_note = ""
-        if src.lower().endswith(".wav"):
+        if not src.lower().endswith(".wem"):
             codec_note = f" (codec 0x{codec_tag:04X})"
         self.status.setText(f"Replaced source ID {t.source_id} using {src_name}{codec_note}.")
 
