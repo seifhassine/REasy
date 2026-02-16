@@ -18,6 +18,7 @@ from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.rsz.rsz_handler import RszHandler  
 from file_handlers.mdf.mdf_handler import MdfHandler  
 from file_handlers.cfil.cfil_handler import CfilHandler
+from file_handlers.uvs.uvs_handler import UvsHandler
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
