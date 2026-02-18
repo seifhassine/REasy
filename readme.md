@@ -49,7 +49,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
 | BNK/PCK       | ✅       |    Most titles   |
-| WEL       | ✅       |    All titles (except RE7)   |
+| WEL       | ✅       |    All titles (except RE7 non-rt)   |
 | UVS       | ✅       |    Most titles   |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
