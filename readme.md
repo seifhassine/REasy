@@ -48,7 +48,8 @@ REasy GUI is currently available in English and Chinese (limited)
 | MCAMBANK       | ✅       | Most titles      |
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
-| BNK/PCK       | ✅       |    Most titles   ||
+| BNK/PCK       | ✅       |    Most titles   |
+| WEL       | ✅       |    All titles (except RE7)   |
 | UVS       | ✅       |    Most titles   |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |

@@ -11,9 +11,12 @@ from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.base_handler import FileHandler
 from file_handlers.sound.sound_handler import SoundHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
+from file_handlers.wel.wel_handler import WelHandler
 
 
-def get_handler_for_data(data: bytes) -> FileHandler:
+def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
+    if filename.lower().endswith(".wel.11"):
+        return WelHandler()
     for handler_class in [
         RszHandler,
         MsgHandler,

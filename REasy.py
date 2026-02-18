@@ -19,6 +19,7 @@ from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.mdf.mdf_handler import MdfHandler  
 from file_handlers.cfil.cfil_handler import CfilHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
+from file_handlers.wel.wel_handler import WelHandler
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
@@ -422,7 +423,7 @@ class FileTab:
 
     def _prepare_handler(self, data):
         try:
-            handler = get_handler_for_data(data)
+            handler = get_handler_for_data(data, self.filename or "")
             if not handler:
                 raise ValueError("No handler found for this file type")
             
@@ -438,6 +439,9 @@ class FileTab:
                 handler.filepath = self.filename or ""
                 
             if isinstance(handler, UvsHandler):
+                handler.filepath = self.filename or ""
+                
+            if isinstance(handler, WelHandler):
                 handler.filepath = self.filename or ""
                 
             handler.refresh_tree_callback = self.refresh_tree
@@ -2057,7 +2061,7 @@ class REasyEditorApp(QMainWindow):
 
         tab = None
         try:
-            handler = get_handler_for_data(data)
+            handler = get_handler_for_data(data, filename)
             if not handler:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Unsupported file type"))
                 return
@@ -2122,7 +2126,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2* *.sbnk* *.spck*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;All Files (*.*)"
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2* *.sbnk* *.spck* *.wel*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;Wwise Event List (*.wel*);;All Files (*.*)"
         )
         if not fn:
             return
@@ -2130,7 +2134,7 @@ class REasyEditorApp(QMainWindow):
             with open(fn, "rb") as f:
                 data = f.read()
 
-            handler = get_handler_for_data(data)
+            handler = get_handler_for_data(data, fn)
             if handler:
                 self.add_tab(fn, data) 
             else:
