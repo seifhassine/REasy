@@ -53,6 +53,7 @@ python scripts\compile_qm.py
 python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
+  --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
   --add-binary "%HELPER_OUT%\reasy_tex_gdeflate_helper.exe;tools" ^
   --add-binary "%HELPER_OUT%\reasy_tex_gdeflate_helper.dll;tools" ^
   --add-binary "%HELPER_OUT%\runtimes\win-x64\native\libGDeflate.dll;tools" ^
