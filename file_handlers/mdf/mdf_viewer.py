@@ -185,6 +185,12 @@ class MdfViewer(QWidget):
 		self.bake_texture_spin.setRange(0, 2147483647)
 		self.bake_texture_spin.valueChanged.connect(self._on_bake_texture_changed)
 		ov.addWidget(self.bake_texture_spin, 3, 1)
+		self.ukn_label = QLabel("Unknown 64")
+		ov.addWidget(self.ukn_label, 3, 2)
+		self.ukn_edit = QLineEdit()
+		self.ukn_edit.setPlaceholderText("0 (or 0x...)" )
+		self.ukn_edit.textChanged.connect(self._on_ukn_changed)
+		ov.addWidget(self.ukn_edit, 3, 3)
 		self.flags_group = QGroupBox("Material Flags")
 		fg = QGridLayout(self.flags_group)
 		self._flags1_names = [
@@ -479,6 +485,26 @@ class MdfViewer(QWidget):
 		i = rows[0].row()
 		m.materials[i].header.BakeTextureArraySize = value
 		self.modified = True
+
+	def _on_ukn_changed(self, text: str):
+		rows = self.materials_table.selectionModel().selectedRows()
+		m = self.handler.mdf
+		if not m or not rows:
+			return
+		i = rows[0].row()
+		text = (text or "").strip()
+		if not text:
+			value = 0
+		else:
+			try:
+				value = int(text, 0)
+			except ValueError:
+				return
+		value = max(0, min(value, 0xFFFFFFFFFFFFFFFF))
+		if m.materials[i].header.ukn != value:
+			m.materials[i].header.ukn = value
+			self.modified = True
+
 	def _on_flags_changed(self, *_):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
@@ -768,6 +794,9 @@ class MdfViewer(QWidget):
 			self.matname_hash_label.setText("0x00000000")
 			self.bake_texture_label.setVisible(False)
 			self.bake_texture_spin.setVisible(False)
+			self.ukn_label.setVisible(False)
+			self.ukn_edit.setVisible(False)
+			self.ukn_edit.setText("0")
 			self._update_table_rows(self.textures_table, 0)
 			if self.params_stack.count() > 0:
 				self.params_stack.setCurrentIndex(0)
@@ -805,6 +834,19 @@ class MdfViewer(QWidget):
 			self.bake_texture_label.setVisible(False)
 			self.bake_texture_spin.setVisible(False)
 			self.bake_texture_spin.blockSignals(False)
+
+		if version >= 51:
+			self.ukn_edit.blockSignals(True)
+			self.ukn_edit.setText(str(md.header.ukn))
+			self.ukn_label.setVisible(True)
+			self.ukn_edit.setVisible(True)
+			self.ukn_edit.blockSignals(False)
+		else:
+			self.ukn_edit.blockSignals(True)
+			self.ukn_edit.setText("0")
+			self.ukn_label.setVisible(False)
+			self.ukn_edit.setVisible(False)
+			self.ukn_edit.blockSignals(False)
 		
 		self._update_flags_ui(md.header)
 		

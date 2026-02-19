@@ -82,6 +82,8 @@ class MdfClipboard:
         if file_version >= 31:
             header_data["BakeTextureArraySize"] = int(header.BakeTextureArraySize)
             header_data["shaderLODNum"] = int(header.shaderLODNum)
+        if file_version >= 51:
+            header_data["ukn"] = int(header.ukn)
 
         textures = [
             {
@@ -141,6 +143,8 @@ class MdfClipboard:
         if target_version >= 31:
             header.BakeTextureArraySize = int(header_info.get("BakeTextureArraySize", 0))
             header.shaderLODNum = int(header_info.get("shaderLODNum", 0))
+        if target_version >= 51:
+            header.ukn = int(header_info.get("ukn", header_info.get("pre_property_headers_offset_51", header_info.get("ukn_unsigned_long_51", 0))))
 
         textures: List[TexHeader] = []
         for tex_info in data.get("textures", []):
