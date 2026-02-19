@@ -317,7 +317,9 @@ class RszViewer(QWidget):
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         root_dict["type"] = "root"
-        file_type = "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
+        file_type = "WCC" if getattr(self.scn, "is_headless", False) else (
+            "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
+        )
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
             advanced_children = [
@@ -335,18 +337,30 @@ class RszViewer(QWidget):
         return root_dict
 
     def _iter_advanced_sections(self):
-        yield self._create_header_info()
-        yield self._create_gameobjects_info()
-        if not self.scn.is_pfb and not self.scn.is_usr:
-            yield self._create_folders_info()
-            yield self._create_prefabs_info()
-        if self.scn.is_pfb:
-            yield self._create_gameobject_ref_infos()
-        yield self._create_resources_info()
+        if getattr(self.scn, "is_headless", False):
+            yield self._create_headless_info()
+        else:
+            yield self._create_header_info()
+            yield self._create_gameobjects_info()
+            if not self.scn.is_pfb and not self.scn.is_usr:
+                yield self._create_folders_info()
+                yield self._create_prefabs_info()
+            if self.scn.is_pfb:
+                yield self._create_gameobject_ref_infos()
+            yield self._create_resources_info()
         yield self._create_rsz_header_info()
         yield self._create_object_table_info()
         yield self._create_instance_infos()
         yield self._create_userdata_infos()
+
+    def _create_headless_info(self):
+        return DataTreeBuilder.create_branch_from_pairs(
+            "Headless RSZ",
+            [
+                ("Format", "Headless RSZ"),
+                ("Description", "No outer SCN/PFB/USR header tables"),
+            ],
+        )
 
     def _create_header_info(self):
         """Create Header info section for self.scn.header"""
@@ -602,6 +616,27 @@ class RszViewer(QWidget):
         return id_adjustment_map
     
     def _add_data_block(self, parent_dict):
+        if getattr(self.scn, "is_headless", False):
+            for instance_id, inst_info in enumerate(self.scn.instance_infos):
+                if instance_id == 0:
+                    continue
+                fields = self.scn.parsed_elements.get(instance_id)
+                if fields is None:
+                    continue
+                reasy_id = self.handler.id_manager.register_instance(instance_id)
+                type_name = self.name_helper.get_instance_name(instance_id)
+                instance_dict = {
+                    "data": [f"{type_name} (ID: {instance_id})", ""],
+                    "instance_id": instance_id,
+                    "reasy_id": reasy_id,
+                    "children": [],
+                }
+                for field_name, field_data in fields.items():
+                    instance_dict["children"].append(
+                        self._create_field_dict(field_name, field_data)
+                    )
+                parent_dict["children"].append(instance_dict)
+            return
         if self.handler.rsz_file.is_usr:
             if len(self.scn.object_table) > 0:
                 root_instance_id = self.scn.object_table[0]

@@ -12,11 +12,15 @@ from file_handlers.base_handler import FileHandler
 from file_handlers.sound.sound_handler import SoundHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
 from file_handlers.wel.wel_handler import WelHandler
+from file_handlers.wcc.wcc_handler import WccHandler
 
 
 def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
-    if filename.lower().endswith(".wel.11"):
+    fn = filename.lower()
+    if fn.endswith(".wel.11"):
         return WelHandler()
+    elif ".wcc" in fn:
+        return WccHandler()
     for handler_class in [
         RszHandler,
         MsgHandler,

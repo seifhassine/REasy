@@ -306,8 +306,16 @@ class AdvancedTreeView(QTreeView):
 
     def _apply_outdated_marker(self):
         model = self.model()
+        if not model:
+            return
         resources_node = self._find_resources_node()
+        if resources_node is None:
+            # Headless RSZ formats do not expose an Advanced->Resources section.
+            # Keep resources_outdated state but skip marker injection safely.
+            return
         idx = model.getIndexFromItem(resources_node)
+        if not idx.isValid():
+            return
         self.setIndexWidget(idx, None)
         container = QWidget(self)
         layout = QHBoxLayout(container)
@@ -1742,7 +1750,7 @@ class AdvancedTreeView(QTreeView):
 
     def _find_resources_node(self):
         """Helper to find the resources section node under Advanced Information"""
-        return self._find_root_node_child("Advanced Information", "Resources")
+        return self._find_root_node_child("Advanced Information", "Resources", log_missing=False)
 
     
     def add_gameobject_to_ui_direct(self, go_data, parent_index=None):
@@ -1909,7 +1917,7 @@ class AdvancedTreeView(QTreeView):
                         self.add_gameobject_to_ui_direct(child_data, children_node_index)
                 break
     
-    def _find_root_node_child(self, root_node_name, node_name):
+    def _find_root_node_child(self, root_node_name, node_name, log_missing=True):
 
         model = self.model()
         data_index = None
@@ -1924,7 +1932,8 @@ class AdvancedTreeView(QTreeView):
                 break
         
         if not data_index or not data_index.isValid():
-            print("Could not find Data node")
+            if log_missing:
+                print("Could not find Data node")
             return None
         
         data_count = model.rowCount(data_index)
@@ -1937,7 +1946,8 @@ class AdvancedTreeView(QTreeView):
             if child_text.startswith(node_name):
                 return child_index.internalPointer()
 
-        print(f"Could not find {node_name} node under {root_node_name}")
+        if log_missing:
+            print(f"Could not find {node_name} node under {root_node_name}")
         return None
     
     def find_user_file_array_node(self):

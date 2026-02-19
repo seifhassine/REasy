@@ -579,8 +579,8 @@ class RszFile:
         self._type_info_cache = {}
 
 
-    def read(self, data: bytes, skip_data: bool = False):
-        # Use memoryview for efficient slicing operations
+    def _initialize_read_context(self, data: bytes):
+        """Reset parsing state shared by full and headless RSZ readers."""
         self.full_data = memoryview(data)
         self._current_offset = 0
         self._parser_pool.clear()
@@ -596,6 +596,11 @@ class RszFile:
         self._is_18 = self._path_lower.endswith(".18")
         self._is_19 = self._path_lower.endswith(".19")
         self._is_scn_new = self._is_18 or self._is_19
+        self.is_headless = False
+
+    def read(self, data: bytes, skip_data: bool = False):
+        # Use memoryview for efficient slicing operations
+        self._initialize_read_context(data)
 
         if data[:4] == b'USR\x00':
             self.is_usr = True
@@ -769,8 +774,9 @@ class RszFile:
                 s = sys.intern(s)
                 self.set_userdata_string(ui, s)
 
-    def _parse_rsz_section(self, data, skip_data = False):
-        self._current_offset = self.header.data_offset
+    def _parse_rsz_section_core(self, data: bytes, rsz_base_offset: int, skip_data: bool = False):
+        """Parse an RSZ section located at a given base offset."""
+        self._current_offset = rsz_base_offset
 
         self.rsz_header = RszRSZHeader()
         self._current_offset = self.rsz_header.parse(data, self._current_offset)
@@ -794,9 +800,9 @@ class RszFile:
         }
 
         # Continue with rest of RSZ section parsing
-        self._current_offset = self.header.data_offset + self.rsz_header.instance_offset
-
-        # Parse Instance Infos –that has instance_count entries (8 bytes each)
+        self._current_offset = rsz_base_offset + self.rsz_header.instance_offset
+        
+        self.instance_infos = []
         for _ in range(self.rsz_header.instance_count):
             ii = RszInstanceInfo()
             self._current_offset = ii.parse(data, self._current_offset)
@@ -808,13 +814,13 @@ class RszFile:
 
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
-            self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
+            self._current_offset = rsz_base_offset + self.rsz_header.userdata_offset
             if self._is_19 or (self._is_18 and self.is_scn):
                 self._parse_scn19_rsz_userdata(data, skip_data)
             elif self._is_16:
                 self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data)
             else:
-                self._parse_standard_rsz_userdata(data)
+                self._parse_standard_rsz_userdata(data, rsz_base_offset)
         
         self.data = self.full_data[self._current_offset:]
         
@@ -823,6 +829,9 @@ class RszFile:
 
         file_offset_of_data = self._current_offset
         self._instance_base_mod = file_offset_of_data % 16
+        
+    def _parse_rsz_section(self, data, skip_data = False):
+        self._parse_rsz_section_core(data, self.header.data_offset, skip_data)
 
     def _warm_type_registry_cache(self):
         """Preload type information for all parsed instance infos."""
@@ -843,14 +852,15 @@ class RszFile:
         for type_id in type_ids:
             cache[type_id] = type_registry.get_type_info(type_id)
 
-    def _parse_standard_rsz_userdata(self, data):
+    def _parse_standard_rsz_userdata(self, data, rsz_base_offset=None):
         """Parse standard RSZ userdata entries (16 bytes each)"""
+        base_offset = self.header.data_offset if rsz_base_offset is None else rsz_base_offset
         self.rsz_userdata_infos = []
         for _ in range(self.rsz_header.userdata_count):
             rui = RSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
             if rui.string_offset != 0:
-                abs_offset = self.header.data_offset + rui.string_offset
+                abs_offset = base_offset + rui.string_offset
                 s, _ = read_wstring(self.full_data, abs_offset, 1000)
                 s = sys.intern(s)
                 self.set_rsz_userdata_string(rui, s)
@@ -858,13 +868,33 @@ class RszFile:
             
         last_str_offset = self.rsz_userdata_infos[-1].string_offset if self.rsz_userdata_infos else 0
         if last_str_offset:
-            abs_offset = self.header.data_offset + last_str_offset
+            abs_offset = base_offset + last_str_offset
             s, new_offset = read_wstring(self.full_data, abs_offset, 1000)
             _ = sys.intern(s)
         else:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 
+    def read_headless(self, data: bytes, skip_data: bool = False):
+        """Read a headless RSZ payload without an outer file header/tables."""
+        self._initialize_read_context(data)
+        self.is_headless = True
+        self.header = None
+        self.is_usr = False
+        self.is_pfb = False
+        self.is_scn = False
+        self.is_pfb16 = False
+
+        self.gameobjects = []
+        self.folder_infos = []
+        self.resource_infos = []
+        self.prefab_infos = []
+        self.userdata_infos = []
+        self.gameobject_ref_infos = []
+
+        self._parse_rsz_section_core(data, 0, skip_data)
+        self._parse_instances(data, skip_data)
+        
     def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
         self.has_embedded_rsz = True
@@ -2073,7 +2103,7 @@ class RszFile:
 
         return bytes(out)
     
-    def _build_rsz_section(self, out: bytearray, special_align_enabled = False):
+    def _build_rsz_section(self, out: bytearray, special_align_enabled = False, update_header_data_offset: bool = True):
         """Build the RSZ section that's common to all file formats.
         Returns the rsz_start position."""
         # Ensure RSZ header starts on 16-byte alignment
@@ -2082,7 +2112,8 @@ class RszFile:
                 out += b"\x00"
                 
         rsz_start = len(out)
-        self.header.data_offset = rsz_start
+        if update_header_data_offset and self.header is not None:
+            self.header.data_offset = rsz_start
 
         # Write RSZ header with placeholder offsets
         rsz_header_bytes = struct.pack(
@@ -2149,6 +2180,17 @@ class RszFile:
         )
         out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
 
+    def build_headless(self, special_align_enabled = False) -> bytes:
+        """Build a headless RSZ payload (RSZ section only, no outer file header/tables)."""
+        if self.rsz_header:
+            self.rsz_header.object_count = len(self.object_table)
+            self.rsz_header.instance_count = len(self.instance_infos)
+            self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
+
+        out = bytearray()
+        self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
+        return bytes(out)
+    
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""
         if self.is_pfb16:

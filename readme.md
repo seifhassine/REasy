@@ -50,6 +50,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | MDF       | ✅       |    Most titles   |
 | BNK/PCK       | ✅       |    Most titles   |
 | WEL       | ✅       |    All titles (except RE7 non-rt)   |
+| WCC       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
