@@ -196,44 +196,59 @@ class TexFile:
         h = self.header
         w = max(1, h.width >> level)
         hh = max(1, h.height >> level)
-        start = mh.offset
-        end = start + mh.size
+        expected_size, expected_pitch, row_step = self._expected_mip_layout(w, hh)
+        if mh.pitch > expected_pitch:
+            data = self._read_mip_with_pitch(idx, w, hh)
+        else:
+            start = mh.offset
+            end = start + min(mh.size, expected_size)
+            data = self._data[start:end]
         return type('Mip', (), {
             'width': w,
             'height': hh,
-            'data': self._data[start:end]
+            'data': data
         })
+
+    def _expected_mip_layout(self, w: int, h: int) -> Tuple[int, int, int]:
+        if self.header.format_is_block_compressed():
+            block_size = get_block_size_bytes(self.header.format)
+            blocks_w = (w + 3) // 4
+            blocks_h = (h + 3) // 4
+            return blocks_w * blocks_h * block_size, blocks_w * block_size, 4
+
+        bpp_bytes = max(1, self.header.bits_per_pixel // 8)
+        return w * h * bpp_bytes, w * bpp_bytes, 1
+
+    def _read_mip_with_pitch(self, idx: int, w: int, h: int) -> bytes:
+        mh = self.mips[idx]
+        expected_size, expected_pitch, row_step = self._expected_mip_layout(w, h)
+        if expected_size <= 0:
+            return b""
+
+        out = bytearray(expected_size)
+        src = memoryview(self._data)
+        cursor = mh.offset
+        out_off = 0
+        row_count = max(1, (h + (row_step - 1)) // row_step)
+
+        for _ in range(row_count):
+            out[out_off:out_off + expected_pitch] = src[cursor:cursor + expected_pitch]
+            cursor += mh.pitch
+            out_off += expected_pitch
+
+        return bytes(out)
 
     def header_is_power_of_two(self) -> bool:
         return self.header.is_power_of_two
 
     def read_non_pot_level(self, level: int, image_index: int) -> Tuple[bytes, int, int]:
         idx = image_index * self.header.mip_count + level
-        mh = self.mips[idx]
         w = max(1, self.header.width >> level)
         h = max(1, self.header.height >> level)
-        block_size = get_block_size_bytes(self.header.format)
         if h == 0 or w == 0:
             return b"", w, h
 
-        blocks_w = (w + 3) // 4
-        blocks_h = (h + 3) // 4
-        size = blocks_w * blocks_h * block_size
-        real_pitch_size = size // h * 4
-
-        src = memoryview(self._data)
-        out = bytearray(size)
-        off = 0
-        stride_offset = mh.pitch - real_pitch_size
-        cursor = mh.offset
-        if stride_offset == 0:
-            out[:] = src[cursor:cursor + size]
-        else:
-            for _row in range(0, h, 4):
-                out[off:off + real_pitch_size] = src[cursor:cursor + real_pitch_size]
-                cursor += real_pitch_size + stride_offset
-                off += real_pitch_size
-        return bytes(out), w, h
+        return self._read_mip_with_pitch(idx, w, h), w, h
 
     @staticmethod
     def build_tex_bytes_from_dds(
@@ -337,4 +352,3 @@ class TexFile:
             bh.write_at(mip_header_pos[i], '<q', offsets[i])
 
         return bh.get_all_bytes()
-
