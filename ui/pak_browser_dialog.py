@@ -12,16 +12,20 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
 	QFileDialog, QLineEdit, QCheckBox,
-	QMessageBox, QTreeView, QAbstractItemView
+	QMessageBox, QTreeView, QAbstractItemView, QMenu
 )
 
 from settings import load_settings
+
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from ui.widgets_utils import create_list_file_help_widget
 
 
 class PakBrowserDialog(QDialog):
+	_ITEM_EXTRACT_PATH_ROLE = Qt.UserRole + 32
+	_ITEM_IS_DIR_ROLE = Qt.UserRole + 33
+
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		self.setWindowTitle(self.tr("PAK Browser"))
@@ -84,6 +88,10 @@ class PakBrowserDialog(QDialog):
 		self.tree.setUniformRowHeights(True)
 		self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection)
 		self.tree.setHeaderHidden(True)
+		self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+		self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
+		self.tree.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
+		self.tree.viewport().customContextMenuRequested.connect(self._show_tree_context_menu)
 		lay.addWidget(self.tree, 3)
 		self._tree_model = None
 		self._flat_model: QStringListModel | None = None
@@ -286,7 +294,8 @@ class PakBrowserDialog(QDialog):
 				item = QStandardItem(display_name)
 				item.setEditable(False)
 				full = prefix + name
-				item.setData(full if not child else None)
+				item.setData(full, self._ITEM_EXTRACT_PATH_ROLE)
+				item.setData(bool(child), self._ITEM_IS_DIR_ROLE)
 				parent.appendRow(item)
 				if child:
 					build(item, child, full + "/", False)
@@ -475,11 +484,45 @@ class PakBrowserDialog(QDialog):
 			return paths
 		if isinstance(model, QStandardItemModel):
 			for idx in self.tree.selectedIndexes():
-				item = model.itemFromIndex(idx)
-				data = item.data()
+				is_dir = bool(idx.data(self._ITEM_IS_DIR_ROLE))
+				if is_dir:
+					continue
+				data = idx.data(self._ITEM_EXTRACT_PATH_ROLE)
 				if isinstance(data, str) and data:
 					paths.append(data)
 		return paths
+
+	def _iter_display_paths(self):
+		for p in self._all_manifest_paths:
+			if not self.show_only_valid_cb.isChecked():
+				yield p
+				continue
+			if p.startswith("__Unknown/") or p.lower() in self._valid_paths:
+				yield p
+
+	def _show_tree_context_menu(self, pos):
+		sender = self.sender()
+		if sender is self.tree:
+			vpos = self.tree.viewport().mapFrom(self.tree, pos)
+		else:
+			vpos = pos
+		index = self.tree.indexAt(vpos)
+		if not index.isValid():
+			return
+		is_dir = bool(index.data(self._ITEM_IS_DIR_ROLE))
+		if not is_dir:
+			return
+		folder_path = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		if not isinstance(folder_path, str) or not folder_path:
+			return
+		menu = QMenu(self)
+		action = menu.addAction(self.tr("Extract Folder"))
+		chosen = menu.exec(self.tree.viewport().mapToGlobal(vpos))
+		if chosen != action:
+			return
+		prefix = folder_path + "/"
+		targets = [p for p in self._iter_display_paths() if p.startswith(prefix)]
+		self._extract(targets)
 
 	def _update_dump_button_visibility(self):
 		show = (self.show_only_valid_cb.isChecked() and 
