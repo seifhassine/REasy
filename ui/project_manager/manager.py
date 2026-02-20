@@ -17,6 +17,7 @@ from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_pac
 from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate   import _ActionsDelegate, _PakActionsDelegate
 from .trees      import _DndTree, _DropTree
+from .pak_file_lists import find_default_pak_list_path
 
 from ui.project_manager.project_settings_dialog import ProjectSettingsDialog
 from tools.fluffy_exporter import create_fluffy_zip
@@ -318,6 +319,16 @@ class ProjectManager(QDockWidget):
     def apply_unpacked_root(self, path: str):
         self._apply_unpacked_root(path)
 
+    def _try_autoload_default_pak_list(self):
+        if self._pak_list_path or self._pak_base_paths:
+            return
+
+        default_list = find_default_pak_list_path(self.current_game, _get_base_dir())
+        if not default_list:
+            return
+
+        self._load_pak_list_file(str(default_list))
+
     def _apply_pak_root(self, path):
         self.pak_dir = os.path.abspath(path)
         
@@ -333,6 +344,7 @@ class ProjectManager(QDockWidget):
         self._active_tab = "pak"
         self._update_path_label()
         self._scan_paks()
+        self._try_autoload_default_pak_list()
         self._update_placeholders()
 
     # Public wrapper for use by by main window
