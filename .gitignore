@@ -7,6 +7,8 @@ settings.json
 .cache/
 myevn/
 .sonar/**
+tools/reasy_tex_gdeflate_helper/bin/
+tools/reasy_tex_gdeflate_helper/obj/
 
 # Distribution / packaging
 build/
