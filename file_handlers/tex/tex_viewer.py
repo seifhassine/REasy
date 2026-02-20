@@ -157,9 +157,9 @@ class TexViewer(QWidget):
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
 
-        self.export_tex_btn = QPushButton("Export TEX")
-        self.export_tex_btn.clicked.connect(self._export_tex)
-        exp.addWidget(self.export_tex_btn)
+        #self.export_tex_btn = QPushButton("Export TEX")
+        #self.export_tex_btn.clicked.connect(self._export_tex)
+        #exp.addWidget(self.export_tex_btn)
         exp.addStretch()
         layout.addLayout(exp)
 
@@ -171,7 +171,7 @@ class TexViewer(QWidget):
         is_dds = raw[:4] == b'DDS '
 
         self.export_dds_btn.setVisible(is_tex)
-        self.export_tex_btn.setVisible(is_dds)
+        #self.export_tex_btn.setVisible(is_dds)
 
         self.image_index.blockSignals(True)
         self.mip_index.blockSignals(True)
@@ -232,7 +232,7 @@ class TexViewer(QWidget):
             self.source_height = decoded.height
             self._apply_channel_filter()
             self.export_dds_btn.setVisible(bool(t))
-            self.export_tex_btn.setVisible(getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ')
+            #self.export_tex_btn.setVisible(getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ')
         except Exception as e:
             self.info_label.setText(f"Failed to decode: {e}")
             self.source_rgba = b""
