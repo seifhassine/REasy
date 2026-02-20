@@ -5,15 +5,68 @@ from typing import List, Tuple
 from utils.binary_handler import BinaryHandler
 from .dxgi import get_bits_per_pixel, is_block_compressed, get_block_size_bytes
 
+SERIALIZER_RE7 = 1
+SERIALIZER_MHRISE = 2
+SERIALIZER_MHWILDS = 3
+SERIALIZER_UNKNOWN = 0
+
+_VERSION_SERIALIZER_LOOKUP = {
+    8: SERIALIZER_RE7,
+    10: SERIALIZER_RE7,
+    11: SERIALIZER_RE7,
+    190820018: SERIALIZER_RE7,
+    28: SERIALIZER_MHRISE,
+    30: SERIALIZER_MHRISE,
+    34: SERIALIZER_MHRISE,
+    35: SERIALIZER_MHRISE,
+    143221013: SERIALIZER_MHRISE,
+    760230703: SERIALIZER_MHRISE,
+    240606151: SERIALIZER_MHRISE,
+    240701001: SERIALIZER_MHRISE,
+    241106027: SERIALIZER_MHWILDS,
+    250813143: SERIALIZER_MHWILDS,
+    251111100: SERIALIZER_MHWILDS,
+}
+
+
 def get_internal_version(version: int) -> int:
-    return 20 if version == 190820018 else version
+    serializer = get_serializer_version(version)
+    if serializer == SERIALIZER_RE7:
+        return 10
+    if serializer == SERIALIZER_MHRISE:
+        return 28
+    return 241106027
+
+
+def _lookup_serializer_version(version: int, file_version: int = 0) -> int | None:
+    mapped = _VERSION_SERIALIZER_LOOKUP.get(version)
+    if mapped is not None:
+        return mapped
+
+    if file_version:
+        mapped = _VERSION_SERIALIZER_LOOKUP.get(file_version)
+        if mapped is not None:
+            return mapped
+
+    return None
+
+
+def get_known_serializer_version(version: int, file_version: int = 0) -> int:
+    mapped = _lookup_serializer_version(version, file_version)
+    if mapped is not None:
+        return mapped
+    return SERIALIZER_UNKNOWN
+
+
+def get_serializer_version(version: int, file_version: int = 0) -> int:
+    mapped = _lookup_serializer_version(version, file_version)
+    if mapped is not None:
+        return mapped
+    return SERIALIZER_MHWILDS
 
 
 TEX_MAGIC = 0x00584554 
 GDEFLATE_MAGIC = 0xFB04
-MHWILDS_TEX_VERSION = 241106027
-
-
 @dataclass
 class TexHeader:
     magic: int = TEX_MAGIC
@@ -34,8 +87,8 @@ class TexHeader:
     seven: int = 0
     one: int = 0
 
-    def get_internal_version(self) -> int:
-        return get_internal_version(self.version)
+    def get_serializer_version(self) -> int:
+        return get_serializer_version(self.version)
 
     @property
     def bits_per_pixel(self) -> int:
@@ -70,10 +123,11 @@ class TexFile:
         self.mips: List[MipHeader] = []
         self.packed_mips: List[PackedMipHeader] = []
         self._data: bytes = b""
+        self._file_version_hint: int = 0
 
     @property
     def uses_packed_mips(self) -> bool:
-        return self.header.version >= MHWILDS_TEX_VERSION
+        return get_known_serializer_version(self.header.version, self._file_version_hint) >= SERIALIZER_MHWILDS
 
     @property
     def _packed_payload_offset(self) -> int:
@@ -89,8 +143,9 @@ class TexFile:
         last = self.mips[-1]
         return (last.offset + last.size) - first.offset
 
-    def read(self, data: bytes) -> bool:
+    def read(self, data: bytes, file_version: int = 0) -> bool:
         self._data = data
+        self._file_version_hint = int(file_version or 0)
         h = BinaryHandler(bytearray(data))
         magic = h.read_uint32()
         if magic != TEX_MAGIC:
@@ -100,11 +155,13 @@ class TexFile:
         self.header.width = h.read_int16()
         self.header.height = h.read_int16()
         self.header.depth = h.read_int16()
-        version_internal = self.header.get_internal_version()
-        if version_internal > 20:
+        serializer_version = get_serializer_version(self.header.version, self._file_version_hint)
+        if serializer_version >= SERIALIZER_MHRISE:
             self.header.image_count = h.read_uint8()
             self.header.mip_header_size = h.read_uint8()
             self.header.mip_count = self.header.mip_header_size // 16
+            if self.header.image_count == 0 and self.header.mip_count > 0:
+                self.header.image_count = 1
         else:
             self.header.mip_count = h.read_uint8()
             self.header.image_count = h.read_uint8()
@@ -112,7 +169,7 @@ class TexFile:
         self.header.swizzle_control = h.read_int32()
         self.header.cubemap_marker = h.read_uint32()
         self.header.flags = h.read_int32()
-        if version_internal > 27:
+        if serializer_version >= SERIALIZER_MHRISE:
             self.header.swizzle_height_depth = h.read_uint8()
             self.header.swizzle_width = h.read_uint8()
             self.header.null1 = h.read_uint16()
@@ -129,46 +186,61 @@ class TexFile:
             self.mips.append(MipHeader(offset, pitch, size))
 
         if self.uses_packed_mips and self.mips:
-            h.seek(self.mips[0].offset)
-            for _ in range(total):
-                self.packed_mips.append(PackedMipHeader(
-                    size=h.read_int32(),
-                    offset=h.read_int32(),
-                ))
-            self._expand_packed_mips()
+            if self._read_packed_mip_headers(h, total):
+                self._ensure_packed_mips_are_uncompressed()
 
         return True
 
-    def _expand_packed_mips(self) -> None:
+    def _read_packed_mip_headers(self, h: BinaryHandler, total: int) -> bool:
+        h.seek(self.mips[0].offset)
+        candidate: List[PackedMipHeader] = []
+        for _ in range(total):
+            candidate.append(PackedMipHeader(size=h.read_int32(), offset=h.read_int32()))
+
+        packed_payload_offset = self.mips[0].offset + (total * 8)
+        max_payload = len(self._data) - packed_payload_offset
+        if max_payload < 0:
+            return False
+
+        prev_offset = -1
+        for i, cmip in enumerate(candidate):
+            if cmip.size < 0 or cmip.offset < 0:
+                return False
+            if i == 0 and cmip.offset != 0:
+                return False
+            if cmip.offset < prev_offset:
+                return False
+            if cmip.offset + cmip.size > max_payload:
+                return False
+            prev_offset = cmip.offset
+
+        self.packed_mips = candidate
+        return True
+
+    def _ensure_packed_mips_are_uncompressed(self) -> None:
         if not self.packed_mips:
             return
 
-        raw = self._data
-        compressed_region_start = self._packed_payload_offset
-        decompressed_size = self._mip_span_size
-        decompressed = bytearray(decompressed_size)
-
         for i, (mip, cmip) in enumerate(zip(self.mips, self.packed_mips)):
-            src_start = compressed_region_start + cmip.offset
+            src_start = self._packed_payload_offset + cmip.offset
             src_end = src_start + cmip.size
-            dst_start = mip.offset - self.mips[0].offset
-            chunk = raw[src_start:src_end]
+            chunk = self._data[src_start:src_end]
 
             if len(chunk) >= 2 and int.from_bytes(chunk[:2], "little") == GDEFLATE_MAGIC:
                 raise RuntimeError(
                     f"TEX file contains gdeflate-compressed mip data (mip {i}); external helper required"
                 )
 
-            decompressed[dst_start:dst_start + mip.size] = chunk[:mip.size]
+    def _read_mip_bytes(self, idx: int, mh: MipHeader) -> bytes:
+        if not self.packed_mips:
+            start = mh.offset
+            end = start + mh.size
+            return self._data[start:end]
 
-        base = bytearray(raw)
-        dst_start_abs = self.mips[0].offset
-        dst_end_abs = dst_start_abs + decompressed_size
-        if dst_end_abs > len(base):
-            base.extend(b"\x00" * (dst_end_abs - len(base)))
-        base[dst_start_abs:dst_end_abs] = decompressed
-        self._data = bytes(base)
-        self.packed_mips.clear()
+        cmip = self.packed_mips[idx]
+        start = self._packed_payload_offset + cmip.offset
+        end = start + cmip.size
+        return self._data[start:end]
 
     def export_header_dict(self) -> dict:
         h = self.header
@@ -197,12 +269,11 @@ class TexFile:
         w = max(1, h.width >> level)
         hh = max(1, h.height >> level)
         expected_size, expected_pitch, row_step = self._expected_mip_layout(w, hh)
+        raw_mip = self._read_mip_bytes(idx, mh)
         if mh.pitch > expected_pitch:
-            data = self._read_mip_with_pitch(idx, w, hh)
+            data = self._read_mip_with_pitch(raw_mip, w, hh, mh.pitch)
         else:
-            start = mh.offset
-            end = start + min(mh.size, expected_size)
-            data = self._data[start:end]
+            data = raw_mip[:min(mh.size, expected_size)]
         return type('Mip', (), {
             'width': w,
             'height': hh,
@@ -219,21 +290,21 @@ class TexFile:
         bpp_bytes = max(1, self.header.bits_per_pixel // 8)
         return w * h * bpp_bytes, w * bpp_bytes, 1
 
-    def _read_mip_with_pitch(self, idx: int, w: int, h: int) -> bytes:
-        mh = self.mips[idx]
+    def _read_mip_with_pitch(self, raw_mip: bytes, w: int, h: int, source_pitch: int) -> bytes:
         expected_size, expected_pitch, row_step = self._expected_mip_layout(w, h)
         if expected_size <= 0:
             return b""
 
         out = bytearray(expected_size)
-        src = memoryview(self._data)
-        cursor = mh.offset
+        src = memoryview(raw_mip)
+        cursor = 0
         out_off = 0
         row_count = max(1, (h + (row_step - 1)) // row_step)
+        stride_offset = source_pitch - expected_pitch
 
         for _ in range(row_count):
             out[out_off:out_off + expected_pitch] = src[cursor:cursor + expected_pitch]
-            cursor += mh.pitch
+            cursor += expected_pitch + stride_offset
             out_off += expected_pitch
 
         return bytes(out)
@@ -248,7 +319,7 @@ class TexFile:
         if h == 0 or w == 0:
             return b"", w, h
 
-        return self._read_mip_with_pitch(idx, w, h), w, h
+        return self._read_mip_with_pitch(self._read_mip_bytes(idx, self.mips[idx]), w, h, self.mips[idx].pitch), w, h
 
     @staticmethod
     def build_tex_bytes_from_dds(

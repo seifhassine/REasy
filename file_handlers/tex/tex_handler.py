@@ -99,9 +99,17 @@ class TexHandler(BaseFileHandler):
     def read(self, data: bytes):
         self.raw_data = data
         tex = TexFile()
+        file_version = 0
+        filepath = getattr(self, "filepath", "") or ""
+        try:
+            lowered = filepath.lower()
+            if ".tex." in lowered:
+                file_version = int(lowered.rsplit(".tex.", 1)[1])
+        except (TypeError, ValueError, IndexError):
+            file_version = 0
 
         try:
-            ok = tex.read(data)
+            ok = tex.read(data, file_version=file_version)
         except RuntimeError as ex:
             if "gdeflate" not in str(ex).lower():
                 raise
@@ -111,7 +119,7 @@ class TexHandler(BaseFileHandler):
                     "TEX file contains gdeflate-compressed mip data and helper execution failed. "
                     f"Helper diagnostics: {helper_diag}"
                 ) from ex
-            ok = tex.read(unpacked)
+            ok = tex.read(unpacked, file_version=file_version)
             self.raw_data = unpacked
 
         if not ok:
