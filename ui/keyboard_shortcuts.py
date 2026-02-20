@@ -23,6 +23,7 @@ def create_shortcuts_tab():
         "file_save_as": "Save File As",
         "file_reload": "Reload File",
         "file_close_tab": "Close Tab",
+        "file_reopen_closed": "Reopen Last Closed File",
         "find_search": "Find",
         "find_search_guid": "Search for GUID",
         "find_search_text": "Search for Text",

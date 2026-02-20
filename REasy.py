@@ -101,6 +101,7 @@ GAMES = [
 NO_FILE_LOADED_STR = "No file loaded"
 UNSAVED_CHANGES_STR = "Unsaved changes"
 DEFAULT_THEME_COLOR = "#ff851b"
+RECENTLY_CLOSED_FILES_LIMIT = 20
 
 def resource_path(relative_path):
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -1020,6 +1021,9 @@ class REasyEditorApp(QMainWindow):
 
         self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
+        history = self.settings.get("recently_closed_files", [])
+        self._closed_file_history = [f for f in history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
+        self.recently_closed_menu = None
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
@@ -1098,15 +1102,19 @@ class REasyEditorApp(QMainWindow):
 
     def _open_path(self, path: str):
         file_path = path
-        if os.path.isfile(file_path):
-            try:
-                with open(file_path, "rb") as f:
-                    data = f.read()
-                self.add_tab(file_path, data)
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Error", f"Failed to load {file_path}: {str(e)}"
-                )
+        if not os.path.isfile(file_path):
+            return False
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            self.add_tab(file_path, data)
+            return True
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Error", f"Failed to load {file_path}: {str(e)}"
+            )
+            return False
+        
     def _create_menus(self):
         menubar = self.menuBar()
         self.update_notification.update_update_menu(force=True, menubar=menubar)
@@ -1160,6 +1168,15 @@ class REasyEditorApp(QMainWindow):
         close_tab_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_close_tab", "Ctrl+W")))
         close_tab_act.triggered.connect(self.close_current_tab)
         file_menu.addAction(close_tab_act)
+        
+        reopen_closed_act = QAction(self.tr("Reopen Last Closed File"), self)
+        reopen_closed_act.setObjectName("file_reopen_closed")
+        reopen_closed_act.setShortcut(QKeySequence(self.settings.get("keyboard_shortcuts", {}).get("file_reopen_closed", "Ctrl+Shift+T")))
+        reopen_closed_act.triggered.connect(self.reopen_last_closed_file)
+        file_menu.addAction(reopen_closed_act)
+
+        self.recently_closed_menu = file_menu.addMenu(self.tr("Recently Closed Files"))
+        self.recently_closed_menu.aboutToShow.connect(self._populate_recently_closed_menu)
 
         file_menu.addSeparator()
 
@@ -2196,6 +2213,59 @@ class REasyEditorApp(QMainWindow):
                 break
         return None
     
+    def _save_closed_file_history(self):
+        self._closed_file_history = [f for f in self._closed_file_history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
+        self.settings["recently_closed_files"] = list(self._closed_file_history)
+        save_settings(self.settings)
+
+    def _record_closed_file(self, filename):
+        if not filename:
+            return
+        if filename in self._closed_file_history:
+            self._closed_file_history.remove(filename)
+        self._closed_file_history.append(filename)
+        self._save_closed_file_history()
+
+    def _clear_recently_closed_files(self):
+        self._closed_file_history.clear()
+        self._save_closed_file_history()
+
+    def reopen_closed_file(self, filename=None, notify_if_empty=False):
+        while self._closed_file_history:
+            target = filename or self._closed_file_history[-1]
+            if target not in self._closed_file_history:
+                break
+            self._closed_file_history.remove(target)
+            self._save_closed_file_history()
+            if self._open_path(target):
+                return
+            if filename:
+                break
+
+        if notify_if_empty and filename is None:
+            QMessageBox.information(self, "Reopen Closed File", "No recently closed files to reopen.")
+
+    def _populate_recently_closed_menu(self):
+        if not self.recently_closed_menu:
+            return
+
+        self.recently_closed_menu.clear()
+        if not self._closed_file_history:
+            empty_action = self.recently_closed_menu.addAction(self.tr("No recently closed files"))
+            empty_action.setEnabled(False)
+            return
+
+        for filename in reversed(self._closed_file_history):
+            action = self.recently_closed_menu.addAction(os.path.basename(filename))
+            action.setToolTip(filename)
+            action.triggered.connect(lambda _checked=False, fn=filename: self.reopen_closed_file(fn))
+
+        self.recently_closed_menu.addSeparator()
+        self.recently_closed_menu.addAction(self.tr("Clear Recently Closed Files"), self._clear_recently_closed_files)
+
+    def reopen_last_closed_file(self):
+        self.reopen_closed_file(notify_if_empty=True)
+
     def close_tab(self, index):
         widget = self.notebook.widget(index)
         tab = self.tabs.get(widget)
@@ -2214,6 +2284,9 @@ class REasyEditorApp(QMainWindow):
             else:
                 tab.modified = False
                 tab.update_tab_title()
+                
+        if tab and tab.filename:
+            self._record_closed_file(tab.filename)
 
         if widget in self.tabs:
             del self.tabs[widget]

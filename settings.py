@@ -19,6 +19,7 @@ DEFAULT_SETTINGS = {
         "file_save_as": "Ctrl+Shift+S",
         "file_reload": "Ctrl+R",
         "file_close_tab": "Ctrl+W",
+        "file_reopen_closed": "Ctrl+Shift+T",
         "find_search": "Ctrl+F",
         "find_search_guid": "Ctrl+G",
         "find_search_text": "Ctrl+T",
@@ -29,6 +30,7 @@ DEFAULT_SETTINGS = {
         "view_debug_console": "Ctrl+Shift+D"
     },
     "confirmation_prompt": True,
+    "recently_closed_files": [],
     "last_seen_version": ""
 }
 
