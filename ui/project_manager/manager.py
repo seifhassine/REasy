@@ -4,14 +4,14 @@ import shutil
 from pathlib import Path
 import json
 import sys
-from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
+from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
     QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox, QTextEdit, QProgressBar,
     QTreeView, QAbstractItemView, QCheckBox, QLineEdit, QStyle, QSizePolicy
 )
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QDesktopServices
 from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
 
 from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
@@ -1029,13 +1029,25 @@ class ProjectManager(QDockWidget):
 
         try:
             create_fluffy_zip(proj, zip_path)
-            QMessageBox.information(
-                self, self.tr("Done"),
-                self.tr("Fluffy mod ZIP created.\nSaved to:\n{}").format(zip_path)
+            self._show_export_done_dialog(
+                self.tr(f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}"),
+                zip_path,
             )
         except Exception as e:
             QMessageBox.critical(self, self.tr("ZIP failed"), str(e))
 
+    def _show_export_done_dialog(self, msg: str, output_path: Path):
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Information)
+        box.setWindowTitle(self.tr("Done"))
+        box.setText(msg)
+        reveal_btn = box.addButton(self.tr("Show in Folder"), QMessageBox.ActionRole)
+        box.addButton(QMessageBox.Ok)
+        box.exec()
+
+        if box.clickedButton() is reveal_btn:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(output_path.parent)))
+            
     def _export_mod(self):
 
         need, latest = packer_status()
@@ -1090,9 +1102,9 @@ class ProjectManager(QDockWidget):
                 bar.hide()
                 log.append(out)
                 if code == 0:
-                    QMessageBox.information(
-                        self, self.tr("Done"),
-                        self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path)
+                    self._show_export_done_dialog(
+                        self.tr(f"Export completed.\nPAK file saved to:\n{dest_path}"),
+                        dest_path,
                     )
                 else:
                     QMessageBox.critical(self, self.tr("Error"),
