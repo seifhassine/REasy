@@ -159,11 +159,14 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Full UVS file support."),
-            ("New", "BNK/PCK: Support for more import formats (.mp3, .ogg, and more)."),
-            ("Improved", "Tex: Support for more texture formats."),
-            ("Fixed", "Tex: Channel behavior was incorrect."),
-            ("Fixed", "BNK/PCK: Bad wav->wem conversion leading to jittery/high pitch imported sounds.")
+            ("New", "Added .wel and .wcc support."),
+            ("New", "When creating a new project, the file list will be automatically selected if available."),
+            ("New", "MDF: Added support for Pragmata MDFs."),
+            ("New", "Recently closed file list and a shortcut to reopen last closed file (ctrl+shift+T by default)."),
+            ("Improved", "Updated Monster Hunter Wilds file list and RSZ dump."),
+            ("Improved", "Added \"Show in folder\" button in the mod export dialog to make it easier to locate your exported mods."),
+            ("Improved", "PAK: Ability to right-click and extract folders in PAK Browser."),
+            ("Fixed", "Tex: fixed missing decoder issue, as well other .tex format issues. All .tex files should now be supported."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
