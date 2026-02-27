@@ -35,6 +35,7 @@ class EnumManager:
             "O2": "resources/data/enums/o2_enums.json",
             "DD2": "resources/data/enums/dd2_enums.json",
             "KunitsuGami": "resources/data/enums/kunitsugami_enums.json",
+            "RE9": "resources/data/enums/re9_enums.json",
         }
         
     @property

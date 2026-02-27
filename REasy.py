@@ -93,9 +93,9 @@ from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
 
-CURRENT_VERSION = "0.6.5"
+CURRENT_VERSION = "0.6.6"
 GAMES = [
-    "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance",
+    "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance", "RE9",
     "RE7", "RE7RT", "MHWilds", "MHRise", "MHST3", "DMC5", "SF6", "O2", "DD2", "Pragmata", "KunitsuGami"
 ]
 NO_FILE_LOADED_STR = "No file loaded"
