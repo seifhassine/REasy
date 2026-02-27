@@ -730,15 +730,19 @@ class UvsViewer(QWidget):
 
     def _game_native_prefix(self) -> str:
         app = getattr(self.handler, "app", None)
-        game = str(getattr(app, "settings", {}).get("game_version", "RE4"))
-        parts = EXPECTED_NATIVE.get(game, ("natives", "stm"))
-        return "/".join(parts).strip("/") + "/"
+        proj_mgr = getattr(app, "project_manager", None) if app is not None else None
+        game = str(getattr(proj_mgr, "current_game", "") or "")
+        return "/".join(EXPECTED_NATIVE.get(game, ("natives", "stm"))).strip("/") + "/"
 
-    def _prefixed_texture_path(self, raw_path: str) -> str:
-        base = self._normalize_uvs_path(raw_path)
-        if not base:
-            return ""
-        return self._game_native_prefix() + base
+    def _texture_path_candidates(self, raw_path: str) -> list[str]:
+        if not (base := self._normalize_uvs_path(raw_path)):
+            return []
+        if base.startswith(("natives/stm/", "natives/x64/")):
+            return [base]
+
+        primary = (self._game_native_prefix() + base).strip("/").lower()
+        alternate = (("natives/x64/" if primary.startswith("natives/stm/") else "natives/stm/") + base).strip("/").lower()
+        return [primary] if primary == alternate else [primary, alternate]
 
     def _resolve_pak_path_for_texture(self, tex_idx: int, source: str) -> str | None:
         if not (uvs := self.handler.uvs) or tex_idx < 0 or tex_idx >= len(uvs.textures):
@@ -747,14 +751,18 @@ class UvsViewer(QWidget):
         tex = uvs.textures[tex_idx]
         raw_path = {'normal': tex.normal_path, 'specular': tex.specular_path, 'alpha': tex.alpha_path}.get(source, tex.path)
 
-        if not (candidate := self._prefixed_texture_path(raw_path)):
+        if not (candidates := self._texture_path_candidates(raw_path)):
             return None
 
         if not (reader := self._project_mode_cached_reader()):
             return None
 
-        pref = candidate.lower()
-        return next((path for path in reader.cached_paths(include_unknown=False) if path.lower().startswith(pref + ".")), None)
+        cached_paths = reader.cached_paths(include_unknown=False)
+        for pref in candidates:
+            hit = next((path for path in cached_paths if path.lower().startswith(pref + ".")), None)
+            if hit:
+                return hit
+        return None
     def _decode_tex_to_pixmap(self, tex_bytes: bytes) -> QPixmap | None:
         th = TexHandler()
         th.read(tex_bytes)
