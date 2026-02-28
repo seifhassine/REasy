@@ -1014,10 +1014,10 @@ class REasyEditorApp(QMainWindow):
 
         self.notebook = CustomNotebook()
         self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.notebook.setMinimumSize(50, 50)    
+        self.notebook.setMinimumSize(50, 50)
         self.notebook.app_instance = self
         self.notebook._set_icon_callback = set_app_icon
-        main_layout.addWidget(self.notebook)
+        main_layout.addWidget(self.notebook, 1)  # Stretch factor 1 - gets most space
 
         self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
@@ -1061,8 +1061,11 @@ class REasyEditorApp(QMainWindow):
 
         self.console_widget = ConsoleWidget()
         self.console_widget.setMaximumHeight(100)
+        self.console_widget.setMinimumHeight(20)  # Minimum height when visible
+        # Set size policy to prevent console from taking too much space
+        self.console_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.console_widget.setVisible(self.settings.get("show_debug_console", True))
-        main_layout.addWidget(self.console_widget)
+        main_layout.addWidget(self.console_widget, 0)  # Stretch factor 0
 
         if self.settings.get("show_debug_console", True):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
