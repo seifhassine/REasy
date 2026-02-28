@@ -197,10 +197,11 @@ class SoundViewer(QWidget):
         self.skip_btn = mk("Skip Silence", QStyle.SP_MediaSkipForward, self._on_skip, enabled=False)
         self.exp_wav = mk("Export WAV", QStyle.SP_DialogSaveButton, self._on_export_wav)
         self.exp_wem = mk("Export WEM", QStyle.SP_DialogSaveButton, self._on_export_wem)
+        self.exp_all = mk("Export All WAV/WEM", QStyle.SP_DialogSaveButton, self._on_export_all)
         self.exp_pck = mk("Export Non-Streaming PCK", QStyle.SP_DialogSaveButton, self._on_export_pck)
         self.rep_wem = mk("Replace WEM/WAV", QStyle.SP_BrowserReload, self._on_replace)
         for b in (self.play_btn, self.analyze_btn, self.stop_btn, self.skip_btn,
-                  self.exp_wav, self.exp_wem, self.exp_pck, self.rep_wem):
+                  self.exp_wav, self.exp_wem, self.exp_all, self.exp_pck, self.rep_wem):
             row.addWidget(b)
         row.addStretch()
         vl.addLayout(row)
@@ -523,6 +524,85 @@ class SoundViewer(QWidget):
                             ext=".pck", filt="PCK Files (*.pck)")
         if p:
             self._write_export(p, export_non_streaming_pck(self.handler.raw_data), "Non-streaming PCK")
+
+    def _on_export_all(self):
+        if not self._parsed_tracks:
+            QMessageBox.information(self, "Export All", "No tracks available to export.")
+            return
+
+        mode, ok = QInputDialog.getItem(
+            self,
+            "Export All Tracks",
+            "Export format:",
+            ["WEM", "WAV", "WEM + WAV"],
+            2,
+            False,
+        )
+        if not ok:
+            return
+        export_wem, export_wav = {
+            "WEM": (True, False),
+            "WAV": (False, True),
+            "WEM + WAV": (True, True),
+        }[mode]
+
+        out_dir = QFileDialog.getExistingDirectory(self, "Export All Tracks", "")
+        if not out_dir:
+            return
+
+        total = len(self._parsed_tracks)
+        ok_wem = ok_wav = 0
+        failed: list[str] = []
+        progress = QProgressDialog("Exporting tracks...", "Cancel", 0, total, self)
+        progress.setWindowTitle("Export All Tracks")
+        progress.setMinimumDuration(0)
+        progress.setWindowModality(Qt.WindowModal)
+        self.status.setText(f"Exporting {total} track(s)...")
+
+        for i, track in enumerate(self._parsed_tracks, 1):
+            progress.setLabelText(f"Exporting track ID {track.source_id} ({i}/{total})")
+            progress.setValue(i - 1)
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                break
+
+            base = str(track.source_id)
+            if export_wem:
+                wem_name = f"{base}.wem"
+                wem_data = extract_embedded_wem(self.handler.raw_data, track)
+                try:
+                    if not wem_data:
+                        raise OSError("empty")
+                    with open(os.path.join(out_dir, wem_name), "wb") as f:
+                        f.write(wem_data)
+                    ok_wem += 1
+                except OSError:
+                    failed.append(wem_name)
+
+            if export_wav:
+                wav_name = f"{base}.wav"
+                tmp_wem = tmp_wav = None
+                try:
+                    tmp_wem, tmp_wav = self._decode_track(track)
+                    if not tmp_wav:
+                        raise OSError("decode")
+                    shutil.copyfile(tmp_wav, os.path.join(out_dir, wav_name))
+                    ok_wav += 1
+                except OSError:
+                    failed.append(wav_name)
+                finally:
+                    self._rm(tmp_wem)
+                    self._rm(tmp_wav)
+
+        progress.setValue(total)
+        parts = ([f"WEM: {ok_wem}/{total}"] if export_wem else []) + ([f"WAV: {ok_wav}/{total}"] if export_wav else [])
+        fail_note = f" | Failed: {len(failed)}" if failed else ""
+        cancel_note = " (cancelled)" if progress.wasCanceled() else ""
+        self.status.setText(f"Export complete{cancel_note}. {' | '.join(parts)}{fail_note}.")
+        if failed:
+            preview = "\n".join(failed[:12])
+            more = "" if len(failed) <= 12 else f"\n...and {len(failed) - 12} more"
+            QMessageBox.warning(self, "Export All Complete", f"Some tracks failed to export:\n{preview}{more}")
 
     def _choose_wav_codec_tag(self) -> int | None:
         items = [f"{name} (0x{tag:04X})" for name, tag in POPULAR_WEM_CODECS]
