@@ -142,10 +142,11 @@ class PakBrowserDialog(QDialog):
 			return
 		
 
+		self._cache_outdated = True
 		old_paks = [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
 		if paks == old_paks and self._cached_reader:
 
-			self._recompute_display()
+			self._refresh_index()
 			return
 		
 		self.pak_list.clear()
