@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 import time
+from contextlib import contextmanager
 
 from PySide6.QtCore import Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
 
@@ -12,7 +13,7 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
 	QFileDialog, QLineEdit, QCheckBox,
-	QMessageBox, QTreeView, QAbstractItemView, QMenu
+	QMessageBox, QTreeView, QAbstractItemView, QMenu, QApplication
 )
 
 from settings import load_settings
@@ -74,6 +75,7 @@ class PakBrowserDialog(QDialog):
 		mid.addWidget(self.filter_edit, 1)
 		self.show_unknown_cb = QCheckBox(self.tr("Include unknown entries"))
 		self.show_unknown_cb.setChecked(False)
+		self.show_unknown_cb.toggled.connect(self._on_show_unknown_toggled)
 		mid.addWidget(self.show_unknown_cb)
 		
 		self.show_only_valid_cb = QCheckBox(self.tr("Show only valid files"))
@@ -123,8 +125,28 @@ class PakBrowserDialog(QDialog):
 		self._cached_show_valid = False
 		self._cached_show_unknown = False
 		self._cache_outdated = False
-		self.show_unknown_cb.toggled.connect(lambda _=False: self._recompute_display())
+		self._loading_depth = 0
+		self.loading_label = QLabel(self)
+		self.loading_label.setStyleSheet(f"color: {self._highlight_color.name()}; font-weight: 600;")
+		self.loading_label.setVisible(False)
+		lay.addWidget(self.loading_label)
 
+	@contextmanager
+	def _loading(self, message: str):
+		self._loading_depth += 1
+		if self._loading_depth == 1:
+			self.loading_label.setText(message)
+			self.loading_label.setVisible(True)
+			QApplication.setOverrideCursor(Qt.WaitCursor)
+			QApplication.processEvents()
+		try:
+			yield
+		finally:
+			self._loading_depth = max(0, self._loading_depth - 1)
+			if self._loading_depth == 0:
+				self.loading_label.setVisible(False)
+				QApplication.restoreOverrideCursor()
+				QApplication.processEvents()
 
 	def _choose_dir(self):
 		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
@@ -136,7 +158,8 @@ class PakBrowserDialog(QDialog):
 		if not root:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("Select a directory to scan."))
 			return
-		paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
+		with self._loading(self.tr("Scanning PAK files...")):
+			paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
 		if not paks:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
 			return
@@ -210,9 +233,14 @@ class PakBrowserDialog(QDialog):
 		if d:
 			self.out_edit.setText(d)
 	
-	def _on_show_only_valid_toggled(self):
-		self._update_dump_button_visibility()
-		self._apply_filter_now()
+	def _on_show_unknown_toggled(self, _checked: bool):
+		with self._loading(self.tr("Updating file list...")):
+			self._recompute_display()
+
+	def _on_show_only_valid_toggled(self, _checked: bool):
+		with self._loading(self.tr("Updating file list...")):
+			self._update_dump_button_visibility()
+			self._apply_filter_now()
 
 	def _on_filter_text_changed(self, _=None):
 		self._filter_timer.start(120)
@@ -421,41 +449,43 @@ class PakBrowserDialog(QDialog):
 		_profile = os.getenv("REASY_PROFILE", "0").lower() in ("1", "true", "yes", "on")
 		_sections = []
 		_t0 = time.perf_counter()
-		try:
-			with open(path, "r", encoding="utf-8") as f:
-				items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
-		except Exception as e:
-			QMessageBox.critical(self, "Read failed", str(e))
-			return
+		with self._loading(self.tr("Loading list file...")):
+			try:
+				with open(path, "r", encoding="utf-8") as f:
+					items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
+			except Exception as e:
+				QMessageBox.critical(self, "Read failed", str(e))
+				return
 		_t1 = time.perf_counter()
 		if _profile:
 			_sections.append(("Read & normalize .list", ( _t1 - _t0 ) * 1000.0))
 
-		_t2a = time.perf_counter()
-		manifest_paths = self._auto_merge_manifest()
-		_t2b = time.perf_counter()
-		if _profile:
-			_sections.append(("Read manifest (if any)", ( _t2b - _t2a ) * 1000.0))
-		
-		merged = sorted(set(items) | set(p.lower() for p in manifest_paths))
-		self._base_paths = merged
+		with self._loading(self.tr("Resolving list entries...")):
+			_t2a = time.perf_counter()
+			manifest_paths = self._auto_merge_manifest()
+			_t2b = time.perf_counter()
+			if _profile:
+				_sections.append(("Read manifest (if any)", ( _t2b - _t2a ) * 1000.0))
+			
+			merged = sorted(set(items) | set(p.lower() for p in manifest_paths))
+			self._base_paths = merged
 
-		_t3a = time.perf_counter()
-		if self._cached_reader:
-			try:
-				self._cached_reader.assign_paths(self._base_paths)
-				self._valid_paths = set()
-				if self._cached_reader._cache:
-					all_cached = self._cached_reader.cached_paths(include_unknown=True)
-					self._valid_paths = {p.lower() for p in all_cached}
-			except Exception:
+			_t3a = time.perf_counter()
+			if self._cached_reader:
+				try:
+					self._cached_reader.assign_paths(self._base_paths)
+					self._valid_paths = set()
+					if self._cached_reader._cache:
+						all_cached = self._cached_reader.cached_paths(include_unknown=True)
+						self._valid_paths = {p.lower() for p in all_cached}
+				except Exception:
+					self._refresh_index()
+			else:
 				self._refresh_index()
-		else:
-			self._refresh_index()
-		_t3b = time.perf_counter()
-		if _profile:
-			_sections.append(("Resolve names (assign/index)", ( _t3b - _t3a ) * 1000.0))
-		self._recompute_display()
+			_t3b = time.perf_counter()
+			if _profile:
+				_sections.append(("Resolve names (assign/index)", ( _t3b - _t3a ) * 1000.0))
+			self._recompute_display()
 		_t4 = time.perf_counter()
 		if _profile:
 			_sections.append(("Build UI model", ( _t4 - _t3b ) * 1000.0))
