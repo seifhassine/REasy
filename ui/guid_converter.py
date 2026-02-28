@@ -74,4 +74,4 @@ def create_guid_converter_dialog(parent):
     mem_to_std_btn.clicked.connect(mem_to_std)
     std_to_mem_btn.clicked.connect(std_to_mem)
 
-    dialog.exec()
+    return dialog

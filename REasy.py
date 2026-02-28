@@ -1022,6 +1022,11 @@ class REasyEditorApp(QMainWindow):
         self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
         self._pak_browser = None
+        self._guid_converter_dialog = None
+        self._outdated_files_dialog = None
+        self._rsz_field_value_finder_dialog = None
+        self._rsz_differ_dialog = None
+        self._file_list_generator_dialog = None
         history = self.settings.get("recently_closed_files", [])
         self._closed_file_history = [f for f in history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
         self.recently_closed_menu = None
@@ -1447,9 +1452,15 @@ class REasyEditorApp(QMainWindow):
         self._pak_browser.activateWindow()
     
     def open_file_list_generator(self):
-        """Open the File List Generator dialog."""
-        dialog = FileListGeneratorDialog(self)
-        dialog.exec()
+        if self._file_list_generator_dialog is None:
+            self._file_list_generator_dialog = FileListGeneratorDialog(self)
+            self._file_list_generator_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._file_list_generator_dialog.destroyed.connect(
+                lambda *_: setattr(self, "_file_list_generator_dialog", None)
+            )
+        self._file_list_generator_dialog.show()
+        self._file_list_generator_dialog.raise_()
+        self._file_list_generator_dialog.activateWindow()
 
     def set_dark_mode(self, state):
         self.dark_mode = state
@@ -1959,23 +1970,38 @@ class REasyEditorApp(QMainWindow):
                 menubar.update()
 
     def open_guid_converter(self):
-        create_guid_converter_dialog(self)
+        if self._guid_converter_dialog is None:
+            self._guid_converter_dialog = create_guid_converter_dialog(self)
+            self._guid_converter_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._guid_converter_dialog.destroyed.connect(lambda *_: setattr(self, "_guid_converter_dialog", None))
+        self._guid_converter_dialog.show()
+        self._guid_converter_dialog.raise_()
+        self._guid_converter_dialog.activateWindow()
 
     def open_hash_calculator(self):
         self.hash_calculator = HashCalculator()
         self.hash_calculator.show()
 
     def open_outdated_files_detector(self):
-        """Open the Outdated Files Detector dialog"""
-        registry_path = self.settings.get("rcol_json_path", None)
-        dialog = OutdatedFilesDialog(self, registry_path)
-        dialog.exec()
+        if self._outdated_files_dialog is None:
+            registry_path = self.settings.get("rcol_json_path", None)
+            self._outdated_files_dialog = OutdatedFilesDialog(self, registry_path)
+            self._outdated_files_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._outdated_files_dialog.destroyed.connect(lambda *_: setattr(self, "_outdated_files_dialog", None))
+        self._outdated_files_dialog.show()
+        self._outdated_files_dialog.raise_()
+        self._outdated_files_dialog.activateWindow()
         
     def open_rsz_differ(self):
-        game_version = self.game_dropdown.currentText() if hasattr(self, 'game_dropdown') else "RE4"
-        json_path = self.settings.get("rcol_json_path", None)
-        dialog = RszDifferDialog(self, game_version, json_path)
-        dialog.exec()
+        if self._rsz_differ_dialog is None:
+            game_version = self.game_dropdown.currentText() if hasattr(self, 'game_dropdown') else "RE4"
+            json_path = self.settings.get("rcol_json_path", None)
+            self._rsz_differ_dialog = RszDifferDialog(self, game_version, json_path)
+            self._rsz_differ_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._rsz_differ_dialog.destroyed.connect(lambda *_: setattr(self, "_rsz_differ_dialog", None))
+        self._rsz_differ_dialog.show()
+        self._rsz_differ_dialog.raise_()
+        self._rsz_differ_dialog.activateWindow()
         
     def search_directory_for_number(self):
         search_directory_for_type(self, 'number', create_search_dialog, create_search_patterns)
@@ -1990,10 +2016,15 @@ class REasyEditorApp(QMainWindow):
         search_directory_for_type(self, 'hex', create_search_dialog, create_search_patterns)
     
     def open_rsz_field_value_finder(self):
-        """Open the RSZ field value finder dialog"""
-        from ui.rsz_field_value_finder_dialog import RszFieldValueFinderDialog
-        dialog = RszFieldValueFinderDialog(self, self.settings)
-        dialog.exec()
+        """Open the RSZ field value finder window."""
+        if self._rsz_field_value_finder_dialog is None:
+            from ui.rsz_field_value_finder_dialog import RszFieldValueFinderDialog
+            self._rsz_field_value_finder_dialog = RszFieldValueFinderDialog(self, self.settings)
+            self._rsz_field_value_finder_dialog.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._rsz_field_value_finder_dialog.destroyed.connect(lambda *_: setattr(self, "_rsz_field_value_finder_dialog", None))
+        self._rsz_field_value_finder_dialog.show()
+        self._rsz_field_value_finder_dialog.raise_()
+        self._rsz_field_value_finder_dialog.activateWindow()
 
     def open_find_dialog(self):
         active = self.get_active_tab()
