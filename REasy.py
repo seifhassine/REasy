@@ -1021,6 +1021,7 @@ class REasyEditorApp(QMainWindow):
 
         self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
+        self._pak_browser = None
         history = self.settings.get("recently_closed_files", [])
         self._closed_file_history = [f for f in history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
         self.recently_closed_menu = None
@@ -1437,8 +1438,13 @@ class REasyEditorApp(QMainWindow):
         self._script_creator.activateWindow()
     
     def open_pak_browser(self):
-        dialog = PakBrowserDialog(self)
-        dialog.exec()
+        if self._pak_browser is None:
+            self._pak_browser = PakBrowserDialog(self)
+            self._pak_browser.setAttribute(Qt.WA_DeleteOnClose, True)
+            self._pak_browser.destroyed.connect(lambda *_: setattr(self, "_pak_browser", None))
+        self._pak_browser.show()
+        self._pak_browser.raise_()
+        self._pak_browser.activateWindow()
     
     def open_file_list_generator(self):
         """Open the File List Generator dialog."""
