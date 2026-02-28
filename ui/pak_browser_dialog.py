@@ -565,11 +565,14 @@ class PakBrowserDialog(QDialog):
 		if not self._flat_model_valid_only or self._flat_model_valid_only.rowCount() == 0:
 			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
 			return
+		valid_paths = [p for p in self._flat_model_valid_only.stringList() if not p.startswith("__Unknown/")]
+		if not valid_paths:
+			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
+			return
 		path, _ = QFileDialog.getSaveFileName(self, self.tr("Save valid paths list"), "valid_paths.list", self.tr("List files (*.list *.txt);;All files (*)"))
 		if not path:
 			return
 		try:
-			valid_paths = self._flat_model_valid_only.stringList()
 			with open(path, "w", encoding="utf-8") as f:
 				for p in valid_paths:
 					f.write(p + "\n")
