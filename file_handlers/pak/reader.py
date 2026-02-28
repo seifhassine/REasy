@@ -21,9 +21,10 @@ from .pakfile import (
     _decrypt_pak_entry_data,
     _decrypt_resource,
     _read_chunk_table,
-    FEATURE_EXTRA_DATA,
-    FEATURE_CHUNKED_RESOURCES,
+    PAK_FLAG_ENTRY_TABLE_KEY,
+    PAK_FLAG_CHUNK_TABLE,
     _is_chunked_entry,
+    _skip_optional_header_sections,
 )
 
 def _normalize_for_hash(path: str) -> str:
@@ -359,14 +360,13 @@ class CachedPakReader(PakReader):
                     entry_table_size = file_count * (48 if maj == 4 else 24)
                     entry_table = bytearray(f.read(entry_table_size))
                     
-                    if (features & FEATURE_EXTRA_DATA) != 0:
-                        f.seek(4, 1)
-                    
-                    if features != 0:
+                    _skip_optional_header_sections(f, features)
+
+                    if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
                         key = bytearray(f.read(128))
                         _decrypt_pak_entry_data(entry_table, key)
 
-                    chunk_table = _read_chunk_table(f) if (features & FEATURE_CHUNKED_RESOURCES) != 0 else ()
+                    chunk_table = _read_chunk_table(f) if (features & PAK_FLAG_CHUNK_TABLE) != 0 else ()
 
                     off = 0
                     for _ in range(file_count):

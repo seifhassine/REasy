@@ -7,11 +7,28 @@ from typing import Optional, BinaryIO, List, Sequence
 
 
 MAGIC = 0x414B504B
-FEATURE_EXTRA_DATA = 0x10
-FEATURE_CHUNKED_RESOURCES = 0x20
+PAK_FLAG_HEADER_PADDING = 0x04
+PAK_FLAG_ENTRY_TABLE_KEY = 0x08
+PAK_FLAG_HEADER_MARKER = 0x10
+PAK_FLAG_CHUNK_TABLE = 0x20
+PAK_SUPPORTED_FLAGS = (
+    PAK_FLAG_HEADER_PADDING
+    | PAK_FLAG_ENTRY_TABLE_KEY
+    | PAK_FLAG_HEADER_MARKER
+    | PAK_FLAG_CHUNK_TABLE
+)
+_HEADER_SKIP_BY_FLAG = (
+    (PAK_FLAG_HEADER_MARKER, 4),
+    (PAK_FLAG_HEADER_PADDING, 9),
+)
 CHUNK_SIZE_SHIFT = 10
 CHUNK_UNCOMPRESSED_SIZE = 512 * 1024
 CHUNKED_ATTRIBS = {0x1000000, 0x1000400}
+
+def _skip_optional_header_sections(f: BinaryIO, features: int) -> None:
+    for flag, skip_len in _HEADER_SKIP_BY_FLAG:
+        if (features & flag) != 0:
+            f.seek(skip_len, io.SEEK_CUR)
 
 
 @dataclass(frozen=True)
@@ -68,9 +85,9 @@ class PakFile:
         if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
             raise IOError(f"Unsupported PAK version {maj}.{minr}")
 
-        if features not in (0, 8, 24, 16):
-
-            pass
+        unknown_flags = features & ~PAK_SUPPORTED_FLAGS
+        if unknown_flags:
+            raise IOError(f"Unsupported PAK flags {features} for file {self.filepath}")
 
         self.header = PakHeader(magic, maj, minr, features, file_count, fingerprint)
         self.entries.clear()
@@ -83,17 +100,15 @@ class PakFile:
             raise IOError("Unexpected EOF reading PAK entry table")
 
 
-        if (features & FEATURE_EXTRA_DATA) != 0:
-            f.seek(4, io.SEEK_CUR)
+        _skip_optional_header_sections(f, features)
 
-
-        if features != 0:
+        if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
             key = f.read(128)
             if len(key) != 128:
                 raise IOError("Unexpected EOF reading PAK key")
             _decrypt_pak_entry_data(entry_table, bytearray(key))
 
-        self.chunk_table = _read_chunk_table(f) if (features & FEATURE_CHUNKED_RESOURCES) != 0 else ()
+        self.chunk_table = _read_chunk_table(f) if (features & PAK_FLAG_CHUNK_TABLE) != 0 else ()
 
         buf = memoryview(entry_table)
         off = 0
