@@ -159,14 +159,12 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added .wel and .wcc support."),
-            ("New", "When creating a new project, the file list will be automatically selected if available."),
-            ("New", "MDF: Added support for Pragmata MDFs."),
-            ("New", "Recently closed file list and a shortcut to reopen last closed file (ctrl+shift+T by default)."),
-            ("Improved", "Updated Monster Hunter Wilds file list and RSZ dump."),
-            ("Improved", "Added \"Show in folder\" button in the mod export dialog to make it easier to locate your exported mods."),
-            ("Improved", "PAK: Ability to right-click and extract folders in PAK Browser."),
-            ("Fixed", "Tex: fixed missing decoder issue, as well other .tex format issues. All .tex files should now be supported."),
+            ("New", "Added support for RE9 and added RE9_STM.list (subject to improvement)."),
+            ("Improved", "Made windows of all tools non-blocking, meaning you can for example open PAK Browser and edit files at the same time."),
+            ("Improved", "Added progress indicators for PAK Browser operations."),
+            ("Fixed", "Unsupported extraction of RE9 DLCs."),
+            ("Fixed", "Subsequent scans in PAK Browser were not detecting .pak file modifications, specifically file path changes."),
+            ("Fixed", "A bug that led to UVS preview failing to load texture due to unresolved path for DMC5 and RE7 non-rt."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
