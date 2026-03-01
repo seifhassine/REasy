@@ -1,5 +1,7 @@
 import os
 import io
+import re
+import mmap
 from collections import defaultdict
 
 
@@ -40,6 +42,72 @@ VARIATION_SUFFIXES = [
     ".x64.zhcn",
     ".x64.zhtw",
 ]
+
+LARGE_FILE_THRESHOLD = 512 * 1024 * 1024
+MMAP_WINDOW_SIZE = 64 * 1024 * 1024
+MMAP_OVERLAP_SIZE = 1 * 1024 * 1024
+
+
+def _is_valid_extracted_char(char):
+    return char.isprintable()
+
+
+def _extract_utf16le_strings(data, min_len):
+    strings = []
+    data_len = len(data)
+    min_bytes = min_len * 2
+
+    for start_parity in (0, 1):
+        i = start_parity
+        while i <= data_len - min_bytes:
+            if not (32 <= data[i] <= 126 and data[i + 1] == 0):
+                i += 2
+                continue
+
+            j = i
+            chars = []
+
+            while j <= data_len - 2:
+                codepoint = data[j] | (data[j + 1] << 8)
+                if codepoint == 0:
+                    break
+
+                char = chr(codepoint)
+                if not _is_valid_extracted_char(char):
+                    break
+
+                chars.append(char)
+                j += 2
+
+            if len(chars) >= min_len:
+                strings.append(''.join(chars))
+                i = j + 2
+            else:
+                i += 2
+
+    return strings
+
+
+_UTF8_CANDIDATE_PATTERN = re.compile(rb'[\x20-\x7E\x80-\xFF]{10,}')
+
+
+def _extract_utf8_strings(data, min_len):
+    strings = []
+
+    for match in _UTF8_CANDIDATE_PATTERN.finditer(data):
+        chunk = match.group(0)
+        if len(chunk) < min_len:
+            continue
+
+        try:
+            decoded = chunk.decode('utf-8')
+        except UnicodeDecodeError:
+            continue
+
+        if all(_is_valid_extracted_char(ch) for ch in decoded):
+            strings.append(decoded)
+
+    return strings
 
 
 def expand_with_variations(paths):
@@ -228,67 +296,60 @@ class ExePathExtractor:
         self.include_streaming = include_streaming
     
     def _extract_strings(self, data, min_len=10):
-        strings = []
-        data_len = len(data)
-        
-        i = 0
-        while i < data_len - min_len * 2:
-            if data[i] != 0 and 32 <= data[i] <= 126 and data[i+1] == 0:
-                j = i
-                s = bytearray()
-                while j < data_len - 1 and data[j] != 0 and 32 <= data[j] <= 126 and data[j+1] == 0:
-                    s.append(data[j])
-                    j += 2
-                if len(s) >= min_len:
-                    try:
-                        strings.append(s.decode('ascii'))
-                    except:
-                        pass
-                i = j
-            else:
-                i += 2
-        
-        i = 0
-        while i < data_len - min_len:
-            if 32 <= data[i] <= 126:
-                j = i
-                s = bytearray()
-                while j < data_len and 32 <= data[j] <= 126:
-                    s.append(data[j])
-                    j += 1
-                if len(s) >= min_len:
-                    try:
-                        strings.append(s.decode('utf-8'))
-                    except:
-                        pass
-                i = j
-            else:
-                i += 1
-        
-        return strings
+        return _extract_utf16le_strings(data, min_len) + _extract_utf8_strings(data, min_len)
     
-    def extract_paths_from_exe(self, exe_path, progress_callback=None):
+    def _extract_strings_from_large_mmap(self, mm, progress_callback=None, source_label="binary file"):
+        strings = []
+        seen = set()
+        total = len(mm)
+        step = max(1, MMAP_WINDOW_SIZE - MMAP_OVERLAP_SIZE)
+
+        for start in range(0, total, step):
+            end = min(total, start + MMAP_WINDOW_SIZE)
+            chunk = mm[start:end]
+
+            for value in self._extract_strings(chunk):
+                if value not in seen:
+                    seen.add(value)
+                    strings.append(value)
+
+            if progress_callback and total > 0:
+                progress = int((end / total) * 30)
+                progress_callback(f"Reading {source_label}...", min(progress, 30), 100)
+
+            if end >= total:
+                break
+
+        return strings
+
+    def extract_paths_from_binary_file(self, file_path, progress_callback=None, source_label="binary file"):
         self.collected_paths.clear()
-        
+
         if progress_callback:
-            progress_callback("Reading executable...", 0, 100)
-        
+            progress_callback(f"Reading {source_label}...", 0, 100)
+
         try:
-            with open(exe_path, 'rb') as f:
-                strings = self._extract_strings(f.read())
-        except:
+            file_size = os.path.getsize(file_path)
+            if file_size >= LARGE_FILE_THRESHOLD:
+                with open(file_path, 'rb') as f:
+                    with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                        strings = self._extract_strings_from_large_mmap(mm, progress_callback, source_label)
+            else:
+                with open(file_path, 'rb') as f:
+                    strings = self._extract_strings(f.read())
+        except Exception:
             return True, None, 0
-        
+
         if progress_callback:
             progress_callback("Processing strings...", 30, 100)
-        
+
         base_paths = set()
         for s in strings:
             path = s.replace('\\', '/').lstrip('@')
             if ':' in path:
                 path = path.split(':')[-1]
             path = path.lstrip('@')
-            
+
             parts = path.split('.')
             version_idx = None
             for i in range(len(parts) - 1, 0, -1):
@@ -298,18 +359,18 @@ class ExePathExtractor:
                 except ValueError:
                     if version_idx:
                         break
-            
+
             base = '.'.join(parts[:version_idx]) if version_idx and version_idx > 1 else path
             if any(base.lower().endswith(f'.{ext}') for ext in self.extensions):
                 base_paths.add(base.lower())
-        
+
         if progress_callback:
             progress_callback("Generating version combinations...", 60, 100)
-        
+
         for base in base_paths:
             if not base.startswith('natives/'):
                 base = self.path_prefix + base
-            
+
             parts = base.split('.')
             if len(parts) >= 2:
                 ext = parts[-1]
@@ -321,18 +382,21 @@ class ExePathExtractor:
                     self.collected_paths.add(base)
             else:
                 self.collected_paths.add(base)
-        
+
         if progress_callback:
             progress_callback("Extraction complete!", 100, 100)
-        
+
         paths = self.collected_paths
         if self.include_streaming:
             paths = expand_with_streaming(paths, self.path_prefix)
         if self.include_variations:
             paths = expand_with_variations(paths)
         self.collected_paths = paths
-        
+
         return True, None, len(self.collected_paths)
+
+    def extract_paths_from_exe(self, exe_path, progress_callback=None):
+        return self.extract_paths_from_binary_file(exe_path, progress_callback, source_label="executable")
     
     def export_to_file(self, output_path):
         try:
@@ -373,35 +437,44 @@ class PathCollector:
     def should_skip_entry(self, entry):
         return entry.decompressed_size > 50 * 1024 * 1024 or entry.decompressed_size < 100
     
-    def extract_strings_from_data(self, data):
-        strings = []
-        min_length = 10
-        i = 0
-        data_len = len(data)
-        min_bytes = min_length * 2
-        
-        while i < data_len - min_bytes:
-            if data[i] != 0 and 32 <= data[i] <= 126 and data[i+1] == 0:
-                string_bytes = bytearray()
-                j = i
-                while j < data_len - 1:
-                    byte1, byte2 = data[j], data[j+1]
-                    if byte1 != 0 and 32 <= byte1 <= 126 and byte2 == 0:
-                        string_bytes.append(byte1)
-                        j += 2
-                    else:
-                        break
-                
-                if len(string_bytes) >= min_length:
+    def _parse_list_path_components(self, line):
+        parts = line.split('.')
+        if len(parts) < 2:
+            return None, None, None
+
+        path_without_version = None
+        extension = None
+
+        for i in range(len(parts) - 1, 0, -1):
+            try:
+                int(parts[i])
+                path_without_version = '.'.join(parts[:i])
+                extension = parts[i - 1].lower() if i > 0 else None
+                break
+            except ValueError:
+                if i > 1:
                     try:
-                        strings.append(string_bytes.decode('ascii'))
-                    except:
+                        int(parts[i - 1])
+                        path_without_version = '.'.join(parts[:i - 1])
+                        extension = parts[i - 2].lower() if i > 1 else None
+                        break
+                    except ValueError:
                         pass
-                i = j
-            else:
-                i += 2
-        
-        return strings
+
+        if not path_without_version or not extension:
+            return None, None, None
+
+        base_parts = path_without_version.split('.')
+        if len(base_parts) < 2:
+            return None, None, None
+
+        stem = '.'.join(base_parts[:-1]).lower()
+        extension = base_parts[-1].lower()
+        return stem, path_without_version.lower(), extension
+    
+    def extract_strings_from_data(self, data):
+        min_length = 10
+        return _extract_utf16le_strings(data, min_length) + _extract_utf8_strings(data, min_length)
     
     def _process_entry(self, entry, f, entry_idx):
         from file_handlers.pak.pakfile import _read_entry_raw
@@ -528,102 +601,223 @@ class PathCollector:
                     line = line.strip()
                     if not line or line.startswith('#') or not line.startswith('natives/'):
                         continue
-                    
-                    parts = line.split('.')
-                    if len(parts) < 2:
+
+                    _, path_without_version, extension = self._parse_list_path_components(line)
+                    if not path_without_version:
                         continue
-                    
-                    path_without_version = None
-                    extension = None
-                    
-                    for i in range(len(parts) - 1, 0, -1):
-                        try:
-                            int(parts[i])
-                            path_without_version = '.'.join(parts[:i])
-                            if i > 0:
-                                extension = parts[i - 1].lower()
-                            break
-                        except ValueError:
-                            if i > 1:
-                                try:
-                                    int(parts[i-1])
-                                    path_without_version = '.'.join(parts[:i-1])
-                                    if i > 1:
-                                        extension = parts[i - 2].lower()
-                                    break
-                                except ValueError:
-                                    pass
-                    
-                    if path_without_version:
-                        versions = self.extension_versions.get(extension, set())
-                        if versions:
-                            for version in versions:
-                                self.collected_paths.add(f"{path_without_version}.{version}".lower())
-                        else:
-                            self.collected_paths.add(path_without_version.lower())
+
+                    versions = self.extension_versions.get(extension, set())
+                    if versions:
+                        for version in versions:
+                            self.collected_paths.add(f"{path_without_version}.{version}".lower())
+                    else:
+                        self.collected_paths.add(path_without_version.lower())
             
             return True, None
         except Exception as e:
             return False, f"Failed to process list file: {e}"
     
+    def generate_improved_paths_from_list(self, list_file_path, progress_callback=None):
+        if not os.path.exists(list_file_path):
+            return False, f"List file not found: {list_file_path}", 0, 0
+
+        try:
+            stems = set()
+            with open(list_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or not line.startswith('natives/'):
+                        continue
+
+                    stem, _, _ = self._parse_list_path_components(line)
+                    if stem:
+                        stems.add(stem)
+
+            if not stems:
+                return False, "No valid list entries found to improve", 0, 0
+
+            self.collected_paths.clear()
+            stem_list = sorted(stems)
+
+            for idx, stem in enumerate(stem_list, 1):
+                if progress_callback:
+                    should_stop = progress_callback(
+                        f"Generating combinations for list entry {idx}/{len(stem_list)}", idx, len(stem_list)
+                    )
+                    if should_stop:
+                        break
+
+                for extension in self.extensions:
+                    versions = self.extension_versions.get(extension, set())
+                    if versions:
+                        for version in versions:
+                            self.collected_paths.add(f"{stem}.{extension}.{version}".lower())
+                    else:
+                        self.collected_paths.add(f"{stem}.{extension}".lower())
+
+            if progress_callback:
+                progress_callback("List improver combination generation complete", len(stem_list), len(stem_list))
+
+            return True, None, len(stems), len(self.collected_paths)
+        except Exception as e:
+            return False, f"Failed to build improved list combinations: {e}", 0, 0
+
+    def _collect_pak_hashes(self, pak_directory, progress_callback=None):
+        from file_handlers.pak import scan_pak_files, PakFile
+
+        if not os.path.exists(pak_directory):
+            return False, f"Directory not found: {pak_directory}", set()
+
+        if progress_callback:
+            progress_callback("Scanning PAK files for hashes...", 0, 1)
+
+        pak_files = scan_pak_files(pak_directory, ignore_mod_paks=False)
+        if not pak_files:
+            return False, "No .pak files found in directory", set()
+
+        pak_hashes = set()
+
+        for pak_idx, pak_path in enumerate(pak_files, 1):
+            pak_name = os.path.basename(pak_path)
+            if progress_callback:
+                progress_callback(f"Scanning PAK {pak_idx}/{len(pak_files)}: {pak_name}\nCollecting file hashes...", pak_idx, len(pak_files))
+
+            try:
+                pak = PakFile()
+                with open(pak_path, 'rb') as f:
+                    pak.read_contents(f, None)
+                for entry in pak.entries:
+                    pak_hashes.add(entry.combined_hash)
+            except Exception as e:
+                print(f"Warning: Failed to read PAK {pak_name}: {e}")
+                continue
+
+        if not pak_hashes:
+            return False, "No hashes found in PAK files", set()
+
+        return True, None, pak_hashes
+
+    def _iter_improver_candidates(self, stem, suffixes):
+        for suffix in suffixes:
+            base_candidate = f"{stem}.{suffix}"
+            for candidate in self._iter_expanded_variants(base_candidate):
+                yield candidate
+
+    def _iter_expanded_variants(self, base_candidate):
+        candidates = [base_candidate]
+
+        if self.include_streaming:
+            prefix = self.path_prefix.lower()
+            streaming_prefix = f"{prefix}streaming/"
+            if base_candidate.startswith(prefix) and not base_candidate.startswith(streaming_prefix):
+                candidates.append(f"{streaming_prefix}{base_candidate[len(prefix):]}")
+
+        for candidate in candidates:
+            yield candidate
+            if self.include_variations:
+                for variation_suffix in VARIATION_SUFFIXES:
+                    if not candidate.endswith(variation_suffix):
+                        yield f"{candidate}{variation_suffix}"
+
+    def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None):
+        try:
+            from file_handlers.pak.utils import filepath_hash
+
+            if not os.path.exists(list_file_path):
+                return False, f"List file not found: {list_file_path}", None, set()
+
+            stems = set()
+            with open(list_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or not line.startswith('natives/'):
+                        continue
+                    stem, _, _ = self._parse_list_path_components(line)
+                    if stem:
+                        stems.add(stem)
+
+            if not stems:
+                return False, "No valid list entries found to improve", None, set()
+
+            ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
+            if not ok:
+                return False, error, None, set()
+
+            stem_list = sorted(stems)
+            suffixes = []
+            for extension in self.extensions:
+                versions = self.extension_versions.get(extension, set())
+                if versions:
+                    suffixes.extend(f"{extension}.{version}" for version in versions)
+                else:
+                    suffixes.append(extension)
+
+            validated_paths = set()
+            generated_candidates = 0
+
+            for idx, stem in enumerate(stem_list, 1):
+                for candidate in self._iter_improver_candidates(stem, suffixes):
+                    generated_candidates += 1
+                    candidate_hash = filepath_hash(candidate)
+                    if candidate_hash in pak_hashes:
+                        validated_paths.add(candidate)
+                        pak_hashes.discard(candidate_hash)
+
+                if progress_callback:
+                    progress_callback(
+                        f"Improving list entries...\nEntry {idx}/{len(stem_list)}\n"
+                        f"Generated so far: {generated_candidates}\nValid so far: {len(validated_paths)}",
+                        idx,
+                        len(stem_list)
+                    )
+
+                if not pak_hashes:
+                    break
+
+            stats = {
+                'source_entries': len(stem_list),
+                'generated_candidates': generated_candidates,
+                'validated_paths': len(validated_paths),
+            }
+            return True, None, stats, validated_paths
+        except Exception as e:
+            return False, f"List improver error: {e}", None, set()
+
     def validate_paths_against_paks(self, pak_directory, progress_callback=None):
         try:
-            from file_handlers.pak import scan_pak_files, PakFile
             from file_handlers.pak.utils import filepath_hash
-            
-            if not os.path.exists(pak_directory):
-                return False, f"Directory not found: {pak_directory}", set()
-            
-            if progress_callback:
-                progress_callback("Scanning PAK files for hashes...", 0, 1)
-            
-            pak_files = scan_pak_files(pak_directory, ignore_mod_paks=False)
-            if not pak_files:
-                return False, "No .pak files found in directory", set()
-            
-            pak_hashes = set()
-            
-            for pak_idx, pak_path in enumerate(pak_files, 1):
-                pak_name = os.path.basename(pak_path)
-                if progress_callback:
-                    progress_callback(f"Scanning PAK {pak_idx}/{len(pak_files)}: {pak_name}\nCollecting file hashes...", pak_idx, len(pak_files))
-                
-                try:
-                    pak = PakFile()
-                    with open(pak_path, 'rb') as f:
-                        pak.read_contents(f, None)
-                    for entry in pak.entries:
-                        pak_hashes.add(entry.combined_hash)
-                except Exception as e:
-                    print(f"Warning: Failed to read PAK {pak_name}: {e}")
-                    continue
-            
-            if not pak_hashes:
-                return False, "No hashes found in PAK files", set()
-            
+
+            ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
+            if not ok:
+                return False, error, set()
+
             paths_to_validate = self._get_paths_for_validation()
 
             if progress_callback:
                 progress_callback("Validating collected paths...", 0, len(paths_to_validate))
-            
+
             validated_paths = set()
             total_paths = len(paths_to_validate)
-            
+
             for idx, path in enumerate(paths_to_validate, 1):
                 if progress_callback and idx % 1000 == 0:
                     progress_callback(f"Validating paths...\nChecked: {idx}/{total_paths}\nValid: {len(validated_paths)}", idx, total_paths)
-                
+
                 path_hash = filepath_hash(path)
                 if path_hash in pak_hashes:
                     validated_paths.add(path.lower())
-            
+                    pak_hashes.discard(path_hash)
+
+                if not pak_hashes:
+                    break
+
             if progress_callback:
                 progress_callback(f"Validation complete!\nValid paths: {len(validated_paths)}/{total_paths}", total_paths, total_paths)
-            
+
             return True, None, validated_paths
         except Exception as e:
             return False, f"Validation error: {e}", set()
-    
+
     def export_to_file(self, output_path, paths=None):
         try:
             paths_to_export = paths if paths is not None else self._get_paths_for_validation()
@@ -638,13 +832,16 @@ class PathCollector:
     def get_path_count(self):
         return len(self._get_paths_for_validation())
 
-    def _get_paths_for_validation(self):
-        paths = self.collected_paths
+    def _expand_paths_for_validation(self, paths):
+        expanded_paths = paths
         if self.include_streaming:
-            paths = expand_with_streaming(paths, self.path_prefix)
+            expanded_paths = expand_with_streaming(expanded_paths, self.path_prefix)
         if self.include_variations:
-            paths = expand_with_variations(paths)
-        return paths
+            expanded_paths = expand_with_variations(expanded_paths)
+        return expanded_paths
+
+    def _get_paths_for_validation(self):
+        return self._expand_paths_for_validation(self.collected_paths)
     
     def clear(self):
         self.collected_paths.clear()

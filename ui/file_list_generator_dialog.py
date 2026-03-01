@@ -132,6 +132,16 @@ class FileListGeneratorDialog(QDialog):
         self.extract_exe_btn.setEnabled(False)
         self.extract_exe_btn.setStyleSheet("QPushButton { background-color: #2E7D32; color: white; } QPushButton:disabled { background-color: #BDBDBD; color: #666; }")
         buttons_layout.addWidget(self.extract_exe_btn)
+
+        self.extract_dump_btn = QPushButton("Extract Paths from Memory Dump")
+        self.extract_dump_btn.setMinimumHeight(40)
+        dump_font = self.extract_dump_btn.font()
+        dump_font.setBold(True)
+        self.extract_dump_btn.setFont(dump_font)
+        self.extract_dump_btn.clicked.connect(self._extract_paths_from_dump)
+        self.extract_dump_btn.setEnabled(False)
+        self.extract_dump_btn.setStyleSheet("QPushButton { background-color: #1565C0; color: white; } QPushButton:disabled { background-color: #BDBDBD; color: #666; }")
+        buttons_layout.addWidget(self.extract_dump_btn)
         
         layout.addLayout(buttons_layout)
     
@@ -160,6 +170,15 @@ class FileListGeneratorDialog(QDialog):
         font.setBold(True)
         self.collect_paths_btn.setFont(font)
         bottom_layout.addWidget(self.collect_paths_btn)
+
+        self.improve_list_btn = QPushButton("Improve Existing List")
+        self.improve_list_btn.clicked.connect(self._improve_list)
+        self.improve_list_btn.setVisible(False)
+        self.improve_list_btn.setMinimumHeight(35)
+        improve_font = self.improve_list_btn.font()
+        improve_font.setBold(True)
+        self.improve_list_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.improve_list_btn)
         
         bottom_layout.addStretch()
         
@@ -190,12 +209,16 @@ class FileListGeneratorDialog(QDialog):
             self.list_label.setText(f"Existing List File: {os.path.basename(file_path)}")
             self.list_label.setToolTip(file_path)
             self.clear_list_btn.setEnabled(True)
+            if hasattr(self, 'improve_list_btn'):
+                self.improve_list_btn.setEnabled(True)
     
     def _clear_list_file(self):
         self.list_file_path = None
         self.list_label.setText("Existing List File: None (optional)")
         self.list_label.setToolTip("")
         self.clear_list_btn.setEnabled(False)
+        if hasattr(self, 'improve_list_btn'):
+            self.improve_list_btn.setEnabled(False)
     
     def _update_run_button(self):
         has_exe = self.game_exe_path is not None
@@ -304,7 +327,10 @@ class FileListGeneratorDialog(QDialog):
         
         QMessageBox.information(self, "Analysis Complete", summary_msg)
         self.collect_paths_btn.setVisible(True)
+        self.improve_list_btn.setVisible(True)
+        self.improve_list_btn.setEnabled(bool(self.list_file_path))
         self.extract_exe_btn.setEnabled(True)
+        self.extract_dump_btn.setEnabled(True)
     
     def _on_item_double_clicked(self, item, column):
         if column != 1:
@@ -452,11 +478,92 @@ class FileListGeneratorDialog(QDialog):
         else:
             QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
     
+    def _improve_list(self):
+        if not self.list_file_path:
+            QMessageBox.warning(self, "No List File", "Please select an existing list file first.")
+            return
+
+        extensions = list(self.analyzer.combined_extensions.keys())
+        if not extensions:
+            QMessageBox.warning(self, "No Extensions", "No extensions available. Please run the analysis first.")
+            return
+
+        if not self.game_exe_path:
+            QMessageBox.warning(self, "No Game Path", "Game executable path is not available.")
+            return
+
+        pak_directory = os.path.dirname(self.game_exe_path)
+        self.path_collector = PathCollector(
+            extensions,
+            extension_versions=self.analyzer.combined_extensions,
+            path_prefix=self.path_prefix,
+            include_variations=self.include_variations,
+            include_streaming=self.include_streaming
+        )
+
+        progress = QProgressDialog("Improving list entries...", None, 0, 100, self)
+        progress.setWindowTitle("List Improver")
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setCancelButton(None)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+
+        def update_progress(message, current, total):
+            if total > 0:
+                progress.setValue(int((current / total) * 100))
+            progress.setLabelText(f"{message}\n\nProcessing {current} of {total}...")
+            QApplication.processEvents()
+
+        success, error, stats, validated_paths = self.path_collector.improve_list_with_chunked_validation(
+            self.list_file_path,
+            pak_directory,
+            progress_callback=update_progress
+        )
+        progress.close()
+
+        if not success:
+            QMessageBox.critical(self, "List Improver Error", f"Failed to improve list:\n\n{error}")
+            return
+
+        output_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Improved List", "improved_result.list",
+            "List Files (*.list);;Text Files (*.txt);;All Files (*.*)"
+        )
+        if not output_path:
+            return
+
+        success, error = self.path_collector.export_to_file(output_path, validated_paths)
+        if not success:
+            QMessageBox.critical(self, "Export Error", f"Failed to export improved list:\n\n{error}")
+            return
+
+        QMessageBox.information(
+            self,
+            "List Improver Complete",
+            f"List improver complete!\n\n"
+            f"Source list entries: {stats['source_entries']}\n"
+            f"Generated combinations: {stats['generated_candidates']}\n"
+            f"Validated paths: {stats['validated_paths']}\n\n"
+            f"Saved to: {output_path}"
+        )
+
     def _extract_paths_from_exe(self):
-        if not self.game_exe_path or not self.analyzer.combined_extensions:
+        if not self.game_exe_path:
+            QMessageBox.warning(self, "Error", "Please select a game executable first.")
+            return
+
+        self._run_binary_extraction(
+            self.game_exe_path,
+            source_label="executable",
+            default_filename="exe_paths.txt",
+            save_title="Save Extracted Paths"
+        )
+
+    def _run_binary_extraction(self, input_path, source_label, default_filename, save_title):
+        if not input_path or not self.analyzer.combined_extensions:
             QMessageBox.warning(self, "Error", "Please run the analysis first.")
             return
-        
+
         self.exe_path_extractor = ExePathExtractor(
             list(self.analyzer.combined_extensions.keys()),
             self.analyzer.combined_extensions,
@@ -464,14 +571,15 @@ class FileListGeneratorDialog(QDialog):
             include_variations=self.include_variations,
             include_streaming=self.include_streaming
         )
-        
-        progress = QProgressDialog("Extracting paths from executable...", "Stop", 0, 100, self)
+
+        progress = QProgressDialog(f"Extracting paths from {source_label}...", "Stop", 0, 100, self)
         progress.setWindowTitle("Extracting File Paths")
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(0)
         progress.setValue(0)
-        
+
         stopped = False
+
         def update_progress(msg, cur, total):
             nonlocal stopped
             if progress.wasCanceled():
@@ -482,32 +590,34 @@ class FileListGeneratorDialog(QDialog):
             progress.setLabelText(msg)
             QApplication.processEvents()
             return False
-        
-        success, error, count = self.exe_path_extractor.extract_paths_from_exe(
-            self.game_exe_path, update_progress
+
+        success, error, count = self.exe_path_extractor.extract_paths_from_binary_file(
+            input_path,
+            update_progress,
+            source_label=source_label
         )
         progress.close()
-        
+
         if stopped or not success or count == 0:
             if not stopped:
-                msg = error or "No file paths were found in the executable."
+                msg = error or f"No file paths were found in the {source_label}."
                 QMessageBox.warning(self, "Extraction Failed", msg)
             return
-        
+
         output_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Extracted Paths", "exe_paths.txt",
+            self, save_title, default_filename,
             "Text Files (*.txt);;List Files (*.list);;All Files (*.*)"
         )
         if not output_path:
             return
-        
+
         success, error = self.exe_path_extractor.export_to_file(output_path)
-        
+
         if success:
             stats = self.analyzer.get_statistics()
             QMessageBox.information(
                 self, "Extraction Complete",
-                f"Successfully extracted {count} unique file paths!\n\n"
+                f"Successfully extracted {count} unique file paths from {source_label}!\n\n"
                 f"- {stats['total']} extensions analyzed\n"
                 f"- All version combinations included\n"
                 f"- Prefix '{self.path_prefix}' applied\n\n"
@@ -515,7 +625,26 @@ class FileListGeneratorDialog(QDialog):
             )
         else:
             QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
-    
+
+    def _extract_paths_from_dump(self):
+        if not self.analyzer.combined_extensions:
+            QMessageBox.warning(self, "Error", "Please run the analysis first.")
+            return
+
+        dump_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Memory Dump", "",
+            "Dump Files (*.dmp *.bin *.mdmp);;All Files (*.*)"
+        )
+        if not dump_path:
+            return
+
+        self._run_binary_extraction(
+            dump_path,
+            source_label="memory dump",
+            default_filename="dump_paths.txt",
+            save_title="Save Extracted Paths from Memory Dump"
+        )
+
     def _parse_version_input(self, text):
         new_versions = set()
         for part in text.split(','):
