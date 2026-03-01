@@ -2275,18 +2275,32 @@ class REasyEditorApp(QMainWindow):
         self._save_closed_file_history()
 
     def reopen_closed_file(self, filename=None, notify_if_empty=False):
-        while self._closed_file_history:
-            target = filename or self._closed_file_history[-1]
-            if target not in self._closed_file_history:
-                break
-            self._closed_file_history.remove(target)
-            self._save_closed_file_history()
-            if self._open_path(target):
-                return
-            if filename:
-                break
+        if filename is not None:
+            candidates = [filename]
+        else:
+            candidates = list(reversed(self._closed_file_history))
 
-        if notify_if_empty and filename is None:
+        attempted = False
+        for target in candidates:
+            if target not in self._closed_file_history:
+                continue
+            attempted = True
+            if self._open_path(target):
+                self._closed_file_history.remove(target)
+                self._save_closed_file_history()
+                return
+
+            prompt = QMessageBox(self)
+            prompt.setIcon(QMessageBox.Critical)
+            prompt.setWindowTitle("Reopen Closed File")
+            prompt.setText(f"Failed to reopen {os.path.basename(target)}. Remove it from recently closed files?")
+            prompt.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            if prompt.exec_() == QMessageBox.Yes:
+                self._closed_file_history.remove(target)
+                self._save_closed_file_history()
+            break
+
+        if not attempted and notify_if_empty and filename is None and not self._closed_file_history:
             QMessageBox.information(self, "Reopen Closed File", "No recently closed files to reopen.")
 
     def _populate_recently_closed_menu(self):
