@@ -231,9 +231,16 @@ def create_search_patterns(search_type, value):
         except Exception as e:
             raise ValueError(QObject.tr("Could not convert number: {}").format(e))
     elif search_type == 'text':
-        p1 = value.encode('utf-16le')
-        p2 = p1 + b'\x00\x00'
-        return [p1, p2]
+        utf16 = value.encode('utf-16le')
+        utf8 = value.encode('utf-8')
+        patterns = [
+            utf16,
+            utf16 + b'\x00\x00',
+            utf8,
+            utf8 + b'\x00',
+        ]
+        # Preserve order while removing duplicates for ASCII-only text, etc.
+        return list(dict.fromkeys(patterns))
     elif search_type == 'guid':
         try:
             gobj = uuid.UUID(value.strip())
