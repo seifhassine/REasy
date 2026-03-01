@@ -1578,14 +1578,34 @@ class RszGameObjectClipboard(RszClipboardBase):
     @staticmethod
     def _apply_name_to_instance(viewer, instance_id, new_name):
         fields = viewer.scn.parsed_elements[instance_id]
-        name_field = fields["Name"]
+        name_field = RszGameObjectClipboard._find_name_field(fields)
+        if name_field is None:
+            return False
         name_field.value = new_name
         return True
     
     @staticmethod
     def _get_instance_name_from_fields(fields, default_name=None):
-        return (fields["Name"].value or default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
+        name_field = RszGameObjectClipboard._find_name_field(fields)
+        if name_field is None:
+            return (default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
+        return (name_field.value or default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
 
+    @staticmethod
+    def _find_name_field(fields):
+        if "Name" in fields:
+            return fields["Name"]
+
+        for field_name, field_data in fields.items():
+            if isinstance(field_data, StringData) and "name" in field_name.lower():
+                return field_data
+
+        for field_data in fields.values():
+            if isinstance(field_data, StringData):
+                return field_data
+
+        return None
+    
     @staticmethod
     def _get_components_for_gameobject(viewer, gameobject):
         instance = RszGameObjectClipboard.get_instance()
