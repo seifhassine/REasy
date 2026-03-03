@@ -170,7 +170,7 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
     def update_display(self):
         if not self._data:
             return
-        values = [self._data.x, self._data.y]
+        values = [self._data.width, self._data.height]
         for input_field, val in zip(self.inputs, values):
             input_field.setText(f"{val:.8g}") 
 
