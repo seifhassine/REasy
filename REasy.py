@@ -1438,10 +1438,15 @@ class REasyEditorApp(QMainWindow):
         self.current_project = path
         self.proj_dock.current_game = self.current_game
         self.proj_dock.set_project(path)
-        self.proj_dock.show()     
+        self.proj_dock.show()
+        self._shrink_project_dock()    
         self.status_bar.showMessage(
             f"Project: {os.path.basename(path)}", 3000)
 
+    def _shrink_project_dock(self):
+        min_w = max(360, self.proj_dock.minimumSizeHint().width())
+        self.resizeDocks([self.proj_dock], [min_w], Qt.Horizontal)
+        
     def open_script_creator(self):
         """
         Opens (or focuses) the standalone REF Script Creator window.
