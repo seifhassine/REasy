@@ -850,8 +850,8 @@ def get_type_class(field_type: str, field_size: int = 4, is_native: bool = False
     if field_type == "int4" and "color" in field_name.lower():
         return Int4ColorData
         
-    if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
-        return MaybeObject
+    #if is_array and is_native and field_size == 4 and (field_type in ("s32", "u32")):
+    #    return MaybeObject
 
     matchedType = TYPE_MAPPING.get(field_type, RawBytesData)
 
