@@ -1,16 +1,18 @@
 import os
 import shutil
-import struct
 import subprocess
 import tempfile
+import threading
 import wave
+
+import numpy as np
 
 from PySide6.QtCore import QPoint, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QComboBox, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QMessageBox, QPushButton, QFileDialog, QInputDialog, QSlider, QSpinBox, QStyle,
+    QApplication, QMessageBox, QPushButton, QFileDialog, QInputDialog, QProgressDialog, QSlider, QSpinBox, QStyle,
     QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
@@ -119,6 +121,7 @@ class WaveformWidget(QWidget):
 
 class SoundViewer(QWidget):
     modified_changed = Signal(bool)
+    waveform_ready = Signal(object)
 
     def __init__(self, handler):
         super().__init__()
@@ -133,7 +136,9 @@ class SoundViewer(QWidget):
         self._active_ms: list[tuple[int, int]] = []
         self._sensitivity = 0.52
         self._cleanup_done = False
+        self._waveform_job_id = 0
         self._setup_ui()
+        self.waveform_ready.connect(self._on_waveform_ready)
         self.destroyed.connect(lambda *_: self._finalize())
         QTimer.singleShot(0, self._on_analyze)
 
@@ -418,7 +423,11 @@ class SoundViewer(QWidget):
         self.skip_btn.setEnabled(False)
         self.waveform.clear()
 
+    def _cancel_waveform_job(self):
+        self._waveform_job_id += 1
+
     def _cleanup_audio(self):
+        self._cancel_waveform_job()
         try:
             self.player.setSource(QUrl())
         except RuntimeError:
@@ -678,9 +687,38 @@ class SoundViewer(QWidget):
         self._current_wem, self._current_wav = wem, wav
         self.player.setSource(QUrl.fromLocalFile(wav))
         self.player.play()
-        self._build_waveform(wav)
+        self._queue_waveform_build(wav)
+        self.status.setText("Playing embedded track. Building waveform preview in background...")
+
+    def _queue_waveform_build(self, wav_path: str):
+        self._cancel_waveform_job()
+        job_id = self._waveform_job_id
+        self._reset_waveform()
+        target_width = max(300, self.waveform.width())
+
+        def _worker():
+            payload = self._compute_waveform_payload(wav_path, target_width)
+            self.waveform_ready.emit((job_id, wav_path, payload))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _on_waveform_ready(self, result):
+        job_id, wav_path, payload = result
+        if job_id != self._waveform_job_id or wav_path != self._current_wav:
+            return
+        if payload is None:
+            self._active_ms = []
+            self.skip_btn.setEnabled(False)
+            self.status.setText("Playing embedded track (waveform unavailable for this format).")
+            return
+        self._active_ms = payload["active_ms"]
+        self.skip_btn.setEnabled(bool(self._active_ms))
+        self.waveform.set_waveform(payload["peaks"], payload["ranges"])
         n = len(self._active_ms)
-        self.status.setText(f"Playing embedded track. {n} activity segment(s) detected. Click waveform or Skip Silence to jump.")
+        if n:
+            self.status.setText(f"Playing embedded track. {n} activity segment(s) detected. Click waveform or Skip Silence to jump.")
+        else:
+            self.status.setText("Playing embedded track. No voice/activity detected in this track.")
 
     def _on_analyze(self):
         self.status.setText("Analyzing sound container...")
@@ -704,96 +742,111 @@ class SoundViewer(QWidget):
         self._stop()
         self.status.setText("")
 
-    def _build_waveform(self, wav_path: str):
-        result = self._read_mono(wav_path)
-        if result is None:
-            return
-        mono, sr = result
-        pn = max(1.0, max(mono))
-        tw = max(300, self.waveform.width())
-        fpb = max(1, len(mono) // tw)
-        peaks = [(max(mono[i:i + fpb]) / pn) if i < len(mono) else 0.0
-                 for i in range(0, len(mono), fpb)]
-        norm = [a / pn for a in mono]
-        ranges = self._detect_activity(norm, sr)
-        ratios, self._active_ms = [], []
-        for s, e in ranges:
-            ratios.append((s / len(mono), e / len(mono)))
-            self._active_ms.append((int(s * 1000 / max(1, sr)), int(e * 1000 / max(1, sr))))
-        self.skip_btn.setEnabled(bool(self._active_ms))
-        if not self._active_ms:
-            self.status.setText("No voice/activity detected in this track.")
-        self.waveform.set_waveform(peaks, ratios)
-
-    def _read_mono(self, wav_path: str) -> tuple[list[float], int] | None:
+    def _compute_waveform_payload(self, wav_path: str, target_width: int):
         try:
             with wave.open(wav_path, "rb") as w:
-                sw, ch, sr = w.getsampwidth(), w.getnchannels(), w.getframerate()
-                raw = w.readframes(w.getnframes())
-        except (wave.Error, OSError) as e:
-            self.status.setText(f"Playing extracted embedded track (waveform unavailable: {e}).")
-            self._reset_waveform()
+                if w.getsampwidth() != 2:
+                    return None
+                channels = w.getnchannels()
+                sr = w.getframerate()
+                frame_count = w.getnframes()
+                if channels <= 0 or sr <= 0 or frame_count <= 0:
+                    return None
+                raw = w.readframes(frame_count)
+        except (wave.Error, OSError):
             return None
-        if sw != 2 or ch <= 0:
-            self.status.setText("Playing extracted embedded track (waveform unsupported sample format).")
-            self._reset_waveform()
-            return None
-        sc = len(raw) // 2
-        if sc <= 0:
-            self._reset_waveform()
-            return None
-        samples = struct.unpack(f"<{sc}h", raw)
-        frames = sc // ch
-        if frames <= 0:
-            return None
-        mono = [sum(abs(samples[i * ch + c]) for c in range(ch)) / ch for i in range(frames)]
-        return mono, sr
 
-    def _detect_activity(self, norm: list[float], sr: int) -> list[tuple[int, int]]:
-        wms, wsz = 20, max(1, int(sr * 20 / 1000))
-        energies = []
-        for i in range(0, len(norm), wsz):
-            c = norm[i:i + wsz]
-            if c:
-                energies.append(sum(v * v for v in c) / len(c))
+        pcm = np.frombuffer(raw, dtype=np.int16)
+        usable = (pcm.size // channels) * channels
+        if usable == 0:
+            return None
+        pcm = pcm[:usable].reshape(-1, channels)
+        mono = np.abs(pcm.astype(np.float32)).mean(axis=1)
+        total_frames = int(mono.size)
+        if total_frames == 0:
+            return None
+
+        bins = max(1, int(target_width))
+        frames_per_bin = max(1, total_frames // bins)
+        peak_len = (total_frames // frames_per_bin) * frames_per_bin
+        if peak_len:
+            peaks_arr = mono[:peak_len].reshape(-1, frames_per_bin).max(axis=1)
+            if peak_len < total_frames:
+                peaks_arr = np.append(peaks_arr, mono[peak_len:].max())
+        else:
+            peaks_arr = np.array([mono.max()], dtype=np.float32)
+
+        norm = float(max(1.0, mono.max()))
+        peaks = (peaks_arr / norm).clip(0.0, 1.0).tolist()
+
+        win = max(1, int(sr * 20 / 1000))
+        energy_len = (total_frames // win) * win
+        if energy_len:
+            energies = (mono[:energy_len].reshape(-1, win) ** 2).mean(axis=1).tolist()
+            if energy_len < total_frames:
+                tail = mono[energy_len:]
+                energies.append(float((tail * tail).mean()))
+        else:
+            energies = [float((mono * mono).mean())]
+
+        ranges = self._detect_activity_from_energies(energies, total_frames, win)
+        if not ranges:
+            ranges = self._fallback_range_from_peaks(peaks_arr.tolist(), frames_per_bin, total_frames, sr)
+
+        ratios = [(s / total_frames, e / total_frames) for s, e in ranges]
+        active_ms = [(int(s * 1000 / sr), int(e * 1000 / sr)) for s, e in ranges]
+        return {"peaks": peaks, "ranges": ratios, "active_ms": active_ms}
+
+    def _detect_activity_from_energies(self, energies: list[float], total_frames: int,
+                                       window_frames: int) -> list[tuple[int, int]]:
         if not energies:
-            return self._fallback_range(norm, sr)
+            return []
         se = sorted(energies)
         nf = se[max(0, int(len(se) * 0.2) - 1)]
         sp = se[max(0, int(len(se) * 0.9) - 1)]
         bt = min(0.12, max(nf * 2.4, nf + (sp - nf) * 0.18, 0.00045))
         thr = max(0.0002, bt * self._sensitivity)
         rel = max(0.0001, thr * 0.70)
-        wins, active, start = [], False, 0
-        for i, e in enumerate(energies):
-            if not active and e >= thr:
+
+        wins: list[tuple[int, int]] = []
+        active = False
+        start = 0
+        for i, energy in enumerate(energies):
+            if not active and energy >= thr:
                 active, start = True, i
-            elif active and e <= rel:
+            elif active and energy <= rel:
                 wins.append((start, i))
                 active = False
         if active:
             wins.append((start, len(energies) - 1))
-        mg = max(1, int(140 / wms))
+
+        merge_gap_wins = max(1, int(140 / 20))
         merged: list[list[int]] = []
         for s, e in wins:
-            if merged and s - merged[-1][1] <= mg:
+            if merged and s - merged[-1][1] <= merge_gap_wins:
                 merged[-1][1] = e
             else:
                 merged.append([s, e])
-        mn = max(1, int(120 / wms))
-        ranges = []
+
+        min_len_wins = max(1, int(120 / 20))
+        ranges: list[tuple[int, int]] = []
         for s, e in merged:
-            if e - s + 1 >= mn:
-                ranges.append((s * wsz, min(len(norm) - 1, (e + 1) * wsz - 1)))
-        return ranges if ranges else self._fallback_range(norm, sr)
+            if e - s + 1 < min_len_wins:
+                continue
+            start_frame = s * window_frames
+            end_frame = min(total_frames - 1, (e + 1) * window_frames - 1)
+            ranges.append((start_frame, end_frame))
+        return ranges
 
     @staticmethod
-    def _fallback_range(norm: list[float], sr: int) -> list[tuple[int, int]]:
-        if not norm:
+    def _fallback_range_from_peaks(raw_peaks: list[float], frames_per_bin: int,
+                                   total_frames: int, sr: int) -> list[tuple[int, int]]:
+        if not raw_peaks or total_frames <= 0 or sr <= 0:
             return []
-        loud = max(range(len(norm)), key=norm.__getitem__)
-        h = max(1, int(sr * 0.35))
-        return [(max(0, loud - h), min(len(norm) - 1, loud + h))]
+        loud_bin = max(range(len(raw_peaks)), key=raw_peaks.__getitem__)
+        center = min(total_frames - 1, loud_bin * frames_per_bin + frames_per_bin // 2)
+        half = max(1, int(sr * 0.35))
+        return [(max(0, center - half), min(total_frames - 1, center + half))]
 
     def _populate(self, tracks):
         self.table.setRowCount(0)
