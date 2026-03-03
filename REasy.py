@@ -92,6 +92,7 @@ fastmesh = ensure_fastmesh()
 from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
+from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog 
 
 CURRENT_VERSION = "0.6.6"
 GAMES = [
@@ -1299,6 +1300,10 @@ class REasyEditorApp(QMainWindow):
         tools_menu.addAction(file_list_gen_act)
 
         tools_menu.addSeparator()
+        
+        csv_extractor_act = QAction(self.tr("CSV Extractor (RSZ Data Matcher)"), self)
+        csv_extractor_act.triggered.connect(self.open_rsz_csv_extractor)
+        tools_menu.addAction(csv_extractor_act)
 
         help_menu = menubar.addMenu(self.tr("Help"))
         about_act = QAction(self.tr("About"), self)
@@ -1469,6 +1474,10 @@ class REasyEditorApp(QMainWindow):
         self._file_list_generator_dialog.raise_()
         self._file_list_generator_dialog.activateWindow()
 
+    def open_rsz_csv_extractor(self):
+        dialog = RszCsvExtractorDialog(self, self.settings)
+        dialog.exec()
+        
     def set_dark_mode(self, state):
         self.dark_mode = state
         self.settings["dark_mode"] = state
