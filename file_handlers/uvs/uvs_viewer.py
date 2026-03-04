@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import math
+
 from PySide6.QtCore import Qt, Signal, QTimer, QPointF, QRectF
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
     QCheckBox,
+    QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -25,6 +31,7 @@ from PySide6.QtWidgets import (
 
 from .uvs_file import UvsPattern, UvsSequence, UvsTexture
 from file_handlers.tex.tex_handler import TexHandler
+from file_handlers.tex.tex_viewer import TexViewer
 from file_handlers.tex.texture_decoder import decode_tex_mip
 from file_handlers.pak.reader import CachedPakReader
 from ui.project_manager.constants import EXPECTED_NATIVE
@@ -339,9 +346,11 @@ class UvsViewer(QWidget):
         self.preview_focused: UvsPreviewWidget | None = None
         self.focused_cutout_chk: QCheckBox | None = None
         self.preview_source_combo: QComboBox | None = None
+        self.preview_channel_combo: QComboBox | None = None
 
         self._tex_pixmap_cache: dict[tuple[int, str], QPixmap | None] = {}
         self._tex_path_cache: dict[tuple[int, str], str] = {}
+        self._channel_pixmap_cache: dict[tuple[int, str, str, int], QPixmap | None] = {}
         self._custom_tex_pixmap: dict[int, QPixmap | None] = {}
         self._custom_tex_file: dict[int, str] = {}
 
@@ -424,7 +433,7 @@ class UvsViewer(QWidget):
         sequences_panel = QWidget()
         sequences_layout = QVBoxLayout(sequences_panel)
         sequences_layout.addWidget(QLabel("Sequences"))
-        sequences_layout.addLayout(self._toolbar(self._add_sequence, self._remove_sequence))
+        sequences_layout.addLayout(self._toolbar(self._add_sequence, self._remove_sequence, extra=[("✨ Animation Creator", self._open_animation_creator)]))
         self.sequences_table = self._table(["Index", "Pattern Count"])
         self.sequences_table.itemSelectionChanged.connect(self._on_sequence_selected)
         sequences_layout.addWidget(self.sequences_table)
@@ -467,6 +476,9 @@ class UvsViewer(QWidget):
         self.preview_source_combo = QComboBox()
         self.preview_source_combo.addItems(["Albedo", "Normal", "Specular", "Alpha"])
         self.preview_source_combo.currentIndexChanged.connect(self._on_preview_source_changed)
+        self.preview_channel_combo = QComboBox()
+        self.preview_channel_combo.addItems(["RGBA", "R", "G", "B", "A"])
+        self.preview_channel_combo.currentIndexChanged.connect(self._on_preview_source_changed)
         ctl.addWidget(self.play_btn)
         ctl.addWidget(QLabel("Frame"))
         ctl.addWidget(self.frame_slider, 1)
@@ -475,6 +487,8 @@ class UvsViewer(QWidget):
         ctl.addWidget(self.loop_chk)
         ctl.addWidget(QLabel("Source"))
         ctl.addWidget(self.preview_source_combo)
+        ctl.addWidget(QLabel("Channel"))
+        ctl.addWidget(self.preview_channel_combo)
         ctl.addWidget(self.focused_cutout_chk)
         pv_layout.addLayout(ctl)
 
@@ -499,6 +513,422 @@ class UvsViewer(QWidget):
         splitter.addWidget(left)
         splitter.addWidget(right)
         splitter.setSizes([520, 970])
+
+    def _create_sprite_sheet_patterns(
+        self,
+        rows: int,
+        cols: int,
+        frame_count: int,
+        start_index: int,
+        margin_x_px: int,
+        margin_y_px: int,
+        spacing_x_px: int,
+        spacing_y_px: int,
+        texture_width: int,
+        texture_height: int,
+        texture_index: int,
+        flags: int,
+        direction: str,
+        cutout_vertices: int = 0,
+    ) -> list[UvsPattern]:
+        if rows <= 0 or cols <= 0:
+            raise ValueError("Rows and columns must be greater than zero.")
+        if frame_count <= 0:
+            raise ValueError("Frame count must be greater than zero.")
+        if texture_width <= 0 or texture_height <= 0:
+            raise ValueError("Texture dimensions must be greater than zero.")
+
+        ordered_slots = self._ordered_sheet_slots(rows, cols, direction)
+        total_slots = len(ordered_slots)
+        if start_index < 0 or start_index >= total_slots:
+            raise ValueError("Start frame is outside the sprite sheet bounds.")
+
+        available = total_slots - start_index
+        if frame_count > available:
+            raise ValueError(f"Requested {frame_count} frames but only {available} are available from start frame {start_index}.")
+
+        usable_w = texture_width - (margin_x_px * 2) - (spacing_x_px * (cols - 1))
+        usable_h = texture_height - (margin_y_px * 2) - (spacing_y_px * (rows - 1))
+        if usable_w <= 0 or usable_h <= 0:
+            raise ValueError("Margins and spacing are too large for the selected texture dimensions.")
+
+        frame_w = usable_w / cols
+        frame_h = usable_h / rows
+
+        patterns: list[UvsPattern] = []
+        for row, col in ordered_slots[start_index:start_index + frame_count]:
+            x = margin_x_px + col * (frame_w + spacing_x_px)
+            y = margin_y_px + row * (frame_h + spacing_y_px)
+            left = x / texture_width
+            top = y / texture_height
+            right = (x + frame_w) / texture_width
+            bottom = (y + frame_h) / texture_height
+            cutouts = [] if cutout_vertices < 3 else [(left, top), (right, top), (right, bottom), (left, bottom)][:cutout_vertices]
+            patterns.append(UvsPattern(
+                flags=flags,
+                left=left,
+                top=top,
+                right=right,
+                bottom=bottom,
+                texture_index=texture_index,
+                cutout_uvs=cutouts,
+            ))
+        return patterns
+
+    def _ordered_sheet_slots(self, rows: int, cols: int, direction: str) -> list[tuple[int, int]]:
+        layout = {
+            "Row: Left → Right, Top → Bottom": (range(rows), range(cols), "row"),
+            "Row: Right → Left, Top → Bottom": (range(rows), range(cols - 1, -1, -1), "row"),
+            "Row: Left → Right, Bottom → Top": (range(rows - 1, -1, -1), range(cols), "row"),
+            "Row: Right → Left, Bottom → Top": (range(rows - 1, -1, -1), range(cols - 1, -1, -1), "row"),
+            "Column: Top → Bottom, Left → Right": (range(rows), range(cols), "col"),
+            "Column: Bottom → Top, Left → Right": (range(rows - 1, -1, -1), range(cols), "col"),
+            "Column: Top → Bottom, Right → Left": (range(rows), range(cols - 1, -1, -1), "col"),
+            "Column: Bottom → Top, Right → Left": (range(rows - 1, -1, -1), range(cols - 1, -1, -1), "col"),
+        }
+        if not (spec := layout.get(direction)):
+            raise ValueError("Unsupported frame direction.")
+
+        row_range, col_range, major = spec
+        if major == "row":
+            return [(r, c) for r in row_range for c in col_range]
+        return [(r, c) for c in col_range for r in row_range]
+
+    def _get_texture_dimensions(self, tex_index: int) -> tuple[int, int] | None:
+        if (pm := self._get_texture_preview_pixmap(tex_index)) and not pm.isNull():
+            return pm.width(), pm.height()
+        return None
+
+    def _get_texture_preview_pixmap(self, tex_index: int) -> QPixmap | None:
+        if tex_index in self._custom_tex_pixmap:
+            return self._custom_tex_pixmap.get(tex_index)
+
+        cache_key = (tex_index, "albedo")
+        if cache_key in self._tex_pixmap_cache:
+            return self._tex_pixmap_cache[cache_key]
+
+        pak_path = self._resolve_pak_path_for_texture(tex_index, "albedo")
+        reader = self._project_mode_cached_reader() if pak_path else None
+        stream = reader.get_file(pak_path) if reader and pak_path else None
+        pm = self._decode_tex_to_pixmap(stream.read()) if stream else None
+        self._tex_pixmap_cache[cache_key] = pm
+        self._tex_path_cache[cache_key] = pak_path or ""
+        return pm
+
+    def _build_patterns_from_creator_data(self, data: dict, flags: int = 0) -> tuple[list[UvsPattern], tuple[int, int]]:
+        if not (dims := self._get_texture_dimensions(data["texture_index"])):
+            raise ValueError("Could not resolve texture dimensions. Ensure the TEX is available in loaded PAKs or as custom texture.")
+        source_pm = self._get_texture_preview_pixmap(data["texture_index"])
+        patterns = self._create_sprite_sheet_patterns(
+            rows=data["rows"],
+            cols=data["cols"],
+            frame_count=data["count"],
+            start_index=data["start"],
+            margin_x_px=data["margin_x"],
+            margin_y_px=data["margin_y"],
+            spacing_x_px=data["spacing_x"],
+            spacing_y_px=data["spacing_y"],
+            texture_width=dims[0],
+            texture_height=dims[1],
+            texture_index=data["texture_index"],
+            flags=flags,
+            direction=data["direction"],
+            cutout_vertices=data.get("cutout_vertices", 0),
+        )
+        if data.get("cutout_vertices", 0) >= 3 and source_pm and not source_pm.isNull():
+            threshold = max(0, min(255, int(data.get("alpha_threshold", 1))))
+            img = source_pm.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+            count = data["cutout_vertices"]
+            for pat in patterns:
+                pat.cutout_uvs = self._generate_cutout_uvs_from_alpha(img, pat, count, threshold)
+        return patterns, dims
+
+    def _generate_cutout_uvs_from_alpha(
+        self,
+        image: QImage,
+        pat: UvsPattern,
+        count: int,
+        alpha_threshold: int = 1,
+    ) -> list[tuple[float, float]]:
+        if count < 3 or image.isNull():
+            return pat.cutout_uvs
+
+        w, h = image.width(), image.height()
+        x0 = max(0, min(w - 1, int(round(pat.left * w))))
+        y0 = max(0, min(h - 1, int(round(pat.top * h))))
+        x1 = max(0, min(w - 1, int(round(pat.right * w)) - 1))
+        y1 = max(0, min(h - 1, int(round(pat.bottom * h)) - 1))
+        if x1 <= x0 or y1 <= y0:
+            return pat.cutout_uvs
+
+        cx = (x0 + x1) / 2.0
+        cy = (y0 + y1) / 2.0
+        max_r = int(math.hypot(x1 - x0, y1 - y0)) + 2
+
+        def opaque(px: int, py: int) -> bool:
+            return image.pixelColor(px, py).alpha() >= alpha_threshold
+
+        points: list[tuple[float, float]] = []
+        for i in range(count):
+            a = (2.0 * math.pi * i) / count
+            dx, dy = math.cos(a), math.sin(a)
+            hit = None
+            for r in range(max_r + 1):
+                px = int(round(cx + dx * r))
+                py = int(round(cy + dy * r))
+                if px < x0 or px > x1 or py < y0 or py > y1:
+                    break
+                if opaque(px, py):
+                    hit = (px, py)
+
+            if hit is None:
+                fx = int(max(x0, min(x1, round(cx + dx * max_r))))
+                fy = int(max(y0, min(y1, round(cy + dy * max_r))))
+                hit = (fx, fy)
+
+            points.append((hit[0] / w, hit[1] / h))
+
+        return self._stabilize_cutout_points(points, pat)
+
+    @staticmethod
+    def _stabilize_cutout_points(points: list[tuple[float, float]], pat: UvsPattern) -> list[tuple[float, float]]:
+        if len(points) < 3:
+            return points
+
+        cx = (pat.left + pat.right) * 0.5
+        cy = (pat.top + pat.bottom) * 0.5
+        radii = [math.hypot(u - cx, v - cy) for u, v in points]
+        med = sorted(radii)[len(radii) // 2]
+        if med <= 0:
+            return points
+
+        max_r = med * 1.35
+        clamped: list[tuple[float, float]] = []
+        for (u, v), r in zip(points, radii):
+            if r <= max_r:
+                clamped.append((u, v))
+                continue
+            s = max_r / r
+            nu = cx + (u - cx) * s
+            nv = cy + (v - cy) * s
+            clamped.append((min(max(nu, pat.left), pat.right), min(max(nv, pat.top), pat.bottom)))
+        return clamped
+
+    def _render_animation_creator_preview(self, preview_label: QLabel, data: dict):
+        try:
+            patterns, dims = self._build_patterns_from_creator_data(data)
+        except Exception as ex:
+            preview_label.setText(str(ex))
+            preview_label.setPixmap(QPixmap())
+            return
+
+        base = self._get_texture_preview_pixmap(data["texture_index"])
+        canvas = base.copy() if base and not base.isNull() else QPixmap(dims[0], dims[1])
+        if canvas.isNull():
+            preview_label.setText("Preview unavailable")
+            preview_label.setPixmap(QPixmap())
+            return
+        if not base or base.isNull():
+            canvas.fill(QColor(60, 60, 60))
+
+        painter = QPainter(canvas)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        for i, pat in enumerate(patterns):
+            painter.setPen(QPen(QColor(255, 215, 0) if i == 0 else QColor(80, 220, 255), 2))
+            x = int(round(pat.left * canvas.width()))
+            y = int(round(pat.top * canvas.height()))
+            w = max(1, int(round((pat.right - pat.left) * canvas.width())))
+            h = max(1, int(round((pat.bottom - pat.top) * canvas.height())))
+            painter.drawRect(x, y, w, h)
+            if pat.cutout_uvs:
+                painter.setPen(QPen(QColor(255, 105, 180), 1))
+                pts = [QPointF(u * canvas.width(), v * canvas.height()) for (u, v) in pat.cutout_uvs]
+                for j in range(len(pts)):
+                    painter.drawLine(pts[j], pts[(j + 1) % len(pts)])
+                for pt in pts:
+                    painter.drawEllipse(pt, 2, 2)
+        painter.end()
+
+        preview_label.setPixmap(canvas.scaled(640, 260, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        preview_label.setText("")
+
+    def _open_animation_creator(self):
+        if not (uvs := self.handler.uvs):
+            return
+
+        class AnimationCreatorDialog(QDialog):
+            DIRECTIONS = [
+                "Row: Left → Right, Top → Bottom",
+                "Row: Right → Left, Top → Bottom",
+                "Row: Left → Right, Bottom → Top",
+                "Row: Right → Left, Bottom → Top",
+                "Column: Top → Bottom, Left → Right",
+                "Column: Bottom → Top, Left → Right",
+                "Column: Top → Bottom, Right → Left",
+                "Column: Bottom → Top, Right → Left",
+            ]
+
+            def __init__(self, parent, tex_count: int, tex_dims: tuple[int, int] | None):
+                super().__init__(parent)
+                self.setWindowTitle("UVS Animation Creator")
+                self.setMinimumWidth(620)
+
+                def spin(min_v: int, max_v: int, val: int | None = None) -> QSpinBox:
+                    sb = QSpinBox()
+                    sb.setRange(min_v, max_v)
+                    if val is not None:
+                        sb.setValue(val)
+                    return sb
+
+                def add_grid_row(grid: QGridLayout, row: int, left_lbl: str, left_w: QWidget, right_lbl: str, right_w: QWidget):
+                    grid.addWidget(QLabel(left_lbl), row, 0)
+                    grid.addWidget(left_w, row, 1)
+                    grid.addWidget(QLabel(right_lbl), row, 2)
+                    grid.addWidget(right_w, row, 3)
+
+                root = QVBoxLayout(self)
+ 
+                form = QFormLayout()
+                self.texture_idx = spin(0, max(0, tex_count - 1))
+                self.texture_dims_label = QLabel("Unknown")
+                if tex_dims:
+                    self.texture_dims_label.setText(f"{tex_dims[0]} × {tex_dims[1]} px")
+
+                for name, lo, hi, val in [
+                    ("rows", 1, 128, 4),
+                    ("cols", 1, 128, 4),
+                    ("start", 0, 16384, None),
+                    ("count", 1, 16384, 16),
+                    ("margin_x", 0, 4096, None),
+                    ("margin_y", 0, 4096, None),
+                    ("spacing_x", 0, 4096, None),
+                    ("spacing_y", 0, 4096, None),
+                ]:
+                    setattr(self, name, spin(lo, hi, val))
+
+                self.direction = QComboBox(); self.direction.addItems(self.DIRECTIONS)
+                self.auto_cutouts = QCheckBox("Auto-generate cutout UVs")
+                self.cutout_vertices = spin(3, 64, 4)
+                self.alpha_threshold = spin(0, 255, 1)
+                self.cutout_vertices.setEnabled(False)
+                self.alpha_threshold.setEnabled(False)
+                self.auto_cutouts.toggled.connect(self.cutout_vertices.setEnabled)
+                self.auto_cutouts.toggled.connect(self.alpha_threshold.setEnabled)
+                self.flags = QLineEdit("0")
+                self.new_sequence = QCheckBox("Create a new sequence")
+                self.new_sequence.setChecked(True)
+
+                sheet_grid = QGridLayout()
+                add_grid_row(sheet_grid, 0, "Rows", self.rows, "Columns", self.cols)
+                add_grid_row(sheet_grid, 1, "Start Frame", self.start, "Frame Count", self.count)
+
+                pad_grid = QGridLayout()
+                add_grid_row(pad_grid, 0, "Margin X (px)", self.margin_x, "Margin Y (px)", self.margin_y)
+                add_grid_row(pad_grid, 1, "Spacing X (px)", self.spacing_x, "Spacing Y (px)", self.spacing_y)
+
+                for label, widget in [
+                    ("Texture Index", self.texture_idx),
+                    ("Texture Dimensions", self.texture_dims_label),
+                    (None, sheet_grid),
+                    (None, pad_grid),
+                    ("Frame Direction", self.direction),
+                ]:
+                    form.addRow(widget) if label is None else form.addRow(label, widget)
+                form.addRow(self.auto_cutouts)
+                form.addRow("Cutout Vertices", self.cutout_vertices)
+                form.addRow("Alpha Threshold", self.alpha_threshold)
+                form.addRow("Pattern Flags", self.flags)
+                form.addRow(self.new_sequence)
+                root.addLayout(form)
+
+                self.preview_label = QLabel("Preview unavailable")
+                self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.preview_label.setMinimumHeight(220)
+                self.preview_label.setStyleSheet("QLabel { background-color: #222; border: 1px solid #444; }")
+                root.addWidget(self.preview_label)
+
+                buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+                buttons.accepted.connect(self.accept)
+                buttons.rejected.connect(self.reject)
+                root.addWidget(buttons)
+
+            def set_texture_dims(self, dims: tuple[int, int] | None):
+                self.texture_dims_label.setText(f"{dims[0]} × {dims[1]} px" if dims else "Unknown")
+
+            def payload(self):
+                data = {k: getattr(self, k).value() for k in ("texture_idx", "rows", "cols", "start", "count", "margin_x", "margin_y", "spacing_x", "spacing_y")}
+                data["texture_index"] = data.pop("texture_idx")
+                data.update({
+                    "direction": self.direction.currentText(),
+                    "cutout_vertices": self.cutout_vertices.value() if self.auto_cutouts.isChecked() else 0,
+                    "alpha_threshold": self.alpha_threshold.value(),
+                    "new_sequence": self.new_sequence.isChecked(),
+                    "flags": self.flags.text().strip(),
+                })
+                return data
+
+        if len(uvs.textures) == 0:
+            QMessageBox.information(self, "No texture available", "Add at least one texture before creating an animation.")
+            return
+
+        initial_tex = self.textures_table.currentRow() if self.textures_table and self.textures_table.currentRow() >= 0 else 0
+        dlg = AnimationCreatorDialog(self, len(uvs.textures), self._get_texture_dimensions(initial_tex))
+
+        def refresh_preview():
+            data = dlg.payload()
+            dlg.set_texture_dims(self._get_texture_dimensions(data["texture_index"]))
+            self._render_animation_creator_preview(dlg.preview_label, data)
+
+        def connect_refresh(*signals):
+            for signal in signals:
+                signal.connect(lambda *_: refresh_preview())
+
+        dlg.texture_idx.setValue(initial_tex)
+        connect_refresh(
+            dlg.texture_idx.valueChanged,
+            dlg.rows.valueChanged,
+            dlg.cols.valueChanged,
+            dlg.start.valueChanged,
+            dlg.count.valueChanged,
+            dlg.margin_x.valueChanged,
+            dlg.margin_y.valueChanged,
+            dlg.spacing_x.valueChanged,
+            dlg.spacing_y.valueChanged,
+            dlg.direction.currentIndexChanged,
+            dlg.auto_cutouts.toggled,
+            dlg.cutout_vertices.valueChanged,
+            dlg.alpha_threshold.valueChanged,
+        )
+        refresh_preview()
+
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        try:
+            data = dlg.payload()
+            generated, _ = self._build_patterns_from_creator_data(data, flags=self._read_int(data["flags"] or "0"))
+        except Exception as ex:
+            QMessageBox.warning(self, "Animation creator", str(ex))
+            return
+
+        if data["new_sequence"] or self._selected_sequence < 0 or self._selected_sequence >= len(uvs.sequences):
+            seq = UvsSequence()
+            uvs.sequences.append(seq)
+            self._selected_sequence = len(uvs.sequences) - 1
+        else:
+            seq = uvs.sequences[self._selected_sequence]
+
+        seq.patterns.extend(generated)
+        self._selected_pattern = max(0, len(seq.patterns) - len(generated))
+        self._reload_sequences()
+        self._reload_patterns()
+        self._reload_cutouts()
+        self._sync_preview()
+        if self.sequences_table and self._selected_sequence >= 0:
+            self.sequences_table.selectRow(self._selected_sequence)
+        if self.patterns_table and self._selected_pattern >= 0:
+            self.patterns_table.selectRow(self._selected_pattern)
+        self._mark_modified()
 
     def _toolbar(self, add_cb, remove_cb, extra=None):
         row = QHBoxLayout()
@@ -622,9 +1052,34 @@ class UvsViewer(QWidget):
             return
         self._sync_preview()
 
+    def _preview_channel_key(self) -> str:
+        if not self.preview_channel_combo:
+            return "rgba"
+        key = self.preview_channel_combo.currentText().strip().lower()
+        return key if key in ("rgba", "r", "g", "b", "a") else "rgba"
+
+    def _apply_channel_to_pixmap(self, tex_idx: int, source: str, pixmap: QPixmap | None) -> QPixmap | None:
+        channel = self._preview_channel_key()
+        if not pixmap or pixmap.isNull() or channel == "rgba":
+            return pixmap
+        key = (tex_idx, source, channel, int(pixmap.cacheKey()))
+        if key in self._channel_pixmap_cache:
+            return self._channel_pixmap_cache[key]
+
+        img = pixmap.toImage().convertToFormat(QImage.Format.Format_RGBA8888)
+        ptr = img.bits()
+        if hasattr(ptr, "setsize"):
+            ptr.setsize(img.sizeInBytes())
+        raw = bytes(ptr)
+        filtered_raw = TexViewer._filter_channels(raw, channel.upper())
+        out = QPixmap.fromImage(QImage(filtered_raw, img.width(), img.height(), QImage.Format.Format_RGBA8888).copy())
+        self._channel_pixmap_cache[key] = out
+        return out
+
     def _clear_texture_preview_cache(self, row: int):
         self._tex_pixmap_cache = {k: v for k, v in self._tex_pixmap_cache.items() if k[0] != row}
         self._tex_path_cache = {k: v for k, v in self._tex_path_cache.items() if k[0] != row}
+        self._channel_pixmap_cache = {k: v for k, v in self._channel_pixmap_cache.items() if k[0] != row}
 
     def _on_texture_selected(self):
         uvs = self.handler.uvs
@@ -778,31 +1233,31 @@ class UvsViewer(QWidget):
 
         if source == "albedo" and tex_idx in self._custom_tex_pixmap:
             pix = self._custom_tex_pixmap.get(tex_idx)
-            self._apply_preview_texture(tex_idx, pix, pix is None)
+            self._apply_preview_texture(tex_idx, pix, pix is None, source)
             return
 
         if cache_key in self._tex_pixmap_cache:
             pix = self._tex_pixmap_cache[cache_key]
-            self._apply_preview_texture(tex_idx, pix, pix is None)
+            self._apply_preview_texture(tex_idx, pix, pix is None, source)
             return
 
         pak_path = self._resolve_pak_path_for_texture(tex_idx, source)
         self._tex_path_cache[cache_key] = pak_path or ""
         if not pak_path:
             self._tex_pixmap_cache[cache_key] = None
-            self._apply_preview_texture(tex_idx, None, True)
+            self._apply_preview_texture(tex_idx, None, True, source)
             return
 
         reader = self._project_mode_cached_reader()
         if not reader:
             self._tex_pixmap_cache[cache_key] = None
-            self._apply_preview_texture(tex_idx, None, True)
+            self._apply_preview_texture(tex_idx, None, True, source)
             return
 
         stream = reader.get_file(pak_path)
         pix = self._decode_tex_to_pixmap(stream.read()) if stream else None
         self._tex_pixmap_cache[cache_key] = pix
-        self._apply_preview_texture(tex_idx, pix, pix is None)
+        self._apply_preview_texture(tex_idx, pix, pix is None, source)
 
     def _ensure_texture_for_selected_pattern(self):
         pat = self._current_pattern()
@@ -810,7 +1265,8 @@ class UvsViewer(QWidget):
             return
         self._ensure_texture_preview(pat.texture_index)
 
-    def _apply_preview_texture(self, tex_idx: int, pixmap: QPixmap | None, missing: bool):
+    def _apply_preview_texture(self, tex_idx: int, pixmap: QPixmap | None, missing: bool, source: str):
+        pixmap = self._apply_channel_to_pixmap(tex_idx, source, pixmap)
         for preview in (self.preview, self.preview_focused):
             if preview:
                 preview.set_texture_pixmap(tex_idx, pixmap)
@@ -986,13 +1442,28 @@ class UvsViewer(QWidget):
             if preview:
                 preview.update()
 
+    @staticmethod
+    def _select_row(table: QTableWidget, row: int):
+        if row >= 0 and table.rowCount() > row:
+            table.selectRow(row)
+
+    def _reload_pattern_context(self, sequence_row: int, pattern_row: int, cutout_row: int | None = None):
+        self._reload_patterns()
+        self._select_row(self.sequences_table, sequence_row)
+        self._select_row(self.patterns_table, pattern_row)
+        self._reload_cutouts()
+        if cutout_row is not None:
+            self._select_row(self.cutouts_table, cutout_row)
+
     def _add_texture(self):
         if not (uvs := self.handler.uvs):
             return
-        uvs.textures.append(UvsTexture())
+        row = self.textures_table.currentRow()
+        insert_at = row + 1 if row >= 0 else len(uvs.textures)
+        uvs.textures.insert(insert_at, UvsTexture())
         self._reload_textures()
         if self.textures_table.rowCount() > 0:
-            self.textures_table.selectRow(self.textures_table.rowCount() - 1)
+            self.textures_table.selectRow(insert_at)
         self._mark_modified()
 
     def _remove_texture(self):
@@ -1014,6 +1485,11 @@ class UvsViewer(QWidget):
             for (i, src), v in self._tex_path_cache.items()
             if i != row
         }
+        self._channel_pixmap_cache = {
+            (i - (1 if i > row else 0), src, ch, ck): v
+            for (i, src, ch, ck), v in self._channel_pixmap_cache.items()
+            if i != row
+        }
         
         for seq in uvs.sequences:
             for pat in seq.patterns:
@@ -1031,8 +1507,16 @@ class UvsViewer(QWidget):
     def _add_sequence(self):
         if not (uvs := self.handler.uvs):
             return
-        uvs.sequences.append(UvsSequence())
+        row = self.sequences_table.currentRow()
+        insert_at = row + 1 if row >= 0 else len(uvs.sequences)
+        uvs.sequences.insert(insert_at, UvsSequence())
+        self._selected_sequence = insert_at
+        self._selected_pattern = -1
         self._reload_sequences()
+        self._refresh_pattern_views()
+        if self.sequences_table.rowCount() > 0:
+            self.sequences_table.selectRow(insert_at)
+        self._sync_preview()
         self._mark_modified()
 
     def _remove_sequence(self):
@@ -1051,41 +1535,57 @@ class UvsViewer(QWidget):
     def _add_pattern(self):
         if not (uvs := self.handler.uvs) or self._selected_sequence < 0 or self._selected_sequence >= len(uvs.sequences):
             return
-        uvs.sequences[self._selected_sequence].patterns.append(UvsPattern())
+        sequence_row = self._selected_sequence
+        seq = uvs.sequences[sequence_row]
+        row = self.patterns_table.currentRow()
+        insert_at = row + 1 if row >= 0 else len(seq.patterns)
+        seq.patterns.insert(insert_at, UvsPattern())
+        self._selected_pattern = insert_at
         self._reload_sequences()
-        self._reload_patterns()
+        self._selected_sequence = sequence_row
+        self._reload_pattern_context(sequence_row, insert_at)
         self._sync_preview()
         self._mark_modified()
 
     def _remove_pattern(self):
         if not (uvs := self.handler.uvs) or self._selected_sequence < 0 or self._selected_sequence >= len(uvs.sequences):
             return
-        seq = uvs.sequences[self._selected_sequence]
+        sequence_row = self._selected_sequence
+        seq = uvs.sequences[sequence_row]
         row = self.patterns_table.currentRow()
         if row < 0 or row >= len(seq.patterns):
             return
         seq.patterns.pop(row)
-        self._selected_pattern = -1
+
+        if seq.patterns:
+            self._selected_pattern = min(row, len(seq.patterns) - 1)
+        else:
+            self._selected_pattern = -1
+
         self._reload_sequences()
-        self._refresh_pattern_views()
+        self._selected_sequence = sequence_row
+        self._reload_pattern_context(sequence_row, self._selected_pattern)
         self._sync_preview()
         self._mark_modified()
 
     def _add_cutout(self):
         if not (pat := self._current_pattern()):
             return
-        pat.cutout_uvs.append((0.0, 0.0))
-        self._reload_patterns()
-        self._reload_cutouts()
+        pattern_row = self._selected_pattern
+        row = self.cutouts_table.currentRow()
+        insert_at = row + 1 if row >= 0 else len(pat.cutout_uvs)
+        pat.cutout_uvs.insert(insert_at, (0.0, 0.0))
+        self._reload_pattern_context(self._selected_sequence, pattern_row, insert_at)
         self._mark_modified()
 
     def _remove_cutout(self):
         if not (pat := self._current_pattern()):
             return
+        pattern_row = self._selected_pattern
         row = self.cutouts_table.currentRow()
         if row < 0 or row >= len(pat.cutout_uvs):
             return
         pat.cutout_uvs.pop(row)
-        self._reload_patterns()
-        self._reload_cutouts()
+        cutout_row = min(row, len(pat.cutout_uvs) - 1) if pat.cutout_uvs else None
+        self._reload_pattern_context(self._selected_sequence, pattern_row, cutout_row)
         self._mark_modified()
