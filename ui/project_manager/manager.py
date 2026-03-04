@@ -25,7 +25,7 @@ from tools.fluffy_exporter import create_fluffy_zip
 from PySide6.QtCore import qInstallMessageHandler
 
 from file_handlers.pak import scan_pak_files
-from file_handlers.pak.reader import PakReader, CachedPakReader
+from file_handlers.pak.reader import CachedPakReader
 from file_handlers.pak.utils import guess_extension_from_header
 from ui.widgets_utils import create_list_file_help_label
 
@@ -555,17 +555,7 @@ class ProjectManager(QDockWidget):
             self._update_placeholders()
             return
         try:
-            r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
-            if not r:
-                r = CachedPakReader()
-                r.pak_file_priority = list(self._pak_selected_paks)
-            r.reset_file_list()
-            if self._pak_base_paths:
-                r.add_files(*self._pak_base_paths)
-                r.cache_entries(assign_paths=True)
-            else:
-                r.cache_entries(assign_paths=False)
-            self._pak_cached_reader = r
+            r = self._ensure_project_pak_reader(assign_paths=bool(self._pak_base_paths))
             
             valid = set(p.lower() for p in r.cached_paths(include_unknown=False))
             base = set(self._pak_base_paths)
@@ -588,6 +578,22 @@ class ProjectManager(QDockWidget):
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
             self._update_placeholders()
+
+    def _ensure_project_pak_reader(self, *, assign_paths: bool) -> CachedPakReader:
+        r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
+        selected = list(self._pak_selected_paks)
+        if not r:
+            r = CachedPakReader()
+        if r.pak_file_priority != selected:
+            r = CachedPakReader()
+        r.pak_file_priority = selected
+        if r._cache is None:
+            r.reset_file_list()
+            if assign_paths and self._pak_base_paths:
+                r.add_files(*self._pak_base_paths)
+            r.cache_entries(assign_paths=False)
+        self._pak_cached_reader = r
+        return r
 
     def _build_pak_tree_model(self, paths: list[str]):
         model = QStandardItemModel()
@@ -784,24 +790,17 @@ class ProjectManager(QDockWidget):
         if not self._pak_selected_paks:
             return
         try:
-            r = PakReader()
-            r.pak_file_priority = list(self._pak_selected_paks)
-            r.add_files(path)
-            found = None
-            for pth, stream in r.find_files():
-                if pth.lower() == path.lower():
-                    found = (pth, stream)
-                    break
-            if not found:
+            r = self._ensure_project_pak_reader(assign_paths=False)
+            stream = r.get_file(path)
+            if not stream:
                 QMessageBox.information(self, self.tr("Open"), f"{self.tr('Path')} not found in {self.tr('PAKs')}: {path}")
                 return
-            pth, stream = found
             data = stream.read()
             try:
                 ext = guess_extension_from_header(data[:64])
             except Exception:
                 ext = None
-            name = pth if ('.' in os.path.basename(pth)) else (pth + ('.' + ext.lower() if ext else ''))
+            name = path if ('.' in os.path.basename(path)) else (path + ('.' + ext.lower() if ext else ''))
             self.app_win.add_tab(name, data)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Open failed"), str(e))
@@ -815,17 +814,8 @@ class ProjectManager(QDockWidget):
         if not self._pak_selected_paks:
             QMessageBox.information(self, self.tr("Add to project"), self.tr("Scan for .pak files first."))
             return
-        try:
-            r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
-            if not r:
-                r = CachedPakReader()
-                r.pak_file_priority = list(self._pak_selected_paks)
-                if self._pak_base_paths:
-                    r.add_files(*self._pak_base_paths)
-                    r.cache_entries(assign_paths=True)
-                else:
-                    r.cache_entries(assign_paths=False)
-                self._pak_cached_reader = r
+        try:            
+            r = self._ensure_project_pak_reader(assign_paths=bool(self._pak_base_paths))
             missing: list[str] = []
             targets = sorted(set(paths))
             count = r.extract_files_to(self.project_dir, targets, missing_files=missing)
