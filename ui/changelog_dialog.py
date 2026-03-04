@@ -159,12 +159,19 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Added support for RE9 and added RE9_STM.list (subject to improvement)."),
-            ("Improved", "Made windows of all tools non-blocking, meaning you can for example open PAK Browser and edit files at the same time."),
-            ("Improved", "Added progress indicators for PAK Browser operations."),
-            ("Fixed", "Unsupported extraction of RE9 DLCs."),
-            ("Fixed", "Subsequent scans in PAK Browser were not detecting .pak file modifications, specifically file path changes."),
-            ("Fixed", "A bug that led to UVS preview failing to load texture due to unresolved path for DMC5 and RE7 non-rt."),
+            ("New", "Bulk export for sound tracks."),
+            ("New", "`Find` > `Search` now support searching in PAK files."),
+            ("New", "Automated sequence creator for UVS files."),
+            ("Improved", "Playback speed for sounds (previously slowed down due to unoptimized waveform generation)."),
+            ("Improved", "Added more paths to RE9_STM. Greatly improved RE9 RSZ dump."),
+            ("Improved", "When opening a project, the project browser window now takes less space."),
+            ("Improved", "Added channel selection in UVS preview."),
+            ("Improved", "Opening and adding files from `PAK Files` in a project is now much faster."),
+            ("Fixed", "Gameobject copy issue when RSZ dump is incomplete (via.Gameobject)."),
+            ("Fixed", "Recently closed files list issues such as reset when failing to reopen a file."),
+            ("Fixed", "A few mistakes in the RE4 RSZ dump."),
+            ("Fixed", "Fields of type `Size` were not displayed at all in RSZ files."),
+            ("Fixed", "Missing entry in `Tools` for CSV Data Extractor."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
