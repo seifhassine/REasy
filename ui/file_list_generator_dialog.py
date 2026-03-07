@@ -171,7 +171,7 @@ class FileListGeneratorDialog(QDialog):
         self.collect_paths_btn.setFont(font)
         bottom_layout.addWidget(self.collect_paths_btn)
 
-        self.improve_list_btn = QPushButton("Improve Existing List")
+        self.improve_list_btn = QPushButton("Improve Existing List (1)")
         self.improve_list_btn.clicked.connect(self._improve_list)
         self.improve_list_btn.setVisible(False)
         self.improve_list_btn.setMinimumHeight(35)
@@ -179,6 +179,13 @@ class FileListGeneratorDialog(QDialog):
         improve_font.setBold(True)
         self.improve_list_btn.setFont(improve_font)
         bottom_layout.addWidget(self.improve_list_btn)
+
+        self.cross_game_improve_btn = QPushButton("Improve List from Another Game")
+        self.cross_game_improve_btn.clicked.connect(self._improve_list_from_other_game)
+        self.cross_game_improve_btn.setVisible(False)
+        self.cross_game_improve_btn.setMinimumHeight(35)
+        self.cross_game_improve_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.cross_game_improve_btn)
         
         bottom_layout.addStretch()
         
@@ -211,6 +218,8 @@ class FileListGeneratorDialog(QDialog):
             self.clear_list_btn.setEnabled(True)
             if hasattr(self, 'improve_list_btn'):
                 self.improve_list_btn.setEnabled(True)
+            if hasattr(self, 'cross_game_improve_btn'):
+                self.cross_game_improve_btn.setEnabled(True)
     
     def _clear_list_file(self):
         self.list_file_path = None
@@ -219,6 +228,8 @@ class FileListGeneratorDialog(QDialog):
         self.clear_list_btn.setEnabled(False)
         if hasattr(self, 'improve_list_btn'):
             self.improve_list_btn.setEnabled(False)
+        if hasattr(self, 'cross_game_improve_btn'):
+            self.cross_game_improve_btn.setEnabled(False)
     
     def _update_run_button(self):
         has_exe = self.game_exe_path is not None
@@ -328,7 +339,10 @@ class FileListGeneratorDialog(QDialog):
         QMessageBox.information(self, "Analysis Complete", summary_msg)
         self.collect_paths_btn.setVisible(True)
         self.improve_list_btn.setVisible(True)
-        self.improve_list_btn.setEnabled(bool(self.list_file_path))
+        self.cross_game_improve_btn.setVisible(True)
+        has_list = bool(self.list_file_path)
+        self.improve_list_btn.setEnabled(has_list)
+        self.cross_game_improve_btn.setEnabled(has_list)
         self.extract_exe_btn.setEnabled(True)
         self.extract_dump_btn.setEnabled(True)
     
@@ -478,9 +492,26 @@ class FileListGeneratorDialog(QDialog):
         else:
             QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
     
-    def _improve_list(self):
-        if not self.list_file_path:
-            QMessageBox.warning(self, "No List File", "Please select an existing list file first.")
+    def _read_list_paths(self, list_file_path):
+        paths = set()
+        if not list_file_path or not os.path.exists(list_file_path):
+            return paths
+
+        try:
+            with open(list_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    paths.add(line.lower())
+        except Exception:
+            return set()
+
+        return paths
+
+    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None):
+        if not source_list_path:
+            QMessageBox.warning(self, "No List File", "Please select a source list file first.")
             return
 
         extensions = list(self.analyzer.combined_extensions.keys())
@@ -502,7 +533,7 @@ class FileListGeneratorDialog(QDialog):
         )
 
         progress = QProgressDialog("Improving list entries...", None, 0, 100, self)
-        progress.setWindowTitle("List Improver")
+        progress.setWindowTitle(title)
         progress.setWindowModality(Qt.WindowModal)
         progress.setCancelButton(None)
         progress.setMinimumDuration(0)
@@ -515,9 +546,10 @@ class FileListGeneratorDialog(QDialog):
             QApplication.processEvents()
 
         success, error, stats, validated_paths = self.path_collector.improve_list_with_chunked_validation(
-            self.list_file_path,
+            source_list_path,
             pak_directory,
-            progress_callback=update_progress
+            progress_callback=update_progress,
+            override_prefix=override_prefix
         )
         progress.close()
 
@@ -532,10 +564,24 @@ class FileListGeneratorDialog(QDialog):
         if not output_path:
             return
 
-        success, error = self.path_collector.export_to_file(output_path, validated_paths)
+        export_paths = set(validated_paths)
+        base_path_count = 0
+        if append_from_list_path:
+            base_paths = self._read_list_paths(append_from_list_path)
+            base_path_count = len(base_paths)
+            export_paths.update(base_paths)
+
+        success, error = self.path_collector.export_to_file(output_path, export_paths)
         if not success:
             QMessageBox.critical(self, "Export Error", f"Failed to export improved list:\n\n{error}")
             return
+
+        append_summary = ""
+        if append_from_list_path:
+            append_summary = (
+                f"Base list paths kept: {base_path_count}\n"
+                f"Final exported paths: {len(export_paths)}\n\n"
+            )
 
         QMessageBox.information(
             self,
@@ -543,8 +589,37 @@ class FileListGeneratorDialog(QDialog):
             f"List improver complete!\n\n"
             f"Source list entries: {stats['source_entries']}\n"
             f"Generated combinations: {stats['generated_candidates']}\n"
-            f"Validated paths: {stats['validated_paths']}\n\n"
+            f"Validated paths: {stats['validated_paths']}\n"
+            f"{append_summary}"
             f"Saved to: {output_path}"
+        )
+
+    def _improve_list(self):
+        self._run_list_improver(
+            self.list_file_path,
+            title="Current Game List Improver",
+            override_prefix=False
+        )
+
+    def _improve_list_from_other_game(self):
+        other_list_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Source List from Another Game",
+            "",
+            "List Files (*.list);;All Files (*.*)"
+        )
+        if not other_list_path:
+            return
+
+        if not self.list_file_path:
+            QMessageBox.warning(self, "No Existing List", "Please select your existing list file first.")
+            return
+
+        self._run_list_improver(
+            other_list_path,
+            title="Cross-Game List Improver",
+            override_prefix=True,
+            append_from_list_path=self.list_file_path
         )
 
     def _extract_paths_from_exe(self):

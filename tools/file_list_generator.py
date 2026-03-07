@@ -471,6 +471,42 @@ class PathCollector:
         stem = '.'.join(base_parts[:-1]).lower()
         extension = base_parts[-1].lower()
         return stem, path_without_version.lower(), extension
+
+    def _rewrite_stem_prefix(self, stem):
+        stem = stem.lower()
+        if not stem.startswith('natives/'):
+            return f"{self.path_prefix}{stem.lstrip('/')}"
+
+        parts = stem.split('/', 2)
+        if len(parts) < 3:
+            return f"{self.path_prefix}{parts[-1]}"
+
+        return f"{self.path_prefix}{parts[2]}"
+
+    def _collect_improver_entries(self, list_file_path, override_prefix=False):
+        known_extensions = set(self.extensions) | set(self.extension_versions.keys())
+        entries = set()
+        with open(list_file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or not line.startswith('natives/'):
+                    continue
+
+                stem, _, extension = self._parse_list_path_components(line)
+                if not stem or not extension or extension not in known_extensions:
+                    continue
+
+                normalized_stem = self._rewrite_stem_prefix(stem) if override_prefix else stem
+                entries.add((normalized_stem, extension))
+        return entries
+
+    def _iter_extension_suffixes(self, extension):
+        versions = self.extension_versions.get(extension, set())
+        if versions:
+            for version in versions:
+                yield f"{extension}.{version}"
+        else:
+            yield extension
     
     def extract_strings_from_data(self, data):
         min_length = 10
@@ -617,48 +653,33 @@ class PathCollector:
         except Exception as e:
             return False, f"Failed to process list file: {e}"
     
-    def generate_improved_paths_from_list(self, list_file_path, progress_callback=None):
+    def generate_improved_paths_from_list(self, list_file_path, progress_callback=None, override_prefix=False):
         if not os.path.exists(list_file_path):
             return False, f"List file not found: {list_file_path}", 0, 0
 
         try:
-            stems = set()
-            with open(list_file_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#') or not line.startswith('natives/'):
-                        continue
+            entries = sorted(self._collect_improver_entries(list_file_path, override_prefix=override_prefix))
 
-                    stem, _, _ = self._parse_list_path_components(line)
-                    if stem:
-                        stems.add(stem)
-
-            if not stems:
+            if not entries:
                 return False, "No valid list entries found to improve", 0, 0
 
             self.collected_paths.clear()
-            stem_list = sorted(stems)
 
-            for idx, stem in enumerate(stem_list, 1):
+            for idx, (stem, extension) in enumerate(entries, 1):
                 if progress_callback:
                     should_stop = progress_callback(
-                        f"Generating combinations for list entry {idx}/{len(stem_list)}", idx, len(stem_list)
+                        f"Generating combinations for list entry {idx}/{len(entries)}", idx, len(entries)
                     )
                     if should_stop:
                         break
 
-                for extension in self.extensions:
-                    versions = self.extension_versions.get(extension, set())
-                    if versions:
-                        for version in versions:
-                            self.collected_paths.add(f"{stem}.{extension}.{version}".lower())
-                    else:
-                        self.collected_paths.add(f"{stem}.{extension}".lower())
+                for suffix in self._iter_extension_suffixes(extension):
+                    self.collected_paths.add(f"{stem}.{suffix}".lower())
 
             if progress_callback:
-                progress_callback("List improver combination generation complete", len(stem_list), len(stem_list))
+                progress_callback("List improver combination generation complete", len(entries), len(entries))
 
-            return True, None, len(stems), len(self.collected_paths)
+            return True, None, len(entries), len(self.collected_paths)
         except Exception as e:
             return False, f"Failed to build improved list combinations: {e}", 0, 0
 
@@ -719,43 +740,27 @@ class PathCollector:
                     if not candidate.endswith(variation_suffix):
                         yield f"{candidate}{variation_suffix}"
 
-    def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None):
+    def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None, override_prefix=False):
         try:
             from file_handlers.pak.utils import filepath_hash
 
             if not os.path.exists(list_file_path):
                 return False, f"List file not found: {list_file_path}", None, set()
 
-            stems = set()
-            with open(list_file_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#') or not line.startswith('natives/'):
-                        continue
-                    stem, _, _ = self._parse_list_path_components(line)
-                    if stem:
-                        stems.add(stem)
+            entries = sorted(self._collect_improver_entries(list_file_path, override_prefix=override_prefix))
 
-            if not stems:
+            if not entries:
                 return False, "No valid list entries found to improve", None, set()
 
             ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
             if not ok:
                 return False, error, None, set()
 
-            stem_list = sorted(stems)
-            suffixes = []
-            for extension in self.extensions:
-                versions = self.extension_versions.get(extension, set())
-                if versions:
-                    suffixes.extend(f"{extension}.{version}" for version in versions)
-                else:
-                    suffixes.append(extension)
-
             validated_paths = set()
             generated_candidates = 0
 
-            for idx, stem in enumerate(stem_list, 1):
+            for idx, (stem, extension) in enumerate(entries, 1):
+                suffixes = list(self._iter_extension_suffixes(extension))
                 for candidate in self._iter_improver_candidates(stem, suffixes):
                     generated_candidates += 1
                     candidate_hash = filepath_hash(candidate)
@@ -765,17 +770,17 @@ class PathCollector:
 
                 if progress_callback:
                     progress_callback(
-                        f"Improving list entries...\nEntry {idx}/{len(stem_list)}\n"
+                        f"Improving list entries...\nEntry {idx}/{len(entries)}\n"
                         f"Generated so far: {generated_candidates}\nValid so far: {len(validated_paths)}",
                         idx,
-                        len(stem_list)
+                        len(entries)
                     )
 
                 if not pak_hashes:
                     break
 
             stats = {
-                'source_entries': len(stem_list),
+                'source_entries': len(entries),
                 'generated_candidates': generated_candidates,
                 'validated_paths': len(validated_paths),
             }
