@@ -83,7 +83,6 @@ class AdvancedTreeView(QTreeView):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.parent_modified_callback = None
         self.resources_outdated = False
-        _rsz_array_cb.RszArrayClipboard.on_resource_data_deserialized = self._mark_resources_outdated
         self.shift_pressed = False
         self.label_width = 150
         self.translation_manager = TranslationManager(self)
