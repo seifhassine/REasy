@@ -196,17 +196,18 @@ class SoundViewer(QWidget):
         vl.setSpacing(10)
         row = QHBoxLayout()
         mk = self._make_btn
-        self.play_btn = mk("Decode && Play", QStyle.SP_MediaPlay, self._on_play)
-        self.analyze_btn = mk("Refresh Tracks", QStyle.SP_BrowserReload, self._on_analyze)
+        self.play_btn = mk("Play", QStyle.SP_MediaPlay, self._on_play)
+        self.analyze_btn = mk("Refresh", QStyle.SP_BrowserReload, self._on_analyze)
         self.stop_btn = mk("Stop", QStyle.SP_MediaStop, self._on_stop, enabled=False)
         self.skip_btn = mk("Skip Silence", QStyle.SP_MediaSkipForward, self._on_skip, enabled=False)
         self.exp_wav = mk("Export WAV", QStyle.SP_DialogSaveButton, self._on_export_wav)
         self.exp_wem = mk("Export WEM", QStyle.SP_DialogSaveButton, self._on_export_wem)
         self.exp_all = mk("Export All WAV/WEM", QStyle.SP_DialogSaveButton, self._on_export_all)
         self.exp_pck = mk("Export Non-Streaming PCK", QStyle.SP_DialogSaveButton, self._on_export_pck)
-        self.rep_wem = mk("Replace WEM/WAV", QStyle.SP_BrowserReload, self._on_replace)
+        self.rep_wem = mk("Replace Track", QStyle.SP_BrowserReload, self._on_replace)
+        self.rep_bulk = mk("Bulk Replace from Folder", QStyle.SP_DirOpenIcon, self._on_bulk_replace)
         for b in (self.play_btn, self.analyze_btn, self.stop_btn, self.skip_btn,
-                  self.exp_wav, self.exp_wem, self.exp_all, self.exp_pck, self.rep_wem):
+                  self.exp_wav, self.exp_wem, self.exp_all, self.exp_pck, self.rep_wem, self.rep_bulk):
             row.addWidget(b)
         row.addStretch()
         vl.addLayout(row)
@@ -630,6 +631,11 @@ class SoundViewer(QWidget):
                 return tag
         return None
 
+    def _refresh_tracks(self):
+        self.handler.raw_data = self.handler.rebuild()
+        self._parsed_tracks = parse_soundbank(self.handler.raw_data).tracks
+        self._populate(self._parsed_tracks)
+
     def _on_replace(self):
         r = self._require_track("Replace")
         if not r:
@@ -643,34 +649,93 @@ class SoundViewer(QWidget):
         )
         if not src:
             return
-        src_name = os.path.basename(src)
         try:
-            low = src.lower()
-            if low.endswith(".wem"):
-                with open(src, "rb") as f:
-                    d = f.read()
-            else:
-                codec_tag = self._choose_wav_codec_tag()
-                if codec_tag is None:
-                    return
-                d = convert_file_to_wem(src, parent_window=self, codec_tag=codec_tag)
+            data, codec_tag = self._read_replacement_audio(src)
         except OSError as e:
             QMessageBox.warning(self, "Replace Error", f"Failed to read replacement file\n{e}")
             return
         except Exception as e:
             QMessageBox.warning(self, "Replace Error", f"Failed to convert replacement file\n{e}")
             return
-        if not d:
+        if not data:
             QMessageBox.warning(self, "Replace Error", "Replacement file is empty.")
             return
-        self.handler.replace_track_data(t.source_id, d)
-        self.handler.raw_data = self.handler.rebuild()
-        self._parsed_tracks = parse_soundbank(self.handler.raw_data).tracks
-        self._populate(self._parsed_tracks)
-        codec_note = ""
-        if not src.lower().endswith(".wem"):
-            codec_note = f" (codec 0x{codec_tag:04X})"
-        self.status.setText(f"Replaced source ID {t.source_id} using {src_name}{codec_note}.")
+        self.handler.replace_track_data(t.source_id, data)
+        self._refresh_tracks()
+        codec_note = f" (codec 0x{codec_tag:04X})" if codec_tag is not None else ""
+        self.status.setText(f"Replaced source ID {t.source_id} using {os.path.basename(src)}{codec_note}.")
+
+    def _read_replacement_audio(self, src_path: str, *, codec_tag: int | None = None) -> tuple[bytes, int | None]:
+        if src_path.lower().endswith(".wem"):
+            with open(src_path, "rb") as f:
+                return f.read(), None
+        codec = codec_tag if codec_tag is not None else self._choose_wav_codec_tag()
+        if codec is None:
+            return b"", None
+        return convert_file_to_wem(src_path, parent_window=self, codec_tag=codec), codec
+
+    def _on_bulk_replace(self):
+        if not self._parsed_tracks:
+            QMessageBox.information(self, "Bulk Replace", "No tracks available to replace.")
+            return
+        source_dir = QFileDialog.getExistingDirectory(self, "Select Folder with Replacement Audio", "")
+        if not source_dir:
+            return
+
+        track_by_id = {str(t.source_id): t.source_id for t in self._parsed_tracks}
+        entries = [
+            (os.path.splitext(n)[0], os.path.join(source_dir, n))
+            for n in os.listdir(source_dir)
+            if os.path.isfile(os.path.join(source_dir, n))
+        ]
+        file_map: dict[str, str] = {}
+        for stem, path in entries:
+            if stem in track_by_id and stem not in file_map:
+                file_map[stem] = path
+        if not file_map:
+            QMessageBox.information(self, "Bulk Replace", "No matching file names were found.\n\nFile name (without extension) must match a track source ID.")
+            return
+
+        need_codec = any(not p.lower().endswith(".wem") for p in file_map.values())
+        codec_tag = self._choose_wav_codec_tag() if need_codec else None
+        if need_codec and codec_tag is None:
+            return
+
+        ids = sorted(file_map, key=int)
+        progress = QProgressDialog("Replacing tracks...", "Cancel", 0, len(ids), self)
+        progress.setWindowTitle("Bulk Replace")
+        progress.setMinimumDuration(0)
+        progress.setWindowModality(Qt.WindowModal)
+
+        replaced, failures = 0, []
+        for i, source_id_txt in enumerate(ids, 1):
+            progress.setValue(i - 1)
+            progress.setLabelText(f"Replacing source ID {source_id_txt} ({i}/{len(ids)})")
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                break
+            path = file_map[source_id_txt]
+            try:
+                data, _ = self._read_replacement_audio(path, codec_tag=codec_tag)
+                if not data:
+                    raise OSError("empty")
+                self.handler.replace_track_data(track_by_id[source_id_txt], data)
+                replaced += 1
+            except Exception:
+                failures.append(os.path.basename(path))
+
+        progress.setValue(len(ids))
+        if replaced:
+            self._refresh_tracks()
+
+        cancelled = " (cancelled)" if progress.wasCanceled() else ""
+        failed = f" | Failed: {len(failures)}" if failures else ""
+        codec = f" | Codec: 0x{codec_tag:04X}" if codec_tag is not None else ""
+        self.status.setText(f"Bulk replace complete{cancelled}. Replaced: {replaced}/{len(ids)}{failed}{codec}.")
+        if failures:
+            preview = "\n".join(failures[:12])
+            more = "" if len(failures) <= 12 else f"\n...and {len(failures) - 12} more"
+            QMessageBox.warning(self, "Bulk Replace Complete", f"Some files failed to replace:\n{preview}{more}")
 
     def _on_play(self):
         self._stop()
