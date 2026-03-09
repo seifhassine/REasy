@@ -47,6 +47,19 @@ LARGE_FILE_THRESHOLD = 512 * 1024 * 1024
 MMAP_WINDOW_SIZE = 64 * 1024 * 1024
 MMAP_OVERLAP_SIZE = 1 * 1024 * 1024
 
+TEX_VARIANT_SUFFIXES = [
+    "_acot", "_albd", "_nrmr", "_msr", "_mskm", "_scot", "_nrca", "_msk4", "_alb", "_nrma",
+    "_nrm", "_albs", "_atos", "_faketex", "_dslut", "_msk3", "_emi", "_msk1", "_colormask.",
+    "_selectionmask", "_hgt", "_nrrc", "_hdr", "_mask", "_msk", "_nrra", "_albm", "_albh",
+    "_nrro", "_rocm", "_occ", "_lymo", "_alba", "_nrca", "_alp", "_nmr", "_rgh", "_met",
+    "_iam", "_lut", "_fbi", "_add", "_emm", "_lym", "_cvt", "_vns", "_lin", "_pos", "_fur", "_im", "_disp",
+]
+UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
+MAX_LAST_NUMBER_VARIANTS = 1000
+LINKED_DUAL_TAIL_FIRST_WINDOW = 32
+MAX_LINKED_DUAL_TAIL_COMBINATIONS = 5000
+POWER_OF_TWO_VALUES = tuple(1 << exp for exp in range(19))
+
 
 def _is_valid_extracted_char(char):
     return char.isprintable()
@@ -415,7 +428,9 @@ class PathCollector:
         extension_versions=None,
         path_prefix="natives/stm/",
         include_variations=False,
-        include_streaming=False
+        include_streaming=False,
+        include_tex_variants=False,
+        include_extension_swaps=False
     ):
         self.extensions = [ext.lower() for ext in extensions]
         self.extension_versions = {}
@@ -426,6 +441,9 @@ class PathCollector:
         self.collected_paths = set()
         self.include_variations = include_variations
         self.include_streaming = include_streaming
+        self.include_tex_variants = include_tex_variants
+        self.include_extension_swaps = include_extension_swaps
+        self._linked_dual_tail_values = {}
     
     def filter_path_by_extensions(self, path):
         path_lower = path.lower()
@@ -507,6 +525,170 @@ class PathCollector:
                 yield f"{extension}.{version}"
         else:
             yield extension
+
+    def _suffix_extension(self, suffix):
+        return suffix.split('.', 1)[0].lower()
+
+    def _iter_improver_suffixes(self, source_extension):
+        if not self.include_extension_swaps:
+            yield from self._iter_extension_suffixes(source_extension)
+            return
+
+        candidate_extensions = dict.fromkeys([source_extension, *self.extensions, *self.extension_versions.keys()])
+        yielded = set()
+        for extension in candidate_extensions:
+            for suffix in self._iter_extension_suffixes(extension):
+                if suffix not in yielded:
+                    yielded.add(suffix)
+                    yield suffix
+
+
+    def _iter_number_values(self, token):
+        digit_count = len(token)
+        if digit_count <= 0:
+            return [0]
+
+        max_value = (10 ** digit_count) - 1
+        capped_max = min(max_value, MAX_LAST_NUMBER_VARIANTS - 1)
+        return range(0, capped_max + 1)
+
+    def _is_power_of_two_token(self, token):
+        try:
+            value = int(token)
+        except ValueError:
+            return False
+        return value > 0 and (value & (value - 1)) == 0
+
+    def _replace_match_number(self, stem, match, value):
+        token = match.group(0)
+        is_zero_padded = token.startswith('0') and len(token) > 1
+        rendered = str(value).zfill(len(token)) if is_zero_padded else str(value)
+        return f"{stem[:match.start()]}{rendered}{stem[match.end():]}"
+
+    def _get_linked_dual_tail_context(self, stem):
+        matches = list(re.finditer(r'\d+', stem))
+        if len(matches) < 2:
+            return None
+
+        first = matches[-2]
+        second = matches[-1]
+
+        if stem[first.end():second.start()] != '_':
+            return None
+
+        first_token = first.group(0)
+        second_token = second.group(0)
+        if len(first_token) != 3 or len(second_token) != 2:
+            return None
+
+        first_pattern = re.compile(rf'(?<=[_/]){re.escape(first_token)}(?=[_/]|$)')
+        if len(list(first_pattern.finditer(stem))) < 2:
+            return None
+
+        key_with_second_placeholder = f"{stem[:second.start()]}{{B}}"
+        family_key = first_pattern.sub('{A}', key_with_second_placeholder)
+
+        return {
+            'first_token': first_token,
+            'second_token': second_token,
+            'first_pattern': first_pattern,
+            'second_span': (second.start(), second.end()),
+            'family_key': family_key,
+        }
+
+    def _build_linked_dual_tail_values(self, entries):
+        values = {}
+        for stem, _ in entries:
+            context = self._get_linked_dual_tail_context(stem)
+            if not context:
+                continue
+
+            family = values.setdefault(context['family_key'], {'first': set(), 'second': set()})
+            family['first'].add(int(context['first_token']))
+            family['second'].add(int(context['second_token']))
+        return values
+
+    def _iter_linked_dual_tail_candidates(self, stem):
+        context = self._get_linked_dual_tail_context(stem)
+        if not context:
+            return
+
+        first_token = context['first_token']
+        second_token = context['second_token']
+        first_pattern = context['first_pattern']
+        second_start, second_end = context['second_span']
+
+        observed = self._linked_dual_tail_values.get(context['family_key'])
+        if observed:
+            first_values = sorted(observed['first'])
+            second_values = sorted(observed['second'])
+        else:
+            first_original = int(first_token)
+            first_values = list(range(max(0, first_original - LINKED_DUAL_TAIL_FIRST_WINDOW), min(999, first_original + LINKED_DUAL_TAIL_FIRST_WINDOW) + 1))
+            second_values = list(self._iter_number_values(second_token))
+
+        max_combinations = MAX_LINKED_DUAL_TAIL_COMBINATIONS
+        generated = 0
+        for first_value in first_values:
+            first_rendered = str(first_value).zfill(len(first_token))
+            stem_with_first = first_pattern.sub(first_rendered, stem)
+            for second_value in second_values:
+                second_rendered = str(second_value).zfill(len(second_token))
+                yield f"{stem_with_first[:second_start]}{second_rendered}{stem_with_first[second_end:]}"
+                generated += 1
+                if generated >= max_combinations:
+                    return
+
+    def _iter_numeric_stem_combinations(self, stem):
+        number_matches = list(re.finditer(r'\d+', stem))
+        if not number_matches:
+            yield stem
+            return
+
+        seen = set()
+
+        seen.add(stem)
+        yield stem
+
+        for match in number_matches:
+            for value in self._iter_number_values(match.group(0)):
+                candidate = self._replace_match_number(stem, match, value)
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
+
+        for linked_candidate in self._iter_linked_dual_tail_candidates(stem):
+            if linked_candidate not in seen:
+                seen.add(linked_candidate)
+                yield linked_candidate
+
+        for match in number_matches:
+            if not self._is_power_of_two_token(match.group(0)):
+                continue
+            for value in POWER_OF_TWO_VALUES:
+                candidate = self._replace_match_number(stem, match, value)
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
+
+    def _split_tex_stem_variant(self, stem):
+        lower_stem = stem.lower()
+        for variant in UNIQUE_TEX_VARIANT_SUFFIXES:
+            if lower_stem.endswith(variant):
+                return stem[:-len(variant)], variant
+        return stem, None
+
+    def _iter_tex_stem_variants(self, stem, extension):
+        if extension != 'tex' or not self.include_tex_variants:
+            yield stem
+            return
+
+        base_stem, used_variant = self._split_tex_stem_variant(stem)
+
+        for suffix in UNIQUE_TEX_VARIANT_SUFFIXES:
+            if used_variant and suffix == used_variant:
+                continue
+            yield f"{base_stem}{suffix}"
     
     def extract_strings_from_data(self, data):
         min_length = 10
@@ -718,11 +900,21 @@ class PathCollector:
 
         return True, None, pak_hashes
 
-    def _iter_improver_candidates(self, stem, suffixes):
-        for suffix in suffixes:
-            base_candidate = f"{stem}.{suffix}"
-            for candidate in self._iter_expanded_variants(base_candidate):
-                yield candidate
+    def _iter_improver_candidates(self, stem, extension, suffixes, on_base_candidate=None):
+        stem_iter = self._iter_tex_stem_variants(stem, extension)
+
+        for variant_stem in stem_iter:
+            if self.include_tex_variants or self.include_extension_swaps:
+                numeric_iter = [variant_stem]
+            else:
+                numeric_iter = self._iter_numeric_stem_combinations(variant_stem)
+            for numeric_stem in numeric_iter:
+                for suffix in suffixes:
+                    if on_base_candidate:
+                        on_base_candidate(numeric_stem, self._suffix_extension(suffix))
+                    base_candidate = f"{numeric_stem}.{suffix}"
+                    for candidate in self._iter_expanded_variants(base_candidate):
+                        yield candidate
 
     def _iter_expanded_variants(self, base_candidate):
         candidates = [base_candidate]
@@ -752,26 +944,54 @@ class PathCollector:
             if not entries:
                 return False, "No valid list entries found to improve", None, set()
 
+            self._linked_dual_tail_values = self._build_linked_dual_tail_values(entries)
+
             ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
             if not ok:
                 return False, error, None, set()
 
             validated_paths = set()
             generated_candidates = 0
+            remaining_entries = set(entries)
+
+            progress_update_interval = 5000
 
             for idx, (stem, extension) in enumerate(entries, 1):
-                suffixes = list(self._iter_extension_suffixes(extension))
-                for candidate in self._iter_improver_candidates(stem, suffixes):
+                current_entry = (stem, extension)
+                if current_entry not in remaining_entries:
+                    continue
+
+                remaining_entries.discard(current_entry)
+                suffixes = list(self._iter_improver_suffixes(extension))
+                generated_in_entry = 0
+
+                def consume_matching_entry(candidate_stem, candidate_extension):
+                    remaining_entries.discard((candidate_stem, candidate_extension))
+
+                for candidate in self._iter_improver_candidates(stem, extension, suffixes, on_base_candidate=consume_matching_entry):
                     generated_candidates += 1
+                    generated_in_entry += 1
                     candidate_hash = filepath_hash(candidate)
                     if candidate_hash in pak_hashes:
                         validated_paths.add(candidate)
                         pak_hashes.discard(candidate_hash)
 
+                    if progress_callback and generated_in_entry % progress_update_interval == 0:
+                        progress_callback(
+                            f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                            f"Generated in current entry: {generated_in_entry}\n"
+                            f"Generated so far: {generated_candidates}\n"
+                            f"Valid so far: {len(validated_paths)}",
+                            idx,
+                            len(entries)
+                        )
+
                 if progress_callback:
                     progress_callback(
-                        f"Improving list entries...\nEntry {idx}/{len(entries)}\n"
-                        f"Generated so far: {generated_candidates}\nValid so far: {len(validated_paths)}",
+                        f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension}) complete\n"
+                        f"Generated in current entry: {generated_in_entry}\n"
+                        f"Generated so far: {generated_candidates}\n"
+                        f"Valid so far: {len(validated_paths)}",
                         idx,
                         len(entries)
                     )

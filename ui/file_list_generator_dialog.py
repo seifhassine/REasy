@@ -180,7 +180,21 @@ class FileListGeneratorDialog(QDialog):
         self.improve_list_btn.setFont(improve_font)
         bottom_layout.addWidget(self.improve_list_btn)
 
-        self.cross_game_improve_btn = QPushButton("Improve List from Another Game")
+        self.improve_list_tex_btn = QPushButton("Improve List (Tex Variants)")
+        self.improve_list_tex_btn.clicked.connect(self._improve_list_tex)
+        self.improve_list_tex_btn.setVisible(False)
+        self.improve_list_tex_btn.setMinimumHeight(35)
+        self.improve_list_tex_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.improve_list_tex_btn)
+
+        self.improve_list_swap_ext_btn = QPushButton("Improve List (Swap Extensions)")
+        self.improve_list_swap_ext_btn.clicked.connect(self._improve_list_swap_extensions)
+        self.improve_list_swap_ext_btn.setVisible(False)
+        self.improve_list_swap_ext_btn.setMinimumHeight(35)
+        self.improve_list_swap_ext_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.improve_list_swap_ext_btn)
+
+        self.cross_game_improve_btn = QPushButton("Improve Using Another Game List")
         self.cross_game_improve_btn.clicked.connect(self._improve_list_from_other_game)
         self.cross_game_improve_btn.setVisible(False)
         self.cross_game_improve_btn.setMinimumHeight(35)
@@ -218,6 +232,10 @@ class FileListGeneratorDialog(QDialog):
             self.clear_list_btn.setEnabled(True)
             if hasattr(self, 'improve_list_btn'):
                 self.improve_list_btn.setEnabled(True)
+            if hasattr(self, 'improve_list_tex_btn'):
+                self.improve_list_tex_btn.setEnabled(True)
+            if hasattr(self, 'improve_list_swap_ext_btn'):
+                self.improve_list_swap_ext_btn.setEnabled(True)
             if hasattr(self, 'cross_game_improve_btn'):
                 self.cross_game_improve_btn.setEnabled(True)
     
@@ -228,6 +246,10 @@ class FileListGeneratorDialog(QDialog):
         self.clear_list_btn.setEnabled(False)
         if hasattr(self, 'improve_list_btn'):
             self.improve_list_btn.setEnabled(False)
+        if hasattr(self, 'improve_list_tex_btn'):
+            self.improve_list_tex_btn.setEnabled(False)
+        if hasattr(self, 'improve_list_swap_ext_btn'):
+            self.improve_list_swap_ext_btn.setEnabled(False)
         if hasattr(self, 'cross_game_improve_btn'):
             self.cross_game_improve_btn.setEnabled(False)
     
@@ -339,9 +361,13 @@ class FileListGeneratorDialog(QDialog):
         QMessageBox.information(self, "Analysis Complete", summary_msg)
         self.collect_paths_btn.setVisible(True)
         self.improve_list_btn.setVisible(True)
+        self.improve_list_tex_btn.setVisible(True)
+        self.improve_list_swap_ext_btn.setVisible(True)
         self.cross_game_improve_btn.setVisible(True)
         has_list = bool(self.list_file_path)
         self.improve_list_btn.setEnabled(has_list)
+        self.improve_list_tex_btn.setEnabled(has_list)
+        self.improve_list_swap_ext_btn.setEnabled(has_list)
         self.cross_game_improve_btn.setEnabled(has_list)
         self.extract_exe_btn.setEnabled(True)
         self.extract_dump_btn.setEnabled(True)
@@ -509,7 +535,17 @@ class FileListGeneratorDialog(QDialog):
 
         return paths
 
-    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None):
+    def _confirm_improver_mode(self, mode_name, description):
+        message = f"Run mode: {mode_name}\n\n{description}\n\nContinue?"
+        return QMessageBox.question(
+            self,
+            "Confirm List Improver Mode",
+            message,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes
+        ) == QMessageBox.Yes
+
+    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False):
         if not source_list_path:
             QMessageBox.warning(self, "No List File", "Please select a source list file first.")
             return
@@ -528,8 +564,10 @@ class FileListGeneratorDialog(QDialog):
             extensions,
             extension_versions=self.analyzer.combined_extensions,
             path_prefix=self.path_prefix,
-            include_variations=self.include_variations,
-            include_streaming=self.include_streaming
+            include_variations=False if ignore_extra_options else self.include_variations,
+            include_streaming=False if ignore_extra_options else self.include_streaming,
+            include_tex_variants=include_tex_variants,
+            include_extension_swaps=include_extension_swaps
         )
 
         progress = QProgressDialog("Improving list entries...", None, 0, 100, self)
@@ -565,6 +603,10 @@ class FileListGeneratorDialog(QDialog):
             return
 
         export_paths = set(validated_paths)
+        source_paths = self._read_list_paths(source_list_path)
+        source_path_count = len(source_paths)
+        export_paths.update(source_paths)
+
         base_path_count = 0
         if append_from_list_path:
             base_paths = self._read_list_paths(append_from_list_path)
@@ -576,12 +618,13 @@ class FileListGeneratorDialog(QDialog):
             QMessageBox.critical(self, "Export Error", f"Failed to export improved list:\n\n{error}")
             return
 
-        append_summary = ""
+        append_summary = (
+            f"Source list paths kept: {source_path_count}\n"
+            f"Final exported paths: {len(export_paths)}\n"
+        )
         if append_from_list_path:
-            append_summary = (
-                f"Base list paths kept: {base_path_count}\n"
-                f"Final exported paths: {len(export_paths)}\n\n"
-            )
+            append_summary += f"Base list paths kept: {base_path_count}\n"
+        append_summary += "\n"
 
         QMessageBox.information(
             self,
@@ -594,11 +637,38 @@ class FileListGeneratorDialog(QDialog):
             f"Saved to: {output_path}"
         )
 
+    def _run_improver_mode(self, mode_name, description, **kwargs):
+        if not self._confirm_improver_mode(mode_name, description):
+            return
+        self._run_list_improver(self.list_file_path, **kwargs)
+
     def _improve_list(self):
-        self._run_list_improver(
-            self.list_file_path,
+        self._run_improver_mode(
+            "Improve Existing List",
+            "Generates numeric path variants, validates against PAK hashes, and keeps original source paths.",
             title="Current Game List Improver",
-            override_prefix=False
+            override_prefix=False,
+            include_tex_variants=False,
+        )
+
+    def _improve_list_tex(self):
+        self._run_improver_mode(
+            "Improve Existing List (Tex Variants)",
+            "For .tex paths, tries configured texture suffix variants without numeric expansion; keeps other source paths.",
+            title="Current Game List Improver (Tex Variants)",
+            override_prefix=False,
+            ignore_extra_options=True,
+            include_tex_variants=True,
+        )
+
+    def _improve_list_swap_extensions(self):
+        self._run_improver_mode(
+            "Improve Existing List (Swap Extensions)",
+            "Keeps each stem and tries all known extension/version combinations, then validates against PAK hashes.",
+            title="Current Game List Improver (Swap Extensions)",
+            override_prefix=False,
+            include_tex_variants=False,
+            include_extension_swaps=True,
         )
 
     def _improve_list_from_other_game(self):
@@ -619,7 +689,8 @@ class FileListGeneratorDialog(QDialog):
             other_list_path,
             title="Cross-Game List Improver",
             override_prefix=True,
-            append_from_list_path=self.list_file_path
+            append_from_list_path=self.list_file_path,
+            include_tex_variants=False
         )
 
     def _extract_paths_from_exe(self):
