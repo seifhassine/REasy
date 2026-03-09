@@ -10,3 +10,4 @@ zstandard
 texture2ddecoder
 PyOpenGL
 numpy
+capstone
