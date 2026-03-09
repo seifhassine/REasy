@@ -12,8 +12,6 @@ from ui.template_manager_dialog import TemplateManagerDialog
 from ui.template_export_dialog import TemplateExportDialog
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
-import file_handlers.rsz.rsz_array_clipboard as _rsz_array_cb
-
 from .tree_widget_factory import TreeWidgetFactory
 
 from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
@@ -328,11 +326,6 @@ class AdvancedTreeView(QTreeView):
         layout.addWidget(header)
         layout.addStretch()
         self.setIndexWidget(idx, container)
-
-    def _mark_resources_outdated(self, _):
-        if self.parent().handler.auto_resource_management and self.parent().handler.show_advanced: 
-            self.resources_outdated = True
-            self._apply_outdated_marker()
 
     def show_context_menu(self, position):
         """Show context menu for tree items"""

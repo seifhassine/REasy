@@ -1,6 +1,5 @@
 import os
 import json
-from typing import Callable, Optional
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
@@ -17,7 +16,6 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
 
 class RszArrayClipboard:
     
-    on_resource_data_deserialized: Optional[Callable[[str], None]] = None
     @staticmethod
     def get_clipboard_directory():
         return RszClipboardUtils.get_type_clipboard_directory("arrayelement")
@@ -2524,7 +2522,7 @@ class RszArrayClipboard:
         return RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
     
     @staticmethod
-    def _deserialize_element(element_data, element_class, guid_mapping=None, randomize_guids=True):
+    def _deserialize_element(element_data, element_class, guid_mapping=None, randomize_guids=True, on_resource_deserialized=None):
         if guid_mapping is None:
             guid_mapping = {}
             
@@ -2577,8 +2575,8 @@ class RszArrayClipboard:
             
         elif element_type == "ResourceData":
             string_value = element_data.get("value", "")
-            if string_value and RszArrayClipboard.on_resource_data_deserialized:
-                RszArrayClipboard.on_resource_data_deserialized(string_value)
+            if string_value and on_resource_deserialized:
+                on_resource_deserialized()
             return ResourceData(string_value, orig_type)
         
         elif element_type == "RuntimeTypeData":

@@ -913,7 +913,10 @@ class RszClipboardBase(ABC):
                     field_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids, viewer
                 )
             else:
-                element = RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
+                element = RszArrayClipboard._deserialize_element(
+                    field_data, None, guid_mapping, randomize_guids,
+                    on_resource_deserialized=getattr(getattr(viewer, "tree", None), "_on_resource_name_changed", None),
+                )
                 if element:
                     new_fields[field_name] = element
         
@@ -1058,7 +1061,9 @@ class RszClipboardBase(ABC):
             elif value_type == "GameObjectRefData":
                 new_array.values.append(self._deserialize_gameobject_ref(value_data, guid_mapping, randomize_guids))
             else:
-                element = RszArrayClipboard._deserialize_element(value_data, element_class)
+                element = RszArrayClipboard._deserialize_element(
+                    value_data, element_class,
+                    on_resource_deserialized=getattr(getattr(viewer, "tree", None), "_on_resource_name_changed", None),)
                 if element:
                     new_array.values.append(element)
                     
