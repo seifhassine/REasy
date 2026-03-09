@@ -11,3 +11,4 @@ texture2ddecoder
 PyOpenGL
 numpy
 capstone
+pefile
