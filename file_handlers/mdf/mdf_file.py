@@ -127,11 +127,11 @@ class MatHeader:
         self.shader_type = h.read_int32()
         if version >= 31:
             self.material_flags = h.read_uint64()
+            if version >= 51:
+                self.ukn = h.read_uint64()
             self.shaderLODNum = h.read_uint32()
         else:
             self.material_flags = h.read_uint32()
-        if version >= 51:
-            self.ukn = h.read_uint64()
         self.param_header_offset = h.read_int64()
         self.tex_header_offset = h.read_int64()
         if version >= 19:
@@ -168,11 +168,11 @@ class MatHeader:
         h.write_int32(self.shader_type)
         if version >= 31:
             h.write_uint64(self.material_flags)
+            if version >= 51:
+                h.write_uint64(self.ukn)
             h.write_uint32(self.shaderLODNum)
         else:
             h.write_uint32(self.material_flags)
-        if version >= 51:
-            h.write_uint64(self.ukn)
         h.write_int64(self.param_header_offset)
         h.write_int64(self.tex_header_offset)
         if version >= 19:
@@ -210,11 +210,11 @@ class MatHeader:
         # ukn1 and shaderLODNum (>=31)
         if version >= 31:
             cur += 12
+            # v51 unknown long
+            if version >= 51:
+                cur += 8
         else:
             cur += 4
-        # v51 unknown long
-        if version >= 51:
-            cur += 8
         # param_header_offset, tex_header_offset
         h.write_at(cur, '<q', self.param_header_offset)
         cur += 8
