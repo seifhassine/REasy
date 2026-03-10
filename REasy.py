@@ -29,6 +29,7 @@ from ui.outdated_files_dialog import OutdatedFilesDialog
 from ui.update_notification import UpdateNotificationManager
 from ui.rsz_differ_dialog import RszDifferDialog
 from ui.file_list_generator_dialog import FileListGeneratorDialog
+from ui.rsz_enum_prompt import RszEnumPromptController
 from settings import DEFAULT_SETTINGS, load_settings, save_settings
 from tools.ffmpeg_downloader import ensure_ffmpeg, ffmpeg_status
 from ui.changelog_dialog import ChangelogDialog
@@ -2158,6 +2159,8 @@ class REasyEditorApp(QMainWindow):
                 if tab.notebook_widget:
                     tab.notebook_widget.deleteLater()
                 return
+            if isinstance(getattr(tab, "handler", None), RszHandler):
+                RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else "Untitled"
             _ = self.notebook.addTab(tab.notebook_widget, tab_label)

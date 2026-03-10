@@ -31,7 +31,8 @@ DEFAULT_SETTINGS = {
     },
     "confirmation_prompt": True,
     "recently_closed_files": [],
-    "last_seen_version": ""
+    "last_seen_version": "",
+    "enum_prompt_checked_json_path": ""
 }
 
 
