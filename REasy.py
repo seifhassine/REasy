@@ -1416,6 +1416,7 @@ class REasyEditorApp(QMainWindow):
                 self.tr("Please pick a mod folder *directly* inside one of the game "
                         "directories (e.g. projects/RE4/YourMod).")
             )
+            return
 
         self.current_game = game
         self.proj_dock.current_game = game
@@ -1437,9 +1438,10 @@ class REasyEditorApp(QMainWindow):
         """Make <path> the current project and show the dock."""
         self.current_project = path
         self.proj_dock.current_game = self.current_game
-        self.proj_dock.set_project(path)
         self.proj_dock.show()
-        self._shrink_project_dock()    
+        self._shrink_project_dock()   
+        QApplication.processEvents()
+        self.proj_dock.set_project(path) 
         self.status_bar.showMessage(
             f"Project: {os.path.basename(path)}", 3000)
 

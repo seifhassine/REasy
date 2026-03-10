@@ -4,14 +4,15 @@ import shutil
 from pathlib import Path
 import json
 import sys
-from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl
+from time import monotonic
+from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
     QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox, QTextEdit, QProgressBar,
-    QTreeView, QAbstractItemView, QCheckBox, QLineEdit, QStyle, QSizePolicy
+    QTreeView, QAbstractItemView, QCheckBox, QLineEdit, QStyle, QSizePolicy, QFrame, QApplication
 )
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QDesktopServices
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QDesktopServices, QPainter, QPen, QColor
 from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
 
 from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
@@ -45,6 +46,36 @@ def _get_base_dir() -> Path:
         return Path(__file__).resolve().parent.parent.parent
     
 __all__ = ["ProjectManager"]  
+
+class _LoadingSpinner(QWidget):
+    def __init__(self, parent: QWidget | None = None, size: int = 34):
+        super().__init__(parent)
+        self._angle = 0
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._step)
+        self._timer.start(16)
+        self.setFixedSize(size, size)
+
+    def sizeHint(self) -> QSize:
+        return self.size()
+
+    def _step(self):
+        self._angle = (self._angle + 12) % 360
+        self.update()
+
+    def paintEvent(self, _event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        r = self.rect().adjusted(4, 4, -4, -4)
+
+        bg_pen = QPen(QColor(255, 255, 255, 45), 3)
+        p.setPen(bg_pen)
+        p.drawEllipse(r)
+
+        fg_pen = QPen(QColor(120, 200, 255, 235), 3)
+        fg_pen.setCapStyle(Qt.RoundCap)
+        p.setPen(fg_pen)
+        p.drawArc(r, int((90 - self._angle) * 16), int(-110 * 16))
 
 class ProjectManager(QDockWidget):
     """
@@ -165,6 +196,9 @@ class ProjectManager(QDockWidget):
         self._pak_cached_reader: CachedPakReader | None = None
         self._pak_population_paths: list[str] = []
         self._pak_flat_model: QStringListModel | None = None
+        self._project_load_ticket = 0
+        self._project_load_started_at = 0.0
+        self._project_load_min_visible_ms = 300
         self._pak_filter_proxy = QSortFilterProxyModel(self)
         self._pak_filter_proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self._pak_filter_proxy.setFilterKeyColumn(0)
@@ -215,6 +249,36 @@ class ProjectManager(QDockWidget):
         self.pak_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         lay.addWidget(self.sys_placeholder)
         lay.addWidget(self.pak_placeholder)
+
+        self.loading_overlay = QFrame(c)
+        self.loading_overlay.setStyleSheet("background-color: rgba(9, 12, 16, 118);")
+        self.loading_overlay.hide()
+        overlay_layout = QVBoxLayout(self.loading_overlay)
+        overlay_layout.setContentsMargins(24, 24, 24, 24)
+        overlay_layout.addStretch(1)
+
+        self.loading_card = QFrame(self.loading_overlay)
+        self.loading_card.setStyleSheet(
+            "QFrame {"
+            "background-color: rgba(24, 28, 36, 220);"
+            "border: 1px solid rgba(255, 255, 255, 32);"
+            "border-radius: 12px;"
+            "}"
+        )
+        card_layout = QVBoxLayout(self.loading_card)
+        card_layout.setContentsMargins(26, 20, 26, 18)
+        card_layout.setSpacing(12)
+
+        self.loading_spinner = _LoadingSpinner(self.loading_card, size=36)
+        card_layout.addWidget(self.loading_spinner, alignment=Qt.AlignHCenter)
+
+        self.loading_label = QLabel(self.tr("Loading project..."), self.loading_card)
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.setStyleSheet("color: rgba(245, 248, 255, 230); font-size: 14px; font-weight: 600;")
+        card_layout.addWidget(self.loading_label)
+
+        overlay_layout.addWidget(self.loading_card, alignment=Qt.AlignHCenter)
+        overlay_layout.addStretch(1)
 
         # Toggle buttons
         self.btn_sys .clicked.connect(lambda: self._switch(True))
@@ -434,12 +498,6 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
         if proj_dir:
-            if not self.current_game:
-                inferred = self.infer_project_game(proj_dir)
-                if inferred:
-                    self.current_game = inferred
-            if self.current_game:
-                self._update_project_cfg({"game": self.current_game})
             self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
@@ -455,30 +513,12 @@ class ProjectManager(QDockWidget):
             self.model_sys.setRootPath("")
             self.tree_sys.setRootIndex(self.model_sys.index(""))
             self._update_path_label()
-            # Restore saved PAK config if present
-            try:
-                cfg_path = Path(proj_dir) / ".reasy_project.json"
-                if cfg_path.exists():
-                    cfg = json.loads(cfg_path.read_text())
-                    udir = cfg.get("unpacked_dir")
-                    if udir and os.path.isdir(udir):
-                        self.unpacked_dir = udir
-                        self.model_sys.setRootPath(self.unpacked_dir)
-                        self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
-                        
-                    self._update_path_label()
-                    gdir = cfg.get("pak_game_dir")
-                    if gdir and os.path.isdir(gdir):
-                        self.pak_dir = gdir
-                        self._scan_paks()
-                        self._update_path_label()  # Update label after setting pak_dir
-                    path = cfg.get("pak_list_path")
-                    if path and os.path.isfile(path):
-                        self._pak_list_path = path
-                        self.pak_list_edit.setText(path)
-                        self._load_pak_list_file(path)
-            except Exception:
-                pass
+            self._set_loading_overlay(True, self.tr("Loading project..."))
+            self._project_load_started_at = monotonic()
+            QApplication.processEvents()
+            self._project_load_ticket += 1
+            ticket = self._project_load_ticket
+            QTimer.singleShot(120, lambda: self._finish_project_load(ticket, proj_dir))
         else:
             self.project_label.setText(self.tr("<i>No project open</i>"))
             self.tree_proj .setRootIndex(QModelIndex())
@@ -494,10 +534,83 @@ class ProjectManager(QDockWidget):
             self.model_sys.setRootPath("")
             self.tree_sys.setRootIndex(self.model_sys.index(""))
             self._update_path_label()
+            self._set_loading_overlay(False)
         self._update_placeholders()
 
+    def _set_loading_overlay(self, visible: bool, text: str | None = None):
+        if text:
+            self.loading_label.setText(text)
+        self.loading_overlay.setGeometry(self.widget().rect())
+        self.loading_overlay.setVisible(visible)
+        self.loading_overlay.raise_()
+
+    def _finish_project_load(self, ticket: int, proj_dir: str):
+        if ticket != self._project_load_ticket or self.project_dir != proj_dir:
+            return
+        try:
+            if not self.current_game:
+                inferred = self.infer_project_game(proj_dir)
+                if inferred:
+                    self.current_game = inferred
+            if self.current_game:
+                self._update_project_cfg({"game": self.current_game})
+
+            cfg_path = Path(proj_dir) / ".reasy_project.json"
+            if cfg_path.exists():
+                cfg = json.loads(cfg_path.read_text())
+                udir = cfg.get("unpacked_dir")
+                if udir and os.path.isdir(udir):
+                    self.unpacked_dir = udir
+                    self.model_sys.setRootPath(self.unpacked_dir)
+                    self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+                self._update_path_label()
+                gdir = cfg.get("pak_game_dir")
+                path = cfg.get("pak_list_path")
+                pak_state_changed = False
+                if gdir and os.path.isdir(gdir):
+                    self.pak_dir = gdir
+                    self._update_path_label()
+                    self._set_loading_overlay(True, self.tr("Loading PAKs..."))
+                    QApplication.processEvents()
+                    self._scan_paks(rebuild=False)
+                    pak_state_changed = True
+                if path and os.path.isfile(path):
+                    self._pak_list_path = path
+                    self.pak_list_edit.setText(path)
+                    self._set_loading_overlay(True, self.tr("Loading PAK list..."))
+                    QApplication.processEvents()
+                    self._load_pak_list_file(path, rebuild=False)
+                    pak_state_changed = True
+                if pak_state_changed:
+                    self._set_loading_overlay(True, self.tr("Building PAK index..."))
+                    QApplication.processEvents()
+                    self._rebuild_pak_index()
+        except Exception:
+            pass
+        finally:
+            self._hide_loading_overlay(ticket)
+            self._update_placeholders()
+
+
+
+
+    def _hide_loading_overlay(self, ticket: int):
+        if ticket != self._project_load_ticket:
+            return
+        elapsed_ms = int((monotonic() - self._project_load_started_at) * 1000)
+        remaining_ms = max(0, self._project_load_min_visible_ms - elapsed_ms)
+        if remaining_ms:
+            QTimer.singleShot(remaining_ms, lambda: self._hide_loading_overlay(ticket))
+            return
+        self._set_loading_overlay(False)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "loading_overlay"):
+            self.loading_overlay.setGeometry(self.widget().rect())
+
     # ---------------- PAK integration ----------------
-    def _scan_paks(self):
+    def _scan_paks(self, rebuild: bool = True):
         if not self.pak_dir:
             QMessageBox.information(self, self.tr("Scan"), self.tr("Select a game directory first."))
             return
@@ -515,7 +628,8 @@ class ProjectManager(QDockWidget):
         self._pak_selected_paks = paks
         
         self._pak_cached_reader = None
-        self._rebuild_pak_index()
+        if rebuild:
+            self._rebuild_pak_index()
 
     def _choose_pak_list(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)"))
@@ -524,7 +638,7 @@ class ProjectManager(QDockWidget):
         self._load_pak_list_file(path)
         self._update_placeholders()
 
-    def _load_pak_list_file(self, path: str):
+    def _load_pak_list_file(self, path: str, rebuild: bool = True):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
@@ -539,6 +653,8 @@ class ProjectManager(QDockWidget):
         
         self._pak_cached_reader = None
         self._rebuild_pak_index()
+        if rebuild:
+            self._rebuild_pak_index()
 
     def _rebuild_pak_index(self):
         
