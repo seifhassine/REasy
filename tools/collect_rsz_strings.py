@@ -20,7 +20,7 @@ def _build_extension_variants(ext_json_path, verbose=False):
     versions = data.get("Versions", {})
     info = data.get("Info", {})
     # Known language codes (exclude platform markers like 'stm')
-    known_langs = {'en','ar','de','es','fr','it','ja','ko','ptbr','ru','zhcn','zhtw', 'es419', 'pl'}
+    known_langs = {'en','ar','de','es','fr','it','ja','ko','ptbr','ru','zhcn','zhtw', 'es419', 'pl', 'hi', 'th'}
     result = {}
     for ext, ver in versions.items():
         meta = info.get(ext, {})
