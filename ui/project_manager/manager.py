@@ -83,6 +83,65 @@ class ProjectManager(QDockWidget):
       • trees.py       – drag / drop QTreeView subclasses
       • delegate.py    – icon handling
     """
+    PAK_HISTORY_PREFIX = "pak://"
+
+    @classmethod
+    def encode_pak_history_entry(cls, pak_path: str) -> str:
+        return f"{cls.PAK_HISTORY_PREFIX}{pak_path}"
+
+    @classmethod
+    def decode_pak_history_entry(cls, entry: str) -> tuple[bool, str]:
+        if isinstance(entry, str) and entry.startswith(cls.PAK_HISTORY_PREFIX):
+            return True, entry[len(cls.PAK_HISTORY_PREFIX):]
+        return False, entry
+
+    def prepare_pak_tab_direct_save(self, tab) -> bool:
+        pak_source_path = tab.pak_source_path
+
+        if not self.project_dir:
+            QMessageBox.information(
+                tab.notebook_widget,
+                "Save",
+                "This file was opened from PAK files. Open a project to save it directly into project files, or use Save As."
+            )
+            return tab.on_save()
+
+        project_target = os.path.join(self.project_dir, *pak_source_path.split("/"))
+        if os.path.abspath(getattr(tab, "filename", "") or "") == os.path.abspath(project_target):
+            return True
+
+        target_exists = os.path.exists(project_target)
+        if target_exists:
+            answer = QMessageBox.question(
+                tab.notebook_widget,
+                "Overwrite project file",
+                f"This file already exists in the project:\n{project_target}\n\nAre you sure you want to overwrite it?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if answer != QMessageBox.Yes:
+                return False
+
+        os.makedirs(os.path.dirname(project_target), exist_ok=True)
+        tab.filename = project_target
+        if not target_exists:
+            QMessageBox.information(
+                tab.notebook_widget,
+                "Added to project",
+                f"Added file to project:\n{project_target}"
+            )
+        return True
+
+    def reopen_pak_history_entry(self, pak_path: str) -> bool:
+        if not self.project_dir:
+            QMessageBox.information(
+                self,
+                "Reopen Closed File",
+                "This file was opened from PAK files while in project mode, so it can't be reopened right now. Open a project first."
+            )
+            return False
+        return self._open_pak_path_in_editor(pak_path)
+
     def _expected_native(self):        
         return EXPECTED_NATIVE.get(self.current_game or "", ())
     
@@ -904,22 +963,36 @@ class ProjectManager(QDockWidget):
 
     def _open_pak_path_in_editor(self, path: str):
         if not self._pak_selected_paks:
-            return
+            return False
         try:
             r = self._ensure_project_pak_reader(assign_paths=False)
             stream = r.get_file(path)
             if not stream:
                 QMessageBox.information(self, self.tr("Open"), f"{self.tr('Path')} not found in {self.tr('PAKs')}: {path}")
-                return
+                return False
             data = stream.read()
             try:
                 ext = guess_extension_from_header(data[:64])
             except Exception:
                 ext = None
             name = path if ('.' in os.path.basename(path)) else (path + ('.' + ext.lower() if ext else ''))
-            self.app_win.add_tab(name, data)
+            tab = self.app_win.add_tab(name, data)
+            if tab:
+                tab.pak_source_path = path
+                tab.pak_data_loader = self._read_pak_file_data
+            return True
         except Exception as e:
             QMessageBox.critical(self, self.tr("Open failed"), str(e))
+            return False
+
+    def _read_pak_file_data(self, path: str) -> bytes | None:
+        if not path or not self._pak_selected_paks:
+            return None
+        r = self._ensure_project_pak_reader(assign_paths=False)
+        stream = r.get_file(path)
+        if not stream:
+            return None
+        return stream.read()
 
     def _extract_from_paks_to_project(self, paths: list[str]):
         if not paths:
@@ -974,12 +1047,12 @@ class ProjectManager(QDockWidget):
         dst = os.path.join(self.project_dir, rel)
 
         if os.path.isdir(src) and QMessageBox.question(
-                self, self.tr("Confirm Add"), self.tr("Add entire folder\n\"{}\" and all its contents?").format(os.path.basename(src)),
+                self, self.tr("Confirm Add"), self.tr(f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?"),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
         if os.path.exists(dst) and QMessageBox.question(
-                self, self.tr("Confirm Overwrite"), self.tr("\"{}\" already exists — overwrite?").format(rel),
+                self, self.tr("Confirm Overwrite"), self.tr(f"""\"{rel}\" already exists — overwrite?"""),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
@@ -1159,16 +1232,16 @@ class ProjectManager(QDockWidget):
 
         if box.clickedButton() is reveal_btn:
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(output_path.parent)))
-            
+
     def _export_mod(self):
 
         need, latest = packer_status()
         if need:
             tag_txt = latest or "latest"
             msg = (
-                self.tr("The REE.PAK packer ({}) is not downloaded yet\n").format(tag_txt)
+                self.tr(f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n")
                 if not _EXE_PATH.exists()
-                else self.tr("A newer packer release ({}) is available\n").format(tag_txt)
+                else self.tr(f"A newer packer release ({tag_txt}) is available\n")
             ) + self.tr("Do you want to download it now?")
             if QMessageBox.question(self, self.tr("Download packer?"), msg,
                                     QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:

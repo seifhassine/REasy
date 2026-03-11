@@ -282,6 +282,8 @@ class FileTab:
         self.app = app
         self.viewer = None 
         self.original_data = data 
+        self.pak_source_path: str | None = None
+        self.pak_data_loader = None
 
         self.status_label = QLabel(NO_FILE_LOADED_STR)
 
@@ -716,6 +718,8 @@ class FileTab:
         if not self.handler:
             QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
             return False
+        if self.pak_source_path and not self.app.proj_dock.prepare_pak_tab_direct_save(self):
+            return False
         if not self.filename:
             return self.on_save()
         return self.handle_file_save(self.filename)
@@ -756,8 +760,15 @@ class FileTab:
         self._release_resources_before_reload()
 
         try:
-            with open(self.filename, "rb") as f:
-                data = f.read()
+            data = None
+            if self.pak_source_path and not os.path.isfile(self.filename) and callable(self.pak_data_loader):
+                data = self.pak_data_loader(self.pak_source_path)
+            else:
+                with open(self.filename, "rb") as f:
+                    data = f.read()
+
+            if data is None:
+                raise FileNotFoundError(f"Unable to read source data for: {self.filename}")
 
             success = self.load_file(self.filename, data)
             if success and self.app and hasattr(self.app, "status_bar"):
@@ -2135,14 +2146,14 @@ class REasyEditorApp(QMainWindow):
                     index = self.notebook.indexOf(tab.notebook_widget)
                     if index != -1:
                         self.notebook.setCurrentIndex(index)
-                    return
+                    return tab
 
         tab = None
         try:
             handler = get_handler_for_data(data, filename)
             if not handler:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Unsupported file type"))
-                return
+                return None
             
             if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
                 if not self.settings.get("rcol_json_path"):
@@ -2152,13 +2163,13 @@ class REasyEditorApp(QMainWindow):
                         QMessageBox.Yes | QMessageBox.No)
                     if msg.exec() == QMessageBox.Yes:
                         self.open_settings_dialog()
-                    return
+                    return None
 
             tab = FileTab(None, filename, data, app=self)
             if data is not None and not getattr(tab, "initial_load_complete", True):
                 if tab.notebook_widget:
                     tab.notebook_widget.deleteLater()
-                return
+                return None
             if isinstance(getattr(tab, "handler", None), RszHandler):
                 RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
             tab.parent_notebook = self.notebook
@@ -2167,6 +2178,7 @@ class REasyEditorApp(QMainWindow):
             self.tabs[tab.notebook_widget] = tab
             self.notebook.setCurrentWidget(tab.notebook_widget)
             self._update_highlight_menu_visibility()
+            return tab
             
         except Exception as e:
             QMessageBox.critical(self, self.tr("Error"), f"Failed to open file: {str(e)}")
@@ -2175,6 +2187,7 @@ class REasyEditorApp(QMainWindow):
                     tab.notebook_widget.deleteLater()
                 except Exception as e:
                     print(f"Error closing tab: {e}")
+            return None
 
     def get_active_tab(self):
         aw = QApplication.activeWindow()
@@ -2301,10 +2314,15 @@ class REasyEditorApp(QMainWindow):
 
         attempted = False
         for target in candidates:
-            if target not in self._closed_file_history:
-                continue
             attempted = True
-            if self._open_path(target):
+            is_pak_entry, decoded_target = ProjectManager.decode_pak_history_entry(target)
+
+            if is_pak_entry:
+                if self.proj_dock.reopen_pak_history_entry(decoded_target):
+                    self._closed_file_history.remove(target)
+                    self._save_closed_file_history()
+                    return
+            elif self._open_path(decoded_target):
                 self._closed_file_history.remove(target)
                 self._save_closed_file_history()
                 return
@@ -2312,7 +2330,7 @@ class REasyEditorApp(QMainWindow):
             prompt = QMessageBox(self)
             prompt.setIcon(QMessageBox.Critical)
             prompt.setWindowTitle("Reopen Closed File")
-            prompt.setText(f"Failed to reopen {os.path.basename(target)}. Remove it from recently closed files?")
+            prompt.setText(f"Failed to reopen {os.path.basename(decoded_target)}. Remove it from recently closed files?")
             prompt.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             if prompt.exec_() == QMessageBox.Yes:
                 self._closed_file_history.remove(target)
@@ -2333,8 +2351,9 @@ class REasyEditorApp(QMainWindow):
             return
 
         for filename in reversed(self._closed_file_history):
-            action = self.recently_closed_menu.addAction(os.path.basename(filename))
-            action.setToolTip(filename)
+            _, display_path = ProjectManager.decode_pak_history_entry(filename)
+            action = self.recently_closed_menu.addAction(os.path.basename(display_path))
+            action.setToolTip(display_path)
             action.triggered.connect(lambda _checked=False, fn=filename: self.reopen_closed_file(fn))
 
         self.recently_closed_menu.addSeparator()
@@ -2363,7 +2382,10 @@ class REasyEditorApp(QMainWindow):
                 tab.update_tab_title()
                 
         if tab and tab.filename:
-            self._record_closed_file(tab.filename)
+            if tab.pak_source_path:
+                self._record_closed_file(ProjectManager.encode_pak_history_entry(tab.pak_source_path))
+            else:
+                self._record_closed_file(tab.filename)
 
         if widget in self.tabs:
             del self.tabs[widget]
