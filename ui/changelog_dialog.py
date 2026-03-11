@@ -159,19 +159,15 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Bulk export for sound tracks."),
-            ("New", "`Find` > `Search` now support searching in PAK files."),
-            ("New", "Automated sequence creator for UVS files."),
-            ("Improved", "Playback speed for sounds (previously slowed down due to unoptimized waveform generation)."),
-            ("Improved", "Added more paths to RE9_STM. Greatly improved RE9 RSZ dump."),
-            ("Improved", "When opening a project, the project browser window now takes less space."),
-            ("Improved", "Added channel selection in UVS preview."),
-            ("Improved", "Opening and adding files from `PAK Files` in a project is now much faster."),
-            ("Fixed", "Gameobject copy issue when RSZ dump is incomplete (via.Gameobject)."),
-            ("Fixed", "Recently closed files list issues such as reset when failing to reopen a file."),
-            ("Fixed", "A few mistakes in the RE4 RSZ dump."),
-            ("Fixed", "Fields of type `Size` were not displayed at all in RSZ files."),
-            ("Fixed", "Missing entry in `Tools` for CSV Data Extractor."),
+            ("New", "Bulk replacement of soundtracks in sound files is now possible (files in a folder are detected if their name is the ID.)"),
+            ("Improved", "When opening a file from PAK files in a project, it will now be added to current project upon saving it. If it already was added before, the user will be prompted. Note that reloading files loaded from PAK Files is now possible and will re-read the file from the PAK archives."),
+            ("Improved", "Loading overlay when opening or creating a project."),
+            ("Improved", "If the user loads an RSZ file with the wrong game version for enums, they will be prompted to switch game version."),
+            ("Improved", "RE9 RSZ dump is now complete and fully tested. RE4's dump also has a few fixes."),
+            ("Improved", "Added more paths to the RE9 and RE4 file lists."),
+            ("Improved", "Added more file list improvement modes to File List Generator."),
+            ("Fixed", "Error while copy pasting RSZ data after closing a different tab."),
+            ("Fixed", "An MDF write issue for newer formats."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
