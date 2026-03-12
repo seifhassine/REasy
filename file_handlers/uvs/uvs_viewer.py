@@ -33,7 +33,7 @@ from .uvs_file import UvsPattern, UvsSequence, UvsTexture
 from file_handlers.tex.tex_handler import TexHandler
 from file_handlers.tex.tex_viewer import TexViewer
 from file_handlers.tex.texture_decoder import decode_tex_mip
-from file_handlers.pak.reader import CachedPakReader
+from utils.resource_file_utils import resolve_resource_data
 from ui.project_manager.constants import EXPECTED_NATIVE
 
 
@@ -607,12 +607,16 @@ class UvsViewer(QWidget):
         if cache_key in self._tex_pixmap_cache:
             return self._tex_pixmap_cache[cache_key]
 
-        pak_path = self._resolve_pak_path_for_texture(tex_index, "albedo")
-        reader = self._project_mode_cached_reader() if pak_path else None
-        stream = reader.get_file(pak_path) if reader and pak_path else None
-        pm = self._decode_tex_to_pixmap(stream.read()) if stream else None
+        resolved = self._resolve_texture_resource(tex_index, "albedo")
+        if not resolved:
+            self._tex_pixmap_cache[cache_key] = None
+            self._tex_path_cache[cache_key] = ""
+            return None
+
+        path, tex_bytes = resolved
+        pm = self._decode_tex_to_pixmap(tex_bytes)
         self._tex_pixmap_cache[cache_key] = pm
-        self._tex_path_cache[cache_key] = pak_path or ""
+        self._tex_path_cache[cache_key] = path
         return pm
 
     def _build_patterns_from_creator_data(self, data: dict, flags: int = 0) -> tuple[list[UvsPattern], tuple[int, int]]:
@@ -1148,76 +1152,37 @@ class UvsViewer(QWidget):
             return None
         return seq.patterns[self._selected_pattern]
 
-    def _project_mode_cached_reader(self):
-        app = getattr(self.handler, "app", None)
-        proj = getattr(app, "proj_dock", None)
-        if proj is None:
-            return None
-        if getattr(proj, "_active_tab", "") != "pak":
-            return None
-
-        reader = getattr(proj, "_pak_cached_reader", None)
-        if reader:
-            return reader
-
-        selected = list(getattr(proj, "_pak_selected_paks", []) or [])
-        if not selected:
-            return None
-
-        reader = CachedPakReader()
-        reader.pak_file_priority = selected
-        base_paths = list(getattr(proj, "_pak_base_paths", []) or [])
-        if base_paths:
-            reader.add_files(*base_paths)
-            reader.cache_entries(assign_paths=True)
-        else:
-            reader.cache_entries(assign_paths=False)
-        proj._pak_cached_reader = reader
-        return reader
-
-    def _normalize_uvs_path(self, p: str) -> str:
-        s = (p or "").strip().replace("\\", "/")
-        if s.startswith("@"):
-            s = s[1:]
-        while s.startswith("/"):
-            s = s[1:]
-        return s.lower()
-
     def _game_native_prefix(self) -> str:
         app = getattr(self.handler, "app", None)
         proj_mgr = getattr(app, "project_manager", None) if app is not None else None
         game = str(getattr(proj_mgr, "current_game", "") or "")
         return "/".join(EXPECTED_NATIVE.get(game, ("natives", "stm"))).strip("/") + "/"
 
-    def _texture_path_candidates(self, raw_path: str) -> list[str]:
-        if not (base := self._normalize_uvs_path(raw_path)):
-            return []
-        if base.startswith(("natives/stm/", "natives/x64/")):
-            return [base]
-
-        primary = (self._game_native_prefix() + base).strip("/").lower()
-        alternate = (("natives/x64/" if primary.startswith("natives/stm/") else "natives/stm/") + base).strip("/").lower()
-        return [primary] if primary == alternate else [primary, alternate]
-
-    def _resolve_pak_path_for_texture(self, tex_idx: int, source: str) -> str | None:
+    def _resolve_texture_resource(self, tex_idx: int, source: str) -> tuple[str, bytes] | None:
         if not (uvs := self.handler.uvs) or tex_idx < 0 or tex_idx >= len(uvs.textures):
             return None
 
         tex = uvs.textures[tex_idx]
         raw_path = {'normal': tex.normal_path, 'specular': tex.specular_path, 'alpha': tex.alpha_path}.get(source, tex.path)
-
-        if not (candidates := self._texture_path_candidates(raw_path)):
+        
+        if not raw_path:
             return None
 
-        if not (reader := self._project_mode_cached_reader()):
+        app = getattr(self.handler, "app", None)
+        proj = getattr(app, "proj_dock", None)
+        if proj is None:
             return None
 
-        cached_paths = reader.cached_paths(include_unknown=False)
-        for pref in candidates:
-            hit = next((path for path in cached_paths if path.lower().startswith(pref + ".")), None)
-            if hit:
-                return hit
-        return None
+        path_prefix = self._game_native_prefix().rstrip("/")
+        return resolve_resource_data(
+            raw_path,
+            getattr(proj, "project_dir", None),
+            getattr(proj, "unpacked_dir", None),
+            path_prefix,
+            getattr(proj, "_pak_cached_reader", None),
+            getattr(proj, "_pak_selected_paks", None),
+        )
+        
     def _decode_tex_to_pixmap(self, tex_bytes: bytes) -> QPixmap | None:
         th = TexHandler()
         th.read(tex_bytes)
@@ -1241,21 +1206,15 @@ class UvsViewer(QWidget):
             self._apply_preview_texture(tex_idx, pix, pix is None, source)
             return
 
-        pak_path = self._resolve_pak_path_for_texture(tex_idx, source)
-        self._tex_path_cache[cache_key] = pak_path or ""
-        if not pak_path:
+        resolved = self._resolve_texture_resource(tex_idx, source)
+        self._tex_path_cache[cache_key] = resolved[0] if resolved else ""
+        if not resolved:
             self._tex_pixmap_cache[cache_key] = None
             self._apply_preview_texture(tex_idx, None, True, source)
             return
 
-        reader = self._project_mode_cached_reader()
-        if not reader:
-            self._tex_pixmap_cache[cache_key] = None
-            self._apply_preview_texture(tex_idx, None, True, source)
-            return
-
-        stream = reader.get_file(pak_path)
-        pix = self._decode_tex_to_pixmap(stream.read()) if stream else None
+        _path, tex_bytes = resolved
+        pix = self._decode_tex_to_pixmap(tex_bytes)
         self._tex_pixmap_cache[cache_key] = pix
         self._apply_preview_texture(tex_idx, pix, pix is None, source)
 

@@ -246,7 +246,7 @@ class CachedPakReader(PakReader):
             return
         self._cache = {}
 
-        for pak in self._enumerate_paks(assign_paths=False):
+        for pak in self._enumerate_paks(assign_paths=assign_paths):
             for e in pak.entries:
                 if e.path is None and self._searched_paths:
                     name = self._searched_paths.get(e.combined_hash)

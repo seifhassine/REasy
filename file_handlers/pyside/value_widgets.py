@@ -1761,8 +1761,7 @@ class StringInput(BaseValueWidget):
 
     def _open_resource_file(self, app_window, resource_path, add_to_project=False):
         from utils.resource_file_utils import (
-            find_resource_in_paks, 
-            find_resource_in_filesystem,
+            resolve_resource_data,
             get_path_prefix_for_game,
             copy_resource_to_project
         )
@@ -1806,28 +1805,17 @@ class StringInput(BaseValueWidget):
                     f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
             return
         
-        file_data = None
-        file_path = None
-        
-        pak_result = find_resource_in_paks(
+        path_prefix = get_path_prefix_for_game(app_window.current_game)
+        resolved = resolve_resource_data(
             resource_path,
+            proj_dock.project_dir,
+            proj_dock.unpacked_dir,
+            path_prefix,
             proj_dock._pak_cached_reader,
-            proj_dock._pak_selected_paks
+            proj_dock._pak_selected_paks,
         )
-        if pak_result:
-            file_path, file_data = pak_result
-        
-        if not file_data:
-            path_prefix = get_path_prefix_for_game(app_window.current_game)
-            fs_result = find_resource_in_filesystem(
-                resource_path,
-                proj_dock.unpacked_dir,
-                path_prefix
-            )
-            if fs_result:
-                file_path, file_data = fs_result
-        
-        if file_data:
+        if resolved:
+            file_path, file_data = resolved
             app_window.add_tab(file_path, file_data)
         else:
             QMessageBox.critical(self, self.tr("Open Resource"),

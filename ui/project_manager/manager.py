@@ -774,6 +774,12 @@ class ProjectManager(QDockWidget):
         if r._cache is None:
             r.reset_file_list()
             r.cache_entries(assign_paths=False)
+            base_paths = list(self._pak_base_paths or [])
+            if base_paths:
+                try:
+                    r.assign_paths(base_paths)
+                except Exception:
+                    pass
         self._pak_cached_reader = r
         return r
 
