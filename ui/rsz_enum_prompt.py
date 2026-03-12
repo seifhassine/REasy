@@ -41,11 +41,13 @@ class RszEnumPromptController:
     @classmethod
     def maybe_prompt_for_loaded_rsz(cls, app):
         json_path = app.settings.get("rcol_json_path", "")
-        if not json_path or app.settings.get("enum_prompt_checked_json_path") == json_path:
+        current = app.settings.get("game_version", "RE4")
+        current_signature = f"{json_path}|{current}"
+
+        if not json_path or app.settings.get("enum_prompt_checked_json_path") == current_signature:
             return
 
         expected = cls.infer_game_version(json_path)
-        current = app.settings.get("game_version", "RE4")
         if expected and expected != current:
             ans = QMessageBox.question(
                 app,
@@ -60,6 +62,7 @@ class RszEnumPromptController:
             if ans == QMessageBox.Yes:
                 app.settings["game_version"] = expected
                 app.update_from_app_settings()
+                current = expected
 
-        app.settings["enum_prompt_checked_json_path"] = json_path
+        app.settings["enum_prompt_checked_json_path"] = f"{json_path}|{current}"
         app.save_settings()

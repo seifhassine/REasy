@@ -76,5 +76,6 @@ def ensure_json_path(self) -> bool:
         if not new_path or not os.path.exists(new_path):
             return False
         settings["rcol_json_path"] = new_path
+        settings["enum_prompt_checked_json_path"] = ""
         save_settings(settings)
     return True

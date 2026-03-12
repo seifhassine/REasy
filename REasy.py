@@ -1910,6 +1910,8 @@ class REasyEditorApp(QMainWindow):
                 QMessageBox.critical(dialog, self.tr("Error"), self.tr("The specified JSON file does not exist."))
                 return
 
+            if new_json_path != self.settings.get("rcol_json_path", ""):
+                self.settings["enum_prompt_checked_json_path"] = ""
             self.settings["rcol_json_path"] = new_json_path
             self.settings["vgmstream_cli_path"] = vgmstream_entry.text().strip()
             self.settings["dark_mode"] = dark_box.isChecked()
