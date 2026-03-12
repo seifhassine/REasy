@@ -1689,10 +1689,10 @@ class StringInput(BaseValueWidget):
             
             if self.add_open_button is None:
                 self.add_open_button = QToolButton()
-                self.add_open_button.setText(self.tr("Add & Open"))
-                self.add_open_button.setToolTip(self.tr("Add resource file to project and open it"))
-                self.add_open_button.setFixedWidth(85)
-                self.add_open_button.clicked.connect(self._on_add_open_clicked)
+                self.add_open_button.setText(self.tr("Add"))
+                self.add_open_button.setToolTip(self.tr("Add resource file to project"))
+                self.add_open_button.setFixedWidth(50)
+                self.add_open_button.clicked.connect(self._on_add_clicked)
                 self.layout.addWidget(self.add_open_button)
             
             self.layout.addStretch()
@@ -1707,7 +1707,7 @@ class StringInput(BaseValueWidget):
         self.open_button.setToolTip("Open resource file")
         
         if self.add_open_button:
-            self.add_open_button.setToolTip("Add resource file to project and open it")
+            self.add_open_button.setToolTip("Add resource file to project")
 
     def _get_app_window(self):
         widget = self
@@ -1738,22 +1738,22 @@ class StringInput(BaseValueWidget):
         
         self._open_resource_file(app_window, resource_path, add_to_project=False)
     
-    def _on_add_open_clicked(self):
+    def _on_add_clicked(self):
         if not isinstance(self._data, ResourceData):
             return
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, self.tr("Add & Open Resource"), self.tr("Resource path is empty"))
+            QMessageBox.information(self, self.tr("Add Resource"), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, self.tr("Add & Open Resource"), self.tr("Unable to access application window"))
+            QMessageBox.warning(self, self.tr("Add Resource"), self.tr("Unable to access application window"))
             return
         
         if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, self.tr("Add & Open Resource"),
+            QMessageBox.information(self, self.tr("Add Resource"),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
@@ -1771,11 +1771,21 @@ class StringInput(BaseValueWidget):
         if add_to_project:
             project_dir = proj_dock.project_dir
             if not project_dir:
-                QMessageBox.information(self, self.tr("Add & Open Resource"), 
+                QMessageBox.information(self, self.tr("Add Resource"), 
                     self.tr("No project is currently open."))
                 return
             
             path_prefix = get_path_prefix_for_game(app_window.current_game)
+            
+            overwrite_state = {"asked": False, "accepted": False}
+
+            def _confirm_overwrite(dest_path: str) -> bool:
+                overwrite_state["asked"] = True
+                accepted = True
+                if hasattr(proj_dock, "_confirm_project_overwrite"):
+                    accepted = proj_dock._confirm_project_overwrite(dest_path, self)
+                overwrite_state["accepted"] = accepted
+                return accepted
             
             dest_path = copy_resource_to_project(
                 resource_path, 
@@ -1783,25 +1793,19 @@ class StringInput(BaseValueWidget):
                 proj_dock.unpacked_dir,
                 path_prefix,
                 proj_dock._pak_cached_reader,
-                proj_dock._pak_selected_paks
+                proj_dock._pak_selected_paks,
+                should_overwrite=_confirm_overwrite
             )
             
             if dest_path:
-                try:
-                    with open(dest_path, "rb") as f:
-                        data = f.read()
-                    app_window.add_tab(dest_path, data)
-                    
-                    if hasattr(proj_dock, '_refresh_proj'):
-                        proj_dock._refresh_proj()
-                    
-                    QMessageBox.information(self, self.tr("Add & Open Resource"), 
-                        f"File added to project and opened:\n{dest_path}")
-                except Exception as e:
-                    QMessageBox.critical(self, self.tr("Add & Open Resource"), 
-                        f"File was added but failed to open:\n{str(e)}")
+                if hasattr(proj_dock, '_refresh_proj'):
+                    proj_dock._refresh_proj()
+                QMessageBox.information(self, self.tr("Add Resource"),
+                    f"File added to project:\n{dest_path}")
             else:
-                QMessageBox.critical(self, self.tr("Add & Open Resource"), 
+                if overwrite_state["asked"] and not overwrite_state["accepted"]:
+                    return
+                QMessageBox.critical(self, self.tr("Add Resource"),
                     f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
             return
         

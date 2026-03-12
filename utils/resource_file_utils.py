@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, Optional, Tuple
+from typing import Callable, Iterable, Optional, Tuple
 
 
 def _normalize_lookup_path(path: str) -> str:
@@ -153,18 +153,30 @@ def _resolve_destination_relative_path(resource_path: str, source_path: str | No
     return normalized_resource
 
 
-def copy_resource_to_project(resource_path: str, project_dir: str, unpacked_dir: str, path_prefix: str, pak_cached_reader=None, pak_selected_paks=None,) -> Optional[str]:
+def copy_resource_to_project(resource_path: str, project_dir: str, unpacked_dir: str, path_prefix: str, pak_cached_reader=None, pak_selected_paks=None,
+                             should_overwrite: Callable[[str], bool] | None = None) -> Optional[str]:
     resolved = resolve_resource_data( resource_path, project_dir, unpacked_dir, path_prefix, pak_cached_reader, pak_selected_paks)
     if not resolved:
         return None
 
     source_path, file_data = resolved
-    if source_path and os.path.abspath(source_path).startswith(os.path.abspath(project_dir) + os.sep):
-        return source_path
+    in_project = bool(
+        source_path
+        and os.path.abspath(source_path).startswith(os.path.abspath(project_dir) + os.sep)
+    )
 
     relative_path = _resolve_destination_relative_path(resource_path, source_path, unpacked_dir, path_prefix)
-    dest_path = os.path.join(project_dir, path_prefix.replace("/", os.sep), relative_path.replace("/", os.sep))
-    
+    if in_project:
+        dest_path = source_path
+    else:
+        dest_path = os.path.join(project_dir, path_prefix.replace("/", os.sep), relative_path.replace("/", os.sep))
+    if os.path.exists(dest_path):
+        if callable(should_overwrite) and not should_overwrite(dest_path):
+            return None
+
+    if in_project:
+        return dest_path
+
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     
     with open(dest_path, "wb") as f:

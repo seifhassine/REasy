@@ -111,16 +111,8 @@ class ProjectManager(QDockWidget):
             return True
 
         target_exists = os.path.exists(project_target)
-        if target_exists:
-            answer = QMessageBox.question(
-                tab.notebook_widget,
-                "Overwrite project file",
-                f"This file already exists in the project:\n{project_target}\n\nAre you sure you want to overwrite it?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if answer != QMessageBox.Yes:
-                return False
+        if target_exists and not self._confirm_project_overwrite(project_target, tab.notebook_widget):
+            return False
 
         os.makedirs(os.path.dirname(project_target), exist_ok=True)
         tab.filename = project_target
@@ -131,6 +123,16 @@ class ProjectManager(QDockWidget):
                 f"Added file to project:\n{project_target}"
             )
         return True
+
+    def _confirm_project_overwrite(self, project_target: str, parent=None) -> bool:
+        answer = QMessageBox.question(
+            parent or self,
+            "Overwrite project file",
+            f"This file already exists in the project:\n{project_target}\n\nAre you sure you want to overwrite it?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        return answer == QMessageBox.Yes
 
     def reopen_pak_history_entry(self, pak_path: str) -> bool:
         if not self.project_dir:
@@ -1011,7 +1013,15 @@ class ProjectManager(QDockWidget):
         try:            
             r = self._ensure_project_pak_reader()
             missing: list[str] = []
-            targets = sorted(set(paths))
+            targets = []
+            for pak_path in sorted(set(paths)):
+                project_target = os.path.join(self.project_dir, *pak_path.split("/"))
+                if os.path.exists(project_target) and not self._confirm_project_overwrite(project_target):
+                    continue
+                targets.append(pak_path)
+
+            if not targets:
+                return
             count = r.extract_files_to(self.project_dir, targets, missing_files=missing)
             self._refresh_proj()
             msg = f"{self.tr('Added')} {count} {self.tr('file(s) to project.')}"
@@ -1056,9 +1066,7 @@ class ProjectManager(QDockWidget):
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
-        if os.path.exists(dst) and QMessageBox.question(
-                self, self.tr("Confirm Overwrite"), self.tr(f"""\"{rel}\" already exists — overwrite?"""),
-                QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
+        if os.path.exists(dst) and not self._confirm_project_overwrite(dst):
             return
 
         try:
