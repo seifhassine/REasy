@@ -27,7 +27,7 @@ from PySide6.QtCore import qInstallMessageHandler
 
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
-from file_handlers.pak.utils import guess_extension_from_header
+from file_handlers.pak.utils import guess_extension_from_header, filepath_hash
 from ui.widgets_utils import create_list_file_help_label
 
 def _custom_message_handler(mode, ctx, msg):
@@ -700,7 +700,14 @@ class ProjectManager(QDockWidget):
     def _load_pak_list_file(self, path: str, rebuild: bool = True):
         try:
             with open(path, "r", encoding="utf-8") as f:
-                items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
+                seen: set[str] = set()
+                items: list[str] = []
+                for ln in f:
+                    item = ln.strip().replace("\\", "/").lower()
+                    if not item or item in seen:
+                        continue
+                    seen.add(item)
+                    items.append(item)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Read failed"), str(e))
             return
@@ -730,18 +737,20 @@ class ProjectManager(QDockWidget):
             self._update_placeholders()
             return
         try:
-            r = self._ensure_project_pak_reader(assign_paths=bool(self._pak_base_paths))
-            
-            valid = set(p.lower() for p in r.cached_paths(include_unknown=False))
-            base = set(self._pak_base_paths)
-            display = sorted(p for p in base if p in valid)
+            r = self._ensure_project_pak_reader()
+
+            cache_keys = r._cache_keys_set or set()
+            display = sorted(
+                p for p in self._pak_base_paths
+                if filepath_hash(p) in cache_keys
+            )
             self._pak_all_paths = display
             pop = set(display)
             try:
                 if self._pak_cached_reader and self._pak_cached_reader._cache:
-                    for p in self._pak_cached_reader.cached_paths(include_unknown=True):
-                        if p.startswith("__Unknown/"):
-                            pop.add(p)
+                    for h, (_pak, e) in self._pak_cached_reader._cache.items():
+                        if e.path is None:
+                            pop.add(f"__Unknown/{h:016X}")
             except Exception:
                 pass
             self._pak_population_paths = sorted(pop)
@@ -754,7 +763,7 @@ class ProjectManager(QDockWidget):
             self.tree_pak.setModel(None)
             self._update_placeholders()
 
-    def _ensure_project_pak_reader(self, *, assign_paths: bool) -> CachedPakReader:
+    def _ensure_project_pak_reader(self) -> CachedPakReader:
         r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
         selected = list(self._pak_selected_paks)
         if not r:
@@ -764,8 +773,6 @@ class ProjectManager(QDockWidget):
         r.pak_file_priority = selected
         if r._cache is None:
             r.reset_file_list()
-            if assign_paths and self._pak_base_paths:
-                r.add_files(*self._pak_base_paths)
             r.cache_entries(assign_paths=False)
         self._pak_cached_reader = r
         return r
@@ -775,14 +782,6 @@ class ProjectManager(QDockWidget):
         model.setHorizontalHeaderLabels([self.tr("Paths")])
         
         display_paths = list(paths)
-        try:
-            if self._pak_cached_reader and self._pak_cached_reader._cache:
-                all_cached = self._pak_cached_reader.cached_paths(include_unknown=True)
-                for p in all_cached:
-                    if p.startswith("__Unknown/"):
-                        display_paths.append(p)
-        except Exception:
-            pass
         
         root: dict[str, dict] = {}
         for p in sorted(set(display_paths)):
@@ -965,7 +964,7 @@ class ProjectManager(QDockWidget):
         if not self._pak_selected_paks:
             return False
         try:
-            r = self._ensure_project_pak_reader(assign_paths=False)
+            r = self._ensure_project_pak_reader()
             stream = r.get_file(path)
             if not stream:
                 QMessageBox.information(self, self.tr("Open"), f"{self.tr('Path')} not found in {self.tr('PAKs')}: {path}")
@@ -988,7 +987,7 @@ class ProjectManager(QDockWidget):
     def _read_pak_file_data(self, path: str) -> bytes | None:
         if not path or not self._pak_selected_paks:
             return None
-        r = self._ensure_project_pak_reader(assign_paths=False)
+        r = self._ensure_project_pak_reader()
         stream = r.get_file(path)
         if not stream:
             return None
@@ -1004,7 +1003,7 @@ class ProjectManager(QDockWidget):
             QMessageBox.information(self, self.tr("Add to project"), self.tr("Scan for .pak files first."))
             return
         try:            
-            r = self._ensure_project_pak_reader(assign_paths=bool(self._pak_base_paths))
+            r = self._ensure_project_pak_reader()
             missing: list[str] = []
             targets = sorted(set(paths))
             count = r.extract_files_to(self.project_dir, targets, missing_files=missing)
