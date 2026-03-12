@@ -8,7 +8,7 @@ This file contains:
 
 import functools
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
 from utils.enum_manager import EnumManager
 from utils.registry_manager import RegistryManager
@@ -25,7 +25,7 @@ from file_handlers.rsz.rsz_data_types import (
     is_array_type,
 )
 from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
-from .rsz_file import RszFile, RszInstanceInfo
+from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import DataTreeBuilder
@@ -64,6 +64,7 @@ class RszHandler(BaseFileHandler):
         self.component_clipboard = None
         self.type_registry = None
         self.auto_resource_management = False
+        self.suppress_load_error_dialog = False
 
     @property
     def game_version(self):
@@ -97,19 +98,64 @@ class RszHandler(BaseFileHandler):
                 if self.type_registry and (self.type_registry.registry.get("metadata", {}).get("complete", False) or self.type_registry.registry.get("metadata", {}).get("resources_identified", False)):
                     self.auto_resource_management = True
 
-    def read(self, data: bytes):
+    def read(self, data: bytes, validate_type_registry: bool = False):
         """Parse the file data"""
         self.id_manager = IdManager.instance()
+        self.suppress_load_error_dialog = False
         self.init_type_registry()
         self.rsz_file = RszFile()
         self.rsz_file.type_registry = self.type_registry
         self.rsz_file.game_version = self._game_version 
         self.rsz_file.filepath = self.filepath
         print(f"Reading file with game version: {self._game_version}")
-        self.rsz_file.read(data)
+        try:
+            self.rsz_file.read(data, validate_type_registry=validate_type_registry)
+        except TypeRegistryValidationError as exc:
+            if not self._prompt_validation_continue(exc.issues):
+                self.suppress_load_error_dialog = True
+                raise
+            self.rsz_file.read(data, validate_type_registry=False)
         self.rsz_file.auto_resource_management = self.auto_resource_management
         self.gameobject_clipboard = RszGameObjectClipboard()
         self.component_clipboard = RszComponentClipboard()
+
+    def _prompt_validation_continue(self, issues) -> bool:
+        """Show validation details and ask whether parsing should continue."""
+        issue_preview = "\n".join(issues[:10])
+        more_count = len(issues) - 10
+        if more_count > 0:
+            issue_preview += f"\n... and {more_count} more issue(s)."
+
+        file_name = self.filepath or "<unknown file>"
+        registry_name = getattr(self.type_registry, "json_path", None) or "<unknown registry>"
+        has_missing_type = any("missing from the type registry" in issue for issue in issues)
+
+        message = (
+            "RSZ type validation found inconsistencies with the selected type registry.\n\n"
+            f"File: {file_name}\n"
+            f"Registry: {registry_name}\n\n"
+            "Possible reasons:\n"
+            "- Outdated file (unused or not latest version)\n"
+            "- Outdated RSZ dump\n"
+            "- Wrong game for selected RSZ dump\n\n"
+            "Details:\n"
+            f"{issue_preview}"
+        )
+
+        parent = self._viewer if self._viewer else None
+        if has_missing_type:
+            self.suppress_load_error_dialog = True
+            QMessageBox.critical(parent, "Type Registry Validation", message)
+            return False
+
+        reply = QMessageBox.question(
+            parent,
+            "Type Registry Validation",
+            f"{message}\n\nDo you want to continue parsing this file?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        return reply == QMessageBox.Yes
         
     def create_viewer(self):
         """Create a new viewer instance"""

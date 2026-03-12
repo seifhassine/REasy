@@ -486,8 +486,13 @@ class FileTab:
                 raise ValueError("Handler initialization failed")
 
             try:
-                self.handler.read(data)
+                if isinstance(self.handler, RszHandler):
+                    self.handler.read(data, validate_type_registry=self.app.settings.get("verify_rsz_crc_on_open", True))
+                else:
+                    self.handler.read(data)
             except Exception as e:
+                if getattr(self.handler, "suppress_load_error_dialog", False):
+                    return False
                 raise ValueError(f"Failed to read file data: {e}")
                 
             preserved_tree = self._cleanup_layout(layout)
@@ -1852,6 +1857,10 @@ class REasyEditorApp(QMainWindow):
         confirmation_prompt_box.setChecked(self.settings.get("confirmation_prompt", True))
         general_layout.addWidget(confirmation_prompt_box)
 
+        verify_rsz_crc_on_open_box = QCheckBox("Verify RSZ CRCs against registry when opening files")
+        verify_rsz_crc_on_open_box.setChecked(self.settings.get("verify_rsz_crc_on_open", True))
+        general_layout.addWidget(verify_rsz_crc_on_open_box)
+
         ui_lang_layout = QHBoxLayout()
         ui_lang_layout.setContentsMargins(0, 0, 0, 0)
         ui_lang_label = QLabel(self.tr("UI Language (Restart Recommended):"))
@@ -1919,6 +1928,7 @@ class REasyEditorApp(QMainWindow):
             self.settings["show_rsz_advanced"] = rsz_advanced_box.isChecked()
             self.settings["backup_on_save"] = backup_box.isChecked()
             self.settings["confirmation_prompt"] = confirmation_prompt_box.isChecked()
+            self.settings["verify_rsz_crc_on_open"] = verify_rsz_crc_on_open_box.isChecked()
             self.settings["keyboard_shortcuts"] = shortcuts
             self.settings["tree_highlight_color"] = selected_theme_color
 

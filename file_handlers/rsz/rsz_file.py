@@ -524,6 +524,13 @@ class RszInstanceInfo:
 # Main Rsz File Parser
 ########################################
 
+class TypeRegistryValidationError(ValueError):
+    """Raised when optional RSZ type-registry validation finds mismatches."""
+
+    def __init__(self, issues):
+        self.issues = issues
+        super().__init__("RSZ type registry validation failed.")
+
 class RszFile:
 
     def __init__(self):
@@ -577,6 +584,7 @@ class RszFile:
         self._parser_pool = []
         self._prepared_field_defs = set()
         self._type_info_cache = {}
+        self._registry_validation_enabled = False
 
 
     def _initialize_read_context(self, data: bytes):
@@ -598,9 +606,10 @@ class RszFile:
         self._is_scn_new = self._is_18 or self._is_19
         self.is_headless = False
 
-    def read(self, data: bytes, skip_data: bool = False):
+    def read(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False):
         # Use memoryview for efficient slicing operations
         self._initialize_read_context(data)
+        self._registry_validation_enabled = validate_type_registry
 
         if data[:4] == b'USR\x00':
             self.is_usr = True
@@ -811,6 +820,7 @@ class RszFile:
             self.instance_infos.append(ii)
 
         self._warm_type_registry_cache()
+        self._validate_instance_types_against_registry()
 
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
@@ -875,9 +885,10 @@ class RszFile:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 
-    def read_headless(self, data: bytes, skip_data: bool = False):
+    def read_headless(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False):
         """Read a headless RSZ payload without an outer file header/tables."""
         self._initialize_read_context(data)
+        self._registry_validation_enabled = validate_type_registry
         self.is_headless = True
         self.header = None
         self.is_usr = False
@@ -894,6 +905,45 @@ class RszFile:
 
         self._parse_rsz_section_core(data, 0, skip_data)
         self._parse_instances(data, skip_data)
+
+    def _validate_instance_types_against_registry(self):
+        """Validate read instance type IDs/CRCs against the active type registry."""
+        if not self._registry_validation_enabled or not self.type_registry:
+            return
+
+        issues = []
+        type_cache = self._type_info_cache
+        get_type_info = self.type_registry.get_type_info
+
+        for index, instance in enumerate(self.instance_infos):
+            type_id = instance.type_id
+            if index == 0 or not type_id:
+                continue
+
+            type_info = type_cache.get(type_id)
+            if type_info is None:
+                type_info = get_type_info(type_id)
+                type_cache[type_id] = type_info
+            if not type_info:
+                issues.append(f"Instance {index}: type 0x{type_id:08X} is missing from the type registry")
+                continue
+
+            try:
+                registry_crc = int(str(type_info.get("crc")), 16) & 0xFFFFFFFF
+            except (TypeError, ValueError):
+                continue
+
+            file_crc = instance.crc & 0xFFFFFFFF
+            if file_crc == registry_crc or int.from_bytes(file_crc.to_bytes(4, "little"), "big") == registry_crc:
+                continue
+
+            issues.append(
+                f"Instance {index}: type 0x{type_id:08X} ({type_info.get('name', '<unnamed>')}) CRC mismatch "
+                f"(file=0x{file_crc:08X}, registry=0x{registry_crc:08X})"
+            )
+
+        if issues:
+            raise TypeRegistryValidationError(issues)
         
     def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
@@ -933,6 +983,10 @@ class RszFile:
             if type_info is None and type_registry:
                 type_info = type_registry.get_type_info(inst.type_id)
                 type_cache[inst.type_id] = type_info
+            if not type_info:
+                raise TypeRegistryValidationError([
+                    f"Instance {idx}: type 0x{inst.type_id:08X} is missing from the type registry"
+                ])
             fields_def = type_info.get("fields", [])
             
             if not fields_def:

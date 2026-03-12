@@ -30,6 +30,7 @@ DEFAULT_SETTINGS = {
         "view_debug_console": "Ctrl+Shift+D"
     },
     "confirmation_prompt": True,
+    "verify_rsz_crc_on_open": True,
     "recently_closed_files": [],
     "last_seen_version": "",
     "enum_prompt_checked_json_path": ""
