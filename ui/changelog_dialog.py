@@ -159,15 +159,12 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Bulk replacement of soundtracks in sound files is now possible (files in a folder are detected if their name is the ID.)"),
-            ("Improved", "When opening a file from PAK files in a project, it will now be added to current project upon saving it. If it already was added before, the user will be prompted. Note that reloading files loaded from PAK Files is now possible and will re-read the file from the PAK archives."),
-            ("Improved", "Loading overlay when opening or creating a project."),
-            ("Improved", "If the user loads an RSZ file with the wrong game version for enums, they will be prompted to switch game version."),
-            ("Improved", "RE9 RSZ dump is now complete and fully tested. RE4's dump also has a few fixes."),
-            ("Improved", "Added more paths to the RE9 and RE4 file lists."),
-            ("Improved", "Added more file list improvement modes to File List Generator."),
-            ("Fixed", "Error while copy pasting RSZ data after closing a different tab."),
-            ("Fixed", "An MDF write issue for newer formats."),
+            ("Improved", "When encountering an issue while opening an RSZ file, the user will now be given the possible reasons and prompted to continue."),
+            ("Improved", "Identified all resources for MHWilds and fully identified all used types in RE9. RSZ dumps of other games have also been improved."),
+            ("Improved", "Slightly improved project loading speed."),
+            ("Improved", "If user attempts to add a file that already exists in his project, they will be prompted to confirm the overwrite."),
+            ("Improved", "Soundtracks playback performance when running REasy from the executable."),
+            ("Fixed", "User will now be notified when opening an RSZ file with the wrong game version. Previously this only worked once."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
