@@ -20,6 +20,7 @@ DEFAULT_PAK_FILE_LISTS: dict[str, str] = {
     "RE8": "RE8_STM.list",
     "SF6": "SF6_STM.list",
     "RE9": "RE9_STM.list",
+    "KunitsuGami": "KUNITSUGAMI_STM.list",
 }
 
 def find_default_pak_list_path(game: str | None, base_dir: Path) -> Path | None:
