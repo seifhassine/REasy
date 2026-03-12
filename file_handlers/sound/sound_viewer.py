@@ -443,6 +443,17 @@ class SoundViewer(QWidget):
         if self._temp_dir and os.path.exists(self._temp_dir):
             shutil.rmtree(self._temp_dir, ignore_errors=True)
 
+    @staticmethod
+    def _run_vgmstream(args: list[str]) -> subprocess.CompletedProcess:
+        run_kwargs = {"check": False, "capture_output": True, "text": True}
+        if os.name == "nt":
+            run_kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0
+            run_kwargs["startupinfo"] = si
+        return subprocess.run(args, **run_kwargs)
+
     def _decode_wem(self, wem_path: str) -> str | None:
         vgs = self._vgmstream()
         if not vgs:
@@ -451,7 +462,7 @@ class SoundViewer(QWidget):
                 return None
         fd, wav = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
         os.close(fd)
-        r = subprocess.run([vgs, "-o", wav, wem_path], check=False, capture_output=True, text=True)
+        r = self._run_vgmstream([vgs, "-o", wav, wem_path])
         if r.returncode != 0 or not os.path.exists(wav) or os.path.getsize(wav) == 0:
             self._rm(wav)
             err = (r.stderr or r.stdout or "").strip() or "Unknown vgmstream error."
