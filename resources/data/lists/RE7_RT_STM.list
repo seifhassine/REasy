@@ -6002,6 +6002,7 @@ natives/stm/ch8/props/sm2804_storageirongrate/sm2804_storageirongrate_e00.mcol.1
 natives/stm/ch8/props/sm2804_storageirongrate/sm2804_storageirongrate_t00.mcol.13020
 natives/stm/ch8/props/sm2804_storageirongratedoor/sm2804_storageirongratedoor.mdf2.21
 natives/stm/ch8/props/sm2804_storageirongratedoor/sm2804_storageirongratedoor.mesh.220128762
+natives/stm/ch8/props/sm2804_storageirongratedoor/sm2804_storageirongratedoor.rbs.32
 natives/stm/ch8/props/sm2804_storageirongratedoor/sm2804_storageirongratedoor_e00.mcol.13020
 natives/stm/ch8/props/sm2804_storageirongratedoor/sm2804_storageirongratedoor_t00.mcol.13020
 natives/stm/ch8/props/sm2867_lucasmask/sm2867_lucasmask.mdf2.21
@@ -11226,6 +11227,7 @@ natives/stm/character/enemy/em4000/em4000.mdf2.21
 natives/stm/character/enemy/em4000/em4000.mesh.220128762
 natives/stm/character/enemy/em4000/em4000.rdd.32024
 natives/stm/character/enemy/em4000/em4000_albm.tex.35
+natives/stm/character/enemy/em4000/em4000_atos.tex.35
 natives/stm/character/enemy/em4000/em4000_body_albm.tex.35
 natives/stm/character/enemy/em4000/em4000_body_atos.tex.35
 natives/stm/character/enemy/em4000/em4000_body_nrmr.tex.35
@@ -15976,6 +15978,7 @@ natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.ar
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.de
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.en
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.es
+natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.es419
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.fr
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.hi
 natives/stm/hikako/ui/ui4000/tex/healthwarning.tex.35.it
@@ -31894,6 +31897,7 @@ natives/stm/props/textures/poster01_nrmr.tex.35
 natives/stm/props/textures/rock_01_nrm.tex.35
 natives/stm/props/textures/s0303_02sheet_albm.tex.35
 natives/stm/props/textures/scale_albm.tex.35
+natives/stm/props/textures/sm0001_wooddoor01a_alb.tex.35
 natives/stm/props/textures/sm0001_wooddoor01a_albm.tex.35
 natives/stm/props/textures/sm0001_wooddoor01a_atos.tex.35
 natives/stm/props/textures/sm0001_wooddoor01a_nrmr.tex.35
@@ -33642,6 +33646,7 @@ natives/stm/props/textures/sm1400_cushion04a_nrmr.tex.35
 natives/stm/props/textures/sm1401_cushion05a_albm.tex.35
 natives/stm/props/textures/sm1401_cushion05a_atos.tex.35
 natives/stm/props/textures/sm1401_cushion05a_nrmr.tex.35
+natives/stm/props/textures/sm1402_cushiondoll01a_alb.tex.35
 natives/stm/props/textures/sm1402_cushiondoll01a_albm.tex.35
 natives/stm/props/textures/sm1402_cushiondoll01a_atos.tex.35
 natives/stm/props/textures/sm1402_cushiondoll01a_nrmr.tex.35
@@ -34028,6 +34033,7 @@ natives/stm/props/textures/sm1756_explosionoilcan01a_albm.tex.35
 natives/stm/props/textures/sm1757_oilcan02f_a_albm.tex.35
 natives/stm/props/textures/sm1759_davechain_albm.tex.35
 natives/stm/props/textures/sm1759_davechain_nrmr.tex.35
+natives/stm/props/textures/sm1760_toiletseat02b_alb.tex.35
 natives/stm/props/textures/sm1760_toiletseat02b_albm.tex.35
 natives/stm/props/textures/sm1760_toiletseat02b_atos.tex.35
 natives/stm/props/textures/sm1760_toiletseat02b_nrmr.tex.35
@@ -34113,8 +34119,10 @@ natives/stm/props/textures/sm1812_trapbomb_emissive_alb.tex.35
 natives/stm/props/textures/sm1812_trapbomb_nrmr.tex.35
 natives/stm/props/textures/sm1813_tripwirehooka_albm.tex.35
 natives/stm/props/textures/sm1813_tripwirehooka_nrmr.tex.35
+natives/stm/props/textures/sm1816_strawdoll_alb.tex.35
 natives/stm/props/textures/sm1816_strawdoll_albm.tex.35
 natives/stm/props/textures/sm1816_strawdoll_atos.tex.35
+natives/stm/props/textures/sm1816_strawdoll_nrm.tex.35
 natives/stm/props/textures/sm1816_strawdoll_nrmr.tex.35
 natives/stm/props/textures/sm1817_greenhousedoor01a_albm.tex.35
 natives/stm/props/textures/sm1817_greenhousedoor01a_atos.tex.35
@@ -34339,6 +34347,7 @@ natives/stm/props/textures/sm2058_crank01a_a_nrmr.tex.35
 natives/stm/props/textures/sm2059_crankshaft01a_a_albm.tex.35
 natives/stm/props/textures/sm2059_crankshaft01a_a_atos.tex.35
 natives/stm/props/textures/sm2059_crankshaft01a_a_nrmr.tex.35
+natives/stm/props/textures/sm2060_crankbridge01a_a_alb.tex.35
 natives/stm/props/textures/sm2060_crankbridge01a_a_albm.tex.35
 natives/stm/props/textures/sm2060_crankbridge01a_a_atos.tex.35
 natives/stm/props/textures/sm2060_crankbridge01a_a_nrmr.tex.35
@@ -35385,6 +35394,7 @@ natives/stm/props/textures/sm9035_badfood01c_nrmr.tex.35
 natives/stm/props/textures/sm9038_wooddoor01a_albm.tex.35
 natives/stm/props/textures/sm9038_wooddoor01a_atos.tex.35
 natives/stm/props/textures/sm9038_wooddoor01a_nrmr.tex.35
+natives/stm/props/textures/sm9039_cutrope01a_alb.tex.35
 natives/stm/props/textures/sm9039_cutrope01a_albm.tex.35
 natives/stm/props/textures/sm9041_irondoorh240w100_albm.tex.35
 natives/stm/props/textures/sm9041_irondoorh240w100_atos.tex.35
@@ -44279,6 +44289,7 @@ natives/stm/streaming/character/enemy/em3900/em3950/em3970_hair_albm.tex.35
 natives/stm/streaming/character/enemy/em3900/em3950/em3970_hair_atos.tex.35
 natives/stm/streaming/character/enemy/em3900/em3950/em3970_hair_nrmr.tex.35
 natives/stm/streaming/character/enemy/em4000/em4000_albm.tex.35
+natives/stm/streaming/character/enemy/em4000/em4000_atos.tex.35
 natives/stm/streaming/character/enemy/em4000/em4000_body_albm.tex.35
 natives/stm/streaming/character/enemy/em4000/em4000_body_atos.tex.35
 natives/stm/streaming/character/enemy/em4000/em4000_body_nrmr.tex.35
@@ -46292,6 +46303,8 @@ natives/stm/streaming/movie/gamemovie/main/080_endcredits_end.mov.1.x64
 natives/stm/streaming/movie/gamemovie/main/100_prologuestart.mov.1.x64
 natives/stm/streaming/movie/gamemovie/main/110_ff050_miamessage.mov.1.x64
 natives/stm/streaming/movie/gamemovie/main/130_ending_mia.mov.1.x64
+natives/stm/streaming/movie/gamemovie/main/140_ending_zoe.mov.1.x64
+natives/stm/streaming/movie/gamemovie/main/150_reengine_newlogo.mov.1.x64
 natives/stm/streaming/props/sm1402_cushiondoll01a/sm1402_cushiondoll1a_0000_msk1.tex.35
 natives/stm/streaming/props/sm1402_cushiondoll01a/sm1402_cushiondoll1a_0001_msk1.tex.35
 natives/stm/streaming/props/sm1649_ethanlhand/pl0010_hand_albm.tex.35
@@ -46387,6 +46400,7 @@ natives/stm/streaming/props/textures/plasticbottle01_albm.tex.35
 natives/stm/streaming/props/textures/poster01_nrmr.tex.35
 natives/stm/streaming/props/textures/s0303_02sheet_albm.tex.35
 natives/stm/streaming/props/textures/scale_albm.tex.35
+natives/stm/streaming/props/textures/sm0001_wooddoor01a_alb.tex.35
 natives/stm/streaming/props/textures/sm0001_wooddoor01a_albm.tex.35
 natives/stm/streaming/props/textures/sm0001_wooddoor01a_atos.tex.35
 natives/stm/streaming/props/textures/sm0001_wooddoor01a_nrmr.tex.35
@@ -51666,6 +51680,7 @@ natives/stm/streaming/weapon/wp2190_lantern/wp2190_lantern_nrmr.tex.35
 natives/stm/systems/develop/colorchecker_before_nov2014.tex.35
 natives/stm/systems/develop/colorchecker_sphere.mdf2.21
 natives/stm/systems/develop/colorchecker_sphere.mesh.220128762
+natives/stm/systems/develop/colorchecker_sphere.pfb.17
 natives/stm/systems/develop/ecotope.sdf.220128762
 natives/stm/systems/develop/ecotope/v00/_v00.mmtr.220128762
 natives/stm/systems/develop/ecotope/v10/_v10.mmtr.220128762
@@ -51692,9 +51707,12 @@ natives/stm/systems/develop/shadereditor/sphere.mesh.220128762
 natives/stm/systems/develop/shape.sdf.220128762
 natives/stm/systems/dynamics/default.def.6
 natives/stm/systems/effect/chijiiwa_pat128_msk1.tex.35
+natives/stm/systems/effect/chijiiwa_pat256_msk1.tex.35
+natives/stm/systems/effect/chijiiwa_pat512_msk1.tex.35
 natives/stm/systems/effect/defaultparticlerefract.mmtr.220128762
 natives/stm/systems/effect/defaultprimitivemastermaterial.mmtr.220128762
 natives/stm/systems/effect/defaultprimitivemesh.mmtr.220128762
+natives/stm/systems/effect/defaultprimitivemesh_pbr.mdf2.21
 natives/stm/systems/effect/defaultprimitivemesh_pbr.mmtr.220128762
 natives/stm/systems/effect/defaultvfxsectionshader.mmtr.220128762
 natives/stm/systems/effect/lensflaresystemtexture_glow_alb.tex.35
@@ -51762,13 +51780,19 @@ natives/stm/systems/rendering/materialeditor/st0000/sm00018.pfb.17
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfx_devtest_00.mdf2.21
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_00.mesh.220128762
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_alb.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_albm.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_nrm.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_nrmr.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_alb.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_albm.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_nrm.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_nrmr.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_rgh.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/sm00024.pfb.17
 natives/stm/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00.mdf2.21
 natives/stm/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00.mesh.220128762
 natives/stm/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_alb.tex.35
+natives/stm/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_albm.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_met.tex.35
 natives/stm/systems/rendering/materialeditor/st0000/st0000_00_00.lprb.6
 natives/stm/systems/rendering/materialeditor/st0000/st0000_00_00.prb.9
@@ -52212,6 +52236,7 @@ natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.ar
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.de
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.en
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.es
+natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.es419
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.fr
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.it
 natives/stm/ui/ui2100/tex/ui2100_dead_iam.tex.35.ja
@@ -52226,6 +52251,7 @@ natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.ar
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.de
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.en
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.es
+natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.es419
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.fr
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.it
 natives/stm/ui/ui2100/tex/ui2100_failed_iam.tex.35.ja
