@@ -26,17 +26,20 @@ from file_handlers.rsz.rsz_file import RszFile
 GAME_CONFIGS = {
     "mhwilds":{"registry_json": "rszmhwilds.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "pragmata":{"registry_json": "rszpragmata.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
+    "kunitsugami":{"registry_json": "rszkunitsugami.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
+    "mhst3":{"registry_json": "rszmhst3.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "re7":    {"registry_json": "rszre7.json",       "scn_exts": [".18"], "usr_exts": [".-1"], "pfb_exts": [".16"]},
     "re3":    {"registry_json": "rszre3.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "re3rt":  {"registry_json": "rszre3rt.json",     "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "re8":    {"registry_json": "rszre8.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
+    "re9":    {"registry_json": "rszre9.json",       "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "o2":    {"registry_json": "rszo2.json",       "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "mhr":    {"registry_json": "rszmhrise.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "sf6":    {"registry_json": "rszsf6.json",    "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
         "usr_file_exceptions": ["esf021_001_01_chain.user.2", "esf021_000_02_chain.user.2"],
         "scn_file_exceptions": ["set001101221.scn.20", "set001101808.scn.20", "set001103004.scn.20",
-            "set001900120.scn.20", "set001900121.scn.20", "set001900158.scn.20", "set001900186.scn.20", "set001900194.scn.20",
-            "wtc0101_08.scn (5).20", "wtc0101_10.scn (5).20", "wtc0400_12_Props_Manual.scn.20", "wtc0400_14_Props_Manual.scn.20",
+            "set001900120.scn.20", "set001900121.scn.20", "set001900158.scn.20", "set001900186.scn.20", "set001900194.scn.20", "set011900064.scn.20",
+            "wtc0101_08.scn (5).20", "wtc0101_10.scn (5).20", "wtc0400_12_Props_Manual.scn.20", "wtc0400_14_Props_Manual.scn.20", "set011900063.scn.20",
             "wtc0400_17_Props_Manual.scn.20", "wtc0400_24_Props_Manual.scn.20", "wtc0400_27_Props_Manual.scn.20", "wtc0400_36_Props_Manual.scn.20"]},
     
     "re4":    {"registry_json": "rszre4.json", "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"],
@@ -57,11 +60,14 @@ GAME_CONFIGS = {
     "re7rt":  {"registry_json": "rszre7rt.json",     "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"], 
         "pfb_file_exceptions": ["em8000deadbody.pfb.17"],
         "scn_file_exceptions": [
+            "c09_oldhousesaferoom01.scn.20", "c07_mainhouse1fhallway_7_4.scn.20",
+            "c01_corridor03.scn.20", "c03_mainhouse1fhallway_sm.scn.20",
             "levelfsm_c00.scn.20", "levelfsm_c01.scn.20",
+            "stage3_seta.scn.20", "stage3_setb.scn.20", 
             "levelfsm_c03_2.scn.20", "levelfsm_c03_3.scn.20",
             "levelfsm_c03_4.scn.20", "levelfsm_c04_1.scn.20",
             "levelfsm_c04_2.scn.20", "levelfsm_c04_3.scn.20",
-            "levelfsm_ff040.scn.20"
+            "levelfsm_ff040.scn.20", "enemy_c07_4.scn.20"
         ],
     },
 }
