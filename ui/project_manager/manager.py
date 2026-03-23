@@ -366,10 +366,12 @@ class ProjectManager(QDockWidget):
             from REasy import GAMES  # Local import to avoid circular dependency
         except Exception:
             GAMES = []
+            
+        game_names = {game.upper(): game for game in GAMES}
 
         parent_name = path.parent.name.upper()
-        if parent_name in GAMES:
-            return parent_name
+        if parent_name in game_names:
+            return game_names[parent_name]
 
         try:
             rel_parts = path.relative_to(PROJECTS_ROOT).parts
@@ -377,8 +379,8 @@ class ProjectManager(QDockWidget):
             rel_parts = ()
         if len(rel_parts) == 2:
             candidate = rel_parts[0].upper()
-            if candidate in GAMES:
-                return candidate
+            if candidate in game_names:
+                return game_names[candidate]
 
         cfg_path = path / ".reasy_project.json"
         if cfg_path.is_file():
@@ -390,8 +392,8 @@ class ProjectManager(QDockWidget):
                 candidate = cfg.get("game")
                 if isinstance(candidate, str):
                     candidate = candidate.upper()
-                    if candidate in GAMES:
-                        return candidate
+                    if candidate in game_names:
+                        return game_names[candidate]
 
         return None
 
