@@ -41,7 +41,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
 | MSG       | ✅       | RE4      |
-| MESH (3D Viewing)       | ✅ <sub><sup>[MHWilds NOT SUPPORTED]</sup></sub>       | RE4, RE2      |
+| MESH (3D Viewing)       | ✅ <sub><sup>[RE7, KGPG NOT SUPPORTED]</sup></sub>       | Most titles      |
 | PAK       | ✅       | Most titles      |
 | CFIL       | ✅       | Most titles      |
 | MOTBANK       | ✅       | Most titles      |
