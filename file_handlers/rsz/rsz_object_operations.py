@@ -889,7 +889,7 @@ class RszObjectOperations:
         from file_handlers.rsz.rsz_file import RSZUserDataInfo
         new_ui = RSZUserDataInfo()
         new_ui.hash = int(type_id) if type_id is not None else 0
-        new_ui.crc = int(crc_value) if crc_value is not None else 0
+        new_ui.crc = self.viewer._parse_crc_value(crc_value) if crc_value is not None else 0
         new_ui.string_offset = 0
         if not hasattr(self.scn, 'userdata_infos'):
             self.scn.userdata_infos = []

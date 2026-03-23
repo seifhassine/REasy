@@ -1661,11 +1661,12 @@ class RszViewer(QWidget):
         """Parse a CRC value from various formats"""
         if isinstance(crc_value, int):
             return crc_value
-            
+
         if isinstance(crc_value, str):
-            if crc_value.startswith('0x') or any(c in crc_value.lower() for c in 'abcdef'):
-                return int(crc_value, 16)
-            return int(crc_value, 10)
+            crc_value = crc_value.strip()
+            if not crc_value:
+                return 0
+            return int(crc_value, 16)
             
         return 0
 

@@ -914,7 +914,7 @@ class RszArrayClipboard:
             
             inst_info = create_embedded_instance_info(instance_data.get("type_id", 0), viewer.type_registry)
             if "crc" in instance_data:
-                inst_info.crc = instance_data.get("crc", 0)
+                inst_info.crc = viewer._parse_crc_value(instance_data.get("crc", 0))
             
             while len(userdata_info.embedded_instance_infos) <= new_absolute_id:
                 dummy_info = create_embedded_instance_info(0, viewer.type_registry)
@@ -1218,7 +1218,7 @@ class RszArrayClipboard:
             
             inst_info = create_embedded_instance_info(instance_data.get("type_id", 0), viewer.type_registry)
             if "crc" in instance_data:
-                inst_info.crc = instance_data.get("crc", 0)
+                inst_info.crc = viewer._parse_crc_value(instance_data.get("crc", 0))
             
             while len(userdata_info.embedded_instance_infos) <= new_absolute_id:
                 dummy_info = create_embedded_instance_info(0, viewer.type_registry)
@@ -2213,8 +2213,8 @@ class RszArrayClipboard:
         for instance_data in instances:
             relative_id = instance_data.get("id", -1)
             type_id = instance_data.get("type_id", 0)
-            crc = instance_data.get("crc", 0)
-            
+            crc = viewer._parse_crc_value(instance_data.get("crc", 0))
+             
             if relative_id < 0 or type_id <= 0 or crc <= 0:
                 print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
                 continue
@@ -2344,7 +2344,7 @@ class RszArrayClipboard:
         for instance_data in sorted_instances:
             relative_id = instance_data.get("id", -1)
             type_id = instance_data.get("type_id", 0)
-            crc = instance_data.get("crc", 0)
+            crc = viewer._parse_crc_value(instance_data.get("crc", 0))
             
             if relative_id < 0 or type_id <= 0 or crc <= 0:
                 print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")

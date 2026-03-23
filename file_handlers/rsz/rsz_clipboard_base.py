@@ -621,7 +621,7 @@ class RszClipboardBase(ABC):
         Handles regular instances, string-based userdata, and embedded RSZ userdata
         """
         type_id = instance_data.get("type_id", 0)
-        crc = instance_data.get("crc", 0)
+        crc = viewer._parse_crc_value(instance_data.get("crc", 0))
         
         if type_id <= 0:
             print(f"Warning: Invalid type ID for instance {instance_data.get('id', 'unknown')}")
