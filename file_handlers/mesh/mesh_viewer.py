@@ -84,9 +84,17 @@ class MeshViewer(QWidget):
         self._layout = QVBoxLayout(self)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.gl_widget = None
-        if self.handler and getattr(self.handler, "mesh", None):
-            self.gl_widget = _MeshGLWidget(self.handler.mesh)
-            self._layout.addWidget(self.gl_widget, 1)
+        mesh = getattr(self.handler, "mesh", None)
+        if mesh and getattr(mesh, "mesh_buffer", None) and mesh.mesh_buffer.positions:
+            try:
+                self.gl_widget = _MeshGLWidget(mesh)
+                self._layout.addWidget(self.gl_widget, 1)
+            except Exception as e:
+                error_label = QLabel(f"Failed to create viewer: {e}")
+                self._layout.addWidget(error_label)
+        else:
+            error_label = QLabel("No mesh buffer data available to display")
+            self._layout.addWidget(error_label)
 
 
 class _MeshGLWidget(QOpenGLWidget):
@@ -169,6 +177,9 @@ class _MeshGLWidget(QOpenGLWidget):
         self.light_combo.setCurrentText(self.lighting_mode)
         self.light_combo.currentTextChanged.connect(self._set_lighting_mode)
         row2.addWidget(self.light_combo)
+        if getattr(mesh, "streaming_buffer_count", 0):
+            stream_status = "Loaded" if getattr(mesh, "streaming_data_loaded", False) else "Missing"
+            row2.addWidget(QLabel(f"Stream {stream_status}", self.overlay))
         row2.addWidget(QLabel("Amb", self.overlay))
         self.amb_spin = QDoubleSpinBox(self.overlay)
         self.amb_spin.setRange(0.0, 1.0)
@@ -189,13 +200,32 @@ class _MeshGLWidget(QOpenGLWidget):
         self.overlay.move(10, 10)
 
         mb = mesh.mesh_buffer
-        self.vertices = np.array(mb.positions, dtype=np.float32).reshape(-1, 3)
-        self.normals = (
-            np.array(mb.normals, dtype=np.float32).reshape(-1, 3)
-            if mb.normals
-            else None
-        )
-        if self.normals is not None:
+        payloads = getattr(mb, "buffer_payloads", {}) or {0: mb}
+        vertex_chunks: list[np.ndarray] = []
+        normal_chunks: list[np.ndarray] = []
+        color_chunks: list[np.ndarray] = []
+        payload_base: dict[int, int] = {}
+        running_base = 0
+        for buffer_index in sorted(payloads.keys()):
+            payload = payloads[buffer_index]
+            if not getattr(payload, "positions", None):
+                continue
+            verts = np.array(payload.positions, dtype=np.float32).reshape(-1, 3)
+            payload_base[buffer_index] = running_base
+            running_base += len(verts)
+            vertex_chunks.append(verts)
+            if getattr(payload, "normals", None):
+                normal_chunks.append(np.array(payload.normals, dtype=np.float32).reshape(-1, 3))
+            else:
+                normal_chunks.append(np.zeros((len(verts), 3), dtype=np.float32))
+            if getattr(payload, "colors", None):
+                color_chunks.append(np.array(payload.colors, dtype=np.uint8).reshape(-1, 4).astype(np.float32) / 255.0)
+            else:
+                color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
+
+        self.vertices = np.concatenate(vertex_chunks, axis=0) if vertex_chunks else np.zeros((0, 3), dtype=np.float32)
+        self.normals = np.concatenate(normal_chunks, axis=0) if normal_chunks else None
+        if self.normals is not None and len(self.normals):
             lengths = np.linalg.norm(self.normals, axis=1)
             safe_normals = np.zeros_like(self.normals, dtype=np.float32)
             np.divide(self.normals, lengths[:, np.newaxis], out=safe_normals, where=lengths[:, np.newaxis] > 0)
@@ -203,15 +233,8 @@ class _MeshGLWidget(QOpenGLWidget):
             if np.any(invalid_mask):
                 safe_normals[invalid_mask] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
             self.normals = safe_normals
-        self.colors = (
-            np.array(mb.colors, dtype=np.uint8).reshape(-1, 4).astype(np.float32) / 255.0
-            if mb.colors
-            else None
-        )
-        if self.colors is None or len(self.colors) != len(self.vertices):
-            self.base_colors = np.ones((len(self.vertices), 4), dtype=np.float32)
-        else:
-            self.base_colors = self.colors.copy()
+        self.colors = np.concatenate(color_chunks, axis=0) if color_chunks else None
+        self.base_colors = self.colors.copy() if self.colors is not None and len(self.colors) == len(self.vertices) else np.ones((len(self.vertices), 4), dtype=np.float32)
 
         idx_list: list[int] = []
         if mesh.meshes:
@@ -219,14 +242,21 @@ class _MeshGLWidget(QOpenGLWidget):
                 if not m.lods:
                     continue
                 lod0 = m.lods[0]
-                for mg in lod0.mesh_groups:
+                for mg in lod0.parts:
                     for sm in mg.submeshes:
+                        payload = payloads.get(getattr(sm, "buffer_index", 0), payloads.get(0))
+                        if payload is None:
+                            continue
+                        face_array = payload.integer_faces if getattr(payload, "integer_faces", None) is not None else payload.faces
                         start = sm.faces_index_offset
                         end = start + sm.indices_count
-                        base = sm.verts_index_offset
-                        idx_list.extend(base + idx for idx in mb.faces[start:end])
+                        base = payload_base.get(getattr(sm, "buffer_index", 0), 0) + sm.verts_index_offset
+                        idx_list.extend(base + idx for idx in face_array[start:end])
         if not idx_list:
-            idx_list = list(mb.faces)
+            payload0 = payloads.get(0)
+            if payload0 is not None:
+                face_array = payload0.integer_faces if getattr(payload0, "integer_faces", None) is not None else payload0.faces
+                idx_list = list(face_array)
         self.indices = np.array(idx_list, dtype=np.uint32)
 
         if len(self.indices) % 3 == 0:
