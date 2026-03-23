@@ -539,10 +539,24 @@ class _MeshGLWidget(QOpenGLWidget):
         if self._fps_limit == 0:
             self.update()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._update_timer_state()
+
+    def hideEvent(self, event):
+        self._timer.stop()
+        super().hideEvent(event)
+
+    def _update_timer_state(self):
+        if not self.isVisible():
+            self._timer.stop()
+            return
+        interval = 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
+        self._timer.start(interval)
+
     def _change_fps_limit(self, value: int):
         self._fps_limit = value
-        interval = 0 if value == 0 else int(1000 / value)
-        self._timer.setInterval(interval)
+        self._update_timer_state()
 
     def _set_wireframe_mode(self, mode: str):
         self.wireframe_mode = mode
