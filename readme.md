@@ -149,6 +149,8 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @Ekey - PAK file decryption algorithms
 
+@NSACloud for the MPLY flags on MHWILDS+ 
+
 ## Support REasy:
 
 If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
