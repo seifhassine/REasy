@@ -20,6 +20,7 @@ from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.cfil.cfil_handler import CfilHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
 from file_handlers.wel.wel_handler import WelHandler
+from file_handlers.mesh.mesh_handler import MeshHandler
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.guid_converter import create_guid_converter_dialog
@@ -443,18 +444,11 @@ class FileTab:
                 handler.set_game_version(self.app.settings.get("game_version", "RE4"))
                 handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
                 handler.confirmation_prompt = self.app.settings.get("confirmation_prompt", True)
-                handler.filepath = self.filename or ""
-            if isinstance(handler, MdfHandler):
-                handler.filepath = self.filename or ""
-            
-            if isinstance(handler, CfilHandler):
-                handler.filepath = self.filename or ""
                 
-            if isinstance(handler, UvsHandler):
-                handler.filepath = self.filename or ""
-                
-            if isinstance(handler, WelHandler):
-                handler.filepath = self.filename or ""
+            for handler_class in [MdfHandler, CfilHandler, UvsHandler, WelHandler, MeshHandler, RszHandler]:
+                if isinstance(handler, handler_class):
+                    handler.filepath = self.filename or ""
+                    break
                 
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
