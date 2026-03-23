@@ -1794,7 +1794,8 @@ class StringInput(BaseValueWidget):
                 path_prefix,
                 proj_dock._pak_cached_reader,
                 proj_dock._pak_selected_paks,
-                should_overwrite=_confirm_overwrite
+                should_overwrite=_confirm_overwrite,
+                selection_parent=self,
             )
             
             if dest_path:
@@ -1817,6 +1818,7 @@ class StringInput(BaseValueWidget):
             path_prefix,
             proj_dock._pak_cached_reader,
             proj_dock._pak_selected_paks,
+            self,
         )
         if resolved:
             file_path, file_data = resolved

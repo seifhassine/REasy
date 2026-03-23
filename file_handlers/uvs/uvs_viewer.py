@@ -1181,6 +1181,7 @@ class UvsViewer(QWidget):
             path_prefix,
             getattr(proj, "_pak_cached_reader", None),
             getattr(proj, "_pak_selected_paks", None),
+            self,
         )
         
     def _decode_tex_to_pixmap(self, tex_bytes: bytes) -> QPixmap | None:

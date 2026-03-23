@@ -1,5 +1,10 @@
 import os
 from typing import Callable, Iterable, Optional, Tuple
+from weakref import WeakKeyDictionary
+
+
+_PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, str]]" = WeakKeyDictionary()
+_DIR_ENTRIES_CACHE: dict[str, tuple[str, ...]] = {}
 
 
 def _normalize_lookup_path(path: str) -> str:
@@ -18,25 +23,75 @@ def _resource_path_candidates(resource_path: str) -> list[str]:
     return [f"natives/stm/{base}", f"natives/x64/{base}", base]
 
 
-def find_matching_pak_path(pak_cached_reader, patterns: Iterable[str]) -> Optional[str]:
+def _iter_lookup_keys(path: str):
+    current = path
+    while current:
+        yield current
+        slash_idx = current.rfind("/")
+        dot_idx = current.rfind(".")
+        if dot_idx <= slash_idx:
+            break
+        current = current[:dot_idx]
+
+
+def _select_matching_path(paths: list[str], parent=None) -> Optional[str]:
+    if not paths:
+        return None
+    if len(paths) == 1:
+        return paths[0]
+
+    try:
+        from PySide6.QtWidgets import QInputDialog
+
+        selected, ok = QInputDialog.getItem(
+            parent,
+            "Select Resource",
+            "Multiple matching resources were found. Choose one:",
+            paths,
+            0,
+            False,
+        )
+        return selected if ok and selected else None
+    except Exception:
+        return paths[0]
+
+
+def find_matching_pak_path(pak_cached_reader, patterns: Iterable[str], parent=None) -> Optional[str]:
     if not pak_cached_reader:
         return None
-    
-    cached_norm = [(p, _normalize_lookup_path(p)) for p in pak_cached_reader.cached_paths(include_unknown=False)]
+
+    cached_norm = _PAK_PATH_LOOKUP_CACHE.get(pak_cached_reader)
+    if cached_norm is None:
+        cached_norm = {}
+        for original_path in pak_cached_reader.cached_paths(include_unknown=False):
+            normalized_path = _normalize_lookup_path(original_path)
+            for lookup_key in _iter_lookup_keys(normalized_path):
+                cached_norm.setdefault(lookup_key, []).append(original_path)
+        _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = cached_norm
+
     for pattern in patterns:
         needle = _normalize_lookup_path(pattern)
         if not needle:
             continue
-        hit = next((orig for orig, norm in cached_norm if norm == needle or norm.startswith(needle + ".")), None)
-        if hit:
-            return hit
+        matches = cached_norm.get(needle)
+        if matches:
+            return _select_matching_path(matches, parent)
     return None
+
+
+def _get_dir_entries(dir_path: str) -> tuple[str, ...]:
+    cached_entries = _DIR_ENTRIES_CACHE.get(dir_path)
+    if cached_entries is not None:
+        return cached_entries
+
+    entries = tuple(os.listdir(dir_path))
+    _DIR_ENTRIES_CACHE[dir_path] = entries
+    return entries
 
 
 def _find_resource_in_root(resource_path: str, root_dir: str, path_prefix: str) -> Optional[Tuple[str, bytes]]:
     if not root_dir or not os.path.isdir(root_dir):
         return None
-    
 
     normalized_resource = _normalize_lookup_path(resource_path)
     prefix = path_prefix.strip("/").lower()
@@ -49,7 +104,7 @@ def _find_resource_in_root(resource_path: str, root_dir: str, path_prefix: str) 
         return None
 
     target_file = next(
-        (os.path.join(dir_path, f) for f in os.listdir(dir_path) if f == base_name or f.startswith(base_name + ".")),
+        (os.path.join(dir_path, f) for f in _get_dir_entries(dir_path) if f == base_name or f.startswith(base_name + ".")),
         None,
     )
     if not target_file:
@@ -59,28 +114,24 @@ def _find_resource_in_root(resource_path: str, root_dir: str, path_prefix: str) 
         return target_file, f.read()
 
 
-def _read_pak_path(path: str, pak_selected_paks) -> Optional[Tuple[str, bytes]]:
-    if not path or not pak_selected_paks:
+def _read_pak_path(path: str, pak_cached_reader) -> Optional[Tuple[str, bytes]]:
+    if not path or not pak_cached_reader or not hasattr(pak_cached_reader, "get_file"):
         return None
+
     try:
-        from file_handlers.pak.reader import PakReader
+        stream = pak_cached_reader.get_file(path)
+        if stream is None:
+            return None
+
         from file_handlers.pak.utils import guess_extension_from_header
 
-        reader = PakReader()
-        reader.pak_file_priority = list(pak_selected_paks)
-        reader.add_files(path)
-
-        for pth, stream in reader.find_files():
-            if pth.lower() != path.lower():
-                continue
-            data = stream.read()
-            try:
-                ext = guess_extension_from_header(data[:64])
-            except Exception:
-                ext = None
-            name = pth if "." in os.path.basename(pth) else (pth + ("." + ext.lower() if ext else ""))
-            return name, data
-        
+        data = stream.read()
+        try:
+            ext = guess_extension_from_header(data[:64])
+        except Exception:
+            ext = None
+        name = path if "." in os.path.basename(path) else (path + ("." + ext.lower() if ext else ""))
+        return name, data
     except Exception as e:
         print(f"PAK search error: {e}")
     
@@ -99,7 +150,15 @@ def get_path_prefix_for_game(game: str) -> str:
     return "natives/stm"
 
 
-def resolve_resource_data( resource_path: str, project_dir: str, unpacked_dir: str, path_prefix: str, pak_cached_reader, pak_selected_paks) -> Optional[Tuple[str, bytes]]:
+def resolve_resource_data(
+    resource_path: str,
+    project_dir: str,
+    unpacked_dir: str,
+    path_prefix: str,
+    pak_cached_reader,
+    pak_selected_paks,
+    selection_parent=None,
+) -> Optional[Tuple[str, bytes]]:
     candidates = _resource_path_candidates(resource_path)
 
     for c in candidates:
@@ -107,8 +166,8 @@ def resolve_resource_data( resource_path: str, project_dir: str, unpacked_dir: s
         if hit:
             return hit
 
-    match = find_matching_pak_path(pak_cached_reader, candidates)
-    pak_hit = _read_pak_path(match, pak_selected_paks) if match else None
+    match = find_matching_pak_path(pak_cached_reader, candidates, selection_parent)
+    pak_hit = _read_pak_path(match, pak_cached_reader) if match else None
     if pak_hit:
         return pak_hit
 
@@ -120,9 +179,9 @@ def resolve_resource_data( resource_path: str, project_dir: str, unpacked_dir: s
     return None
 
 
-def find_resource_in_paks(resource_path: str, pak_cached_reader, pak_selected_paks) -> Optional[Tuple[str, bytes]]:
-    match = find_matching_pak_path(pak_cached_reader, _resource_path_candidates(resource_path))
-    return _read_pak_path(match, pak_selected_paks) if match else None
+def find_resource_in_paks(resource_path: str, pak_cached_reader, pak_selected_paks, selection_parent=None) -> Optional[Tuple[str, bytes]]:
+    match = find_matching_pak_path(pak_cached_reader, _resource_path_candidates(resource_path), selection_parent)
+    return _read_pak_path(match, pak_cached_reader) if match else None
 
 
 def find_resource_in_filesystem(resource_path: str, unpacked_dir: str, path_prefix: str) -> Optional[Tuple[str, bytes]]:
@@ -153,9 +212,25 @@ def _resolve_destination_relative_path(resource_path: str, source_path: str | No
     return normalized_resource
 
 
-def copy_resource_to_project(resource_path: str, project_dir: str, unpacked_dir: str, path_prefix: str, pak_cached_reader=None, pak_selected_paks=None,
-                             should_overwrite: Callable[[str], bool] | None = None) -> Optional[str]:
-    resolved = resolve_resource_data( resource_path, project_dir, unpacked_dir, path_prefix, pak_cached_reader, pak_selected_paks)
+def copy_resource_to_project(
+    resource_path: str,
+    project_dir: str,
+    unpacked_dir: str,
+    path_prefix: str,
+    pak_cached_reader=None,
+    pak_selected_paks=None,
+    should_overwrite: Callable[[str], bool] | None = None,
+    selection_parent=None,
+) -> Optional[str]:
+    resolved = resolve_resource_data(
+        resource_path,
+        project_dir,
+        unpacked_dir,
+        path_prefix,
+        pak_cached_reader,
+        pak_selected_paks,
+        selection_parent,
+    )
     if not resolved:
         return None
 
