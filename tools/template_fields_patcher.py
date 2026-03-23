@@ -1,44 +1,39 @@
 import json
 import sys
 import argparse
+import re
 from typing import Dict, Any
 
-# python template_fields_patcher.py --source "D:\RE Modding\REasy\resources\data\dumps\rszre4.json" --patch "D:\RE Modding\REasy\resources\patches\rszre4_patch.json" --crc --force-count-mismatch
+# python template_fields_patcher.py --source "D:\RE Modding\REasy\resources\data\dumps\stripped\rszmhwilds_strip.json" --patch "D:\RE Modding\REasy\resources\data\dumps\stripped\rszre9_strip.json" --crc --force-count-mismatch --only-versioned-source-fields
 
 
-'''    
---source: Path to the source template JSON file")
---patch: Path to the patch template JSON file")
---output: Path to the output template JSON file (default: overwrite source)")
---verbose: Show detailed warnings")
---crc: Enable CRC mode - only patch when CRC values match and prune mismatches")
---force-count-mismatch: Force patching even when field counts differ (requires --crc)")
-
-'''
 class TemplatePatcher:
-    def __init__(self, source_path: str, patch_path: str, crc_mode: bool = False, force_count_mismatch: bool = False):
-        """
-        Initialize the template patcher with source and patch file paths.
-
-        Args:
-            source_path: Path to the source JSON template to be updated
-            patch_path: Path to the patch JSON template containing updates
-            crc_mode: If True, only patch when CRC values also match (and remove CRC-mismatched entries)
-            force_count_mismatch: If True, allow patching even when field counts differ (requires crc_mode)
-        """
+    def __init__(
+        self,
+        source_path: str,
+        patch_path: str,
+        crc_mode: bool = False,
+        force_count_mismatch: bool = False,
+        only_versioned_source_fields: bool = False
+    ):
         self.source_path = source_path
         self.patch_path = patch_path
         self.crc_mode = crc_mode
         self.force_count_mismatch = force_count_mismatch
+        self.only_versioned_source_fields = only_versioned_source_fields
+
         self.source_data: Dict[str, Any] = {}
         self.patch_data: Dict[str, Any] = {}
         self.updated_types = 0
         self.skipped_types = 0
         self.warnings: list[str] = []
         self.crc_mismatches = 0
-        self.deleted_nonexistent_types = 0  
+        self.deleted_nonexistent_types = 0
         self.forced_count_mismatches = 0
         self.deleted_empty_field_types = 0
+        self.skipped_non_versioned_source_types = 0
+
+        self.versioned_field_pattern = re.compile(r"^v\d+$")
 
     def load_templates(self) -> bool:
         """Load both source and patch templates."""
@@ -51,6 +46,24 @@ class TemplatePatcher:
         except Exception as e:
             print(f"Error loading templates: {e}")
             return False
+
+    def _source_has_any_non_versioned_field_name(self, fields: list[dict]) -> bool:
+        """
+        Return True if any source field has a 'name' that is not exactly v0, v1, v2, ...
+        Fields without a string 'name' are treated as non-versioned.
+        """
+        for field in fields:
+            if not isinstance(field, dict):
+                return True
+
+            field_name = field.get("name")
+            if not isinstance(field_name, str):
+                return True
+
+            if not self.versioned_field_pattern.fullmatch(field_name):
+                return True
+
+        return False
 
     def patch_templates(self) -> bool:
         """Patch the source template with data from the patch template."""
@@ -70,6 +83,19 @@ class TemplatePatcher:
             source_type = self.source_data[type_id]
 
             if "fields" not in patch_type or "fields" not in source_type:
+                continue
+
+            patch_fields = patch_type["fields"]
+            source_fields = source_type["fields"]
+
+            if self.only_versioned_source_fields and self._source_has_any_non_versioned_field_name(source_fields):
+                warning = (
+                    f"Type {type_id} ({source_type.get('name', 'unnamed')}): "
+                    f"Skipped because source contains non-versioned field names"
+                )
+                self.warnings.append(warning)
+                self.skipped_types += 1
+                self.skipped_non_versioned_source_types += 1
                 continue
 
             # CRC mode: check CRC agreement and remove mismatched entries
@@ -110,9 +136,6 @@ class TemplatePatcher:
                     del self.patch_data[type_id]
                     continue
 
-            patch_fields = patch_type["fields"]
-            source_fields = source_type["fields"]
-
             if not patch_fields:
                 warning = (
                     f"Type {type_id} ({source_type.get('name','unnamed')}): "
@@ -133,7 +156,7 @@ class TemplatePatcher:
                     )
                     self.warnings.append(warning)
                     self.forced_count_mismatches += 1
-                    
+
                     source_type["fields"] = patch_fields
                     self.updated_types += 1
                     continue
@@ -183,7 +206,8 @@ class TemplatePatcher:
             "skipped_types": self.skipped_types,
             "warnings": self.warnings,
             "deleted_nonexistent_types": self.deleted_nonexistent_types,
-            "deleted_empty_field_types": self.deleted_empty_field_types
+            "deleted_empty_field_types": self.deleted_empty_field_types,
+            "skipped_non_versioned_source_types": self.skipped_non_versioned_source_types,
         }
         if self.crc_mode:
             summary["crc_mismatches"] = self.crc_mismatches
@@ -197,7 +221,7 @@ def main():
         description="Patch JSON templates by updating field attributes")
     parser.add_argument("--source", required=True,
                         help="Path to the source template JSON file")
-    parser.add_argument("--patch",   required=True,
+    parser.add_argument("--patch", required=True,
                         help="Path to the patch template JSON file")
     parser.add_argument("--output",
                         help="Output path for patched source template (default: overwrite source)")
@@ -207,6 +231,8 @@ def main():
                         help="Enable CRC mode - only patch when CRC values match and prune mismatches")
     parser.add_argument("--force-count-mismatch", action="store_true",
                         help="Force patching even when field counts differ (requires --crc)")
+    parser.add_argument("--only-versioned-source-fields", action="store_true",
+                        help="Only patch types whose source field names are exclusively v0, v1, v2, ...")
 
     args = parser.parse_args()
 
@@ -214,7 +240,13 @@ def main():
         print("Error: --force-count-mismatch requires --crc mode to be enabled")
         sys.exit(1)
 
-    patcher = TemplatePatcher(args.source, args.patch, args.crc, args.force_count_mismatch)
+    patcher = TemplatePatcher(
+        args.source,
+        args.patch,
+        args.crc,
+        args.force_count_mismatch,
+        args.only_versioned_source_fields
+    )
 
     print("Loading templates...")
     if not patcher.load_templates():
@@ -258,6 +290,8 @@ def main():
         print(f"- Types deleted from patch (not in source): {summary['deleted_nonexistent_types']}")
     if summary['deleted_empty_field_types']:
         print(f"- Types deleted from patch (empty fields): {summary['deleted_empty_field_types']}")
+    if summary['skipped_non_versioned_source_types']:
+        print(f"- Types skipped due to non-versioned source fields: {summary['skipped_non_versioned_source_types']}")
 
     if summary['warnings']:
         if args.verbose:
