@@ -13,6 +13,7 @@ class MeshHandler(BaseFileHandler):
         self.mesh: Optional[MeshFile] = None
         self.raw_data: bytes | bytearray = b""
         self.filepath: str = ""
+        self._streaming_data_cache: dict[str, bytes | None] = {}
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
@@ -28,8 +29,8 @@ class MeshHandler(BaseFileHandler):
         if not self.filepath:
             return None
         path = Path(self.filepath)
-        sibling_stream = path.parent.parent / "streaming" / path.parent.name / path.name if path.parent.parent else None
-        if sibling_stream and sibling_stream.is_file():
+        sibling_stream = path.parent.parent / "streaming" / path.parent.name / path.name
+        if sibling_stream.is_file():
             return sibling_stream
         parts = path.parts
         try:
@@ -46,9 +47,14 @@ class MeshHandler(BaseFileHandler):
         return candidate if candidate.is_file() else None
 
     def _load_streaming_mesh_data(self) -> Optional[bytes]:
+        if self.filepath in self._streaming_data_cache:
+            return self._streaming_data_cache[self.filepath]
+
         stream_path = self._find_streaming_mesh_path()
         if stream_path:
-            return stream_path.read_bytes()
+            data = stream_path.read_bytes()
+            self._streaming_data_cache[self.filepath] = data
+            return data
 
         if not self.filepath:
             return None
@@ -76,26 +82,28 @@ class MeshHandler(BaseFileHandler):
             getattr(proj, "_pak_cached_reader", None),
             getattr(proj, "_pak_selected_paks", None),
         ) if proj is not None else None
-        return resolved[1] if resolved else None
+        if resolved:
+            self._streaming_data_cache[self.filepath] = resolved[1]
+            return resolved[1]
+        self._streaming_data_cache[self.filepath] = None
+        return None
 
     def read(self, data: bytes):
         self.raw_data = data
-        
+
         file_version = 0
         if self.filepath and ".mesh." in self.filepath:
             try:
-                parts = self.filepath.split(".mesh.")
-                if len(parts) > 1:
-                    file_version = int(parts[-1])
+                _, _, version = self.filepath.rpartition(".mesh.")
+                file_version = int(version)
             except (ValueError, IndexError):
                 pass
-        
+
         mf = MeshFile()
         stream_data = self._load_streaming_mesh_data()
         mf.read(data, file_version=file_version, streaming_data=stream_data)
         self.mesh = mf
         self.modified = False
-
 
     def populate_treeview(self, tree, parent_item, metadata_map: dict):
         return

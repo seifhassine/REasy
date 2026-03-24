@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import time
+from collections import deque
 
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QSurfaceFormat
+from PySide6.QtGui import QImage, QPixmap, QSurfaceFormat
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -14,6 +15,12 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QComboBox,
     QDoubleSpinBox,
+    QCheckBox,
+    QHeaderView,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
 )
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 import numpy as np
@@ -50,6 +57,7 @@ from OpenGL.GL import (
     glVertexPointer,
     glNormalPointer,
     glColorPointer,
+    glTexCoordPointer,
     glColor4f,
     glDrawElements,
     GL_TRIANGLES,
@@ -59,6 +67,7 @@ from OpenGL.GL import (
     GL_VERTEX_ARRAY,
     GL_NORMAL_ARRAY,
     GL_COLOR_ARRAY,
+    GL_TEXTURE_COORD_ARRAY,
     GL_ELEMENT_ARRAY_BUFFER,
     GL_BLEND,
     glPolygonMode,
@@ -71,30 +80,313 @@ from OpenGL.GL import (
     glDepthMask,
     GL_AMBIENT,
     GL_DIFFUSE,
+    glBindTexture,
+    glGenTextures,
+    glDeleteTextures,
+    glTexParameteri,
+    glTexImage2D,
+    glPixelStorei,
+    glTexEnvi,
+    GL_TEXTURE_2D,
+    GL_TEXTURE_MIN_FILTER,
+    GL_TEXTURE_MAG_FILTER,
+    GL_LINEAR,
+    GL_RGBA,
+    GL_UNSIGNED_BYTE,
+    GL_UNPACK_ALIGNMENT,
+    GL_TEXTURE_ENV,
+    GL_TEXTURE_ENV_MODE,
+    GL_MODULATE,
 )
 from OpenGL.GLU import gluPerspective
+
+from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
+from settings import save_settings
+from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
+
+MATERIAL_TEXTURE_MAX_DIMENSION = 1024
 
 
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
+    STREAMING_SETTINGS_KEY = "mesh_viewer_prefer_streaming_tex"
 
     def __init__(self, handler):
         super().__init__()
         self.handler = handler
+        self._resolved_mdf = None
+        self._material_bindings: list[MeshMaterialBinding] = []
+        self._texture_cache: dict[str, QImage | None] = {}
+        self._texture_buffer_refs: dict[str, bytes] = {}
+        self._parsed_tex_cache: dict[str, object | None] = {}
+        self._resolved_texture_cache: dict[tuple[bool, str], tuple[str, bytes] | None] = {}
+        self._material_panel_visible = False
+        self._material_table_populated = False
+        self._texture_warmup_timer = QTimer(self)
+        self._texture_warmup_timer.setSingleShot(True)
+        self._texture_warmup_timer.timeout.connect(self._warm_material_textures_step)
+        self._texture_warmup_queue: deque[MeshMaterialBinding] = deque()
         self._layout = QVBoxLayout(self)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.gl_widget = None
+        self._build_ui()
         mesh = getattr(self.handler, "mesh", None)
         if mesh and getattr(mesh, "mesh_buffer", None) and mesh.mesh_buffer.positions:
             try:
                 self.gl_widget = _MeshGLWidget(mesh)
-                self._layout.addWidget(self.gl_widget, 1)
+                self.preview_splitter.insertWidget(0, self.gl_widget)
+                self.preview_splitter.setStretchFactor(0, 4)
+                self.preview_splitter.setStretchFactor(1, 2)
             except Exception as e:
-                error_label = QLabel(f"Failed to create viewer: {e}")
-                self._layout.addWidget(error_label)
+                self.preview_splitter.insertWidget(0, QLabel(f"Failed to create viewer: {e}"))
         else:
-            error_label = QLabel("No mesh buffer data available to display")
-            self._layout.addWidget(error_label)
+            self.preview_splitter.insertWidget(0, QLabel("No mesh buffer data available to display"))
+        self._reload_materials()
+
+    def _build_ui(self):
+        top = QHBoxLayout()
+        self.mdf_label = QLabel("MDF: unresolved")
+        self.mdf_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        top.addWidget(self.mdf_label, 1)
+        self.streaming_check = QCheckBox("Prefer streaming TEX")
+        self.streaming_check.setChecked(self._streaming_preference())
+        self.streaming_check.toggled.connect(self._on_streaming_toggled)
+        top.addWidget(self.streaming_check)
+        self.panel_toggle_btn = QPushButton("Show texture panel")
+        self.panel_toggle_btn.clicked.connect(self._toggle_material_panel)
+        top.addWidget(self.panel_toggle_btn)
+        self._layout.addLayout(top)
+
+        self.preview_splitter = QSplitter(Qt.Horizontal, self)
+        self._layout.addWidget(self.preview_splitter, 1)
+
+        self.material_panel = QWidget(self)
+        side_layout = QVBoxLayout(self.material_panel)
+        side_layout.setContentsMargins(0, 0, 0, 0)
+        side_layout.addWidget(QLabel("Resolved material textures"))
+        self.material_table = QTableWidget(0, 5, self.material_panel)
+        self.material_table.setHorizontalHeaderLabels(["Mesh", "MDF", "Type", "Texture", "Status"])
+        self.material_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.material_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.material_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.material_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.material_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.material_table.itemSelectionChanged.connect(self._update_texture_preview)
+        side_layout.addWidget(self.material_table, 1)
+
+        self.texture_preview = QLabel("Select a material to preview its texture.")
+        self.texture_preview.setAlignment(Qt.AlignCenter)
+        self.texture_preview.setMinimumHeight(220)
+        self.texture_preview.setWordWrap(True)
+        side_layout.addWidget(self.texture_preview)
+
+        self.preview_splitter.addWidget(self.material_panel)
+        self.material_panel.hide()
+
+    def _settings_store(self) -> dict | None:
+        app = getattr(self.handler, "app", None)
+        settings = getattr(app, "settings", None) if app is not None else None
+        return settings if isinstance(settings, dict) else None
+
+    def _streaming_preference(self) -> bool:
+        settings = self._settings_store()
+        return bool(settings.get(self.STREAMING_SETTINGS_KEY, False)) if settings is not None else False
+
+    def _on_streaming_toggled(self, checked: bool):
+        settings = self._settings_store()
+        if settings is not None:
+            settings[self.STREAMING_SETTINGS_KEY] = bool(checked)
+            save_settings(settings)
+        self._reload_materials()
+
+    def _reload_materials(self):
+        self._resolved_mdf, self._material_bindings = MeshMaterialResolver.resolve_for_handler(
+            self.handler,
+            prefer_streaming=self.streaming_check.isChecked(),
+            resolve_textures=False,
+            parse_in_subprocess=True,
+            resource_cache=self._resolved_texture_cache,
+        )
+        active_paths = {binding.resolved_texture_path for binding in self._material_bindings if binding.resolved_texture_path}
+        self._texture_cache = {
+            path: image
+            for path, image in self._texture_cache.items()
+            if path in active_paths
+        }
+        self._texture_buffer_refs = {
+            path: buffer_ref
+            for path, buffer_ref in self._texture_buffer_refs.items()
+            if path in active_paths
+        }
+        self._parsed_tex_cache = {
+            path: tex
+            for path, tex in self._parsed_tex_cache.items()
+            if path in active_paths
+        }
+        if self._resolved_mdf:
+            self.mdf_label.setText(f"MDF: {self._resolved_mdf.path}")
+        else:
+            self.mdf_label.setText("MDF: not found")
+        self._material_table_populated = False
+        if self._material_panel_visible:
+            self._populate_material_table()
+        self._apply_materials_to_gl_widget()
+        self._schedule_texture_warmup()
+
+    def _toggle_material_panel(self):
+        self._material_panel_visible = not self._material_panel_visible
+        if self._material_panel_visible:
+            self.material_panel.show()
+            self.panel_toggle_btn.setText("Hide texture panel")
+            if not self._material_table_populated:
+                self._populate_material_table()
+        else:
+            self.material_panel.hide()
+            self.panel_toggle_btn.setText("Show texture panel")
+
+    def _populate_material_table(self):
+        table = self.material_table
+        table.setRowCount(len(self._material_bindings))
+        for row, binding in enumerate(self._material_bindings):
+            values = [
+                binding.mesh_material_name,
+                binding.mdf_material_name,
+                binding.texture_type,
+                binding.texture_path or binding.resolved_texture_path,
+                binding.status,
+            ]
+            for col, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, col, item)
+        if table.rowCount():
+            table.selectRow(0)
+        else:
+            self.texture_preview.setText("No material mappings found.")
+        self._material_table_populated = True
+
+    def _update_texture_preview(self):
+        row = self.material_table.currentRow()
+        if row < 0 or row >= len(self._material_bindings):
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText("Select a material to preview its texture.")
+            return
+
+        binding = self._material_bindings[row]
+        if not binding.resolved_texture_path and not binding.texture_path:
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText(binding.status)
+            return
+
+        image = self._load_texture_image(binding)
+        if not image or image.isNull():
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText(f"{binding.status}\n{binding.resolved_texture_path}")
+            return
+
+        scaled = QPixmap.fromImage(image).scaled(
+            320,
+            320,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+        self.texture_preview.setText("")
+        self.texture_preview.setPixmap(scaled)
+        self.texture_preview.setToolTip(binding.resolved_texture_path)
+
+    def _apply_materials_to_gl_widget(self):
+        if not self.gl_widget:
+            return
+        images: dict[str, tuple[str, QImage]] = {}
+        for binding in self._material_bindings:
+            if not binding.resolved_texture_path:
+                continue
+            image = self._texture_cache.get(binding.resolved_texture_path)
+            if image is not None and not image.isNull():
+                images[binding.mesh_material_name] = (binding.resolved_texture_path, image)
+        self.gl_widget.set_material_images(images)
+
+    def _schedule_texture_warmup(self):
+        self._texture_warmup_timer.stop()
+        self._texture_warmup_queue = deque(
+            b
+            for b in self._material_bindings
+            if b.texture_path and (not b.resolved_texture_path or b.resolved_texture_path not in self._texture_cache)
+        )
+        if self._texture_warmup_queue:
+            self._texture_warmup_timer.start(0)
+
+    def _warm_material_textures_step(self):
+        if not self._texture_warmup_queue:
+            return
+        did_load = False
+        for _ in range(min(2, len(self._texture_warmup_queue))):
+            binding = self._texture_warmup_queue.popleft()
+            image = self._load_texture_image(binding)
+            if image is not None and not image.isNull():
+                did_load = True
+        if did_load:
+            self._apply_materials_to_gl_widget()
+        if self._texture_warmup_queue:
+            self._texture_warmup_timer.start(0)
+
+    def _load_texture_image(self, binding: MeshMaterialBinding) -> QImage | None:
+        if not binding.resolved_texture_path:
+            if not binding.texture_path:
+                return None
+            resolved = MeshMaterialResolver.resolve_texture_path(
+                self.handler,
+                binding.texture_path,
+                prefer_streaming=self.streaming_check.isChecked(),
+                resource_cache=self._resolved_texture_cache,
+            )
+            if resolved is None:
+                binding.status = "Texture not found"
+                return None
+            binding.resolved_texture_path, binding.resolved_texture_data = resolved
+            binding.status = "Resolved"
+        if not binding.resolved_texture_path:
+            return None
+        cached = self._texture_cache.get(binding.resolved_texture_path)
+        if binding.resolved_texture_path in self._texture_cache:
+            return cached
+
+        tex_bytes = binding.resolved_texture_data
+        image = self._decode_texture_image(binding.resolved_texture_path, tex_bytes) if tex_bytes else None
+        self._texture_cache[binding.resolved_texture_path] = image
+        return image
+
+    @staticmethod
+    def _choose_preview_mip(tex) -> int:
+        mip_count = max(1, getattr(tex.header, "mip_count", 1))
+        width = max(1, getattr(tex.header, "width", 1))
+        height = max(1, getattr(tex.header, "height", 1))
+        mip_index = 0
+        while mip_index + 1 < mip_count and max(width, height) > MATERIAL_TEXTURE_MAX_DIMENSION:
+            width = max(1, width // 2)
+            height = max(1, height // 2)
+            mip_index += 1
+        return mip_index
+
+    def _decode_texture_image(self, resolved_texture_path: str, tex_bytes: bytes) -> QImage | None:
+        parsed_tex = self._parsed_tex_cache.get(resolved_texture_path)
+        if resolved_texture_path not in self._parsed_tex_cache:
+            parsed_tex = parse_tex_bytes(tex_bytes)
+            self._parsed_tex_cache[resolved_texture_path] = parsed_tex
+        if parsed_tex is None:
+            return None
+        decoded = decode_parsed_tex_to_qimage_with_buffer(
+            parsed_tex,
+            mip_selector=self._choose_preview_mip,
+        )
+        if decoded is None:
+            return None
+        image, backing_buffer = decoded
+        self._texture_buffer_refs[resolved_texture_path] = backing_buffer
+        return image
 
 
 class _MeshGLWidget(QOpenGLWidget):
@@ -121,19 +413,13 @@ class _MeshGLWidget(QOpenGLWidget):
         self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self.update)
         self._fps_limit = 60
-        self._timer.start(int(1000 / self._fps_limit))
-        self._wireframe = False
-        self._lighting = True
+        self._update_timer_state()
         self.wireframe_mode = "off"
         self.lighting_mode = "fixed"
         self.line_width = 1.5
-        self.cull_enabled = True
-        self.depth_enabled = True
         self.color_source = "vertex"
         self.ambient = 0.35
         self.diffuse = 0.65
-        self._last_lighting_mode = "fixed"
-        self._last_wf_mode = "lines_overlay"
 
         self.overlay = QFrame(self)
         self.overlay.setStyleSheet(
@@ -204,6 +490,7 @@ class _MeshGLWidget(QOpenGLWidget):
         vertex_chunks: list[np.ndarray] = []
         normal_chunks: list[np.ndarray] = []
         color_chunks: list[np.ndarray] = []
+        uv_chunks: list[np.ndarray] = []
         payload_base: dict[int, int] = {}
         running_base = 0
         for buffer_index in sorted(payloads.keys()):
@@ -222,7 +509,14 @@ class _MeshGLWidget(QOpenGLWidget):
                 color_chunks.append(np.array(payload.colors, dtype=np.uint8).reshape(-1, 4).astype(np.float32) / 255.0)
             else:
                 color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
-
+            if getattr(payload, "uv0", None):
+                uvs = np.array(payload.uv0, dtype=np.float32).reshape(-1, 2)
+                if len(uvs) == len(verts):
+                    uv_chunks.append(1.0 - uvs)
+                else:
+                    uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
+            else:
+                uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
         self.vertices = np.concatenate(vertex_chunks, axis=0) if vertex_chunks else np.zeros((0, 3), dtype=np.float32)
         self.normals = np.concatenate(normal_chunks, axis=0) if normal_chunks else None
         if self.normals is not None and len(self.normals):
@@ -234,9 +528,12 @@ class _MeshGLWidget(QOpenGLWidget):
                 safe_normals[invalid_mask] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
             self.normals = safe_normals
         self.colors = np.concatenate(color_chunks, axis=0) if color_chunks else None
+        self.uvs = np.concatenate(uv_chunks, axis=0) if uv_chunks else None
         self.base_colors = self.colors.copy() if self.colors is not None and len(self.colors) == len(self.vertices) else np.ones((len(self.vertices), 4), dtype=np.float32)
 
-        idx_list: list[int] = []
+        index_chunks: list[np.ndarray] = []
+        self._draw_batches_data: list[tuple[str, np.ndarray]] = []
+        material_names = list(getattr(mesh, "material_names", []) or [])
         if mesh.meshes:
             for m in mesh.meshes:
                 if not m.lods:
@@ -251,23 +548,23 @@ class _MeshGLWidget(QOpenGLWidget):
                         start = sm.faces_index_offset
                         end = start + sm.indices_count
                         base = payload_base.get(getattr(sm, "buffer_index", 0), 0) + sm.verts_index_offset
-                        idx_list.extend(base + idx for idx in face_array[start:end])
-        if not idx_list:
+                        batch_indices = np.asarray(face_array[start:end], dtype=np.uint32) + np.uint32(base)
+                        index_chunks.append(batch_indices)
+                        material_name = ""
+                        material_idx = getattr(sm, "material_index", -1)
+                        if 0 <= material_idx < len(material_names):
+                            material_name = material_names[material_idx]
+                        self._draw_batches_data.append((material_name, batch_indices))
+        if not index_chunks:
             payload0 = payloads.get(0)
             if payload0 is not None:
                 face_array = payload0.integer_faces if getattr(payload0, "integer_faces", None) is not None else payload0.faces
-                idx_list = list(face_array)
-        self.indices = np.array(idx_list, dtype=np.uint32)
+                fallback_indices = np.asarray(face_array, dtype=np.uint32)
+                index_chunks.append(fallback_indices)
+                self._draw_batches_data.append(("", fallback_indices))
+        self.indices = np.concatenate(index_chunks) if index_chunks else np.zeros((0,), dtype=np.uint32)
 
-        if len(self.indices) % 3 == 0:
-            tris_edges = np.concatenate([
-                self.indices.reshape(-1, 3)[:, [0, 1]],
-                self.indices.reshape(-1, 3)[:, [1, 2]],
-                self.indices.reshape(-1, 3)[:, [2, 0]],
-            ], axis=0)
-            self.indices_lines = tris_edges.astype(np.uint32).reshape(-1)
-        else:
-            self.indices_lines = self.indices.copy()
+        self.indices_lines = None
 
         mins = self.vertices.min(axis=0)
         maxs = self.vertices.max(axis=0)
@@ -277,30 +574,19 @@ class _MeshGLWidget(QOpenGLWidget):
 
         self.vbo_vertices = None
         self.vbo_normals = None
+        self.vbo_uvs = None
         self.vbo_colors = None
         self.vbo_indices = None
         self.vbo_indices_lines = None
-        self._normals_generated = False
+        self._draw_batches: list[tuple[str, vbo.VBO, int]] = []
+        self._texture_ids: dict[str, int] = {}
+        self._pending_material_images: dict[str, tuple[str, QImage]] = {}
         self._colors_dirty = True
-
-    def _compute_lit_colors(self) -> np.ndarray:
-        if self.normals is None or not np.isfinite(self.normals).all():
-            normals_used = np.tile(np.array([0.0, 0.0, 1.0], dtype=np.float32), (len(self.vertices), 1))
-        else:
-            normals_used = self.normals
-        light_dir = np.array([0.4, 0.8, 0.4], dtype=np.float32)
-        light_dir /= np.linalg.norm(light_dir) if np.linalg.norm(light_dir) != 0 else 1.0
-        ambient = 0.45
-        diffuse_scale = 0.55
-        intensity = np.clip((normals_used @ light_dir) * diffuse_scale + ambient, 0.0, 1.0).astype(np.float32)
-        lit = self.base_colors.copy()
-        lit[:, :3] *= intensity[:, np.newaxis]
-        lit[:, 3] = 1.0
-        return lit
+        self._texture_sources: dict[str, str] = {}
 
     def _ensure_color_vbo_for_current_mode(self):
         base = self.base_colors if self.color_source == "vertex" else np.ones((len(self.vertices), 4), dtype=np.float32)
-        apply_lighting = (self.lighting_mode == "software" and self._lighting) or (not self._lighting)
+        apply_lighting = self.lighting_mode == "software"
         if apply_lighting:
             if self.normals is None or not np.isfinite(self.normals).all():
                 normals_used = np.tile(np.array([0.0, 0.0, 1.0], dtype=np.float32), (len(self.vertices), 1))
@@ -320,14 +606,34 @@ class _MeshGLWidget(QOpenGLWidget):
         self.vbo_colors = vbo.VBO(colors_now)
         self._colors_dirty = False
 
+    def _ensure_line_indices(self):
+        if self.indices_lines is not None:
+            return
+        if len(self.indices) % 3 == 0:
+            tris_edges = np.concatenate([
+                self.indices.reshape(-1, 3)[:, [0, 1]],
+                self.indices.reshape(-1, 3)[:, [1, 2]],
+                self.indices.reshape(-1, 3)[:, [2, 0]],
+            ], axis=0)
+            self.indices_lines = tris_edges.astype(np.uint32).reshape(-1)
+        else:
+            self.indices_lines = self.indices.copy()
+
     def _cleanup_gl(self):
         self.makeCurrent()
+        self._clear_gl_textures()
+        for _, batch_vbo, _ in self._draw_batches:
+            batch_vbo.delete()
+        self._draw_batches.clear()
         if self.vbo_indices_lines is not None:
             self.vbo_indices_lines.delete()
             self.vbo_indices_lines = None
         if self.vbo_indices is not None:
             self.vbo_indices.delete()
             self.vbo_indices = None
+        if self.vbo_uvs is not None:
+            self.vbo_uvs.delete()
+            self.vbo_uvs = None
         if self.vbo_colors is not None:
             self.vbo_colors.delete()
             self.vbo_colors = None
@@ -338,6 +644,61 @@ class _MeshGLWidget(QOpenGLWidget):
             self.vbo_vertices.delete()
             self.vbo_vertices = None
         self.doneCurrent()
+
+    def set_material_images(self, images: dict[str, tuple[str, QImage]]):
+        self._pending_material_images = dict(images)
+        if self.context() is None:
+            self.update()
+            return
+        self.makeCurrent()
+        self._sync_gl_textures()
+        self.doneCurrent()
+        self.update()
+
+    def _sync_gl_textures(self):
+        stale = set(self._texture_ids) - set(self._pending_material_images)
+        for name in stale:
+            glDeleteTextures([self._texture_ids.pop(name)])
+            self._texture_sources.pop(name, None)
+        for name, (source_path, image) in self._pending_material_images.items():
+            if image.isNull():
+                continue
+            texture_id = self._texture_ids.get(name)
+            if texture_id is not None and self._texture_sources.get(name) == source_path:
+                continue
+            if texture_id is None:
+                texture_id = glGenTextures(1)
+                self._texture_ids[name] = texture_id
+            self._upload_texture(texture_id, image)
+            self._texture_sources[name] = source_path
+
+    def _clear_gl_textures(self):
+        if self._texture_ids:
+            glDeleteTextures(list(self._texture_ids.values()))
+            self._texture_ids.clear()
+        self._texture_sources.clear()
+
+    @staticmethod
+    def _upload_texture(texture_id: int, image: QImage):
+        rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
+        bits = rgba.bits()
+        size = rgba.sizeInBytes()
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            rgba.width(),
+            rgba.height(),
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            bytes(bits[:size]),
+        )
+        glBindTexture(GL_TEXTURE_2D, 0)
 
     def _ensure_normals_vbo_for_lighting(self):
         if self.vbo_normals is not None:
@@ -370,7 +731,6 @@ class _MeshGLWidget(QOpenGLWidget):
                 safe_vertex_normals[invalid_v] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
             self.normals = safe_vertex_normals.astype(np.float32)
             self.vbo_normals = vbo.VBO(self.normals)
-            self._normals_generated = True
 
     def initializeGL(self):
         glClearColor(0.1, 0.1, 0.1, 1.0)
@@ -382,6 +742,7 @@ class _MeshGLWidget(QOpenGLWidget):
         glCullFace(GL_BACK)
         glFrontFace(GL_CCW)
         glEnable(GL_NORMALIZE)
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
         glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1.0))
@@ -391,11 +752,17 @@ class _MeshGLWidget(QOpenGLWidget):
 
         self.vbo_vertices = vbo.VBO(self.vertices)
         self.vbo_indices = vbo.VBO(self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
-        if self.indices_lines is not None and len(self.indices_lines) > 0:
-            self.vbo_indices_lines = vbo.VBO(self.indices_lines, target=GL_ELEMENT_ARRAY_BUFFER)
+        if self.uvs is not None and len(self.uvs) == len(self.vertices):
+            self.vbo_uvs = vbo.VBO(self.uvs.astype(np.float32))
         if self.normals is not None:
             self.vbo_normals = vbo.VBO(self.normals)
+        self._draw_batches = [
+            (material_name, vbo.VBO(indices, target=GL_ELEMENT_ARRAY_BUFFER), len(indices))
+            for material_name, indices in self._draw_batches_data
+            if len(indices) > 0
+        ]
         self._ensure_color_vbo_for_current_mode()
+        self._sync_gl_textures()
 
     def resizeGL(self, w: int, h: int):
         glViewport(0, 0, w, max(h, 1))
@@ -446,6 +813,13 @@ class _MeshGLWidget(QOpenGLWidget):
             self.vbo_vertices.bind()
             glEnableClientState(GL_VERTEX_ARRAY)
             glVertexPointer(3, GL_FLOAT, 0, None)
+            textured = self.vbo_uvs is not None and bool(self._texture_ids)
+            if textured:
+                self.vbo_uvs.bind()
+                glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+                glTexCoordPointer(2, GL_FLOAT, 0, None)
+            else:
+                glDisableClientState(GL_TEXTURE_COORD_ARRAY)
 
             glDisableClientState(GL_NORMAL_ARRAY)
             glDisableClientState(GL_COLOR_ARRAY)
@@ -468,9 +842,24 @@ class _MeshGLWidget(QOpenGLWidget):
                     glColorPointer(4, GL_FLOAT, 0, None)
                     used_color_array = True
 
-            self.vbo_indices.bind()
-            glDrawElements(GL_TRIANGLES, len(self.indices), GL_UNSIGNED_INT, None)
-            self.vbo_indices.unbind()
+            if self._draw_batches:
+                for material_name, batch_vbo, count in self._draw_batches:
+                    tex_id = self._texture_ids.get(material_name)
+                    if tex_id:
+                        glEnable(GL_TEXTURE_2D)
+                        glBindTexture(GL_TEXTURE_2D, tex_id)
+                    else:
+                        glBindTexture(GL_TEXTURE_2D, 0)
+                        glDisable(GL_TEXTURE_2D)
+                    batch_vbo.bind()
+                    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
+                    batch_vbo.unbind()
+                glBindTexture(GL_TEXTURE_2D, 0)
+                glDisable(GL_TEXTURE_2D)
+            else:
+                self.vbo_indices.bind()
+                glDrawElements(GL_TRIANGLES, len(self.indices), GL_UNSIGNED_INT, None)
+                self.vbo_indices.unbind()
 
             if self.vbo_indices_lines is not None and self.wireframe_mode in ("lines_depth", "lines_overlay"):
                 if used_color_array:
@@ -506,6 +895,9 @@ class _MeshGLWidget(QOpenGLWidget):
             if bound_normals:
                 glDisableClientState(GL_NORMAL_ARRAY)
                 self.vbo_normals.unbind()
+            if textured:
+                glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+                self.vbo_uvs.unbind()
             glDisableClientState(GL_VERTEX_ARRAY)
             self.vbo_vertices.unbind()
 
@@ -560,6 +952,12 @@ class _MeshGLWidget(QOpenGLWidget):
 
     def _set_wireframe_mode(self, mode: str):
         self.wireframe_mode = mode
+        if mode in ("lines_depth", "lines_overlay") and self.vbo_indices_lines is None:
+            self._ensure_line_indices()
+            if self.indices_lines is not None and len(self.indices_lines) > 0:
+                self.makeCurrent()
+                self.vbo_indices_lines = vbo.VBO(self.indices_lines, target=GL_ELEMENT_ARRAY_BUFFER)
+                self.doneCurrent()
         self.makeCurrent()
         self._apply_render_state()
         self.doneCurrent()

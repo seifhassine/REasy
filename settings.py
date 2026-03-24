@@ -33,7 +33,8 @@ DEFAULT_SETTINGS = {
     "verify_rsz_crc_on_open": True,
     "recently_closed_files": [],
     "last_seen_version": "",
-    "enum_prompt_checked_json_path": ""
+    "enum_prompt_checked_json_path": "",
+    "mesh_viewer_prefer_streaming_tex": False,
 }
 
 
