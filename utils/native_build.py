@@ -9,13 +9,8 @@ def _build_native_module(module_name):
     try:
         return importlib.import_module(module_name)
     except Exception:
-        pass
-
-    try:
         from setuptools import Distribution, Extension
         from setuptools.command.build_ext import build_ext as _build_ext
-    except Exception:
-        return None
 
     src = Path(__file__).resolve().parent.parent / 'native' / f'{module_name}.c'
     if not src.exists():
