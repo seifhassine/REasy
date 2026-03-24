@@ -30,9 +30,8 @@ from PySide6.QtWidgets import (
 )
 
 from .uvs_file import UvsPattern, UvsSequence, UvsTexture
-from file_handlers.tex.tex_handler import TexHandler
+from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
 from file_handlers.tex.tex_viewer import TexViewer
-from file_handlers.tex.texture_decoder import decode_tex_mip
 from utils.resource_file_utils import resolve_resource_data
 from ui.project_manager.constants import EXPECTED_NATIVE
 
@@ -1185,13 +1184,7 @@ class UvsViewer(QWidget):
         )
         
     def _decode_tex_to_pixmap(self, tex_bytes: bytes) -> QPixmap | None:
-        th = TexHandler()
-        th.read(tex_bytes)
-        if not th.tex:
-            return None
-        decoded = decode_tex_mip(th.tex, 0, 0)
-        qimg = QImage(decoded.rgba, decoded.width, decoded.height, QImage.Format.Format_RGBA8888).copy()
-        return QPixmap.fromImage(qimg)
+        return decode_tex_bytes_to_qpixmap(tex_bytes)
 
     def _ensure_texture_preview(self, tex_idx: int):
         source = self._preview_source_key()
