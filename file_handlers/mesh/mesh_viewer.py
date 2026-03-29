@@ -639,7 +639,8 @@ class _MeshGLWidget(QOpenGLWidget):
         pts = np.c_[points.astype(np.float64), np.ones((len(points), 1), dtype=np.float64)]
         clip = (proj @ model @ pts.T).T
         ndc = clip[:, :3] / clip[:, 3:4]
-        visible = (clip[:, 3] != 0.0) & (ndc[:, 2] >= -1.0) & (ndc[:, 2] <= 1.0)
+        w_non_zero = ~np.isclose(clip[:, 3], 0.0, rtol=0.0, atol=1e-12)
+        visible = w_non_zero & (ndc[:, 2] >= -1.0) & (ndc[:, 2] <= 1.0)
         screen = np.column_stack(((ndc[:, 0] * 0.5 + 0.5) * w, (1.0 - (ndc[:, 1] * 0.5 + 0.5)) * h))
         return np.column_stack((screen, visible.astype(np.float64)))
 

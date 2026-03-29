@@ -2185,8 +2185,8 @@ class RcolViewer(QWidget):
         self._refresh_inplace(NavPayload(kind="auto_joint", auto_joint_index=index), update_tree_label=True)
 
     def _remove_auto_joint(self, index: int):
-        joints = self.rcol.auto_generate_joint_descs or []
-        if index >= len(joints):
+        joints = self.rcol.auto_generate_joint_descs
+        if joints is None or not (0 <= index < len(joints)):
             return
         del joints[index]
         if (
