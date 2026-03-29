@@ -4,7 +4,7 @@ import time
 from collections import deque
 
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QImage, QPixmap, QSurfaceFormat
+from PySide6.QtGui import QImage, QPixmap, QSurfaceFormat, QPainter
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -419,7 +419,8 @@ class _MeshGLWidget(QOpenGLWidget):
         self.line_width = 1.5
         self.color_source = "vertex"
         self.ambient = 0.35
-        self.diffuse = 0.65
+        self.diffuse = 0.65        
+        self.show_bone_labels = False
 
         self.overlay = QFrame(self)
         self.overlay.setStyleSheet(
@@ -481,6 +482,13 @@ class _MeshGLWidget(QOpenGLWidget):
         self.diff_spin.valueChanged.connect(self._set_diffuse)
         row2.addWidget(self.diff_spin)
         olayout.addLayout(row2)
+        
+        row3 = QHBoxLayout()
+        self.bone_labels_check = QCheckBox("Bones", self.overlay)
+        self.bone_labels_check.setChecked(self.show_bone_labels)
+        self.bone_labels_check.toggled.connect(self._set_show_bone_labels)
+        row3.addWidget(self.bone_labels_check)
+        olayout.addLayout(row3)
 
         self.overlay.adjustSize()
         self.overlay.move(10, 10)
@@ -582,7 +590,73 @@ class _MeshGLWidget(QOpenGLWidget):
         self._texture_ids: dict[str, int] = {}
         self._pending_material_images: dict[str, tuple[str, QImage]] = {}
         self._colors_dirty = True
-        self._texture_sources: dict[str, str] = {}
+        self._texture_sources: dict[str, str] = {}        
+        self._bone_labels, self._bone_points = self._build_bone_label_points()
+
+    def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
+        joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
+        if joint_count <= 0:
+            return [], np.zeros((0, 3), dtype=np.float32)
+        matrices = list(getattr(self.mesh, "world_matrices", None) or getattr(self.mesh, "local_matrices", None) or [])
+        if not matrices:
+            return [], np.zeros((0, 3), dtype=np.float32)
+        names = list(getattr(self.mesh, "names", []) or [])
+        bone_indices = list(getattr(self.mesh, "bone_indices", []) or [])
+
+        labels: list[str] = []
+        points = np.zeros((joint_count, 3), dtype=np.float32)
+        for i in range(joint_count):
+            matrix = matrices[i]
+            points[i] = (matrix[12], matrix[13], matrix[14])
+            if i < len(bone_indices) and 0 <= bone_indices[i] < len(names):
+                labels.append(names[bone_indices[i]])
+            else:
+                labels.append(f"bone_{i}")
+        return labels, points
+
+    def _project_points(self, points: np.ndarray) -> np.ndarray:
+        w = max(1, self.width())
+        h = max(1, self.height())
+        aspect = w / h
+        f = 1.0 / np.tan(np.radians(45.0) / 2.0)
+        cx, sx = np.cos(np.radians(self.rot_x)), np.sin(np.radians(self.rot_x))
+        cy, sy = np.cos(np.radians(self.rot_y)), np.sin(np.radians(self.rot_y))
+        center = self.center.astype(np.float64)
+
+        t0 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, -self.distance], [0, 0, 0, 1]], dtype=np.float64)
+        rx = np.array([[1, 0, 0, 0], [0, cx, -sx, 0], [0, sx, cx, 0], [0, 0, 0, 1]], dtype=np.float64)
+        ry = np.array([[cy, 0, sy, 0], [0, 1, 0, 0], [-sy, 0, cy, 0], [0, 0, 0, 1]], dtype=np.float64)
+        s = np.array([[self.scale, 0, 0, 0], [0, self.scale, 0, 0], [0, 0, self.scale, 0], [0, 0, 0, 1]], dtype=np.float64)
+        tc = np.array([[1, 0, 0, -center[0]], [0, 1, 0, -center[1]], [0, 0, 1, -center[2]], [0, 0, 0, 1]], dtype=np.float64)
+        model = t0 @ rx @ ry @ s @ tc
+        proj = np.array([
+            [f / aspect, 0.0, 0.0, 0.0],
+            [0.0, f, 0.0, 0.0],
+            [0.0, 0.0, -1.002002002002002, -0.20020020020020018],
+            [0.0, 0.0, -1.0, 0.0],
+        ], dtype=np.float64)
+
+        pts = np.c_[points.astype(np.float64), np.ones((len(points), 1), dtype=np.float64)]
+        clip = (proj @ model @ pts.T).T
+        ndc = clip[:, :3] / clip[:, 3:4]
+        visible = (clip[:, 3] != 0.0) & (ndc[:, 2] >= -1.0) & (ndc[:, 2] <= 1.0)
+        screen = np.column_stack(((ndc[:, 0] * 0.5 + 0.5) * w, (1.0 - (ndc[:, 1] * 0.5 + 0.5)) * h))
+        return np.column_stack((screen, visible.astype(np.float64)))
+
+    def _draw_bone_labels(self):
+        if not self.show_bone_labels or len(self._bone_points) == 0:
+            return
+        projected = self._project_points(self._bone_points)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.TextAntialiasing, True)
+        painter.setPen(Qt.yellow)
+        for i, label in enumerate(self._bone_labels):
+            x, y, visible = projected[i]
+            if not visible:
+                continue
+            if 0 <= x <= self.width() and 0 <= y <= self.height():
+                painter.drawText(int(x) + 4, int(y) - 4, label)
+        painter.end()
 
     def _ensure_color_vbo_for_current_mode(self):
         base = self.base_colors if self.color_source == "vertex" else np.ones((len(self.vertices), 4), dtype=np.float32)
@@ -909,6 +983,7 @@ class _MeshGLWidget(QOpenGLWidget):
             self._frame_count = 0
             self._last_time = now
             self.fps_label.setText(f"{self.fps:.1f} FPS")
+        self._draw_bone_labels()
 
     def mousePressEvent(self, event):
         self.last_pos = event.position()
@@ -979,8 +1054,12 @@ class _MeshGLWidget(QOpenGLWidget):
         self.ambient = float(value)
         self._colors_dirty = True
         self.update()
-
     def _set_diffuse(self, value: float):
         self.diffuse = float(value)
         self._colors_dirty = True
         self.update()
+        
+    def _set_show_bone_labels(self, checked: bool):
+        self.show_bone_labels = bool(checked)
+        self.update()
+

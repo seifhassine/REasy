@@ -1363,6 +1363,15 @@ class MPLYParser:
         mesh_data.material_count = self.header.name_count
         return mesh_buffer, [mesh_data]
 
+@dataclass
+class JointNode:
+    index: int
+    parent_index: int
+    sibling_index: int
+    child_index: int
+    symmetry_index: int
+    use_secondary_weight: int
+    reserved: bytes = b"\x00" * 5
 
 class MeshFile:
     def __init__(self):
@@ -1382,12 +1391,104 @@ class MeshFile:
         self.blend_shape_bytes: bytes = b""
         self.bounds_bytes: bytes = b""
         self.float_bytes: bytes = b""
-        self.bone_indices: List[int] = []
+        self.bone_indices: List[int] = []        
+        self.bone_remap_indices: List[int] = []
+        self.bones: List["JointNode"] = []
+        self.local_matrices: List[List[float]] = []
+        self.world_matrices: List[List[float]] = []
+        self.inverse_bind_matrices: List[List[float]] = []
+        self.joint_count: int = 0
+        self.bone_remap_count: int = 0
         self.blend_shape_indices: List[int] = []
         self.streaming_data_loaded = False
         self.streaming_buffer_count = 0
 
         self._raw: bytes = b""
+        
+    def _section_size(self, start: int, sorted_offsets: List[int]) -> int:
+        for offset in sorted_offsets:
+            if offset > start:
+                return offset - start
+        return 0
+
+    def _collect_section_offsets(self) -> List[int]:
+        offsets = [
+            self.header.lods_offset,
+            self.header.shadow_lods_offset,
+            self.header.occluder_mesh_offset,
+            self.header.bones_offset,
+            self.header.normal_recalc_offset,
+            self.header.blend_shapes_offset,
+            self.header.bounds_offset,
+            self.header.mesh_offset,
+            self.header.floats_offset,
+            self.header.material_indices_offset,
+            self.header.bone_indices_offset,
+            self.header.blend_shape_indices_offset,
+            self.header.name_offsets_offset,
+            self.header.streaming_info_offset,
+        ]
+        offsets = [offset for offset in offsets if offset > 0]
+        offsets.sort()
+        offsets.append(self.header.file_size)
+        return offsets
+
+    def _read_joint_nodes(self, h: BinaryHandler, offset: int, count: int) -> List["JointNode"]:
+        with h.seek_temp(offset):
+            nodes: List[JointNode] = []
+            for _ in range(count):
+                node = JointNode(
+                    index=h.read_int16(),
+                    parent_index=h.read_int16(),
+                    sibling_index=h.read_int16(),
+                    child_index=h.read_int16(),
+                    symmetry_index=h.read_int16(),
+                    use_secondary_weight=h.read_uint8(),
+                    reserved=h.read_bytes(5),
+                )
+                nodes.append(node)
+            return nodes
+
+    def _read_matrices(self, h: BinaryHandler, offset: int, count: int) -> List[List[float]]:
+        with h.seek_temp(offset):
+            return [h.read_matrix4x4() for _ in range(count)]
+
+    def _parse_bones(self, h: BinaryHandler, sorted_offsets: List[int]):
+        self.bones = []
+        self.bone_remap_indices = []
+        self.local_matrices = []
+        self.world_matrices = []
+        self.inverse_bind_matrices = []
+        if not self.header.bones_offset:
+            return
+
+        with h.seek_temp(self.header.bones_offset):
+            self.joint_count = h.read_int32()
+            self.bone_remap_count = h.read_int32()
+            h.read_int32()
+            h.read_int32()
+            hierarchy_offset = h.read_int64()
+            local_matrix_offset = h.read_int64()
+            world_matrix_offset = h.read_int64()
+            inv_world_matrix_offset = h.read_int64()
+
+            if self.bone_remap_count > 0:
+                self.bone_remap_indices = [h.read_int16() for _ in range(self.bone_remap_count)]
+                h.align(8)
+
+            self.bones = self._read_joint_nodes(h, hierarchy_offset, self.joint_count)
+            self.local_matrices = self._read_matrices(h, local_matrix_offset, self.joint_count)
+            self.world_matrices = self._read_matrices(h, world_matrix_offset, self.joint_count)
+            self.inverse_bind_matrices = self._read_matrices(h, inv_world_matrix_offset, self.joint_count)
+
+    def _parse_bone_indices(self, data: bytes, sorted_offsets: List[int]):
+        self.bone_indices = []
+        if not self.header.bone_indices_offset:
+            return
+        size = self._section_size(self.header.bone_indices_offset, sorted_offsets)
+        count = self.joint_count if self.joint_count > 0 else (size // 2)
+        fmt = f'<{count}H'
+        self.bone_indices = list(struct.unpack_from(fmt, data, self.header.bone_indices_offset))
 
     def read(
         self,
@@ -1398,7 +1499,9 @@ class MeshFile:
         file_version: int = 0,
         streaming_data: Optional[bytes] = None,
     ) -> bool:
-        self._raw = data
+        self._raw = data        
+        self.joint_count = 0
+        self.bone_remap_count = 0
         h = BinaryHandler(data, file_version=file_version)
         if not self.header.read(h, file_version=file_version):
             raise ValueError("Not a mesh file")
@@ -1428,68 +1531,41 @@ class MeshFile:
             md.read(h, read_all_lods=read_extras)
             self.meshes.append(md)
 
+        sorted_offsets = self._collect_section_offsets()
+        self._parse_bones(h, sorted_offsets)
+        self._parse_bone_indices(data, sorted_offsets)
+        
         if read_extras:
-            offsets = [
-                self.header.lods_offset,
-                self.header.shadow_lods_offset,
-                self.header.occluder_mesh_offset,
-                self.header.bones_offset,
-                self.header.normal_recalc_offset,
-                self.header.blend_shapes_offset,
-                self.header.bounds_offset,
-                self.header.mesh_offset,
-                self.header.floats_offset,
-                self.header.material_indices_offset,
-                self.header.bone_indices_offset,
-                self.header.blend_shape_indices_offset,
-                self.header.name_offsets_offset,
-                self.header.streaming_info_offset,
-            ]
-            offsets = [o for o in offsets if o > 0]
-            offsets.sort()
-            offsets.append(self.header.file_size)
-
-            def section_size(start: int) -> int:
-                for o in offsets:
-                    if o > start:
-                        return o - start
-                return 0
-
             if self.header.shadow_lods_offset:
-                size = section_size(self.header.shadow_lods_offset)
+                size = self._section_size(self.header.shadow_lods_offset, sorted_offsets)
                 h.seek(self.header.shadow_lods_offset)
                 self.shadow_lod_bytes = h.read_bytes(size)
-            if self.header.occluder_mesh_offset:
-                size = section_size(self.header.occluder_mesh_offset)
+            if self.header.occluder_mesh_offset:                
+                size = self._section_size(self.header.occluder_mesh_offset, sorted_offsets)
                 h.seek(self.header.occluder_mesh_offset)
                 self.occluder_mesh_bytes = h.read_bytes(size)
             if self.header.bones_offset:
-                size = section_size(self.header.bones_offset)
+                size = self._section_size(self.header.bones_offset, sorted_offsets)
                 h.seek(self.header.bones_offset)
                 self.bones_bytes = h.read_bytes(size)
             if self.header.normal_recalc_offset:
-                size = section_size(self.header.normal_recalc_offset)
+                size = self._section_size(self.header.normal_recalc_offset, sorted_offsets)
                 h.seek(self.header.normal_recalc_offset)
                 self.normal_recalc_bytes = h.read_bytes(size)
             if self.header.blend_shapes_offset:
-                size = section_size(self.header.blend_shapes_offset)
+                size = self._section_size(self.header.blend_shapes_offset, sorted_offsets)
                 h.seek(self.header.blend_shapes_offset)
                 self.blend_shape_bytes = h.read_bytes(size)
             if self.header.bounds_offset:
-                size = section_size(self.header.bounds_offset)
+                size = self._section_size(self.header.bounds_offset, sorted_offsets)
                 h.seek(self.header.bounds_offset)
                 self.bounds_bytes = h.read_bytes(size)
             if self.header.floats_offset:
-                size = section_size(self.header.floats_offset)
+                size = self._section_size(self.header.floats_offset, sorted_offsets)
                 h.seek(self.header.floats_offset)
                 self.float_bytes = h.read_bytes(size)
-            if self.header.bone_indices_offset:
-                size = section_size(self.header.bone_indices_offset)
-                start = self.header.bone_indices_offset
-                fmt = '<{}H'.format(size // 2)
-                self.bone_indices = list(struct.unpack_from(fmt, data, start))
             if self.header.blend_shape_indices_offset:
-                size = section_size(self.header.blend_shape_indices_offset)
+                size = size = self._section_size(self.header.blend_shape_indices_offset, sorted_offsets)
                 start = self.header.blend_shape_indices_offset
                 fmt = '<{}H'.format(size // 2)
                 self.blend_shape_indices = list(struct.unpack_from(fmt, data, start))
