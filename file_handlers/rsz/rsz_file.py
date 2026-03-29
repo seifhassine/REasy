@@ -529,7 +529,7 @@ class TypeRegistryValidationError(ValueError):
 
     def __init__(self, issues):
         self.issues = issues
-        super().__init__("RSZ type registry validation failed.")
+        super().__init__("RSZ type registry validation failed. Please make sure you selected the correct RSZ dump (rszxxx.json)")
 
 class RszFile:
 
