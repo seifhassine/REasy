@@ -7,7 +7,7 @@ This file contains:
 """
 
 import functools
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QModelIndex
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
 from utils.enum_manager import EnumManager
@@ -359,6 +359,109 @@ class RszViewer(QWidget):
         print("Populating tree")
         self.tree.setModelData(self._build_tree_data())
         self.embed_forms()
+        
+    def _find_model_item_by_prefix(self, label_prefix: str):
+        model = self.tree.model()
+        if model is None:
+            return None, None
+
+        def walk(parent_index=QModelIndex()):
+            for row in range(model.rowCount(parent_index)):
+                index = model.index(row, 0, parent_index)
+                item = index.internalPointer()
+                text = item.data[0] if item and isinstance(item.data, (list, tuple)) else ""
+                if str(text).startswith(label_prefix):
+                    return index, item
+                nested = walk(index)
+                if nested is not None:
+                    return nested
+            return None
+
+        result = walk()
+        return result if result is not None else (None, None)
+
+    def _append_section_delta(self, label_prefix: str, rebuilt_node: dict, start_index: int):
+        model = self.tree.model()
+        if model is None:
+            return
+        section_index, section_item = self._find_model_item_by_prefix(label_prefix)
+        if section_index is None or section_item is None:
+            return
+
+        rebuilt_data = rebuilt_node.get("data", section_item.data if isinstance(section_item.data, list) else [label_prefix, ""])
+        if isinstance(section_item.data, list):
+            section_item.data[:] = rebuilt_data
+        else:
+            section_item.data = rebuilt_data
+
+        if isinstance(section_item.raw, dict):
+            section_item.raw["data"] = list(rebuilt_data)
+
+        new_children = rebuilt_node.get("children", [])
+        if start_index < len(new_children):
+            model.addChildren(section_item, new_children[start_index:])
+
+        model.dataChanged.emit(section_index, section_index)
+
+    def _append_new_headless_request_userdata_nodes(self, prev_instance_count: int, prev_object_count: int, root_instance_id: int):
+        self._append_section_delta("Instance Infos", self._create_instance_infos(), prev_instance_count)
+        self._append_section_delta("Object Table", self._create_object_table_info(), prev_object_count)
+
+        model = self.tree.model()
+        if model is None:
+            return
+        _, data_block_item = self._find_model_item_by_prefix(DATA_BLOCK_TITLE)
+        if data_block_item is None:
+            return
+
+        for existing_raw in getattr(data_block_item, "_raw_children", []) or []:
+            if isinstance(existing_raw, dict) and existing_raw.get("instance_id") == root_instance_id:
+                return
+
+        data_block = {"data": [DATA_BLOCK_TITLE, ""], "children": []}
+        self._add_headless_data_block(data_block)
+        target = next(
+            (
+                child for child in data_block.get("children", [])
+                if isinstance(child, dict) and child.get("instance_id") == root_instance_id
+            ),
+            None,
+        )
+        if target is not None:
+            model.addChild(data_block_item, target)
+
+    def add_headless_request_userdata(self, type_name: str, group_shape_count: int = 0) -> tuple[int, int, int]: #TODO: move this to rcol files
+        if not self.object_operations:
+            self.object_operations = RszObjectOperations(self)
+        if not self.type_registry:
+            raise ValueError("No type registry is loaded.")
+
+        type_info, type_id = self.type_registry.find_type_by_name(type_name)
+        if not type_info or not type_id:
+            raise ValueError(f"Type not found in registry: {type_name}")
+
+        prev_instance_count = len(self.scn.instance_infos)
+        prev_object_count = len(self.scn.object_table)
+
+        root_instance_id = self.object_operations._create_object_instance_with_nested_objects(
+            type_info,
+            type_id,
+            prev_instance_count,
+        )
+        if root_instance_id <= 0:
+            raise ValueError(f"Failed to initialize type: {type_name}")
+
+        request_set_userdata_index = len(self.scn.object_table)
+        self.scn.object_table.append(root_instance_id)
+
+        # Reserve one distinct object-table entry per group shape for the req set
+        group_userdata_index_start = len(self.scn.object_table)
+        for _ in range(max(0, group_shape_count)):
+            self.scn.object_table.append(0)
+
+        self._append_new_headless_request_userdata_nodes(prev_instance_count, prev_object_count, root_instance_id)
+        self.mark_modified()
+        return request_set_userdata_index, group_userdata_index_start, root_instance_id
 
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
@@ -662,26 +765,8 @@ class RszViewer(QWidget):
         return id_adjustment_map
     
     def _add_data_block(self, parent_dict):
-        if getattr(self.scn, "is_headless", False):
-            for instance_id, inst_info in enumerate(self.scn.instance_infos):
-                if instance_id == 0:
-                    continue
-                fields = self.scn.parsed_elements.get(instance_id)
-                if fields is None:
-                    continue
-                reasy_id = self.handler.id_manager.register_instance(instance_id)
-                type_name = self.name_helper.get_instance_name(instance_id)
-                instance_dict = {
-                    "data": [f"{type_name} (ID: {instance_id})", ""],
-                    "instance_id": instance_id,
-                    "reasy_id": reasy_id,
-                    "children": [],
-                }
-                for field_name, field_data in fields.items():
-                    instance_dict["children"].append(
-                        self._create_field_dict(field_name, field_data)
-                    )
-                parent_dict["children"].append(instance_dict)
+        if getattr(self.scn, "is_headless", False):            
+            self._add_headless_data_block(parent_dict)
             return
         if self.handler.rsz_file.is_usr:
             if len(self.scn.object_table) > 0:
@@ -821,6 +906,45 @@ class RszViewer(QWidget):
                 children_node["children"].append(node_dict)
         
         print("added data block")
+
+    def _add_headless_data_block(self, parent_dict):
+        """Build a headless RSZ hierarchy from object-table roots and parsed instance links."""
+        nodes = {}
+        for instance_id, _inst_info in enumerate(self.scn.instance_infos):
+            if instance_id == 0:
+                continue
+            fields = self.scn.parsed_elements.get(instance_id)
+            if fields is None or not isinstance(fields, dict):
+                continue
+
+            reasy_id = self.handler.id_manager.register_instance(instance_id)
+            type_name = self.name_helper.get_instance_name(instance_id)
+            instance_dict = {
+                "data": [f"{type_name} (ID: {instance_id})", ""],
+                "instance_id": instance_id,
+                "reasy_id": reasy_id,
+                "children": [],
+            }
+            for field_name, field_data in fields.items():
+                instance_dict["children"].append(
+                    self._create_field_dict(field_name, field_data)
+                )
+            nodes[instance_id] = instance_dict
+
+        if not nodes:
+            return
+
+        ordered_roots = []
+        seen_roots = set()
+
+        # For headless RSZ, object table entries are the preferred roots
+        for instance_id in self.scn.object_table:
+            if instance_id in nodes and instance_id not in seen_roots:
+                ordered_roots.append(instance_id)
+                seen_roots.add(instance_id)
+
+        for instance_id in ordered_roots:
+            parent_dict["children"].append(nodes[instance_id])
 
     def _create_field_dict(self, field_name, data_obj, embedded_context=None, use_lazy=True):
         """Create a dictionary representation of a field for the tree view"""
