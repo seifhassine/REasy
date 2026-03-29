@@ -1113,21 +1113,15 @@ class MPLYParser:
             raw_positions = [struct.unpack_from("<3B", data, i * 3) for i in range(len(data) // 3)]
             pos_array = [(x / 255.0, y / 255.0, z / 255.0) for x, y, z in raw_positions]
         elif flags.use_32bit_pos:
+            inv_10bit = 1.0 / 1023.0
             pos_array = []
             for i in range(len(data) // 4):
                 packed = struct.unpack_from("<I", data, i * 4)[0]
-                if position_compress_level:
-                    pos_array.append((
-                        (packed & 0x7FF) / 2047.0,
-                        ((packed >> 11) & 0x3FF) / 1023.0,
-                        ((packed >> 21) & 0x7FF) / 2047.0,
-                    ))
-                else:
-                    pos_array.append((
-                        (packed & 0x3FF) / 1023.0,
-                        ((packed >> 10) & 0x3FF) / 1023.0,
-                        ((packed >> 20) & 0x3FF) / 1023.0,
-                    ))
+                pos_array.append((
+                    (packed & 0x3FF) * inv_10bit,
+                    ((packed >> 10) & 0x3FF) * inv_10bit,
+                    ((packed >> 20) & 0x3FF) * inv_10bit,
+                ))
         else:
             raw_positions = [struct.unpack_from("<3H", data, i * 6) for i in range(len(data) // 6)]
             pos_array = [(x / 65535.0, y / 65535.0, z / 65535.0) for x, y, z in raw_positions]
@@ -1145,33 +1139,31 @@ class MPLYParser:
                 for x, y, z in pos_array
             ]
 
+        # Credit: shadowcookie for the compressed position decode.
         div_byte = (flags.raw >> 24) & 0xFF
         mult_byte = (flags.raw >> 16) & 0xFF
         div_shift = div_byte - 127
         scale = (1 << div_shift) if div_shift >= 0 else (1.0 / (1 << -div_shift))
         offset = 1 << (mult_byte - div_byte)
 
-        if position_compress_level:
-            offset_x, scale_x, offset_y, scale_y, offset_z, scale_z = relative_aabb
-            out = []
-            for x, y, z in pos_array:
-                out.append((
-                    ((((offset_x + (x * scale_x)) / 65535.0) - 0.5) * offset) * scale + center[0],
-                    ((((offset_y + (y * scale_y)) / 65535.0) - 0.5) * offset) * scale + center[1],
-                    ((((offset_z + (z * scale_z)) / 65535.0) - 0.5) * offset) * scale + center[2],
-                ))
-            return out
-
-        rel_center = (
-            relative_aabb[0] / 65535.0,
-            relative_aabb[2] / 65535.0,
-            relative_aabb[4] / 65535.0,
+        offset_terms = (
+            ((relative_aabb[0] / 65535.0) - 0.5) * offset,
+            ((relative_aabb[2] / 65535.0) - 0.5) * offset,
+            ((relative_aabb[4] / 65535.0) - 0.5) * offset,
         )
+
+        if flags.use_24bit_pos:
+            quant_scale = 1.0 / 256.0
+        elif flags.use_32bit_pos:
+            quant_scale = 1.0 / 64.0
+        else:
+            quant_scale = 1.0
+        
         return [
             (
-                (x - 0.5 + (rel_center[0] - 0.5) * offset) * scale + center[0],
-                (y - 0.5 + (rel_center[1] - 0.5) * offset) * scale + center[1],
-                (z - 0.5 + (rel_center[2] - 0.5) * offset) * scale + center[2],
+                (((x - 0.5) * quant_scale) + offset_terms[0]) * scale + center[0],
+                (((y - 0.5) * quant_scale) + offset_terms[1]) * scale + center[1],
+                (((z - 0.5) * quant_scale) + offset_terms[2]) * scale + center[2],
             )
             for x, y, z in pos_array
         ]
