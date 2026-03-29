@@ -86,6 +86,7 @@ from ui.directory_search import search_directory_for_type
 from ui.highlight_manager import HighlightManager
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.highlight_delegate import HighlightDelegate
+from ui.homepage import HomePageStack, HomePageWidget
 from tools.hash_calculator import HashCalculator
 
 from utils.native_build import ensure_fast_pakresolve, ensure_fastmesh
@@ -1017,12 +1018,20 @@ class REasyEditorApp(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0) 
         main_layout.setSpacing(0) 
 
+        self.home_widget = HomePageWidget(
+            on_open_file=self.on_open,
+            on_new_project=self.new_project,
+            on_open_project=self.open_project,
+            on_reopen_last=self.reopen_last_closed_file,
+            parent=self,
+        )
         self.notebook = CustomNotebook()
         self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.notebook.setMinimumSize(50, 50)    
         self.notebook.app_instance = self
         self.notebook._set_icon_callback = set_app_icon
-        main_layout.addWidget(self.notebook)
+        self.home_stack = HomePageStack(self.notebook, self.home_widget)
+        main_layout.addWidget(self.home_stack.widget)
 
         self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
@@ -1045,6 +1054,8 @@ class REasyEditorApp(QMainWindow):
         self._create_toolbar()
         
         self.notebook.currentChanged.connect(self._update_highlight_menu_visibility)
+        self.notebook.currentChanged.connect(lambda _index: self._refresh_homepage())
+        self.proj_dock.visibilityChanged.connect(lambda _visible: self._refresh_homepage())
 
         self.status_bar = QStatusBar()
         self.status_bar.setContentsMargins(0, 0, 0, 0)
@@ -1081,6 +1092,15 @@ class REasyEditorApp(QMainWindow):
         last_seen = self.settings.get("last_seen_version", "")
         if last_seen != CURRENT_VERSION:
             QTimer.singleShot(600, self._show_changelog_if_needed)
+        self._refresh_homepage()
+
+    def _refresh_homepage(self):
+        show_notebook = self.notebook.count() > 0 or self.proj_dock.isVisible()
+        recent_label = "No recently closed files yet."
+        if self._closed_file_history:
+            _, decoded_target = ProjectManager.decode_pak_history_entry(self._closed_file_history[-1])
+            recent_label = f"Last closed: {os.path.basename(decoded_target)}"
+        self.home_stack.refresh(show_notebook, recent_label)
 
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
@@ -2162,6 +2182,7 @@ class REasyEditorApp(QMainWindow):
             self.tabs[tab.notebook_widget] = tab
             self.notebook.setCurrentWidget(tab.notebook_widget)
             self._update_highlight_menu_visibility()
+            self._refresh_homepage()
             return tab
             
         except Exception as e:
@@ -2285,10 +2306,12 @@ class REasyEditorApp(QMainWindow):
             self._closed_file_history.remove(filename)
         self._closed_file_history.append(filename)
         self._save_closed_file_history()
+        self._refresh_homepage()
 
     def _clear_recently_closed_files(self):
         self._closed_file_history.clear()
         self._save_closed_file_history()
+        self._refresh_homepage()
 
     def reopen_closed_file(self, filename=None, notify_if_empty=False):
         if filename is not None:
@@ -2305,10 +2328,12 @@ class REasyEditorApp(QMainWindow):
                 if self.proj_dock.reopen_pak_history_entry(decoded_target):
                     self._closed_file_history.remove(target)
                     self._save_closed_file_history()
+                    self._refresh_homepage()
                     return
             elif self._open_path(decoded_target):
                 self._closed_file_history.remove(target)
                 self._save_closed_file_history()
+                self._refresh_homepage()
                 return
 
             prompt = QMessageBox(self)
@@ -2319,6 +2344,7 @@ class REasyEditorApp(QMainWindow):
             if prompt.exec_() == QMessageBox.Yes:
                 self._closed_file_history.remove(target)
                 self._save_closed_file_history()
+                self._refresh_homepage()
             break
 
         if not attempted and notify_if_empty and filename is None and not self._closed_file_history:
@@ -2380,6 +2406,7 @@ class REasyEditorApp(QMainWindow):
         elif widget is not None:
             widget.deleteLater()
         self._check_and_close_shared_find_dialog()
+        self._refresh_homepage()
 
     def show_about(self):
         dialog = AboutDialog(self)
