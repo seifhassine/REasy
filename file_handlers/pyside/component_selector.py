@@ -4,11 +4,12 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget,
 class ComponentSelectorDialog(QDialog):
     """Dialog for selecting a component type with filtering and autocomplete"""
     
-    def __init__(self, parent=None, type_registry=None, required_parent_name=None):
+    def __init__(self, parent=None, type_registry=None, required_parent_name=None, include_parent=False):
         super().__init__(parent)
         self.type_registry = type_registry
         self.selected_component = None
         self.required_parent_name = required_parent_name
+        self.include_parent = include_parent
         
         self.setWindowTitle("Add Component")
         self.resize(500, 400)
@@ -57,6 +58,11 @@ class ComponentSelectorDialog(QDialog):
                     continue
                     
                 if self.required_parent_name:
+                    if type_name == self.required_parent_name:
+                        if self.include_parent:
+                            self.all_component_types.append(type_name)
+                            count += 1
+                        continue
                     parents = self.type_registry.getTypeParents(type_name)
                     if self.required_parent_name in parents:
                         self.all_component_types.append(type_name)
