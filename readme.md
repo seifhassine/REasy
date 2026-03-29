@@ -33,6 +33,7 @@ REasy GUI is currently available in English and Chinese (limited)
 <div align="center">
 
 <sub><sup>Note: Below formats are listed according to source code. The release archive may be outdated and might not yet support them.</sup></sub>  
+<sub><sup>Note 2: Many formats are not supported in RE7 non-rt.</sup></sub>  
 | File Type | Support | Tested On |
 |-----------|---------|-----------|
 | UVAR      | ✅       | Most Titles  |
@@ -49,7 +50,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
 | BNK/PCK       | ✅       |    Most titles   |
-| WEL       | ✅       |    All titles (except RE7 non-rt)   |
+| WEL       | ✅       |    Most titles|
 | WCC       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
 | CDEF       | Coming Soon       |       |
