@@ -11,6 +11,7 @@ from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.base_handler import FileHandler
 from file_handlers.sound.sound_handler import SoundHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
+from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.wel.wel_handler import WelHandler
 from file_handlers.wcc.wcc_handler import WccHandler
 
@@ -34,6 +35,7 @@ def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
         MeshHandler,        
         SoundHandler,
         UvsHandler,
+        RcolHandler,
     ]:
         if handler_class.can_handle(data):
             return handler_class()

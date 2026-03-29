@@ -19,6 +19,7 @@ from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.mdf.mdf_handler import MdfHandler  
 from file_handlers.cfil.cfil_handler import CfilHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
+from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.wel.wel_handler import WelHandler
 from file_handlers.mesh.mesh_handler import MeshHandler
 
@@ -445,7 +446,7 @@ class FileTab:
                 handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
                 handler.confirmation_prompt = self.app.settings.get("confirmation_prompt", True)
                 
-            for handler_class in [MdfHandler, CfilHandler, UvsHandler, WelHandler, MeshHandler, RszHandler]:
+            for handler_class in [MdfHandler, CfilHandler, UvsHandler, WelHandler, MeshHandler, RszHandler, RcolHandler]:
                 if isinstance(handler, handler_class):
                     handler.filepath = self.filename or ""
                     break
