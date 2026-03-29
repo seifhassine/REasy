@@ -507,6 +507,9 @@ class FileTab:
                 layout.addWidget(self.tree)
                 self.refresh_tree()
 
+            if self.app and getattr(self.app, "status_bar", None):
+                self.app.status_bar.showMessage(f"Loaded: {filename}", 4000)
+                
             self.initial_load_complete = True
             return True
 
