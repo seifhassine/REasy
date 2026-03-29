@@ -40,7 +40,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | SCN       | ✅       | Most titles       |
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
-| MSG       | ✅       | RE4      |
+| MSG       | ✅       | Most titles      |
 | MESH (3D Viewing)       | ✅ <sub><sup>[RE7, KGPG NOT SUPPORTED]</sup></sub>       | Most titles      |
 | PAK       | ✅       | Most titles      |
 | CFIL       | ✅       | Most titles      |
