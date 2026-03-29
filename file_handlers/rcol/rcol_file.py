@@ -210,8 +210,9 @@ class RcolFile:
         for group_index in range(header.num_groups):
             if guid_block_end == request_set_info_end:
                 break
-            group_info_offset = header.groups_ptr_offset + (group_index * self.GROUP_INFO_SIZE)
-            add_candidate(read_i64(group_info_offset + 16))
+            group_info_offset = header.groups_ptr_offset + (group_index * self.GROUP_INFO_SIZE)            
+            add_candidate(read_i64(group_info_offset + 16))   # group name pointer
+            add_candidate(read_i64(group_info_offset + 56))   # group mask GUID payload pointer
 
             num_shapes_field_offset = group_info_offset + (28 if handler.file_version >= 25 else 32)
             num_shapes = (
@@ -356,10 +357,15 @@ class RcolFile:
                 if group.info.name is not None:
                     collector.collect_string(group.info.name, 'group_name')
                 
-                # Collect shape name for this group
+                # Collect regular shape names for this group
                 for shape in group.shapes:
                     if shape.info.name is not None:
                         collector.collect_string(shape.info.name, 'shape_name')
+                                        
+                # And mirror shape names
+                for shape in group.extra_shapes:
+                    if shape.info.name is not None:
+                        collector.collect_string(shape.info.name, 'mirror_shape_name')
             
             # 2: collect cmat paths (v28+) before joint names
             for group in self.groups:
@@ -512,6 +518,14 @@ class RcolFile:
                             if string in string_refs:
                                 for offset_pos in string_refs[string]:
                                     handler.write_at(offset_pos, '<q', offset)
+                    elif context == 'mirror_shape_name':
+                        if string not in string_first_offset:
+                            offset = handler.tell
+                            string_first_offset[string] = offset
+                            handler.write_wstring(string)
+                        if string in string_refs:
+                            for offset_pos in string_refs[string]:
+                                handler.write_at(offset_pos, '<q', string_first_offset[string])
                     else:
                         # Other strings (group names, request names, etc.)
                         # Default behavior: write each occurrence (no deduplication)
@@ -635,6 +649,8 @@ class RcolFile:
                 handler.write_bytes(payload_bytes)
 
             group.info.mask_guids_offset = target_offset
+            if group.info.mask_guids_offset_start > 0:
+                handler.write_int64_at(group.info.mask_guids_offset_start, target_offset)
                             
         # Prepare ignore tags
         # They will be written with their own string table after the main string table
@@ -784,29 +800,104 @@ class RcolFile:
         """Setup references between RCOL components and RSZ instances"""
         if not self.rsz:
             return
+        
+        object_owner_by_index = {}
+
+        def claim_object_index(index: int, owner: str):
+            if index in object_owner_by_index:
+                existing_owner = object_owner_by_index[index]
+                raise ValueError(
+                    f"RSZ object index {index} is referenced by both '{existing_owner}' and '{owner}'. "
+                    f"Each RSZ object index must be owned by exactly one request-set entity."
+                )
+            object_owner_by_index[index] = owner
             
-        # Setup group references
-        if file_version < 25: #user_data_index in groups only exists in versions earlier than 25
-            for group in self.groups:
-                for shape in group.shapes:
-                    if shape.info.user_data_index != -1:
-                        shape.instance = self.rsz.object_table[shape.info.user_data_index]
+        # Setup group/shape base references first
+        if file_version < 25:  # user_data_index is available ONLY before v25
+            for group_index, group in enumerate(self.groups):
+                for shape_index, shape in enumerate(group.shapes):
+                    shape_idx = shape.info.user_data_index
+                    if not isinstance(shape_idx, int) or shape_idx < 0:
+                        continue
+                    if shape_idx < len(self.rsz.object_table):
+                        claim_object_index(
+                            shape_idx,
+                            f"group[{group_index}] shape[{shape_index}] base",
+                        )
+                        shape.instance = self.rsz.object_table[shape_idx]
                         
         # Setup request set references
-        for i, request_set in enumerate(self.request_sets):
+        for i, request_set in enumerate(self.request_sets):            
+            if not (0 <= request_set.info.group_index < len(self.groups)):
+                request_set.group = None
+                continue
             request_set.group = self.groups[request_set.info.group_index]
             
             if file_version >= 25:
-                request_set.instance = self.rsz.object_table[request_set.info.request_set_userdata_index]
+                request_root_index = request_set.info.request_set_userdata_index
+                if 0 <= request_root_index < len(self.rsz.object_table):
+                    claim_object_index(
+                        request_root_index,
+                        f"request_set[{i}] root",
+                    )
+                    request_set.instance = self.rsz.object_table[request_root_index]
+                else:
+                    request_set.instance = None
+
+                preserved_shape_entries = [
+                    item for item in (request_set.shape_userdata or [])
+                    if not isinstance(item, int)
+                ]
+                resolved_shape_instances = []
                 for k in range(len(request_set.group.shapes)):
                     idx = request_set.info.group_userdata_index_start + k
-                    request_set.shape_userdata.append(self.rsz.object_table[idx])
+                    if 0 <= idx < len(self.rsz.object_table):
+                        claim_object_index(
+                            idx,
+                            f"request_set[{i}] shape[{k}]",
+                        )
+                        resolved_shape_instances.append(self.rsz.object_table[idx])
+                request_set.shape_userdata = preserved_shape_entries + resolved_shape_instances
             else:
-                request_set.instance = self.rsz.object_table[i]
+                request_obj_index = i
+                if (
+                    isinstance(request_obj_index, int)
+                    and 0 <= request_obj_index < len(self.rsz.object_table)
+                ):
+                    claim_object_index(
+                        request_obj_index,
+                        f"request_set[{i}] root",
+                    )
+                    request_set.instance = self.rsz.object_table[request_obj_index]
+                else:
+                    request_set.instance = None
+                
+                preserved_shape_entries = [
+                    item for item in (request_set.shape_userdata or [])
+                    if not isinstance(item, int)
+                ]
+                resolved_shape_instances = []
+                group_request_sets = [
+                    rs for rs in self.request_sets
+                    if rs.info.group_index == request_set.info.group_index
+                ]
+                is_primary_group_request = (
+                    len(group_request_sets) > 0 and group_request_sets[0] is request_set
+                )
                 
                 for k in range(len(request_set.group.shapes)):
                     shape = request_set.group.shapes[k]
-                    idx = shape.info.user_data_index + request_set.info.shape_offset
-                    if idx < len(self.rsz.object_table):
+                    if is_primary_group_request:
+                        idx = shape.info.user_data_index
+                    else:
+                        idx = shape.info.user_data_index + request_set.info.shape_offset
+                    if 0 <= idx < len(self.rsz.object_table):
+                        if not is_primary_group_request:
+                            claim_object_index(
+                                idx,
+                                f"request_set[{i}] shape[{k}]",
+                            )
                         instance_id = self.rsz.object_table[idx]
-                        request_set.shape_userdata.append(self.rsz.instance_infos[instance_id])
+                        if 0 <= instance_id < len(self.rsz.instance_infos):
+                            resolved_shape_instances.append(self.rsz.instance_infos[instance_id])
+                request_set.shape_userdata = preserved_shape_entries + resolved_shape_instances
