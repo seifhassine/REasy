@@ -20,6 +20,7 @@ class BinaryHandler:
         self.file_version = file_version
         self.file_path = file_path
         self.string_table_offsets = []
+        self.string_table_contexts = {}
         self.offset_content_table = []
         
     @property
@@ -221,6 +222,8 @@ class BinaryHandler:
         offset_pos = self.tell
         self.write_uint64(0) 
         self.string_table_offsets.append((offset_pos, value))
+        if context is not None:
+            self.string_table_contexts[offset_pos] = context
     
     def read_guid(self) -> bytes:
         return self.read_bytes(16)
@@ -340,6 +343,7 @@ class BinaryHandler:
         self.data = bytearray()
         self.position = 0
         self.string_table_offsets.clear()
+        self.string_table_contexts.clear()
         self.offset_content_table.clear()
     
     def get_bytes(self) -> bytes:

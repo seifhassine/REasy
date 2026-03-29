@@ -135,7 +135,7 @@ class GroupInfo(BaseModel):
         self.name = ""
         self.name_hash = 0
         
-        self.user_data_index = 0
+        self.rsz_chunk = 0
         self.num_mirror_shapes = 0
         self.num_shapes = 0
         
@@ -144,10 +144,10 @@ class GroupInfo(BaseModel):
         self.layer_index = 0
         self.mask_bits = 0
         self.mask_guids_offset = 0
-        self.layer_guid = uuid.UUID(int=0)
+        self.layer_guid = uuid.UUID(int=0)        
+        self.mask_guids_offset_start = 0
         
         self.mask_guids: Optional[List[uuid.UUID]] = None
-        self.user_data = None  # RSZ instance
         self.shapes_offset_start = 0
         
     def do_read(self, handler: FileHandler) -> bool:
@@ -165,7 +165,9 @@ class GroupInfo(BaseModel):
             self.num_mirror_shapes = handler.read_int32()
             self.num_mask_guids = handler.read_int32()
         else:
-            self.user_data_index = handler.read_int32()
+            self.rsz_chunk = handler.read_int32() # this refers to the entire RSZ chunk id. Should always be 0.
+            if(self.rsz_chunk != 0):
+                raise  RuntimeError("Currently only groups with RSZ chunk 0 are supported.")
             self.num_shapes = handler.read_int32()
             self.num_mask_guids = handler.read_int32()
             
@@ -190,7 +192,6 @@ class GroupInfo(BaseModel):
         self.name_hash = calc_hash(self.name)
         handler.write_uint32(self.name_hash)
         
-        self.user_data_index = self.user_data.index if self.user_data else self.user_data_index
         self.num_mask_guids = len(self.mask_guids) if self.mask_guids else 0
         
         if handler.file_version >= 25:
@@ -198,7 +199,7 @@ class GroupInfo(BaseModel):
             handler.write_int32(self.num_mirror_shapes)
             handler.write_int32(self.num_mask_guids)
         else:
-            handler.write_int32(self.user_data_index)
+            handler.write_int32(self.rsz_chunk)
             handler.write_int32(self.num_shapes)
             handler.write_int32(self.num_mask_guids)
             
@@ -207,6 +208,7 @@ class GroupInfo(BaseModel):
         handler.write_int32(self.layer_index)
         handler.write_uint32(self.mask_bits)
         
+        self.mask_guids_offset_start = handler.tell
         handler.write_int64(self.mask_guids_offset)
         handler.write_guid(self.layer_guid)
             
@@ -241,7 +243,7 @@ class RcolShapeInfo(BaseModel):
         self.name = handler.read_offset_wstring()
         self.name_hash = handler.read_uint32()
         # ????  via.physics.RequestSetColliderResource.ShapeState
-        if handler.file_version >= 27:
+        if handler.file_version >= 25:
             self.status = handler.read_int32()
         else: self.user_data_index = handler.read_int32()
         self.layer_index = handler.read_int32()
@@ -285,7 +287,7 @@ class RcolShapeInfo(BaseModel):
         handler.write_offset_wstring(self.name or "")
             
         handler.write_uint32(self.name_hash)
-        if handler.file_version >= 27:
+        if handler.file_version >= 25:
             handler.write_int32(self.status)
         else: handler.write_int32(self.user_data_index)
         
@@ -388,13 +390,17 @@ class RcolGroup(BaseModel):
         
     def do_read(self, handler: FileHandler) -> bool:
         self.shapes.clear()
-        if self.info.num_shapes > 0 and self.info.shapes_offset > 0:
+        total_shapes = self.info.num_shapes + self.info.num_mirror_shapes
+        has_shape_stream = False
+        if total_shapes > 0 and self.info.shapes_offset > 0:
             # Check if offset is valid
             if self.info.shapes_offset >= len(handler.data):
                 print(f"Warning: shapes_offset {self.info.shapes_offset} is beyond file size {len(handler.data)}")
                 return True
             
             handler.seek(self.info.shapes_offset)
+            has_shape_stream = True
+        if self.info.num_shapes > 0 and has_shape_stream:
             for i in range(self.info.num_shapes):
                 shape = RcolShape()
                 if not shape.read(handler):
@@ -402,7 +408,7 @@ class RcolGroup(BaseModel):
                 self.shapes.append(shape)
                 
         self.extra_shapes.clear()
-        if self.info.num_mirror_shapes > 0:
+        if self.info.num_mirror_shapes > 0 and has_shape_stream:
             for i in range(self.info.num_mirror_shapes):
                 shape = RcolShape()
                 if not shape.read(handler):
@@ -412,13 +418,15 @@ class RcolGroup(BaseModel):
         return True
         
     def do_write(self, handler: FileHandler) -> bool:
-        if self.info.num_shapes > 0:
+        has_shape_payload = self.info.num_shapes > 0 or self.info.num_mirror_shapes > 0
+        if has_shape_payload:
             self.info.shapes_offset = handler.tell
             if self.info.shapes_offset_start > 0:
                 handler.write_int64_at(self.info.shapes_offset_start, self.info.shapes_offset)
             else:
                 raise ValueError("Should WriteInfo first")
                 
+        if self.info.num_shapes > 0:
             for shape in self.shapes:
                 shape.write(handler)
                 
