@@ -468,7 +468,6 @@ class FileTab:
         try:
             old_handler = self.handler
             old_viewer = self.viewer
-            old_status_text = self.status_label.text() if hasattr(self, "status_label") else NO_FILE_LOADED_STR
             
             self.filename = filename
             self.original_data = data
@@ -496,22 +495,16 @@ class FileTab:
             try:
                 self.viewer = self.handler.create_viewer()
                 if self.viewer:
-                    self.status_label = QLabel(f"Loaded: {filename}")
                     layout.addWidget(self.viewer)
-                    layout.addWidget(self.status_label)
                     self.viewer.modified_changed.connect(self._on_viewer_modified)
                 else:
-                    self.status_label = QLabel(f"Loaded: {filename}")
                     layout.addWidget(self.tree)
-                    layout.addWidget(self.status_label)
                     if not isinstance(self.handler, RszHandler):
                         self.refresh_tree()
             except Exception as e:
                 print(f"Viewer creation failed: {e}")
                 self.viewer = None
-                self.status_label = QLabel(f"Loaded: {filename}")
                 layout.addWidget(self.tree)
-                layout.addWidget(self.status_label)
                 self.refresh_tree()
 
             self.initial_load_complete = True
@@ -529,10 +522,6 @@ class FileTab:
                 layout.addWidget(old_viewer)
             else:
                 layout.addWidget(self.tree)
-                
-            # Create a new status label
-            self.status_label = QLabel(old_status_text)
-            layout.addWidget(self.status_label)
             
             QMessageBox.critical(None, "Error", f"Failed to load file: {e}")
             return False
@@ -933,13 +922,6 @@ class FileTab:
                 if widget:
                     widget.setParent(None)
                     widget.deleteLater()
-
-        if self.status_label:
-            try:
-                self.status_label.deleteLater()
-            except Exception:
-                pass
-            self.status_label = None
 
         if self.tree:
             try:
@@ -1604,23 +1586,15 @@ class REasyEditorApp(QMainWindow):
         if not layout:
             return
 
-        try:
-            status_text = tab.status_label.text()
-        except (RuntimeError, AttributeError):
-            status_text = "Ready"
-
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.deleteLater()
         
-        new_status_label = QLabel(status_text)
         layout.addWidget(new_viewer)
-        layout.addWidget(new_status_label)
         
         tab.viewer = new_viewer
-        tab.status_label = new_status_label
         
         if hasattr(tab, "_find_dialog") and tab._find_dialog and tab._find_dialog.isVisible():
             tab._find_dialog.close()
