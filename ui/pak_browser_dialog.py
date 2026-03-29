@@ -12,7 +12,7 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
-	QFileDialog, QLineEdit, QCheckBox,
+	QFileDialog, QLineEdit, QCheckBox, QInputDialog,
 	QMessageBox, QTreeView, QAbstractItemView, QMenu, QApplication
 )
 
@@ -20,6 +20,8 @@ from settings import load_settings
 
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
+from ui.project_manager.constants import BASE_DIR
+from ui.project_manager.pak_file_lists import find_suggested_pak_list_paths_for_directory
 from ui.widgets_utils import create_list_file_help_widget
 
 
@@ -151,7 +153,7 @@ class PakBrowserDialog(QDialog):
 	def _choose_dir(self):
 		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
 		if d:
-			self.dir_edit.setText(d)
+			self._prompt_auto_list_from_directory(d)
 
 	def _scan_dir(self):
 		root = self.dir_edit.text().strip()
@@ -446,6 +448,9 @@ class PakBrowserDialog(QDialog):
 		path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)") )
 		if not path:
 			return
+		self._load_list_file_from_path(path)
+
+	def _load_list_file_from_path(self, path: str):
 		_profile = os.getenv("REASY_PROFILE", "0").lower() in ("1", "true", "yes", "on")
 		_sections = []
 		_t0 = time.perf_counter()
@@ -493,6 +498,22 @@ class PakBrowserDialog(QDialog):
 			msg = "\n".join(f"{name}: {ms:.2f} ms" for name, ms in _sections)
 			msg += f"\nTotal: {_total:.2f} ms"
 			QMessageBox.information(self, self.tr("Profile – Load .list"), msg)
+
+	def _prompt_auto_list_from_directory(self, directory_path: str):
+		suggestions = find_suggested_pak_list_paths_for_directory(directory_path, BASE_DIR)
+		if not suggestions:
+			return
+		choices = [str(p) for p in suggestions]
+		selected, ok = QInputDialog.getItem(
+			self,
+			self.tr("Suggested List File"),
+			self.tr("Detected game folder name. Choose a list file to load:"),
+			choices,
+			0,
+			False,
+		)
+		if ok and selected:
+			self._load_list_file_from_path(selected)
 
 	def _extract_selected(self):
 		targets = self._collect_selected_paths()
