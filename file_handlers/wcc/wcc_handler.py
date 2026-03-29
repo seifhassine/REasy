@@ -13,14 +13,14 @@ class WccHandler(RszHandler):
         # WCC is selected by extension in the factory to avoid collisions.
         return False
 
-    def read(self, data: bytes):
+    def read(self, data: bytes, validate_type_registry: bool = False):
         self.id_manager = IdManager.instance()
         self.init_type_registry()
         self.rsz_file = RszFile()
         self.rsz_file.type_registry = self.type_registry
         self.rsz_file.game_version = self._game_version
         self.rsz_file.filepath = self.filepath
-        self.rsz_file.read_headless(data)
+        self.rsz_file.read_headless(data, validate_type_registry=validate_type_registry)
         self.rsz_file.auto_resource_management = self.auto_resource_management
         self.gameobject_clipboard = RszGameObjectClipboard()
         self.component_clipboard = RszComponentClipboard()
