@@ -23,7 +23,7 @@ from utils.type_registry import TypeRegistry
 from file_handlers.rsz.rsz_file import RszFile
 
 # ───────────────────────── game‑table ─────────────────────────
-GAME_CONFIGS = {gui031700.pfb.18
+GAME_CONFIGS = {
     "mhwilds":{"registry_json": "rszmhwilds.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "pragmata":{"registry_json": "rszpragmata.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "kunitsugami":{"registry_json": "rszkunitsugami.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
