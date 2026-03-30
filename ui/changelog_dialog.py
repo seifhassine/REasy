@@ -159,12 +159,24 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("Improved", "When encountering an issue while opening an RSZ file, the user will now be given the possible reasons and prompted to continue."),
-            ("Improved", "Identified all resources for MHWilds and fully identified all used types in RE9. RSZ dumps of other games have also been improved."),
-            ("Improved", "Slightly improved project loading speed."),
-            ("Improved", "If user attempts to add a file that already exists in his project, they will be prompted to confirm the overwrite."),
-            ("Improved", "Soundtracks playback performance when running REasy from the executable."),
-            ("Fixed", "User will now be notified when opening an RSZ file with the wrong game version. Previously this only worked once."),
+            ("New", "RCOL viewer for most games, including 3D viewer (RE7 non-rt, MHST3, MHWilds, KGPG unsupported)."),
+            ("New", "MHST3 support (RSZ dump, file list and some file formats)."),
+            ("Updated", "MHWilds RSZ dump."),
+            ("Updated", "SF6 RSZ dump, enums and file list."),
+            ("Updated", "RE9 file list and RSZ dump."),
+            ("Improved", "Placeholder soundtracks in PCKs will now show 'Empty' as duration."),
+            ("Improved", "Attempt to auto-detect file list when selecting a directory in PAK Browser."),
+            ("Improved", "Added bones display toggle in Mesh viewer (when available)."),
+            ("Improved", "Added MDF lookup for Mesh viewer. Textures will be guessed and applied when available."),
+            ("Improved", "Added more paths to O2 file list."),
+            ("Improved", "Added mesh support for all games (except KGPG and RE non-rt)."),
+            ("Improved", "Improved most used types in RE7RT RSZ dump."),
+            ("Improved", "Removed redundant status bar when loading files."),
+            ("Fixed", "Minor RE4 RSZ dump issues."),
+            ("Fixed", "RSZ dump verification issue leading to error while opening WCC files."),
+            ("Fixed", "Rare issue leading to CRC corruption in RSZ files."),
+            ("Fixed", "Issue preventing opening existing MHWilds projects."),
+            ("Fixed", "FPS drop issue when viewing many mesh files at the same time, due to faulty FPS limiter."),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -251,6 +263,9 @@ class ChangelogDialog(QDialog):
             }}
             QLabel#TagPill[tagName="improved"] {{
                 background-color: #f39c12;
+            }}
+            QLabel#TagPill[tagName="updated"] {{
+                background-color: #1034A6;
             }}
             QLabel#TagPill[tagName="fixed"] {{
                 background-color: #e74c3c;

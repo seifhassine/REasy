@@ -98,7 +98,7 @@ from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
 from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog 
 
-CURRENT_VERSION = "0.6.9"
+CURRENT_VERSION = "0.7.0"
 GAMES = [
     "RE4", "RE2", "RE2RT", "RE8", "RE3", "RE3RT", "REResistance", "RE9",
     "RE7", "RE7RT", "MHWilds", "MHRise", "MHST3", "DMC5", "SF6", "O2", "DD2", "Pragmata", "KunitsuGami"
