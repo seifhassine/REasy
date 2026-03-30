@@ -6,7 +6,7 @@ DEFAULT_PAK_FILE_LISTS: dict[str, str] = {
     "DD2": "DD2_STM.list",
     "DMC5": "DMC5_STM.list",
     "MHRise": "MHR_STM.list",
-    "MHST3": "MHST3_DEMO_STM.list",
+    "MHST3": "MHST3_STM.list",
     "MHWilds": "MHWS_STM.list",
     "O2": "O2_STM.list",
     "Pragmata": "PRAGMATA_DEMO_STM.list",
@@ -35,6 +35,7 @@ DIRECTORY_NAME_PAK_LIST_SUGGESTIONS: dict[str, tuple[str, ...]] = {
     "RESIDENT EVIL 4  BIOHAZARD RE4": ("RE4_STM.list",),
     "RESIDENT EVIL 7 biohazard": ("RE7_STM.list", "RE7_RT_STM.list"),
     "requiem": ("RE9_STM.list",),
+    "MONSTER_HUNTER_STORIES_3_TWISTED_REFLECTION": ("MHST3_STM.list",),
     "Resident Evil Village BIOHAZARD VILLAGE": ("RE8_STM.list",),
     "Street Fighter 6": ("SF6_STM.list",),
 }
