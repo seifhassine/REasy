@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import gc
+import multiprocessing
 import os
 import sys
 import uuid
@@ -2559,7 +2560,7 @@ def main():
 
     window = REasyEditorApp()
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not str(sys.argv[1]).startswith("-"):
         fn = sys.argv[1]
         try:
             with open(fn, "rb") as f:
@@ -2573,5 +2574,6 @@ def main():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()
 
