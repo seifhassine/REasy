@@ -39,6 +39,7 @@ class BnkParseResult:
     bank_version: int | None
     tracks: list[BnkTrack]
     container_type: str = _BNK
+    has_embedded_data: bool = True
 
 @dataclass(slots=True)
 class WemMetadata:
@@ -57,6 +58,8 @@ class _PckTable:
 class _PckLayout:
     version: int
     header_size: int
+    bnk_table_size: int
+    external_table_size: int
     tables_start: int
     tables_end: int
     blob_base: int
@@ -95,6 +98,10 @@ def parse_pck(data: bytes) -> BnkParseResult:
     layout = _parse_pck_layout(data)
     if layout is None:
         return BnkParseResult(bank_version=None, tracks=[], container_type=_PCK)
+    if layout.bnk_table_size != 4:
+        raise ValueError(f"Unsupported PCK bnkTableSize: expected 4, got {layout.bnk_table_size}")
+    if layout.external_table_size != 4:
+        raise ValueError(f"Unsupported PCK externalTableSize: expected 4, got {layout.external_table_size}")
     bnk_t, wem_t, ext_t = layout.tables
     entries = wem_t.entries + ext_t.entries or bnk_t.entries
     tracks = [BnkTrack(index=i, source_id=e[0], offset=e[3], length=e[2], absolute_offset=True)
@@ -103,7 +110,13 @@ def parse_pck(data: bytes) -> BnkParseResult:
         for t in tracks:
             if t.offset + t.length > len(data) and layout.header_size + t.offset + t.length <= len(data):
                 t.offset += layout.header_size
-    return BnkParseResult(bank_version=layout.version, tracks=tracks, container_type=_PCK)
+    has_embedded_data = layout.tables_end < len(data)
+    return BnkParseResult(
+        bank_version=layout.version,
+        tracks=tracks,
+        container_type=_PCK,
+        has_embedded_data=has_embedded_data,
+    )
 
 def get_data_chunk(data: bytes) -> bytes | None:
     return _read_chunks(data).get("DATA")
@@ -222,7 +235,7 @@ def _rewrite_bnk(data: bytes, replacements: dict[int, bytes]) -> bytes:
 def _parse_pck_layout(data: bytes) -> _PckLayout | None:
     if len(data) < 28 or data[:4] != _PCK_MAGIC:
         return None
-    hsz, ver, lang_sz, *_ = struct.unpack_from(_PCK_HDR_FMT, data, 4)
+    hsz, ver, lang_sz, bnk_sz, _wem_sz, ext_sz = struct.unpack_from(_PCK_HDR_FMT, data, 4)
     pos = 28
     if pos + 4 > len(data):
         return None
@@ -236,7 +249,16 @@ def _parse_pck_layout(data: bytes) -> _PckLayout | None:
         tbl, pos = _read_pck_table(data, pos)
         tables.append(tbl)
     bb = max(hsz, pos)
-    return _PckLayout(version=ver, header_size=hsz, tables_start=ts, tables_end=pos, blob_base=bb, tables=tables)
+    return _PckLayout(
+        version=ver,
+        header_size=hsz,
+        bnk_table_size=bnk_sz,
+        external_table_size=ext_sz,
+        tables_start=ts,
+        tables_end=pos,
+        blob_base=bb,
+        tables=tables,
+    )
 
 def _read_pck_table(data: bytes, pos: int) -> tuple[_PckTable, int]:
     if pos + 4 > len(data):

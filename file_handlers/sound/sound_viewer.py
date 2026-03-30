@@ -135,6 +135,7 @@ class SoundViewer(QWidget):
         self._duration_ms = 0
         self._active_ms: list[tuple[int, int]] = []
         self._sensitivity = 0.52
+        self._has_embedded_data = True
         self._cleanup_done = False
         self._waveform_job_id = 0
         self._setup_ui()
@@ -644,7 +645,9 @@ class SoundViewer(QWidget):
 
     def _refresh_tracks(self):
         self.handler.raw_data = self.handler.rebuild()
-        self._parsed_tracks = parse_soundbank(self.handler.raw_data).tracks
+        res = parse_soundbank(self.handler.raw_data)
+        self._parsed_tracks = res.tracks
+        self._has_embedded_data = res.has_embedded_data
         self._populate(self._parsed_tracks)
 
     def _on_replace(self):
@@ -805,6 +808,7 @@ class SoundViewer(QWidget):
             QMessageBox.warning(self, "Analyze Error", f"Failed to parse sound container: {e}")
             return
         self._parsed_tracks = res.tracks
+        self._has_embedded_data = res.has_embedded_data
         self._populate(res.tracks)
         self.exp_pck.setVisible((res.container_type or "").lower() == "pck")
         ver = f" version: {res.bank_version}." if res.bank_version is not None else ""
@@ -926,6 +930,14 @@ class SoundViewer(QWidget):
 
     def _populate(self, tracks):
         self.table.setRowCount(0)
+        if not self._has_embedded_data:
+            for t in tracks:
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+                vals = [str(t.index), str(t.source_id), "Empty (Check BNK or streaming)", "", "", ""]
+                for c, v in enumerate(vals):
+                    self.table.setItem(row, c, QTableWidgetItem(v))
+            return
         dc = get_data_chunk(self.handler.raw_data)
         for t in tracks:
             wd = extract_embedded_wem(self.handler.raw_data, t) if t.absolute_offset else (
