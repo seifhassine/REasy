@@ -153,6 +153,7 @@ class PakBrowserDialog(QDialog):
 	def _choose_dir(self):
 		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
 		if d:
+			self.dir_edit.setText(d)
 			self._prompt_auto_list_from_directory(d)
 
 	def _scan_dir(self):
