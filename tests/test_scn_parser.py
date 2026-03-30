@@ -23,11 +23,12 @@ from utils.type_registry import TypeRegistry
 from file_handlers.rsz.rsz_file import RszFile
 
 # ───────────────────────── game‑table ─────────────────────────
-GAME_CONFIGS = {
+GAME_CONFIGS = {gui031700.pfb.18
     "mhwilds":{"registry_json": "rszmhwilds.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "pragmata":{"registry_json": "rszpragmata.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "kunitsugami":{"registry_json": "rszkunitsugami.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
-    "mhst3":{"registry_json": "rszmhst3.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
+    "mhst3":{"registry_json": "rszmhst3.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"],
+             "pfb_file_exceptions": ["gui031700.pfb.18"]},
     "re7":    {"registry_json": "rszre7.json",       "scn_exts": [".18"], "usr_exts": [".-1"], "pfb_exts": [".16"]},
     "re3":    {"registry_json": "rszre3.json",       "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
     "re3rt":  {"registry_json": "rszre3rt.json",     "scn_exts": [".20"], "usr_exts": [".2"],  "pfb_exts": [".17"]},
