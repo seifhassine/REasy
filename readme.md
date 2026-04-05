@@ -37,7 +37,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | File Type | Support | Tested On |
 |-----------|---------|-----------|
 | UVAR      | ✅       | Most Titles  |
-| RCOL      | ✅       | Most titles       |
+| RCOL      | ✅    <sub><sup>[RE7, Wilds NOT SUPPORTED]</sup></sub>   | Most titles       |
 | SCN       | ✅       | Most titles       |
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
