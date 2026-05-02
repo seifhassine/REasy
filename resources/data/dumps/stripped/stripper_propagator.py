@@ -155,10 +155,40 @@ def propagate_file(input_json: str, out: Optional[str] = None):
         )
     print(f"Wrote propagated JSON to: {out}")
 
+def crc_copy_structs(src_json: str, target_json: str):
+    with open(src_json, "r", encoding="utf-8") as f:
+        data_src = json.load(f)
+    with open(target_json, "r", encoding="utf-8") as f:
+        data_target = json.load(f)
+
+    for t in data_target.keys():
+        if not t in data_src or t == 'metadata':
+            continue
+
+        src = data_src[t]
+        target = data_target[t]
+        if src['crc'] == target['crc']:
+            print('Copied data for type:', t, '\tcrc:', src['crc'], '\t', src.get("name"))
+            data_target[t] = src
+
+    path_out = target_json + '.merged.json'
+    with open(path_out, "w", encoding="utf-8") as f:
+        json.dump(
+            OrderedDict(
+                ([("metadata", data_target["metadata"])] if "metadata" in data_target else [])
+                + [(k, data_target[k]) for k in sorted(data_target.keys()) if k != "metadata"]
+            ),
+            f,
+            indent='\t'
+        )
+    print(f"Wrote merged JSON to: {path_out}")
+
+
 def main():
     fire.Fire({
         "strip": strip_file,
         "propagate": propagate_file,
+        "crc_copy": crc_copy_structs,
     })
 
 if __name__ == "__main__":
