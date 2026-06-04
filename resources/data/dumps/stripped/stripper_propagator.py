@@ -155,7 +155,7 @@ def propagate_file(input_json: str, out: Optional[str] = None):
         )
     print(f"Wrote propagated JSON to: {out}")
 
-def crc_copy_structs(src_json: str, target_json: str):
+def crc_copy_structs(src_json: str, target_json: str, includeUnknowns: Optional[bool] = False):
     with open(src_json, "r", encoding="utf-8") as f:
         data_src = json.load(f)
     with open(target_json, "r", encoding="utf-8") as f:
@@ -168,6 +168,13 @@ def crc_copy_structs(src_json: str, target_json: str):
         src = data_src[t]
         target = data_target[t]
         if src['crc'] == target['crc']:
+            if all(field.get('name').startswith('v') for field in src['fields']):
+                continue
+
+            if not includeUnknowns and not all(field.get('name', '').startswith('v') for field in target['fields']):
+                # print('Skipping', t, 'because it already has names')
+                continue
+
             print('Copied data for type:', t, '\tcrc:', src['crc'], '\t', src.get("name"))
             data_target[t] = src
 
