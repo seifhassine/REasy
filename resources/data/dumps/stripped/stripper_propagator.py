@@ -178,7 +178,7 @@ def crc_copy_structs(src_json: str, target_json: str, includeUnknowns: Optional[
             print('Copied data for type:', t, '\tcrc:', src['crc'], '\t', src.get("name"))
             data_target[t] = src
 
-    path_out = target_json + '.merged.json'
+    path_out = target_json
     with open(path_out, "w", encoding="utf-8") as f:
         json.dump(
             OrderedDict(
