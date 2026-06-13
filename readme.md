@@ -53,6 +53,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | WEL       | ✅       |    Most titles|
 | WCC       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
+| CLIP/TML/UCURVE       | ✅       |    Most titles (up to Pragmata)  |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
   
