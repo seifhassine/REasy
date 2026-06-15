@@ -21,9 +21,3 @@ For each type, append all fields belonging to the parent(s) at the start. The re
 ```bash
 python stripper_propagator.py propagate "rsz[gamename]_strip.json"
 ```
-
-### CRC copy
-Attempts to match any classes with identical CRC hashes from one RSZ dump to another. The result will be saved to `"[target_file].merged.json"`.
-```bash
-python stripper_propagator.py crc_copy "base_rsz_strip.json" "target_rsz_strip.json"
-```
