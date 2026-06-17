@@ -907,10 +907,10 @@ class RszGameObjectClipboard(RszClipboardBase):
             print(f"Invalid instance ID for Folder {folder_id}")
             return False
             
-            source_name = get_instance_name_from_fields(
-                viewer.scn.parsed_elements.get(source_instance_id, {}),
-                RszGameObjectClipboard.DEFAULT_GO_NAME,
-            )
+        source_name = get_instance_name_from_fields(
+            viewer.scn.parsed_elements.get(source_instance_id, {}),
+            RszGameObjectClipboard.DEFAULT_GO_NAME,
+        )
         
         child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
         
