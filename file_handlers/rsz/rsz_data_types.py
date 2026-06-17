@@ -1,6 +1,8 @@
 #From Enums_Internal
 from types import MappingProxyType
 
+from utils.number_format import format_float_sequence
+
 class ArrayData:
     """Array container that stores values and element type"""
     def __init__(self, values=None, element_class=None, orig_type=""):
@@ -321,7 +323,7 @@ class Mat4Data:
         return self.values[idx]
 
     def __str__(self):
-        return f"MAT4({', '.join(f'{v:.6f}' for v in self.values)})"
+        return f"MAT4({format_float_sequence(self.values)})"
 
     @classmethod
     def parse(cls, ctx):
@@ -550,7 +552,7 @@ class OBBData:
         return self.values[idx]
 
     def __str__(self):
-        return f"OBB({', '.join(f'{v:.6f}' for v in self.values)})"
+        return f"OBB({format_float_sequence(self.values)})"
 
     @classmethod
     def parse(cls, ctx):

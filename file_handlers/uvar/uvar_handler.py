@@ -14,6 +14,7 @@ from file_handlers.uvar import (
     UVarFile, Variable, TypeKind, UvarFlags, 
     FileHandler as BinaryHandler, UVAR_MAGIC
 )
+from utils.number_format import format_float_sequence, format_full_float
 
 
 class LazyTreeWidget(QTreeWidget):
@@ -441,14 +442,14 @@ class UvarHandler(BaseFileHandler):
             
         if hasattr(var.value, 'x') and hasattr(var.value, 'y'):
             if hasattr(var.value, 'z'):
-                return f"({var.value.x}, {var.value.y}, {var.value.z})"
+                return f"({format_float_sequence((var.value.x, var.value.y, var.value.z))})"
             else:
-                return f"({var.value.x}, {var.value.y})"
+                return f"({format_float_sequence((var.value.x, var.value.y))})"
         elif isinstance(var.value, (list, tuple)):
             if len(var.value) == 0:
                 return "[ ] empty"
             elif len(var.value) <= 4:
-                return f"[{', '.join(str(v) for v in var.value)}]"
+                return f"[{format_float_sequence(var.value)}]"
             else:
                 return f"[...] {len(var.value)} items"
         elif isinstance(var.value, uuid.UUID):
@@ -456,8 +457,7 @@ class UvarHandler(BaseFileHandler):
         elif isinstance(var.value, bool):
             return "✓ True" if var.value else "✗ False"
         elif isinstance(var.value, float):
-            formatted = f"{var.value:.6f}".rstrip('0').rstrip('.')
-            return formatted
+            return format_full_float(var.value)
         elif isinstance(var.value, str):
             if not var.value:
                 return '""'

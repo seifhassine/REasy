@@ -48,6 +48,7 @@ from .rcol_scene import SceneAttachment, build_scene_meshes
 from file_handlers.mesh.mesh_file import MeshFile
 from file_handlers.mesh.mesh_handler import MeshHandler
 from ui.scene.scene_preview import SceneDrawMesh, ScenePreviewWidget
+from utils.number_format import format_display_value
 from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
 
 
@@ -893,7 +894,7 @@ class RcolViewer(QWidget):
                 except Exception:
                     return raw.hex()
             return raw.hex()
-        return str(value or "")
+        return format_display_value(value if value is not None else "")
 
     def _resolve_type_registry(self):
         return getattr(self.rcol, "type_registry", None) or getattr(self.handler, "type_registry", None)

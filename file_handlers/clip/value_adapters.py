@@ -4,6 +4,7 @@ import struct
 
 from .enums import PropertyType, property_type_or_unknown
 from .structures import ActionKey, BoolKey, Key, NoHermiteKey, Property, SpeedPoint
+from utils.number_format import format_full_float
 
 
 def key_payload_text(prop: Property | None, key) -> str:
@@ -118,8 +119,7 @@ def _parse_bool(text: str) -> bool:
 
 
 def _float_text(value: float) -> str:
-    text = repr(float(value))
-    return text[:-2] if text.endswith(".0") else text
+    return format_full_float(value)
 
 
 _INT_SCALAR_FORMATS = {

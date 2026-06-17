@@ -7,6 +7,7 @@ from file_handlers.rsz.rsz_file import RszFile, RszGameObject, RszFolderInfo
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
 from utils.hex_util import guid_le_to_str
+from utils.number_format import format_display_value, format_float_sequence, format_full_float
 
 @dataclass
 class GameObjectDiff:
@@ -1242,16 +1243,12 @@ class RszDiffer:
         if isinstance(value, float):
             if abs(value) < 1e-12:
                 return "0"
-            elif abs(value) < 0.0001 or abs(value) > 100000:
-                return f"{value:.6e}"
-            else:
-                formatted = f"{value:.6f}".rstrip('0').rstrip('.')
-                return formatted if formatted else "0"
+            return format_full_float(value)
         if isinstance(value, str):
             return f'"{value[:50]}..."' if len(value) > 50 else f'"{value}"' if value else '""'
         if isinstance(value, int):
             return str(value)
-        return str(value)[:100]
+        return format_display_value(value)[:100]
 
     def get_field_value_string(self, value) -> str:
         if value is None:
@@ -1285,39 +1282,40 @@ class RszDiffer:
         elif isinstance(value, GuidData):
             return f"GUID: {value.guid_str}"
         elif isinstance(value, (Float2Data, Vec2Data, Int2Data, Uint2Data)):
-            return f"({value.x}, {value.y})"
+            return f"({format_float_sequence((value.x, value.y))})"
         elif isinstance(value, (Float3Data, Vec3Data, PositionData, Int3Data, Uint3Data)):
-            return f"({value.x}, {value.y}, {value.z})"
+            return f"({format_float_sequence((value.x, value.y, value.z))})"
         elif isinstance(value, (Float4Data, Vec4Data, QuaternionData, Int4Data, Int4ColorData)):
-            return f"({value.x}, {value.y}, {value.z}, {value.w})"
+            return f"({format_float_sequence((value.x, value.y, value.z, value.w))})"
         elif isinstance(value, ColorData):
-            return f"Color({value.r}, {value.g}, {value.b}, {value.a})"
+            return f"Color({format_float_sequence((value.r, value.g, value.b, value.a))})"
         elif isinstance(value, (RangeData, RangeIData)):
-            return f"Range[{value.min}, {value.max}]"
+            return f"Range[{format_float_sequence((value.min, value.max))}]"
         elif isinstance(value, AABBData):
-            return f"AABB[({value.min.x:.2f}, {value.min.y:.2f}, {value.min.z:.2f})-({value.max.x:.2f}, {value.max.y:.2f}, {value.max.z:.2f})]"
+            return f"AABB[({format_float_sequence((value.min.x, value.min.y, value.min.z))})-({format_float_sequence((value.max.x, value.max.y, value.max.z))})]"
         elif isinstance(value, OBBData):
-            return f"OBB[{', '.join(f'{v:.2f}' for v in value.values[:6])}...]"
+            return f"OBB[{format_float_sequence(value.values[:6])}...]"
         elif isinstance(value, CapsuleData):
-            return f"Capsule[({value.start.x:.2f}, {value.start.y:.2f}, {value.start.z:.2f})-({value.end.x:.2f}, {value.end.y:.2f}, {value.end.z:.2f}), r={value.radius:.2f}]"
+            return f"Capsule[({format_float_sequence((value.start.x, value.start.y, value.start.z))})-({format_float_sequence((value.end.x, value.end.y, value.end.z))}), r={format_display_value(value.radius)}]"
         elif isinstance(value, SphereData):
-            return f"Sphere[({value.center.x:.2f}, {value.center.y:.2f}, {value.center.z:.2f}), r={value.radius:.2f}]"
+            return f"Sphere[({format_float_sequence((value.center.x, value.center.y, value.center.z))}), r={format_display_value(value.radius)}]"
         elif isinstance(value, CylinderData):
-            return f"Cylinder[({value.center.x:.2f}, {value.center.y:.2f}, {value.center.z:.2f}), r={value.radius:.2f}, h={value.height:.2f}]"
+            return f"Cylinder[({format_float_sequence((value.center.x, value.center.y, value.center.z))}), r={format_display_value(value.radius)}, h={format_display_value(value.height)}]"
         elif isinstance(value, ConeData):
-            return f"Cone[pos:({value.position.x:.2f}, {value.position.y:.2f}, {value.position.z:.2f}), angle={value.angle:.2f}, dist={value.distance:.2f}]"
+            return f"Cone[pos:({format_float_sequence((value.position.x, value.position.y, value.position.z))}), angle={format_display_value(value.angle)}, dist={format_display_value(value.distance)}]"
         elif isinstance(value, LineSegmentData):
-            return f"LineSegment[({value.start.x:.2f}, {value.start.y:.2f}, {value.start.z:.2f})-({value.end.x:.2f}, {value.end.y:.2f}, {value.end.z:.2f})]"
+            return f"LineSegment[({format_float_sequence((value.start.x, value.start.y, value.start.z))})-({format_float_sequence((value.end.x, value.end.y, value.end.z))})]"
         elif isinstance(value, AreaData) or isinstance(value, AreaDataOld):
-            return f"Area[p0:({value.p0.x:.2f}, {value.p0.y:.2f}), p1:({value.p1.x:.2f}, {value.p1.y:.2f}), h={value.height:.2f}]"
+            return f"Area[p0:({format_float_sequence((value.p0.x, value.p0.y))}), p1:({format_float_sequence((value.p1.x, value.p1.y))}), h={format_display_value(value.height)}]"
         elif isinstance(value, RectData):
-            return f"Rect[({value.min_x:.2f}, {value.min_y:.2f})-({value.max_x:.2f}, {value.max_y:.2f})]"
+            return f"Rect[({format_float_sequence((value.min_x, value.min_y))})-({format_float_sequence((value.max_x, value.max_y))})]"
         elif isinstance(value, PointData):
-            return f"Point({value.x:.2f}, {value.y:.2f}, {value.z:.2f})"
+            coords = (value.x, value.y, value.z) if hasattr(value, "z") else (value.x, value.y)
+            return f"Point({format_float_sequence(coords)})"
         elif isinstance(value, SizeData):
-            return f"Size[{value.width:.2f}x{value.height:.2f}]"
+            return f"Size[{format_display_value(value.width)}x{format_display_value(value.height)}]"
         elif isinstance(value, Vec3ColorData):
-            return f"Color({value.x:.3f}, {value.y:.3f}, {value.z:.3f})"
+            return f"Color({format_float_sequence((value.x, value.y, value.z))})"
         elif isinstance(value, RuntimeTypeData):
             return f"RuntimeType[{value.value}]"
         elif isinstance(value, RawBytesData):

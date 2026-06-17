@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 from .uvs_file import UvsPattern, UvsSequence, UvsTexture
 from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
 from file_handlers.tex.tex_viewer import TexViewer
+from utils.number_format import format_display_value
 from utils.resource_file_utils import resolve_resource_data
 from ui.project_manager.constants import EXPECTED_NATIVE
 
@@ -384,7 +385,7 @@ class UvsViewer(QWidget):
 
     def _set_pattern_row_values(self, row: int, pat: UvsPattern):
         for col, val in enumerate([pat.left, pat.top, pat.right, pat.bottom], 2):
-            self._set_table_item(self.patterns_table, row, col, str(val))
+            self._set_table_item(self.patterns_table, row, col, format_display_value(val))
 
     def _refresh_pattern_views(self):
         self._set_loading(True)
@@ -1014,7 +1015,7 @@ class UvsViewer(QWidget):
         for i, pat in enumerate(uvs.sequences[self._selected_sequence].patterns):
             self.patterns_table.insertRow(i)
             for col, val in enumerate([i, pat.flags, pat.left, pat.top, pat.right, pat.bottom, pat.texture_index, len(pat.cutout_uvs)]):
-                self._set_table_item(self.patterns_table, i, col, str(val), editable=(col not in (0, 7)))
+                self._set_table_item(self.patterns_table, i, col, format_display_value(val), editable=(col not in (0, 7)))
 
     def _reload_cutouts(self):
         self.cutouts_table.setRowCount(0)
@@ -1023,8 +1024,8 @@ class UvsViewer(QWidget):
         for i, (u, v) in enumerate(pat.cutout_uvs):
             self.cutouts_table.insertRow(i)
             self._set_table_item(self.cutouts_table, i, 0, str(i), editable=False)
-            self._set_table_item(self.cutouts_table, i, 1, str(u))
-            self._set_table_item(self.cutouts_table, i, 2, str(v))
+            self._set_table_item(self.cutouts_table, i, 1, format_display_value(u))
+            self._set_table_item(self.cutouts_table, i, 2, format_display_value(v))
 
     def _sync_preview(self):
         for preview in (self.preview, self.preview_focused):

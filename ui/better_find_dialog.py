@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
     QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow
 )
 
+from utils.number_format import format_display_value, format_float_sequence
+
 
 class BetterFindDialog(QDockWidget):
 
@@ -20,7 +22,7 @@ class BetterFindDialog(QDockWidget):
         for sp in widget.findChildren(QSpinBox):
             vals.append(str(sp.value()))
         for sp in widget.findChildren(QDoubleSpinBox):
-            vals.append(str(sp.value()))
+            vals.append(format_display_value(sp.value()))
 
         for chk in widget.findChildren(QCheckBox):
             vals.append(str(chk.isChecked()))
@@ -56,7 +58,7 @@ class BetterFindDialog(QDockWidget):
 
                 # numeric scalars
                 if hasattr(obj, "value"):
-                    return str(obj.value)
+                    return format_display_value(obj.value)
 
                 # vectors / ranges
                 if all(hasattr(obj, attr) for attr in ("x", "y")):
@@ -65,10 +67,10 @@ class BetterFindDialog(QDockWidget):
                         coords.append(obj.z)
                     if hasattr(obj, "w"):
                         coords.append(obj.w)
-                    return "(" + ", ".join(f"{c:.6g}" for c in coords) + ")"
+                    return f"({format_float_sequence(coords, 6)})"
 
                 if hasattr(obj, "values") and isinstance(obj.values, (list, tuple)):
-                    return " ".join(str(v) for v in obj.values)
+                    return format_float_sequence(obj.values, separator=" ")
 
         # fall-back (second column of the node’s data list))
         if hasattr(item, "data") and isinstance(item.data, (list, tuple)) and len(item.data) > 1:

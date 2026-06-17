@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
 from PySide6.QtCore import Qt, Signal, QSize, QPoint
 from utils.hash_util import murmur3_hash_utf16le
+from utils.number_format import format_display_value
 from .mdf_clipboard import MdfClipboard
 from .mdf_template_manager import MdfTemplateManager
 from ui.mdf_template_export_dialog import MdfTemplateExportDialog
@@ -884,7 +885,7 @@ class MdfViewer(QWidget):
 		for i in range(4):
 			item = QTableWidgetItem("")
 			if 0 <= i < p.component_count:
-				item.setText(str(values[i]))
+				item.setText(format_display_value(values[i]))
 				item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 			else:
 				item.setText("")

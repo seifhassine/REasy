@@ -10,6 +10,8 @@ from PySide6.QtGui import QDoubleValidator, QIntValidator
 
 import uuid
 
+from utils.number_format import format_float_sequence, format_full_float
+
 
 class UvarValueEditDialog(QDialog):
     """Dialog for editing UVAR variable values with type-specific input"""
@@ -82,7 +84,7 @@ class UvarValueEditDialog(QDialog):
                 input_field = QLineEdit()
                 if var_type == TypeKind.Single:
                     input_field.setValidator(QDoubleValidator())
-                    input_field.setText(f"{float(values[i]):.8g}")
+                    input_field.setText(format_full_float(values[i], 8))
                 else:
                     # Integer types
                     input_field.setValidator(QIntValidator())
@@ -205,7 +207,7 @@ class UvarValueEditDialog(QDialog):
                 
                 input_field = QLineEdit()
                 input_field.setValidator(QDoubleValidator())
-                input_field.setText(f"{values[i]:.8g}" if i < len(values) else "0.0")
+                input_field.setText(format_full_float(values[i], 8) if i < len(values) else "0.0")
                 input_field.setMaximumWidth(100)
                 layout.addWidget(input_field)
                 self.inputs.append(input_field)
@@ -232,19 +234,19 @@ class UvarValueEditDialog(QDialog):
         elif isinstance(value, bool):
             return "True" if value else "False"
         elif isinstance(value, float):
-            return f"{value:.8g}"
+            return format_full_float(value, 8)
         elif isinstance(value, str):
             return value.strip('\x00')  # Remove null terminators
         elif hasattr(value, 'x') and hasattr(value, 'y'):
             # Vector types
             if hasattr(value, 'w'):
-                return f"{value.x:.8g}, {value.y:.8g}, {value.z:.8g}, {value.w:.8g}"
+                return format_float_sequence((value.x, value.y, value.z, value.w), 8)
             elif hasattr(value, 'z'):
-                return f"{value.x:.8g}, {value.y:.8g}, {value.z:.8g}"
+                return format_float_sequence((value.x, value.y, value.z), 8)
             else:
-                return f"{value.x:.8g}, {value.y:.8g}"
+                return format_float_sequence((value.x, value.y), 8)
         elif isinstance(value, (list, tuple)):
-            return ", ".join(str(v) for v in value)
+            return format_float_sequence(value, 8)
         else:
             return str(value)
             

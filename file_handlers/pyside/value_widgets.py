@@ -17,6 +17,7 @@ import re
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
 from ui.widgets_utils import ColorPreviewButton
+from utils.number_format import format_display_value, format_full_float
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -79,9 +80,7 @@ class VectorClipboardMixin:
         )
 
     def _format_clipboard_value(self, value):
-        if isinstance(value, float):
-            return f"{value:.{self.clipboard_precision}g}"
-        return str(value)
+        return format_display_value(value, self.clipboard_precision)
 
     def _convert_clipboard_token(self, token):
         return float(token)
@@ -172,11 +171,11 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
             return
         values = [self._data.width, self._data.height]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
         
     def getValues(self):
         return tuple(float(input_field.text() or "0") for input_field in self.inputs)
@@ -234,11 +233,11 @@ class Vec2Input(VectorClipboardMixin, BaseValueWidget):
             return
         values = [self._data.x, self._data.y]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
         
     def getValues(self):
         return tuple(float(input_field.text() or "0") for input_field in self.inputs)
@@ -297,11 +296,11 @@ class Vec3Input(VectorClipboardMixin, BaseValueWidget):
             return
         values = [self._data.x, self._data.y, self._data.z]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
         
     def getValues(self):
         return tuple(float(input_field.text() or "0") for input_field in self.inputs)
@@ -361,11 +360,11 @@ class Vec4Input(VectorClipboardMixin, BaseValueWidget):
             return
         values = [self._data.x, self._data.y, self._data.z, self._data.w]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}")
+            input_field.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
             
     def getValues(self):
         return tuple(float(input_field.text() or "0") for input_field in self.inputs)
@@ -714,7 +713,7 @@ class F32Input(NumberInput):
         
     def update_display(self):
         if self._data and hasattr(self._data, 'value'):
-            self.line_edit.setText(f"{self._data.value:.8g}") 
+            self.line_edit.setText(format_full_float(self._data.value, 8))
 
 class F64Input(NumberInput):
     def __init__(self, parent=None):
@@ -730,7 +729,7 @@ class F64Input(NumberInput):
 
     def update_display(self):
         if self._data and hasattr(self._data, 'value'):
-            self.line_edit.setText(f"{self._data.value:.17g}")
+            self.line_edit.setText(format_full_float(self._data.value, 17))
 
 class S32Input(NumberInput):
     def __init__(self, parent=None):
@@ -1273,15 +1272,15 @@ class AABBInput(BaseValueWidget):
         mins = (self._data.min.x, self._data.min.y, self._data.min.z)
         maxs = (self._data.max.x, self._data.max.y, self._data.max.z)
         for le, val in zip(self.min_edits, mins):
-            le.setText(f"{val:.8g}")
+            le.setText(format_full_float(val, 8))
         for le, val in zip(self.max_edits, maxs):
-            le.setText(f"{val:.8g}")
+            le.setText(format_full_float(val, 8))
             
     def setValues(self, values):
         if len(values) != 6:
             return
         for le, v in zip(self.min_edits + self.max_edits, values):
-            le.setText(str(v))
+            le.setText(format_display_value(v))
 
     def getValues(self):
         try:
@@ -1356,15 +1355,15 @@ class RectInput(BaseValueWidget):
         mins = (self._data.min_x, self._data.min_y)
         maxs = (self._data.max_x, self._data.max_y)
         for le, val in zip(self.min_edits, mins):
-            le.setText(f"{val:.8g}")
+            le.setText(format_full_float(val, 8))
         for le, val in zip(self.max_edits, maxs):
-            le.setText(f"{val:.8g}")
+            le.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         if len(values) != 4:
             return
         for le, v in zip(self.min_edits + self.max_edits, values):
-            le.setText(str(v))
+            le.setText(format_display_value(v))
 
     def getValues(self):
         try:
@@ -1430,12 +1429,12 @@ class OBBInput(BaseValueWidget):
         for row in range(5):
             for col in range(4):
                 idx = row * 4 + col
-                self.inputs[row][col].setText(f"{values[idx]:.8g}") 
+                self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def setValues(self, values):
         flat_inputs = [input_field for row in self.inputs for input_field in row]
         for input_field, val in zip(flat_inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
             
     def getValues(self):
         try:
@@ -1771,7 +1770,7 @@ class StringInput(BaseValueWidget):
         if add_to_project:
             project_dir = proj_dock.project_dir
             if not project_dir:
-                QMessageBox.information(self, self.tr("Add Resource"), 
+                QMessageBox.information(self, self.tr("Add Resource"),
                     self.tr("No project is currently open."))
                 return
             
@@ -1788,7 +1787,7 @@ class StringInput(BaseValueWidget):
                 return accepted
             
             dest_path = copy_resource_to_project(
-                resource_path, 
+                resource_path,
                 project_dir,
                 proj_dock.unpacked_dir,
                 path_prefix,
@@ -2048,11 +2047,11 @@ class RangeInput(BaseValueWidget):
             return
         values = [self._data.min, self._data.max]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(format_full_float(val, 8))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
             
     def getValues(self):
         try:
@@ -2328,7 +2327,7 @@ class Mat4Input(BaseValueWidget):
         for row in range(4):
             for col in range(4):
                 idx = row * 4 + col  
-                self.inputs[row][col].setText(f"{values[idx]:.8g}")
+                self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def _on_value_changed(self):
         """Handle input changes and update the data model"""
@@ -2360,7 +2359,7 @@ class Mat4Input(BaseValueWidget):
         for row in range(4):
             for col in range(4):
                 idx = row * 4 + col
-                self.inputs[row][col].setText(str(values[idx]))
+                self.inputs[row][col].setText(format_display_value(values[idx]))
     
     def getValues(self):
         """Get all values as a flat list"""
@@ -2471,7 +2470,7 @@ class ColorInput(BaseValueWidget):
                 input_field.style().polish(input_field)
                 
                 if not valid:
-                    input_field.setText(str(value))
+                    input_field.setText(format_display_value(value))
             
             self._data.r = values[0]
             self._data.g = values[1]
@@ -2649,7 +2648,7 @@ class Int4ColorInput(ColorInput):
                 input_field.style().polish(input_field)
 
                 if not valid:
-                    input_field.setText(str(value))
+                    input_field.setText(format_display_value(value))
 
             self._data.x = values[0]
             self._data.y = values[1]
@@ -2880,7 +2879,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
                 input_field.style().polish(input_field)
                 
                 if not valid:
-                    input_field.setText(str(value))
+                    input_field.setText(format_display_value(value))
             
             self._data.x = values[0]
             self._data.y = values[1]
@@ -2901,7 +2900,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
             
         values = [self._data.x, self._data.y, self._data.z]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.6g}")
+            input_field.setText(format_full_float(val, 6))
             
         self._update_color_button()
     
@@ -2947,7 +2946,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.6g}")
+            input_field.setText(format_full_float(val, 6))
         self._update_color_button()
     
     def getValues(self):
@@ -3045,15 +3044,15 @@ class CapsuleInput(BaseValueWidget):
         if hasattr(self._data, 'start') and hasattr(self._data.start, 'x'):
             start_values = [self._data.start.x, self._data.start.y, self._data.start.z]
             for input_field, val in zip(self.start_inputs, start_values):
-                input_field.setText(f"{val:.8g}")
+                input_field.setText(format_full_float(val, 8))
                 
         if hasattr(self._data, 'end') and hasattr(self._data.end, 'x'):
             end_values = [self._data.end.x, self._data.end.y, self._data.end.z]
             for input_field, val in zip(self.end_inputs, end_values):
-                input_field.setText(f"{val:.8g}")
+                input_field.setText(format_full_float(val, 8))
                 
         if hasattr(self._data, 'radius'):
-            self.radius_input.setText(f"{self._data.radius:.8g}")
+            self.radius_input.setText(format_full_float(self._data.radius, 8))
 
     def _on_value_changed(self):
         """Handle input changes and update the data model"""
@@ -3105,12 +3104,12 @@ class CapsuleInput(BaseValueWidget):
             return
             
         for i, val in enumerate(values[:3]):
-            self.start_inputs[i].setText(str(val))
+            self.start_inputs[i].setText(format_display_value(val))
             
         for i, val in enumerate(values[3:6]):
-            self.end_inputs[i].setText(str(val))
+            self.end_inputs[i].setText(format_display_value(val))
             
-        self.radius_input.setText(str(values[6]))
+        self.radius_input.setText(format_display_value(values[6]))
     
     def getValues(self):
         """Get all values as a tuple (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
@@ -3203,7 +3202,7 @@ class AreaInput(BaseValueWidget):
             self._data.height, self._data.bottom
         ]
         for inp, v in zip(self.inputs, vals):
-            inp.setText(f"{v:.8g}")
+            inp.setText(format_full_float(v, 8))
 
     def _on_value_changed(self):
         if not self._data:

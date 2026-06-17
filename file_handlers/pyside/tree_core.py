@@ -5,6 +5,8 @@ Consolidated tree infrastructure that handles both eager and lazy-loading approa
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
 from PySide6.QtWidgets import QAbstractItemView, QStyledItemDelegate
 from typing import Callable, Optional, Any
+from utils.number_format import format_display_value
+
 class DeferredChildBuilder:
     __slots__ = ('builder_func', 'context', '_built', '_children')
     
@@ -143,10 +145,10 @@ class TreeModel(QAbstractItemModel):
         item = index.internalPointer()
         if role == Qt.DisplayRole:
             txt = item.data[0] if isinstance(item.data, (list, tuple)) else item.data
-            return str(txt)
+            return format_display_value(txt)
         if role == Qt.UserRole:
             val = item.data[1] if isinstance(item.data, (list, tuple)) and len(item.data) > 1 else ""
-            return str(val)
+            return format_display_value(val)
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):

@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont, QPalette, QKeySequence, QShortcut
 
+from utils.number_format import format_full_float
+
 
 class MsgViewer(QWidget):
     modified_changed = Signal(bool)
@@ -547,7 +549,7 @@ class MsgViewer(QWidget):
                 editor.valueChanged.connect(lambda v, i=idx: self._on_attribute_changed_typed(str(v), entry_idx, i))
             elif attr_type == 1:
                 editor = QLineEdit()
-                editor.setText(str(float(value)) if value else "0.0")
+                editor.setText(format_full_float(value) if value else "0.0")
                 editor.setPlaceholderText("0.0")
                 editor.textChanged.connect(lambda v, i=idx: self._on_attribute_changed_typed(v, entry_idx, i))
             else:

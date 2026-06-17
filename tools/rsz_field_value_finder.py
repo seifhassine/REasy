@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from utils.type_registry import TypeRegistry
+from utils.number_format import format_display_value, format_float_sequence
 
 def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     if not os.path.isfile(filepath):
@@ -132,7 +133,7 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
 def format_value(value):
     """Format a field value for display"""
     if hasattr(value, 'value'):
-        return str(value.value)
+        return format_display_value(value.value)
     elif hasattr(value, 'values'):
         if not value.values:
             return "[]"
@@ -146,47 +147,47 @@ def format_value(value):
     elif hasattr(value, 'x') and hasattr(value, 'y'):
         if hasattr(value, 'z'):
             if hasattr(value, 'w'):
-                return f"({value.x}, {value.y}, {value.z}, {value.w})"
-            return f"({value.x}, {value.y}, {value.z})"
-        return f"({value.x}, {value.y})"
+                return f"({format_float_sequence((value.x, value.y, value.z, value.w))})"
+            return f"({format_float_sequence((value.x, value.y, value.z))})"
+        return f"({format_float_sequence((value.x, value.y))})"
     elif hasattr(value, 'r') and hasattr(value, 'g') and hasattr(value, 'b'):
         if hasattr(value, 'a'):
-            return f"RGBA({value.r}, {value.g}, {value.b}, {value.a})"
-        return f"RGB({value.r}, {value.g}, {value.b})"
+            return f"RGBA({format_float_sequence((value.r, value.g, value.b, value.a))})"
+        return f"RGB({format_float_sequence((value.r, value.g, value.b))})"
     elif hasattr(value, 'guid_str'):
         return value.guid_str
     elif hasattr(value, 'min') and hasattr(value, 'max'):
         if isinstance(value.min, (float, int)) and isinstance(value.max, (float, int)):
-            return f"Range({value.min}, {value.max})"
+            return f"Range({format_float_sequence((value.min, value.max))})"
         else:
             min_value = format_value(value.min)
             max_value = format_value(value.max)
             return f"Range({min_value}, {max_value})"
     elif hasattr(value, 'width') and hasattr(value, 'height'):
-        return f"Size({value.width}, {value.height})"
+        return f"Size({format_float_sequence((value.width, value.height))})"
     elif hasattr(value, 'min_x') and hasattr(value, 'max_x'):
-        return f"Rect({value.min_x}, {value.min_y}, {value.max_x}, {value.max_y})"
+        return f"Rect({format_float_sequence((value.min_x, value.min_y, value.max_x, value.max_y))})"
     elif hasattr(value, 'center') and hasattr(value, 'radius'):
         center_str = format_value(value.center)
-        return f"Sphere({center_str}, {value.radius})"
+        return f"Sphere({center_str}, {format_display_value(value.radius)})"
     elif hasattr(value, 'start') and hasattr(value, 'end'):
         start_str = format_value(value.start)
         end_str = format_value(value.end)
         if hasattr(value, 'radius'): 
-            return f"Capsule(start:{start_str}, end:{end_str}, radius:{value.radius})"
+            return f"Capsule(start:{start_str}, end:{end_str}, radius:{format_display_value(value.radius)})"
         return f"LineSegment(start:{start_str}, end:{end_str})"
     elif hasattr(value, 'position') and hasattr(value, 'direction'):
         pos_str = format_value(value.position)
         dir_str = format_value(value.direction)
         if hasattr(value, 'angle') and hasattr(value, 'distance'):  
-            return f"Cone(pos:{pos_str}, dir:{dir_str}, angle:{value.angle}, distance:{value.distance})"
+            return f"Cone(pos:{pos_str}, dir:{dir_str}, angle:{format_display_value(value.angle)}, distance:{format_display_value(value.distance)})"
         return f"Direction(pos:{pos_str}, dir:{dir_str})"
     elif hasattr(value, 'center') and hasattr(value, 'radius') and hasattr(value, 'height'): 
         center_str = format_value(value.center)
-        return f"Cylinder(center:{center_str}, radius:{value.radius}, height:{value.height})"
+        return f"Cylinder(center:{center_str}, radius:{format_display_value(value.radius)}, height:{format_display_value(value.height)})"
     elif hasattr(value, 'type_name'): 
         return f"Type({value.type_name})"
-    return str(value)
+    return format_display_value(value)
 
 def main():
     parser = argparse.ArgumentParser(description='Find all possible values of a specific field in RSZ files')

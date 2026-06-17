@@ -1,6 +1,17 @@
 from enum import IntEnum
 from typing import List, Tuple
 
+from utils.number_format import format_display_value, format_float_sequence
+
+
+def _vec_text(values):
+    return f"[{format_float_sequence(values)}]"
+
+
+def _matrix_text(rows):
+    return "[" + ", ".join(_vec_text(row) for row in rows) + "]"
+
+
 class ShapeType(IntEnum):
     Aabb = 0x0
     Sphere = 0x1
@@ -60,7 +71,7 @@ class AABB(BaseShape):
         self.write_vec3_padded(handler, self.max)
         
     def __str__(self):
-        return f"AABB(min={self.min}, max={self.max})"
+        return f"AABB(min={_vec_text(self.min)}, max={_vec_text(self.max)})"
 
 class Sphere(BaseShape):
     """Sphere shape"""
@@ -77,7 +88,7 @@ class Sphere(BaseShape):
         handler.write_float(self.radius)
         
     def __str__(self):
-        return f"Sphere(center={self.center}, radius={self.radius})"
+        return f"Sphere(center={_vec_text(self.center)}, radius={format_display_value(self.radius)})"
 
 class Capsule(BaseShape):
     """Capsule shape"""
@@ -105,7 +116,7 @@ class Capsule(BaseShape):
             handler.write_float(0.0)
         
     def __str__(self):
-        return f"Capsule(start={self.start}, end={self.end}, radius={self.radius})"
+        return f"Capsule(start={_vec_text(self.start)}, end={_vec_text(self.end)}, radius={format_display_value(self.radius)})"
 
 class OBB(BaseShape):
     """Oriented Bounding Box"""
@@ -131,7 +142,7 @@ class OBB(BaseShape):
         handler.write_float(self.padding)
         
     def __str__(self):
-        return f"OBB(extent={self.extent})"
+        return f"OBB(extent={_vec_text(self.extent)})"
 
 class Area(BaseShape):
     """Area shape (4x Vec2 + height + bottom + 8-byte padding)"""
@@ -157,7 +168,7 @@ class Area(BaseShape):
         handler.write_float(self.padding[1] if len(self.padding) > 1 else 0.0)
             
     def __str__(self):
-        return f"Area(points={self.points}, height={self.height}, bottom={self.bottom})"
+        return f"Area(points={_matrix_text(self.points)}, height={format_display_value(self.height)}, bottom={format_display_value(self.bottom)})"
 
 class Triangle(BaseShape):
     """Triangle shape - 3 vertices"""
@@ -172,13 +183,13 @@ class Triangle(BaseShape):
             self.write_vec3_padded(handler, vertex)
             
     def __str__(self):
-        return f"Triangle(vertices={self.vertices})"
+        return f"Triangle(vertices={_matrix_text(self.vertices)})"
 
 # Cylinder is identical to Capsule in structure
 class Cylinder(Capsule):
     """Cylinder shape"""
     def __str__(self):
-        return f"Cylinder(start={self.start}, end={self.end}, radius={self.radius})"
+        return f"Cylinder(start={_vec_text(self.start)}, end={_vec_text(self.end)}, radius={format_display_value(self.radius)})"
 
 # Shape factory
 SHAPE_MAP = {

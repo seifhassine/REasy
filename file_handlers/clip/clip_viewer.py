@@ -58,6 +58,7 @@ from .structures import (
     UserDataAssetInfo,
 )
 from .value_adapters import apply_key_payload_text, key_payload_editable, key_payload_text
+from utils.number_format import format_display_value, format_float_sequence, format_full_float
 
 
 KEY_OBJECT_TYPES = (Key, BoolKey, ActionKey, NoHermiteKey, SpeedPoint)
@@ -123,6 +124,14 @@ def _guid_text(raw: bytes) -> str:
         return data.hex()
     hexed = data.hex()
     return f"{hexed[:8]}-{hexed[8:12]}-{hexed[12:16]}-{hexed[16:20]}-{hexed[20:]}"
+
+
+def _frame_text(value) -> str:
+    return format_full_float(value)
+
+
+def _frame_range_text(start, end) -> str:
+    return f"{_frame_text(start)}-{_frame_text(end)}"
 
 
 def _parse_guid_text(text: str) -> bytes:
@@ -249,7 +258,7 @@ class ClipTimelineCanvas(QWidget):
             owner_track=track,
             badge="Clip",
             badge_color=QColor("#4f83c2"),
-            meta=f"{clip_info.frame_in:g}-{clip_info.frame_out:g}",
+            meta=_frame_range_text(clip_info.frame_in, clip_info.frame_out),
         ))
         if not self._is_collapsed(clip_info) and self._show_clip_nodes(clip_info):
             for node in clip_info.root_nodes:
@@ -264,7 +273,7 @@ class ClipTimelineCanvas(QWidget):
         owner_node: Node | None = None,
     ):
         name = _node_display_name(node)
-        meta = f"{node.begin_frame:g}-{node.end_frame:g}"
+        meta = _frame_range_text(node.begin_frame, node.end_frame)
         counts = []
         if node.properties:
             counts.append(f"{len(node.properties)} props")
@@ -430,7 +439,7 @@ class ClipTimelineCanvas(QWidget):
             painter.setPen(QColor("#7f8790"))
             painter.drawLine(x, self.header_h - 6, x, self.height())
             painter.setPen(QColor("#f2f2f2"))
-            painter.drawText(x + 3, 0, 70, self.header_h, Qt.AlignVCenter, f"{tick:g}")
+            painter.drawText(x + 3, 0, 70, self.header_h, Qt.AlignVCenter, _frame_text(tick))
 
     def _paint_row(self, painter: QPainter, row_index: int, row: dict[str, Any]):
         y = self.header_h + row_index * self.row_h
@@ -703,15 +712,15 @@ class ClipTimelineCanvas(QWidget):
         if isinstance(obj, Track):
             return f"Track: {obj.group_name or obj.type_unicode or obj.type_ascii or 'Track'}"
         if isinstance(obj, ClipInfo):
-            return f"Clip: {obj.unicode_name or 'Clip'}\nFrames {obj.frame_in:g}-{obj.frame_out:g}"
+            return f"Clip: {obj.unicode_name or 'Clip'}\nFrames {_frame_range_text(obj.frame_in, obj.frame_out)}"
         if isinstance(obj, Node):
-            return f"{_node_type_name(obj)}: {_node_display_name(obj)}\nFrames {obj.begin_frame:g}-{obj.end_frame:g}"
+            return f"{_node_type_name(obj)}: {_node_display_name(obj)}\nFrames {_frame_range_text(obj.begin_frame, obj.end_frame)}"
         if isinstance(obj, Property):
-            return f"{_prop_type_name(obj)}: {obj.name or 'Property'}\nFrames {obj.begin_frame:g}-{obj.end_frame:g}"
+            return f"{_prop_type_name(obj)}: {obj.name or 'Property'}\nFrames {_frame_range_text(obj.begin_frame, obj.end_frame)}"
         if isinstance(obj, KEY_OBJECT_TYPES):
             owner = meta.get("owner_prop")
             value = key_payload_text(owner, obj) if isinstance(owner, Property) else ""
-            return f"{meta.get('kind', 'Key')}: frame {getattr(obj, 'frame', 0.0):g}\n{value}"
+            return f"{meta.get('kind', 'Key')}: frame {_frame_text(getattr(obj, 'frame', 0.0))}\n{value}"
         return str(obj)
 
     def _item_at(self, pos):
@@ -986,9 +995,9 @@ class ClipTimelineCanvas(QWidget):
                 meta=self._track_meta(obj),
             )
         elif isinstance(obj, ClipInfo):
-            row.update(label=obj.unicode_name or "Clip", meta=f"{obj.frame_in:g}-{obj.frame_out:g}")
+            row.update(label=obj.unicode_name or "Clip", meta=_frame_range_text(obj.frame_in, obj.frame_out))
         elif isinstance(obj, Node):
-            meta = f"{obj.begin_frame:g}-{obj.end_frame:g}"
+            meta = _frame_range_text(obj.begin_frame, obj.end_frame)
             counts = []
             if obj.properties:
                 counts.append(f"{len(obj.properties)} props")
@@ -1367,7 +1376,7 @@ class ClipViewer(QWidget):
         h = self.parsed.header
         state = "Modified" if self.modified else "Ready"
         self.status.setText(
-            f"{state} | v{h.version} | {h.total_frame:g} frames | "
+            f"{state} | v{h.version} | {_frame_text(h.total_frame)} frames | "
             f"{len(self.parsed.tracks)} tracks, {len(self.parsed.nodes)} nodes, "
             f"{len(self.parsed.properties)} properties"
         )
@@ -1583,7 +1592,7 @@ class ClipViewer(QWidget):
             scrollbar.setValue(min(scrollbar.maximum(), y - self.timeline_scroll.viewport().height() + self.timeline.row_h * 2))
 
     def _line(self, obj, attr: str, label: str):
-        edit = QLineEdit(str(getattr(obj, attr, "")))
+        edit = QLineEdit(format_display_value(getattr(obj, attr, "")))
         edit.setProperty("clip_obj_id", id(obj))
         edit.setProperty("clip_attr", attr)
         def commit():
@@ -1618,7 +1627,7 @@ class ClipViewer(QWidget):
             self._line(obj, attr, label)
 
     def _readonly(self, label: str, value):
-        edit = QLineEdit(str(value))
+        edit = QLineEdit(format_display_value(value))
         edit.setReadOnly(True)
         self.form.addRow(label, edit)
 
@@ -1681,7 +1690,7 @@ class ClipViewer(QWidget):
         h = self.parsed.header
         self._readonlys((
             ("Version", h.version),
-            ("Frames", f"{h.total_frame:g}"),
+            ("Frames", _frame_text(h.total_frame)),
             ("Tracks", len(self.parsed.tracks)),
             ("Clip Infos", len(self.parsed.clip_infos)),
             ("Nodes", len(self.parsed.nodes)),
@@ -1703,7 +1712,7 @@ class ClipViewer(QWidget):
 
     def _show_oword(self, index: int):
         values = self.parsed.owords[index]
-        edit = QLineEdit(", ".join(f"{value:g}" for value in values))
+        edit = QLineEdit(format_float_sequence(values))
         def commit():
             try:
                 new_values = tuple(float(part.strip()) for part in edit.text().split(","))
@@ -1794,7 +1803,7 @@ class ClipViewer(QWidget):
 
     def _related_owords(self):
         for index, values in enumerate(self.parsed.owords):
-            text = ", ".join(f"{value:g}" for value in values)
+            text = format_float_sequence(values)
             item = QListWidgetItem(f"{index}: {text}")
             item.setData(Qt.UserRole, {"kind": "oword", "obj": values, "index": index})
             self.related.addItem(item)
@@ -1857,7 +1866,7 @@ class ClipViewer(QWidget):
                     return
 
     def _set_key_table_row(self, row: int, prop: Property, role: str, key):
-        self.keys.setItem(row, 0, self._key_item(str(getattr(key, "frame", ""))))
+        self.keys.setItem(row, 0, self._key_item(format_display_value(getattr(key, "frame", ""))))
         self.keys.setItem(row, 1, self._key_item(f"{role} ({self._key_kind_text(key)})", editable=False))
         self.keys.setItem(row, 2, self._key_item(self._interpolation_text(key)))
         self.keys.setItem(row, 3, self._key_item(key_payload_text(prop, key), editable=key_payload_editable(prop, key)))
@@ -1992,7 +2001,7 @@ class ClipViewer(QWidget):
         if value is None:
             value = INTERPOLATION_DEFAULT_REFS.get(getattr(key, "interpolation_type", 0))
             key.interpolation_ref = value
-        edit = QLineEdit(", ".join(f"{part:g}" for part in value))
+        edit = QLineEdit(format_float_sequence(value))
         def commit():
             try:
                 values = tuple(float(part.strip()) for part in edit.text().split(","))
@@ -2405,7 +2414,7 @@ class ClipViewer(QWidget):
             attr = field.property("clip_attr") if isinstance(field, QLineEdit) else None
             if attr and field.property("clip_obj_id") == id(obj) and hasattr(obj, attr):
                 value = getattr(obj, attr, "")
-                field.setText(_guid_text(value) if isinstance(value, (bytes, bytearray)) else str(value))
+                field.setText(_guid_text(value) if isinstance(value, (bytes, bytearray)) else format_display_value(value))
         self._sync_key_table_row(obj)
         self._show_validation(obj)
 
@@ -2417,7 +2426,7 @@ class ClipViewer(QWidget):
                 item = self.keys.item(row, 0)
                 data = item.data(Qt.UserRole) if item else None
                 if data and data.get("key") is obj:
-                    item.setText(str(getattr(obj, "frame", "")))
+                    item.setText(format_display_value(getattr(obj, "frame", "")))
                     return
 
     def _update_buttons(self, obj):
@@ -2528,9 +2537,9 @@ class ClipViewer(QWidget):
         if isinstance(obj, Property):
             return f"{obj.name or 'Property'} ({_prop_type_name(obj)})"
         if isinstance(obj, SpeedPoint):
-            return f"SpeedPoint @ {obj.frame:g}"
+            return f"SpeedPoint @ {_frame_text(obj.frame)}"
         if isinstance(obj, (Key, BoolKey, ActionKey, NoHermiteKey)):
-            return f"{type(obj).__name__} @ {obj.frame:g}"
+            return f"{type(obj).__name__} @ {_frame_text(obj.frame)}"
         if isinstance(obj, UserDataAssetInfo):
             return obj.path_unicode or obj.type_ascii or "UserDataAsset"
         return "CLIP Overview"

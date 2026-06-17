@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import QComboBox
 
 from utils.type_registry import TypeRegistry
+from utils.number_format import format_display_value
 from tools.rsz_field_value_finder import format_value
 from tools.rsz_data_matcher import scan_directory_single_pass
 
@@ -842,7 +843,7 @@ class RszCsvExtractorDialog(QDialog):
             fmt = {
                 "str": lambda v: f'"{v}"',
                 "int": str,
-                "float": lambda v: f"{v:.3f}",
+                "float": format_display_value,
                 "bool": lambda v: "true" if v else "false",
                 "bytes": lambda v: f"bytes[{len(v)}]",
                 "vec": lambda v: f"({','.join(str(cv) for _, cv in v)})",
