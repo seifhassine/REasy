@@ -114,14 +114,23 @@ class UvsPreviewWidget(QWidget):
         bottom = draw_rect.top() + pat.bottom * draw_rect.height()
         return QRectF(QPointF(left, top), QPointF(right, bottom)).normalized()
 
-    def _find_draw_area(self, pm: QPixmap | None) -> QRectF:
+    def _source_rect(self, pm: QPixmap, pat: UvsPattern | None) -> QRectF:
+        full = QRectF(0, 0, pm.width(), pm.height())
+        if self._crop_selected_only and pat:
+            crop = self._pattern_rect(pat, full).intersected(full)
+            if crop.width() > 0 and crop.height() > 0:
+                return crop
+        return full
+
+    def _find_draw_area(self, pm: QPixmap | None, pat: UvsPattern | None = None) -> QRectF:
         margin = 10
         avail = QRectF(margin, margin, max(1, self.width() - margin * 2), max(1, self.height() - margin * 2))
         if not pm or pm.isNull():
             return avail
-        scale = min(avail.width() / pm.width(), avail.height() / pm.height())
-        w = pm.width() * scale
-        h = pm.height() * scale
+        source = self._source_rect(pm, pat)
+        scale = min(avail.width() / source.width(), avail.height() / source.height())
+        w = source.width() * scale
+        h = source.height() * scale
         x = avail.left() + (avail.width() - w) / 2
         y = avail.top() + (avail.height() - h) / 2
         return QRectF(x, y, w, h)
@@ -173,7 +182,7 @@ class UvsPreviewWidget(QWidget):
 
         pat = self._current_pattern()
         pm = self._pixmaps.get(pat.texture_index) if pat and pat.texture_index >= 0 else None
-        draw_area = self._find_draw_area(pm)
+        draw_area = self._find_draw_area(pm, pat)
 
         p.fillRect(draw_area, QColor(60, 60, 60))
         if not pat:
@@ -181,12 +190,7 @@ class UvsPreviewWidget(QWidget):
 
         if pm and not pm.isNull():
             if self._crop_selected_only and pat:
-                src = self._pattern_rect(pat, QRectF(0, 0, pm.width(), pm.height())).toRect()
-                src = src.intersected(pm.rect())
-                if src.width() > 0 and src.height() > 0:
-                    p.drawPixmap(draw_area.toRect(), pm, src)
-                else:
-                    p.drawPixmap(draw_area.toRect(), pm)
+                p.drawPixmap(draw_area.toRect(), pm, self._source_rect(pm, pat).toRect())
             else:
                 p.drawPixmap(draw_area.toRect(), pm)
         else:
@@ -237,7 +241,7 @@ class UvsPreviewWidget(QWidget):
         if not pat:
             return
         pm = self._pixmaps.get(pat.texture_index) if pat.texture_index >= 0 else None
-        draw_rect = self._find_draw_area(pm)
+        draw_rect = self._find_draw_area(pm, pat)
         pr = self._pattern_rect(pat, draw_rect)
 
         if self._edit_cutouts and pat.cutout_uvs:
@@ -268,7 +272,7 @@ class UvsPreviewWidget(QWidget):
         if not pat:
             return
         pm = self._pixmaps.get(pat.texture_index) if pat.texture_index >= 0 else None
-        draw_rect = self._find_draw_area(pm)
+        draw_rect = self._find_draw_area(pm, pat)
         if self._drag_mode == "cutout" and 0 <= self._drag_cutout_index < len(pat.cutout_uvs):
             u, v = self._widget_to_uv(pat, draw_rect, QPointF(e.position()))
             pat.cutout_uvs[self._drag_cutout_index] = (u, v)
@@ -403,14 +407,16 @@ class UvsViewer(QWidget):
 
     def _setup_ui(self):
         root = QVBoxLayout(self)
-        title = QLabel("🧭 UVS Editor")
-        root.addWidget(title)
+        root.setContentsMargins(4, 4, 4, 4)
+        root.setSpacing(4)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         root.addWidget(splitter)
 
         left = QWidget()
         left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
 
         top_bottom = QSplitter(Qt.Orientation.Vertical)
 
