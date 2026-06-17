@@ -3,14 +3,14 @@ import json
 import traceback
 from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
 from file_handlers.rsz.rsz_data_types import (
-    is_reference_type, is_array_type, StringData
+    StringData
 )
 from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject, PfbGameObject
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.utils.rsz_guid_utils import create_new_guid, create_guid_data, handle_guid_mapping
-from file_handlers.rsz.utils.rsz_field_utils import shift_references_above_threshold
+from file_handlers.rsz.utils.rsz_field_utils import iter_field_references, shift_references_above_threshold
 
 
 class _ReferenceUpdater:
@@ -71,24 +71,13 @@ class _ReferenceUpdater:
             if has_embedded_rsz and handle_embedded_contexts:
                 instance_context_id = _ReferenceUpdater._get_instance_context(viewer, instance_id)
             
-            for field_name, field_data in fields.items():
-                if is_reference_type(field_data):
-                    if _ReferenceUpdater.update_field_reference(
-                        field_data, instance_remapping, 
-                        has_embedded_rsz and handle_embedded_contexts,
-                        instance_context_id, viewer
-                    ):
-                        update_count += 1
-                        
-                elif is_array_type(field_data):
-                    for element in field_data.values:
-                        if is_reference_type(element):
-                            if _ReferenceUpdater.update_field_reference(
-                                element, instance_remapping,
-                                has_embedded_rsz and handle_embedded_contexts,
-                                instance_context_id, viewer
-                            ):
-                                update_count += 1
+            for ref_obj in iter_field_references(fields):
+                if _ReferenceUpdater.update_field_reference(
+                    ref_obj, instance_remapping,
+                    has_embedded_rsz and handle_embedded_contexts,
+                    instance_context_id, viewer
+                ):
+                    update_count += 1
         
         return update_count
 
@@ -1605,7 +1594,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 return field_data
 
         return None
-    
+
     @staticmethod
     def _get_components_for_gameobject(viewer, gameobject):
         instance = RszGameObjectClipboard.get_instance()

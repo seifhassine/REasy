@@ -19,7 +19,11 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     build_context_chain,
     update_embedded_references_for_shift
 )
-from file_handlers.rsz.utils.rsz_field_utils import update_references_with_mapping
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_object_reference_values,
+    update_references_of_type,
+    update_references_with_mapping,
+)
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
 from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
 
@@ -212,14 +216,7 @@ class RszEmbeddedArrayOperations:
                 
             for _, fields in rui.embedded_instances.items():
                 if isinstance(fields, dict):
-                    for _, field_data in fields.items():
-                        if isinstance(field_data, UserDataData) and field_data.value == userdata_id:
-                            field_data.value = 0  
-                            
-                        elif is_array_type(field_data):
-                            for element in field_data.values:
-                                if isinstance(element, UserDataData) and element.value == userdata_id:
-                                    element.value = 0  
+                    update_references_of_type(fields, {userdata_id: 0}, UserDataData)
 
         if hasattr(rui, 'embedded_instance_hierarchy'):
             if userdata_id in rui.embedded_instance_hierarchy:
@@ -443,13 +440,8 @@ class RszEmbeddedArrayOperations:
         for check_id, fields in rui.embedded_instances.items():
             if check_id == source_id or not isinstance(fields, dict):
                 continue
-            for _, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                    return False
-                elif is_array_type(field_data):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value == instance_id:
-                            return False
+            if instance_id in collect_object_reference_values(fields, positive_only=False):
+                return False
         return True
 
     def create_array_element(self, element_type, array_data, top_rui, direct_update=False, array_item=None):

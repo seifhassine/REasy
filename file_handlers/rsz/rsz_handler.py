@@ -37,7 +37,11 @@ from .rsz_object_operations import RszObjectOperations
 from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
-from .utils.rsz_field_utils import update_references_with_mapping, shift_references_above_threshold
+from .utils.rsz_field_utils import (
+    iter_field_references,
+    update_references_with_mapping,
+    shift_references_above_threshold,
+)
 from .utils.rsz_guid_utils import create_guid_data
 from .rsz_lazy_loading import RszLazyNodeBuilder
 
@@ -1280,14 +1284,10 @@ class RszViewer(QWidget):
         
         reference_count = 0
         
-        def count_userdata_refs(ref_obj):
-            nonlocal reference_count
-            if isinstance(ref_obj, UserDataData) and ref_obj.value == rui_id:
-                reference_count += 1
-        
         for instance_id, fields in self.scn.parsed_elements.items():
-            from .utils.rsz_field_utils import collect_field_references
-            collect_field_references(fields, count_userdata_refs)
+            for ref_obj in iter_field_references(fields):
+                if isinstance(ref_obj, UserDataData) and ref_obj.value == rui_id:
+                    reference_count += 1
         
         return reference_count        
     def _create_embedded_instance_nodes(self, rui, domain_id):

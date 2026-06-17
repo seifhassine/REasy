@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, get_type_class, is_reference_type
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+from file_handlers.rsz.utils.rsz_field_utils import iter_field_reference_entries
 
 class RszArrayOperations:
     """
@@ -711,31 +712,20 @@ class RszArrayOperations:
             if min_id < check_id <= max_id:  # Exclusive range check
                 continue
                 
-            for field_name, field_data in fields.items():
-                # Check direct references based on reference type
-                if self._is_reference_match(field_data, instance_id, ref_type):
-                    print(f"  Found external reference from instance {check_id}, field {field_name}")
+            for field_name, ref_obj, array_index in iter_field_reference_entries(fields):
+                if self._is_reference_match(ref_obj, instance_id, ref_type):
+                    field_label = field_name if array_index is None else f"{field_name}[{array_index}]"
+                    print(f"  Found external reference from instance {check_id}, field {field_label}")
                     return True
-                    
-                # Check references in arrays
-                elif isinstance(field_data, ArrayData):
-                    for i, item in enumerate(field_data.values):
-                        if self._is_reference_match(item, instance_id, ref_type):
-                            print(f"  Found external reference from instance {check_id}, field {field_name}[{i}]")
-                            return True
-                            
+
+            for field_data in fields.values():
                 # Check embedded instances within UserData
                 if hasattr(field_data, 'embedded_instances'):
                     for emb_id, emb_fields in field_data.embedded_instances.items():
                         if isinstance(emb_fields, dict):
-                            for emb_field_name, emb_field_data in emb_fields.items():
-                                if self._is_reference_match(emb_field_data, instance_id, ref_type):
+                            for _, ref_obj, _ in iter_field_reference_entries(emb_fields):
+                                if self._is_reference_match(ref_obj, instance_id, ref_type):
                                     return True
-                                    
-                                elif isinstance(emb_field_data, ArrayData):
-                                    for i, item in enumerate(emb_field_data.values):
-                                        if self._is_reference_match(item, instance_id, ref_type):
-                                            return True
         
         # Special additional check for arrays: 
         # If this is the array we're modifying, check other indices for references

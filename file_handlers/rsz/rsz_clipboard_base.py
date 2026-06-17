@@ -10,6 +10,12 @@ from file_handlers.rsz.rsz_data_types import (
 )
 from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszInstanceInfo
 from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_object_reference_values,
+    collect_userdata_reference_values,
+    iter_field_references,
+    update_references_of_type,
+)
 
 
 class RszClipboardBase(ABC):
@@ -235,7 +241,6 @@ class RszClipboardBase(ABC):
         by UserDataData fields but weren't marked as userdata during serialization.
         Also removes duplicate SCN19RSZUserDataInfo entries.
         """
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData, ObjectData
         from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
         
         if hasattr(viewer.scn, 'rsz_userdata_infos'):
@@ -266,13 +271,7 @@ class RszClipboardBase(ABC):
             if instance_id not in viewer.scn.parsed_elements:
                 continue
             fields = viewer.scn.parsed_elements[instance_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    instances_to_scan.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            instances_to_scan.add(element.value)
+            instances_to_scan.update(collect_object_reference_values(fields))
         
         #  scan all relevant instances for UserDataData references
         for instance_id in instances_to_scan:
@@ -280,14 +279,9 @@ class RszClipboardBase(ABC):
                 continue
                 
             fields = viewer.scn.parsed_elements[instance_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    userdata_referenced_instances.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            userdata_referenced_instances.add(element.value)
-                elif isinstance(field_data, ObjectData) and field_data.value > 0:
+            userdata_referenced_instances.update(collect_userdata_reference_values(fields))
+            for field_data in fields.values():
+                if isinstance(field_data, ObjectData) and field_data.value > 0:
                     self._check_nested_userdata_refs(viewer, field_data.value, userdata_referenced_instances, set())
         
         # Ensure each UserDataData-referenced instance has a SCN19RSZUserDataInfo
@@ -359,42 +353,24 @@ class RszClipboardBase(ABC):
     
     def _check_nested_userdata_refs(self, viewer, instance_id, userdata_refs, visited):
         """Recursively check nested objects for UserDataData references"""
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData, ObjectData
-        
         if instance_id in visited or instance_id not in viewer.scn.parsed_elements:
             return
         
         visited.add(instance_id)
         fields = viewer.scn.parsed_elements[instance_id]
         
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value > 0:
-                userdata_refs.add(field_data.value)
-            elif isinstance(field_data, ArrayData):
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and element.value > 0:
-                        userdata_refs.add(element.value)
-                    elif isinstance(element, ObjectData) and element.value > 0:
-                        self._check_nested_userdata_refs(viewer, element.value, userdata_refs, visited)
-            elif isinstance(field_data, ObjectData) and field_data.value > 0:
-                self._check_nested_userdata_refs(viewer, field_data.value, userdata_refs, visited)
+        userdata_refs.update(collect_userdata_reference_values(fields))
+        for ref_id in collect_object_reference_values(fields):
+            self._check_nested_userdata_refs(viewer, ref_id, userdata_refs, visited)
     
     def _cleanup_orphaned_userdata_infos(self, viewer):
         """Remove orphaned SCN19RSZUserDataInfo entries that aren't referenced by any UserDataData"""
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData
-        
         if not hasattr(viewer.scn, 'rsz_userdata_infos'):
             return
         
         referenced_instances = set()
         for instance_id, fields in viewer.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    referenced_instances.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            referenced_instances.add(element.value)
+            referenced_instances.update(collect_userdata_reference_values(fields))
         
         cleaned_infos = []
         removed_count = 0
@@ -677,9 +653,9 @@ class RszClipboardBase(ABC):
             """Track UserData references with their embedded context"""
             context_id = getattr(embedded_context, 'instance_id', 0) if embedded_context else 0
             
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    key = (field_data.value, context_id)
+            for ref_obj in iter_field_references(fields):
+                if isinstance(ref_obj, UserDataData) and ref_obj.value > 0:
+                    key = (ref_obj.value, context_id)
                     if key not in global_userdata_refs:
                         global_userdata_refs[key] = 0
                         userdata_contexts[key] = {
@@ -687,18 +663,6 @@ class RszClipboardBase(ABC):
                             'context_type': 'embedded' if embedded_context else 'main'
                         }
                     global_userdata_refs[key] += 1
-                    
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            key = (element.value, context_id)
-                            if key not in global_userdata_refs:
-                                global_userdata_refs[key] = 0
-                                userdata_contexts[key] = {
-                                    'context_id': context_id,
-                                    'context_type': 'embedded' if embedded_context else 'main'
-                                }
-                            global_userdata_refs[key] += 1
         
         def scan_instance_tree(instance_id, embedded_context=None):
             """Recursively scan instance tree for UserData references"""
@@ -728,14 +692,9 @@ class RszClipboardBase(ABC):
                         for embedded_inst_id in userdata_rui.embedded_instances:
                             if embedded_inst_id > 0:  # Skip null instance
                                 scan_instance_tree(embedded_inst_id, None)
-                
-                elif isinstance(field_data, ObjectData) and field_data.value > 0:
-                    scan_instance_tree(field_data.value, embedded_context)
-                    
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            scan_instance_tree(element.value, embedded_context)
+
+            for ref_id in collect_object_reference_values(fields):
+                scan_instance_tree(ref_id, embedded_context)
         
         if scan_gameobjects and hasattr(viewer.scn, 'gameobjects'):
             for go in viewer.scn.gameobjects:
@@ -1071,14 +1030,7 @@ class RszClipboardBase(ABC):
     
     def update_userdata_references(self, fields, userdata_mapping):
         """Update UserDataData references with correct userdata mapping"""
-        for _, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value in userdata_mapping:
-                field_data.value = userdata_mapping[field_data.value]
-            
-            elif isinstance(field_data, ArrayData):
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and element.value in userdata_mapping:
-                        element.value = userdata_mapping[element.value]
+        update_references_of_type(fields, userdata_mapping, UserDataData)
     
     def _collect_embedded_rsz_instances(self, rui, viewer):
         """Recursively collect all instance IDs from embedded RSZ structures"""

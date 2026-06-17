@@ -16,6 +16,7 @@ from .rsz_data_types import (
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.rsz.utils.rsz_embedded_utils import copy_embedded_rsz_header
+from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values
 
 
 class RszObjectOperations:
@@ -1210,30 +1211,21 @@ class RszObjectOperations:
         # Find and collect additional UserData instances referenced by the instances being deleted
         const_to_delete_instances = to_delete_instances.copy()
         for instance_id in const_to_delete_instances:
-            for field_name, field in self.scn.parsed_elements.get(instance_id, {}).items():
-                if isinstance(field, UserDataData) and field.value not in to_delete_instances and field.value:
-                    to_delete_instances.append(field.value)
-                elif isinstance(field, ArrayData):
-                    for element in field.values:
-                        if isinstance(element, UserDataData) and element.value not in to_delete_instances and element.value:
-                            to_delete_instances.append(element.value)
+            fields = self.scn.parsed_elements.get(instance_id, {})
+            for userdata_id in collect_userdata_reference_values(fields, positive_only=False):
+                if userdata_id and userdata_id not in to_delete_instances:
+                    to_delete_instances.append(userdata_id)
         
         userdata_reference_map = {}
         for key, instance in self.scn.parsed_elements.items():
             if key in to_delete_instances:
                 continue  # Skip instances that are already being deleted
                 
-            for field in instance.values():
-                if isinstance(field, UserDataData) and field.value in to_delete_instances:
-                    if field.value not in userdata_reference_map:
-                        userdata_reference_map[field.value] = 0
-                    userdata_reference_map[field.value] += 1
-                elif isinstance(field, ArrayData):
-                    for element in field.values:
-                        if isinstance(element, UserDataData) and element.value in to_delete_instances:
-                            if element.value not in userdata_reference_map:
-                                userdata_reference_map[element.value] = 0
-                            userdata_reference_map[element.value] += 1
+            for userdata_id in collect_userdata_reference_values(instance, positive_only=False):
+                if userdata_id and userdata_id in to_delete_instances:
+                    if userdata_id not in userdata_reference_map:
+                        userdata_reference_map[userdata_id] = 0
+                    userdata_reference_map[userdata_id] += 1
         
         const_to_delete_instances = to_delete_instances.copy()
         to_delete_instances = []

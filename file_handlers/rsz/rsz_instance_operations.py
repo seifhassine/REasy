@@ -1,4 +1,12 @@
-from file_handlers.rsz.rsz_data_types import is_reference_type
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_object_reference_values,
+    collect_userdata_reference_values,
+    iter_field_reference_entries,
+    iter_field_references,
+    update_references_with_mapping,
+)
+
+
 class RszInstanceOperations:
     """
     Utility class for RSZ instance operations that are common across multiple components.
@@ -63,13 +71,7 @@ class RszInstanceOperations:
             fields: Dictionary of fields to search
             userdata_refs: Set to collect UserDataData references
         """
-        from file_handlers.rsz.utils.rsz_field_utils import collect_field_references
-        
-        def collector(ref_obj):
-            if ref_obj.__class__.__name__ == 'UserDataData' and ref_obj.value > 0:
-                userdata_refs.add(ref_obj.value)
-        
-        collect_field_references(fields, collector)
+        userdata_refs.update(collect_userdata_reference_values(fields))
                         
     @staticmethod
     def update_references_before_deletion(parsed_elements, deleted_ids, id_adjustments):
@@ -82,8 +84,6 @@ class RszInstanceOperations:
             deleted_ids: Set of instance IDs to be deleted
             id_adjustments: Dict mapping old_instance_id -> new_instance_id
         """
-        from file_handlers.rsz.utils.rsz_field_utils import update_references_with_mapping
-        
         for instance_id, fields in parsed_elements.items():
             if instance_id in deleted_ids:
                 continue
@@ -114,14 +114,9 @@ class RszInstanceOperations:
             if check_id == source_id:
                 continue 
                 
-            for _, field_data in fields.items():
-                class_name = field_data.__class__.__name__
-                if class_name in ('ObjectData', 'UserDataData') and field_data.value == instance_id:
+            for ref_obj in iter_field_references(fields):
+                if ref_obj.value == instance_id:
                     return False
-                elif class_name == 'ArrayData':
-                    for item in field_data.values:
-                        if is_reference_type(item) and item.value == instance_id:
-                            return False
             
         return True 
         
@@ -140,21 +135,14 @@ class RszInstanceOperations:
         references = {}
         
         for ref_id, fields in parsed_elements.items():
-            for field_name, field_data in fields.items():
-                class_name = field_data.__class__.__name__
-                
-                if class_name in ('ObjectData', 'UserDataData') and field_data.value == instance_id:
+            for field_name, ref_obj, array_index in iter_field_reference_entries(fields):
+                if ref_obj.value == instance_id:
                     if ref_id not in references:
                         references[ref_id] = []
-                    references[ref_id].append((field_name, "direct"))
-                
-                elif class_name == 'ArrayData':
-                    for i, item in enumerate(field_data.values):
-                        
-                        if is_reference_type(item) and item.value == instance_id:
-                            if ref_id not in references:
-                                references[ref_id] = []
-                            references[ref_id].append((f"{field_name}[{i}]", "array_object"))
+                    if array_index is None:
+                        references[ref_id].append((field_name, "direct"))
+                    else:
+                        references[ref_id].append((f"{field_name}[{array_index}]", "array_object"))
     
         return references
         
@@ -250,17 +238,7 @@ class RszInstanceOperations:
         Returns:
             set: Set of referenced object IDs
         """
-        from file_handlers.rsz.utils.rsz_field_utils import collect_field_references
-        
-        references = set()
-        
-        def collector(ref_obj):
-            if ref_obj.__class__.__name__ == 'ObjectData' and ref_obj.value > 0:
-                references.add(ref_obj.value)
-        
-        collect_field_references(fields, collector)
-        
-        return references
+        return collect_object_reference_values(fields)
     
     @staticmethod
     def topological_sort(dependency_graph):
