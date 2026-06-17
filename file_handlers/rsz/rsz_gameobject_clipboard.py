@@ -2,15 +2,22 @@ import os
 import json
 import traceback
 from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
-from file_handlers.rsz.rsz_data_types import (
-    StringData
-)
-from file_handlers.rsz.rsz_file import RszPrefabInfo, RszGameObject, PfbGameObject
+from file_handlers.rsz.rsz_file import RszPrefabInfo
 from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.utils.rsz_guid_utils import create_new_guid, create_guid_data, handle_guid_mapping
+from file_handlers.rsz.utils.rsz_guid_utils import handle_guid_mapping
 from file_handlers.rsz.utils.rsz_field_utils import iter_field_references, shift_references_above_threshold
+from file_handlers.rsz.utils.rsz_gameobject_utils import (
+    DEFAULT_GAMEOBJECT_NAME,
+    add_guid_to_settings,
+    apply_name_to_instance,
+    create_gameobject_entry,
+    find_gameobject_by_id,
+    get_instance_name_from_fields,
+    insert_into_object_table,
+    update_gameobject_hierarchy,
+)
 
 
 class _ReferenceUpdater:
@@ -96,9 +103,7 @@ class _GameObjectHelper:
                 mapped_component_instances.append(new_comp_instance_id)
                 
                 new_component_object_id = gameobject.id + i + 1
-                RszGameObjectClipboard._insert_into_object_table(
-                    viewer, new_component_object_id, new_comp_instance_id
-                )
+                insert_into_object_table(viewer.scn, new_component_object_id, new_comp_instance_id)
         
         gameobject.component_count = len(mapped_component_instances)
         return mapped_component_instances
@@ -114,9 +119,7 @@ class _GameObjectHelper:
             )
             if new_guid:
                 gameobject.guid = new_guid
-                RszGameObjectClipboard._add_guid_to_settings(
-                    viewer, instance_id, new_guid
-                )
+                add_guid_to_settings(viewer.scn, instance_id, new_guid)
                 return True
         return False
     
@@ -135,7 +138,7 @@ class _GameObjectHelper:
 
 
 class RszGameObjectClipboard(RszClipboardBase):
-    DEFAULT_GO_NAME = "GameObject"
+    DEFAULT_GO_NAME = DEFAULT_GAMEOBJECT_NAME
     _instance = None
     
     def get_clipboard_type(self) -> str:
@@ -179,7 +182,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 print(f"Invalid GameObject ID: {gameobject_id}")
                 return False
                 
-            source_go = RszGameObjectClipboard._find_gameobject_by_id(viewer, gameobject_id)
+            source_go = find_gameobject_by_id(viewer.scn, gameobject_id)
             if source_go is None:
                 print(f"GameObject with ID {gameobject_id} not found")
                 return False
@@ -189,7 +192,10 @@ class RszGameObjectClipboard(RszClipboardBase):
                 print(f"Invalid instance ID for GameObject {gameobject_id}")
                 return False
                 
-            source_name = RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(source_instance_id, {}))
+            source_name = get_instance_name_from_fields(
+                viewer.scn.parsed_elements.get(source_instance_id, {}),
+                RszGameObjectClipboard.DEFAULT_GO_NAME,
+            )
             print(f"Copying GameObject '{source_name}' (ID: {gameobject_id})")
             
             prefab_path = None
@@ -362,7 +368,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         new_root_object_id = len(viewer.scn.object_table)
         viewer.scn.object_table.append(new_root_instance_id)
         
-        new_root_object = RszGameObjectClipboard._create_gameobject_entry(viewer, new_root_object_id, parent_id)
+        new_root_object = create_gameobject_entry(viewer.scn, new_root_object_id, parent_id)
         
         if hasattr(new_root_object, 'ukn') and "ukn" in root_go_data:
             new_root_object.ukn = root_go_data["ukn"]
@@ -384,10 +390,10 @@ class RszGameObjectClipboard(RszClipboardBase):
         else:
             new_root_object.component_count = 0
         
-        RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_root_object)
+        update_gameobject_hierarchy(viewer.scn, new_root_object)
         viewer.scn.gameobjects.append(new_root_object)
         
-        RszGameObjectClipboard._apply_name_to_instance(viewer, new_root_instance_id, root_name)
+        apply_name_to_instance(viewer.scn, new_root_instance_id, root_name)
         
         pasted_children = []
         go_ids = sorted([int(id_str) for id_str in gameobjects_data.keys()])
@@ -421,7 +427,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             child_name = go_data.get("name", "")
                 
-            new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
+            new_child_go = create_gameobject_entry(viewer.scn, new_child_object_id, new_parent_id)
             
             if hasattr(new_child_go, "ukn") and "ukn" in go_data:
                         new_child_go.ukn = go_data["ukn"]
@@ -446,13 +452,16 @@ class RszGameObjectClipboard(RszClipboardBase):
             else:
                 new_child_go.component_count = 0
             
-            RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_child_go)
+            update_gameobject_hierarchy(viewer.scn, new_child_go)
             viewer.scn.gameobjects.append(new_child_go)
             
             child_result = {
                 "go_id": new_child_go.id,
                 "instance_id": new_go_instance_id,
-                "name": RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(new_go_instance_id, {}), child_name),
+                "name": get_instance_name_from_fields(
+                    viewer.scn.parsed_elements.get(new_go_instance_id, {}),
+                    child_name,
+                ),
                 "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_go_instance_id),
                 "component_count": new_child_go.component_count,
                 "parent_id": new_parent_id,
@@ -471,7 +480,10 @@ class RszGameObjectClipboard(RszClipboardBase):
             "success": True,
             "go_id": new_root_object.id,
             "instance_id": new_root_instance_id,
-            "name": RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(new_root_instance_id, {}), root_name),
+            "name": get_instance_name_from_fields(
+                viewer.scn.parsed_elements.get(new_root_instance_id, {}),
+                root_name,
+            ),
             "parent_id": parent_id,
             "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(new_root_instance_id),
             "component_count": new_root_object.component_count,
@@ -564,7 +576,7 @@ class RszGameObjectClipboard(RszClipboardBase):
     @staticmethod
     def _serialize_gameobject_data(viewer, gameobject_id):
         """Serialize GameObject-specific data (not instance data)"""
-        go = RszGameObjectClipboard._find_gameobject_by_id(viewer, gameobject_id)
+        go = find_gameobject_by_id(viewer.scn, gameobject_id)
         if not go:
             return None
             
@@ -572,9 +584,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         if instance_id <= 0:
             return None
             
-        name = RszGameObjectClipboard._get_instance_name_from_fields(
-            viewer.scn.parsed_elements.get(instance_id, {})
-        )
+        name = get_instance_name_from_fields(viewer.scn.parsed_elements.get(instance_id, {}))
         
         go_data = {
             "id": gameobject_id,
@@ -632,9 +642,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             }
 
         fields      = viewer.scn.parsed_elements[instance_id]
-        folder_name = RszGameObjectClipboard._get_instance_name_from_fields(
-            fields, f"Folder_{folder_id}"
-        )
+        folder_name = get_instance_name_from_fields(fields, f"Folder_{folder_id}")
 
         fields_data = {
             fname: RszArrayClipboard._serialize_element(fdata)
@@ -824,7 +832,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             
             go_id_mapping[go_id] = new_child_object_id
             
-            new_child_go = RszGameObjectClipboard._create_gameobject_entry(viewer, new_child_object_id, new_parent_id)
+            new_child_go = create_gameobject_entry(viewer.scn, new_child_object_id, new_parent_id)
             
             if hasattr(new_child_go, "ukn") and "ukn" in go_data:
                 new_child_go.ukn = go_data["ukn"]
@@ -843,10 +851,10 @@ class RszGameObjectClipboard(RszClipboardBase):
                     viewer, new_child_go, child_prefab_path
                 )
             
-            RszGameObjectClipboard._update_gameobject_hierarchy(viewer, new_child_go)
+            update_gameobject_hierarchy(viewer.scn, new_child_go)
             viewer.scn.gameobjects.append(new_child_go)
             
-            child_name = RszGameObjectClipboard._get_instance_name_from_fields(
+            child_name = get_instance_name_from_fields(
                 viewer.scn.parsed_elements.get(new_go_instance_id, {}), 
                 go_data.get("name", "")
             )
@@ -899,7 +907,10 @@ class RszGameObjectClipboard(RszClipboardBase):
             print(f"Invalid instance ID for Folder {folder_id}")
             return False
             
-        source_name = RszGameObjectClipboard._get_instance_name_from_fields(viewer.scn.parsed_elements.get(source_instance_id, {}))
+            source_name = get_instance_name_from_fields(
+                viewer.scn.parsed_elements.get(source_instance_id, {}),
+                RszGameObjectClipboard.DEFAULT_GO_NAME,
+            )
         
         child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
         
@@ -1432,69 +1443,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             return None
         
     @staticmethod
-    def _create_gameobject_entry(viewer, object_id, parent_id):
-        if viewer.scn.is_pfb:
-            new_go = PfbGameObject()
-        else:
-            new_go = RszGameObject()
-        
-        new_go.id = object_id
-        new_go.parent_id = parent_id
-        new_go.component_count = 0
-        if viewer.scn.is_scn:
-            guid_bytes = create_new_guid()
-            new_go.guid = guid_bytes
-            new_go.prefab_id = -1 
-            
-        return new_go
-    
-    @staticmethod
-    def _update_gameobject_hierarchy(viewer, gameobject):
-        instance_id = viewer.scn.object_table[gameobject.id]
-        viewer.scn.instance_hierarchy[instance_id] = {"children": [], "parent": None}
-        
-        if gameobject.parent_id >= 0 and gameobject.parent_id < len(viewer.scn.object_table):
-            parent_instance_id = viewer.scn.object_table[gameobject.parent_id]
-            
-            if parent_instance_id > 0:
-                viewer.scn.instance_hierarchy[instance_id]["parent"] = parent_instance_id
-                
-                if parent_instance_id in viewer.scn.instance_hierarchy:
-                    if "children" not in viewer.scn.instance_hierarchy[parent_instance_id]:
-                        viewer.scn.instance_hierarchy[parent_instance_id]["children"] = []
-                    
-                    viewer.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
-    
-    @staticmethod
-    def _insert_into_object_table(viewer, object_table_index, instance_id):
-        if object_table_index >= len(viewer.scn.object_table):
-            viewer.scn.object_table.extend(
-                [0] * (object_table_index - len(viewer.scn.object_table) + 1)
-            )
-            viewer.scn.object_table[object_table_index] = instance_id
-        else:
-            viewer.scn.object_table.insert(object_table_index, instance_id)
-            
-        for go in viewer.scn.gameobjects:
-            if go.id >= object_table_index:
-                go.id += 1
-            if go.parent_id >= object_table_index:
-                go.parent_id += 1
-                
-        for folder in viewer.scn.folder_infos:
-            if folder.id >= object_table_index:
-                folder.id += 1
-            if folder.parent_id >= object_table_index:
-                folder.parent_id += 1
-                
-        if viewer.scn.is_pfb:
-            for ref_info in viewer.scn.gameobject_ref_infos:
-                if ref_info.object_id >= object_table_index:
-                    ref_info.object_id += 1
-                if ref_info.target_id >= object_table_index:
-                    ref_info.target_id += 1
-    
-    @staticmethod
     def _delete_instances_and_update_references(viewer, instances_to_delete):
         """Delete multiple instances and update all references efficiently"""
         if not instances_to_delete:
@@ -1531,69 +1479,9 @@ class RszGameObjectClipboard(RszClipboardBase):
 
         return True
     @staticmethod
-    def _add_guid_to_settings(viewer, instance_id, guid_bytes):
-        if instance_id in viewer.scn.parsed_elements:
-            fields = viewer.scn.parsed_elements[instance_id]
-            
-            guid_data = create_guid_data(guid_bytes)
-            
-            guid_data._display_only = True
-            
-            for go in viewer.scn.gameobjects:
-                if go.id < len(viewer.scn.object_table) and viewer.scn.object_table[go.id] == instance_id:
-                    guid_data.gameobject = go
-                    break
-            
-            if "GUID" not in fields:
-                new_fields = {"GUID": guid_data}
-                for key, value in fields.items():
-                    new_fields[key] = value
-                viewer.scn.parsed_elements[instance_id] = new_fields
-            else:
-                fields["GUID"] = guid_data
-    
-    @staticmethod
-    def _find_gameobject_by_id(viewer, gameobject_id):
-        for go in viewer.scn.gameobjects:
-            if go.id == gameobject_id:
-                return go
-        return None
-    
-    @staticmethod
     def _get_instance_id(viewer, gameobject_id):
         instance = RszGameObjectClipboard.get_instance()
         return instance._get_gameobject_instance_id(viewer, gameobject_id)
-    
-    @staticmethod
-    def _apply_name_to_instance(viewer, instance_id, new_name):
-        fields = viewer.scn.parsed_elements[instance_id]
-        name_field = RszGameObjectClipboard._find_name_field(fields)
-        if name_field is None:
-            return False
-        name_field.value = new_name
-        return True
-    
-    @staticmethod
-    def _get_instance_name_from_fields(fields, default_name=None):
-        name_field = RszGameObjectClipboard._find_name_field(fields)
-        if name_field is None:
-            return (default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
-        return (name_field.value or default_name or RszGameObjectClipboard.DEFAULT_GO_NAME).strip("\00")
-
-    @staticmethod
-    def _find_name_field(fields):
-        if "Name" in fields:
-            return fields["Name"]
-
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, StringData) and "name" in field_name.lower():
-                return field_data
-
-        for field_data in fields.values():
-            if isinstance(field_data, StringData):
-                return field_data
-
-        return None
 
     @staticmethod
     def _get_components_for_gameobject(viewer, gameobject):

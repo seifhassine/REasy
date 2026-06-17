@@ -2,6 +2,7 @@ import traceback
 from file_handlers.rsz.rsz_data_types import ObjectData
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
 
 class RszComponentClipboard(RszClipboardBase):
     """Clipboard handling for copying and pasting components."""
@@ -174,9 +175,7 @@ class RszComponentClipboard(RszClipboardBase):
                     print(f"Updated component's parent field to point to GO {go_instance_id}")
             
             component_object_id = go_object_id + target_go.component_count + 1
-            RszGameObjectClipboard._insert_into_object_table(
-                viewer, component_object_id, main_component_new_id
-            )
+            insert_into_object_table(viewer.scn, component_object_id, main_component_new_id)
             
             target_go.component_count += 1
             

@@ -17,6 +17,14 @@ from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.rsz.utils.rsz_embedded_utils import copy_embedded_rsz_header
 from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values
+from file_handlers.rsz.utils.rsz_gameobject_utils import (
+    add_guid_to_settings,
+    create_gameobject_entry,
+    find_gameobject_by_id,
+    insert_into_object_table,
+    remove_from_object_table,
+    update_gameobject_hierarchy,
+)
 
 
 class RszObjectOperations:
@@ -119,15 +127,12 @@ class RszObjectOperations:
         object_table_index = len(self.scn.object_table)
         self.scn.object_table.append(insertion_index)
         
-        new_gameobject = self._create_gameobject_entry(
-            object_table_index, parent_id
-        )
+        new_gameobject = create_gameobject_entry(self.scn, object_table_index, parent_id)
         
-        self._update_gameobject_hierarchy(new_gameobject)
+        update_gameobject_hierarchy(self.scn, new_gameobject)
         self.scn.gameobjects.append(new_gameobject)
         if self.scn.is_scn:
-            from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-            RszGameObjectClipboard._add_guid_to_settings(self.viewer, insertion_index, new_gameobject.guid)
+            add_guid_to_settings(self.scn, insertion_index, new_gameobject.guid)
         self.viewer.mark_modified()
         
         return {
@@ -143,52 +148,13 @@ class RszObjectOperations:
         """Calculate the best insertion index for a new GameObject instance"""
         return len(self.scn.instance_infos)
 
-    def _create_gameobject_entry(self, object_id, parent_id):
-        """Create a new GameObject entry for the scene"""
-        from file_handlers.rsz.rsz_file import RszGameObject
-        new_go = RszGameObject()
-        new_go.id = object_id
-        new_go.parent_id = parent_id
-        new_go.component_count = 0
-        
-        if self.scn.is_scn:
-            from .utils.rsz_guid_utils import create_new_guid
-            guid_bytes = create_new_guid()
-            new_go.guid = guid_bytes
-            new_go.prefab_id = -1 
-            
-        return new_go
-
-    def _update_gameobject_hierarchy(self, gameobject):
-        """Update instance hierarchy with parent-child relationship for GameObjects"""
-        instance_id = self.scn.object_table[gameobject.id]
-        self.scn.instance_hierarchy[instance_id] = {"children": [], "parent": None}
-        
-        if gameobject.parent_id >= 0 and gameobject.parent_id < len(self.scn.object_table):
-            parent_instance_id = self.scn.object_table[gameobject.parent_id]
-            
-            if parent_instance_id > 0:
-                self.scn.instance_hierarchy[instance_id]["parent"] = parent_instance_id
-                
-                if parent_instance_id in self.scn.instance_hierarchy:
-                    if "children" not in self.scn.instance_hierarchy[parent_instance_id]:
-                        self.scn.instance_hierarchy[parent_instance_id]["children"] = []
-                    
-                    self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
-    
-    def _find_gameobject_by_id(self, gameobject_id):
-        for go in self.scn.gameobjects:
-            if go.id == gameobject_id:
-                return go
-        return None
-        
     def delete_gameobject(self, gameobject_id):
         """Delete a GameObject with the given ID"""
         if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
             QMessageBox.warning(self.viewer, "Error", f"Invalid GameObject ID: {gameobject_id}")
             return False
             
-        target_go = self._find_gameobject_by_id(gameobject_id)
+        target_go = find_gameobject_by_id(self.scn, gameobject_id)
         
         if target_go is None:
             QMessageBox.warning(self.viewer, "Error", f"GameObject with ID {gameobject_id} not found")
@@ -260,7 +226,7 @@ class RszObjectOperations:
             if id_mapping:
                 self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
         
-            self._remove_from_object_table(go.id)
+            remove_from_object_table(self.scn, go.id)
             self.scn.gameobjects.remove(go)
 
         for prefab_id in sorted(prefabs_to_delete, reverse=True):
@@ -486,31 +452,6 @@ class RszObjectOperations:
                     else:
                         array_data.values.append(element)
 
-    def _insert_into_object_table(self, object_table_index, instance_id):
-        if object_table_index >= len(self.scn.object_table):
-            self.scn.object_table.extend(
-                [0] * (object_table_index - len(self.scn.object_table) + 1)
-            )
-            self.scn.object_table[object_table_index] = instance_id
-        else:
-            self.scn.object_table.insert(object_table_index, instance_id)
-        for go in self.scn.gameobjects:
-            if go.id >= object_table_index:
-                go.id += 1
-            if go.parent_id >= object_table_index:
-                go.parent_id += 1
-        for folder in self.scn.folder_infos:
-            if folder.id >= object_table_index:
-                folder.id += 1
-            if folder.parent_id >= object_table_index:
-                folder.parent_id += 1
-        if self.scn.is_pfb:
-            for ref_info in self.scn.gameobject_ref_infos:
-                if ref_info.object_id >= object_table_index:
-                    ref_info.object_id += 1
-                if ref_info.target_id >= object_table_index:
-                    ref_info.target_id += 1
-
     def _calculate_component_insertion_index(self, gameobject):
         """Calculate the best insertion index for a new component"""
         existing_component_instance_ids = []
@@ -531,31 +472,6 @@ class RszObjectOperations:
         # Fallback: append at end
         return len(self.scn.instance_infos)
     
-    def _remove_from_object_table(self, object_table_index):
-        _ = self.scn.object_table[object_table_index]
-            
-        self.scn.object_table.pop(object_table_index)
-        
-        for go in self.scn.gameobjects:
-            if go.id > object_table_index:
-                go.id -= 1
-            if go.parent_id > object_table_index:
-                go.parent_id -= 1
-                
-        for folder in self.scn.folder_infos:
-            if folder.id > object_table_index:
-                folder.id -= 1
-            if folder.parent_id > object_table_index:
-                folder.parent_id -= 1
-                
-        if self.scn.is_pfb:
-            for ref_info in self.scn.gameobject_ref_infos:
-                if ref_info.object_id > object_table_index:
-                    ref_info.object_id -= 1
-                if ref_info.target_id > object_table_index:
-                    ref_info.target_id -= 1
-
-
     def delete_folder(self, folder_id):
         """Delete a folder with the given ID and all its contents"""
         target_folder = None
@@ -620,7 +536,7 @@ class RszObjectOperations:
                     self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
             
             if folder.id < len(self.scn.object_table):
-                self._remove_from_object_table(folder.id)
+                remove_from_object_table(self.scn, folder.id)
             
             if folder in self.scn.folder_infos:
                 self.scn.folder_infos.remove(folder)
@@ -643,7 +559,7 @@ class RszObjectOperations:
                 self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
         
         if target_folder.id < len(self.scn.object_table):
-            self._remove_from_object_table(target_folder.id)
+            remove_from_object_table(self.scn, target_folder.id)
         
         if target_folder in self.scn.folder_infos:
             self.scn.folder_infos.remove(target_folder)
@@ -1163,7 +1079,7 @@ class RszObjectOperations:
         self.scn.parsed_elements[component_instance_id] = component_fields
 
         target_go.component_count += 1
-        self._insert_into_object_table(object_table_insertion_index, component_instance_id)
+        insert_into_object_table(self.scn, object_table_insertion_index, component_instance_id)
 
         self.viewer.mark_modified()
 
@@ -1236,27 +1152,7 @@ class RszObjectOperations:
             to_delete_instances.append(instance_id)
 
         owner_go.component_count -= 1
-        
-        self.scn.object_table.pop(object_table_index)
-        
-        for go in self.scn.gameobjects:
-            if go.id > object_table_index:
-                go.id -= 1
-            if go.parent_id > object_table_index:
-                go.parent_id -= 1
-                
-        for folder in self.scn.folder_infos:
-            if folder.id > object_table_index:
-                folder.id -= 1
-            if folder.parent_id > object_table_index:
-                folder.parent_id -= 1
-                
-        if self.scn.is_pfb:
-            for ref_info in self.scn.gameobject_ref_infos:
-                if hasattr(ref_info, 'object_id') and ref_info.object_id > object_table_index:
-                    ref_info.object_id -= 1
-                if hasattr(ref_info, 'target_id') and ref_info.target_id > object_table_index:
-                    ref_info.target_id -= 1
+        remove_from_object_table(self.scn, object_table_index)
         
         for instance_id in to_delete_instances:
             self.viewer._remove_instance_references(instance_id)
