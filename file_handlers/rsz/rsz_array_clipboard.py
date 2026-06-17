@@ -584,6 +584,264 @@ class RszArrayClipboard:
         return userdata_element
 
     @staticmethod
+    def _reset_embedded_userdata_storage(userdata_info, viewer):
+        from file_handlers.rsz.scn_19.scn_19_structure import EmbeddedRSZHeader
+
+        userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
+        userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
+        userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version
+        userdata_info.embedded_object_table = []
+        userdata_info.embedded_instance_infos = []
+        userdata_info.embedded_userdata_infos = []
+        userdata_info.embedded_instances = {}
+
+    @staticmethod
+    def _initialize_embedded_userdata_storage(userdata_info, viewer, name, id_manager_instance_id):
+        if not hasattr(userdata_info, 'name'):
+            userdata_info.name = name
+
+        RszArrayClipboard._reset_embedded_userdata_storage(userdata_info, viewer)
+
+        if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
+            userdata_info.embedded_instance_hierarchy = {}
+
+        from utils.id_manager import EmbeddedIdManager
+        userdata_info.id_manager = EmbeddedIdManager(id_manager_instance_id)
+
+    @staticmethod
+    def _create_embedded_userdata_info(instance_id, type_id, root_instance, parent_userdata_rui):
+        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
+
+        userdata_info = Scn19RSZUserDataInfo()
+        userdata_info.instance_id = instance_id
+        userdata_info.type_id = type_id
+        userdata_info.json_path_hash = 0
+        userdata_info.data_size = 0
+        userdata_info.rsz_offset = 0
+        userdata_info.data = b""
+        userdata_info.original_data = None
+        userdata_info.modified = True
+        userdata_info.value = root_instance.get("type_name", "")
+        userdata_info.parent_userdata_rui = parent_userdata_rui
+        return userdata_info
+
+    @staticmethod
+    def _register_main_userdata_info(viewer, userdata_info, instance_id, root_instance, require_userdata_set):
+        if require_userdata_set:
+            already_registered = instance_id in viewer.scn._rsz_userdata_set
+        else:
+            already_registered = hasattr(viewer.scn, '_rsz_userdata_set') and instance_id in viewer.scn._rsz_userdata_set
+
+        if already_registered:
+            print(f"Warning: RSZUserDataInfo for instance {instance_id} already exists - this should not happen")
+            return False
+
+        viewer.scn.rsz_userdata_infos.append(userdata_info)
+
+        if not hasattr(viewer.scn, '_rsz_userdata_dict'):
+            viewer.scn._rsz_userdata_dict = {}
+        if not hasattr(viewer.scn, '_rsz_userdata_set'):
+            viewer.scn._rsz_userdata_set = set()
+        if not hasattr(viewer.scn, '_rsz_userdata_str_map'):
+            viewer.scn._rsz_userdata_str_map = {}
+
+        viewer.scn._rsz_userdata_dict[instance_id] = userdata_info
+        viewer.scn._rsz_userdata_set.add(instance_id)
+
+        type_name = root_instance.get("type_name") or userdata_info.value or f"UserData_{instance_id}"
+        viewer.scn._rsz_userdata_str_map[userdata_info] = type_name
+        return True
+
+    @staticmethod
+    def _build_field_order_id_mapping(instances, object_graph, viewer):
+        instance_by_relative_id = {inst.get("id", -1): inst for inst in instances}
+
+        parent_child_map = {}
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            fields = instance_data.get("fields", {})
+
+            for field_name, field_data in fields.items():
+                if isinstance(field_data, dict):
+                    field_type = field_data.get("type")
+                    if field_type == "ObjectData":
+                        child_relative_id = field_data.get("value", 0)
+                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
+                            if relative_id not in parent_child_map:
+                                parent_child_map[relative_id] = []
+                            parent_child_map[relative_id].append((field_name, child_relative_id))
+                    elif field_type == "UserDataData":
+                        child_relative_id = field_data.get("value", 0)
+                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
+                            if relative_id not in parent_child_map:
+                                parent_child_map[relative_id] = []
+                            parent_child_map[relative_id].append((field_name, child_relative_id))
+
+        id_mapping = {}
+        next_embedded_id = 1
+        processed_ids = set()
+
+        def assign_ids_respecting_field_order(relative_id):
+            """Recursively assign IDs respecting field declaration order"""
+            nonlocal next_embedded_id
+
+            if relative_id in processed_ids:
+                return
+
+            processed_ids.add(relative_id)
+            instance_data = instance_by_relative_id.get(relative_id)
+            if not instance_data:
+                return
+
+            type_id = instance_data.get("type_id", 0)
+            type_info = viewer.type_registry.get_type_info(type_id) if hasattr(viewer, 'type_registry') else None
+
+            if type_info and relative_id in parent_child_map:
+                field_order = {field["name"]: idx for idx, field in enumerate(type_info.get("fields", []))}
+
+                children = parent_child_map[relative_id]
+                sorted_children = sorted(children, key=lambda x: field_order.get(x[0], 999))
+
+                for field_name, child_id in sorted_children:
+                    assign_ids_respecting_field_order(child_id)
+
+            id_mapping[relative_id] = next_embedded_id
+            next_embedded_id += 1
+
+        root_relative_id = object_graph.get("root_id", 1)
+        assign_ids_respecting_field_order(root_relative_id)
+
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            if relative_id not in id_mapping:
+                id_mapping[relative_id] = next_embedded_id
+                next_embedded_id += 1
+
+        return id_mapping
+
+    @staticmethod
+    def _populate_reconstructed_embedded_instances(userdata_info, instances, id_mapping, viewer):
+        for instance_data in instances:
+            relative_id = instance_data.get("id", 0)
+            new_absolute_id = id_mapping[relative_id]
+
+            inst_info = create_embedded_instance_info(instance_data.get("type_id", 0), viewer.type_registry)
+            if "crc" in instance_data:
+                inst_info.crc = viewer._parse_crc_value(instance_data.get("crc", 0))
+
+            while len(userdata_info.embedded_instance_infos) <= new_absolute_id:
+                dummy_info = create_embedded_instance_info(0, viewer.type_registry)
+                userdata_info.embedded_instance_infos.append(dummy_info)
+
+            userdata_info.embedded_instance_infos[new_absolute_id] = inst_info
+
+            fields_data = instance_data.get("fields", {})
+            reconstructed_fields = {}
+
+            for field_name, field_data in fields_data.items():
+                reconstructed_fields[field_name] = RszArrayClipboard._reconstruct_field_with_new_ids(
+                    field_data, id_mapping
+                )
+
+            userdata_info.embedded_instances[new_absolute_id] = reconstructed_fields
+
+            userdata_info.embedded_instance_hierarchy[new_absolute_id] = {"children": [], "parent": None}
+
+            if hasattr(userdata_info, 'id_manager') and userdata_info.id_manager:
+                userdata_info.id_manager.register_instance(new_absolute_id)
+
+    @staticmethod
+    def _append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer):
+        userdata_infos = object_graph.get("userdata_infos", [])
+        for ui_data in userdata_infos:
+            nested_instance_id = ui_data.get("instance_id", 0)
+            nested_type_id = ui_data.get("type_id", 0)
+            nested_hash = ui_data.get("hash", 0)
+            nested_json_path_hash = ui_data.get("json_path_hash", 0)
+
+            from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
+            nested_userdata_info = Scn19RSZUserDataInfo()
+            mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
+            nested_userdata_info.instance_id = mapped_instance_id
+            nested_userdata_info.type_id = nested_type_id
+            nested_userdata_info.hash = nested_hash
+            nested_userdata_info.json_path_hash = nested_json_path_hash
+            nested_userdata_info.data_size = 0
+            nested_userdata_info.rsz_offset = 0
+            nested_userdata_info.data = b""
+            nested_userdata_info.modified = True
+
+            nested_graph = ui_data.get("nested_object_graph")
+            if nested_graph:
+                nested_userdata_info = RszArrayClipboard._populate_userdata_from_object_graph(
+                    nested_userdata_info, nested_graph, viewer
+                )
+
+            userdata_info.embedded_userdata_infos.append(nested_userdata_info)
+
+            nested_string = ui_data.get("userdata_string")
+            if nested_string:
+                if not hasattr(userdata_info, '_rsz_userdata_str_map'):
+                    userdata_info._rsz_userdata_str_map = {}
+                userdata_info._rsz_userdata_str_map[nested_userdata_info] = nested_string
+
+    @staticmethod
+    def _build_sequential_id_mapping(instances):
+        id_mapping = {}
+        next_relative_id = 1
+        for instance in instances:
+            clipboard_id = instance.get("id", -1)
+            id_mapping[clipboard_id] = next_relative_id
+            next_relative_id += 1
+        return id_mapping
+
+    @staticmethod
+    def _insert_graph_instances(viewer, instances, insertion_index):
+        from file_handlers.rsz.rsz_file import RszInstanceInfo
+
+        relative_to_new_id = {}
+        guid_mapping = {}
+
+        current_index = insertion_index
+        for instance_data in instances:
+            relative_id = instance_data.get("id", -1)
+            type_id = instance_data.get("type_id", 0)
+            crc = viewer._parse_crc_value(instance_data.get("crc", 0))
+
+            if relative_id < 0 or type_id <= 0 or crc <= 0:
+                print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
+                continue
+
+            new_instance = RszInstanceInfo()
+            new_instance.type_id = type_id
+            new_instance.crc = crc
+
+            viewer._insert_instance_and_update_references(current_index, new_instance)
+
+            viewer.handler.id_manager.register_instance(current_index)
+
+            relative_to_new_id[relative_id] = current_index
+
+            if instance_data.get("is_userdata", False):
+                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+                base_clipboard = type('TempClipboard', (RszClipboardBase,), {
+                    'get_clipboard_type': lambda self: 'temp'
+                })()
+
+                base_clipboard.setup_userdata_for_pasted_instance(
+                    viewer,
+                    current_index,
+                    instance_data.get("userdata_hash", 0),
+                    instance_data.get("userdata_string", "")
+                )
+
+            viewer.scn.parsed_elements[current_index] = {}
+
+            current_index += 1
+
+        return relative_to_new_id, guid_mapping
+
+    @staticmethod
     def _create_rsz_userdata_info_for_existing_instance(viewer, elem_data, existing_instance_id):
         """Create RSZUserDataInfo for an existing instance (used when instance was pre-allocated)"""
         object_graph = elem_data.get("object_graph", {})
@@ -601,46 +859,17 @@ class RszArrayClipboard:
         else:
             print(f"Warning: existing_instance_id {existing_instance_id} not found in instance_infos, using type_id 0")
         
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo, EmbeddedRSZHeader
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = existing_instance_id
-        userdata_info.type_id = instance_type_id 
-        userdata_info.json_path_hash = 0
-        userdata_info.data_size = 0
-        userdata_info.rsz_offset = 0
-        userdata_info.data = b""
-        userdata_info.original_data = None
-        userdata_info.modified = True
-        
         root_instance = instances[0] if instances else {}
         type_name = root_instance.get("type_name", "")
-        userdata_info.value = type_name
-        userdata_info.parent_userdata_rui = None 
+        userdata_info = RszArrayClipboard._create_embedded_userdata_info(
+            existing_instance_id, instance_type_id, root_instance, None
+        )
         
-        if not hasattr(userdata_info, 'name'):
-            userdata_info.name = type_name
-        
-        userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
-        userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
-        userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version 
-        userdata_info.embedded_object_table = []
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_instances = {}
-        
-        if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
-            userdata_info.embedded_instance_hierarchy = {}
-        
-        from utils.id_manager import EmbeddedIdManager
-        userdata_info.id_manager = EmbeddedIdManager(existing_instance_id)
+        RszArrayClipboard._initialize_embedded_userdata_storage(
+            userdata_info, viewer, type_name, existing_instance_id
+        )
 
-        id_mapping = {}
-        next_relative_id = 1
-        for instance in instances:
-            clipboard_id = instance.get("id", -1)
-            id_mapping[clipboard_id] = next_relative_id
-            next_relative_id += 1
+        id_mapping = RszArrayClipboard._build_sequential_id_mapping(instances)
         
         null_instance_info = create_embedded_instance_info(0, viewer.type_registry)
         userdata_info.embedded_instance_infos = [null_instance_info]
@@ -732,39 +961,7 @@ class RszArrayClipboard:
         target_instance_relative_id = len(instances)  # Last instance position
         userdata_info.embedded_object_table = [target_instance_relative_id]
         
-        userdata_infos = object_graph.get("userdata_infos", [])
-        if userdata_infos:
-            for ui_data in userdata_infos:
-                nested_instance_id = ui_data.get("instance_id", 0)
-                nested_type_id = ui_data.get("type_id", 0)
-                nested_hash = ui_data.get("hash", 0)
-                nested_json_path_hash = ui_data.get("json_path_hash", 0)
-                
-                from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-                nested_userdata_info = Scn19RSZUserDataInfo()
-                mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
-                nested_userdata_info.instance_id = mapped_instance_id
-                nested_userdata_info.type_id = nested_type_id
-                nested_userdata_info.hash = nested_hash
-                nested_userdata_info.json_path_hash = nested_json_path_hash
-                nested_userdata_info.data_size = 0
-                nested_userdata_info.rsz_offset = 0
-                nested_userdata_info.data = b""
-                nested_userdata_info.modified = True
-                
-                nested_graph = ui_data.get("nested_object_graph")
-                if nested_graph:
-                    nested_userdata_info = RszArrayClipboard._populate_userdata_from_object_graph(
-                        nested_userdata_info, nested_graph, viewer
-                    )
-                
-                userdata_info.embedded_userdata_infos.append(nested_userdata_info)
-                
-                nested_string = ui_data.get("userdata_string")
-                if nested_string:
-                    if not hasattr(userdata_info, '_rsz_userdata_str_map'):
-                        userdata_info._rsz_userdata_str_map = {}
-                    userdata_info._rsz_userdata_str_map[nested_userdata_info] = nested_string
+        RszArrayClipboard._append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer)
         
         update_rsz_header_counts(userdata_info)
         
@@ -814,128 +1011,18 @@ class RszArrayClipboard:
         root_instance = instances[0] if instances else {}
         root_type_id = root_instance.get("type_id", 0)
         
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo, EmbeddedRSZHeader
+        userdata_info = RszArrayClipboard._create_embedded_userdata_info(
+            next_userdata_id, root_type_id, root_instance, None
+        )
         
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = next_userdata_id
-        userdata_info.type_id = root_type_id
-        userdata_info.json_path_hash = 0
-        userdata_info.data_size = 0
-        userdata_info.rsz_offset = 0
-        userdata_info.data = b""
-        userdata_info.original_data = None
-        userdata_info.modified = True
-        userdata_info.value = root_instance.get("type_name", "")
-        userdata_info.parent_userdata_rui = None
-        
-        if not hasattr(userdata_info, 'name'):
-            userdata_info.name = root_instance.get("type_name", "")
-        
-        userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
-        userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
-        userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version 
-        userdata_info.embedded_object_table = []
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_instances = {}
-        
-        if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
-            userdata_info.embedded_instance_hierarchy = {}
-        
-        from utils.id_manager import EmbeddedIdManager
-        userdata_info.id_manager = EmbeddedIdManager(next_userdata_id)
-        
-        instance_by_relative_id = {inst.get("id", -1): inst for inst in instances}
-        
-        parent_child_map = {}  # Maps parent relative ID to list of (field_name, child_relative_id)
-        for instance_data in instances:
-            relative_id = instance_data.get("id", -1)
-            fields = instance_data.get("fields", {})
-            
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, dict):
-                    field_type = field_data.get("type")
-                    if field_type == "ObjectData":
-                        child_relative_id = field_data.get("value", 0)
-                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
-                    elif field_type == "UserDataData":
-                        child_relative_id = field_data.get("value", 0)
-                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
-        
-        id_mapping = {}
-        next_embedded_id = 1
-        processed_ids = set()
-        
-        def assign_ids_respecting_field_order(relative_id):
-            """Recursively assign IDs respecting field declaration order"""
-            nonlocal next_embedded_id
-            
-            if relative_id in processed_ids:
-                return
-                
-            processed_ids.add(relative_id)
-            instance_data = instance_by_relative_id.get(relative_id)
-            if not instance_data:
-                return
-            
-            type_id = instance_data.get("type_id", 0)
-            type_info = viewer.type_registry.get_type_info(type_id) if hasattr(viewer, 'type_registry') else None
-            
-            if type_info and relative_id in parent_child_map:
-                field_order = {field["name"]: idx for idx, field in enumerate(type_info.get("fields", []))}
-                
-                children = parent_child_map[relative_id]
-                sorted_children = sorted(children, key=lambda x: field_order.get(x[0], 999))
-                
-                for field_name, child_id in sorted_children:
-                    assign_ids_respecting_field_order(child_id)
-            
-            id_mapping[relative_id] = next_embedded_id
-            next_embedded_id += 1
-        
-        root_relative_id = object_graph.get("root_id", 1)
-        assign_ids_respecting_field_order(root_relative_id)
-        
-        for instance_data in instances:
-            relative_id = instance_data.get("id", -1)
-            if relative_id not in id_mapping:
-                id_mapping[relative_id] = next_embedded_id
-                next_embedded_id += 1
-        
-        for instance_data in instances:
-            relative_id = instance_data.get("id", 0)
-            new_absolute_id = id_mapping[relative_id]
-            
-            inst_info = create_embedded_instance_info(instance_data.get("type_id", 0), viewer.type_registry)
-            if "crc" in instance_data:
-                inst_info.crc = viewer._parse_crc_value(instance_data.get("crc", 0))
-            
-            while len(userdata_info.embedded_instance_infos) <= new_absolute_id:
-                dummy_info = create_embedded_instance_info(0, viewer.type_registry)
-                userdata_info.embedded_instance_infos.append(dummy_info)
-            
-            userdata_info.embedded_instance_infos[new_absolute_id] = inst_info
-            
-            fields_data = instance_data.get("fields", {})
-            reconstructed_fields = {}
-            
-            for field_name, field_data in fields_data.items():
-                reconstructed_fields[field_name] = RszArrayClipboard._reconstruct_field_with_new_ids(
-                    field_data, id_mapping
-                )
-            
-            userdata_info.embedded_instances[new_absolute_id] = reconstructed_fields
-            
-            userdata_info.embedded_instance_hierarchy[new_absolute_id] = {"children": [], "parent": None}
-            
-            if hasattr(userdata_info, 'id_manager') and userdata_info.id_manager:
-                userdata_info.id_manager.register_instance(new_absolute_id)
+        RszArrayClipboard._initialize_embedded_userdata_storage(
+            userdata_info, viewer, root_instance.get("type_name", ""), next_userdata_id
+        )
+
+        id_mapping = RszArrayClipboard._build_field_order_id_mapping(instances, object_graph, viewer)
+        RszArrayClipboard._populate_reconstructed_embedded_instances(
+            userdata_info, instances, id_mapping, viewer
+        )
         
         target_instance_relative_id = len(instances)
         userdata_info.embedded_object_table = [target_instance_relative_id]
@@ -943,58 +1030,12 @@ class RszArrayClipboard:
         if not hasattr(viewer.scn, 'rsz_userdata_infos'):
             viewer.scn.rsz_userdata_infos = []
         
-        if next_userdata_id in viewer.scn._rsz_userdata_set:
-            print(f"Warning: RSZUserDataInfo for instance {next_userdata_id} already exists - this should not happen")
+        if not RszArrayClipboard._register_main_userdata_info(
+            viewer, userdata_info, next_userdata_id, root_instance, require_userdata_set=True
+        ):
             return None
-        
-        viewer.scn.rsz_userdata_infos.append(userdata_info)
-        
-        if not hasattr(viewer.scn, '_rsz_userdata_dict'):
-            viewer.scn._rsz_userdata_dict = {}
-        if not hasattr(viewer.scn, '_rsz_userdata_set'):
-            viewer.scn._rsz_userdata_set = set()
-        if not hasattr(viewer.scn, '_rsz_userdata_str_map'):
-            viewer.scn._rsz_userdata_str_map = {}
-        
-        viewer.scn._rsz_userdata_dict[next_userdata_id] = userdata_info
-        viewer.scn._rsz_userdata_set.add(next_userdata_id)
-        
-        type_name = root_instance.get("type_name") or userdata_info.value or f"UserData_{next_userdata_id}"
-        viewer.scn._rsz_userdata_str_map[userdata_info] = type_name
-        
-        userdata_infos = object_graph.get("userdata_infos", [])
-        if userdata_infos:
-            for ui_data in userdata_infos:
-                nested_instance_id = ui_data.get("instance_id", 0)
-                nested_type_id = ui_data.get("type_id", 0)
-                nested_hash = ui_data.get("hash", 0)
-                nested_json_path_hash = ui_data.get("json_path_hash", 0)
-                
-                from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-                nested_userdata_info = Scn19RSZUserDataInfo()
-                mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
-                nested_userdata_info.instance_id = mapped_instance_id
-                nested_userdata_info.type_id = nested_type_id
-                nested_userdata_info.hash = nested_hash
-                nested_userdata_info.json_path_hash = nested_json_path_hash
-                nested_userdata_info.data_size = 0
-                nested_userdata_info.rsz_offset = 0
-                nested_userdata_info.data = b""
-                nested_userdata_info.modified = True
-                
-                nested_graph = ui_data.get("nested_object_graph")
-                if nested_graph:
-                    nested_userdata_info = RszArrayClipboard._populate_userdata_from_object_graph(
-                        nested_userdata_info, nested_graph, viewer
-                    )
-                
-                userdata_info.embedded_userdata_infos.append(nested_userdata_info)
-                
-                nested_string = ui_data.get("userdata_string")
-                if nested_string:
-                    if not hasattr(userdata_info, '_rsz_userdata_str_map'):
-                        userdata_info._rsz_userdata_str_map = {}
-                    userdata_info._rsz_userdata_str_map[nested_userdata_info] = nested_string
+
+        RszArrayClipboard._append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer)
         
         update_rsz_header_counts(userdata_info)
     
@@ -1014,21 +1055,9 @@ class RszArrayClipboard:
         if not instances:
             return userdata_info
         
-        from file_handlers.rsz.scn_19.scn_19_structure import EmbeddedRSZHeader
-        userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
-        userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
-        userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version 
-        userdata_info.embedded_object_table = []
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_instances = {}
-        
-        id_mapping = {}
-        next_relative_id = 1
-        for instance in instances:
-            clipboard_id = instance.get("id", -1)
-            id_mapping[clipboard_id] = next_relative_id
-            next_relative_id += 1
+        RszArrayClipboard._reset_embedded_userdata_storage(userdata_info, viewer)
+
+        id_mapping = RszArrayClipboard._build_sequential_id_mapping(instances)
         
         null_instance_info = create_embedded_instance_info(0, viewer.type_registry)
         userdata_info.embedded_instance_infos = [null_instance_info]
@@ -1046,56 +1075,25 @@ class RszArrayClipboard:
             
             instance_info = create_embedded_instance_info(instance.get("type_id", 0), viewer.type_registry)
             userdata_info.embedded_instance_infos[new_relative_id] = instance_info
-            
+
             fields_data = instance.get("fields", {})
             embedded_fields = {}
-            
+
             for field_name, field_data in fields_data.items():
                 deserialized_field = RszArrayClipboard._deserialize_field_with_relative_mapping(
                     field_data, id_mapping
                 )
                 embedded_fields[field_name] = deserialized_field
-            
+
             userdata_info.embedded_instances[new_relative_id] = embedded_fields
-        
+
         target_instance_relative_id = len(instances)  # Last instance position
         userdata_info.embedded_object_table = [target_instance_relative_id]
-        
-        userdata_infos = object_graph.get("userdata_infos", [])
-        for ui_data in userdata_infos:
-            nested_instance_id = ui_data.get("instance_id", 0)
-            nested_type_id = ui_data.get("type_id", 0)
-            nested_hash = ui_data.get("hash", 0)
-            nested_json_path_hash = ui_data.get("json_path_hash", 0)
-            
-            from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-            nested_userdata_info = Scn19RSZUserDataInfo()
-            mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
-            nested_userdata_info.instance_id = mapped_instance_id
-            nested_userdata_info.type_id = nested_type_id
-            nested_userdata_info.hash = nested_hash
-            nested_userdata_info.json_path_hash = nested_json_path_hash
-            nested_userdata_info.data_size = 0
-            nested_userdata_info.rsz_offset = 0
-            nested_userdata_info.data = b""
-            nested_userdata_info.modified = True
-            
-            nested_graph = ui_data.get("nested_object_graph")
-            if nested_graph:
-                nested_userdata_info = RszArrayClipboard._populate_userdata_from_object_graph(
-                    nested_userdata_info, nested_graph, viewer
-                )
-            
-            userdata_info.embedded_userdata_infos.append(nested_userdata_info)
-            
-            nested_string = ui_data.get("userdata_string")
-            if nested_string:
-                if not hasattr(userdata_info, '_rsz_userdata_str_map'):
-                    userdata_info._rsz_userdata_str_map = {}
-                userdata_info._rsz_userdata_str_map[nested_userdata_info] = nested_string
-        
+
+        RszArrayClipboard._append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer)
+
         return userdata_info
-        
+
     @staticmethod  
     def _add_instances_to_existing_rui(object_graph, viewer, target_rui):
         """Add clipboard instances directly to existing RUI structure by creating new userdata info (following embedded operations pattern)""" 
@@ -1118,128 +1116,18 @@ class RszArrayClipboard:
         root_instance = instances[0] if instances else {}
         root_type_id = root_instance.get("type_id", 0)
         
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo, EmbeddedRSZHeader
+        userdata_info = RszArrayClipboard._create_embedded_userdata_info(
+            next_userdata_id, root_type_id, root_instance, target_rui
+        )
         
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = next_userdata_id
-        userdata_info.type_id = root_type_id
-        userdata_info.json_path_hash = 0  # Will be calculated later
-        userdata_info.data_size = 0  # Will be set after building RSZ data
-        userdata_info.rsz_offset = 0  # Will be set during main file build
-        userdata_info.data = b""  # Will be set after building RSZ data
-        userdata_info.original_data = None
-        userdata_info.modified = True 
-        userdata_info.value = root_instance.get("type_name", "")
-        userdata_info.parent_userdata_rui = target_rui
-        
-        if not hasattr(userdata_info, 'name'):
-            userdata_info.name = root_instance.get("type_name", "")
-        
-        userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
-        userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
-        userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version 
-        userdata_info.embedded_object_table = []  
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_instances = {}
-        
-        if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
-            userdata_info.embedded_instance_hierarchy = {}
+        RszArrayClipboard._initialize_embedded_userdata_storage(
+            userdata_info, viewer, root_instance.get("type_name", ""), next_userdata_id
+        )
 
-        from utils.id_manager import EmbeddedIdManager
-        userdata_info.id_manager = EmbeddedIdManager(next_userdata_id)
-
-        instance_by_relative_id = {inst.get("id", -1): inst for inst in instances}
-        
-        parent_child_map = {}
-        for instance_data in instances:
-            relative_id = instance_data.get("id", -1)
-            fields = instance_data.get("fields", {})
-            
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, dict):
-                    field_type = field_data.get("type")
-                    if field_type == "ObjectData":
-                        child_relative_id = field_data.get("value", 0)
-                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
-                    elif field_type == "UserDataData":
-                        child_relative_id = field_data.get("value", 0)
-                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
-        
-        id_mapping = {}
-        next_embedded_id = 1
-        processed_ids = set()
-        
-        def assign_ids_respecting_field_order(relative_id):
-            """Recursively assign IDs respecting field declaration order"""
-            nonlocal next_embedded_id
-            
-            if relative_id in processed_ids:
-                return
-                
-            processed_ids.add(relative_id)
-            instance_data = instance_by_relative_id.get(relative_id)
-            if not instance_data:
-                return
-            
-            type_id = instance_data.get("type_id", 0)
-            type_info = viewer.type_registry.get_type_info(type_id) if hasattr(viewer, 'type_registry') else None
-            
-            if type_info and relative_id in parent_child_map:
-                field_order = {field["name"]: idx for idx, field in enumerate(type_info.get("fields", []))}
-                
-                children = parent_child_map[relative_id]
-                sorted_children = sorted(children, key=lambda x: field_order.get(x[0], 999))
-                
-                for field_name, child_id in sorted_children:
-                    assign_ids_respecting_field_order(child_id)
-            
-            id_mapping[relative_id] = next_embedded_id
-            next_embedded_id += 1
-        
-        root_relative_id = object_graph.get("root_id", 1)
-        assign_ids_respecting_field_order(root_relative_id)
-        
-        for instance_data in instances:
-            relative_id = instance_data.get("id", -1)
-            if relative_id not in id_mapping:
-                id_mapping[relative_id] = next_embedded_id
-                next_embedded_id += 1
-                        
-        for instance_data in instances:
-            relative_id = instance_data.get("id", 0)
-            new_absolute_id = id_mapping[relative_id]
-            
-            inst_info = create_embedded_instance_info(instance_data.get("type_id", 0), viewer.type_registry)
-            if "crc" in instance_data:
-                inst_info.crc = viewer._parse_crc_value(instance_data.get("crc", 0))
-            
-            while len(userdata_info.embedded_instance_infos) <= new_absolute_id:
-                dummy_info = create_embedded_instance_info(0, viewer.type_registry)
-                userdata_info.embedded_instance_infos.append(dummy_info)
-            
-            userdata_info.embedded_instance_infos[new_absolute_id] = inst_info
-            
-            fields_data = instance_data.get("fields", {})
-            reconstructed_fields = {}
-            
-            for field_name, field_data in fields_data.items():
-                reconstructed_fields[field_name] = RszArrayClipboard._reconstruct_field_with_new_ids(
-                    field_data, id_mapping
-                )
-            
-            userdata_info.embedded_instances[new_absolute_id] = reconstructed_fields
-            
-            userdata_info.embedded_instance_hierarchy[new_absolute_id] = {"children": [], "parent": None}
-            
-            if hasattr(userdata_info, 'id_manager') and userdata_info.id_manager:
-                userdata_info.id_manager.register_instance(new_absolute_id)
+        id_mapping = RszArrayClipboard._build_field_order_id_mapping(instances, object_graph, viewer)
+        RszArrayClipboard._populate_reconstructed_embedded_instances(
+            userdata_info, instances, id_mapping, viewer
+        )
         
         target_instance_relative_id = len(instances) 
         userdata_info.embedded_object_table = [target_instance_relative_id]
@@ -1248,24 +1136,10 @@ class RszArrayClipboard:
             if not hasattr(viewer.scn, 'rsz_userdata_infos'):
                 viewer.scn.rsz_userdata_infos = []
             
-            if hasattr(viewer.scn, '_rsz_userdata_set') and next_userdata_id in viewer.scn._rsz_userdata_set:
-                print(f"Warning: RSZUserDataInfo for instance {next_userdata_id} already exists - this should not happen")
+            if not RszArrayClipboard._register_main_userdata_info(
+                viewer, userdata_info, next_userdata_id, root_instance, require_userdata_set=False
+            ):
                 return None
-        
-            viewer.scn.rsz_userdata_infos.append(userdata_info)
-
-            if not hasattr(viewer.scn, '_rsz_userdata_dict'):
-                viewer.scn._rsz_userdata_dict = {}
-            if not hasattr(viewer.scn, '_rsz_userdata_set'):
-                viewer.scn._rsz_userdata_set = set()
-            if not hasattr(viewer.scn, '_rsz_userdata_str_map'):
-                viewer.scn._rsz_userdata_str_map = {}
-            
-            viewer.scn._rsz_userdata_dict[next_userdata_id] = userdata_info
-            viewer.scn._rsz_userdata_set.add(next_userdata_id)
-            
-            type_name = root_instance.get("type_name") or userdata_info.value or f"UserData_{next_userdata_id}"
-            viewer.scn._rsz_userdata_str_map[userdata_info] = type_name
         else:
             if not hasattr(target_rui, 'embedded_userdata_infos'):
                 target_rui.embedded_userdata_infos = []
@@ -1334,39 +1208,7 @@ class RszArrayClipboard:
             # Embedded context - instance_infos are handled by the embedded RUI only
             pass
         
-        userdata_infos = object_graph.get("userdata_infos", [])
-        if userdata_infos:
-            for ui_data in userdata_infos:
-                nested_instance_id = ui_data.get("instance_id", 0)
-                nested_type_id = ui_data.get("type_id", 0)
-                nested_hash = ui_data.get("hash", 0)
-                nested_json_path_hash = ui_data.get("json_path_hash", 0)
-                
-                from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-                nested_userdata_info = Scn19RSZUserDataInfo()
-                mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
-                nested_userdata_info.instance_id = mapped_instance_id
-                nested_userdata_info.type_id = nested_type_id
-                nested_userdata_info.hash = nested_hash
-                nested_userdata_info.json_path_hash = nested_json_path_hash
-                nested_userdata_info.data_size = 0
-                nested_userdata_info.rsz_offset = 0
-                nested_userdata_info.data = b""
-                nested_userdata_info.modified = True
-                
-                nested_graph = ui_data.get("nested_object_graph")
-                if nested_graph:
-                    nested_userdata_info = RszArrayClipboard._populate_userdata_from_object_graph(
-                        nested_userdata_info, nested_graph, viewer
-                    )
-                
-                userdata_info.embedded_userdata_infos.append(nested_userdata_info)
-                
-                nested_string = ui_data.get("userdata_string")
-                if nested_string:
-                    if not hasattr(userdata_info, '_rsz_userdata_str_map'):
-                        userdata_info._rsz_userdata_str_map = {}
-                    userdata_info._rsz_userdata_str_map[nested_userdata_info] = nested_string
+        RszArrayClipboard._append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer)
         
         update_rsz_header_counts(target_rui)
         update_rsz_header_counts(userdata_info)
@@ -1386,23 +1228,10 @@ class RszArrayClipboard:
         field_type = field_data.get("type", "")
         
         if field_type == "ObjectData":
-            value = field_data.get("value", 0)
-            orig_type = field_data.get("orig_type", "")
-            
-            if field_data.get("in_graph", False) and value in id_mapping:
-                value = id_mapping[value]
-
-            return ObjectData(value, orig_type)
+            return RszArrayClipboard._deserialize_object_field_with_mapping(field_data, id_mapping)
             
         elif field_type == "UserDataData":
-            value = field_data.get("value", 0)
-            string = field_data.get("string", "")
-            orig_type = field_data.get("orig_type", "")
-            
-            if field_data.get("in_graph", False) and value in id_mapping:
-                value = id_mapping[value]
-
-            return UserDataData(value, string, orig_type)
+            return RszArrayClipboard._deserialize_userdata_field_with_mapping(field_data, id_mapping)
             
         elif field_type == "ArrayData":
             result_values = []
@@ -1416,6 +1245,28 @@ class RszArrayClipboard:
         
         else:
             return RszArrayClipboard._deserialize_element(field_data, None, {}, randomize_guids=False)
+
+    @staticmethod
+    def _mapped_graph_value(field_data, id_mapping):
+        value = field_data.get("value", 0)
+
+        if field_data.get("in_graph", False) and value in id_mapping:
+            value = id_mapping[value]
+
+        return value
+
+    @staticmethod
+    def _deserialize_object_field_with_mapping(field_data, id_mapping):
+        value = RszArrayClipboard._mapped_graph_value(field_data, id_mapping)
+        orig_type = field_data.get("orig_type", "")
+        return ObjectData(value, orig_type)
+
+    @staticmethod
+    def _deserialize_userdata_field_with_mapping(field_data, id_mapping):
+        value = RszArrayClipboard._mapped_graph_value(field_data, id_mapping)
+        string = field_data.get("string", "")
+        orig_type = field_data.get("orig_type", "")
+        return UserDataData(value, string, orig_type)
 
     @staticmethod
     def _paste_embedded_userdata(viewer, elem_data, array_data, embedded_context):
@@ -1570,6 +1421,19 @@ class RszArrayClipboard:
             }
             
         return RszArrayClipboard._serialize_element(field_data)
+
+    @staticmethod
+    def _serialize_area_element(element, type_name):
+        return {
+            "type": type_name,
+            "p0": RszArrayClipboard._serialize_element(element.p0),
+            "p1": RszArrayClipboard._serialize_element(element.p1),
+            "p2": RszArrayClipboard._serialize_element(element.p2),
+            "p3": RszArrayClipboard._serialize_element(element.p3),
+            "height": element.height,
+            "bottom": element.bottom,
+            "orig_type": element.orig_type
+        }
 
     @staticmethod
     def _serialize_element(element):
@@ -1902,27 +1766,9 @@ class RszArrayClipboard:
                 "orig_type": element.orig_type
             }
         elif isinstance(element, AreaData):
-            return {
-                "type": "AreaData",
-                "p0": RszArrayClipboard._serialize_element(element.p0),
-                "p1": RszArrayClipboard._serialize_element(element.p1),
-                "p2": RszArrayClipboard._serialize_element(element.p2),
-                "p3": RszArrayClipboard._serialize_element(element.p3),
-                "height": element.height,
-                "bottom": element.bottom,
-                "orig_type": element.orig_type
-            }
+            return RszArrayClipboard._serialize_area_element(element, "AreaData")
         elif isinstance(element, AreaDataOld):
-            return {
-                "type": "AreaDataOld",
-                "p0": RszArrayClipboard._serialize_element(element.p0),
-                "p1": RszArrayClipboard._serialize_element(element.p1),
-                "p2": RszArrayClipboard._serialize_element(element.p2),
-                "p3": RszArrayClipboard._serialize_element(element.p3),
-                "height": element.height,
-                "bottom": element.bottom,
-                "orig_type": element.orig_type
-            }
+            return RszArrayClipboard._serialize_area_element(element, "AreaDataOld")
         elif isinstance(element, RectData):
             return {
                 "type": "RectData",
@@ -2204,47 +2050,9 @@ class RszArrayClipboard:
             
         print(f"Pasting object graph with {len(instances)} instances")
         
-        from file_handlers.rsz.rsz_file import RszInstanceInfo
-        
-        relative_to_new_id = {}
-        guid_mapping = {}
-        
-        current_index = insertion_index
-        for instance_data in instances:
-            relative_id = instance_data.get("id", -1)
-            type_id = instance_data.get("type_id", 0)
-            crc = viewer._parse_crc_value(instance_data.get("crc", 0))
-             
-            if relative_id < 0 or type_id <= 0 or crc <= 0:
-                print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
-                continue
-                
-            new_instance = RszInstanceInfo()
-            new_instance.type_id = type_id
-            new_instance.crc = crc
-            
-            viewer._insert_instance_and_update_references(current_index, new_instance)
-                
-            viewer.handler.id_manager.register_instance(current_index)
-            
-            relative_to_new_id[relative_id] = current_index
-            
-            if instance_data.get("is_userdata", False):
-                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-                base_clipboard = type('TempClipboard', (RszClipboardBase,), {
-                    'get_clipboard_type': lambda self: 'temp'
-                })()
-                
-                base_clipboard.setup_userdata_for_pasted_instance(
-                    viewer,
-                    current_index,
-                    instance_data.get("userdata_hash", 0),
-                    instance_data.get("userdata_string", "")
-                )
-            
-            viewer.scn.parsed_elements[current_index] = {}
-            
-            current_index += 1
+        relative_to_new_id, guid_mapping = RszArrayClipboard._insert_graph_instances(
+            viewer, instances, insertion_index
+        )
         
         for instance_data in instances:
             relative_id = instance_data.get("id", -1)
@@ -2334,47 +2142,10 @@ class RszArrayClipboard:
                     array_data.values.append(element)
                     return element
             
-        from file_handlers.rsz.rsz_file import RszInstanceInfo
-        
-        relative_to_new_id = {}
-        guid_mapping = {}
         sorted_instances = sorted(instances, key=lambda x: x.get("id", -1))
-        
-        current_index = insertion_index
-        for instance_data in sorted_instances:
-            relative_id = instance_data.get("id", -1)
-            type_id = instance_data.get("type_id", 0)
-            crc = viewer._parse_crc_value(instance_data.get("crc", 0))
-            
-            if relative_id < 0 or type_id <= 0 or crc <= 0:
-                print(f"Skipping invalid instance: rel_id={relative_id}, type_id={type_id}")
-                continue
-                
-            new_instance = RszInstanceInfo()
-            new_instance.type_id = type_id
-            new_instance.crc = crc
-            
-            viewer._insert_instance_and_update_references(current_index, new_instance)
-                
-            viewer.handler.id_manager.register_instance(current_index)
-            
-            relative_to_new_id[relative_id] = current_index
-            
-            if instance_data.get("is_userdata", False):
-                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-                base_clipboard = type('TempClipboard', (RszClipboardBase,), {
-                    'get_clipboard_type': lambda self: 'temp'
-                })()
-                
-                base_clipboard.setup_userdata_for_pasted_instance(
-                    viewer,
-                    current_index,
-                    instance_data.get("userdata_hash", 0),
-                    instance_data.get("userdata_string", "")
-                )
-            
-            viewer.scn.parsed_elements[current_index] = {}
-            current_index += 1
+        relative_to_new_id, guid_mapping = RszArrayClipboard._insert_graph_instances(
+            viewer, sorted_instances, insertion_index
+        )
         
         for instance_data in instances:
             relative_id = instance_data.get("id", -1)
@@ -2424,26 +2195,13 @@ class RszArrayClipboard:
         field_type = field_data.get("type", "")
         
         if field_type == "ObjectData":
-            value = field_data.get("value", 0)
-            orig_type = field_data.get("orig_type", "")
-            
             if field_data.get("is_external_ref", False):
-                return ObjectData(value, orig_type)
-                
-            if field_data.get("in_graph", False) and value in id_mapping:
-                value = id_mapping[value]
-                
-            return ObjectData(value, orig_type)
+                return ObjectData(field_data.get("value", 0), field_data.get("orig_type", ""))
+
+            return RszArrayClipboard._deserialize_object_field_with_mapping(field_data, id_mapping)
             
         elif field_type == "UserDataData":
-            value = field_data.get("value", 0)
-            string = field_data.get("string", "")
-            orig_type = field_data.get("orig_type", "")
-            
-            if field_data.get("in_graph", False) and value in id_mapping:
-                value = id_mapping[value]
-                
-            return UserDataData(value, string, orig_type)
+            return RszArrayClipboard._deserialize_userdata_field_with_mapping(field_data, id_mapping)
             
         elif field_type == "GameObjectRefData":
             guid_str = field_data.get("guid_str", "")
