@@ -39,6 +39,7 @@ from ui.changelog_dialog import ChangelogDialog
 
 from PySide6.QtCore import (
     Qt,
+    QLocale,
     QTimer,
     QUrl,
     QObject
@@ -2523,6 +2524,7 @@ def main():
     gen2 = gen2 * 2
     gc.set_threshold(allocs, gen1, gen2)
     
+    QLocale.setDefault(QLocale.c())
     app = QApplication(sys.argv)
 
     app.setStyle(QStyleFactory.create("Fusion"))
