@@ -141,17 +141,21 @@ class VectorClipboardMixin:
         self.setValues(values)
         self._on_value_changed()
 
-class SizeInput(VectorClipboardMixin, BaseValueWidget):
+class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
     valueChanged = Signal(tuple)
+
+    fields = ()
+    input_width = 100
+    precision = 8
 
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
         self.inputs = []
-        for i, coord in enumerate(['width', 'height']):
+        for coord in self.fields:
             line_edit = QLineEdit()
             line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
+            line_edit.setFixedWidth(self.input_width)
             line_edit.setProperty("coord", coord)
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
@@ -164,14 +168,14 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
             return
-        values = [self._data.width, self._data.height]
+        values = self._data_values()
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_full_float(val, 8))
+            input_field.setText(format_full_float(val, self.precision))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
@@ -185,214 +189,41 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
             return
         
         try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.width = new_values[0]
-            self._data.height = new_values[1]
-            
+            new_values = tuple(self._parse_input_value(input_field) for input_field in self.inputs)
+            self._set_data_values(new_values)
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
             pass
 
-class Vec2Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
+    def _data_values(self):
+        return tuple(getattr(self._data, field) for field in self.fields)
 
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
+    def _set_data_values(self, values):
+        for field, value in zip(self.fields, values):
+            setattr(self._data, field, value)
 
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+    def _parse_input_value(self, input_field):
+        text = input_field.text()
+        if not text or text == "-":
+            return 0.0
+        return float(text)
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_full_float(val, 8))
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_display_value(val))
-        
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass
+class SizeInput(FloatVectorInput):
+    fields = ("width", "height")
 
-class Vec3Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
 
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
+class Vec2Input(FloatVectorInput):
+    fields = ("x", "y")
 
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y', 'z']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
 
-        # Add clipboard helpers and stretch to keep widgets left-aligned
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+class Vec3Input(FloatVectorInput):
+    fields = ("x", "y", "z")
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_full_float(val, 8))
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_display_value(val))
-        
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            self._data.z = new_values[2]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass  # Ignore invalid input during typing
-
-class Vec4Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
-
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y', 'z', 'w']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-
-        # a stretch at the end to push widgets left
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
-
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z, self._data.w]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_full_float(val, 8))
-
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_display_value(val))
-            
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            self._data.z = new_values[2]
-            self._data.w = new_values[3]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass 
+class Vec4Input(FloatVectorInput):
+    fields = ("x", "y", "z", "w")
 
 class GuidInput(BaseValueWidget):
     valueChanged = Signal(str)
@@ -747,19 +578,26 @@ class S32Input(NumberInput):
             self.line_edit.setText(str(self._data.value))
 
 
-class Int3Input(BaseValueWidget):
+class IntVectorInput(BaseValueWidget):
     valueChanged = Signal(tuple)
-    
+
+    fields = ()
+    minimum = None
+    maximum = None
+    range_name = "integer"
+    input_width = 100
+    max_length = 12
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
         self.inputs = []
-        for i, _ in enumerate(['x', 'y', 'z']):
+        for _ in self.fields:
             line_edit = QLineEdit()
             validator = QIntValidator()
             line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
+            line_edit.setMaxLength(self.max_length)
+            line_edit.setFixedWidth(self.input_width)
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
             self.inputs.append(line_edit)
@@ -770,14 +608,24 @@ class Int3Input(BaseValueWidget):
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
             return
-        values = [self._data.x, self._data.y, self._data.z]
+        values = self._data_values()
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+            input_field.setText(str(int(val)))
+
+    def setValues(self, values):
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(int(val)))
+
+    def getValues(self):
+        try:
+            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
+        except ValueError:
+            return tuple(0 for _ in self.inputs)
 
     def _on_value_changed(self):
         if not self._data:
@@ -786,17 +634,10 @@ class Int3Input(BaseValueWidget):
         try:
             new_values = []
             valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
+
+            for input_field in self.inputs:
                 try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value > 2147483647:
-                        raise ValueError("Out of Int32 range")
+                    value = self._parse_input_value(input_field.text())
                     input_field.setStyleSheet("")
                         
                 except ValueError:
@@ -807,294 +648,64 @@ class Int3Input(BaseValueWidget):
                 new_values.append(value)
             
             if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                self._data.z = new_values[2]
-                
-                self.valueChanged.emit(tuple(new_values))
+                new_values = tuple(new_values)
+                self._set_data_values(new_values)
+                self.valueChanged.emit(new_values)
                 self.mark_modified()
 
         except Exception as e:
-            print(f"Error in Int3Input._on_value_changed: {e}")
+            print(f"Error in {self.__class__.__name__}._on_value_changed: {e}")
 
-class Int2Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+    def _data_values(self):
+        return tuple(getattr(self._data, field) for field in self.fields)
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+    def _set_data_values(self, values):
+        for field, value in zip(self.fields, values):
+            setattr(self._data, field, value)
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value > 2147483647 or value < -2147483648:
-                        raise ValueError("Out of Int32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
+    def _parse_input_value(self, text):
+        if not text or text == "-":
+            value = 0
+        else:
+            value = int(text)
 
-        except Exception as e:
-            print(f"Error in Int2Input._on_value_changed: {e}")
+        if self.minimum is not None and value < self.minimum:
+            raise ValueError(f"Out of {self.range_name} range")
+        if self.maximum is not None and value > self.maximum:
+            raise ValueError(f"Out of {self.range_name} range")
+        return value
 
-class Int4Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y', 'z', 'w']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z, self._data.w]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+class SignedIntVectorInput(IntVectorInput):
+    minimum = -2147483648
+    maximum = 2147483647
+    range_name = "Int32"
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value > 2147483647 or value < -2147483648:
-                        raise ValueError("Out of Int32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                self._data.z = new_values[2]
-                self._data.w = new_values[3]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
 
-        except Exception as e:
-            print(f"Error in Int4Input._on_value_changed: {e}")
+class UnsignedIntVectorInput(IntVectorInput):
+    minimum = 0
+    maximum = 4294967295
+    range_name = "U32"
 
-class Uint2Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+class Int3Input(SignedIntVectorInput):
+    fields = ("x", "y", "z")
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value < 0 or value > 4294967295:
-                        raise ValueError("Out of U32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
 
-        except Exception as e:
-            print(f"Error in Uint2Input._on_value_changed: {e}")
+class Int2Input(SignedIntVectorInput):
+    fields = ("x", "y")
 
-class Uint3Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y', 'z']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+class Int4Input(SignedIntVectorInput):
+    fields = ("x", "y", "z", "w")
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value < 0 or value > 4294967295:
-                        raise ValueError("Out of U32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                self._data.z = new_values[2]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
 
-        except Exception as e:
-            print(f"Error in Uint3Input._on_value_changed: {e}")
+class Uint2Input(UnsignedIntVectorInput):
+    fields = ("x", "y")
+
+
+class Uint3Input(UnsignedIntVectorInput):
+    fields = ("x", "y", "z")
 
 class U32Input(NumberInput):
     def __init__(self, parent=None):
@@ -1819,6 +1430,7 @@ class StringInput(BaseValueWidget):
             proj_dock._pak_selected_paks,
             self,
         )
+
         if resolved:
             file_path, file_data = resolved
             app_window.add_tab(file_path, file_data)
@@ -1999,7 +1611,7 @@ class BoolInput(BaseValueWidget):
             self.valueChanged.emit(bool(state))
             self.mark_modified()
 
-class RangeInput(BaseValueWidget):
+class BaseRangeInput(BaseValueWidget):
     valueChanged = Signal(tuple)
     
     def __init__(self, data=None, parent=None):
@@ -2008,7 +1620,7 @@ class RangeInput(BaseValueWidget):
         self.layout.setSpacing(4)
         
         self.inputs = []
-        for i, name in enumerate(['Min', 'Max']):
+        for i, name in enumerate(["Min", "Max"]):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -2020,7 +1632,7 @@ class RangeInput(BaseValueWidget):
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
+            line_edit.setValidator(self._create_validator())
             line_edit.setFixedWidth(80)
             line_edit.setProperty("name", name.lower())
             line_edit.setAlignment(Qt.AlignLeft)
@@ -2042,127 +1654,78 @@ class RangeInput(BaseValueWidget):
         for input_field in self.inputs:
             input_field.textEdited.connect(self._on_value_changed)
 
+    def _create_validator(self):
+        return QDoubleValidator()
+
+    def _format_display_value(self, value):
+        return format_full_float(value, 8)
+
+    def _format_set_value(self, value):
+        return format_display_value(value)
+
+    def _parse_value(self, text):
+        if not text or text == "-":
+            return 0.0
+        return float(text)
+
+    def _fallback_values(self):
+        return (0.0, 0.0)
+
     def update_display(self):
         if not self._data:
             return
         values = [self._data.min, self._data.max]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_full_float(val, 8))
+            input_field.setText(self._format_display_value(val))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(format_display_value(val))
-            
+            input_field.setText(self._format_set_value(val))
+
     def getValues(self):
         try:
-            return tuple(float(input_field.text() or "0") for input_field in self.inputs)
+            return tuple(self._parse_value(input_field.text()) for input_field in self.inputs)
         except ValueError:
-            return (0.0, 0.0)
-        
+            return self._fallback_values()
+
     def _on_value_changed(self):
         if not self._data:
             return
             
         try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-                
-            new_values = tuple(new_values)
+            new_values = tuple(self._parse_value(input_field.text()) for input_field in self.inputs)
             self._data.min = new_values[0]
             self._data.max = new_values[1]
             
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
-            pass 
+            pass
 
-class RangeIInput(BaseValueWidget):
+
+class RangeInput(BaseRangeInput):
+    pass
+
+
+class RangeIInput(BaseRangeInput):
     """Widget for editing integer range values"""
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.layout.setSpacing(4)
-        
-        self.inputs = []
-        for i, name in enumerate(['Min', 'Max']):
-            container = QWidget()
-            container_layout = QHBoxLayout(container)
-            container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setSpacing(2)
-            
-            label = QLabel(name)
-            label.setFixedWidth(33)
-            label.setStyleSheet("padding-right: 2px;")
-            container_layout.addWidget(label)
-            
-            line_edit = QLineEdit()
-            line_edit.setValidator(QIntValidator())
-            line_edit.setFixedWidth(80)
-            line_edit.setProperty("name", name.lower())
-            line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 2px;")
-            container_layout.addWidget(line_edit)
-            
-            if i == 0:
-                container.setFixedWidth(120)
-                container.setStyleSheet("margin-right: 6px;")
-            
-            self.layout.addWidget(container)
-            self.inputs.append(line_edit)
-        
-        self.layout.addStretch(1)
-        
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed)
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.min, self._data.max]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+    def _create_validator(self):
+        return QIntValidator()
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-            
-    def getValues(self):
-        try:
-            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
-        except ValueError:
-            return (0, 0)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-            
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0)
-                else:
-                    new_values.append(int(text))
-            
-            new_values = tuple(new_values)
-            self._data.min = new_values[0]
-            self._data.max = new_values[1]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass 
+    def _format_display_value(self, value):
+        return str(value)
+
+    def _format_set_value(self, value):
+        return str(value)
+
+    def _parse_value(self, text):
+        if not text or text == "-":
+            return 0
+        return int(text)
+
+    def _fallback_values(self):
+        return (0, 0)
 
 class EnumInput(BaseValueWidget):
     """Widget for editing enum values with dropdown selection"""
