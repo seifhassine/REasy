@@ -900,7 +900,6 @@ class RszArrayClipboard:
             fields_data = instance.get("fields", {})
             embedded_fields = {}
             
-            from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
             from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData
             
             for field_name, field_data in fields_data.items():

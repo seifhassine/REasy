@@ -19,6 +19,135 @@ from file_handlers.pyside.component_selector import ComponentSelectorDialog
 from ui.widgets_utils import ColorPreviewButton
 from utils.number_format import format_display_value, format_full_float
 
+
+_COMPONENT_LABEL_STYLE = """
+    QLabel {
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+"""
+
+_COMPONENT_INPUT_STYLE = """
+    QLineEdit {
+        margin: 0;
+        padding: 1px 2px;
+        border: 1px solid #888888;
+    }
+    QLineEdit:focus {
+        border: 1px solid #aaaaaa;
+    }
+    QLineEdit[invalid="true"] {
+        border: 1px solid red;
+    }
+"""
+
+
+def _set_invalid_state(widget, invalid):
+    widget.setProperty("invalid", invalid)
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
+
+
+def _create_component_inputs(grid, components, validator_factory, input_width):
+    inputs = []
+    last_index = len(components) - 1
+    for i, comp in enumerate(components):
+        label = QLabel(comp)
+        label.setFixedWidth(8)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet(_COMPONENT_LABEL_STYLE)
+
+        line_edit = QLineEdit()
+        line_edit.setValidator(validator_factory())
+        line_edit.setFixedWidth(input_width)
+        line_edit.setFixedHeight(20)
+        line_edit.setProperty("component", comp.lower())
+        line_edit.setStyleSheet(_COMPONENT_INPUT_STYLE)
+
+        col_offset = (i * 3) + 2
+        grid.addWidget(label, 0, col_offset)
+        grid.addWidget(line_edit, 0, col_offset + 1)
+        if i < last_index:
+            grid.setColumnMinimumWidth(col_offset + 2, 3)
+        inputs.append(line_edit)
+    return inputs
+
+
+def _double_validator(decimals=None):
+    validator = QDoubleValidator()
+    if decimals is not None:
+        validator.setDecimals(decimals)
+    return validator
+
+
+def _rgba_dialog_result(parent, initial_color):
+    dlg = QColorDialog(initial_color, parent)
+    dlg.setOption(QColorDialog.DontUseNativeDialog, True)
+    dlg.setOption(QColorDialog.ShowAlphaChannel, True)
+
+    hex_edit = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
+    if not hex_edit:
+        for widget in dlg.findChildren(QLineEdit):
+            if widget.placeholderText().startswith("#") or widget.text().startswith("#"):
+                hex_edit = widget
+                break
+
+    if hex_edit:
+        hex_edit.setInputMask("")
+        hex_edit.setMaxLength(9)
+        hex_edit.setPlaceholderText("#RRGGBBAA")
+        hex_edit.setValidator(QRegularExpressionValidator(QRegularExpression(r"^#[0-9A-Fa-f]{8}$")))
+
+    def write_html(color):
+        if not hex_edit:
+            return
+        text = f"#{color.red():02X}{color.green():02X}{color.blue():02X}{color.alpha():02X}"
+        QTimer.singleShot(0, lambda t=text: (
+            hex_edit.blockSignals(True),
+            hex_edit.setText(t),
+            hex_edit.blockSignals(False))
+        )
+
+    write_html(initial_color)
+    dlg.currentColorChanged.connect(write_html)
+
+    for slider in dlg.findChildren(QSlider):
+        if slider.minimum() == 0 and slider.maximum() == 255:
+            slider.valueChanged.connect(
+                lambda value, d=dlg: write_html(d.currentColor().withAlpha(value))
+            )
+            break
+
+    if hex_edit:
+        def on_hex(text: str):
+            try:
+                if len(text) == 7 or len(text) == 9:
+                    r, g, b = int(text[1:3], 16), int(text[3:5], 16), int(text[5:7], 16)
+                    a = int(text[7:9], 16)
+                else:
+                    return
+                dlg.setCurrentColor(QColor(r, g, b, a))
+            except Exception:
+                pass
+        hex_edit.textChanged.connect(on_hex)
+
+    if not dlg.exec_():
+        return None
+
+    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
+    if final:
+        return (
+            int(final[1:3], 16),
+            int(final[3:5], 16),
+            int(final[5:7], 16),
+            int(final[7:9], 16),
+        )
+
+    color = dlg.currentColor()
+    return color.red(), color.green(), color.blue(), color.alpha()
+
+
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
     
@@ -813,108 +942,10 @@ class U8Input(NumberInput):
         if self._data and hasattr(self._data, 'value'):
             self.line_edit.setText(str(self._data.value))
 
-    def _on_text_changed(self, text):
-        if not self._data or not text:
-            return
-            
-        try:
-            value = self.validate_and_convert(text)
-            if value is not None:
-                old_value = self._data.value
-                self._data.value = value
-                if old_value != value:
-                    self.valueChanged.emit(value)
-                    self.mark_modified()
-                self.line_edit.setStyleSheet("")
-        except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
-
-class AABBInput(BaseValueWidget):
-    valueChanged = Signal(tuple) 
-
-    _LABEL_W  = 33                 
-    _FIELD_W  = 75
-
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-
-        grid = QGridLayout()
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(2)     
-        grid.setVerticalSpacing(2)
-        grid.setAlignment(Qt.AlignLeft)
-        self.layout.addLayout(grid)
-
-        for i, name in enumerate("XYZ", 1):
-            hdr = QLabel(name)
-            hdr.setAlignment(Qt.AlignCenter)
-            grid.addWidget(hdr, 0, i)
-
-        def make_row(row_idx: int, title: str):
-            lbl = QLabel(title)
-            lbl.setFixedWidth(self._LABEL_W)
-            lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            grid.addWidget(lbl, row_idx, 0)
-
-            edits = []
-            for col in range(1, 4):
-                le = QLineEdit()
-                le.setValidator(QDoubleValidator())
-                le.setFixedWidth(self._FIELD_W)
-                le.setAlignment(Qt.AlignLeft)
-                grid.addWidget(le, row_idx, col)
-                edits.append(le)
-            return edits
-
-        self.min_edits = make_row(1, "Min:")
-        self.max_edits = make_row(2, "Max:")
-
-        self.layout.addStretch()
-
-        for le in (*self.min_edits, *self.max_edits):
-            le.textEdited.connect(self._on_value_changed)
-
-        if data:
-            self.set_data(data)
-
-    def update_display(self):
-        if not self._data:
-            return
-        mins = (self._data.min.x, self._data.min.y, self._data.min.z)
-        maxs = (self._data.max.x, self._data.max.y, self._data.max.z)
-        for le, val in zip(self.min_edits, mins):
-            le.setText(format_full_float(val, 8))
-        for le, val in zip(self.max_edits, maxs):
-            le.setText(format_full_float(val, 8))
-            
-    def setValues(self, values):
-        if len(values) != 6:
-            return
-        for le, v in zip(self.min_edits + self.max_edits, values):
-            le.setText(format_display_value(v))
-
-    def getValues(self):
-        try:
-            return tuple(float(le.text() or "0") for le in (self.min_edits + self.max_edits))
-        except ValueError:
-            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        try:
-            vals = [float(le.text() or "0") for le in (self.min_edits + self.max_edits)]
-            (self._data.min.x, self._data.min.y, self._data.min.z,
-             self._data.max.x, self._data.max.y, self._data.max.z) = vals
-            self.valueChanged.emit(tuple(vals))
-            self.mark_modified()
-        except ValueError:
-            pass  
-
-
-class RectInput(BaseValueWidget):
+class BoundsInput(BaseValueWidget):
     valueChanged = Signal(tuple)
 
+    _COMPONENTS = ()
     _LABEL_W = 33
     _FIELD_W = 75
 
@@ -928,7 +959,7 @@ class RectInput(BaseValueWidget):
         grid.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(grid)
 
-        for i, name in enumerate("XY", 1):
+        for i, name in enumerate(self._COMPONENTS, 1):
             hdr = QLabel(name)
             hdr.setAlignment(Qt.AlignCenter)
             grid.addWidget(hdr, 0, i)
@@ -940,7 +971,7 @@ class RectInput(BaseValueWidget):
             grid.addWidget(lbl, row_idx, 0)
 
             edits = []
-            for col in range(1, 3):
+            for col in range(1, len(self._COMPONENTS) + 1):
                 le = QLineEdit()
                 le.setValidator(QDoubleValidator())
                 le.setFixedWidth(self._FIELD_W)
@@ -963,15 +994,11 @@ class RectInput(BaseValueWidget):
     def update_display(self):
         if not self._data:
             return
-        mins = (self._data.min_x, self._data.min_y)
-        maxs = (self._data.max_x, self._data.max_y)
-        for le, val in zip(self.min_edits, mins):
-            le.setText(format_full_float(val, 8))
-        for le, val in zip(self.max_edits, maxs):
+        for le, val in zip(self.min_edits + self.max_edits, self._data_values()):
             le.setText(format_full_float(val, 8))
 
     def setValues(self, values):
-        if len(values) != 4:
+        if len(values) != self._value_count:
             return
         for le, v in zip(self.min_edits + self.max_edits, values):
             le.setText(format_display_value(v))
@@ -980,18 +1007,53 @@ class RectInput(BaseValueWidget):
         try:
             return tuple(float(le.text() or "0") for le in (self.min_edits + self.max_edits))
         except ValueError:
-            return (0.0, 0.0, 0.0, 0.0)
+            return (0.0,) * self._value_count
 
     def _on_value_changed(self):
         if not self._data:
             return
         try:
             vals = [float(le.text() or "0") for le in (self.min_edits + self.max_edits)]
-            self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y = vals
+            self._set_data_values(vals)
             self.valueChanged.emit(tuple(vals))
             self.mark_modified()
         except ValueError:
             pass
+
+    @property
+    def _value_count(self):
+        return len(self._COMPONENTS) * 2
+
+    def _data_values(self):
+        raise NotImplementedError()
+
+    def _set_data_values(self, values):
+        raise NotImplementedError()
+
+
+class AABBInput(BoundsInput):
+    _COMPONENTS = "XYZ"
+
+    def _data_values(self):
+        return (
+            self._data.min.x, self._data.min.y, self._data.min.z,
+            self._data.max.x, self._data.max.y, self._data.max.z,
+        )
+
+    def _set_data_values(self, values):
+        (self._data.min.x, self._data.min.y, self._data.min.z,
+         self._data.max.x, self._data.max.y, self._data.max.z) = values
+
+
+class RectInput(BoundsInput):
+    _COMPONENTS = "XY"
+
+    def _data_values(self):
+        return self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y
+
+    def _set_data_values(self, values):
+        self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y = values
+
 
 class OBBInput(BaseValueWidget):
     valueChanged = Signal(list)
@@ -1935,6 +1997,7 @@ class Mat4Input(BaseValueWidget):
 
 class ColorInput(BaseValueWidget):
     valueChanged = Signal(tuple)
+    channel_attrs = ("r", "g", "b", "a")
     
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
@@ -1951,47 +2014,9 @@ class ColorInput(BaseValueWidget):
         grid.addWidget(self.color_button, 0, 0)
         grid.setColumnMinimumWidth(1, 6) 
 
-        self.inputs = []
-        for i, comp in enumerate(['R', 'G', 'B', 'A']):
-            label = QLabel(comp)
-            label.setFixedWidth(8)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
-            
-            line_edit = QLineEdit()
-            validator = QIntValidator(0, 255)
-            line_edit.setValidator(validator)
-            line_edit.setFixedWidth(28) 
-            line_edit.setFixedHeight(20)
-            line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
-            
-            col_offset = (i * 3) + 2
-            grid.addWidget(label, 0, col_offset)
-            grid.addWidget(line_edit, 0, col_offset + 1)
-            
-            if i < 3: 
-                grid.setColumnMinimumWidth(col_offset + 2, 3)
-                
-            self.inputs.append(line_edit)
+        self.inputs = _create_component_inputs(
+            grid, ["R", "G", "B", "A"], lambda: QIntValidator(0, 255), 28
+        )
         
         self.layout.addLayout(grid)
         self.layout.addStretch()
@@ -2008,44 +2033,13 @@ class ColorInput(BaseValueWidget):
             return
             
         try:
-            values = []
-            valid = True
-            
-            for input_field in self.inputs:
-                text = input_field.text().strip()
-                
-                try:
-                    if text == '' or text == '-':
-                        value = 0
-                    else:
-                        value = int(text)
-                        if value < 0 or value > 255:
-                            valid = False
-                            value = max(0, min(255, value))  # Clamp value
-                except ValueError:
-                    valid = False
-                    value = 0
-                
-                values.append(value)
-                
-                input_field.setProperty("invalid", not valid)
-                input_field.style().unpolish(input_field)
-                input_field.style().polish(input_field)
-                
-                if not valid:
-                    input_field.setText(format_display_value(value))
-            
-            self._data.r = values[0]
-            self._data.g = values[1]
-            self._data.b = values[2]
-            self._data.a = values[3]
-            
+            values, valid = self._validated_channel_values()
+            self._set_channel_values(values)
             self._update_color_button()
-            
+
             if valid:
                 self.valueChanged.emit(tuple(values))
                 self.mark_modified()
-                
         except ValueError:
             pass
 
@@ -2053,7 +2047,7 @@ class ColorInput(BaseValueWidget):
         if not self._data:
             return
             
-        values = [self._data.r, self._data.g, self._data.b, self._data.a]
+        values = self._channel_values()
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
             
@@ -2063,85 +2057,22 @@ class ColorInput(BaseValueWidget):
         """Update the color button appearance based on current RGBA values"""
         if not self._data:
             return
-            
-        r = int(self._data.r)
-        g = int(self._data.g)
-        b = int(self._data.b)
-        a = int(self._data.a)
-        
-        self.color_button.setColor(r, g, b, a)
+
+        self.color_button.setColor(*(int(value) for value in self._channel_values()))
     
     def _show_color_dialog(self):
-            if not self._data:
-                return
+        if not self._data:
+            return
 
-            init = QColor(self._data.r, self._data.g, self._data.b, self._data.a)
+        result = _rgba_dialog_result(self, QColor(*self._channel_values()))
+        if result is None:
+            return
 
-            dlg = QColorDialog(init, self)
-            dlg.setOption(QColorDialog.DontUseNativeDialog, True)
-            dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
+        self._set_channel_values(result)
+        self.update_display()
+        self.valueChanged.emit(result)
+        self.mark_modified()
 
-            hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
-            if not hex_edit:
-                for w in dlg.findChildren(QLineEdit):
-                    if w.placeholderText().startswith("#") or w.text().startswith("#"):
-                        hex_edit = w
-                        break
-
-            if hex_edit:
-                hex_edit.setInputMask("")             
-                hex_edit.setMaxLength(9)              
-                hex_edit.setPlaceholderText("#RRGGBBAA")
-                rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
-                hex_edit.setValidator(QRegularExpressionValidator(rx))
-
-            def write_html(c: QColor):
-                if not hex_edit:
-                    return
-                text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
-
-                QTimer.singleShot(0, lambda t=text: (
-                    hex_edit.blockSignals(True),
-                    hex_edit.setText(t),
-                    hex_edit.blockSignals(False))
-                )
-
-            write_html(init)
-            dlg.currentColorChanged.connect(write_html)  
-
-            for sld in dlg.findChildren(QSlider):
-                if sld.minimum() == 0 and sld.maximum() == 255:
-                    sld.valueChanged.connect(
-                        lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
-                    )
-                    break
-            
-            excepted = False
-            if hex_edit:
-                    def on_hex(text: str):
-                        try:
-                            if len(text) == 7 or len(text) == 9:  
-                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                                a     = int(text[7:9],16)
-                            else:
-                                return
-                            dlg.setCurrentColor(QColor(r,g,b,a))
-                        except Exception:
-                            excepted = True
-                    hex_edit.textChanged.connect(on_hex)
-
-            if dlg.exec_() and not excepted:
-                    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
-                    if final:
-                        r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
-                    else:
-                        c = dlg.currentColor()
-                        r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
-
-                    self._data.r, self._data.g, self._data.b, self._data.a = r, g, b, a
-                    self.update_display()
-                    self.valueChanged.emit((r,g,b,a))
-                    self.mark_modified()
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
@@ -2162,183 +2093,50 @@ class ColorInput(BaseValueWidget):
             values = []
             for input_field in self.inputs:
                 text = input_field.text()
-                if not text or text == '-':
-                    values.append(0)
-                else:
-                    values.append(max(0, min(255, int(text))))
-            
-            self._data.r = values[0]
-            self._data.g = values[1]
-            self._data.b = values[2]
-            self._data.a = values[3]
-            
+                values.append(0 if not text or text == '-' else max(0, min(255, int(text))))
+
+            self._set_channel_values(values)
             self._update_color_button()
             
             self.valueChanged.emit(tuple(values))
             self.mark_modified()
         except ValueError:
             pass 
+
+    def _channel_values(self):
+        return [getattr(self._data, attr) for attr in self.channel_attrs]
+
+    def _set_channel_values(self, values):
+        for attr, value in zip(self.channel_attrs, values):
+            setattr(self._data, attr, value)
+
+    def _validated_channel_values(self):
+        values = []
+        valid = True
+        for input_field in self.inputs:
+            text = input_field.text().strip()
+            try:
+                if text == '' or text == '-':
+                    value = 0
+                else:
+                    value = int(text)
+                    if value < 0 or value > 255:
+                        valid = False
+                        value = max(0, min(255, value))
+            except ValueError:
+                valid = False
+                value = 0
+
+            values.append(value)
+            _set_invalid_state(input_field, not valid)
+            if not valid:
+                input_field.setText(format_display_value(value))
+        return values, valid
+
+
 class Int4ColorInput(ColorInput):
     """Color widget for Int4ColorData objects that store channels as x/y/z/w."""
-
-    def _validate_and_update(self):
-        if not self._data:
-            return
-
-        try:
-            values = []
-            valid = True
-
-            for input_field in self.inputs:
-                text = input_field.text().strip()
-
-                try:
-                    if text == '' or text == '-':
-                        value = 0
-                    else:
-                        value = int(text)
-                        if value < 0 or value > 255:
-                            valid = False
-                            value = max(0, min(255, value))
-                except ValueError:
-                    valid = False
-                    value = 0
-
-                values.append(value)
-
-                input_field.setProperty("invalid", not valid)
-                input_field.style().unpolish(input_field)
-                input_field.style().polish(input_field)
-
-                if not valid:
-                    input_field.setText(format_display_value(value))
-
-            self._data.x = values[0]
-            self._data.y = values[1]
-            self._data.z = values[2]
-            self._data.w = values[3]
-
-            self._update_color_button()
-
-            if valid:
-                self.valueChanged.emit(tuple(values))
-                self.mark_modified()
-
-        except ValueError:
-            pass
-
-    def update_display(self):
-        if not self._data:
-            return
-
-        values = [self._data.x, self._data.y, self._data.z, self._data.w]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-
-        self._update_color_button()
-
-    def _update_color_button(self):
-        if not self._data:
-            return
-
-        self.color_button.setColor(int(self._data.x), int(self._data.y), int(self._data.z), int(self._data.w))
-
-    def _show_color_dialog(self):
-            if not self._data:
-                return
-
-            init = QColor(self._data.x, self._data.y, self._data.z, self._data.w)
-
-            dlg = QColorDialog(init, self)
-            dlg.setOption(QColorDialog.DontUseNativeDialog, True)
-            dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
-
-            hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
-            if not hex_edit:
-                for w in dlg.findChildren(QLineEdit):
-                    if w.placeholderText().startswith("#") or w.text().startswith("#"):
-                        hex_edit = w
-                        break
-
-            if hex_edit:
-                hex_edit.setInputMask("")
-                hex_edit.setMaxLength(9)
-                hex_edit.setPlaceholderText("#RRGGBBAA")
-                rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
-                hex_edit.setValidator(QRegularExpressionValidator(rx))
-
-            def write_html(c: QColor):
-                if not hex_edit:
-                    return
-                text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
-
-                QTimer.singleShot(0, lambda t=text: (
-                    hex_edit.blockSignals(True),
-                    hex_edit.setText(t),
-                    hex_edit.blockSignals(False))
-                )
-
-            write_html(init)
-            dlg.currentColorChanged.connect(write_html)
-
-            for sld in dlg.findChildren(QSlider):
-                if sld.minimum() == 0 and sld.maximum() == 255:
-                    sld.valueChanged.connect(
-                        lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
-                    )
-                    break
-
-            excepted = False
-            if hex_edit:
-                    def on_hex(text: str):
-                        try:
-                            if len(text) == 7 or len(text) == 9:
-                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                                a     = int(text[7:9],16)
-                            else:
-                                return
-                            dlg.setCurrentColor(QColor(r,g,b,a))
-                        except Exception:
-                            excepted = True
-                    hex_edit.textChanged.connect(on_hex)
-
-            if dlg.exec_() and not excepted:
-                    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
-                    if final:
-                        r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
-                    else:
-                        c = dlg.currentColor()
-                        r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
-
-                    self._data.x, self._data.y, self._data.z, self._data.w = r, g, b, a
-                    self.update_display()
-                    self.valueChanged.emit((r,g,b,a))
-                    self.mark_modified()
-
-    def _on_value_changed(self):
-        if not self._data:
-            return
-
-        try:
-            values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    values.append(0)
-                else:
-                    values.append(max(0, min(255, int(text))))
-
-            self._data.x = values[0]
-            self._data.y = values[1]
-            self._data.z = values[2]
-            self._data.w = values[3]
-
-            self._update_color_button()
-
-            self.valueChanged.emit(tuple(values))
-            self.mark_modified()
-        except ValueError:
-            pass
+    channel_attrs = ("x", "y", "z", "w")
 
 class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     """Widget for editing Vec3 RGB color values as floats"""
@@ -2361,48 +2159,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         grid.addWidget(self.color_button, 0, 0)
         grid.setColumnMinimumWidth(1, 6)
 
-        self.inputs = []
-        for i, comp in enumerate(['R', 'G', 'B']):
-            label = QLabel(comp)
-            label.setFixedWidth(8)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
-            
-            line_edit = QLineEdit()
-            validator = QDoubleValidator()
-            validator.setDecimals(6)
-            line_edit.setValidator(validator)
-            line_edit.setFixedWidth(60)
-            line_edit.setFixedHeight(20)
-            line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
-            
-            col_offset = (i * 3) + 2
-            grid.addWidget(label, 0, col_offset)
-            grid.addWidget(line_edit, 0, col_offset + 1)
-            
-            if i < 2:
-                grid.setColumnMinimumWidth(col_offset + 2, 3)
-                
-            self.inputs.append(line_edit)
+        self.inputs = _create_component_inputs(
+            grid, ["R", "G", "B"], lambda: _double_validator(6), 60
+        )
         
         self.layout.addLayout(grid)
         self._setup_clipboard_buttons()
@@ -2437,9 +2196,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
                 
                 values.append(value)
                 
-                input_field.setProperty("invalid", not valid)
-                input_field.style().unpolish(input_field)
-                input_field.style().polish(input_field)
+                _set_invalid_state(input_field, not valid)
                 
                 if not valid:
                     input_field.setText(format_display_value(value))

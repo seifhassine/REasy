@@ -10,6 +10,12 @@ from file_handlers.rsz.rsz_data_types import (
 from utils.hex_util import align
 from utils.id_manager import EmbeddedIdManager
 from utils.hash_util import murmur3_hash  # Added import for murmur3_hash
+from file_handlers.rsz.rsz_build_utils import (
+    calculate_wstring_offsets,
+    pad_to_alignment,
+    write_scn_gameobjects,
+    write_wstring_entries,
+)
 
 class Scn19Header:
     SIZE = 64
@@ -298,29 +304,20 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     )
 
     # 2) Write gameobjects
-    for go in rsz_file.gameobjects:
-        out += go.guid
-        out += struct.pack("<i", go.id)
-        out += struct.pack("<i", go.parent_id)
-        out += struct.pack("<H", go.component_count)
-        out += struct.pack("<h", go.prefab_id)
-        out += struct.pack("<i", go.ukn) 
+    write_scn_gameobjects(out, rsz_file.gameobjects, prefab_before_ukn=True)
 
-    while len(out) % 16 != 0:
-        out += b"\x00"
+    pad_to_alignment(out)
     folder_tbl_offset = len(out)
     for fi in rsz_file.folder_infos:
         out += struct.pack("<ii", fi.id, fi.parent_id)
 
-    while len(out) % 16 != 0:
-        out += b"\x00"
+    pad_to_alignment(out)
     resource_info_tbl_offset = len(out)
     
     for ri in rsz_file.resource_infos:
         out += struct.pack("<II", 0, ri.reserved)
         
-    while len(out) % 16 != 0:
-        out += b"\x00"
+    pad_to_alignment(out)
         
     prefab_info_tbl_offset = len(out)
     
@@ -330,23 +327,12 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     strings_start_offset = len(out)
     current_offset = strings_start_offset
     
-    new_resource_offsets = {}
-    for ri in rsz_file.resource_infos:
-        resource_string = rsz_file._resource_str_map.get(ri, "")
-        if resource_string:
-            new_resource_offsets[ri] = current_offset
-            current_offset += len(resource_string.encode('utf-16-le')) + 2
-        else:
-            new_resource_offsets[ri] = 0
-    
-    new_prefab_offsets = {}
-    for pi in rsz_file.prefab_infos:
-        prefab_string = rsz_file._prefab_str_map.get(pi, "")
-        if prefab_string:
-            new_prefab_offsets[pi] = current_offset
-            current_offset += len(prefab_string.encode('utf-16-le')) + 2
-        else:
-            new_prefab_offsets[pi] = 0
+    new_resource_offsets, current_offset = calculate_wstring_offsets(
+        rsz_file.resource_infos, rsz_file._resource_str_map, current_offset
+    )
+    new_prefab_offsets, current_offset = calculate_wstring_offsets(
+        rsz_file.prefab_infos, rsz_file._prefab_str_map, current_offset
+    )
     
     for i, ri in enumerate(rsz_file.resource_infos):
         ri.string_offset = new_resource_offsets[ri]
@@ -358,32 +344,16 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         offset = prefab_info_tbl_offset + (i * 8)
         struct.pack_into("<I", out, offset, pi.string_offset)
 
-    string_entries = []
-    
-    for ri, offset in new_resource_offsets.items():
-        if offset: 
-            string_entries.append((offset, rsz_file._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-            
-    for pi, offset in new_prefab_offsets.items():
-        if offset: 
-            string_entries.append((offset, rsz_file._prefab_str_map.get(pi, "").encode("utf-16-le") + b"\x00\x00"))
-    
-    string_entries.sort(key=lambda x: x[0])
-    
-    current_offset = string_entries[0][0] if string_entries else len(out)
-    while len(out) < current_offset:
-        out += b"\x00"
-        
-    for offset, string_data in string_entries:
-        while len(out) < offset:
-            out += b"\x00"
-        out += string_data
+    write_wstring_entries(
+        out,
+        (new_resource_offsets, rsz_file._resource_str_map),
+        (new_prefab_offsets, rsz_file._prefab_str_map),
+    )
 
     # Write RSZ header/tables/userdata
     if rsz_file.rsz_header:
         if special_align_enabled:
-            while len(out) % 16 != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
             
         rsz_start = len(out)
         rsz_file.header.data_offset = rsz_start

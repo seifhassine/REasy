@@ -13,6 +13,16 @@ from file_handlers.rsz.rsz_data_types import (
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
+from file_handlers.rsz.rsz_build_utils import (
+    calculate_wstring_offsets,
+    pad_to_alignment,
+    write_prefab_info_table,
+    write_resource_info_table,
+    write_resource_userdata_tables,
+    write_scn_gameobjects,
+    write_userdata_info_table,
+    write_wstring_entries,
+)
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
 _STRUCT_DEFINITIONS = {
@@ -1584,29 +1594,19 @@ class RszFile:
         )
 
         # 2) Write gameobjects
-        for go in self.gameobjects:
-            out += go.guid
-            out += struct.pack("<i", go.id)
-            out += struct.pack("<i", go.parent_id)
-            out += struct.pack("<H", go.component_count)
-            out += struct.pack("<h", go.ukn)
-            out += struct.pack("<i", go.prefab_id) 
+        write_scn_gameobjects(out, self.gameobjects, prefab_before_ukn=False)
 
         # 3) Align and write folder infos, recording folder_tbl offset
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         folder_tbl_offset = len(out)
         for fi in self.folder_infos:
             out += struct.pack("<ii", fi.id, fi.parent_id)
 
         # 4) Align and prepare for resource infos
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         resource_info_tbl_offset = len(out)
         
         # Calculate new string offsets for resource strings
-        resource_strings_offset = 0
-        new_resource_offsets = {}
         current_offset = resource_info_tbl_offset + len(self.resource_infos) * 8  # Each resource info is 8 bytes
         
         # Align to 16 after resource infos
@@ -1621,115 +1621,44 @@ class RszFile:
         # Skip userdata infos table
         current_offset += len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
         
-        # Begin calculating string offsets
-        resource_strings_offset = current_offset
-        
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = resource_strings_offset
-                resource_strings_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate prefab string offsets
-        prefab_strings_offset = resource_strings_offset
-        new_prefab_offsets = {}
-        
-        for pi in self.prefab_infos:
-            prefab_string = self._prefab_str_map.get(pi, "")
-            if prefab_string:
-                new_prefab_offsets[pi] = prefab_strings_offset
-                prefab_strings_offset += len(prefab_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_prefab_offsets[pi] = 0
-        
-        # Calculate userdata string offsets
-        userdata_strings_offset = prefab_strings_offset
-        new_userdata_offsets = {}
-        
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = userdata_strings_offset
-                userdata_strings_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
+        new_resource_offsets, current_offset = calculate_wstring_offsets(
+            self.resource_infos, self._resource_str_map, current_offset
+        )
+        new_prefab_offsets, current_offset = calculate_wstring_offsets(
+            self.prefab_infos, self._prefab_str_map, current_offset
+        )
+        new_userdata_offsets, _ = calculate_wstring_offsets(
+            self.userdata_infos, self._userdata_str_map, current_offset
+        )
         
         # Now write resource infos with updated offsets
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
+        write_resource_info_table(out, self.resource_infos, new_resource_offsets)
 
         # 5) Align and write prefab infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         prefab_info_tbl_offset = len(out)
-        for pi in self.prefab_infos:
-            pi.string_offset = new_prefab_offsets[pi]
-            out += struct.pack("<II", pi.string_offset, pi.parent_id)
+        write_prefab_info_table(out, self.prefab_infos, new_prefab_offsets)
 
         # 6) Align and write user data infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         userdata_info_tbl_offset = len(out)
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        # Only collect string entries that have calculated offsets
-        for ri, offset in new_resource_offsets.items():
-            if offset:
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for pi, offset in new_prefab_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._prefab_str_map.get(pi, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        write_userdata_info_table(out, self.userdata_infos, new_userdata_offsets)
+        write_wstring_entries(
+            out,
+            (new_resource_offsets, self._resource_str_map),
+            (new_prefab_offsets, self._prefab_str_map),
+            (new_userdata_offsets, self._userdata_str_map),
+        )
 
         # 9) Write RSZ header/tables/userdata
         if self.rsz_header:
             # Ensure RSZ header starts on 16-byte alignment
             if(special_align_enabled):
-                while len(out) % 16 != 0:
-                    out += b"\x00"
+                pad_to_alignment(out)
                 
             rsz_start = len(out)
             self.header.data_offset = rsz_start
 
-            # Calculate sizes
-            object_table_size = self.rsz_header.object_count * 4
-            instance_info_size = len(self.instance_infos) * 8
-            
-            # Calculate offsets relative to RSZ section start
-            instance_info_offset = self.rsz_header.SIZE + object_table_size  # After header and object table
-            
-            # Userdata offset comes after instance infos
-            userdata_offset = instance_info_offset + instance_info_size
-            
-            # Data offset comes after userdata section, and needs 16-byte alignment
-            data_offset = userdata_offset + (len(self.rsz_userdata_infos) * 16)  # Each userdata entry is 16 bytes
-            data_offset = _align(data_offset, 16)
-            
             # Write RSZ header with corrected offsets
             rsz_header_bytes = struct.pack(
                 "<5I I Q Q Q",
@@ -1754,8 +1683,7 @@ class RszFile:
 
             # Align to 16 bytes first and calculate relative instance offset
             if(special_align_enabled):
-                while len(out) % 16 != 0:
-                    out += b"\x00"
+                pad_to_alignment(out)
                 
             new_instance_offset = len(out) - rsz_start  # Calculate offset relative to RSZ start
             
@@ -1764,8 +1692,7 @@ class RszFile:
 
 
             # Align to 16 at end
-            while len(out) % 16 != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
 
             new_userdata_offset = len(out) - rsz_start 
 
@@ -1783,8 +1710,7 @@ class RszFile:
                 out += string_data
                 struct.pack_into("<Q", out, rsz_start + entry_offset + 8, current_string_offset)
             # 9e) Align before instance data block and compute new data offset
-            while (len(out) % 16) != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
             new_data_offset = len(out) - rsz_start
 
             # 9f) Update the RSZ header with correct counts and relative offsets.
@@ -1804,8 +1730,7 @@ class RszFile:
 
         # 10) Write instance data
 
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
             
         # Write actual instance data block
         instance_data = self._write_instance_data()
@@ -1862,153 +1787,17 @@ class RszFile:
             self.header.reserved  
         )
 
-        # 2) Calculate offsets for string tables
-        resource_info_tbl = _align(len(out), 16)
-        resource_info_size = len(self.resource_infos) * 8  # Each resource info is 8 bytes
-        
-        userdata_info_tbl = _align(resource_info_tbl + resource_info_size, 16)
-        userdata_info_size = len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
-        
-        # Calculate string positions
-        string_start = _align(userdata_info_tbl + userdata_info_size, 16)
-        current_offset = string_start
-        
-        # Calculate resource string offsets
-        new_resource_offsets = {}
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = current_offset
-                current_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate userdata string offsets
-        new_userdata_offsets = {}
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = current_offset
-                current_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
-        
-        # Align to 16 bytes and write resource info table
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        resource_info_tbl = len(out)
-        
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
-
-        # Align to 16 bytes and write userdata info table
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        userdata_info_tbl = len(out)
-        
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        for ri, offset in new_resource_offsets.items():
-            if offset:
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset:
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        resource_info_tbl, userdata_info_tbl = write_resource_userdata_tables(
+            out,
+            self.resource_infos,
+            self._resource_str_map,
+            self.userdata_infos,
+            self._userdata_str_map,
+        )
 
         # 6) RSZ Section
         if self.rsz_header:
-            if special_align_enabled:
-                while len(out) % 16 != 0:
-                    out += b"\x00"
-                    
-            rsz_start = len(out)
-            self.header.data_offset = rsz_start
-
-            # Write RSZ header with placeholder offsets
-            rsz_header_bytes = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version,
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                0,  # instance_offset - will update later
-                0,  # data_offset - will update later 
-                0   # userdata_offset - will update later
-            )
-            out += rsz_header_bytes
-
-            # Write object table
-            for obj_id in self.object_table:
-                out += struct.pack("<i", obj_id)
-
-            # Add 8 null bytes before instance infos (no 16-byte alignment)
-            new_instance_offset = len(out) - rsz_start
-            
-            for inst in self.instance_infos:
-                out += struct.pack("<II", inst.type_id, inst.crc)
-
-            # Write userdata at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_userdata_offset = len(out) - rsz_start
-
-            # Write userdata entries and strings
-            userdata_entries = []
-            for rui in self.rsz_userdata_infos:
-                entry_offset = len(out) - rsz_start
-                out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
-                userdata_entries.append((entry_offset, rui))
-
-            for entry_offset, rui in userdata_entries:
-                string_offset = len(out) - rsz_start
-                string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
-                out += string_data
-                struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
-
-            # Write instance data at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_data_offset = len(out) - rsz_start
-            
-            instance_data = self._write_instance_data()
-            out += instance_data
-
-            # Update RSZ header with actual offsets
-            new_rsz_header = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version, 
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                new_instance_offset,
-                new_data_offset,
-                new_userdata_offset
-            )
-            out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+            self._build_rsz_section(out, special_align_enabled)
 
         # 7) Update USR header
         header_bytes = struct.pack(
@@ -2063,78 +1852,13 @@ class RszFile:
         for gori in self.gameobject_ref_infos:
             out += struct.pack("<4i", gori.object_id, gori.property_id, gori.array_index, gori.target_id)
         
-        # Calculate string offsets
-        resource_info_tbl = _align(len(out), 16)
-        resource_info_size = len(self.resource_infos) * 8  # Each resource info is 8 bytes
-        
-        userdata_info_tbl = _align(resource_info_tbl + resource_info_size, 16)
-        userdata_info_size = len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
-        
-        # Calculate string positions
-        string_start = _align(userdata_info_tbl + userdata_info_size, 16)
-        current_offset = string_start
-        
-        # Calculate resource string offsets
-        new_resource_offsets = {}
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = current_offset
-                current_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate userdata string offsets
-        new_userdata_offsets = {}
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = current_offset
-                current_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
-        
-        # 4) Align and write resource infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        resource_info_tbl = len(out)
-        
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
-
-        # 5) Align and write userdata infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        userdata_info_tbl = len(out)
-        
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        for ri, offset in new_resource_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        resource_info_tbl, userdata_info_tbl = write_resource_userdata_tables(
+            out,
+            self.resource_infos,
+            self._resource_str_map,
+            self.userdata_infos,
+            self._userdata_str_map,
+        )
 
         # 8) Build the common RSZ section
         self._build_rsz_section(out, special_align_enabled)
@@ -2162,8 +1886,7 @@ class RszFile:
         Returns the rsz_start position."""
         # Ensure RSZ header starts on 16-byte alignment
         if special_align_enabled:
-            while len(out) % 16 != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
                 
         rsz_start = len(out)
         if update_header_data_offset and self.header is not None:
@@ -2194,8 +1917,7 @@ class RszFile:
             out += struct.pack("<II", inst.type_id, inst.crc)
 
         # Write userdata at 16-byte alignment
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         new_userdata_offset = len(out) - rsz_start
 
         # Write userdata entries and strings
@@ -2212,8 +1934,7 @@ class RszFile:
             struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
 
         # Write instance data at 16-byte alignment
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         new_data_offset = len(out) - rsz_start
         
         instance_data = self._write_instance_data()
