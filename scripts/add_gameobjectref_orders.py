@@ -263,7 +263,7 @@ def patch_dump(rsz_dump, il2cpp_dump, *, overwrite=False):
     return stats
 
 
-def main() -> int:
+def main() -> None:
     parser = argparse.ArgumentParser(description="Add via.GameObjectRef property_id metadata to an RSZ dump.")
     parser.add_argument("dump", type=Path, help="RSZ dump JSON")
     parser.add_argument("il2cpp", type=Path, help="Matching il2cpp.json")
@@ -290,14 +290,13 @@ def main() -> int:
 
     if args.dry_run:
         print("Dry run: no file written")
-        return 0
+        return
 
     output = args.dump if args.in_place else args.output
     output = output or args.dump.with_name(f"{args.dump.stem}_with_orders{args.dump.suffix}")
     save_json(output, rsz_dump)
     print(f"Wrote {output}")
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

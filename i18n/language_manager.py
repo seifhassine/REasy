@@ -83,10 +83,11 @@ class LanguageManager(QObject):
         return self._current_language
 
     def set_language(self, code: str, settings: Optional[dict] = None, emit_signal: bool = True) -> bool:
-        if code not in self.SUPPORTED_LANGUAGES:
+        requested_supported = code in self.SUPPORTED_LANGUAGES
+        if not requested_supported:
             code = "en"
         if code == self._current_language and self._app_translator and self._qt_translator:
-            return True
+            return requested_supported
         if self._app_translator:
             QCoreApplication.removeTranslator(self._app_translator)
             self._app_translator = None
@@ -125,5 +126,5 @@ class LanguageManager(QObject):
             self.language_changed.emit(code)
         if app is not None:
             app.sendEvent(app, QEvent(QEvent.LanguageChange))
-        return True
+        return requested_supported
 

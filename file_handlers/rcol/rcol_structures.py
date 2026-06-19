@@ -392,14 +392,18 @@ class RcolGroup(BaseModel):
         self.shapes.clear()
         total_shapes = self.info.num_shapes + self.info.num_mirror_shapes
         has_shape_stream = False
-        if total_shapes > 0 and self.info.shapes_offset > 0:
+        if total_shapes <= 0:
+            return True
+        if self.info.shapes_offset > 0:
             # Check if offset is valid
             if self.info.shapes_offset >= len(handler.data):
                 print(f"Warning: shapes_offset {self.info.shapes_offset} is beyond file size {len(handler.data)}")
-                return True
+                return False
             
             handler.seek(self.info.shapes_offset)
             has_shape_stream = True
+        else:
+            return False
         if self.info.num_shapes > 0 and has_shape_stream:
             for i in range(self.info.num_shapes):
                 shape = RcolShape()
@@ -415,7 +419,7 @@ class RcolGroup(BaseModel):
                     raise ValueError(f"Failed to read extra shape {i} in group '{self.info.name}'")
                 self.extra_shapes.append(shape)
                 
-        return True
+        return len(self.shapes) == self.info.num_shapes and len(self.extra_shapes) == self.info.num_mirror_shapes
         
     def do_write(self, handler: FileHandler) -> bool:
         has_shape_payload = self.info.num_shapes > 0 or self.info.num_mirror_shapes > 0

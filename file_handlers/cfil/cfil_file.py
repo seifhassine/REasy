@@ -27,6 +27,10 @@ class CfilFile:
     def _write_uuid_le(handler: BinaryHandler, value: uuid.UUID):
         handler.write_bytes(value.bytes_le)
 
+    @staticmethod
+    def _table_fits(data_len: int, offset: int, count: int, item_size: int) -> bool:
+        return count >= 0 and 0 <= offset <= data_len and offset + count * item_size <= data_len
+
     def read(self, data: bytes, version: int = 0) -> bool:
         handler = BinaryHandler(bytearray(data))
 
@@ -50,6 +54,11 @@ class CfilFile:
             materialIdGuid = self._read_uuid_le(handler)
             maskGuidsTblOffset = handler.read('<Q')
             materialAttributeGuidsOffset = handler.read('<Q')
+
+            if not self._table_fits(len(data), maskGuidsTblOffset, numMaskGuids, 16):
+                return False
+            if not self._table_fits(len(data), materialAttributeGuidsOffset, numMaterialAttributeGuids, 16):
+                return False
             
             self.status = status
             self.layerGuid = layerGuid
@@ -82,7 +91,7 @@ class CfilFile:
                 sentinel = handler.read('<i')
                 if sentinel != -1:
                     handler.seek(handler.tell - 4)
-        return True
+        return handler.tell <= len(handler.data)
 
     def write(self) -> bytes:
         handler = BinaryHandler(bytearray())

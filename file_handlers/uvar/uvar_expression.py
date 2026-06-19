@@ -28,6 +28,17 @@ class UvarExpression(BaseModel):
         self.output_node_id = handler.read('<h')
         self.unknown_count = handler.read('<h')
         
+        base = getattr(handler, 'offset', 0)
+        data_len = len(handler.data)
+        if self.nodes_count < 0:
+            return False
+        if self.nodes_count > 0:
+            nodes_end = base + self.nodes_offset + self.nodes_count * 32
+            if self.nodes_offset <= 0 or nodes_end > data_len:
+                return False
+        if self.relations_offset and base + self.relations_offset >= data_len:
+            return False
+        
         self.nodes = []
         if self.nodes_count > 0 and self.nodes_offset > 0:
             with handler.seek_temp(self.nodes_offset):

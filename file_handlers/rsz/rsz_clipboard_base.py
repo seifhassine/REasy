@@ -692,6 +692,9 @@ class RszClipboardBase(ABC):
     
     def setup_userdata_for_pasted_instance(self, viewer, instance_id, hash_value, string_value):
         """Create userdata entries for a pasted instance"""
+        if instance_id < 0:
+            return False
+
         if not hasattr(viewer.scn, '_rsz_userdata_set'):
             viewer.scn._rsz_userdata_set = set()
         if not hasattr(viewer.scn, '_rsz_userdata_dict'):

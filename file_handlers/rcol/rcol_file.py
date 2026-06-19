@@ -86,7 +86,8 @@ class RcolFile:
                     group.read_info(handler)
                     self.groups.append(group)
                 for group in self.groups:
-                    group.read(handler)
+                    if not group.read(handler):
+                        return False
                     
         self.read_rsz(handler, header.data_offset)
         

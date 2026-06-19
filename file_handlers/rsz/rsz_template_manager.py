@@ -26,6 +26,20 @@ class RszTemplateManager:
         
         root_dir = RszTemplateManager.get_template_root_directory()
         return os.path.join(root_dir, registry_name)
+
+    @staticmethod
+    def get_template_path(template_id, template_info):
+        if not isinstance(template_id, str) or "/" not in template_id:
+            return None
+
+        registry_name, file_name = template_id.split("/", 1)
+        safe_name = RszTemplateManager._sanitize(file_name)
+        if not safe_name:
+            safe_name = RszTemplateManager._sanitize(template_info.get("name", ""))
+        if not safe_name:
+            return None
+
+        return os.path.join(RszTemplateManager.get_template_directory(registry_name), f"{safe_name}.json")
     
     @staticmethod
     def get_metadata_path():
@@ -155,7 +169,9 @@ class RszTemplateManager:
                 return {"success": False, "message": f"Template '{template_id}' not found"}
                 
             template_info = metadata["templates"][template_id]
-            template_path = template_info["path"]
+            template_path = RszTemplateManager.get_template_path(template_id, template_info)
+            if not template_path:
+                return {"success": False, "message": f"Invalid template path for '{template_id}'"}
             
             if not os.path.exists(template_path):
                 return {"success": False, "message": f"Template file not found: {template_path}"}
@@ -222,11 +238,13 @@ class RszTemplateManager:
             if tag_filter and tag_filter not in template_info.get("tags", []):
                 continue
                 
-            if not os.path.exists(template_info.get("path", "")):
+            template_path = RszTemplateManager.get_template_path(template_id, template_info)
+            if not template_path or not os.path.exists(template_path):
                 continue
                 
             template_copy = template_info.copy()
             template_copy["id"] = template_id
+            template_copy["path"] = template_path
             templates.append(template_copy)
             
         return sorted(templates, key=lambda t: t.get("name", ""))
@@ -286,7 +304,9 @@ class RszTemplateManager:
 
     @staticmethod
     def _apply_name_change(info, old_id, new_name):
-        old_path = info.get("path")
+        old_path = RszTemplateManager.get_template_path(old_id, info)
+        if not old_path:
+            return None
         if info.get("name") == new_name:
             return old_id
 
@@ -336,7 +356,9 @@ class RszTemplateManager:
             return False
             
         template_info = metadata["templates"][template_id]
-        template_path = template_info["path"]
+        template_path = RszTemplateManager.get_template_path(template_id, template_info)
+        if not template_path:
+            return False
         
         try:
             if os.path.exists(template_path):

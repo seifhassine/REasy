@@ -94,19 +94,32 @@ class HashData(BaseModel):
         if self.count == 0:
             return True
 
-        if self.guids_offset > 0 and self.guids_offset < len(handler.data):
+        def table_fits(offset: int, item_size: int) -> bool:
+            absolute_offset = getattr(handler, 'offset', 0) + offset
+            return offset == 0 or absolute_offset + self.count * item_size <= len(handler.data)
+
+        if not table_fits(self.guids_offset, 16):
+            return False
+        if not table_fits(self.maps_offset, 4):
+            return False
+        if not table_fits(self.hash_offset, 4):
+            return False
+        if not table_fits(self.hash_map_offset, 4):
+            return False
+
+        if self.guids_offset > 0:
             with handler.seek_temp(self.guids_offset):
                 self.guids = [handler.read_guid() for _ in range(self.count)]
             
-        if self.maps_offset > 0 and self.maps_offset < len(handler.data):
+        if self.maps_offset > 0:
             with handler.seek_temp(self.maps_offset):
                 self.guid_map = [handler.read('<I') for _ in range(self.count)]
             
-        if self.hash_offset > 0 and self.hash_offset < len(handler.data):
+        if self.hash_offset > 0:
             with handler.seek_temp(self.hash_offset):
                 self.name_hashes = [handler.read('<I') for _ in range(self.count)]
             
-        if self.hash_map_offset > 0 and self.hash_map_offset < len(handler.data):
+        if self.hash_map_offset > 0:
             with handler.seek_temp(self.hash_map_offset):
                 self.name_hash_map = [handler.read('<I') for _ in range(self.count)]
             
