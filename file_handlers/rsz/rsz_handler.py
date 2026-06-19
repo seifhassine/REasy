@@ -20,7 +20,6 @@ from file_handlers.rsz.rsz_data_types import (
     ObjectData,
     UserDataData,
     RawBytesData,
-    get_type_class,
     is_reference_type,
     is_array_type,
 )
@@ -38,6 +37,7 @@ from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
 from .utils.rsz_field_utils import (
+    create_field_from_definition,
     iter_field_references,
     update_references_with_mapping,
     shift_references_above_threshold,
@@ -458,7 +458,7 @@ class RszViewer(QWidget):
         request_set_userdata_index = len(self.scn.object_table)
         self.scn.object_table.append(root_instance_id)
 
-        # Reserve one distinct object-table entry per group shape for the req set
+        # Reserve one distinct object-table entry per group shape for this request set.
         group_userdata_index_start = len(self.scn.object_table)
         for _ in range(max(0, group_shape_count)):
             self.scn.object_table.append(0)
@@ -515,6 +515,23 @@ class RszViewer(QWidget):
             ],
         )
 
+    def _create_scn_header_pairs(self, header, signature, include_userdata_info_tbl):
+        header_pairs = [
+            ("Signature", signature),
+            ("Info Count", header.info_count),
+            ("Resource Count", header.resource_count),
+            ("Folder Count", header.folder_count),
+            ("Prefab Count", header.prefab_count),
+            ("UserData Count", header.userdata_count),
+            ("Folder Tbl", f"0x{header.folder_tbl:X}"),
+            ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+            ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
+        ]
+        if include_userdata_info_tbl:
+            header_pairs.append(("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"))
+        header_pairs.append(("Data Offset", f"0x{header.data_offset:X}"))
+        return header_pairs
+
     def _create_header_info(self):
         """Create Header info section for self.scn.header"""
         header = self.scn.header
@@ -548,32 +565,9 @@ class RszViewer(QWidget):
                 ("Reserved", header.reserved),
             ]
         elif self.scn.filepath.lower().endswith('.18'):
-            header_pairs = [
-                ("Signature", signature),
-                ("Info Count", header.info_count),
-                ("Resource Count", header.resource_count),
-                ("Folder Count", header.folder_count),
-                ("Prefab Count", header.prefab_count),
-                ("UserData Count", header.userdata_count),
-                ("Folder Tbl", f"0x{header.folder_tbl:X}"),
-                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
-                ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
-                ("Data Offset", f"0x{header.data_offset:X}"),
-            ]
+            header_pairs = self._create_scn_header_pairs(header, signature, False)
         else:
-            header_pairs = [
-                ("Signature", signature),
-                ("Info Count", header.info_count),
-                ("Resource Count", header.resource_count),
-                ("Folder Count", header.folder_count),
-                ("Prefab Count", header.prefab_count),
-                ("UserData Count", header.userdata_count),
-                ("Folder Tbl", f"0x{header.folder_tbl:X}"),
-                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
-                ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
-                ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
-                ("Data Offset", f"0x{header.data_offset:X}"),
-            ]
+            header_pairs = self._create_scn_header_pairs(header, signature, True)
 
         return DataTreeBuilder.create_branch_from_pairs("Header", header_pairs)
 
@@ -1476,32 +1470,33 @@ class RszViewer(QWidget):
         except Exception as e:
             raise RuntimeError(f"Failed to rebuild SCN file: {str(e)}")
 
-    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
-        if hasattr(array_data, '_owning_context') and array_data._owning_context:
+    def _resolve_array_operations(self, array_data):
+        embedded_context = getattr(array_data, '_owning_context', None)
+        if embedded_context:
             from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-            embedded_ops = RszEmbeddedArrayOperations(self)
-            return embedded_ops.create_array_element(
-                element_type, array_data, array_data._owning_context,
-                direct_update=direct_update, array_item=array_item
-            )
-        
+            return RszEmbeddedArrayOperations(self), embedded_context
+
         if not self.array_operations:
             self.array_operations = RszArrayOperations(self)
-        return self.array_operations.create_array_element(
+        return self.array_operations, None
+
+    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
+        array_operations, embedded_context = self._resolve_array_operations(array_data)
+        if embedded_context:
+            return array_operations.create_array_element(
+                element_type, array_data, embedded_context,
+                direct_update=direct_update, array_item=array_item
+            )
+
+        return array_operations.create_array_element(
             element_type, array_data, direct_update, array_item, userdata_string=userdata_string
         )
 
     def delete_array_element(self, array_data, element_index):
-        if hasattr(array_data, '_owning_context') and array_data._owning_context:
-            from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-            embedded_ops = RszEmbeddedArrayOperations(self)
-            return embedded_ops.delete_array_element(
-                array_data, element_index, array_data._owning_context
-            )
-        
-        if not self.array_operations:
-            self.array_operations = RszArrayOperations(self)
-        return self.array_operations.delete_array_element(array_data, element_index)
+        array_operations, embedded_context = self._resolve_array_operations(array_data)
+        if embedded_context:
+            return array_operations.delete_array_element(array_data, element_index, embedded_context)
+        return array_operations.delete_array_element(array_data, element_index)
 
     def create_component_for_gameobject(self, gameobject_instance_id, component_type):
         """Create a new component on the specified GameObject"""
@@ -1796,17 +1791,10 @@ class RszViewer(QWidget):
 
     def _initialize_fields_from_type_info(self, fields_dict, type_info, rui=None, instance_id=None):
         for field_def in type_info.get("fields", []):
-            field_name = field_def.get("name", "")
-            if not field_name:
+            field_data = create_field_from_definition(self, field_def)
+            if field_data is None:
                 continue
-            field_type = field_def.get("type", "unknown").lower()
-            field_size = field_def.get("size", 4)
-            field_native = field_def.get("native", False)
-            field_array = field_def.get("array", False)
-            field_align = field_def.get("align", 4)
-            field_orig_type = field_def.get("original_type", "")
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
-            field_obj = self._create_default_field(field_class, field_orig_type, field_array, field_size)
+            field_name, field_obj, field_orig_type, _, _ = field_data
             
             fields_dict[field_name] = field_obj
             field_obj.orig_type = field_orig_type

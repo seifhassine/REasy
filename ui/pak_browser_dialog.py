@@ -601,6 +601,51 @@ class PakBrowserDialog(QDialog):
 			QMessageBox.information(self, self.tr("Success"), self.tr("Dumped {count} valid path(s) to:\n{path}").format(count=len(valid_paths), path=path))
 		except Exception as e:
 			QMessageBox.critical(self, self.tr("Write failed"), str(e))
+
+	def _run_extraction_with_progress(self, reader_getter, outdir_getter, targets: List[str], missing: List[str]):
+		from ui.extraction_progress_dialog import ExtractionProgressDialog
+		from threading import Thread
+
+		progress_dialog = ExtractionProgressDialog(len(targets), self)
+		extraction_error = [None]
+		extraction_count = [0]
+
+		def do_extraction():
+			try:
+				reader = reader_getter()
+				extraction_count[0] = reader.extract_files_to(
+					outdir_getter(),
+					targets,
+					missing_files=missing,
+					progress_dialog=progress_dialog
+				)
+				progress_dialog.signals.extraction_complete.emit()
+			except Exception as e:
+				extraction_error[0] = e
+				progress_dialog.signals.extraction_error.emit(str(e))
+
+		extraction_thread = Thread(target=do_extraction)
+		extraction_thread.start()
+
+		progress_dialog.exec()
+		extraction_thread.join(timeout=2.0)
+
+		if extraction_error[0]:
+			QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
+			return None
+
+		if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
+			QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
+			return None
+
+		return extraction_count[0]
+
+	def _append_missing_paths_message(self, msg: str, missing: List[str]) -> str:
+		if missing:
+			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
+			if len(missing) > 50:
+				msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
+		return msg
 	
 	def _extract(self, targets: List[str]):
 		if not targets:
@@ -632,99 +677,37 @@ class PakBrowserDialog(QDialog):
 					QMessageBox.critical(self, self.tr("Index failed"), str(e))
 					return
 			missing: List[str] = []
-			
-			from ui.extraction_progress_dialog import ExtractionProgressDialog
-			progress_dialog = ExtractionProgressDialog(len(targets), self)
-			
-			from threading import Thread
-			extraction_error = [None]
-			extraction_count = [0]
-			
-			def do_extraction():
-				try:
-					extraction_count[0] = rc.extract_files_to(
-						self.out_edit.text().strip(), 
-						targets, 
-						missing_files=missing,
-						progress_dialog=progress_dialog
-					)
-					progress_dialog.signals.extraction_complete.emit()
-				except Exception as e:
-					extraction_error[0] = e
-					progress_dialog.signals.extraction_error.emit(str(e))
-			
-			extraction_thread = Thread(target=do_extraction)
-			extraction_thread.start()
-			
-			result = progress_dialog.exec()
-			extraction_thread.join(timeout=2.0)
-			
-			if extraction_error[0]:
-				QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
+			count = self._run_extraction_with_progress(
+				lambda: rc,
+				lambda: self.out_edit.text().strip(),
+				targets,
+				missing
+			)
+			if count is None:
 				return
-			
-			if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-				QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
-				return
-			
-			count = extraction_count[0]
+
 			msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(count=count, dest=self.out_edit.text().strip())
-			if missing:
-				msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
-				if len(missing) > 50:
-					msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
-			QMessageBox.information(self, self.tr("Done"), msg)
+			QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))
 			return
 
 
 		r = CachedPakReader()
 		r.pak_file_priority = paks
 		missing: List[str] = []
-		
-		from ui.extraction_progress_dialog import ExtractionProgressDialog
-		progress_dialog = ExtractionProgressDialog(len(targets), self)
-		
-		from threading import Thread
-		extraction_error = [None]
-		extraction_count = [0]
-		
-		def do_extraction():
-			try:
-				if self._cached_reader and isinstance(self._cached_reader, CachedPakReader):
-					r._cache = self._cached_reader._cache
-					_r = r
-				else:
-					_r = r
-				extraction_count[0] = _r.extract_files_to(
-					outdir, 
-					targets, 
-					missing_files=missing,
-					progress_dialog=progress_dialog
-				)
-				progress_dialog.signals.extraction_complete.emit()
-			except Exception as e:
-				extraction_error[0] = e
-				progress_dialog.signals.extraction_error.emit(str(e))
-		
-		extraction_thread = Thread(target=do_extraction)
-		extraction_thread.start()
-		
-		result = progress_dialog.exec()
-		extraction_thread.join(timeout=2.0)
-		
-		if extraction_error[0]:
-			QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
-			return
-		
-		if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-			QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
-			return
-		
-		count = extraction_count[0]
-		msg = f"{self.tr('Extracted')} {count} {self.tr('file(s) to:')}\n{outdir}"
-		if missing:
-			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
-			if len(missing) > 50:
-				msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
-		QMessageBox.information(self, self.tr("Done"), msg)
 
+		def known_path_reader():
+			if self._cached_reader and isinstance(self._cached_reader, CachedPakReader):
+				r._cache = self._cached_reader._cache
+			return r
+
+		count = self._run_extraction_with_progress(
+			known_path_reader,
+			lambda: outdir,
+			targets,
+			missing
+		)
+		if count is None:
+			return
+
+		msg = f"{self.tr('Extracted')} {count} {self.tr('file(s) to:')}\n{outdir}"
+		QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))

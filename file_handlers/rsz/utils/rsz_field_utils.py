@@ -7,6 +7,7 @@ This module provides common field manipulation utilities to reduce code duplicat
 from file_handlers.rsz.rsz_data_types import (
     ObjectData,
     UserDataData,
+    get_type_class,
     is_reference_type,
     is_array_type,
 )
@@ -27,6 +28,47 @@ def iter_field_reference_entries(fields):
             for index, element in enumerate(field_data.values):
                 if is_reference_type(element):
                     yield field_name, element, index
+
+
+def get_reference_id_and_type(obj):
+    """Return (instance_id, reference_type) for ObjectData/UserDataData references."""
+    if isinstance(obj, ObjectData) and obj.value > 0:
+        return obj.value, "object"
+    if isinstance(obj, UserDataData) and obj.value > 0:
+        return obj.value, "userdata"
+    return 0, None
+
+
+def create_field_from_definition(viewer, field_def):
+    """
+    Build a field object from a type-registry field definition.
+
+    Returns:
+        tuple: (field_name, field_obj, field_orig_type, field_array, field_class)
+        or None when the definition has no field name.
+    """
+    field_name = field_def.get("name", "")
+    if not field_name:
+        return None
+
+    field_type = field_def.get("type", "unknown").lower()
+    field_size = field_def.get("size", 4)
+    field_native = field_def.get("native", False)
+    field_array = field_def.get("array", False)
+    field_align = field_def.get("align", 4)
+    field_orig_type = field_def.get("original_type", "")
+
+    field_class = get_type_class(
+        field_type,
+        field_size,
+        field_native,
+        field_array,
+        field_align,
+        field_orig_type,
+        field_name,
+    )
+    field_obj = viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
+    return field_name, field_obj, field_orig_type, field_array, field_class
 
 
 def iter_field_references(fields):

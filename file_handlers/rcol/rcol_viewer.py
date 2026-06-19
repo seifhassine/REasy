@@ -1078,6 +1078,34 @@ class RcolViewer(QWidget):
     def _next_request_id(self) -> int:
         return max((rs.info.id for rs in self.rcol.request_sets), default=-1) + 1
 
+    def _legacy_request_shape_start_indices(self) -> tuple[dict[int, int], dict[int, int]]:
+        legacy_request_start_indices: dict[int, int] = {}
+        legacy_group_base_min_indices: dict[int, int] = {}
+        if self.handler.file_version >= 25:
+            return legacy_request_start_indices, legacy_group_base_min_indices
+
+        for request_set in self.rcol.request_sets:
+            group_index = int(getattr(request_set.info, "group_index", -1))
+            if not (0 <= group_index < len(self.rcol.groups)):
+                continue
+            group = self.rcol.groups[group_index]
+            if not group.shapes:
+                continue
+            base_indices = [
+                int(getattr(shape.info, "user_data_index", 0) or 0)
+                for shape in group.shapes
+            ]
+            if not base_indices:
+                continue
+            shape_offset = int(getattr(request_set.info, "shape_offset", 0) or 0)
+            legacy_group_base_min_indices[id(request_set)] = min(base_indices)
+            legacy_request_start_indices[id(request_set)] = min(
+                base_index + shape_offset
+                for base_index in base_indices
+            )
+
+        return legacy_request_start_indices, legacy_group_base_min_indices
+
     def _insert_root_object_id_at(self, desired_object_index: int, appended_object_index: int):
         if not self.rcol.rsz:
             return
@@ -1093,28 +1121,7 @@ class RcolViewer(QWidget):
         # Snapshot pre-insert effective shape-userdata starts for legacy (pre-v25)
         # request sets so shape_offset can be shifted when insertion happens before
         # their per-group userdata window.
-        legacy_request_start_indices: dict[int, int] = {}
-        legacy_group_base_min_indices: dict[int, int] = {}
-        if self.handler.file_version < 25:
-            for request_set in self.rcol.request_sets:
-                group_index = int(getattr(request_set.info, "group_index", -1))
-                if not (0 <= group_index < len(self.rcol.groups)):
-                    continue
-                group = self.rcol.groups[group_index]
-                if not group.shapes:
-                    continue
-                base_indices = [
-                    int(getattr(shape.info, "user_data_index", 0) or 0)
-                    for shape in group.shapes
-                ]
-                if not base_indices:
-                    continue
-                shape_offset = int(getattr(request_set.info, "shape_offset", 0) or 0)
-                legacy_group_base_min_indices[id(request_set)] = min(base_indices)
-                legacy_request_start_indices[id(request_set)] = min(
-                    base_index + shape_offset
-                    for base_index in base_indices
-                )
+        legacy_request_start_indices, legacy_group_base_min_indices = self._legacy_request_shape_start_indices()
 
         inserted_value = object_table[appended_object_index]
         object_ops = self._get_headless_object_operations()
@@ -1163,29 +1170,8 @@ class RcolViewer(QWidget):
         if not (0 <= object_index < len(object_table)):
             return
 
-        # Snapshot pre-removal  starts for legacy (pre-v25) request sets.
-        legacy_request_start_indices: dict[int, int] = {}
-        legacy_group_base_min_indices: dict[int, int] = {}
-        if self.handler.file_version < 25:
-            for request_set in self.rcol.request_sets:
-                group_index = int(getattr(request_set.info, "group_index", -1))
-                if not (0 <= group_index < len(self.rcol.groups)):
-                    continue
-                group = self.rcol.groups[group_index]
-                if not group.shapes:
-                    continue
-                base_indices = [
-                    int(getattr(shape.info, "user_data_index", 0) or 0)
-                    for shape in group.shapes
-                ]
-                if not base_indices:
-                    continue
-                shape_offset = int(getattr(request_set.info, "shape_offset", 0) or 0)
-                legacy_group_base_min_indices[id(request_set)] = min(base_indices)
-                legacy_request_start_indices[id(request_set)] = min(
-                    base_index + shape_offset
-                    for base_index in base_indices
-                )
+        # Snapshot pre-removal effective starts for legacy (pre-v25) request sets.
+        legacy_request_start_indices, legacy_group_base_min_indices = self._legacy_request_shape_start_indices()
 
         root_instance_id = object_table[object_index]
         object_ops = self._get_headless_object_operations()

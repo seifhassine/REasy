@@ -5,10 +5,14 @@ This file contains operations for adding and removing elements from arrays in RS
 """
 
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, get_type_class, is_reference_type
+from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, is_reference_type
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from file_handlers.rsz.utils.rsz_field_utils import iter_field_reference_entries
+from file_handlers.rsz.utils.rsz_field_utils import (
+    create_field_from_definition,
+    get_reference_id_and_type,
+    iter_field_reference_entries,
+)
 
 class RszArrayOperations:
     """
@@ -142,25 +146,16 @@ class RszArrayOperations:
             node.fields = {}
             
             for field_def in node.type_info.get("fields", []):
-                field_name = field_def.get("name", "")
-                if not field_name:
+                field_data = create_field_from_definition(self.viewer, field_def)
+                if field_data is None:
                     continue
-                    
-                field_type = field_def.get("type", "unknown").lower()
-                field_size = field_def.get("size", 4)
-                field_native = field_def.get("native", False)
-                field_array = field_def.get("array", False)
-                field_align = field_def.get("align", 4)
-                field_orig_type = field_def.get("original_type", "")
-                
-                field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
-                field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
+                field_name, field_obj, field_orig_type, field_array, _ = field_data
                 
                 if field_obj:
                     node.fields[field_name] = field_obj
                     
                     if is_reference_type(field_obj) and field_orig_type and not field_array:
-                        node.field_order.append((field_name, field_type, field_orig_type, field_obj))
+                        node.field_order.append((field_name, field_def.get("type", "unknown").lower(), field_orig_type, field_obj))
                     
                     # Process direct object references
                     if isinstance(field_obj, ObjectData) and field_orig_type and not field_array:
@@ -480,14 +475,7 @@ class RszArrayOperations:
         element = array_data.values[element_index]
         
         # Get instance ID and type of reference based on element type
-        instance_id = 0
-        ref_type = None
-        if isinstance(element, ObjectData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "object"
-        elif isinstance(element, UserDataData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "userdata"
+        instance_id, ref_type = get_reference_id_and_type(element)
         
         # If we have a reference to delete
         if instance_id > 0 and ref_type:
@@ -548,28 +536,13 @@ class RszArrayOperations:
         
         try:
             # 1. Prepare ID adjustments
-            id_adjustments = {}  # old_id -> new_id mapping
-            max_instance_id = len(self.scn.instance_infos)
-            
-            for i in range(max_instance_id):
-                if i in all_nested_objects:
-                    # This instance will be deleted
-                    id_adjustments[i] = -1  # -1 indicates deletion
-                else:
-                    # Calculate how many deleted instances are before this one
-                    offset = sum(1 for deleted_id in all_nested_objects if deleted_id < i)
-                    if offset > 0:
-                        id_adjustments[i] = i - offset
+            id_adjustments = self._build_deletion_id_adjustments(all_nested_objects)
             
             # 2. Update references first
             self._update_references_before_deletion(all_nested_objects, id_adjustments)
             
             # 3. Remove from instance_infos
-            new_instance_infos = []
-            for i, info in enumerate(self.scn.instance_infos):
-                if i not in all_nested_objects:
-                    new_instance_infos.append(info)
-            self.scn.instance_infos = new_instance_infos
+            self._remove_deleted_instance_infos(all_nested_objects)
             
             # 4. Update object table
             for i, idx in enumerate(self.scn.object_table):
@@ -648,6 +621,24 @@ class RszArrayOperations:
         elif ref_type == "userdata":
             return isinstance(ref_obj, UserDataData) and ref_obj.value == instance_id
         return False
+
+    def _build_deletion_id_adjustments(self, deleted_ids):
+        id_adjustments = {}
+        max_instance_id = len(self.scn.instance_infos)
+        for i in range(max_instance_id):
+            if i in deleted_ids:
+                id_adjustments[i] = -1
+            else:
+                offset = sum(1 for deleted_id in deleted_ids if deleted_id < i)
+                if offset > 0:
+                    id_adjustments[i] = i - offset
+        return id_adjustments
+
+    def _remove_deleted_instance_infos(self, deleted_ids):
+        self.scn.instance_infos = [
+            info for i, info in enumerate(self.scn.instance_infos)
+            if i not in deleted_ids
+        ]
     
     def _check_instance_referenced_elsewhere(self, instance_id, current_array, current_index=None, ref_type="object"):
         """
@@ -763,17 +754,7 @@ class RszArrayOperations:
             
             # 1. First, prepare a list of adjustments for higher instance IDs
             # For each deleted instance, instances with higher IDs need to be decreased
-            id_adjustments = {}  # old_id -> new_id mapping
-            
-            # Calculate adjustments for each instance ID
-            max_instance_id = len(self.scn.instance_infos)
-            for i in range(max_instance_id):
-                if i in all_nested_objects:
-                    id_adjustments[i] = -1 
-                else:
-                    offset = sum(1 for deleted_id in all_nested_objects if deleted_id < i)
-                    if offset > 0:
-                        id_adjustments[i] = i - offset
+            id_adjustments = self._build_deletion_id_adjustments(all_nested_objects)
             
             #  Diagnostic purposes
             #print("ID Adjustments:")
@@ -788,12 +769,7 @@ class RszArrayOperations:
             
             # Now actually remove the instances from instance_infos
             # We need to do this in reverse order to avoid index issues
-            new_instance_infos = []
-            for i, info in enumerate(self.scn.instance_infos):
-                if i not in all_nested_objects:
-                    new_instance_infos.append(info)
-            
-            self.scn.instance_infos = new_instance_infos
+            self._remove_deleted_instance_infos(all_nested_objects)
             
             # 3. Remove from object table (replacing with 0)
             for i, instance_id in enumerate(self.scn.object_table):

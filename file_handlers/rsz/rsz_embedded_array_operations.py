@@ -12,19 +12,21 @@ from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info,
-    copy_embedded_rsz_header,
     create_embedded_userdata_info,
+    create_scn19_userdata_info,
     initialize_embedded_rsz_structures,
+    initialize_scn19_userdata_runtime,
     mark_parent_chain_modified,
     build_context_chain,
+    shift_embedded_instances_for_insertion,
     update_embedded_references_for_shift
 )
 from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
+    get_reference_id_and_type,
     update_references_of_type,
     update_references_with_mapping,
 )
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
 from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
 
 
@@ -44,16 +46,9 @@ class RszEmbeddedArrayOperations:
                 element._container_index = i - 1
             
         element = array_data.values[element_index]
-        
-        instance_id = 0
-        ref_type = None
-        if isinstance(element, ObjectData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "object"
-        elif isinstance(element, UserDataData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "userdata"
-            
+
+        instance_id, ref_type = get_reference_id_and_type(element)
+
         if instance_id > 0 and ref_type:
             target_context = getattr(array_data, '_owning_context', None)
             if not target_context:
@@ -529,10 +524,7 @@ class RszEmbeddedArrayOperations:
         This ensures proper instance ordering in the parent embedded context.
         """
         from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-        from file_handlers.rsz.rsz_data_types import UserDataData
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-        from utils.id_manager import EmbeddedIdManager
-        
+
         object_ops = RszObjectOperations(self.viewer)
         
         insertion_index = self._calculate_field_order_insertion_index(array_data, parent_rui, parent_instance_id)
@@ -540,75 +532,28 @@ class RszEmbeddedArrayOperations:
         # For UserDataData, we need to:
         # 1. Reserve space in the parent context for the UserDataData instance itself
         # 2. Create the UserDataData's own embedded RSZ structure
-        
-        count_new = 1  
-        
-        id_shift = {}
-        for old_id in sorted(parent_rui.embedded_instances.keys()):
-            if old_id >= insertion_index:
-                id_shift[old_id] = old_id + count_new
-        
-        if id_shift:
-            new_instances = {}
-            for old_id, fields in parent_rui.embedded_instances.items():
-                new_id = id_shift.get(old_id, old_id)
-                new_instances[new_id] = fields
-            parent_rui.embedded_instances = new_instances
-            
-            if hasattr(parent_rui, 'embedded_instance_infos'):
-                max_new_id = max(id_shift.values()) if id_shift else insertion_index
-                while len(parent_rui.embedded_instance_infos) <= max_new_id:
-                    from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
-                    parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-                
-                for old_id, new_id in sorted(id_shift.items(), reverse=True):
-                    if old_id < len(parent_rui.embedded_instance_infos):
-                        parent_rui.embedded_instance_infos[new_id] = parent_rui.embedded_instance_infos[old_id]
-                        parent_rui.embedded_instance_infos[old_id] = None
-            
-            from file_handlers.rsz.utils.rsz_embedded_utils import update_embedded_references_for_shift
-            update_embedded_references_for_shift(id_shift, parent_rui)
-            
-            if hasattr(parent_rui, 'embedded_userdata_infos'):
-                for ud in parent_rui.embedded_userdata_infos:
-                    if hasattr(ud, 'instance_id') and ud.instance_id in id_shift:
-                        ud.instance_id = id_shift[ud.instance_id]
-            
-            if hasattr(parent_rui, 'embedded_object_table'):
-                parent_rui.embedded_object_table = [
-                    id_shift.get(x, x) for x in parent_rui.embedded_object_table
-                ]
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = type_id
-        userdata_info.crc = int(type_info.get("crc", "0"), 16)
-        userdata_info.name = element_type
-        userdata_info.value = element_type
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
-        if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.parsed_elements = {}
-            
 
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
-            userdata_info._rsz_userdata_dict = {}
-            userdata_info._rsz_userdata_set = set()
-            userdata_info._rsz_userdata_str_map = {}
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info._array_counters = {}
-            userdata_info.modified = False
-            
+        shift_embedded_instances_for_insertion(parent_rui, insertion_index, 1, self.type_registry)
+
+        userdata_info = create_scn19_userdata_info(
+            insertion_index,
+            type_id,
+            element_type,
+            parent_rui,
+            crc=int(type_info.get("crc", "0"), 16),
+        )
+
+        if hasattr(parent_rui, 'embedded_rsz_header'):
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                insertion_index,
+                include_parsed_elements=True,
+                include_maps=True,
+                include_array_counters=True,
+                modified=False,
+            )
+
             if type_info:
                 object_ops._create_embedded_instance_with_nested_objects(
                     userdata_info, type_info, type_id, element_type
@@ -1247,17 +1192,8 @@ class RszEmbeddedArrayOperations:
                         if widget_container:
                             self.viewer.tree.setIndexWidget(child_index, widget_container)
         return True
-    
-    def _create_embedded_userdata_node_data(self, ref_id, index, element, embedded_context):
-        type_name = f"UserData[{ref_id}]"
-        userdata_rui = None
-        if hasattr(embedded_context, 'embedded_userdata_infos'):
-            for userdata_info in embedded_context.embedded_userdata_infos:
-                if userdata_info.instance_id == ref_id:
-                    userdata_rui = userdata_info
-                    if hasattr(userdata_info, 'name') and userdata_info.name:
-                        type_name = userdata_info.name
-                    break
+
+    def _create_embedded_reference_node_data(self, ref_id, index, element, embedded_context, type_name):
         node_data = DataTreeBuilder.create_data_node(
             f"{index}: ({type_name})",
             "",
@@ -1269,6 +1205,21 @@ class RszEmbeddedArrayOperations:
         node_data["domain_id"] = getattr(embedded_context, 'instance_id', 0)
         node_data["embedded_context"] = embedded_context
         node_data["context_chain"] = context_chain
+        return node_data, context_chain
+
+    def _create_embedded_userdata_node_data(self, ref_id, index, element, embedded_context):
+        type_name = f"UserData[{ref_id}]"
+        userdata_rui = None
+        if hasattr(embedded_context, 'embedded_userdata_infos'):
+            for userdata_info in embedded_context.embedded_userdata_infos:
+                if userdata_info.instance_id == ref_id:
+                    userdata_rui = userdata_info
+                    if hasattr(userdata_info, 'name') and userdata_info.name:
+                        type_name = userdata_info.name
+                    break
+        node_data, context_chain = self._create_embedded_reference_node_data(
+            ref_id, index, element, embedded_context, type_name
+        )
         if userdata_rui and hasattr(userdata_rui, 'embedded_instances'):
             root_instance_id = None
             if hasattr(userdata_rui, 'embedded_object_table') and userdata_rui.embedded_object_table:
@@ -1296,17 +1247,9 @@ class RszEmbeddedArrayOperations:
                     type_info = self.viewer.type_registry.get_type_info(type_id)
                     if type_info and "name" in type_info:
                         type_name = type_info["name"]
-        node_data = DataTreeBuilder.create_data_node(
-            f"{index}: ({type_name})",
-            "",
-            element.__class__.__name__, 
-            element
+        node_data, context_chain = self._create_embedded_reference_node_data(
+            ref_id, index, element, embedded_context, type_name
         )
-        context_chain = build_context_chain(embedded_context)
-        node_data["embedded"] = True
-        node_data["domain_id"] = getattr(embedded_context, 'instance_id', 0)
-        node_data["embedded_context"] = embedded_context
-        node_data["context_chain"] = context_chain
         node_data["instance_id"] = ref_id
         node_data["children"] = []
         if hasattr(embedded_context, 'embedded_instances'):
@@ -1442,19 +1385,7 @@ class RszEmbeddedArrayOperations:
                 ctx.modified = True
         self.viewer.mark_modified()
 
-    def _create_userdata_element_fixed(self, element_type, array_data, parent_rui):
-        """Create UserDataData element with proper ordering."""
-        type_info, type_id = self.type_registry.find_type_by_name(element_type)
-        if not type_info:
-            return None
-        
-        parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
-        if parent_instance_id is None:
-            parent_context, parent_instance_id = self._find_deep_owner_of_array(parent_rui, array_data)
-            if parent_instance_id is None:
-                return None
-            parent_rui = parent_context
-        
+    def _prepare_userdata_array_owner(self, array_data, parent_rui, parent_instance_id):
         if hasattr(array_data, '_owning_instance_id') and array_data._owning_instance_id != parent_instance_id:
             array_data._owning_instance_id = parent_instance_id
         if hasattr(array_data, '_owning_context') and array_data._owning_context != parent_rui:
@@ -1466,37 +1397,8 @@ class RszEmbeddedArrayOperations:
                 if field_obj is array_data:
                     array_data._owning_field_name = field_name
                     break
-        
-        insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
 
-        self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = type_id
-        userdata_info.name = element_type
-        userdata_info.value = element_type
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
-        if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
-            self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
-            
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
-            userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
-            userdata_info.data_size = len(userdata_info.data)
-        
+    def _register_userdata_in_parent(self, parent_rui, insertion_index, userdata_info):
         parent_rui.embedded_instances[insertion_index] = {}
         
         if not hasattr(parent_rui, 'embedded_instance_infos'):
@@ -1506,10 +1408,10 @@ class RszEmbeddedArrayOperations:
             parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
         
         if insertion_index < len(parent_rui.embedded_instance_infos):
-            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(type_id, self.type_registry)
+            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(userdata_info.type_id, self.type_registry)
         else:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(type_id, self.type_registry))
-        
+            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(userdata_info.type_id, self.type_registry))
+
         if not hasattr(parent_rui, 'embedded_userdata_infos'):
             parent_rui.embedded_userdata_infos = []
         parent_rui.embedded_userdata_infos.append(userdata_info)
@@ -1521,7 +1423,43 @@ class RszEmbeddedArrayOperations:
             parent_rui._rsz_userdata_dict[insertion_index] = userdata_info
         if hasattr(parent_rui, '_rsz_userdata_set'):
             parent_rui._rsz_userdata_set.add(insertion_index)
-        
+
+    def _create_userdata_element_fixed(self, element_type, array_data, parent_rui):
+        """Create UserDataData element with proper ordering."""
+        type_info, type_id = self.type_registry.find_type_by_name(element_type)
+        if not type_info:
+            return None
+
+        parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
+        if parent_instance_id is None:
+            parent_context, parent_instance_id = self._find_deep_owner_of_array(parent_rui, array_data)
+            if parent_instance_id is None:
+                return None
+            parent_rui = parent_context
+
+        self._prepare_userdata_array_owner(array_data, parent_rui, parent_instance_id)
+
+        insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
+
+        self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
+
+        userdata_info = create_scn19_userdata_info(insertion_index, type_id, element_type, parent_rui)
+
+        if hasattr(parent_rui, 'embedded_rsz_header'):
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                insertion_index,
+            )
+
+            self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
+
+            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
+            userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
+            userdata_info.data_size = len(userdata_info.data)
+
+        self._register_userdata_in_parent(parent_rui, insertion_index, userdata_info)
+
         element = UserDataData(insertion_index, "", element_type)
         element._owning_userdata = userdata_info
         
@@ -1649,74 +1587,35 @@ class RszEmbeddedArrayOperations:
         parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
         if parent_instance_id is None:
             return None
-        
-        if hasattr(array_data, '_owning_instance_id') and array_data._owning_instance_id != parent_instance_id:
-            array_data._owning_instance_id = parent_instance_id
-        if hasattr(array_data, '_owning_context') and array_data._owning_context != parent_rui:
-            array_data._owning_context = parent_rui
-        
-        if parent_instance_id in parent_rui.embedded_instances:
-            parent_fields = parent_rui.embedded_instances[parent_instance_id]
-            for field_name, field_obj in parent_fields.items():
-                if field_obj is array_data:
-                    array_data._owning_field_name = field_name
-                    break
-        
+
+        self._prepare_userdata_array_owner(array_data, parent_rui, parent_instance_id)
+
         insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
         
         self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
         
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = embedded_data["type_id"]
-        userdata_info.name = embedded_data["name"]
-        userdata_info.value = embedded_data["name"]
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
+        userdata_info = create_scn19_userdata_info(
+            insertion_index,
+            embedded_data["type_id"],
+            embedded_data["name"],
+            parent_rui,
+        )
+
         if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                insertion_index,
+            )
+
             self._restore_embedded_content(userdata_info, embedded_data)
             
             from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
-        
-        parent_rui.embedded_instances[insertion_index] = {}
-        
-        if not hasattr(parent_rui, 'embedded_instance_infos'):
-            parent_rui.embedded_instance_infos = []
-            
-        while len(parent_rui.embedded_instance_infos) <= insertion_index:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-        
-        if insertion_index < len(parent_rui.embedded_instance_infos):
-            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(userdata_info.type_id, self.type_registry)
-        else:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(userdata_info.type_id, self.type_registry))
-        
-        if not hasattr(parent_rui, 'embedded_userdata_infos'):
-            parent_rui.embedded_userdata_infos = []
-        parent_rui.embedded_userdata_infos.append(userdata_info)
-        
-        if hasattr(parent_rui, 'id_manager'):
-            parent_rui.id_manager.register_instance(insertion_index)
-        
-        if hasattr(parent_rui, '_rsz_userdata_dict'):
-            parent_rui._rsz_userdata_dict[insertion_index] = userdata_info
-        if hasattr(parent_rui, '_rsz_userdata_set'):
-            parent_rui._rsz_userdata_set.add(insertion_index)
-        
+
+        self._register_userdata_in_parent(parent_rui, insertion_index, userdata_info)
+
         element = UserDataData(insertion_index, "", elem_data.get("orig_type", ""))
         element._owning_userdata = userdata_info
         

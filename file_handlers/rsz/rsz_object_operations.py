@@ -10,13 +10,16 @@ This file contains utility methods for:
 
 from PySide6.QtWidgets import QMessageBox
 from .rsz_data_types import (
-    get_type_class, ObjectData, ArrayData, 
+    ObjectData, ArrayData,
     UserDataData, S32Data
 )
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from utils.id_manager import EmbeddedIdManager
-from file_handlers.rsz.utils.rsz_embedded_utils import copy_embedded_rsz_header
-from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values
+from file_handlers.rsz.utils.rsz_embedded_utils import (
+    create_scn19_userdata_info,
+    initialize_scn19_userdata_runtime,
+    shift_embedded_instances_for_insertion,
+)
+from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values, create_field_from_definition
 from file_handlers.rsz.utils.rsz_gameobject_utils import (
     add_guid_to_settings,
     create_gameobject_entry,
@@ -365,19 +368,10 @@ class RszObjectOperations:
         
         fields_dict = {}
         for field_def in type_info.get("fields", []):
-            field_name = field_def.get("name", "")
-            if not field_name:
+            field_data = create_field_from_definition(self.viewer, field_def)
+            if field_data is None:
                 continue
-                
-            field_type = field_def.get("type", "unknown").lower()
-            field_size = field_def.get("size", 4)
-            field_native = field_def.get("native", False)
-            field_array = field_def.get("array", False)
-            field_align = field_def.get("align", 4)
-            field_orig_type = field_def.get("original_type", "")
-            
-            field_class = get_type_class(field_type, field_size, field_native, field_array, field_align, field_orig_type, field_name)
-            field_obj = self.viewer._create_default_field(field_class, field_orig_type, field_array, field_size)
+            field_name, field_obj, field_orig_type, field_array, field_class = field_data
             
             if field_obj:
                 temp_elements[field_name] = field_obj
@@ -472,6 +466,29 @@ class RszObjectOperations:
         # Fallback: append at end
         return len(self.scn.instance_infos)
     
+    def _delete_folder_backing_instance(self, folder):
+        folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
+
+        if folder_instance_id > 0:
+            nested_objects = RszInstanceOperations.find_nested_objects(
+                self.scn.parsed_elements, folder_instance_id, self.scn.object_table
+            )
+            nested_objects.add(folder_instance_id)
+
+            for inst_id in sorted(nested_objects, reverse=True):
+                self.viewer._remove_instance_references(inst_id)
+
+            id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
+
+            if id_mapping:
+                self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
+
+        if folder.id < len(self.scn.object_table):
+            remove_from_object_table(self.scn, folder.id)
+
+        if folder in self.scn.folder_infos:
+            self.scn.folder_infos.remove(folder)
+
     def delete_folder(self, folder_id):
         """Delete a folder with the given ID and all its contents"""
         target_folder = None
@@ -519,50 +536,10 @@ class RszObjectOperations:
                 continue
                 
             print(f"  Deleting subfolder with ID {folder.id}")
-            folder_instance_id = self.scn.object_table[folder.id] if folder.id < len(self.scn.object_table) else 0
-            
-            if folder_instance_id > 0:
-                nested_objects = RszInstanceOperations.find_nested_objects(
-                    self.scn.parsed_elements, folder_instance_id, self.scn.object_table
-                )
-                nested_objects.add(folder_instance_id)
-                
-                for inst_id in sorted(nested_objects, reverse=True):
-                    self.viewer._remove_instance_references(inst_id)
-                
-                id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
-                
-                if id_mapping:
-                    self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
-            
-            if folder.id < len(self.scn.object_table):
-                remove_from_object_table(self.scn, folder.id)
-            
-            if folder in self.scn.folder_infos:
-                self.scn.folder_infos.remove(folder)
+            self._delete_folder_backing_instance(folder)
 
         print(f"  Deleting target folder with ID {target_folder.id}")
-        folder_instance_id = self.scn.object_table[target_folder.id] if target_folder.id < len(self.scn.object_table) else 0
-        
-        if folder_instance_id > 0:
-            nested_objects = RszInstanceOperations.find_nested_objects(
-                self.scn.parsed_elements, folder_instance_id, self.scn.object_table
-            )
-            nested_objects.add(folder_instance_id)
-            
-            for inst_id in sorted(nested_objects, reverse=True):
-                self.viewer._remove_instance_references(inst_id)
-            
-            id_mapping = self.viewer._update_instance_references_after_deletion(folder_instance_id, nested_objects)
-            
-            if id_mapping:
-                self.viewer.handler.id_manager.update_all_mappings(id_mapping, nested_objects)
-        
-        if target_folder.id < len(self.scn.object_table):
-            remove_from_object_table(self.scn, target_folder.id)
-        
-        if target_folder in self.scn.folder_infos:
-            self.scn.folder_infos.remove(target_folder)
+        self._delete_folder_backing_instance(target_folder)
         
         self.viewer.mark_modified()
         return True
@@ -993,6 +970,29 @@ class RszObjectOperations:
         component_fields = {}
         self.viewer._initialize_fields_from_type_info(component_fields, type_info)
 
+        def _prepare_component_field(field_obj):
+            nonlocal next_insertion_index
+            if field_obj is None:
+                return
+
+            if isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
+                if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
+                    userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index, None)
+                    if userdata_id is not None:
+                        field_obj.value = userdata_id
+                        field_obj.string = field_obj.orig_type
+                        next_insertion_index += 1
+
+            elif isinstance(field_obj, ArrayData) and getattr(field_obj, 'element_class', None) == UserDataData and getattr(field_obj, 'orig_type', ''):
+                field_obj._needs_userdata_creation = True
+                field_obj._userdata_type = field_obj.orig_type
+
+            elif isinstance(field_obj, ObjectData) and getattr(field_obj, 'orig_type', ''):
+                child_type_info, child_type_id = self.type_registry.find_type_by_name(field_obj.orig_type)
+                if child_type_info and child_type_id:
+                    child_id = _create_instance_for_type(child_type_info)
+                    field_obj.value = child_id
+
         def _create_instance_for_type(current_type_info):
             nonlocal next_insertion_index
 
@@ -1003,27 +1003,7 @@ class RszObjectOperations:
                 field_name = field_def.get("name", "")
                 if not field_name:
                     continue
-                field_obj = instance_fields.get(field_name)
-                if field_obj is None:
-                    continue
-
-                if isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
-                    if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
-                        userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index, None)
-                        if userdata_id is not None:
-                            field_obj.value = userdata_id
-                            field_obj.string = field_obj.orig_type
-                            next_insertion_index += 1
-
-                elif isinstance(field_obj, ArrayData) and getattr(field_obj, 'element_class', None) == UserDataData and getattr(field_obj, 'orig_type', ''):
-                    field_obj._needs_userdata_creation = True
-                    field_obj._userdata_type = field_obj.orig_type
-
-                elif isinstance(field_obj, ObjectData) and getattr(field_obj, 'orig_type', ''):
-                    child_type_info, child_type_id = self.type_registry.find_type_by_name(field_obj.orig_type)
-                    if child_type_info and child_type_id:
-                        child_id = _create_instance_for_type(child_type_info)
-                        field_obj.value = child_id
+                _prepare_component_field(instance_fields.get(field_name))
 
             _, cur_type_id = self.type_registry.find_type_by_name(current_type_info.get("name", ""))
             if not cur_type_id:
@@ -1043,27 +1023,7 @@ class RszObjectOperations:
             field_name = field_def.get("name", "")
             if not field_name:
                 continue
-            field_obj = component_fields.get(field_name)
-            if field_obj is None:
-                continue
-
-            if isinstance(field_obj, UserDataData) and getattr(field_obj, 'orig_type', ''):
-                if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
-                    userdata_id = self._create_userdata_instance_for_field(field_obj.orig_type, next_insertion_index, None)
-                    if userdata_id is not None:
-                        field_obj.value = userdata_id
-                        field_obj.string = field_obj.orig_type
-                        next_insertion_index += 1
-
-            elif isinstance(field_obj, ArrayData) and getattr(field_obj, 'element_class', None) == UserDataData and getattr(field_obj, 'orig_type', ''):
-                field_obj._needs_userdata_creation = True
-                field_obj._userdata_type = field_obj.orig_type
-
-            elif isinstance(field_obj, ObjectData) and getattr(field_obj, 'orig_type', ''):
-                nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_obj.orig_type)
-                if nested_type_info and nested_type_id:
-                    child_id = _create_instance_for_type(nested_type_info)
-                    field_obj.value = child_id
+            _prepare_component_field(component_fields.get(field_name))
 
         new_instance = self.viewer._initialize_new_instance(type_id, type_info)
         if not new_instance:
@@ -1261,8 +1221,6 @@ class RszObjectOperations:
         This is called BEFORE the component instance is created to ensure proper ordering.
         Returns the instance ID of the created UserDataData instance.
         """
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-
         type_info, type_id = self.type_registry.find_type_by_name(field_type)
         if not type_info:
             print(f"Warning: Type not found for UserDataData field: {field_type}")
@@ -1281,30 +1239,21 @@ class RszObjectOperations:
         
         self.viewer.handler.id_manager.register_instance(current_insertion_index)
         if self.scn.has_embedded_rsz:
-            userdata_info = Scn19RSZUserDataInfo()
-            userdata_info.instance_id = current_insertion_index
-            userdata_info.type_id = type_id
-            userdata_info.crc = int(type_info.get("crc", "0"), 16)
-            userdata_info.name = field_type
-            userdata_info.value = field_type
-            userdata_info.data = b""
-            userdata_info.data_size = 0
-    
-            userdata_info.embedded_rsz_header = type(self.scn.rsz_header)()
-            copy_embedded_rsz_header(self.scn.rsz_header, userdata_info.embedded_rsz_header)
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.parsed_elements = {}
-        
-            userdata_info.id_manager = EmbeddedIdManager(current_insertion_index)
-            userdata_info._rsz_userdata_dict = {}
-            userdata_info._rsz_userdata_set = set()
-            userdata_info._rsz_userdata_str_map = {}
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info._array_counters = {}
-            userdata_info.modified = False
+            userdata_info = create_scn19_userdata_info(
+                current_insertion_index,
+                type_id,
+                field_type,
+                crc=int(type_info.get("crc", "0"), 16),
+            )
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                self.scn.rsz_header,
+                current_insertion_index,
+                include_parsed_elements=True,
+                include_maps=True,
+                include_array_counters=True,
+                modified=False,
+            )
         
             def mark_modified_func():
                 userdata_info.modified = True
@@ -1346,8 +1295,6 @@ class RszObjectOperations:
         Create an RSZUserDataInfo entry for a UserDataData field.
         This is used for SCN.18/19 files where UserDataData contains embedded RSZ data.
         """
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-        
         next_id = len(self.scn.instance_infos) if hasattr(self.scn, 'instance_infos') else 0
 
         type_info, type_id = self.type_registry.find_type_by_name(field_type)
@@ -1371,33 +1318,21 @@ class RszObjectOperations:
         
         self.viewer.handler.id_manager.register_instance(next_id)
         
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = next_id
-        userdata_info.type_id = type_id
-        userdata_info.crc = int(type_info.get("crc", "0"), 16)
-        userdata_info.name = field_type
-        userdata_info.value = field_type
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-    
-        userdata_info.embedded_rsz_header = type(self.scn.rsz_header)()
-        copy_embedded_rsz_header(self.scn.rsz_header, userdata_info.embedded_rsz_header)
-        
-        userdata_info.embedded_instances = {}
-        userdata_info.embedded_instance_infos = []
-        userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_object_table = []
-        userdata_info.parsed_elements = {}
-        
-        userdata_info.id_manager = EmbeddedIdManager(next_id)
-        
-        userdata_info._rsz_userdata_dict = {}
-        userdata_info._rsz_userdata_set = set()
-        userdata_info._rsz_userdata_str_map = {}
-        userdata_info.embedded_instance_hierarchy = {}
-        userdata_info._array_counters = {}
-        
-        userdata_info.modified = False
+        userdata_info = create_scn19_userdata_info(
+            next_id,
+            type_id,
+            field_type,
+            crc=int(type_info.get("crc", "0"), 16),
+        )
+        initialize_scn19_userdata_runtime(
+            userdata_info,
+            self.scn.rsz_header,
+            next_id,
+            include_parsed_elements=True,
+            include_maps=True,
+            include_array_counters=True,
+            modified=False,
+        )
         
         def mark_modified_func():
             userdata_info.modified = True
@@ -1439,6 +1374,28 @@ class RszObjectOperations:
         if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
             userdata_info.embedded_instance_hierarchy = {}
             
+        def _bind_array_field(field_obj, owner_id, field_name):
+            field_obj._owning_context = userdata_info
+            field_obj._owning_instance_id = owner_id
+            field_obj._owning_field = field_name
+            field_obj._container_context = userdata_info
+            field_obj._container_parent_id = owner_id
+            field_obj._container_field = field_name
+
+        def _populate_userdata_array_elements(field_obj):
+            nonlocal instance_insertion_index
+            if hasattr(field_obj, 'element_class') and field_obj.element_class == UserDataData:
+                element_type = getattr(field_obj, 'orig_type', '')
+                if element_type:
+                    for idx, element in enumerate(field_obj.values):
+                        if isinstance(element, UserDataData) and element.value == 0:
+                            new_userdata = self._create_embedded_userdata_in_context(
+                                element_type, userdata_info, instance_insertion_index
+                            )
+                            if new_userdata:
+                                field_obj.values[idx] = new_userdata
+                                instance_insertion_index += 1
+
         null_info = self._create_instance_info(0, 0)
         userdata_info.embedded_instance_infos = [null_info]
         
@@ -1476,24 +1433,8 @@ class RszObjectOperations:
                     instance_insertion_index += 1
                     
             elif field_array and isinstance(field_obj, ArrayData):
-                field_obj._owning_context = userdata_info
-                field_obj._owning_instance_id = instance_insertion_index  # Will be updated when main instance is created
-                field_obj._owning_field = field_name
-                field_obj._container_context = userdata_info
-                field_obj._container_parent_id = instance_insertion_index  # Will be updated when main instance is created
-                field_obj._container_field = field_name
-                
-                if hasattr(field_obj, 'element_class') and field_obj.element_class == UserDataData:
-                    element_type = getattr(field_obj, 'orig_type', '')
-                    if element_type:
-                        for idx, element in enumerate(field_obj.values):
-                            if isinstance(element, UserDataData) and element.value == 0:
-                                new_userdata = self._create_embedded_userdata_in_context(
-                                    element_type, userdata_info, instance_insertion_index
-                                )
-                                if new_userdata:
-                                    field_obj.values[idx] = new_userdata
-                                    instance_insertion_index += 1
+                _bind_array_field(field_obj, instance_insertion_index, field_name)
+                _populate_userdata_array_elements(field_obj)
         
         while nested_instances:
             current_type_info, current_type_id, current_instance_id, parent_id = nested_instances.pop(0)
@@ -1540,24 +1481,8 @@ class RszObjectOperations:
                         instance_insertion_index += 1
                         
                 elif field_array and isinstance(field_obj, ArrayData):
-                    field_obj._owning_context = userdata_info
-                    field_obj._owning_instance_id = current_instance_id
-                    field_obj._owning_field = field_name
-                    field_obj._container_context = userdata_info
-                    field_obj._container_parent_id = current_instance_id
-                    field_obj._container_field = field_name
-                    
-                    if hasattr(field_obj, 'element_class') and field_obj.element_class == UserDataData:
-                        element_type = getattr(field_obj, 'orig_type', '')
-                        if element_type:
-                            for idx, element in enumerate(field_obj.values):
-                                if isinstance(element, UserDataData) and element.value == 0:
-                                    new_userdata = self._create_embedded_userdata_in_context(
-                                        element_type, userdata_info, instance_insertion_index
-                                    )
-                                    if new_userdata:
-                                        field_obj.values[idx] = new_userdata
-                                        instance_insertion_index += 1
+                    _bind_array_field(field_obj, current_instance_id, field_name)
+                    _populate_userdata_array_elements(field_obj)
             
             userdata_info.embedded_instances[current_instance_id] = instance_fields
             
@@ -1646,81 +1571,31 @@ class RszObjectOperations:
         
         if parent_instance_id is not None:
             next_id = parent_instance_id
-            
-            id_shift = {}
-            for old_id in sorted(parent_rui.embedded_instances.keys()):
-                if old_id >= next_id:
-                    id_shift[old_id] = old_id + 1
-            
-            if id_shift:
-                new_instances = {}
-                for old_id, fields in parent_rui.embedded_instances.items():
-                    new_id = id_shift.get(old_id, old_id)
-                    new_instances[new_id] = fields
-                parent_rui.embedded_instances = new_instances
-                
-                if hasattr(parent_rui, 'embedded_instance_infos'):
-                    max_new_id = max(id_shift.values())
-                    while len(parent_rui.embedded_instance_infos) <= max_new_id:
-                        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
-                        parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-                    
-                    for old_id, new_id in sorted(id_shift.items(), reverse=True):
-                        if old_id < len(parent_rui.embedded_instance_infos):
-                            parent_rui.embedded_instance_infos[new_id] = parent_rui.embedded_instance_infos[old_id]
-                            parent_rui.embedded_instance_infos[old_id] = None
-                
-                from file_handlers.rsz.utils.rsz_embedded_utils import update_embedded_references_for_shift
-                update_embedded_references_for_shift(id_shift, parent_rui)
-                
-                if hasattr(parent_rui, 'embedded_userdata_infos'):
-                    for ud in parent_rui.embedded_userdata_infos:
-                        if hasattr(ud, 'instance_id') and ud.instance_id in id_shift:
-                            ud.instance_id = id_shift[ud.instance_id]
-                
-                if hasattr(parent_rui, 'embedded_object_table'):
-                    parent_rui.embedded_object_table = [
-                        id_shift.get(x, x) for x in parent_rui.embedded_object_table
-                    ]
+            shift_embedded_instances_for_insertion(parent_rui, next_id, 1, self.type_registry)
         else:
             raise ValueError("Parent RUI is not valid")
         
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-        from file_handlers.rsz.rsz_data_types import UserDataData
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = next_id
-        userdata_info.type_id = type_id
-        userdata_info.crc = int(type_info.get("crc", "0"), 16)
-        userdata_info.name = field_type
-        userdata_info.value = field_type
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
+        userdata_info = create_scn19_userdata_info(
+            next_id,
+            type_id,
+            field_type,
+            parent_rui,
+            crc=int(type_info.get("crc", "0"), 16),
+        )
         
         if hasattr(parent_rui, 'embedded_rsz_header'):
-            if hasattr(parent_rui, 'embedded_rsz_header'):
-                userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-                copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-                
-                userdata_info.embedded_rsz_header.object_count = 1
-                userdata_info.embedded_rsz_header.instance_count = 2
-                userdata_info.embedded_rsz_header.userdata_count = 0
-
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.parsed_elements = {}
-            
-            from utils.id_manager import EmbeddedIdManager
-            userdata_info.id_manager = EmbeddedIdManager(next_id)
-            
-            userdata_info._rsz_userdata_dict = {}
-            userdata_info._rsz_userdata_set = set()
-            userdata_info._rsz_userdata_str_map = {}
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info._array_counters = {}
-            userdata_info.modified = False
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                next_id,
+                include_parsed_elements=True,
+                include_maps=True,
+                include_array_counters=True,
+                modified=False,
+            )
+            userdata_info.embedded_rsz_header.object_count = 1
+            userdata_info.embedded_rsz_header.instance_count = 2
+            userdata_info.embedded_rsz_header.userdata_count = 0
             
             def mark_modified_func():
                 userdata_info.modified = True

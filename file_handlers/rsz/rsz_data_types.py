@@ -38,6 +38,36 @@ class StructData:
     def parse(cls, _ctx):
         raise NotImplementedError("StructData parsing is handled separately")
 
+
+_MISSING = object()
+
+
+class _ValueData:
+    default_value = 0
+
+    def __init__(self, value=_MISSING, orig_type: str = ""):
+        self.value = self.default_value if value is _MISSING else value
+        self.orig_type = orig_type
+
+
+class _BinaryValueData(_ValueData):
+    unpacker_name = ""
+
+    @classmethod
+    def parse(cls, ctx):
+        value = ctx.read_value(getattr(ctx, cls.unpacker_name), ctx.field_size)
+        return cls(value, ctx.original_type)
+
+
+class _Utf16StringData(_ValueData):
+    default_value = ""
+
+    @classmethod
+    def parse(cls, ctx):
+        value = ctx.read_string_utf16()
+        return cls(value, ctx.original_type)
+
+
 class ObjectData:
     def __init__(self, value: int = 0, orig_type: str = ""):
         self.value = value
@@ -50,15 +80,8 @@ class ObjectData:
         ctx.set_parent(value, ctx.current_instance_index)
         return cls(value, ctx.original_type)
 
-class ResourceData:
-    def __init__(self, value: str = "", orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_string_utf16()
-        return cls(value, ctx.original_type)
+class ResourceData(_Utf16StringData):
+    pass
 
 class UserDataData:
     def __init__(self, value: int = 0, string: str = "", orig_type: str = ""):
@@ -75,10 +98,8 @@ class UserDataData:
             value = ctx.rsz_userdata_map.get(rui, "")
         return cls(instance_id, value, ctx.original_type)
 
-class BoolData:
-    def __init__(self, value: bool = False, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class BoolData(_ValueData):
+    default_value = False
 
     @classmethod
     def parse(cls, ctx):
@@ -86,115 +107,38 @@ class BoolData:
         value = bool(raw[0]) if len(raw) > 0 else False
         return cls(value, ctx.original_type)
 
-class S8Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class S8Data(_BinaryValueData):
+    unpacker_name = "unpack_sbyte"
 
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_sbyte, ctx.field_size)
-        return cls(value, ctx.original_type)
+class U8Data(_BinaryValueData):
+    unpacker_name = "unpack_ubyte"
 
-class U8Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class S16Data(_BinaryValueData):
+    unpacker_name = "unpack_short"
 
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_ubyte, ctx.field_size)
-        return cls(value, ctx.original_type)
+class U16Data(_BinaryValueData):
+    unpacker_name = "unpack_ushort"
 
-class S16Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class S32Data(_BinaryValueData):
+    unpacker_name = "unpack_int"
 
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_short, ctx.field_size)
-        return cls(value, ctx.original_type)
+class U32Data(_BinaryValueData):
+    unpacker_name = "unpack_uint"
 
-class U16Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class S64Data(_BinaryValueData):
+    unpacker_name = "unpack_long"
 
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_ushort, ctx.field_size)
-        return cls(value, ctx.original_type)
+class U64Data(_BinaryValueData):
+    unpacker_name = "unpack_ulong"
 
-class S32Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class F32Data(_BinaryValueData):
+    unpacker_name = "unpack_float"
 
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_int, ctx.field_size)
-        return cls(value, ctx.original_type)
+class F64Data(_BinaryValueData):
+    unpacker_name = "unpack_double"
 
-class U32Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_uint, ctx.field_size)
-        return cls(value, ctx.original_type)
-
-class S64Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_long, ctx.field_size)
-        return cls(value, ctx.original_type)
-
-class U64Data:
-    def __init__(self, value: int = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_ulong, ctx.field_size)
-        return cls(value, ctx.original_type)
-
-class F32Data:
-    def __init__(self, value: float = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_float, ctx.field_size)
-        return cls(value, ctx.original_type)
-
-class F64Data:
-    def __init__(self, value: float = 0, orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_value(ctx.unpack_double, ctx.field_size)
-        return cls(value, ctx.original_type)
-
-class StringData:
-    def __init__(self, value: str = "", orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        value = ctx.read_string_utf16()
-        return cls(value, ctx.original_type)
+class StringData(_Utf16StringData):
+    pass
 
 class Uint2Data:
     def __init__(self, x: int = 0, y: int = 0, orig_type: str = ""):
@@ -242,7 +186,7 @@ class Int3Data:
         vals = ctx.read_struct(ctx.unpack_3int, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class Int4Data:
+class _Int4Data:
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, w: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -255,18 +199,11 @@ class Int4Data:
         values = [ctx.read_value(ctx.unpack_int, 4) for _ in range(4)]
         return cls(values[0], values[1], values[2], values[3], ctx.original_type)
 
-class Int4ColorData:
-    def __init__(self, x: int = 0, y: int = 0, z: int = 0, w: int = 0, orig_type: str = ""):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.w = w
-        self.orig_type = orig_type
+class Int4Data(_Int4Data):
+    pass
 
-    @classmethod
-    def parse(cls, ctx):
-        values = [ctx.read_value(ctx.unpack_int, 4) for _ in range(4)]
-        return cls(values[0], values[1], values[2], values[3], ctx.original_type)
+class Int4ColorData(_Int4Data):
+    pass
 
 class Float2Data:
     def __init__(self, x: float = 0, y: float = 0, orig_type: str = ""):
@@ -291,7 +228,7 @@ class Float3Data:
         vals = ctx.read_struct(ctx.unpack_3float, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class Float4Data:
+class _Float4Data:
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, w: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -303,6 +240,9 @@ class Float4Data:
     def parse(cls, ctx):
         vals = ctx.read_struct(ctx.unpack_4float, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], vals[3], ctx.original_type)
+
+class Float4Data(_Float4Data):
+    pass
 
 class Mat4Data:
     def __init__(self, values = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), orig_type: str = ""):
@@ -341,7 +281,7 @@ class Vec2Data:
         vals = ctx.read_struct(ctx.unpack_2float, ctx.field_size)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class Vec3Data:
+class _Vec3FromFloat4Data:
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -353,45 +293,19 @@ class Vec3Data:
         vals = ctx.read_struct(ctx.unpack_4float, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class Vec3ColorData:
-    def __init__(self, x: float = 0, y: float = 0, z: float = 0, orig_type: str = ""):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.orig_type = orig_type
+class Vec3Data(_Vec3FromFloat4Data):
+    pass
 
-    @classmethod
-    def parse(cls, ctx):
-        vals = ctx.read_struct(ctx.unpack_4float, ctx.field_size)
-        return cls(vals[0], vals[1], vals[2], ctx.original_type)
+class Vec3ColorData(_Vec3FromFloat4Data):
+    pass
 
-class Vec4Data:
-    def __init__(self, x: float = 0, y: float = 0, z: float = 0, w: float = 0, orig_type: str = ""):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.w = w
-        self.orig_type = orig_type
+class Vec4Data(_Float4Data):
+    pass
 
-    @classmethod
-    def parse(cls, ctx):
-        vals = ctx.read_struct(ctx.unpack_4float, ctx.field_size)
-        return cls(vals[0], vals[1], vals[2], vals[3], ctx.original_type)
+class QuaternionData(_Float4Data):
+    pass
 
-class QuaternionData:
-    def __init__(self, x: float = 0, y: float = 0, z: float = 0, w: float = 0, orig_type: str = ""):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.w = w
-        self.orig_type = orig_type
-
-    @classmethod
-    def parse(cls, ctx):
-        vals = ctx.read_struct(ctx.unpack_4float, ctx.field_size)
-        return cls(vals[0], vals[1], vals[2], vals[3], ctx.original_type)
-
-class GuidData:
+class _GuidBytesData:
     def __init__(self, guid_str: str = None, raw_bytes: bytes = None, orig_type: str = ""):
         if not guid_str:
             guid_str = "00000000-0000-0000-0000-000000000000"
@@ -406,6 +320,9 @@ class GuidData:
     def parse(cls, ctx):
         guid_str, raw_bytes = ctx.read_guid(ctx.field_size)
         return cls(guid_str, raw_bytes, ctx.original_type)
+
+class GuidData(_GuidBytesData):
+    pass
 
 class ColorData:
     def __init__(self, r: int = 0, g: int = 0, b: int = 0, a: int = 0, orig_type: str = ""):
@@ -656,25 +573,11 @@ class RectData:
         values = ctx.read_struct(ctx.unpack_4float, 16)
         return cls(values[0], values[1], values[2], values[3], ctx.original_type)
 
-class GameObjectRefData:
-    def __init__(self, guid_str: str = "", raw_bytes: bytes = None, orig_type: str = ""):
-        if not guid_str:
-            guid_str = "00000000-0000-0000-0000-000000000000"
-        if not raw_bytes:
-            raw_bytes = b'\0' * 16
-        self.guid_str = guid_str
-        self.raw_bytes = raw_bytes  # Store original bytes
-        self.orig_type = orig_type
+class GameObjectRefData(_GuidBytesData):
+    pass
 
-    @classmethod
-    def parse(cls, ctx):
-        guid_str, raw_bytes = ctx.read_guid(ctx.field_size)
-        return cls(guid_str, raw_bytes, ctx.original_type)
-
-class RuntimeTypeData:
-    def __init__(self, value: str = "", orig_type: str = ""):
-        self.value = value
-        self.orig_type = orig_type
+class RuntimeTypeData(_ValueData):
+    default_value = ""
 
     @classmethod
     def parse(cls, ctx):
