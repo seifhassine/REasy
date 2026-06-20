@@ -7352,24 +7352,32 @@
 			"value": 0
 		},
 		{
-			"name": "DLSS",
-			"value": 1
+			"name": "MaskFG",
+			"value": 7
 		},
 		{
 			"name": "DLSSFG",
-			"value": 2
+			"value": 1
 		},
 		{
 			"name": "FSR3FG",
-			"value": 3
+			"value": 2
 		},
 		{
 			"name": "XeSSFG",
-			"value": 4
+			"value": 3
 		},
 		{
-			"name": "Num",
-			"value": 5
+			"name": "BaseOptionalShift",
+			"value": 3
+		},
+		{
+			"name": "BaseOptionalMask",
+			"value": 4294967288
+		},
+		{
+			"name": "DLSS",
+			"value": 8
 		}
 	],
 	"via.network.error.MethodUtility": [
@@ -8238,6 +8246,10 @@
 		{
 			"name": "MoveRightDirOnly3",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "SubGame1HowToPlay",
+			"value": 1073741824
 		},
 		{
 			"name": "Inventory",
@@ -9138,6 +9150,10 @@
 		{
 			"name": "HasSpecifiedFlag",
 			"value": 1
+		},
+		{
+			"name": "IsTransitionToDangerHitpoint",
+			"value": 2
 		}
 	],
 	"via.motion.detail.Chain2NodeData.AngleMode": [
@@ -11594,6 +11610,16 @@
 			"value": 3
 		}
 	],
+	"app.UI4031GuiBehavior.Phase": [
+		{
+			"name": "Idle",
+			"value": 0
+		},
+		{
+			"name": "SelectItem",
+			"value": 1
+		}
+	],
 	"via.effect.gpgpu.DeformedMesh.MeshCsResource.SkinningShaderType": [
 		{
 			"name": "SkinningShaderType_None",
@@ -13116,6 +13142,14 @@
 		{
 			"name": "TypeB",
 			"value": 2
+		},
+		{
+			"name": "TypeC",
+			"value": 3
+		},
+		{
+			"name": "TypeD",
+			"value": 4
 		}
 	],
 	"app.GmJackMashActionV2.StepType": [
@@ -14266,6 +14300,10 @@
 			"value": 27
 		},
 		{
+			"name": "ID021",
+			"value": 93
+		},
+		{
 			"name": "ID030",
 			"value": 82
 		},
@@ -14474,12 +14512,28 @@
 			"value": 72
 		},
 		{
+			"name": "ID702",
+			"value": 94
+		},
+		{
+			"name": "ID703",
+			"value": 95
+		},
+		{
 			"name": "ID705",
 			"value": 75
 		},
 		{
 			"name": "ID706",
 			"value": 73
+		},
+		{
+			"name": "ID707",
+			"value": 105
+		},
+		{
+			"name": "ID708",
+			"value": 106
 		},
 		{
 			"name": "ID711",
@@ -14514,6 +14568,38 @@
 			"value": 54
 		},
 		{
+			"name": "ID762",
+			"value": 97
+		},
+		{
+			"name": "ID763",
+			"value": 98
+		},
+		{
+			"name": "ID764",
+			"value": 99
+		},
+		{
+			"name": "ID765",
+			"value": 100
+		},
+		{
+			"name": "ID766",
+			"value": 101
+		},
+		{
+			"name": "ID767",
+			"value": 102
+		},
+		{
+			"name": "ID768",
+			"value": 103
+		},
+		{
+			"name": "ID769",
+			"value": 104
+		},
+		{
 			"name": "ID770",
 			"value": 79
 		},
@@ -14524,6 +14610,10 @@
 		{
 			"name": "ID772",
 			"value": 81
+		},
+		{
+			"name": "ID773",
+			"value": 96
 		},
 		{
 			"name": "ID797",
@@ -15346,12 +15436,40 @@
 			"value": 2
 		},
 		{
-			"name": "Seconds",
+			"name": "PercentMinus",
 			"value": 3
 		},
 		{
-			"name": "PercentSecondDecimalPlace",
+			"name": "Seconds",
 			"value": 4
+		},
+		{
+			"name": "PercentSecondDecimalPlace",
+			"value": 5
+		},
+		{
+			"name": "FloatValue_F1",
+			"value": 6
+		},
+		{
+			"name": "ConsumptionAmmo",
+			"value": 7
+		},
+		{
+			"name": "TimeExtend",
+			"value": 8
+		},
+		{
+			"name": "JustParyyCount",
+			"value": 9
+		},
+		{
+			"name": "ShotHitBuildUpRate",
+			"value": 10
+		},
+		{
+			"name": "InventoryEmptySpace",
+			"value": 11
 		}
 	],
 	"app.GunHoldState": [
@@ -25622,6 +25740,54 @@
 		{
 			"name": "RedundantStreamingTextureLoad",
 			"value": 2476
+		},
+		{
+			"name": "StreamingTextureForceReleasePass1",
+			"value": 2477
+		},
+		{
+			"name": "StreamingTextureForceReleasePass2",
+			"value": 2478
+		},
+		{
+			"name": "Render2479",
+			"value": 2479
+		},
+		{
+			"name": "RenderResourceDebugTrack",
+			"value": 2481
+		},
+		{
+			"name": "RenderResourceDebugTrackEnd",
+			"value": 2482
+		},
+		{
+			"name": "Render2483",
+			"value": 2483
+		},
+		{
+			"name": "Render2484",
+			"value": 2484
+		},
+		{
+			"name": "AMD_IsRdpConnected",
+			"value": 2485
+		},
+		{
+			"name": "Render2486",
+			"value": 2486
+		},
+		{
+			"name": "Render2487",
+			"value": 2487
+		},
+		{
+			"name": "Render2488",
+			"value": 2488
+		},
+		{
+			"name": "UnexpectedStreamingState",
+			"value": 2489
 		}
 	],
 	"via.motion.Chain2Resource.ChainAttrFlags": [
@@ -33152,20 +33318,28 @@
 			"value": 3
 		},
 		{
-			"name": "SetDefaultWindowMode",
+			"name": "RequestLoad_Chunk01",
 			"value": 4
 		},
 		{
-			"name": "WaitForChangeWindowMode",
+			"name": "WaitForLoad_Chunk01",
 			"value": 5
 		},
 		{
-			"name": "SetDefaultResolution",
+			"name": "SetDefaultWindowMode",
 			"value": 6
 		},
 		{
-			"name": "Finish",
+			"name": "WaitForChangeWindowMode",
 			"value": 7
+		},
+		{
+			"name": "SetDefaultResolution",
+			"value": 8
+		},
+		{
+			"name": "Finish",
+			"value": 9
 		}
 	],
 	"app.Gm99_087.SwitchState": [
@@ -33538,6 +33712,16 @@
 		{
 			"name": "Float3",
 			"value": 2
+		}
+	],
+	"app.GameModeGimmickLimitRequester.GameModeGimmickLimitData.GameModeLimitType": [
+		{
+			"name": "ContextID",
+			"value": 0
+		},
+		{
+			"name": "Behavior",
+			"value": 1
 		}
 	],
 	"via.audiorender.dev.WaveRecMode": [
@@ -34686,6 +34870,10 @@
 		{
 			"name": "SubGame1",
 			"value": 2
+		},
+		{
+			"name": "SubGame1Chart",
+			"value": 3
 		}
 	],
 	"via.network.MatchesPsnCooperativeResult": [
@@ -36240,6 +36428,10 @@
 		{
 			"name": "ID446",
 			"value": 446
+		},
+		{
+			"name": "Gamepad0450",
+			"value": 450
 		}
 	],
 	"app.ControllerVibrationType": [
@@ -36718,6 +36910,32 @@
 		{
 			"name": "CalculationType_MultiConst",
 			"value": 4
+		}
+	],
+	"app.SavedataChunkBits": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Chunk_00",
+			"value": 1
+		},
+		{
+			"name": "Chunk_01",
+			"value": 2
+		},
+		{
+			"name": "Chunk_02",
+			"value": 4
+		},
+		{
+			"name": "Chunk_03",
+			"value": 8
+		},
+		{
+			"name": "All",
+			"value": 4294967295
 		}
 	],
 	"via.effect.script.EffectManager.EffectName": [
@@ -45662,6 +45880,18 @@
 		{
 			"name": "CacheAndPoolExist",
 			"value": 378
+		},
+		{
+			"name": "RegistHandleValueCycled",
+			"value": 387
+		},
+		{
+			"name": "RegistHandleValueDuplicate",
+			"value": 388
+		},
+		{
+			"name": "RegistHandleValueLimit",
+			"value": 389
 		}
 	],
 	"app.loop.LoopCoreTest.Databases": [
@@ -46400,6 +46630,10 @@
 		{
 			"name": "PauseMenu",
 			"value": 1
+		},
+		{
+			"name": "Sub1Game",
+			"value": 2
 		}
 	],
 	"app.Cp_B800GrappleZone.ZoneKindType": [
@@ -49716,6 +49950,38 @@
 		{
 			"name": "DebugReportExport",
 			"value": 540
+		},
+		{
+			"name": "DebugReportNotFoundParentDirectory",
+			"value": 541
+		},
+		{
+			"name": "DebugReportFailedExportDxdiag",
+			"value": 542
+		},
+		{
+			"name": "TagStarted",
+			"value": 543
+		},
+		{
+			"name": "TagEnded",
+			"value": 544
+		},
+		{
+			"name": "TagSuspended",
+			"value": 545
+		},
+		{
+			"name": "TagResumed",
+			"value": 546
+		},
+		{
+			"name": "TaggedProfileItem",
+			"value": 547
+		},
+		{
+			"name": "DebugReportExportToPathUnsupportedPlatform",
+			"value": 548
 		}
 	],
 	"via.Stream.Attribute": [
@@ -71966,6 +72232,10 @@
 		{
 			"name": "PlayerEnterRetreatZone",
 			"value": 7
+		},
+		{
+			"name": "NowhereToGo",
+			"value": 8
 		}
 	],
 	"app.CharacterPostureType": [
@@ -73455,6 +73725,20 @@
 		{
 			"name": "PL_First_ChainsawSlash",
 			"value": 1
+		}
+	],
+	"app.Gm19_183.HoldState": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Up",
+			"value": 1
+		},
+		{
+			"name": "Down",
+			"value": 2
 		}
 	],
 	"app.EffectCharacterSurfaceMaterialDefinition.WetLevel": [
@@ -77885,6 +78169,10 @@
 		{
 			"name": "Timer",
 			"value": 5
+		},
+		{
+			"name": "TimerAndCount",
+			"value": 6
 		}
 	],
 	"via.geometry.BrushPipelineState": [
@@ -84564,6 +84852,40 @@
 			"value": 1
 		}
 	],
+	"app.SubGame1EnemyIdentificationSettings.IdentificationType": [
+		{
+			"name": "ID000",
+			"value": 0
+		},
+		{
+			"name": "ID001",
+			"value": 1
+		},
+		{
+			"name": "ID002",
+			"value": 2
+		},
+		{
+			"name": "ID003",
+			"value": 3
+		},
+		{
+			"name": "ID004",
+			"value": 4
+		},
+		{
+			"name": "ID005",
+			"value": 5
+		},
+		{
+			"name": "ID006",
+			"value": 6
+		},
+		{
+			"name": "ID007",
+			"value": 7
+		}
+	],
 	"app.Cp_B600StepType": [
 		{
 			"name": "None",
@@ -85048,6 +85370,10 @@
 		{
 			"name": "PauseMenu",
 			"value": 1
+		},
+		{
+			"name": "Sub1Title",
+			"value": 2
 		}
 	],
 	"app.Cp_B000Sever.State": [
@@ -85844,6 +86170,20 @@
 		{
 			"name": "TailHorizon",
 			"value": 4608
+		}
+	],
+	"app.Cp_C750Color.State": [
+		{
+			"name": "Bad",
+			"value": 0
+		},
+		{
+			"name": "Normal",
+			"value": 1
+		},
+		{
+			"name": "Good",
+			"value": 2
 		}
 	],
 	"app.ExtraJointConstraintsUserData.MontagePart": [
@@ -95352,6 +95692,14 @@
 		{
 			"name": "Type003",
 			"value": 3
+		},
+		{
+			"name": "Type004",
+			"value": 4
+		},
+		{
+			"name": "Type005",
+			"value": 5
 		}
 	],
 	"via.render.Bloodshed.SourceChannel": [
@@ -96214,6 +96562,16 @@
 		{
 			"name": "ThrowOnExisting",
 			"value": 2
+		}
+	],
+	"app.UI2070GuiBehavior.MoneyType": [
+		{
+			"name": "Money",
+			"value": 0
+		},
+		{
+			"name": "Score",
+			"value": 1
 		}
 	],
 	"app.EnemyAttackPermitManager.AttackPermitReturnType": [
@@ -97610,6 +97968,10 @@
 		{
 			"name": "WidgetProcessFailed",
 			"value": 10
+		},
+		{
+			"name": "Undefined",
+			"value": 11
 		}
 	],
 	"via.render.Outline.DrawMode": [
@@ -106695,6 +107057,26 @@
 		{
 			"name": "Type0128",
 			"value": 128
+		},
+		{
+			"name": "Type0129",
+			"value": 129
+		},
+		{
+			"name": "Type0130",
+			"value": 130
+		},
+		{
+			"name": "Type0131",
+			"value": 131
+		},
+		{
+			"name": "Type0132",
+			"value": 132
+		},
+		{
+			"name": "Type0133",
+			"value": 133
 		}
 	],
 	"app.SoundPlParameter.CostumeID": [
@@ -107463,6 +107845,10 @@
 		{
 			"name": "Retry",
 			"value": 9
+		},
+		{
+			"name": "HowToPlay",
+			"value": 10
 		}
 	],
 	"app.structure.GimmickAccessParam.ParamUseType": [
@@ -109877,6 +110263,10 @@
 		{
 			"name": "Difficulty",
 			"value": 1
+		},
+		{
+			"name": "SubGame1Result",
+			"value": 2
 		}
 	],
 	"via.effect.detail.PrimitiveVfxShaderGroup": [
@@ -110423,604 +110813,632 @@
 			"value": 2
 		},
 		{
-			"name": "UI0300_00",
+			"name": "UI0220_01",
 			"value": 3
 		},
 		{
-			"name": "UI0300_10",
+			"name": "UI0300_00",
 			"value": 4
 		},
 		{
-			"name": "UI0300_20",
+			"name": "UI0300_10",
 			"value": 5
 		},
 		{
-			"name": "UI0301_00",
+			"name": "UI0300_20",
 			"value": 6
 		},
 		{
-			"name": "UI0310_00",
+			"name": "UI0301_00",
 			"value": 7
 		},
 		{
-			"name": "UI0310_01",
+			"name": "UI0310_00",
 			"value": 8
 		},
 		{
-			"name": "UI0311_00",
+			"name": "UI0310_01",
 			"value": 9
 		},
 		{
-			"name": "UI0315_00",
+			"name": "UI0311_00",
 			"value": 10
 		},
 		{
-			"name": "UI0320_00",
+			"name": "UI0315_00",
 			"value": 11
 		},
 		{
-			"name": "UI0321_00",
+			"name": "UI0320_00",
 			"value": 12
 		},
 		{
-			"name": "UI0322_00",
+			"name": "UI0321_00",
 			"value": 13
 		},
 		{
-			"name": "UI0325_00",
+			"name": "UI0322_00",
 			"value": 14
 		},
 		{
-			"name": "UI0326_00",
+			"name": "UI0325_00",
 			"value": 15
 		},
 		{
-			"name": "UI0327_00",
+			"name": "UI0326_00",
 			"value": 16
 		},
 		{
-			"name": "UI0328_00",
+			"name": "UI0327_00",
 			"value": 17
 		},
 		{
-			"name": "UI0329_00",
+			"name": "UI0328_00",
 			"value": 18
 		},
 		{
-			"name": "UI0340_00",
+			"name": "UI0329_00",
 			"value": 19
 		},
 		{
-			"name": "UI0341_00",
+			"name": "UI0340_00",
 			"value": 20
 		},
 		{
-			"name": "UI0341_01",
+			"name": "UI0341_00",
 			"value": 21
 		},
 		{
-			"name": "UI0341_02",
+			"name": "UI0341_01",
 			"value": 22
 		},
 		{
-			"name": "UI0341_03",
+			"name": "UI0341_02",
 			"value": 23
 		},
 		{
-			"name": "UI0342_00",
+			"name": "UI0341_03",
 			"value": 24
 		},
 		{
-			"name": "UI0342_01",
+			"name": "UI0342_00",
 			"value": 25
 		},
 		{
-			"name": "UI0342_02",
+			"name": "UI0342_01",
 			"value": 26
 		},
 		{
-			"name": "UI0342_03",
+			"name": "UI0342_02",
 			"value": 27
 		},
 		{
-			"name": "UI0342_04",
+			"name": "UI0342_03",
 			"value": 28
 		},
 		{
-			"name": "UI0343_00",
+			"name": "UI0342_04",
 			"value": 29
 		},
 		{
-			"name": "UI0343_01",
+			"name": "UI0343_00",
 			"value": 30
 		},
 		{
-			"name": "UI0343_02",
+			"name": "UI0343_01",
 			"value": 31
 		},
 		{
-			"name": "UI0343_03",
+			"name": "UI0343_02",
 			"value": 32
 		},
 		{
-			"name": "UI0350_00",
+			"name": "UI0343_03",
 			"value": 33
 		},
 		{
-			"name": "UI0350_01",
+			"name": "UI0350_00",
 			"value": 34
 		},
 		{
-			"name": "UI0350_02",
+			"name": "UI0350_01",
 			"value": 35
 		},
 		{
-			"name": "UI0360_00",
+			"name": "UI0350_02",
 			"value": 36
 		},
 		{
-			"name": "UI0360_01",
+			"name": "UI0360_00",
 			"value": 37
 		},
 		{
-			"name": "UI0361_00",
+			"name": "UI0360_01",
 			"value": 38
 		},
 		{
-			"name": "UI0401_00",
+			"name": "UI0361_00",
 			"value": 39
 		},
 		{
-			"name": "UI0402_00",
+			"name": "UI0401_00",
 			"value": 40
 		},
 		{
-			"name": "UI0410_00",
+			"name": "UI0402_00",
 			"value": 41
 		},
 		{
-			"name": "UI0410_01",
+			"name": "UI0410_00",
 			"value": 42
 		},
 		{
-			"name": "UI0410_02",
+			"name": "UI0410_01",
 			"value": 43
 		},
 		{
-			"name": "UI0411_00",
+			"name": "UI0410_02",
 			"value": 44
 		},
 		{
-			"name": "UI0411_01",
+			"name": "UI0411_00",
 			"value": 45
 		},
 		{
-			"name": "UI0411_02",
+			"name": "UI0411_01",
 			"value": 46
 		},
 		{
-			"name": "UI0411_03",
+			"name": "UI0411_02",
 			"value": 47
 		},
 		{
-			"name": "UI0411_04",
+			"name": "UI0411_03",
 			"value": 48
 		},
 		{
-			"name": "UI0412_00",
+			"name": "UI0411_04",
 			"value": 49
 		},
 		{
-			"name": "UI0412_01",
+			"name": "UI0412_00",
 			"value": 50
 		},
 		{
-			"name": "UI0412_02",
+			"name": "UI0412_01",
 			"value": 51
 		},
 		{
-			"name": "UI0412_03",
+			"name": "UI0412_02",
 			"value": 52
 		},
 		{
-			"name": "UI0412_04",
+			"name": "UI0412_03",
 			"value": 53
 		},
 		{
-			"name": "UI0620_00",
+			"name": "UI0412_04",
 			"value": 54
 		},
 		{
-			"name": "UI1000_00",
+			"name": "UI0620_00",
 			"value": 55
 		},
 		{
-			"name": "UI1010_00",
+			"name": "UI1000_00",
 			"value": 56
 		},
 		{
-			"name": "UI1011_00",
+			"name": "UI1010_00",
 			"value": 57
 		},
 		{
-			"name": "UI1012_00",
+			"name": "UI1011_00",
 			"value": 58
 		},
 		{
-			"name": "UI1091_00",
+			"name": "UI1012_00",
 			"value": 59
 		},
 		{
-			"name": "UI2002_00",
+			"name": "UI1091_00",
 			"value": 60
 		},
 		{
-			"name": "UI2005_00",
+			"name": "UI2002_00",
 			"value": 61
 		},
 		{
-			"name": "UI2030_00",
+			"name": "UI2005_00",
 			"value": 62
 		},
 		{
-			"name": "UI2030_01",
+			"name": "UI2030_00",
 			"value": 63
 		},
 		{
-			"name": "UI2035_00",
+			"name": "UI2030_01",
 			"value": 64
 		},
 		{
-			"name": "UI2100_00",
+			"name": "UI2035_00",
 			"value": 65
 		},
 		{
-			"name": "UI2100_01",
+			"name": "UI2100_00",
 			"value": 66
 		},
 		{
-			"name": "UI2200_00",
+			"name": "UI2100_01",
 			"value": 67
 		},
 		{
-			"name": "UI2200_01",
+			"name": "UI2200_00",
 			"value": 68
 		},
 		{
-			"name": "UI2200_02",
+			"name": "UI2200_01",
 			"value": 69
 		},
 		{
-			"name": "UI2200_03",
+			"name": "UI2200_02",
 			"value": 70
 		},
 		{
-			"name": "UI2211_00",
+			"name": "UI2200_03",
 			"value": 71
 		},
 		{
-			"name": "UI2211_01",
+			"name": "UI2211_00",
 			"value": 72
 		},
 		{
-			"name": "UI2201_00",
+			"name": "UI2211_01",
 			"value": 73
 		},
 		{
-			"name": "UI2201_01",
+			"name": "UI2201_00",
 			"value": 74
 		},
 		{
-			"name": "UI2201_02",
+			"name": "UI2201_01",
 			"value": 75
 		},
 		{
-			"name": "UI2201_03",
+			"name": "UI2201_02",
 			"value": 76
 		},
 		{
-			"name": "UI2201_04",
+			"name": "UI2201_03",
 			"value": 77
 		},
 		{
-			"name": "UI2201_05",
+			"name": "UI2201_04",
 			"value": 78
 		},
 		{
-			"name": "UI2240_00",
+			"name": "UI2201_05",
 			"value": 79
 		},
 		{
-			"name": "UI2241_00",
+			"name": "UI2240_00",
 			"value": 80
 		},
 		{
-			"name": "UI2251_00",
+			"name": "UI2241_00",
 			"value": 81
 		},
 		{
-			"name": "UI2251_01",
+			"name": "UI2251_00",
 			"value": 82
 		},
 		{
-			"name": "UI2260_00",
+			"name": "UI2251_01",
 			"value": 83
 		},
 		{
-			"name": "UI2260_01",
+			"name": "UI2260_00",
 			"value": 84
 		},
 		{
-			"name": "UI2260_02",
+			"name": "UI2260_01",
 			"value": 85
 		},
 		{
-			"name": "UI2270_00",
+			"name": "UI2260_02",
 			"value": 86
 		},
 		{
-			"name": "UI2270_01",
+			"name": "UI2270_00",
 			"value": 87
 		},
 		{
-			"name": "UI2270_02",
+			"name": "UI2270_01",
 			"value": 88
 		},
 		{
-			"name": "UI2300_00",
+			"name": "UI2270_02",
 			"value": 89
 		},
 		{
-			"name": "UI2300_01",
+			"name": "UI2270_03",
 			"value": 90
 		},
 		{
-			"name": "UI2300_02",
+			"name": "UI2300_00",
 			"value": 91
 		},
 		{
-			"name": "UI2300_03",
+			"name": "UI2300_01",
 			"value": 92
 		},
 		{
-			"name": "UI2300_04",
+			"name": "UI2300_02",
 			"value": 93
 		},
 		{
-			"name": "UI2400_00",
+			"name": "UI2300_03",
 			"value": 94
 		},
 		{
-			"name": "UI2401_00",
+			"name": "UI2300_04",
 			"value": 95
 		},
 		{
-			"name": "UI2410_00",
+			"name": "UI2400_00",
 			"value": 96
 		},
 		{
-			"name": "UI2410_01",
+			"name": "UI2401_00",
 			"value": 97
 		},
 		{
-			"name": "UI2410_02",
+			"name": "UI2410_00",
 			"value": 98
 		},
 		{
-			"name": "UI2500_00",
+			"name": "UI2410_01",
 			"value": 99
 		},
 		{
-			"name": "UI2500_01",
+			"name": "UI2410_02",
 			"value": 100
 		},
 		{
-			"name": "UI2500_02",
+			"name": "UI2500_00",
 			"value": 101
 		},
 		{
-			"name": "UI2500_m100_001_00",
+			"name": "UI2500_01",
 			"value": 102
 		},
 		{
-			"name": "UI2600_00",
+			"name": "UI2500_02",
 			"value": 103
 		},
 		{
-			"name": "UI2603_00",
+			"name": "UI2500_m100_001_00",
 			"value": 104
 		},
 		{
-			"name": "UI2620_00",
+			"name": "UI2600_00",
 			"value": 105
 		},
 		{
-			"name": "UI2620_01",
+			"name": "UI2603_00",
 			"value": 106
 		},
 		{
-			"name": "UI2700_00",
+			"name": "UI2620_00",
 			"value": 107
 		},
 		{
-			"name": "UI2710_00",
+			"name": "UI2620_01",
 			"value": 108
 		},
 		{
-			"name": "UI2711_00",
+			"name": "UI2700_00",
 			"value": 109
 		},
 		{
-			"name": "UI2720_00",
+			"name": "UI2710_00",
 			"value": 110
 		},
 		{
-			"name": "UI2720_01",
+			"name": "UI2711_00",
 			"value": 111
 		},
 		{
-			"name": "UI2730_00",
+			"name": "UI2720_00",
 			"value": 112
 		},
 		{
-			"name": "UI2730_01",
+			"name": "UI2720_01",
 			"value": 113
 		},
 		{
-			"name": "UI2740_00",
+			"name": "UI2730_00",
 			"value": 114
 		},
 		{
-			"name": "UI2740_01",
+			"name": "UI2730_01",
 			"value": 115
 		},
 		{
-			"name": "UI2740_02",
+			"name": "UI2740_00",
 			"value": 116
 		},
 		{
-			"name": "UI2760_00",
+			"name": "UI2740_01",
 			"value": 117
 		},
 		{
-			"name": "UI2800_00",
+			"name": "UI2740_02",
 			"value": 118
 		},
 		{
-			"name": "UI2800_01",
+			"name": "UI2760_00",
 			"value": 119
 		},
 		{
-			"name": "UI3100_00",
+			"name": "UI2800_00",
 			"value": 120
 		},
 		{
-			"name": "UI1200_00",
+			"name": "UI2800_01",
 			"value": 121
 		},
 		{
-			"name": "UI1200_01",
+			"name": "UI3100_00",
 			"value": 122
 		},
 		{
-			"name": "UI1200_02",
+			"name": "UI1200_00",
 			"value": 123
 		},
 		{
-			"name": "UI1200_03",
+			"name": "UI1200_01",
 			"value": 124
 		},
 		{
-			"name": "UI1200_04",
+			"name": "UI1200_02",
 			"value": 125
 		},
 		{
-			"name": "UI1200_05",
+			"name": "UI1200_03",
 			"value": 126
 		},
 		{
-			"name": "UI1200_06",
+			"name": "UI1200_04",
 			"value": 127
 		},
 		{
-			"name": "UI1200_07",
+			"name": "UI1200_05",
 			"value": 128
 		},
 		{
-			"name": "UI1200_08",
+			"name": "UI1200_06",
 			"value": 129
 		},
 		{
-			"name": "UI1200_09",
+			"name": "UI1200_07",
 			"value": 130
 		},
 		{
-			"name": "UI1100_00",
+			"name": "UI1200_08",
 			"value": 131
 		},
 		{
-			"name": "UI1100_01",
+			"name": "UI1200_09",
 			"value": 132
 		},
 		{
-			"name": "UI1111_00",
+			"name": "UI1100_00",
 			"value": 133
 		},
 		{
-			"name": "UI1121_00",
+			"name": "UI1100_01",
 			"value": 134
 		},
 		{
-			"name": "UI1150_00",
+			"name": "UI1111_00",
 			"value": 135
 		},
 		{
-			"name": "UI1050_00",
+			"name": "UI1121_00",
 			"value": 136
 		},
 		{
-			"name": "UI1130_00",
+			"name": "UI1150_00",
 			"value": 137
 		},
 		{
-			"name": "UI1130_01",
+			"name": "UI1050_00",
 			"value": 138
 		},
 		{
-			"name": "UI1131_00",
+			"name": "UI1130_00",
 			"value": 139
 		},
 		{
-			"name": "UI0331_00",
+			"name": "UI1130_01",
 			"value": 140
 		},
 		{
-			"name": "UI0331_01",
+			"name": "UI1131_00",
 			"value": 141
 		},
 		{
-			"name": "UI0312_00",
+			"name": "UI0331_00",
 			"value": 142
 		},
 		{
-			"name": "UI0313_00",
+			"name": "UI0331_01",
 			"value": 143
 		},
 		{
-			"name": "UI4000_00",
+			"name": "UI0312_00",
 			"value": 144
 		},
 		{
-			"name": "UI4090_00",
+			"name": "UI0313_00",
 			"value": 145
 		},
 		{
-			"name": "UI0700_00",
+			"name": "UI4000_00",
 			"value": 146
 		},
 		{
-			"name": "UI0710_00",
+			"name": "UI4000_01",
 			"value": 147
 		},
 		{
-			"name": "UI0720_00",
+			"name": "UI4000_02",
 			"value": 148
 		},
 		{
-			"name": "UI9998_00",
+			"name": "UI4000_03",
 			"value": 149
 		},
 		{
-			"name": "UI9999_00",
+			"name": "UI4050_00",
 			"value": 150
 		},
 		{
-			"name": "UI9999_01",
+			"name": "UI4060_00",
 			"value": 151
 		},
 		{
-			"name": "InvestigativeBoard_MessageSkip",
+			"name": "UI4090_00",
 			"value": 152
+		},
+		{
+			"name": "UI0700_00",
+			"value": 153
+		},
+		{
+			"name": "UI0710_00",
+			"value": 154
+		},
+		{
+			"name": "UI0720_00",
+			"value": 155
+		},
+		{
+			"name": "UI9998_00",
+			"value": 156
+		},
+		{
+			"name": "UI9999_00",
+			"value": 157
+		},
+		{
+			"name": "UI9999_01",
+			"value": 158
+		},
+		{
+			"name": "InvestigativeBoard_MessageSkip",
+			"value": 159
 		}
 	],
 	"app.AppBootFlowBehaviorTreeAction_FirstTimeSetting.Phase": [
@@ -123583,6 +124001,10 @@
 		{
 			"name": "Montage",
 			"value": 2048
+		},
+		{
+			"name": "GameObjectTag",
+			"value": 4096
 		}
 	],
 	"via.gui.EffectDrawTarget": [
@@ -127266,6 +127688,16 @@
 			"value": 11
 		}
 	],
+	"app.TutorialDefine.TutorialTargetTypeFilter": [
+		{
+			"name": "Type_00",
+			"value": 1
+		},
+		{
+			"name": "Type_01",
+			"value": 2
+		}
+	],
 	"app.cp_E900.MoveState": [
 		{
 			"name": "None",
@@ -127388,6 +127820,24 @@
 		{
 			"name": "Down_End_L",
 			"value": 151
+		}
+	],
+	"app.Cp_C750BehaviorTreeCondition_CheckColorState.CheckType": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Bad",
+			"value": 1
+		},
+		{
+			"name": "Normal",
+			"value": 2
+		},
+		{
+			"name": "Good",
+			"value": 3
 		}
 	],
 	"app.cg_NPC01.MoveMode": [
@@ -133772,6 +134222,58 @@
 		{
 			"name": "Audiorender1200",
 			"value": 1200
+		},
+		{
+			"name": "Audiorender1228",
+			"value": 1228
+		},
+		{
+			"name": "Audiorender1229",
+			"value": 1229
+		},
+		{
+			"name": "Audiorender1230",
+			"value": 1230
+		},
+		{
+			"name": "Audiorender1231",
+			"value": 1231
+		},
+		{
+			"name": "Audiorender1232",
+			"value": 1232
+		},
+		{
+			"name": "Audiorender1233",
+			"value": 1233
+		},
+		{
+			"name": "Audiorender1234",
+			"value": 1234
+		},
+		{
+			"name": "Audiorender1235",
+			"value": 1235
+		},
+		{
+			"name": "Audiorender1236",
+			"value": 1236
+		},
+		{
+			"name": "Audiorender1237",
+			"value": 1237
+		},
+		{
+			"name": "Audiorender1238",
+			"value": 1238
+		},
+		{
+			"name": "Audiorender1239",
+			"value": 1239
+		},
+		{
+			"name": "Audiorender1240",
+			"value": 1240
 		}
 	],
 	"app.Gm27_014.GimmickConditionType": [
@@ -142702,6 +143204,12 @@
 			"value": 3
 		}
 	],
+	"app.UI4060GuiBehavior.Phase": [
+		{
+			"name": "Idle",
+			"value": 0
+		}
+	],
 	"via.render.VolumeOccludee.VISIBILITY": [
 		{
 			"name": "Invisible",
@@ -142756,6 +143264,10 @@
 		{
 			"name": "TYPE36_UnlockAchievement",
 			"value": 35
+		},
+		{
+			"name": "TYPE50_AddAbility",
+			"value": 36
 		}
 	],
 	"via.path.PathKind": [
@@ -144622,6 +145134,16 @@
 		},
 		{
 			"name": "Connect",
+			"value": 1
+		}
+	],
+	"app.UI4050GuiBehavior.CallType": [
+		{
+			"name": "Title",
+			"value": 0
+		},
+		{
+			"name": "Pause",
 			"value": 1
 		}
 	],
@@ -149806,6 +150328,20 @@
 			"value": 258
 		}
 	],
+	"anim.test.MyLookAtBehavior.ExecTypeEnum": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "ControlRatio",
+			"value": 1
+		},
+		{
+			"name": "FollowTarget",
+			"value": 2
+		}
+	],
 	"app.TimelineEventProcess.State": [
 		{
 			"name": "Unload",
@@ -150058,6 +150594,20 @@
 		{
 			"name": "ThreadSafe",
 			"value": 32768
+		}
+	],
+	"app.UI4000GuiBehavior.ItemType": [
+		{
+			"name": "Ascension",
+			"value": 0
+		},
+		{
+			"name": "Setting",
+			"value": 1
+		},
+		{
+			"name": "Start",
+			"value": 2
 		}
 	],
 	"app.AnimFootContact.FootType": [
@@ -151648,6 +152198,10 @@
 		{
 			"name": "Achievement",
 			"value": 7
+		},
+		{
+			"name": "Ability",
+			"value": 8
 		}
 	],
 	"via.render.layer.Transparent.UITargetType": [
@@ -155757,6 +156311,32 @@
 		{
 			"name": "Trace",
 			"value": 0
+		}
+	],
+	"app.SideModeRank": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "One",
+			"value": 1
+		},
+		{
+			"name": "Two",
+			"value": 2
+		},
+		{
+			"name": "Three",
+			"value": 4
+		},
+		{
+			"name": "Four",
+			"value": 8
+		},
+		{
+			"name": "Five",
+			"value": 16
 		}
 	],
 	"app.HudSize": [
@@ -172181,87 +172761,87 @@
 	],
 	"app.PlayerAbilityElement.ElementsType": [
 		{
-			"name": "None",
+			"name": "AttackDamageAmountRate",
 			"value": 0
 		},
 		{
-			"name": "AttackDamageAmountRate",
+			"name": "ShellAttackDamageAmountRate",
 			"value": 1
 		},
 		{
-			"name": "ShellAttackDamageAmountRate",
+			"name": "MeleeAttackDamageAmountRate",
 			"value": 2
 		},
 		{
-			"name": "MeleeAttackDamageAmountRate",
+			"name": "NearRangeShellAttackDamageAmountRate",
 			"value": 3
 		},
 		{
-			"name": "NearRangeShellAttackDamageAmountRate",
+			"name": "NotNearRangeShellAttackDamageAmountRate",
 			"value": 4
 		},
 		{
-			"name": "NotNearRangeShellAttackDamageAmountRate",
+			"name": "MiddleRangeShellAttackDamageAmountRate",
 			"value": 5
 		},
 		{
-			"name": "MiddleRangeShellAttackDamageAmountRate",
+			"name": "ScopeAttachedAttackDamageAmountRate",
 			"value": 6
 		},
 		{
-			"name": "ScopeAttachedAttackDamageAmountRate",
+			"name": "ScopeNotAttachedAttackDamageAmountRate",
 			"value": 7
 		},
 		{
-			"name": "ScopeNotAttachedAttackDamageAmountRate",
+			"name": "LastOneShotAttackDamageAmountRate",
 			"value": 8
 		},
 		{
-			"name": "LastOneShotAttackDamageAmountRate",
+			"name": "WeakPointHitAttackDamageAmountRate",
 			"value": 9
 		},
 		{
-			"name": "WeakPointHitAttackDamageAmountRate",
+			"name": "NotWeakPointHitAttackDamageAmountRate",
 			"value": 10
 		},
 		{
-			"name": "NotWeakPointHitAttackDamageAmountRate",
+			"name": "ShellAttackAmountRateProportionalConsumptionAmmo",
 			"value": 11
 		},
 		{
-			"name": "ShellAttackAmountRateProportionalConsumptionAmmo",
+			"name": "MaxShellAttackAmountRateProportionalConsumptionAmmo",
 			"value": 12
 		},
 		{
-			"name": "MaxShellAttackAmountRateProportionalConsumptionAmmo",
+			"name": "MainEquipmentOnlyAttackAmountRate",
 			"value": 13
 		},
 		{
-			"name": "MainEquipmentOnlyAttackAmountRate",
+			"name": "AimCameraShakeRate",
 			"value": 14
 		},
 		{
-			"name": "AimCameraShakeRate",
+			"name": "ShellAttackDamageAmountRateOnHitPointDanger",
 			"value": 15
 		},
 		{
-			"name": "ShellAttackDamageAmountRateOnHitPointDanger",
+			"name": "AttackDamageAmountRateOnHitPointDanger",
 			"value": 16
 		},
 		{
-			"name": "AttackDamageAmountRateOnHitPointDanger",
+			"name": "ShellAttackCriticalRate",
 			"value": 17
 		},
 		{
-			"name": "ShellAttackCriticalRate",
+			"name": "ReticleFitSpeedRate",
 			"value": 18
 		},
 		{
-			"name": "ReticleFitSpeedRate",
+			"name": "ReticleFitReloadToMissShot",
 			"value": 19
 		},
 		{
-			"name": "ReticleFitSpeedRateReloadToMissShot",
+			"name": "ShellAttackDamageAmountRateOnFit",
 			"value": 20
 		},
 		{
@@ -172273,19 +172853,19 @@
 			"value": 22
 		},
 		{
-			"name": "MoveScaleRate",
+			"name": "PlayerAutoHitPointHeal",
 			"value": 23
 		},
 		{
-			"name": "PlayerAutoHitPointHeal",
+			"name": "PlayerAutoHitPointHealDelaySeconds",
 			"value": 24
 		},
 		{
-			"name": "PlayerAutoHitPointHealDelaySeconds",
+			"name": "HitPointRecoverOnDiscardItem",
 			"value": 25
 		},
 		{
-			"name": "HitPointRecoverOnDiscardItem",
+			"name": "HitPointRecoverOnAttack",
 			"value": 26
 		},
 		{
@@ -172333,48 +172913,104 @@
 			"value": 37
 		},
 		{
-			"name": "FinisherAttackGrappleBorderRate",
+			"name": "JustParryBuildUp",
 			"value": 38
 		},
 		{
-			"name": "FinisherAttackGrappleDistanceRate",
+			"name": "JustParryBuildUpMax",
 			"value": 39
 		},
 		{
-			"name": "AttackDamageAmountRateLinkedToInventoryEmptySpace",
+			"name": "FinisherAttackGrappleBorderRate",
 			"value": 40
 		},
 		{
-			"name": "B000SpecialReactionAxeStaggerDerivedFatalGrappleRate",
+			"name": "FinisherAttackGrappleDistanceRate",
 			"value": 41
 		},
 		{
-			"name": "FireKick",
+			"name": "AttackDamageAmountRateLinkedToInventoryEmptySpace",
 			"value": 42
 		},
 		{
-			"name": "GenerateGrenadeOnDiscardWeapon",
+			"name": "B000SpecialReactionAxeStaggerDerivedFatalGrappleRate",
 			"value": 43
 		},
 		{
-			"name": "NoDamageSecondsAfterUseItHPRecoverItem",
+			"name": "FireKick",
 			"value": 44
 		},
 		{
-			"name": "B000BloodExplosionOnDead",
+			"name": "GenerateGrenadeOnDiscardWeapon",
 			"value": 45
 		},
 		{
-			"name": "InfinityAmmo",
+			"name": "SuperArmor",
 			"value": 46
 		},
 		{
-			"name": "ImproveDropQuality",
+			"name": "DebuffDamageOnTimerEnd",
 			"value": 47
 		},
 		{
-			"name": "Dummy",
+			"name": "B000BloodExplosionOnDead",
 			"value": 48
+		},
+		{
+			"name": "InfinityAmmo",
+			"value": 49
+		},
+		{
+			"name": "ImproveDropQuality",
+			"value": 50
+		},
+		{
+			"name": "Sub1GameTimerAddProbability",
+			"value": 51
+		},
+		{
+			"name": "Sub1GameTimerAddTime",
+			"value": 52
+		},
+		{
+			"name": "Sub1GameTimerAddBuildUp",
+			"value": 53
+		},
+		{
+			"name": "Sub1GameTimerAddBuildUpMax",
+			"value": 54
+		},
+		{
+			"name": "ShotHitBuildUp",
+			"value": 55
+		},
+		{
+			"name": "ShotHitBuildUpMax",
+			"value": 56
+		},
+		{
+			"name": "MissShotBuildDown",
+			"value": 57
+		},
+		{
+			"name": "MissShotBuildDownMin",
+			"value": 58
+		},
+		{
+			"name": "GrenadeAttackRate",
+			"value": 59
+		},
+		{
+			"name": "WeaponThrowAttackRate",
+			"value": 60
+		},
+		{
+			"name": "ChanceToNotConsumeGrenade",
+			"value": 61
+		},
+		{
+			"name": "Dummy",
+			"value": 62
 		}
 	],
 	"app.Cp_B000BehaviorTreeAction_AttackMotionSwitch.AttackAction": [
@@ -177298,6 +177934,46 @@
 		{
 			"name": "UserDefine_Game_3",
 			"value": 512
+		},
+		{
+			"name": "UserDefine_Game_4",
+			"value": 1024
+		},
+		{
+			"name": "UserDefine_Game_5",
+			"value": 2048
+		},
+		{
+			"name": "UserDefine_Game_6",
+			"value": 4096
+		},
+		{
+			"name": "UserDefine_Game_7",
+			"value": 8192
+		},
+		{
+			"name": "UserDefine_Dev_System_0",
+			"value": 16384
+		},
+		{
+			"name": "UserDefine_Dev_System_1",
+			"value": 32768
+		},
+		{
+			"name": "UserDefine_Dev_Game_0",
+			"value": 65536
+		},
+		{
+			"name": "UserDefine_Dev_Game_1",
+			"value": 131072
+		},
+		{
+			"name": "UserDefine_Dev_Game_2",
+			"value": 262144
+		},
+		{
+			"name": "UserDefine_Dev_Game_3",
+			"value": 524288
 		}
 	],
 	"app.CreditsUnitType": [
@@ -179428,6 +180104,36 @@
 		{
 			"name": "NoLockInterpolating",
 			"value": 2
+		}
+	],
+	"app.MedicineAbilityDropTable.UnLockStatus": [
+		{
+			"name": "NoLocked",
+			"value": 0
+		},
+		{
+			"name": "Locked_Bo_10_02_006",
+			"value": 1
+		},
+		{
+			"name": "Locked_Bo_10_02_007",
+			"value": 2
+		},
+		{
+			"name": "Locked_Bo_10_02_008",
+			"value": 3
+		},
+		{
+			"name": "UnLocked_Bo_10_02_006",
+			"value": 4
+		},
+		{
+			"name": "UnLocked_Bo_10_02_007",
+			"value": 5
+		},
+		{
+			"name": "UnLocked_Bo_10_02_008",
+			"value": 6
 		}
 	],
 	"app.MergedGamePadStatus.MouseEmulatorCaps": [
@@ -182970,6 +183676,28 @@
 		{
 			"name": "UseTriggerPlayKey",
 			"value": 1
+		}
+	],
+	"app.GameModeGimmickLimitRequester.GimmickLimitFlag": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "NotOperatable",
+			"value": 1
+		},
+		{
+			"name": "InteractOff",
+			"value": 4
+		},
+		{
+			"name": "Lock",
+			"value": 8
+		},
+		{
+			"name": "MapDisplayOff",
+			"value": 1024
 		}
 	],
 	"via.motion.detail.Chain2LinkData.LinkMode": [
@@ -194562,6 +195290,46 @@
 		{
 			"name": "UserDefine_Game_3",
 			"value": 9
+		},
+		{
+			"name": "UserDefine_Game_4",
+			"value": 10
+		},
+		{
+			"name": "UserDefine_Game_5",
+			"value": 11
+		},
+		{
+			"name": "UserDefine_Game_6",
+			"value": 12
+		},
+		{
+			"name": "UserDefine_Game_7",
+			"value": 13
+		},
+		{
+			"name": "UserDefine_Dev_System_0",
+			"value": 14
+		},
+		{
+			"name": "UserDefine_Dev_System_1",
+			"value": 15
+		},
+		{
+			"name": "UserDefine_Dev_Game_0",
+			"value": 16
+		},
+		{
+			"name": "UserDefine_Dev_Game_1",
+			"value": 17
+		},
+		{
+			"name": "UserDefine_Dev_Game_2",
+			"value": 18
+		},
+		{
+			"name": "UserDefine_Dev_Game_3",
+			"value": 19
 		}
 	],
 	"via.motion.ContinueOptions.ContinueType": [
@@ -195844,8 +196612,16 @@
 			"value": 0
 		},
 		{
-			"name": "SelectItem",
+			"name": "WaitStart",
 			"value": 1
+		},
+		{
+			"name": "WaitAnimation",
+			"value": 2
+		},
+		{
+			"name": "SelectItem",
+			"value": 3
 		}
 	],
 	"via.detail_qt.qt_cell_link_bit": [
@@ -195972,6 +196748,14 @@
 		{
 			"name": "Type003",
 			"value": 3
+		},
+		{
+			"name": "Type004",
+			"value": 4
+		},
+		{
+			"name": "Type005",
+			"value": 5
 		}
 	],
 	"via.navigation.RelationMapInfo.Attribute": [
