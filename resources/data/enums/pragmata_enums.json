@@ -1399,6 +1399,10 @@
 		{
 			"name": "ID562",
 			"value": 562
+		},
+		{
+			"name": "ID563",
+			"value": 563
 		}
 	],
 	"via.puppet.dev.SyncInfo.Event": [
@@ -5195,24 +5199,6 @@
 			"value": 6
 		}
 	],
-	"app.MotionFsmAction_WeaponUpdateJointConstraint.ExecutePhase": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Start",
-			"value": 1
-		},
-		{
-			"name": "Update",
-			"value": 2
-		},
-		{
-			"name": "End",
-			"value": 4
-		}
-	],
 	"via.motion.detail.WindType": [
 		{
 			"name": "None",
@@ -5475,20 +5461,16 @@
 			"value": 3
 		},
 		{
-			"name": "EarlyGIPointCloud",
+			"name": "DPGIProbe",
 			"value": 4
 		},
 		{
-			"name": "DPGIProbe",
+			"name": "IndirectIllumination",
 			"value": 5
 		},
 		{
-			"name": "IndirectIllumination",
-			"value": 6
-		},
-		{
 			"name": "SDFShadow",
-			"value": 7
+			"value": 6
 		},
 		{
 			"name": "LegacyParticleDepthOperation",
@@ -6650,24 +6632,32 @@
 			"value": 0
 		},
 		{
-			"name": "DLSS",
-			"value": 1
+			"name": "MaskFG",
+			"value": 7
 		},
 		{
 			"name": "DLSSFG",
-			"value": 2
+			"value": 1
 		},
 		{
 			"name": "FSR3FG",
-			"value": 3
+			"value": 2
 		},
 		{
 			"name": "XeSSFG",
-			"value": 4
+			"value": 3
 		},
 		{
-			"name": "Num",
-			"value": 5
+			"name": "BaseOptionalShift",
+			"value": 3
+		},
+		{
+			"name": "BaseOptionalMask",
+			"value": 4294967288
+		},
+		{
+			"name": "DLSS",
+			"value": 8
 		}
 	],
 	"app.EnemyHackingDriver.OffMaterialType": [
@@ -7404,10 +7394,6 @@
 		{
 			"name": "TITLE",
 			"value": 0
-		},
-		{
-			"name": "THANK_YOU_FOR_PLAYING",
-			"value": 1
 		}
 	],
 	"via.motion.ExpressionUpdate": [
@@ -8608,6 +8594,10 @@
 		{
 			"name": "EnableRun",
 			"value": 4
+		},
+		{
+			"name": "AroundWait",
+			"value": 8
 		}
 	],
 	"app.ShakeJointsUserData.CalcType": [
@@ -11408,6 +11398,10 @@
 			"value": 128
 		},
 		{
+			"name": "GameOver",
+			"value": 256
+		},
+		{
 			"name": "Dummy_00",
 			"value": 8388608
 		},
@@ -12452,6 +12446,44 @@
 			"value": 6
 		}
 	],
+	"app.Ch17200CureBitController.Phase": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Find",
+			"value": 1
+		},
+		{
+			"name": "Move",
+			"value": 2
+		},
+		{
+			"name": "ClingStart",
+			"value": 3
+		},
+		{
+			"name": "ChargeCure",
+			"value": 4
+		},
+		{
+			"name": "BigCure",
+			"value": 5
+		},
+		{
+			"name": "EndCure",
+			"value": 6
+		},
+		{
+			"name": "ClingEnd",
+			"value": 7
+		},
+		{
+			"name": "Confuse",
+			"value": 8
+		}
+	],
 	"via.gui.MessageTag.Type": [
 		{
 			"name": "Unknown",
@@ -12584,12 +12616,16 @@
 	],
 	"via.render.layer.Scene.SceneSegment": [
 		{
-			"name": "OutdoorProbeUpdateAsyncBegin",
+			"name": "EarlyGIPointCloud",
 			"value": 1
 		},
 		{
-			"name": "OutdoorProbeUpdateAsyncEnd",
+			"name": "OutdoorProbeUpdateAsyncBegin",
 			"value": 2
+		},
+		{
+			"name": "OutdoorProbeUpdateAsyncEnd",
+			"value": 3
 		}
 	],
 	"via.autoplay.action.AutoPlayTimer.Unit": [
@@ -23456,6 +23492,34 @@
 		{
 			"name": "Render2452",
 			"value": 2452
+		},
+		{
+			"name": "AMD_DoNotRunRdpAndGpuDebug",
+			"value": 2464
+		},
+		{
+			"name": "TdrSettings",
+			"value": 2465
+		},
+		{
+			"name": "DX12_CreateSwapChainRetry",
+			"value": 2471
+		},
+		{
+			"name": "Render2472",
+			"value": 2472
+		},
+		{
+			"name": "Render2474",
+			"value": 2474
+		},
+		{
+			"name": "Render2475",
+			"value": 2475
+		},
+		{
+			"name": "RedundantStreamingTextureLoad",
+			"value": 2476
 		}
 	],
 	"via.motion.Chain2Resource.ChainAttrFlags": [
@@ -23822,20 +23886,24 @@
 			"value": 4
 		},
 		{
-			"name": "ExecWarp",
+			"name": "ReturnBasementWait",
 			"value": 5
 		},
 		{
-			"name": "End",
+			"name": "ExecWarp",
 			"value": 6
 		},
 		{
-			"name": "WaitEnd",
+			"name": "End",
 			"value": 7
 		},
 		{
-			"name": "UnOccupy",
+			"name": "WaitEnd",
 			"value": 8
+		},
+		{
+			"name": "UnOccupy",
+			"value": 9
 		}
 	],
 	"via.AnimationCurve.Wrap": [
@@ -29052,6 +29120,14 @@
 		{
 			"name": "AddGrappleDamageToPlayer",
 			"value": 4096
+		},
+		{
+			"name": "CorrectWp8700Wince",
+			"value": 8192
+		},
+		{
+			"name": "CanForceStopGrappleForDamage",
+			"value": 16384
 		}
 	],
 	"via.network.native.SolFulfillmentState": [
@@ -29224,8 +29300,16 @@
 			"value": 6
 		},
 		{
-			"name": "FADE_OUT",
+			"name": "WAIT_INPUT",
 			"value": 7
+		},
+		{
+			"name": "ALLOW_INPUT",
+			"value": 8
+		},
+		{
+			"name": "FADE_OUT",
+			"value": 9
 		}
 	],
 	"via.network.error.CauseMatchmaking": [
@@ -33776,6 +33860,10 @@
 		{
 			"name": "ID446",
 			"value": 446
+		},
+		{
+			"name": "Gamepad0450",
+			"value": 450
 		}
 	],
 	"via.render.RenderConfig.StrandShadingQuality": [
@@ -40796,16 +40884,20 @@
 			"value": 14
 		},
 		{
-			"name": "PlatformRewardWait",
+			"name": "PlatformRewardOpen",
 			"value": 15
 		},
 		{
-			"name": "PlatformRewardResultWait",
+			"name": "PlatformRewardWait",
 			"value": 16
 		},
 		{
-			"name": "PlatformRewordTutorial",
+			"name": "PlatformRewardResultWait",
 			"value": 17
+		},
+		{
+			"name": "PlatformRewordTutorial",
+			"value": 18
 		}
 	],
 	"via.motion.detail.ChainNode.HitFlags": [
@@ -40992,6 +41084,26 @@
 		{
 			"name": "SolidAngleCullingThreshold",
 			"value": 6
+		},
+		{
+			"name": "UseShadowMapFallBack",
+			"value": 7
+		},
+		{
+			"name": "ShadowMapFallBackDistance",
+			"value": 8
+		},
+		{
+			"name": "ShadowMapFallBackBlendDistance",
+			"value": 9
+		},
+		{
+			"name": "TransparentMultiplier",
+			"value": 10
+		},
+		{
+			"name": "FrustumFarPlane",
+			"value": 11
 		}
 	],
 	"app.EPVExpertFootLandingData.FootLandingRelationType": [
@@ -42318,6 +42430,18 @@
 		{
 			"name": "GetAllPlayersDifferent",
 			"value": 381
+		},
+		{
+			"name": "RegistHandleValueCycled",
+			"value": 387
+		},
+		{
+			"name": "RegistHandleValueDuplicate",
+			"value": 388
+		},
+		{
+			"name": "RegistHandleValueLimit",
+			"value": 389
 		}
 	],
 	"via.effect.detail.FlipType": [
@@ -42808,6 +42932,10 @@
 		{
 			"name": "DisableGuardPress",
 			"value": 17179869184
+		},
+		{
+			"name": "DeadFilamentBombInvocating",
+			"value": 34359738368
 		}
 	],
 	"via.motion.IkMultipleDamageAction.CalculationBendRotation": [
@@ -46406,6 +46534,20 @@
 			"value": 1
 		}
 	],
+	"app.EnemyFatalBreakManager.RequestState": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "RequestFatalBreak",
+			"value": 1
+		},
+		{
+			"name": "AcceptFatalBreak",
+			"value": 2
+		}
+	],
 	"via.dynamics.HeightFieldResource.PointState": [
 		{
 			"name": "Removed",
@@ -46418,16 +46560,32 @@
 	],
 	"via.render.debuglayer.LogId": [
 		{
-			"name": "IDCorruptionLog",
-			"value": 3
+			"name": "IDWarnLog",
+			"value": 1
 		},
 		{
 			"name": "IDErrorLog",
 			"value": 2
 		},
 		{
-			"name": "IDWarnLog",
-			"value": 1
+			"name": "IDCorruptionLog",
+			"value": 3
+		},
+		{
+			"name": "IDTraceLogWithId",
+			"value": 4
+		},
+		{
+			"name": "IDWarnLogWithId",
+			"value": 5
+		},
+		{
+			"name": "IDErrorLogWithId",
+			"value": 6
+		},
+		{
+			"name": "IDCorruptionLogWithId",
+			"value": 7
 		}
 	],
 	"via.relib.light.LightBlinkUserCurvePlayer.MaterialControllParam.ParamType": [
@@ -66916,20 +67074,16 @@
 			"value": 64
 		},
 		{
-			"name": "ShadowQuality",
+			"name": "FogCullingDistance",
 			"value": 128
 		},
 		{
-			"name": "FogCullingDistance",
+			"name": "Rejection",
 			"value": 256
 		},
 		{
-			"name": "Rejection",
-			"value": 512
-		},
-		{
 			"name": "LeakBias",
-			"value": 1024
+			"value": 512
 		}
 	],
 	"app.DemoMediator.WorkBase.State": [
@@ -72872,8 +73026,42 @@
 			"value": 1
 		},
 		{
-			"name": "DrawSignedDistanceField",
+			"name": "ForcePathTracing",
 			"value": 2
+		},
+		{
+			"name": "DrawSignedDistanceField",
+			"value": 3
+		}
+	],
+	"app.OccupyFlowSettings.Phase": [
+		{
+			"name": "Wait",
+			"value": 0
+		},
+		{
+			"name": "PreOccupy",
+			"value": 1
+		},
+		{
+			"name": "Occupy",
+			"value": 2
+		},
+		{
+			"name": "WaitOccupy",
+			"value": 3
+		},
+		{
+			"name": "EndOccupy",
+			"value": 4
+		},
+		{
+			"name": "TriggerKeyOn",
+			"value": 5
+		},
+		{
+			"name": "End",
+			"value": 6
 		}
 	],
 	"via.motion.Motion.JointMapExtraType": [
@@ -73338,20 +73526,6 @@
 			"value": 2
 		}
 	],
-	"app.WwiseManagerApp.VoiceType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Conv",
-			"value": 1
-		},
-		{
-			"name": "EffortVoice",
-			"value": 2
-		}
-	],
 	"anim.EnableLayer": [
 		{
 			"name": "ScriptLow",
@@ -73624,6 +73798,36 @@
 		{
 			"name": "BeginOneShot",
 			"value": 4
+		}
+	],
+	"app.ElevatorPartsDestructionController.AxisDirection": [
+		{
+			"name": "Undef",
+			"value": 0
+		},
+		{
+			"name": "X",
+			"value": 1
+		},
+		{
+			"name": "Y",
+			"value": 2
+		},
+		{
+			"name": "Z",
+			"value": 3
+		},
+		{
+			"name": "NX",
+			"value": 5
+		},
+		{
+			"name": "NY",
+			"value": 6
+		},
+		{
+			"name": "NZ",
+			"value": 7
 		}
 	],
 	"via.network.error.MethodRanking": [
@@ -81327,44 +81531,48 @@
 	],
 	"app.TitleMode.TitleModePhase": [
 		{
-			"name": "WaitGuiTitle",
+			"name": "ExtraContentsActivate",
 			"value": 0
 		},
 		{
-			"name": "PauseStart",
+			"name": "WaitGuiTitle",
 			"value": 1
 		},
 		{
-			"name": "FadeOut",
+			"name": "PauseStart",
 			"value": 2
 		},
 		{
-			"name": "Setup",
+			"name": "FadeOut",
 			"value": 3
 		},
 		{
-			"name": "ActivateTitle",
+			"name": "Setup",
 			"value": 4
 		},
 		{
-			"name": "PauseEnd",
+			"name": "ActivateTitle",
 			"value": 5
 		},
 		{
-			"name": "FadeIn",
+			"name": "PauseEnd",
 			"value": 6
 		},
 		{
-			"name": "TitleMenu",
+			"name": "FadeIn",
 			"value": 7
 		},
 		{
-			"name": "TitleMenuClose",
+			"name": "TitleMenu",
 			"value": 8
 		},
 		{
-			"name": "AllInstallWaitPopup",
+			"name": "TitleMenuClose",
 			"value": 9
+		},
+		{
+			"name": "AllInstallWaitPopup",
+			"value": 10
 		}
 	],
 	"via.effect.detail.ConstantBufferType": [
@@ -83299,28 +83507,32 @@
 			"value": 12
 		},
 		{
-			"name": "Mission",
+			"name": "PurchaseDemoRequestWait",
 			"value": 13
 		},
 		{
-			"name": "MissionConfirm",
+			"name": "Mission",
 			"value": 14
 		},
 		{
-			"name": "MissionTutorial_Shop",
+			"name": "MissionConfirm",
 			"value": 15
 		},
 		{
-			"name": "MissionTutorial_Mission",
+			"name": "MissionTutorial_Shop",
 			"value": 16
 		},
 		{
-			"name": "MissionTutorial_Exchange",
+			"name": "MissionTutorial_Mission",
 			"value": 17
 		},
 		{
-			"name": "MissionTutorial_MusicChange",
+			"name": "MissionTutorial_Exchange",
 			"value": 18
+		},
+		{
+			"name": "MissionTutorial_MusicChange",
+			"value": 19
 		}
 	],
 	"via.motion.IkLeg2.CenterAdjust": [
@@ -83992,28 +84204,6 @@
 		},
 		{
 			"name": "Variable",
-			"value": 4
-		}
-	],
-	"app.CharacterHeadParts.EmotionType": [
-		{
-			"name": "Normal",
-			"value": 0
-		},
-		{
-			"name": "Laugh",
-			"value": 1
-		},
-		{
-			"name": "Angry",
-			"value": 2
-		},
-		{
-			"name": "Weak",
-			"value": 3
-		},
-		{
-			"name": "Dying",
 			"value": 4
 		}
 	],
@@ -87972,28 +88162,32 @@
 			"value": 14
 		},
 		{
-			"name": "WeaponDemoPlay",
+			"name": "WeaponDemoStopConciergeWait",
 			"value": 15
 		},
 		{
-			"name": "FirstGet",
+			"name": "WeaponDemoPlay",
 			"value": 16
 		},
 		{
-			"name": "DemoFadeOut",
+			"name": "FirstGet",
 			"value": 17
 		},
 		{
-			"name": "DemoPlay",
+			"name": "DemoFadeOut",
 			"value": 18
 		},
 		{
-			"name": "RewardTutorial",
+			"name": "DemoPlay",
 			"value": 19
 		},
 		{
-			"name": "Close",
+			"name": "RewardTutorial",
 			"value": 20
+		},
+		{
+			"name": "Close",
+			"value": 21
 		}
 	],
 	"via.hid.VrTrackerResultData.ProjectionQuality": [
@@ -88256,28 +88450,6 @@
 			"value": 4
 		}
 	],
-	"app.analysislog.entity.TrialProgressType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "EnterST1",
-			"value": 1
-		},
-		{
-			"name": "UnlockDoor",
-			"value": 2
-		},
-		{
-			"name": "RideElevator",
-			"value": 3
-		},
-		{
-			"name": "ClearTrial",
-			"value": 4
-		}
-	],
 	"app.weapon.wp9100.Wp9100Status": [
 		{
 			"name": "JustShot",
@@ -88372,6 +88544,10 @@
 		{
 			"name": "Rush",
 			"value": 64
+		},
+		{
+			"name": "DownLoop",
+			"value": 128
 		},
 		{
 			"name": "Damage",
@@ -98291,6 +98467,10 @@
 		{
 			"name": "InFatalBreak",
 			"value": 1
+		},
+		{
+			"name": "EndFatalBreak",
+			"value": 2
 		}
 	],
 	"app.gui.ui5146.StateType": [
@@ -108064,6 +108244,14 @@
 		{
 			"name": "MotRefCountTreeLayerFinalize",
 			"value": 842
+		},
+		{
+			"name": "Motion0844",
+			"value": 844
+		},
+		{
+			"name": "Motion0845",
+			"value": 845
 		}
 	],
 	"via.clr.MemberTypes": [
@@ -115825,6 +116013,20 @@
 			"value": 3
 		}
 	],
+	"via.render.PrimaryRayRecaster.AlphaTest": [
+		{
+			"name": "AlphaTestOn",
+			"value": 0
+		},
+		{
+			"name": "AlphaTestOnWithScreenSpace",
+			"value": 1
+		},
+		{
+			"name": "AlphaTestOff",
+			"value": 2
+		}
+	],
 	"via.motion.InterpolationModeOverride": [
 		{
 			"name": "Default",
@@ -115953,36 +116155,6 @@
 		{
 			"name": "OpenBonus",
 			"value": 4096
-		}
-	],
-	"app.Ch17200CureBitController.ch172000Phase": [
-		{
-			"name": "Move",
-			"value": 0
-		},
-		{
-			"name": "ClingStart",
-			"value": 1
-		},
-		{
-			"name": "ChargeCure",
-			"value": 2
-		},
-		{
-			"name": "CureTarget",
-			"value": 3
-		},
-		{
-			"name": "EndCure",
-			"value": 4
-		},
-		{
-			"name": "ClingEnd",
-			"value": 5
-		},
-		{
-			"name": "ChargeConfuse",
-			"value": 6
 		}
 	],
 	"via.audiorender.LogId": [
@@ -126593,6 +126765,20 @@
 			"value": 3
 		}
 	],
+	"app.Ch16200ShieldManager.HitResult": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Normal",
+			"value": 1
+		},
+		{
+			"name": "Weak",
+			"value": 2
+		}
+	],
 	"via.hid.gamePlayer.DevicePickerResult": [
 		{
 			"name": "Done",
@@ -126701,72 +126887,76 @@
 			"value": 6
 		},
 		{
-			"name": "DynamicProbeGIProbe",
+			"name": "EarlyGIPointCloud",
 			"value": 7
 		},
 		{
+			"name": "DynamicProbeGIProbe",
+			"value": 8
+		},
+		{
 			"name": "VolumetricFogBegin",
-			"value": 8
-		},
-		{
-			"name": "VolumetricParticle",
-			"value": 8
-		},
-		{
-			"name": "VolumetricParticleDraw",
 			"value": 9
 		},
 		{
-			"name": "VolumetricFogUpdateCustomMaterial",
+			"name": "VolumetricParticle",
+			"value": 9
+		},
+		{
+			"name": "VolumetricParticleDraw",
 			"value": 10
 		},
 		{
-			"name": "IndirectIlluminationWait",
+			"name": "VolumetricFogUpdateCustomMaterial",
 			"value": 11
 		},
 		{
-			"name": "VolumetricFogSimulate",
+			"name": "IndirectIlluminationWait",
 			"value": 12
 		},
 		{
+			"name": "VolumetricFogSimulate",
+			"value": 13
+		},
+		{
 			"name": "VolumetricFogFinish",
-			"value": 13
-		},
-		{
-			"name": "FogIsAvailable",
-			"value": 13
-		},
-		{
-			"name": "PrepareEffectVertexLighting",
 			"value": 14
 		},
 		{
-			"name": "EffectVertexLighting",
+			"name": "FogIsAvailable",
+			"value": 14
+		},
+		{
+			"name": "PrepareEffectVertexLighting",
 			"value": 15
 		},
 		{
-			"name": "Cloudscape",
+			"name": "EffectVertexLighting",
 			"value": 16
 		},
 		{
-			"name": "DynamicProbeGI",
+			"name": "Cloudscape",
 			"value": 17
 		},
 		{
-			"name": "DefaultGIPointCloud",
+			"name": "DynamicProbeGI",
 			"value": 18
 		},
 		{
-			"name": "EffectIndependentVolume",
+			"name": "DefaultGIPointCloud",
 			"value": 19
 		},
 		{
-			"name": "EffectIndependentVolumeDraw",
+			"name": "EffectIndependentVolume",
 			"value": 20
 		},
 		{
-			"name": "EffectIndependentVolumeDispatch",
+			"name": "EffectIndependentVolumeDraw",
 			"value": 21
+		},
+		{
+			"name": "EffectIndependentVolumeDispatch",
+			"value": 22
 		}
 	],
 	"via.clr.SignatureType": [
@@ -132498,12 +132688,20 @@
 			"value": 13
 		},
 		{
-			"name": "AutoSaveNotice",
+			"name": "DLCActivateStart",
 			"value": 14
 		},
 		{
-			"name": "End",
+			"name": "UpdateApplicationNotice",
 			"value": 15
+		},
+		{
+			"name": "AutoSaveNotice",
+			"value": 16
+		},
+		{
+			"name": "End",
+			"value": 17
 		}
 	],
 	"via.render.Strands.ShadingQuality": [
@@ -135918,48 +136116,52 @@
 			"value": 1
 		},
 		{
-			"name": "SlotList",
+			"name": "InWait",
 			"value": 2
 		},
 		{
-			"name": "OverwriteConfirm",
+			"name": "SlotList",
 			"value": 3
 		},
 		{
-			"name": "SaveCancelConfirm",
+			"name": "OverwriteConfirm",
 			"value": 4
 		},
 		{
-			"name": "LoadConfirm",
+			"name": "SaveCancelConfirm",
 			"value": 5
 		},
 		{
-			"name": "SaveCompleteNotice",
+			"name": "LoadConfirm",
 			"value": 6
 		},
 		{
-			"name": "Save",
+			"name": "SaveCompleteNotice",
 			"value": 7
 		},
 		{
-			"name": "SaveWait",
+			"name": "Save",
 			"value": 8
 		},
 		{
-			"name": "Load",
+			"name": "SaveWait",
 			"value": 9
 		},
 		{
-			"name": "Cancel",
+			"name": "Load",
 			"value": 10
 		},
 		{
-			"name": "FadeWait",
+			"name": "Cancel",
 			"value": 11
 		},
 		{
-			"name": "Close",
+			"name": "FadeWait",
 			"value": 12
+		},
+		{
+			"name": "Close",
+			"value": 13
 		}
 	],
 	"via.render.LineRenderer.DrawOption": [
@@ -136791,7 +136993,7 @@
 		},
 		{
 			"name": "Gimmick_Low",
-			"value": 16777247
+			"value": 16777503
 		},
 		{
 			"name": "Damage",
@@ -136828,6 +137030,10 @@
 		{
 			"name": "Gui_System",
 			"value": 33554437
+		},
+		{
+			"name": "GameOver",
+			"value": 67
 		}
 	],
 	"via.render.DynamicProbeGI.RayTrace": [
@@ -137600,6 +137806,10 @@
 		{
 			"name": "LaunchRecoveryShell04",
 			"value": 262144
+		},
+		{
+			"name": "DeadArmFix",
+			"value": 524288
 		}
 	],
 	"app.gui.Tutorial.Request": [
@@ -139392,6 +139602,10 @@
 		{
 			"name": "Idle",
 			"value": 18
+		},
+		{
+			"name": "Invisible",
+			"value": 19
 		}
 	],
 	"via.hid.VrTrackerResultData.Status": [
@@ -139721,6 +139935,10 @@
 		{
 			"name": "EndJustDodgeSlowMode",
 			"value": 1024
+		},
+		{
+			"name": "StartJustDodgeSlowMode",
+			"value": 4096
 		},
 		{
 			"name": "ShotTargetHackingApplyFirst",
@@ -154553,6 +154771,10 @@
 			"value": 2048
 		},
 		{
+			"name": "ST4LevelNotification",
+			"value": 4096
+		},
+		{
 			"name": "DFFireShell",
 			"value": 1048576
 		}
@@ -155794,6 +156016,26 @@
 		{
 			"name": "SolidAngleCullingThreshold",
 			"value": 64
+		},
+		{
+			"name": "UseShadowMapFallBack",
+			"value": 128
+		},
+		{
+			"name": "ShadowMapFallBackDistance",
+			"value": 256
+		},
+		{
+			"name": "ShadowMapFallBackBlendDistance",
+			"value": 512
+		},
+		{
+			"name": "TransparentMultiplier",
+			"value": 1024
+		},
+		{
+			"name": "FrustumFarPlane",
+			"value": 2048
 		}
 	],
 	"via.render.Stamp.RasterMode": [
@@ -156002,30 +156244,12 @@
 			"value": 6
 		},
 		{
-			"name": "Max",
+			"name": "Precise",
 			"value": 7
-		}
-	],
-	"app.Ch14300LaserManager.InnerState": [
-		{
-			"name": "Initial",
-			"value": 0
 		},
 		{
-			"name": "Standby",
-			"value": 1
-		},
-		{
-			"name": "Start",
-			"value": 2
-		},
-		{
-			"name": "TerrainCheck",
-			"value": 3
-		},
-		{
-			"name": "Close",
-			"value": 4
+			"name": "Max",
+			"value": 8
 		}
 	],
 	"app.ch16050.DamageStatus": [
@@ -157136,11 +157360,11 @@
 			"value": 2
 		},
 		{
-			"name": "EndTakeOutEarthWait",
+			"name": "InteractFadeWait",
 			"value": 3
 		},
 		{
-			"name": "RequestOpenMainMenu",
+			"name": "EndTakeOutEarthWait",
 			"value": 4
 		},
 		{
@@ -157468,28 +157692,32 @@
 			"value": 4
 		},
 		{
-			"name": "Weapon",
+			"name": "BGM_Contents0004",
 			"value": 5
 		},
 		{
-			"name": "Ch01000",
+			"name": "Weapon",
 			"value": 6
 		},
 		{
-			"name": "Ch05000",
+			"name": "Ch01000",
 			"value": 7
 		},
 		{
-			"name": "SfxDucker",
+			"name": "Ch05000",
 			"value": 8
 		},
 		{
-			"name": "Gui",
+			"name": "SfxDucker",
 			"value": 9
 		},
 		{
-			"name": "Portal",
+			"name": "Gui",
 			"value": 10
+		},
+		{
+			"name": "Portal",
+			"value": 11
 		}
 	],
 	"app.DemoMediator.WorkTimeline.ActorItemController.LoadStatus": [
@@ -162042,6 +162270,10 @@
 		{
 			"name": "UnlockDeathBlow",
 			"value": 128
+		},
+		{
+			"name": "SuccessOverDrive",
+			"value": 256
 		}
 	],
 	"via.os.OdrErrorCodeRE": [
@@ -162152,6 +162384,10 @@
 		{
 			"name": "AlphaMask",
 			"value": 64
+		},
+		{
+			"name": "GBuffer",
+			"value": 128
 		}
 	],
 	"app.shell.ch14100.CarShellStatus": [
@@ -162328,12 +162564,24 @@
 			"value": 0
 		},
 		{
-			"name": "Active",
+			"name": "Open",
 			"value": 1
 		},
 		{
-			"name": "End",
+			"name": "Active",
 			"value": 2
+		},
+		{
+			"name": "Close",
+			"value": 3
+		},
+		{
+			"name": "CloseWait",
+			"value": 4
+		},
+		{
+			"name": "End",
+			"value": 5
 		}
 	],
 	"via.os.http_client.Type": [
@@ -162452,20 +162700,16 @@
 			"value": 6
 		},
 		{
-			"name": "ShadowQuality",
+			"name": "FogCullingDistance",
 			"value": 7
 		},
 		{
-			"name": "FogCullingDistance",
+			"name": "Rejection",
 			"value": 8
 		},
 		{
-			"name": "Rejection",
-			"value": 9
-		},
-		{
 			"name": "LeakBias",
-			"value": 10
+			"value": 9
 		}
 	],
 	"app.posteffect.DynamicProbeGIParam.AdvancedBlender.ParamKindFlags": [
@@ -167102,7 +167346,7 @@
 			"value": 3
 		},
 		{
-			"name": "Jack",
+			"name": "Grapple",
 			"value": 4
 		},
 		{
@@ -167485,32 +167729,36 @@
 			"value": 2
 		},
 		{
-			"name": "KeySelect",
+			"name": "PreKeySelect",
 			"value": 3
 		},
 		{
-			"name": "ResetConfirm",
+			"name": "KeySelect",
 			"value": 4
 		},
 		{
-			"name": "ConflictConfirm",
+			"name": "ResetConfirm",
 			"value": 5
 		},
 		{
-			"name": "EmptyConfirm",
+			"name": "ConflictConfirm",
 			"value": 6
 		},
 		{
-			"name": "Apply",
+			"name": "EmptyConfirm",
 			"value": 7
 		},
 		{
-			"name": "WaitSave",
+			"name": "Apply",
 			"value": 8
 		},
 		{
-			"name": "Close",
+			"name": "WaitSave",
 			"value": 9
+		},
+		{
+			"name": "Close",
+			"value": 10
 		}
 	],
 	"via.render.LightProbes.RaycastBakeType": [
@@ -172647,6 +172895,10 @@
 			"value": 64
 		},
 		{
+			"name": "Escape",
+			"value": 128
+		},
+		{
 			"name": "Damage",
 			"value": 1024
 		},
@@ -173129,6 +173381,10 @@
 		{
 			"name": "Dead",
 			"value": 2
+		},
+		{
+			"name": "GameOver",
+			"value": 3
 		}
 	],
 	"via.render.CVDCorrection.CVDType": [
@@ -173571,6 +173827,10 @@
 		{
 			"name": "ST7BossEventFB",
 			"value": 32
+		},
+		{
+			"name": "ST1BossOverDriveUnlock",
+			"value": 64
 		}
 	],
 	"via.os.FileDecompressionProcessor": [
@@ -174499,20 +174759,6 @@
 		{
 			"name": "SkipEndWait",
 			"value": 5
-		}
-	],
-	"app.sm75_031_10PropDriver.Phase": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Sign",
-			"value": 1
-		},
-		{
-			"name": "Laser",
-			"value": 2
 		}
 	],
 	"via.navigation.RelationMapInfo.Attribute": [
