@@ -81,16 +81,6 @@
 			"value": 8
 		}
 	],
-	"app.worldtour.shell.WTShell.FsmNodeStatusInfo.eLockOnType": [
-		{
-			"name": "ToPlayer",
-			"value": 0
-		},
-		{
-			"name": "ToEnemyAndOM",
-			"value": 1
-		}
-	],
 	"app.HatoMacroLauncherSettingData.FolderType": [
 		{
 			"name": "None",
@@ -1359,6 +1349,16 @@
 		{
 			"name": "STAGE_TYPE12",
 			"value": 12
+		}
+	],
+	"app.UIFlowAvatarArcadeGetGauge.StatePattern": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "NO_DATA",
+			"value": 1
 		}
 	],
 	"app.network.api.Enum.BhIntroductionDoing": [
@@ -3389,6 +3389,44 @@
 			"value": 1
 		}
 	],
+	"app.UICFNDetailedMenu.State": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "WaitStrength",
+			"value": 1
+		},
+		{
+			"name": "WaitDetail",
+			"value": 2
+		},
+		{
+			"name": "CheckTransition",
+			"value": 3
+		},
+		{
+			"name": "CheckBlock",
+			"value": 4
+		},
+		{
+			"name": "GoTransition",
+			"value": 5
+		},
+		{
+			"name": "GoPassCode",
+			"value": 6
+		},
+		{
+			"name": "Error",
+			"value": 7
+		},
+		{
+			"name": "End",
+			"value": 8
+		}
+	],
 	"via.render.BindlessByteBlocks": [
 		{
 			"name": "Block16Bytes",
@@ -3723,44 +3761,6 @@
 		{
 			"name": "Lose",
 			"value": 1
-		}
-	],
-	"app.UICFNDetailedMenu.State": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "WaitStrength",
-			"value": 1
-		},
-		{
-			"name": "WaitDetail",
-			"value": 2
-		},
-		{
-			"name": "CheckTransition",
-			"value": 3
-		},
-		{
-			"name": "CheckBlock",
-			"value": 4
-		},
-		{
-			"name": "GoTransition",
-			"value": 5
-		},
-		{
-			"name": "GoPassCode",
-			"value": 6
-		},
-		{
-			"name": "Error",
-			"value": 7
-		},
-		{
-			"name": "End",
-			"value": 8
 		}
 	],
 	"app.network.api.Enum.WtSettingCategory": [
@@ -4718,7 +4718,7 @@
 		},
 		{
 			"name": "TRAINING",
-			"value": 4
+			"value": 6
 		}
 	],
 	"via.motion.InterpolationCurve": [
@@ -4947,6 +4947,20 @@
 		{
 			"name": "Failed",
 			"value": 4
+		}
+	],
+	"app.network.api.Enum.MasterBoutEndResult": [
+		{
+			"name": "EVictory",
+			"value": 1
+		},
+		{
+			"name": "EKoLoses",
+			"value": 2
+		},
+		{
+			"name": "EGiveUp",
+			"value": 3
 		}
 	],
 	"app.network.api.Enum.ReplayPlaybackUploadDay": [
@@ -7451,6 +7465,10 @@
 		{
 			"name": "POSITION_FIXED",
 			"value": 23
+		},
+		{
+			"name": "DRIVE_REVERSAL",
+			"value": 28
 		}
 	],
 	"via.kernel.XCloudResult": [
@@ -7528,6 +7546,32 @@
 		},
 		{
 			"name": "ERolePlayingBattle",
+			"value": 5
+		}
+	],
+	"app.UIFlowAvatarMatchingSetting.Param.TabType": [
+		{
+			"name": "Matching",
+			"value": 0
+		},
+		{
+			"name": "Input",
+			"value": 1
+		},
+		{
+			"name": "Title",
+			"value": 2
+		},
+		{
+			"name": "NewChallenger",
+			"value": 3
+		},
+		{
+			"name": "Battle",
+			"value": 4
+		},
+		{
+			"name": "Profile",
 			"value": 5
 		}
 	],
@@ -8731,6 +8775,16 @@
 			"value": 2
 		}
 	],
+	"app.ReGameGuideConditions.RankRankMatchPastRank.eCompareOption": [
+		{
+			"name": "HigherThanPast",
+			"value": 0
+		},
+		{
+			"name": "LowerThanPast",
+			"value": 1
+		}
+	],
 	"app.worldtour.WTPlayerDataUISaveData.MusicPlayerData.SettingTypes": [
 		{
 			"name": "NONE",
@@ -8806,6 +8860,16 @@
 		},
 		{
 			"name": "HIT_ATTR",
+			"value": 2
+		}
+	],
+	"app.network.api.Enum.EquipmentPerformanceKind": [
+		{
+			"name": "EWtAvatarArcade",
+			"value": 1
+		},
+		{
+			"name": "EAvatarRandomMatch",
 			"value": 2
 		}
 	],
@@ -9937,6 +10001,20 @@
 			"value": 255
 		}
 	],
+	"app.network.api.Enum.ItemAddNoticeType": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Mute",
+			"value": 1
+		},
+		{
+			"name": "CategoryMerge",
+			"value": 2
+		}
+	],
 	"app.UIKeyConfig.StatePattern": [
 		{
 			"name": "Default",
@@ -9993,6 +10071,20 @@
 		{
 			"name": "MANIPULATE",
 			"value": 3
+		}
+	],
+	"app.UIFlowAvatarRoomBase.AvatarRoomMode": [
+		{
+			"name": "AvatarArcade",
+			"value": 0
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 1
+		},
+		{
+			"name": "NUM",
+			"value": 2
 		}
 	],
 	"app.GlobalParam.Prio": [
@@ -11877,6 +11969,36 @@
 			"value": 3
 		}
 	],
+	"app.UIFlowAvatarArcadeTop.ItemType": [
+		{
+			"name": "Spar",
+			"value": 0
+		},
+		{
+			"name": "BattleTour",
+			"value": 1
+		},
+		{
+			"name": "MatchingSetting",
+			"value": 2
+		},
+		{
+			"name": "Status",
+			"value": 3
+		},
+		{
+			"name": "Item",
+			"value": 4
+		},
+		{
+			"name": "General",
+			"value": 5
+		},
+		{
+			"name": "Apparel",
+			"value": 6
+		}
+	],
 	"nBattle.nHit.DAMAGE_ST": [
 		{
 			"name": "Head",
@@ -12695,6 +12817,96 @@
 		{
 			"name": "ClearElementMaxCount",
 			"value": 4
+		}
+	],
+	"app.ReGameGuideConditions.eCondition": [
+		{
+			"name": "EventType",
+			"value": 0
+		},
+		{
+			"name": "PlayTime",
+			"value": 1
+		},
+		{
+			"name": "Rank_VRival",
+			"value": 2
+		},
+		{
+			"name": "Rank_RankMatch",
+			"value": 3
+		},
+		{
+			"name": "Rank_RankMatch_PastRank",
+			"value": 4
+		},
+		{
+			"name": "FG_ConsecutiveWin",
+			"value": 5
+		},
+		{
+			"name": "FG_ConsecutiveLose",
+			"value": 6
+		},
+		{
+			"name": "PlayPoint",
+			"value": 7
+		},
+		{
+			"name": "LeaguePointAndMasterRate",
+			"value": 8
+		},
+		{
+			"name": "FriendCount",
+			"value": 9
+		},
+		{
+			"name": "ClubMemberCount",
+			"value": 10
+		},
+		{
+			"name": "ClubInfo",
+			"value": 11
+		},
+		{
+			"name": "FightingPass",
+			"value": 12
+		},
+		{
+			"name": "BattleSetting",
+			"value": 13
+		},
+		{
+			"name": "Shop",
+			"value": 14
+		},
+		{
+			"name": "WT_Mission",
+			"value": 15
+		},
+		{
+			"name": "WT_PlayerData_Numeric",
+			"value": 16
+		},
+		{
+			"name": "WT_PlayerData_Flag",
+			"value": 17
+		},
+		{
+			"name": "AvatarArcade_Flag",
+			"value": 18
+		},
+		{
+			"name": "AvatarArcade_Numeric",
+			"value": 19
+		},
+		{
+			"name": "AvatarRandomMatch_Numeric",
+			"value": 20
+		},
+		{
+			"name": "_Max",
+			"value": 21
 		}
 	],
 	"app.error.DisplayErrorSubCategory": [
@@ -16215,6 +16427,10 @@
 		{
 			"name": "OTHER_SETTING",
 			"value": 1024
+		},
+		{
+			"name": "AVATAR_ROOM_TARINING_DUMMY_SETTING",
+			"value": 2048
 		}
 	],
 	"via.network.ContextNpln.UserType": [
@@ -16300,6 +16516,24 @@
 		},
 		{
 			"name": "Complete",
+			"value": 3
+		}
+	],
+	"app.UIFlowDialog.EnrollingParam.ePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "AvatarContents_UnlockStyle",
+			"value": 1
+		},
+		{
+			"name": "AvatarContents_EntryMaster",
+			"value": 2
+		},
+		{
+			"name": "AvatarContents_AllTechniquesLearned",
 			"value": 3
 		}
 	],
@@ -16454,31 +16688,11 @@
 	"CharacterAsset.EIkUnLockFlag": [
 		{
 			"name": "TargetIsThrower",
-			"value": 1
-		},
-		{
-			"name": "Dummy_01",
 			"value": 2
 		},
 		{
-			"name": "Dummy_02",
-			"value": 4
-		},
-		{
-			"name": "Dummy_03",
+			"name": "IsRunWithoutLock",
 			"value": 8
-		},
-		{
-			"name": "Dummy_04",
-			"value": 16
-		},
-		{
-			"name": "Dummy_05",
-			"value": 32
-		},
-		{
-			"name": "Dummy_06",
-			"value": 64
 		}
 	],
 	"via.autoplay.action.AutoButton.Activation": [
@@ -16507,6 +16721,16 @@
 		{
 			"name": "EEngland",
 			"value": 4
+		}
+	],
+	"app.ReGameGuideConditions.LeaguePointAndMasterRate.eTarget": [
+		{
+			"name": "LP",
+			"value": 0
+		},
+		{
+			"name": "MR",
+			"value": 1
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValueCamera": [
@@ -16631,6 +16855,24 @@
 		{
 			"name": "Block",
 			"value": 11
+		}
+	],
+	"app.worldtour.WTPlayerDataStyle.WTStyleActionSkillEmptyBit": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Ground",
+			"value": 1
+		},
+		{
+			"name": "Aerial",
+			"value": 2
+		},
+		{
+			"name": "SuperArts",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.BattleEndLocalPlayersRental": [
@@ -20013,10 +20255,6 @@
 			"value": 808
 		},
 		{
-			"name": "GuideDescriptionMessage809",
-			"value": 809
-		},
-		{
 			"name": "GuideDescriptionMessage810",
 			"value": 810
 		},
@@ -20037,10 +20275,6 @@
 			"value": 814
 		},
 		{
-			"name": "GuideDescriptionMessage815",
-			"value": 815
-		},
-		{
 			"name": "GuideDescriptionMessage816",
 			"value": 816
 		},
@@ -20049,20 +20283,12 @@
 			"value": 817
 		},
 		{
-			"name": "GuideDescriptionMessage818",
-			"value": 818
-		},
-		{
 			"name": "GuideDescriptionMessage819",
 			"value": 819
 		},
 		{
 			"name": "GuideDescriptionMessage820",
 			"value": 820
-		},
-		{
-			"name": "GuideDescriptionMessage821",
-			"value": 821
 		},
 		{
 			"name": "GuideDescriptionMessage822",
@@ -20101,10 +20327,6 @@
 			"value": 830
 		},
 		{
-			"name": "GuideDescriptionMessage831",
-			"value": 831
-		},
-		{
 			"name": "GuideDescriptionMessage832",
 			"value": 832
 		},
@@ -20117,12 +20339,16 @@
 			"value": 834
 		},
 		{
+			"name": "GuideDescriptionMessage835",
+			"value": 835
+		},
+		{
 			"name": "GuideDescriptionMessageMaxValue",
-			"value": 834
+			"value": 835
 		},
 		{
 			"name": "GuideDescriptionMessageMaxCount",
-			"value": 732
+			"value": 728
 		}
 	],
 	"app.UIStateType": [
@@ -21549,6 +21775,20 @@
 			"value": 4
 		}
 	],
+	"app.network.api.Enum.MatchMakeSuccessAvatarServerInitialSearchRange": [
+		{
+			"name": "ESmallArea",
+			"value": 1
+		},
+		{
+			"name": "EWideArea",
+			"value": 2
+		},
+		{
+			"name": "ETheWholeWorld",
+			"value": 3
+		}
+	],
 	"JsonParser.Phase": [
 		{
 			"name": "Idle",
@@ -22361,6 +22601,16 @@
 			"value": 3
 		}
 	],
+	"app.network.api.Enum.MatchingInfoAvatarConfirmOpponent": [
+		{
+			"name": "EOn",
+			"value": 1
+		},
+		{
+			"name": "EOff",
+			"value": 2
+		}
+	],
 	"app.commentator.CommentTypeSettingData.DisplayPriority": [
 		{
 			"name": "Sort",
@@ -22779,6 +23029,16 @@
 			"value": 2
 		}
 	],
+	"app.UIFlowAvatarVSInfo.Param.eMode": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Offline",
+			"value": 1
+		}
+	],
 	"via.network.MatchesPsnStatus": [
 		{
 			"name": "None",
@@ -22821,6 +23081,32 @@
 		{
 			"name": "Player2",
 			"value": 2
+		}
+	],
+	"app.avatarroom.eTreasureRareType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Copper",
+			"value": 1
+		},
+		{
+			"name": "Silver",
+			"value": 2
+		},
+		{
+			"name": "Gold",
+			"value": 3
+		},
+		{
+			"name": "Start",
+			"value": 1
+		},
+		{
+			"name": "Num",
+			"value": 3
 		}
 	],
 	"app.worldtour.mg.WTMiniGameUtility02.HoldBoardUniqueParamIndexType": [
@@ -23441,12 +23727,28 @@
 			"value": 33
 		},
 		{
+			"name": "DailyTournamentCharacterLimit34",
+			"value": 34
+		},
+		{
+			"name": "DailyTournamentCharacterLimit35",
+			"value": 35
+		},
+		{
+			"name": "DailyTournamentCharacterLimit36",
+			"value": 36
+		},
+		{
+			"name": "DailyTournamentCharacterLimit37",
+			"value": 37
+		},
+		{
 			"name": "DailyTournamentCharacterLimitMaxValue",
-			"value": 33
+			"value": 37
 		},
 		{
 			"name": "DailyTournamentCharacterLimitMaxCount",
-			"value": 34
+			"value": 38
 		}
 	],
 	"app.UIFlowDeviceBase.BaseParam.BirthPlaceType": [
@@ -23817,6 +24119,24 @@
 		{
 			"name": "SummerTime",
 			"value": 2
+		}
+	],
+	"app.ReGameGuideConditions.PlayTime.ePlayTimeOption": [
+		{
+			"name": "All",
+			"value": 0
+		},
+		{
+			"name": "WT",
+			"value": 1
+		},
+		{
+			"name": "BH",
+			"value": 2
+		},
+		{
+			"name": "FG",
+			"value": 3
 		}
 	],
 	"app.worldtour.WTNpcAI.BehaviorTreeParam.ExActionType": [
@@ -24519,12 +24839,8 @@
 			"value": 0
 		},
 		{
-			"name": "Button",
-			"value": 1
-		},
-		{
 			"name": "Max",
-			"value": 2
+			"value": 1
 		}
 	],
 	"via.navigation.NavigationSurface.UnderSearchSettingType": [
@@ -27843,6 +28159,24 @@
 			"value": 2
 		}
 	],
+	"app.network.api.Enum.AvatarKind": [
+		{
+			"name": "Total",
+			"value": 1
+		},
+		{
+			"name": "Monthly",
+			"value": 2
+		},
+		{
+			"name": "Weekly",
+			"value": 3
+		},
+		{
+			"name": "Daily",
+			"value": 4
+		}
+	],
 	"app.BattleInputLayer.AnalogIndex": [
 		{
 			"name": "AxisLx",
@@ -28147,6 +28481,20 @@
 		{
 			"name": "EBh",
 			"value": 3
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu_ActionSkillEquipBase.eSetEventResult": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Set",
+			"value": 1
+		},
+		{
+			"name": "Remove",
+			"value": 2
 		}
 	],
 	"app.training.ComboTrialManager.ETrialGameSpeed": [
@@ -28587,6 +28935,14 @@
 		{
 			"name": "Gallery",
 			"value": 3
+		},
+		{
+			"name": "AvatarArcade",
+			"value": 4
+		},
+		{
+			"name": "AvatarMatch",
+			"value": 5
 		}
 	],
 	"CharacterAsset.ETriggerKeyState": [
@@ -29118,6 +29474,10 @@
 		{
 			"name": "EventCode",
 			"value": 8
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 9
 		}
 	],
 	"app.network.api.Enum.ResultRoundPleyersLocalPlatformId": [
@@ -29140,6 +29500,16 @@
 		{
 			"name": "ESteam",
 			"value": 5
+		}
+	],
+	"app.UIPartsGeneralItemThumbnail.BgType": [
+		{
+			"name": "Defaut",
+			"value": 0
+		},
+		{
+			"name": "Bg",
+			"value": 1
 		}
 	],
 	"app.worldtour.WTNpc3DBaseActionData.FrontMoveActionType": [
@@ -29716,6 +30086,24 @@
 			"value": 4
 		}
 	],
+	"app.network.api.Enum.MatchingInfoAvatarMode": [
+		{
+			"name": "EFg",
+			"value": 1
+		},
+		{
+			"name": "EBh",
+			"value": 2
+		},
+		{
+			"name": "EWt",
+			"value": 3
+		},
+		{
+			"name": "ETopMenu",
+			"value": 4
+		}
+	],
 	"app.worldtour.avatar.AvatarOverwriteVariableControll.ControllType": [
 		{
 			"name": "WalkOrRun",
@@ -29964,6 +30352,10 @@
 		{
 			"name": "WT_TUTORIAL",
 			"value": 11
+		},
+		{
+			"name": "WT_AVATAR_TRAINING",
+			"value": 12
 		}
 	],
 	"app.MultiMenuManager.RequestTarget": [
@@ -33144,6 +33536,32 @@
 			"value": 3
 		}
 	],
+	"app.UIPartsAvatarResultTreasureListItem.eTreasureBoxIconUVPattern": [
+		{
+			"name": "Gold_Close",
+			"value": 0
+		},
+		{
+			"name": "Silver_Close",
+			"value": 1
+		},
+		{
+			"name": "Bronze_Close",
+			"value": 2
+		},
+		{
+			"name": "Gold_Open",
+			"value": 3
+		},
+		{
+			"name": "Silver_Open",
+			"value": 4
+		},
+		{
+			"name": "Bronze_Open",
+			"value": 5
+		}
+	],
 	"app.UIStaffroll.TextViewType": [
 		{
 			"name": "Invalid",
@@ -33846,6 +34264,20 @@
 			"value": 4
 		}
 	],
+	"app.ExchangeCardTest.CurveTrackType": [
+		{
+			"name": "HighSpeed",
+			"value": 0
+		},
+		{
+			"name": "LowSpeed",
+			"value": 1
+		},
+		{
+			"name": "Curve",
+			"value": 2
+		}
+	],
 	"via.MobileBarState": [
 		{
 			"name": "Invisible",
@@ -34246,6 +34678,14 @@
 			"value": 13
 		},
 		{
+			"name": "DlcData14",
+			"value": 14
+		},
+		{
+			"name": "DlcData15",
+			"value": 15
+		},
+		{
 			"name": "DlcData112",
 			"value": 112
 		},
@@ -34259,7 +34699,7 @@
 		},
 		{
 			"name": "DlcDataMaxCount",
-			"value": 16
+			"value": 18
 		}
 	],
 	"app.network.api.Enum.TeamVersusLocalSettingLiveSubtitle": [
@@ -36028,6 +36468,10 @@
 			"value": 31
 		},
 		{
+			"name": "ESF_032",
+			"value": 32
+		},
+		{
 			"name": "GMNP",
 			"value": 60
 		},
@@ -36126,6 +36570,10 @@
 		{
 			"name": "ESF_102",
 			"value": 102
+		},
+		{
+			"name": "ESF_103",
+			"value": 103
 		},
 		{
 			"name": "CT_118",
@@ -36708,32 +37156,40 @@
 			"value": 1
 		},
 		{
-			"name": "BattlePause",
+			"name": "Spar",
 			"value": 2
 		},
 		{
-			"name": "BattleSetting",
-			"value": 16
-		},
-		{
-			"name": "OptionBattle",
-			"value": 32
-		},
-		{
-			"name": "OptionField",
-			"value": 64
-		},
-		{
-			"name": "MemberSelectFlow",
+			"name": "BattlePause",
 			"value": 4
 		},
 		{
-			"name": "NfcMenu",
+			"name": "BattleSetting",
+			"value": 32
+		},
+		{
+			"name": "OptionBattle",
+			"value": 64
+		},
+		{
+			"name": "OptionField",
 			"value": 128
 		},
 		{
-			"name": "LocalMatchSetting",
+			"name": "MemberSelectFlow",
 			"value": 8
+		},
+		{
+			"name": "NfcMenu",
+			"value": 256
+		},
+		{
+			"name": "LocalMatchSetting",
+			"value": 16
+		},
+		{
+			"name": "AvatarRoom",
+			"value": 512
 		}
 	],
 	"app.battlehub.BHDefine.BhFirstSightType": [
@@ -37526,12 +37982,144 @@
 			"value": 118
 		},
 		{
+			"name": "FGPlayAvatarRandomMatch",
+			"value": 119
+		},
+		{
+			"name": "FGWinAvatarRandomMatch",
+			"value": 120
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster1",
+			"value": 121
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster2",
+			"value": 122
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster3",
+			"value": 123
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster4",
+			"value": 124
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster5",
+			"value": 125
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster6",
+			"value": 126
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster7",
+			"value": 127
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster8",
+			"value": 128
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster9",
+			"value": 129
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster10",
+			"value": 130
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster11",
+			"value": 131
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster12",
+			"value": 132
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster15",
+			"value": 133
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster16",
+			"value": 134
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster17",
+			"value": 135
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster18",
+			"value": 136
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster20",
+			"value": 137
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster21",
+			"value": 138
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster14",
+			"value": 139
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster13",
+			"value": 140
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster19",
+			"value": 141
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster22",
+			"value": 142
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster26",
+			"value": 143
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster27",
+			"value": 144
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster28",
+			"value": 145
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster29",
+			"value": 146
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster25",
+			"value": 147
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster30",
+			"value": 148
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster31",
+			"value": 149
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster32",
+			"value": 150
+		},
+		{
+			"name": "FGUnlockCostumeColorItem1717",
+			"value": 151
+		},
+		{
 			"name": "ChallengeMissionMaxValue",
-			"value": 118
+			"value": 151
 		},
 		{
 			"name": "ChallengeMissionMaxCount",
-			"value": 119
+			"value": 152
 		}
 	],
 	"app.UIPartsCrossBar.INPUT_DIR_TYPE": [
@@ -38379,12 +38967,28 @@
 			"value": 76
 		},
 		{
+			"name": "ProfileAvatarPose77",
+			"value": 77
+		},
+		{
+			"name": "ProfileAvatarPose78",
+			"value": 78
+		},
+		{
+			"name": "ProfileAvatarPose79",
+			"value": 79
+		},
+		{
+			"name": "ProfileAvatarPose80",
+			"value": 80
+		},
+		{
 			"name": "ProfileAvatarPoseMaxValue",
-			"value": 76
+			"value": 80
 		},
 		{
 			"name": "ProfileAvatarPoseMaxCount",
-			"value": 53
+			"value": 57
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.Normal.Param_OnlyDeco.eDecorationItemLayout": [
@@ -41638,6 +42242,18 @@
 		{
 			"name": "TeamBattle",
 			"value": 6
+		},
+		{
+			"name": "AvatarTraining",
+			"value": 7
+		},
+		{
+			"name": "Spar",
+			"value": 8
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 9
 		}
 	],
 	"via.gui.CircleColorType": [
@@ -41847,6 +42463,16 @@
 		},
 		{
 			"name": "MissionList",
+			"value": 1
+		}
+	],
+	"app.ReGameGuideSettings.eMultiConditionOperator": [
+		{
+			"name": "All",
+			"value": 0
+		},
+		{
+			"name": "Any",
 			"value": 1
 		}
 	],
@@ -42400,6 +43026,20 @@
 			"value": 5
 		}
 	],
+	"app.network.api.Enum.AvatarTrainingStartOperationType": [
+		{
+			"name": "EClassic",
+			"value": 1
+		},
+		{
+			"name": "EModern",
+			"value": 2
+		},
+		{
+			"name": "EDynamic",
+			"value": 3
+		}
+	],
 	"via.userdata.exprgraph.ExprNodeFlags": [
 		{
 			"name": "None",
@@ -42514,6 +43154,28 @@
 		{
 			"name": "ENormalCharacter",
 			"value": 2
+		}
+	],
+	"app.network.api.Enum.EnterAvatarRoomRoute": [
+		{
+			"name": "EMultiMenu",
+			"value": 1
+		},
+		{
+			"name": "EFgArcadeTab",
+			"value": 2
+		},
+		{
+			"name": "EFgOnlineTab",
+			"value": 3
+		},
+		{
+			"name": "EBhObjects",
+			"value": 4
+		},
+		{
+			"name": "EWtTopScreen",
+			"value": 5
 		}
 	],
 	"app.esports.UI11435.Param.UpdateStatusType": [
@@ -42728,6 +43390,36 @@
 			"value": 15
 		}
 	],
+	"app.UIFlowAvatarRandomMatchTop.ItemType": [
+		{
+			"name": "Matching",
+			"value": 0
+		},
+		{
+			"name": "Training",
+			"value": 1
+		},
+		{
+			"name": "MatchingSetting",
+			"value": 2
+		},
+		{
+			"name": "Status",
+			"value": 3
+		},
+		{
+			"name": "Ranking",
+			"value": 4
+		},
+		{
+			"name": "Rewards",
+			"value": 5
+		},
+		{
+			"name": "MatchHistory",
+			"value": 6
+		}
+	],
 	"app.UIFlowUI50010.ShowWait.Status": [
 		{
 			"name": "Load",
@@ -42872,6 +43564,28 @@
 		{
 			"name": "release",
 			"value": 25
+		}
+	],
+	"app.ReGameGuideConditions.WTPlayerDataFlag.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsDefaultEquipment",
+			"value": 1
+		},
+		{
+			"name": "IsExistNotMasteredMaster",
+			"value": 2
+		},
+		{
+			"name": "IsExistNotOwnedStyle",
+			"value": 4
+		},
+		{
+			"name": "IsExistNotLearnedSkill",
+			"value": 8
 		}
 	],
 	"via.gui.GUIPropertyLabel": [
@@ -44148,43 +44862,43 @@
 			"value": 5
 		},
 		{
-			"name": "_026",
+			"name": "_011",
 			"value": 6
 		},
 		{
-			"name": "_102",
+			"name": "_007",
 			"value": 7
 		},
 		{
-			"name": "_011",
+			"name": "_030",
 			"value": 8
 		},
 		{
-			"name": "_007",
+			"name": "_026",
 			"value": 9
 		},
 		{
-			"name": "_030",
+			"name": "_102",
 			"value": 10
 		},
 		{
-			"name": "_020",
+			"name": "_031",
 			"value": 11
 		},
 		{
-			"name": "_022",
+			"name": "_027",
 			"value": 12
 		},
 		{
-			"name": "_101",
+			"name": "_020",
 			"value": 13
 		},
 		{
-			"name": "_031",
+			"name": "_022",
 			"value": 14
 		},
 		{
-			"name": "_027",
+			"name": "_101",
 			"value": 15
 		},
 		{
@@ -44244,11 +44958,11 @@
 			"value": 29
 		},
 		{
-			"name": "_028",
+			"name": "_016",
 			"value": 30
 		},
 		{
-			"name": "_033",
+			"name": "_028",
 			"value": 31
 		},
 		{
@@ -44256,7 +44970,7 @@
 			"value": 32
 		},
 		{
-			"name": "_016",
+			"name": "_103",
 			"value": 33
 		},
 		{
@@ -44268,8 +44982,12 @@
 			"value": 35
 		},
 		{
-			"name": "_012",
+			"name": "_033",
 			"value": 36
+		},
+		{
+			"name": "_012",
+			"value": 37
 		}
 	],
 	"app.helper.hInput.eStick": [
@@ -44460,6 +45178,40 @@
 		{
 			"name": "EClose",
 			"value": 2
+		}
+	],
+	"app.AvatarRewardStackManager.eStackTargetFlag": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "Exp",
+			"value": 1
+		},
+		{
+			"name": "StyleExp",
+			"value": 2
+		},
+		{
+			"name": "OutfitPoint",
+			"value": 4
+		},
+		{
+			"name": "StyleSkillExp",
+			"value": 8
+		},
+		{
+			"name": "SkillExp",
+			"value": 16
+		},
+		{
+			"name": "TreasureBox",
+			"value": 32
+		},
+		{
+			"name": "_All",
+			"value": 63
 		}
 	],
 	"app.worldtour.WTEnvCarManager.SignalStatus": [
@@ -45779,6 +46531,12 @@
 			"value": 1
 		}
 	],
+	"app.ReGameGuideConditions.PlayPoint.eSelectionOption": [
+		{
+			"name": "Current",
+			"value": 0
+		}
+	],
 	"app.network.api.Enum.ArcadeDetailStory": [
 		{
 			"name": "ENone",
@@ -45867,6 +46625,24 @@
 		{
 			"name": "Highest",
 			"value": 5
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu_Equip.GroupFocusType": [
+		{
+			"name": "Preset",
+			"value": 0
+		},
+		{
+			"name": "Top",
+			"value": 1
+		},
+		{
+			"name": "Item",
+			"value": 2
+		},
+		{
+			"name": "Max",
+			"value": 3
 		}
 	],
 	"app.worldtour.WTDefine.MinigameOptionBattlelineType": [
@@ -46166,6 +46942,20 @@
 		},
 		{
 			"name": "ETransitionedToTheStore",
+			"value": 2
+		}
+	],
+	"app.UIFlowAvatarRoomBase.FadeStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Change",
+			"value": 1
+		},
+		{
+			"name": "Forward",
 			"value": 2
 		}
 	],
@@ -48575,308 +49365,312 @@
 			"value": 360
 		},
 		{
-			"name": "TerminateVM",
+			"name": "TerminateUserService",
 			"value": 361
 		},
 		{
-			"name": "TerminateJobScheduler",
+			"name": "TerminateVM",
 			"value": 362
 		},
 		{
-			"name": "Finalize",
+			"name": "TerminateJobScheduler",
 			"value": 363
 		},
 		{
-			"name": "FinalizeEOS",
+			"name": "Finalize",
 			"value": 364
 		},
 		{
-			"name": "FinalizeRds",
+			"name": "FinalizeEOS",
 			"value": 365
 		},
 		{
-			"name": "FinalizeObsoleteSecurity",
+			"name": "FinalizeRds",
 			"value": 366
 		},
 		{
-			"name": "FinalizeThreadPool",
+			"name": "FinalizeObsoleteSecurity",
 			"value": 367
 		},
 		{
-			"name": "FinalizeHansoft",
+			"name": "FinalizeThreadPool",
 			"value": 368
 		},
 		{
-			"name": "FinalizeTelemetry",
+			"name": "FinalizeHansoft",
 			"value": 369
 		},
 		{
-			"name": "FinalizeMame",
+			"name": "FinalizeTelemetry",
 			"value": 370
 		},
 		{
-			"name": "FinalizeMovie",
+			"name": "FinalizeMame",
 			"value": 371
 		},
 		{
-			"name": "FinalizeBehavior",
+			"name": "FinalizeMovie",
 			"value": 372
 		},
 		{
-			"name": "FinalizeDevelopSystem",
+			"name": "FinalizeBehavior",
 			"value": 373
 		},
 		{
-			"name": "FinalizeTimeline",
+			"name": "FinalizeDevelopSystem",
 			"value": 374
 		},
 		{
-			"name": "FinalizeVivoxlib",
+			"name": "FinalizeTimeline",
 			"value": 375
 		},
 		{
-			"name": "FinalizePuppet",
+			"name": "FinalizeVivoxlib",
 			"value": 376
 		},
 		{
-			"name": "FinalizeNetwork",
+			"name": "FinalizePuppet",
 			"value": 377
 		},
 		{
-			"name": "FinalizeStore",
+			"name": "FinalizeNetwork",
 			"value": 378
 		},
 		{
-			"name": "FinalizeBrowser",
+			"name": "FinalizeStore",
 			"value": 379
 		},
 		{
-			"name": "finalizeAutoPlay",
+			"name": "FinalizeBrowser",
 			"value": 380
 		},
 		{
-			"name": "finalizeScenario",
+			"name": "finalizeAutoPlay",
 			"value": 381
 		},
 		{
-			"name": "FinalizeBehaviorTree",
+			"name": "finalizeScenario",
 			"value": 382
 		},
 		{
-			"name": "FinalizeFSM",
+			"name": "FinalizeBehaviorTree",
 			"value": 383
 		},
 		{
-			"name": "FinalizeNavigation",
+			"name": "FinalizeFSM",
 			"value": 384
 		},
 		{
-			"name": "FinalizePointGraph",
+			"name": "FinalizeNavigation",
 			"value": 385
 		},
 		{
-			"name": "FinalizeAreaMap",
+			"name": "FinalizePointGraph",
 			"value": 386
 		},
 		{
-			"name": "FinalizeOctree",
+			"name": "FinalizeAreaMap",
 			"value": 387
 		},
 		{
-			"name": "FinalizeFluidFlock",
+			"name": "FinalizeOctree",
 			"value": 388
 		},
 		{
-			"name": "FinalizeMLSupport",
+			"name": "FinalizeFluidFlock",
 			"value": 389
 		},
 		{
-			"name": "FinalizeMotion",
+			"name": "FinalizeMLSupport",
 			"value": 390
 		},
 		{
-			"name": "FinalizeDynamics",
+			"name": "FinalizeMotion",
 			"value": 391
 		},
 		{
-			"name": "FinalizePhysics",
+			"name": "FinalizeDynamics",
 			"value": 392
 		},
 		{
-			"name": "FinalizeHavok",
+			"name": "FinalizePhysics",
 			"value": 393
 		},
 		{
-			"name": "FinalizeBake",
+			"name": "FinalizeHavok",
 			"value": 394
 		},
 		{
-			"name": "FinalizeSpine",
+			"name": "FinalizeBake",
 			"value": 395
 		},
 		{
-			"name": "FinalizeGUI",
+			"name": "FinalizeSpine",
 			"value": 396
 		},
 		{
-			"name": "FinalizeAudioRender",
+			"name": "FinalizeGUI",
 			"value": 397
 		},
 		{
-			"name": "FinalizeWwise",
+			"name": "FinalizeAudioRender",
 			"value": 398
 		},
 		{
-			"name": "FinalizeSimpleWwise",
+			"name": "FinalizeWwise",
 			"value": 399
 		},
 		{
-			"name": "FinalizeWwiselib",
+			"name": "FinalizeSimpleWwise",
 			"value": 400
 		},
 		{
-			"name": "FinalizeSound",
+			"name": "FinalizeWwiselib",
 			"value": 401
 		},
 		{
-			"name": "FinalizeEffect",
+			"name": "FinalizeSound",
 			"value": 402
 		},
 		{
-			"name": "FinalizeNFX",
+			"name": "FinalizeEffect",
 			"value": 403
 		},
 		{
-			"name": "FinalizeVortexel",
+			"name": "FinalizeNFX",
 			"value": 404
 		},
 		{
-			"name": "FinalizeGeometry",
+			"name": "FinalizeVortexel",
 			"value": 405
 		},
 		{
-			"name": "FinalizeSpeedTree",
+			"name": "FinalizeGeometry",
 			"value": 406
 		},
 		{
-			"name": "FinalizeLandscape",
+			"name": "FinalizeSpeedTree",
 			"value": 407
 		},
 		{
-			"name": "FinalizeHoudini",
+			"name": "FinalizeLandscape",
 			"value": 408
 		},
 		{
-			"name": "FinalizeRenderer",
+			"name": "FinalizeHoudini",
 			"value": 409
 		},
 		{
-			"name": "FinalizeHID",
+			"name": "FinalizeRenderer",
 			"value": 410
 		},
 		{
-			"name": "FinalizeVR",
+			"name": "FinalizeHID",
 			"value": 411
 		},
 		{
-			"name": "FinalizeBcat",
+			"name": "FinalizeVR",
 			"value": 412
 		},
 		{
-			"name": "FinalizeRebe",
+			"name": "FinalizeBcat",
 			"value": 413
 		},
 		{
-			"name": "FinalizeSolstice",
+			"name": "FinalizeRebe",
 			"value": 414
 		},
 		{
-			"name": "FinalizeXCloud",
+			"name": "FinalizeSolstice",
 			"value": 415
 		},
 		{
-			"name": "FinalizeSteam",
+			"name": "FinalizeXCloud",
 			"value": 416
 		},
 		{
-			"name": "FinalizeWeGame",
+			"name": "FinalizeSteam",
 			"value": 417
 		},
 		{
-			"name": "FinalizeNNFC",
+			"name": "FinalizeWeGame",
 			"value": 418
 		},
 		{
-			"name": "FinalizeGlobalUserData",
+			"name": "FinalizeNNFC",
 			"value": 419
 		},
 		{
-			"name": "FinalizeModalDialogService",
+			"name": "FinalizeGlobalUserData",
 			"value": 420
 		},
 		{
-			"name": "FinalizeSkuService",
+			"name": "FinalizeModalDialogService",
 			"value": 421
 		},
 		{
-			"name": "FinalizeUDS",
+			"name": "FinalizeSkuService",
 			"value": 422
 		},
 		{
-			"name": "FinalizeUserService",
+			"name": "FinalizeUDS",
 			"value": 423
 		},
 		{
-			"name": "FinalizeShareService",
+			"name": "FinalizeUserService",
 			"value": 424
 		},
 		{
-			"name": "FinalizeSystemService",
+			"name": "FinalizeShareService",
 			"value": 425
 		},
 		{
-			"name": "FinalizeHardwareService",
+			"name": "FinalizeSystemService",
 			"value": 426
 		},
 		{
-			"name": "FinalizePushNotificationService",
+			"name": "FinalizeHardwareService",
 			"value": 427
 		},
 		{
-			"name": "FinalizeScene",
+			"name": "FinalizePushNotificationService",
 			"value": 428
 		},
 		{
-			"name": "FinalizeStorage",
+			"name": "FinalizeScene",
 			"value": 429
 		},
 		{
-			"name": "FinalizeVM",
+			"name": "FinalizeStorage",
 			"value": 430
 		},
 		{
-			"name": "FinalizeResourceManager",
+			"name": "FinalizeVM",
 			"value": 431
 		},
 		{
-			"name": "FinalizeRemoteHost",
+			"name": "FinalizeResourceManager",
 			"value": 432
 		},
 		{
-			"name": "FinalizeDialog",
+			"name": "FinalizeRemoteHost",
 			"value": 433
 		},
 		{
-			"name": "FinalizeMixer",
+			"name": "FinalizeDialog",
 			"value": 434
 		},
 		{
-			"name": "FinalizeGameCore",
+			"name": "FinalizeMixer",
 			"value": 435
 		},
 		{
-			"name": "FinalizeUbitus",
+			"name": "FinalizeGameCore",
 			"value": 436
+		},
+		{
+			"name": "FinalizeUbitus",
+			"value": 437
 		}
 	],
 	"via.dynamics.DistanceLinkVisibleType": [
@@ -49419,12 +50213,20 @@
 			"value": 23
 		},
 		{
-			"name": "LOADING",
+			"name": "WT_STATUS_MENU",
 			"value": 24
 		},
 		{
-			"name": "SAVING",
+			"name": "WT_DUMMY_STATUS_MENU",
 			"value": 25
+		},
+		{
+			"name": "LOADING",
+			"value": 26
+		},
+		{
+			"name": "SAVING",
+			"value": 27
 		}
 	],
 	"via.timeline.DialogueTimelinePlayer.ResourceType": [
@@ -50197,12 +50999,80 @@
 			"value": 50135
 		},
 		{
+			"name": "CircleFlierBackground50136",
+			"value": 50136
+		},
+		{
+			"name": "CircleFlierBackground50137",
+			"value": 50137
+		},
+		{
+			"name": "CircleFlierBackground50138",
+			"value": 50138
+		},
+		{
+			"name": "CircleFlierBackground50139",
+			"value": 50139
+		},
+		{
+			"name": "CircleFlierBackground50140",
+			"value": 50140
+		},
+		{
+			"name": "CircleFlierBackground50141",
+			"value": 50141
+		},
+		{
+			"name": "CircleFlierBackground50142",
+			"value": 50142
+		},
+		{
+			"name": "CircleFlierBackground50143",
+			"value": 50143
+		},
+		{
+			"name": "CircleFlierBackground50144",
+			"value": 50144
+		},
+		{
+			"name": "CircleFlierBackground50145",
+			"value": 50145
+		},
+		{
+			"name": "CircleFlierBackground50146",
+			"value": 50146
+		},
+		{
+			"name": "CircleFlierBackground50147",
+			"value": 50147
+		},
+		{
+			"name": "CircleFlierBackground50148",
+			"value": 50148
+		},
+		{
+			"name": "CircleFlierBackground50149",
+			"value": 50149
+		},
+		{
+			"name": "CircleFlierBackground50150",
+			"value": 50150
+		},
+		{
+			"name": "CircleFlierBackground50151",
+			"value": 50151
+		},
+		{
+			"name": "CircleFlierBackground50152",
+			"value": 50152
+		},
+		{
 			"name": "CircleFlierBackgroundMaxValue",
-			"value": 50135
+			"value": 50152
 		},
 		{
 			"name": "CircleFlierBackgroundMaxCount",
-			"value": 136
+			"value": 153
 		}
 	],
 	"app.UIFlowCustomRoomTableDetail.Training.MatchingPhase": [
@@ -50826,6 +51696,16 @@
 		},
 		{
 			"name": "ShowConfirmDialog",
+			"value": 2
+		}
+	],
+	"app.network.api.Enum.EquipmentApparentKind": [
+		{
+			"name": "EWtAvatarArcade",
+			"value": 1
+		},
+		{
+			"name": "EAvatarRandomMatch",
 			"value": 2
 		}
 	],
@@ -52705,6 +53585,10 @@
 		{
 			"name": "SemiJust",
 			"value": 25
+		},
+		{
+			"name": "NoSound",
+			"value": 26
 		}
 	],
 	"app.network.api.Enum.OnlineBattleEndClientMode": [
@@ -54173,6 +55057,10 @@
 		{
 			"name": "OneFrame",
 			"value": 6
+		},
+		{
+			"name": "DriveGaugeEmptyAct",
+			"value": 7
 		}
 	],
 	"via.render.ExperimentalRayTrace.VFXSpecularDenoiserFlag": [
@@ -54209,6 +55097,10 @@
 		{
 			"name": "Finish",
 			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.LinkTarget": [
@@ -55761,6 +56653,14 @@
 			"value": 31012
 		},
 		{
+			"name": "Api_MatchingInvalidFightUserId",
+			"value": 31013
+		},
+		{
+			"name": "Api_MatchingInvalidMatchingType",
+			"value": 31014
+		},
+		{
 			"name": "Api_OgymUnknown",
 			"value": 31201
 		},
@@ -56795,6 +57695,10 @@
 		{
 			"name": "CUSTOM_ROOM",
 			"value": 12
+		},
+		{
+			"name": "AVATAR_ROOM",
+			"value": 13
 		}
 	],
 	"app.network.api.Enum.BattleRaidCpuClientMode": [
@@ -60561,16 +61465,20 @@
 			"value": 36
 		},
 		{
-			"name": "MASTER_TALK",
+			"name": "AVATAR_ROOM_OM",
 			"value": 37
 		},
 		{
-			"name": "MASTER_TALK_SP",
+			"name": "MASTER_TALK",
 			"value": 38
 		},
 		{
-			"name": "MAX",
+			"name": "MASTER_TALK_SP",
 			"value": 39
+		},
+		{
+			"name": "MAX",
+			"value": 40
 		}
 	],
 	"via.mame.EmulatorUpdateType": [
@@ -60629,6 +61537,20 @@
 		{
 			"name": "RANDOM",
 			"value": 1
+		}
+	],
+	"app.ReGameGuideConditions.FGConsecutiveWin.eTarget": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "RankMatch",
+			"value": 1
+		},
+		{
+			"name": "CasualMatch",
+			"value": 2
 		}
 	],
 	"app.worldtour.WTStyleDefine.WTSkillType": [
@@ -60705,6 +61627,28 @@
 		{
 			"name": "NUM",
 			"value": 4
+		}
+	],
+	"app.avatarroom.eTreasureBoxNum": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "One",
+			"value": 1
+		},
+		{
+			"name": "Two",
+			"value": 2
+		},
+		{
+			"name": "Three",
+			"value": 3
+		},
+		{
+			"name": "Num",
+			"value": 3
 		}
 	],
 	"app.battle.stats.ProjectileCounter.EType": [
@@ -60879,12 +61823,16 @@
 			"value": 8
 		},
 		{
-			"name": "CityJumpFromContact",
+			"name": "DimensionTravel",
 			"value": 9
 		},
 		{
-			"name": "ChangeSituation",
+			"name": "CityJumpFromContact",
 			"value": 10
+		},
+		{
+			"name": "ChangeSituation",
+			"value": 11
 		}
 	],
 	"app.BattleHubTextureScroll.TimelineType": [
@@ -60915,6 +61863,20 @@
 		{
 			"name": "DECIDE",
 			"value": 1
+		}
+	],
+	"app.ReGameGuideConditions.AvatarArcadeFlag.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsExistNotReceivedBattleTourReward",
+			"value": 1
+		},
+		{
+			"name": "IsNotExistNotReceivedBattleTourReward",
+			"value": 2
 		}
 	],
 	"app.commentator.CmtLog.DipFlag": [
@@ -61295,6 +62257,10 @@
 		{
 			"name": "EAmiibo",
 			"value": 15
+		},
+		{
+			"name": "EAvatarRoom",
+			"value": 16
 		}
 	],
 	"app.worldtour.WTDefine.DynamicMotionBankPrio": [
@@ -61653,6 +62619,48 @@
 		{
 			"name": "ERROR",
 			"value": 3
+		}
+	],
+	"app.ReGameGuideSettings.eDisplayPoint": [
+		{
+			"name": "MainMenu",
+			"value": 0
+		},
+		{
+			"name": "WT_Entrance",
+			"value": 1
+		},
+		{
+			"name": "BH_ServerSelection",
+			"value": 2
+		},
+		{
+			"name": "FG_MainMenu",
+			"value": 3
+		},
+		{
+			"name": "MultiMenu",
+			"value": 4
+		},
+		{
+			"name": "FighterProfile",
+			"value": 5
+		},
+		{
+			"name": "Reward",
+			"value": 6
+		},
+		{
+			"name": "AvatarRoom_Arcade",
+			"value": 7
+		},
+		{
+			"name": "AvatarRoom_RandomMatch",
+			"value": 8
+		},
+		{
+			"name": "_Max",
+			"value": 9
 		}
 	],
 	"app.worldtour.avatar.AvatarAccessTargetBase.AccessCheckShape.OptionFlagType": [
@@ -62881,6 +63889,16 @@
 			"value": 3
 		}
 	],
+	"app.ReGameGuideConditions.RankRankMatchPastRank.eSelectionOption": [
+		{
+			"name": "Highest",
+			"value": 0
+		},
+		{
+			"name": "Current",
+			"value": 1
+		}
+	],
 	"app.RenderTargetAllocationPolicy": [
 		{
 			"name": "Priority",
@@ -63213,32 +64231,40 @@
 			"value": 0
 		},
 		{
-			"name": "BattlePause",
+			"name": "Spar",
 			"value": 1
 		},
 		{
-			"name": "MemberSelectFlow",
+			"name": "BattlePause",
 			"value": 2
 		},
 		{
-			"name": "LocalMatchSetting",
+			"name": "MemberSelectFlow",
 			"value": 3
 		},
 		{
-			"name": "BattleSetting",
+			"name": "LocalMatchSetting",
 			"value": 4
 		},
 		{
-			"name": "OptionBattle",
+			"name": "BattleSetting",
 			"value": 5
 		},
 		{
-			"name": "OptionField",
+			"name": "OptionBattle",
 			"value": 6
 		},
 		{
-			"name": "NfcMenu",
+			"name": "OptionField",
 			"value": 7
+		},
+		{
+			"name": "NfcMenu",
+			"value": 8
+		},
+		{
+			"name": "AvatarRoom",
+			"value": 9
 		}
 	],
 	"app.network.api.Enum.ReplaySearchIdSearchType": [
@@ -65525,6 +66551,10 @@
 		{
 			"name": "MotionBankId30374",
 			"value": 30374
+		},
+		{
+			"name": "MotionBankId30375",
+			"value": 30375
 		},
 		{
 			"name": "MotionBankId30501",
@@ -68716,7 +69746,7 @@
 		},
 		{
 			"name": "MotionBankIdMaxCount",
-			"value": 1126
+			"value": 1127
 		}
 	],
 	"via.movie.Codec": [
@@ -69711,6 +70741,16 @@
 		{
 			"name": "End",
 			"value": 2
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu.FADE_OUT_TYPE": [
+		{
+			"name": "FADE_OUT",
+			"value": 0
+		},
+		{
+			"name": "FADE_OUT_SLIDE",
+			"value": 1
 		}
 	],
 	"app.AppDefine.CfnSeason": [
@@ -70925,6 +71965,84 @@
 			"value": 10
 		}
 	],
+	"app.AppDefine.SharedTipsMediaDialogInfo": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo1",
+			"value": 1
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo2",
+			"value": 2
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo3",
+			"value": 3
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo4",
+			"value": 4
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo5",
+			"value": 5
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo6",
+			"value": 6
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo7",
+			"value": 7
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo8",
+			"value": 8
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo9",
+			"value": 9
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo10",
+			"value": 10
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo11",
+			"value": 11
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo12",
+			"value": 12
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo13",
+			"value": 13
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo14",
+			"value": 14
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo15",
+			"value": 15
+		},
+		{
+			"name": "SharedTipsMediaDialogInfo16",
+			"value": 16
+		},
+		{
+			"name": "SharedTipsMediaDialogInfoMaxValue",
+			"value": 16
+		},
+		{
+			"name": "SharedTipsMediaDialogInfoMaxCount",
+			"value": 17
+		}
+	],
 	"app.worldtour.WTHitDefine.Attack.Sound.PartsType": [
 		{
 			"name": "Auto",
@@ -71641,52 +72759,12 @@
 			"value": 24
 		},
 		{
-			"name": "UpdatePlatformBlockCache",
+			"name": "LoginSuccess",
 			"value": 25
 		},
 		{
-			"name": "RejectPlatformBlockCommunication",
-			"value": 26
-		},
-		{
-			"name": "CheckInvite",
-			"value": 27
-		},
-		{
-			"name": "CheckDriveLink",
-			"value": 28
-		},
-		{
-			"name": "CheckXBSCommunication",
-			"value": 29
-		},
-		{
 			"name": "Active",
-			"value": 30
-		},
-		{
-			"name": "GetJoindCircle",
-			"value": 31
-		},
-		{
-			"name": "Block",
-			"value": 32
-		},
-		{
-			"name": "Friend",
-			"value": 33
-		},
-		{
-			"name": "Follow",
-			"value": 34
-		},
-		{
-			"name": "CircleMember",
-			"value": 35
-		},
-		{
-			"name": "LifenRank",
-			"value": 36
+			"value": 26
 		}
 	],
 	"app.training.UIWidget_TMAttackInfo.AttackInfoPriority": [
@@ -71787,12 +72865,16 @@
 			"value": 9
 		},
 		{
+			"name": "ContentType10",
+			"value": 10
+		},
+		{
 			"name": "ContentTypeMaxValue",
-			"value": 9
+			"value": 10
 		},
 		{
 			"name": "ContentTypeMaxCount",
-			"value": 10
+			"value": 11
 		}
 	],
 	"nBattle.UKEMI_TYPE": [
@@ -71811,6 +72893,20 @@
 		{
 			"name": "NAGE_DRAW",
 			"value": 3
+		}
+	],
+	"app.AnimationMixManager.CurveTrackType": [
+		{
+			"name": "Rotate",
+			"value": 0
+		},
+		{
+			"name": "Scale",
+			"value": 1
+		},
+		{
+			"name": "Shake",
+			"value": 2
 		}
 	],
 	"app.UIPartsKeyConfigInputTestButtons.NormalButton": [
@@ -73123,6 +74219,16 @@
 		{
 			"name": "SettedMotionMaxSpeed",
 			"value": 2
+		}
+	],
+	"app.ReGameGuideSettings.eRepeat": [
+		{
+			"name": "Repeat",
+			"value": 0
+		},
+		{
+			"name": "Once",
+			"value": 1
 		}
 	],
 	"via.os.websocket_client.ErrorCause": [
@@ -74531,6 +75637,20 @@
 		},
 		{
 			"name": "_Max",
+			"value": 3
+		}
+	],
+	"app.network.api.Enum.MatchMakeStartAvatarInitialSearchRange": [
+		{
+			"name": "ESmallArea",
+			"value": 1
+		},
+		{
+			"name": "EWideArea",
+			"value": 2
+		},
+		{
+			"name": "ETheWholeWorld",
 			"value": 3
 		}
 	],
@@ -76054,6 +77174,58 @@
 			"value": 3346
 		},
 		{
+			"name": "ATEMI",
+			"value": 3584
+		},
+		{
+			"name": "ATEMI_NORMAL",
+			"value": 3585
+		},
+		{
+			"name": "ATEMI_SPECIAL",
+			"value": 3586
+		},
+		{
+			"name": "ATEMI_SLASH",
+			"value": 3588
+		},
+		{
+			"name": "ATEMI_CATCH",
+			"value": 3590
+		},
+		{
+			"name": "ATEMI_SHELL_0",
+			"value": 3591
+		},
+		{
+			"name": "ATEMI_DRIVE",
+			"value": 3598
+		},
+		{
+			"name": "ATEMI_MULTI",
+			"value": 3592
+		},
+		{
+			"name": "ATEMI_MULTI_SLASH",
+			"value": 3593
+		},
+		{
+			"name": "ATEM_MULTI_SHELL_0",
+			"value": 3600
+		},
+		{
+			"name": "ATEM_MULTI_DRIVE",
+			"value": 3599
+		},
+		{
+			"name": "ATEM_CLAW",
+			"value": 3601
+		},
+		{
+			"name": "ATEM_MULTI_CLAW",
+			"value": 3602
+		},
+		{
 			"name": "COUNTERACT_PHYSICAL_REACT",
 			"value": 4352
 		},
@@ -76100,54 +77272,6 @@
 		{
 			"name": "COUNTERACT_PHYSICAL_REACT_MULTI_CLAW",
 			"value": 4370
-		},
-		{
-			"name": "ATEMI",
-			"value": 3584
-		},
-		{
-			"name": "ATEMI_NORMAL",
-			"value": 3585
-		},
-		{
-			"name": "ATEMI_SPECIAL",
-			"value": 3586
-		},
-		{
-			"name": "ATEMI_SLASH",
-			"value": 3588
-		},
-		{
-			"name": "ATEMI_SHELL_0",
-			"value": 3591
-		},
-		{
-			"name": "ATEMI_DRIVE",
-			"value": 3598
-		},
-		{
-			"name": "ATEMI_MULTI",
-			"value": 3592
-		},
-		{
-			"name": "ATEMI_MULTI_SLASH",
-			"value": 3593
-		},
-		{
-			"name": "ATEM_MULTI_SHELL_0",
-			"value": 3600
-		},
-		{
-			"name": "ATEM_MULTI_DRIVE",
-			"value": 3599
-		},
-		{
-			"name": "ATEM_CLAW",
-			"value": 3601
-		},
-		{
-			"name": "ATEM_MULTI_CLAW",
-			"value": 3602
 		},
 		{
 			"name": "SYSTEM_LAST",
@@ -76232,6 +77356,36 @@
 		{
 			"name": "MULTI_CLAW",
 			"value": 18
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu_ActionSkillEquipBase.eMenuState": [
+		{
+			"name": "SET_LIST",
+			"value": 0
+		},
+		{
+			"name": "CHOICE_LIST",
+			"value": 1
+		},
+		{
+			"name": "ATTENTION",
+			"value": 2
+		},
+		{
+			"name": "SORT",
+			"value": 3
+		},
+		{
+			"name": "CHARGESKILL_ATTENTION",
+			"value": 4
+		},
+		{
+			"name": "ICON_EXPLANATION",
+			"value": 5
+		},
+		{
+			"name": "MAX",
+			"value": 6
 		}
 	],
 	"via.render.SamplerType": [
@@ -76452,6 +77606,16 @@
 		{
 			"name": "INHERIT_EASY_ADJUST",
 			"value": 6
+		}
+	],
+	"app.UIFlowAvatarRandomMatchHistory.StatePattern": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "NO_DATA",
+			"value": 1
 		}
 	],
 	"app.battle.judgement.TargetPlayer": [
@@ -77918,6 +79082,10 @@
 			"value": 20
 		},
 		{
+			"name": "cs_endingdemo",
+			"value": 40
+		},
+		{
 			"name": "CmnEventTypeMaxValue",
 			"value": 40
 		},
@@ -78124,6 +79292,10 @@
 		{
 			"name": "Other",
 			"value": 2
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 3
 		}
 	],
 	"app.network.api.Enum.CustomRoomTextSearchSearchType": [
@@ -79076,6 +80248,24 @@
 		{
 			"name": "NUM",
 			"value": 3
+		}
+	],
+	"app.network.api.Enum.MatchMakeSuccessAvatarClientDoing": [
+		{
+			"name": "EMatchFormation",
+			"value": 1
+		},
+		{
+			"name": "ERejectionSelf",
+			"value": 2
+		},
+		{
+			"name": "ERejectionOpposite",
+			"value": 3
+		},
+		{
+			"name": "EMatchNotEstablishedLeft",
+			"value": 4
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetMatchWait.MatchWaitState": [
@@ -81128,6 +82318,32 @@
 			"value": 0
 		}
 	],
+	"app.ReGameGuideConditions.eOperator": [
+		{
+			"name": "Equal",
+			"value": 0
+		},
+		{
+			"name": "NotEqual",
+			"value": 1
+		},
+		{
+			"name": "GreaterThanOrEqual",
+			"value": 2
+		},
+		{
+			"name": "GreaterThan",
+			"value": 3
+		},
+		{
+			"name": "LessThanOrEqual",
+			"value": 4
+		},
+		{
+			"name": "LessThan",
+			"value": 5
+		}
+	],
 	"app.UIPartsReplayBattleType.StatePattern": [
 		{
 			"name": "HUB",
@@ -82612,6 +83828,10 @@
 		{
 			"name": "Error",
 			"value": 5
+		},
+		{
+			"name": "WaitRetry",
+			"value": 6
 		}
 	],
 	"app.network.api.Enum.FunctionLimitErrorType": [
@@ -82862,6 +84082,10 @@
 		{
 			"name": "MasterRatePass",
 			"value": 10
+		},
+		{
+			"name": "AvatarRoom",
+			"value": 11
 		}
 	],
 	"app.network.api.Enum.GameInfoMode": [
@@ -82918,8 +84142,12 @@
 			"value": 2
 		},
 		{
-			"name": "_Max",
+			"name": "Shared",
 			"value": 3
+		},
+		{
+			"name": "_Max",
+			"value": 4
 		}
 	],
 	"via.gui.TypingCondition": [
@@ -84556,6 +85784,16 @@
 			"value": 1
 		}
 	],
+	"app.UIPartsAvatarMatchingSettingBattle.GroupFocusType": [
+		{
+			"name": "SettingList",
+			"value": 0
+		},
+		{
+			"name": "StageSelect",
+			"value": 1
+		}
+	],
 	"app.network.api.Enum.ClubBreakupType": [
 		{
 			"name": "ForcedWithdrawal",
@@ -84934,6 +86172,10 @@
 		{
 			"name": "EAvatarMatch",
 			"value": 6
+		},
+		{
+			"name": "EAvatarRandomMatch",
+			"value": 7
 		}
 	],
 	"app.network.api.Enum.FunctionLimitToolReleaseErrorType": [
@@ -86052,12 +87294,48 @@
 			"value": 201
 		},
 		{
+			"name": "AttachmentIDs202",
+			"value": 202
+		},
+		{
+			"name": "AttachmentIDs203",
+			"value": 203
+		},
+		{
+			"name": "AttachmentIDs204",
+			"value": 204
+		},
+		{
+			"name": "AttachmentIDs205",
+			"value": 205
+		},
+		{
+			"name": "AttachmentIDs206",
+			"value": 206
+		},
+		{
+			"name": "AttachmentIDs207",
+			"value": 207
+		},
+		{
+			"name": "AttachmentIDs208",
+			"value": 208
+		},
+		{
+			"name": "AttachmentIDs209",
+			"value": 209
+		},
+		{
+			"name": "AttachmentIDs210",
+			"value": 210
+		},
+		{
 			"name": "AttachmentIDsMaxValue",
-			"value": 201
+			"value": 210
 		},
 		{
 			"name": "AttachmentIDsMaxCount",
-			"value": 194
+			"value": 203
 		}
 	],
 	"app.error.ErrorCategory": [
@@ -86230,7 +87508,7 @@
 			"value": 1
 		},
 		{
-			"name": "Exit",
+			"name": "Extras",
 			"value": 2
 		}
 	],
@@ -86812,6 +88090,28 @@
 			"value": 3
 		}
 	],
+	"app.avatarroom.AvatarArcadeDefine.eDifficulity": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Easy",
+			"value": 1
+		},
+		{
+			"name": "Normal",
+			"value": 2
+		},
+		{
+			"name": "Hard",
+			"value": 3
+		},
+		{
+			"name": "Num",
+			"value": 3
+		}
+	],
 	"via.network.error.MethodIdConverter": [
 		{
 			"name": "GetNickname",
@@ -87278,6 +88578,10 @@
 		{
 			"name": "CustomRoomMatch",
 			"value": 3
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 4
 		}
 	],
 	"app.UIStatusMenu_Equip.PresetEquipConfirmWidget.InvokeEventType": [
@@ -90566,8 +91870,12 @@
 			"value": 35
 		},
 		{
-			"name": "_End",
+			"name": "Dummy",
 			"value": 36
+		},
+		{
+			"name": "_End",
+			"value": 37
 		},
 		{
 			"name": "_Start",
@@ -90575,7 +91883,7 @@
 		},
 		{
 			"name": "_Num",
-			"value": 35
+			"value": 36
 		}
 	],
 	"CharacterAsset.ZoneKey.STATUS": [
@@ -90608,12 +91916,8 @@
 			"value": 1
 		},
 		{
-			"name": "color",
-			"value": 2
-		},
-		{
 			"name": "Max",
-			"value": 3
+			"value": 2
 		}
 	],
 	"CharacterAsset.EMissionOption2Type": [
@@ -90670,8 +91974,16 @@
 			"value": 12
 		},
 		{
-			"name": "MAX",
+			"name": "SUNSYMBOL_1",
 			"value": 13
+		},
+		{
+			"name": "SUNSYMBOL_2",
+			"value": 14
+		},
+		{
+			"name": "MAX",
+			"value": 15
 		}
 	],
 	"app.network.api.Enum.FunctionLimitToolReleaseErrorId": [
@@ -90918,6 +92230,32 @@
 		{
 			"name": "CounterDamage",
 			"value": 1
+		}
+	],
+	"app.gallery.GalleryDefine.eMainTabContentCategory": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "FightingGround",
+			"value": 1
+		},
+		{
+			"name": "WorldTour",
+			"value": 2
+		},
+		{
+			"name": "BattleHub",
+			"value": 3
+		},
+		{
+			"name": "History",
+			"value": 4
+		},
+		{
+			"name": "Max",
+			"value": 5
 		}
 	],
 	"app.worldtour.om.Om043000.EventNames": [
@@ -92426,12 +93764,28 @@
 			"value": 40194
 		},
 		{
+			"name": "CircleEmblemSymbol40195",
+			"value": 40195
+		},
+		{
+			"name": "CircleEmblemSymbol40196",
+			"value": 40196
+		},
+		{
+			"name": "CircleEmblemSymbol40197",
+			"value": 40197
+		},
+		{
+			"name": "CircleEmblemSymbol40198",
+			"value": 40198
+		},
+		{
 			"name": "CircleEmblemSymbolMaxValue",
-			"value": 40194
+			"value": 40198
 		},
 		{
 			"name": "CircleEmblemSymbolMaxCount",
-			"value": 187
+			"value": 191
 		}
 	],
 	"via.render.TextureScaler.ScalingMethodType": [
@@ -94390,6 +95744,20 @@
 			"value": 1
 		}
 	],
+	"app.AvatarEmoteCtrl.CreateType": [
+		{
+			"name": "Avatar",
+			"value": 0
+		},
+		{
+			"name": "AvatarUgc",
+			"value": 1
+		},
+		{
+			"name": "Npc",
+			"value": 2
+		}
+	],
 	"app.UIFlowItemDiscardListDialog.ReturnStatus": [
 		{
 			"name": "Invalid",
@@ -94662,6 +96030,32 @@
 		{
 			"name": "Loaded",
 			"value": 4
+		}
+	],
+	"app.UIPartsAvatarMatchingNewChallengerCustomize.SpinItemIndex": [
+		{
+			"name": "AnimType",
+			"value": 0
+		},
+		{
+			"name": "EffectType",
+			"value": 1
+		},
+		{
+			"name": "EffectColor",
+			"value": 2
+		},
+		{
+			"name": "SoundType",
+			"value": 3
+		},
+		{
+			"name": "SoundCallType",
+			"value": 4
+		},
+		{
+			"name": "Max",
+			"value": 5
 		}
 	],
 	"app.esports.bBattleAfterImageControl.eSetupState": [
@@ -95176,6 +96570,16 @@
 			"value": 2
 		}
 	],
+	"app.bAvatarResultFlow.eFrom": [
+		{
+			"name": "ArcadeSpar",
+			"value": 0
+		},
+		{
+			"name": "_Max",
+			"value": 1
+		}
+	],
 	"app.UIStatusMenu_AccessoryEdit.eCameraGuideType": [
 		{
 			"name": "Move",
@@ -95312,12 +96716,16 @@
 			"value": 13
 		},
 		{
+			"name": "OnlineStatus14",
+			"value": 14
+		},
+		{
 			"name": "OnlineStatusMaxValue",
-			"value": 13
+			"value": 14
 		},
 		{
 			"name": "OnlineStatusMaxCount",
-			"value": 14
+			"value": 15
 		}
 	],
 	"app.EventStaffrollEndCtrl.EState": [
@@ -95466,6 +96874,38 @@
 		{
 			"name": "ErrorWait",
 			"value": 32
+		},
+		{
+			"name": "AR_ConnectHost",
+			"value": 33
+		},
+		{
+			"name": "AR_ConnectGuest",
+			"value": 34
+		},
+		{
+			"name": "AR_ConnectWait",
+			"value": 35
+		},
+		{
+			"name": "AR_ConnectReady",
+			"value": 36
+		},
+		{
+			"name": "AR_Standby",
+			"value": 37
+		},
+		{
+			"name": "AR_Confirm",
+			"value": 38
+		},
+		{
+			"name": "AR_ConfirmWait",
+			"value": 39
+		},
+		{
+			"name": "AR_Intrusion",
+			"value": 40
 		}
 	],
 	"app.UIPartsSearchMenu.StatePattern": [
@@ -95637,6 +97077,16 @@
 		},
 		{
 			"name": "Opaque",
+			"value": 1
+		}
+	],
+	"app.UIFlowLegendSelectInfo.Mode": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Option",
 			"value": 1
 		}
 	],
@@ -96508,8 +97958,12 @@
 			"value": 2
 		},
 		{
-			"name": "Reloading",
+			"name": "RequestReload",
 			"value": 3
+		},
+		{
+			"name": "Reloading",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.MatchRequestStatus": [
@@ -97040,6 +98494,10 @@
 		{
 			"name": "WT",
 			"value": 4
+		},
+		{
+			"name": "HT",
+			"value": 5
 		}
 	],
 	"app.dev.autoplay.AutoPlayManager.eTriggerType": [
@@ -97206,1236 +98664,1320 @@
 			"value": 8
 		},
 		{
-			"name": "SNAPSHOT_LOAD",
+			"name": "AVATAR_DUMMY",
 			"value": 9
 		},
 		{
-			"name": "SNAPSHOT_SAVE",
+			"name": "SNAPSHOT_LOAD",
 			"value": 10
 		},
 		{
-			"name": "SNAPSHOT_LOAD_SLOT",
+			"name": "SNAPSHOT_SAVE",
 			"value": 11
 		},
 		{
-			"name": "SNAPSHOT_SAVE_SLOT",
+			"name": "SNAPSHOT_LOAD_SLOT",
 			"value": 12
 		},
 		{
-			"name": "BATTLE_SETTINGS",
+			"name": "SNAPSHOT_SAVE_SLOT",
 			"value": 13
 		},
 		{
-			"name": "COMMAND_LIST_OPEN",
+			"name": "BATTLE_SETTINGS",
 			"value": 14
 		},
 		{
-			"name": "COMMAND_LIST_OPEN_2P",
+			"name": "COMMAND_LIST_OPEN",
 			"value": 15
 		},
 		{
-			"name": "CONTROLLER_SETTING",
+			"name": "COMMAND_LIST_OPEN_2P",
 			"value": 16
 		},
 		{
-			"name": "CONTROLLER_SETTING_2P",
+			"name": "CONTROLLER_SETTING",
 			"value": 17
 		},
 		{
-			"name": "SHORTCUT_OPEN",
+			"name": "CONTROLLER_SETTING_2P",
 			"value": 18
 		},
 		{
-			"name": "SHORTCUT_ACTIVE",
+			"name": "SHORTCUT_OPEN",
 			"value": 19
 		},
 		{
-			"name": "RESET",
+			"name": "SHORTCUT_ACTIVE",
 			"value": 20
 		},
 		{
-			"name": "TUTORIAL_OPEN",
+			"name": "RESET",
 			"value": 21
 		},
 		{
-			"name": "RETURN_CHARACTER_SELECT",
+			"name": "TUTORIAL_OPEN",
 			"value": 22
 		},
 		{
-			"name": "RETURN_MAIN_MENU",
+			"name": "RETURN_CHARACTER_SELECT",
 			"value": 23
 		},
 		{
-			"name": "RETURN_CUSTOM_ROOM",
+			"name": "RETURN_MAIN_MENU",
 			"value": 24
 		},
 		{
-			"name": "OPEN_REPLAY_LIST",
+			"name": "RETURN_CUSTOM_ROOM",
 			"value": 25
 		},
 		{
-			"name": "ENV_RESTART",
+			"name": "OPEN_REPLAY_LIST",
 			"value": 26
 		},
 		{
-			"name": "ENV_POSITION_TYPE",
+			"name": "OPEN_WT_STATUS_MENU",
 			"value": 27
 		},
 		{
-			"name": "ENV_POSITION_TYPE_0",
+			"name": "RETURN_AVATAR_ROOM_MAIN_MENU",
 			"value": 28
 		},
 		{
-			"name": "ENV_POSITION_TYPE_1",
+			"name": "RESET_DUMMY_SETTING",
 			"value": 29
 		},
 		{
-			"name": "ENV_POSITION_TYPE_2",
+			"name": "RESET_AVATAR_TRAINING_SETTING",
 			"value": 30
 		},
 		{
-			"name": "ENV_SIDE_TYPE",
+			"name": "AVATAR_BATTLE_MATCHING",
 			"value": 31
 		},
 		{
-			"name": "ENV_SIDE_TYPE_0",
+			"name": "ENV_RESTART",
 			"value": 32
 		},
 		{
-			"name": "ENV_SIDE_TYPE_1",
+			"name": "ENV_POSITION_TYPE",
 			"value": 33
 		},
 		{
-			"name": "ENV_INPUT_TYPE",
+			"name": "ENV_POSITION_TYPE_0",
 			"value": 34
 		},
 		{
-			"name": "ENV_INPUT_TYPE_0",
+			"name": "ENV_POSITION_TYPE_1",
 			"value": 35
 		},
 		{
-			"name": "ENV_INPUT_TYPE_1",
+			"name": "ENV_POSITION_TYPE_2",
 			"value": 36
 		},
 		{
-			"name": "ENV_GAME_SPEED",
+			"name": "ENV_SIDE_TYPE",
 			"value": 37
 		},
 		{
-			"name": "ENV_GAME_SPEED_0",
+			"name": "ENV_SIDE_TYPE_0",
 			"value": 38
 		},
 		{
-			"name": "ENV_GAME_SPEED_1",
+			"name": "ENV_SIDE_TYPE_1",
 			"value": 39
 		},
 		{
-			"name": "ENV_GAME_SPEED_2",
+			"name": "ENV_INPUT_TYPE",
 			"value": 40
 		},
 		{
-			"name": "ENV_INPUT_DELAY",
+			"name": "ENV_INPUT_TYPE_0",
 			"value": 41
 		},
 		{
-			"name": "ENV_CHARA_SELECT_0",
+			"name": "ENV_INPUT_TYPE_1",
 			"value": 42
 		},
 		{
-			"name": "ENV_CHARA_SELECT_1",
+			"name": "ENV_GAME_SPEED",
 			"value": 43
 		},
 		{
-			"name": "ENV_STAGE_SELECT",
+			"name": "ENV_GAME_SPEED_0",
 			"value": 44
 		},
 		{
-			"name": "ENV_MUSIC_PLAYER",
+			"name": "ENV_GAME_SPEED_1",
 			"value": 45
 		},
 		{
-			"name": "ENV_UNDO_DATA",
+			"name": "ENV_GAME_SPEED_2",
 			"value": 46
 		},
 		{
-			"name": "ENV_OPTION",
+			"name": "ENV_INPUT_DELAY",
 			"value": 47
 		},
 		{
-			"name": "DUMMY_CONTROL_TYPE",
+			"name": "ENV_CHARA_SELECT_0",
 			"value": 48
 		},
 		{
-			"name": "DUMMY_CONTROL_TYPE_0",
+			"name": "ENV_CHARA_SELECT_1",
 			"value": 49
 		},
 		{
-			"name": "DUMMY_CONTROL_TYPE_1",
+			"name": "ENV_STAGE_SELECT",
 			"value": 50
 		},
 		{
-			"name": "DUMMY_CONTROL_TYPE_2",
+			"name": "ENV_MUSIC_PLAYER",
 			"value": 51
 		},
 		{
-			"name": "DUMMY_ACTION_TYPE",
+			"name": "ENV_UNDO_DATA",
 			"value": 52
 		},
 		{
-			"name": "DUMMY_ACTION_TYPE_0",
+			"name": "ENV_OPTION",
 			"value": 53
 		},
 		{
-			"name": "DUMMY_ACTION_TYPE_1",
+			"name": "DUMMY_CONTROL_TYPE",
 			"value": 54
 		},
 		{
-			"name": "DUMMY_ACTION_TYPE_2",
+			"name": "DUMMY_CONTROL_TYPE_0",
 			"value": 55
 		},
 		{
-			"name": "DUMMY_GUARD",
+			"name": "DUMMY_CONTROL_TYPE_1",
 			"value": 56
 		},
 		{
-			"name": "DUMMY_GUARD_0",
+			"name": "DUMMY_CONTROL_TYPE_2",
 			"value": 57
 		},
 		{
-			"name": "DUMMY_GUARD_1",
+			"name": "DUMMY_ACTION_TYPE",
 			"value": 58
 		},
 		{
-			"name": "DUMMY_GUARD_2",
+			"name": "DUMMY_ACTION_TYPE_0",
 			"value": 59
 		},
 		{
-			"name": "DUMMY_GUARD_3",
+			"name": "DUMMY_ACTION_TYPE_1",
 			"value": 60
 		},
 		{
-			"name": "DUMMY_GUARD_4",
+			"name": "DUMMY_ACTION_TYPE_2",
 			"value": 61
 		},
 		{
-			"name": "DUMMY_GUARD_COUNT",
+			"name": "DUMMY_GUARD",
 			"value": 62
 		},
 		{
-			"name": "DUMMY_GUARD_CHANGE",
+			"name": "DUMMY_GUARD_0",
 			"value": 63
 		},
 		{
-			"name": "DUMMY_GUARD_CHANGE_0",
+			"name": "DUMMY_GUARD_1",
 			"value": 64
 		},
 		{
-			"name": "DUMMY_GUARD_CHANGE_1",
+			"name": "DUMMY_GUARD_2",
 			"value": 65
 		},
 		{
-			"name": "DUMMY_GUARD_CHANGE_2",
+			"name": "DUMMY_GUARD_3",
 			"value": 66
 		},
 		{
-			"name": "DUMMY_GUARD_CHANGE_3",
+			"name": "DUMMY_GUARD_4",
 			"value": 67
 		},
 		{
-			"name": "DUMMY_DRIVE_PARRY",
+			"name": "DUMMY_GUARD_COUNT",
 			"value": 68
 		},
 		{
-			"name": "DUMMY_DRIVE_PARRY_0",
+			"name": "DUMMY_GUARD_CHANGE",
 			"value": 69
 		},
 		{
-			"name": "DUMMY_DRIVE_PARRY_1",
+			"name": "DUMMY_GUARD_CHANGE_0",
 			"value": 70
 		},
 		{
-			"name": "DUMMY_DRIVE_PARRY_2",
+			"name": "DUMMY_GUARD_CHANGE_1",
 			"value": 71
 		},
 		{
-			"name": "DUMMY_DRIVE_PARRY_3",
+			"name": "DUMMY_GUARD_CHANGE_2",
 			"value": 72
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL",
+			"name": "DUMMY_GUARD_CHANGE_3",
 			"value": 73
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_0",
+			"name": "DUMMY_DRIVE_PARRY",
 			"value": 74
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_1",
+			"name": "DUMMY_DRIVE_PARRY_0",
 			"value": 75
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_2",
+			"name": "DUMMY_DRIVE_PARRY_1",
 			"value": 76
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_3",
+			"name": "DUMMY_DRIVE_PARRY_2",
 			"value": 77
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_NO_WEIGHT",
+			"name": "DUMMY_DRIVE_PARRY_3",
 			"value": 78
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_GUARD_WEIGHT",
+			"name": "DUMMY_DRIVE_REVERSAL",
 			"value": 79
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_GETUP_WEIGHT",
+			"name": "DUMMY_DRIVE_REVERSAL_0",
 			"value": 80
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_FRAME",
+			"name": "DUMMY_DRIVE_REVERSAL_1",
 			"value": 81
 		},
 		{
-			"name": "DUMMY_DRIVE_REVERSAL_COUNT",
+			"name": "DUMMY_DRIVE_REVERSAL_2",
 			"value": 82
 		},
 		{
-			"name": "DUMMY_COUNTER",
+			"name": "DUMMY_DRIVE_REVERSAL_3",
 			"value": 83
 		},
 		{
-			"name": "DUMMY_COUNTER_0",
+			"name": "DUMMY_DRIVE_REVERSAL_NO_WEIGHT",
 			"value": 84
 		},
 		{
-			"name": "DUMMY_COUNTER_1",
+			"name": "DUMMY_DRIVE_REVERSAL_GUARD_WEIGHT",
 			"value": 85
 		},
 		{
-			"name": "DUMMY_COUNTER_2",
+			"name": "DUMMY_DRIVE_REVERSAL_GETUP_WEIGHT",
 			"value": 86
 		},
 		{
-			"name": "DUMMY_COUNTER_3",
+			"name": "DUMMY_DRIVE_REVERSAL_FRAME",
 			"value": 87
 		},
 		{
-			"name": "DUMMY_COUNTER_NH_WEIGHT",
+			"name": "DUMMY_DRIVE_REVERSAL_COUNT",
 			"value": 88
 		},
 		{
-			"name": "DUMMY_COUNTER_NC_WEIGHT",
+			"name": "DUMMY_COUNTER",
 			"value": 89
 		},
 		{
-			"name": "DUMMY_COUNTER_PC_WEIGHT",
+			"name": "DUMMY_COUNTER_0",
 			"value": 90
 		},
 		{
-			"name": "DUMMY_STANDUP_TYPE",
+			"name": "DUMMY_COUNTER_1",
 			"value": 91
 		},
 		{
-			"name": "DUMMY_STANDUP_TYPE_0",
+			"name": "DUMMY_COUNTER_2",
 			"value": 92
 		},
 		{
-			"name": "DUMMY_STANDUP_TYPE_1",
+			"name": "DUMMY_COUNTER_3",
 			"value": 93
 		},
 		{
-			"name": "DUMMY_STANDUP_TYPE_2",
+			"name": "DUMMY_COUNTER_NH_WEIGHT",
 			"value": 94
 		},
 		{
-			"name": "DUMMY_THROW_TYPE",
+			"name": "DUMMY_COUNTER_NC_WEIGHT",
 			"value": 95
 		},
 		{
-			"name": "DUMMY_THROW_TYPE_0",
+			"name": "DUMMY_COUNTER_PC_WEIGHT",
 			"value": 96
 		},
 		{
-			"name": "DUMMY_THROW_TYPE_1",
+			"name": "DUMMY_STANDUP_TYPE",
 			"value": 97
 		},
 		{
-			"name": "DUMMY_THROW_TYPE_2",
+			"name": "DUMMY_STANDUP_TYPE_0",
 			"value": 98
 		},
 		{
-			"name": "DUMMY_CPU_LEVEL",
+			"name": "DUMMY_STANDUP_TYPE_1",
 			"value": 99
 		},
 		{
-			"name": "RECORD_SETTING",
+			"name": "DUMMY_STANDUP_TYPE_2",
 			"value": 100
 		},
 		{
-			"name": "RECORD_SETTING_0",
+			"name": "DUMMY_THROW_TYPE",
 			"value": 101
 		},
 		{
-			"name": "RECORD_SETTING_1",
+			"name": "DUMMY_THROW_TYPE_0",
 			"value": 102
 		},
 		{
-			"name": "RECORD_START_SETTING",
+			"name": "DUMMY_THROW_TYPE_1",
 			"value": 103
 		},
 		{
-			"name": "RECORD_START_SETTING_0",
+			"name": "DUMMY_THROW_TYPE_2",
 			"value": 104
 		},
 		{
-			"name": "RECORD_START_SETTING_1",
+			"name": "DUMMY_CPU_LEVEL",
 			"value": 105
 		},
 		{
-			"name": "RECORD_START_SETTING_2",
+			"name": "RECORD_SETTING",
 			"value": 106
 		},
 		{
-			"name": "RECORD_COUNT_DOWN",
+			"name": "RECORD_SETTING_0",
 			"value": 107
 		},
 		{
-			"name": "RECORD_COUNT_DOWN_0",
+			"name": "RECORD_SETTING_1",
 			"value": 108
 		},
 		{
-			"name": "RECORD_COUNT_DOWN_1",
+			"name": "RECORD_START_SETTING",
 			"value": 109
 		},
 		{
-			"name": "RECORD_COUNT_DOWN_2",
+			"name": "RECORD_START_SETTING_0",
 			"value": 110
 		},
 		{
-			"name": "RECORD_COUNT_DOWN_3",
+			"name": "RECORD_START_SETTING_1",
 			"value": 111
 		},
 		{
-			"name": "RECORD_SLOT",
+			"name": "RECORD_START_SETTING_2",
 			"value": 112
 		},
 		{
-			"name": "PLAY_INFO_VIEW",
+			"name": "RECORD_COUNT_DOWN",
 			"value": 113
 		},
 		{
-			"name": "PLAY_INFO_VIEW_0",
+			"name": "RECORD_COUNT_DOWN_0",
 			"value": 114
 		},
 		{
-			"name": "PLAY_INFO_VIEW_1",
+			"name": "RECORD_COUNT_DOWN_1",
 			"value": 115
 		},
 		{
-			"name": "PLAY_INFO_VIEW_2",
+			"name": "RECORD_COUNT_DOWN_2",
 			"value": 116
 		},
 		{
-			"name": "PLAY_LOOP",
+			"name": "RECORD_COUNT_DOWN_3",
 			"value": 117
 		},
 		{
-			"name": "PLAY_LOOP_0",
+			"name": "RECORD_SLOT",
 			"value": 118
 		},
 		{
-			"name": "PLAY_LOOP_1",
+			"name": "PLAY_INFO_VIEW",
 			"value": 119
 		},
 		{
-			"name": "PLAY_LOOP_2",
+			"name": "PLAY_INFO_VIEW_0",
 			"value": 120
 		},
 		{
-			"name": "PLAY_JUDGE_SETTING",
+			"name": "PLAY_INFO_VIEW_1",
 			"value": 121
 		},
 		{
-			"name": "PLAY_JUDGE_SETTING_0",
+			"name": "PLAY_INFO_VIEW_2",
 			"value": 122
 		},
 		{
-			"name": "PLAY_JUDGE_SETTING_1",
+			"name": "PLAY_LOOP",
 			"value": 123
 		},
 		{
-			"name": "PLAY_RECORD",
+			"name": "PLAY_LOOP_0",
 			"value": 124
 		},
 		{
-			"name": "PLAY_SLOT",
+			"name": "PLAY_LOOP_1",
 			"value": 125
 		},
 		{
-			"name": "PLAY_SLOT_WEIGHT",
+			"name": "PLAY_LOOP_2",
 			"value": 126
 		},
 		{
-			"name": "REVERSAL_TYPE",
+			"name": "PLAY_JUDGE_SETTING",
 			"value": 127
 		},
 		{
-			"name": "REVERSAL_TYPE_0",
+			"name": "PLAY_JUDGE_SETTING_0",
 			"value": 128
 		},
 		{
-			"name": "REVERSAL_TYPE_1",
+			"name": "PLAY_JUDGE_SETTING_1",
 			"value": 129
 		},
 		{
-			"name": "REVERSAL_TYPE_2",
+			"name": "PLAY_RECORD",
 			"value": 130
 		},
 		{
-			"name": "REVERSAL_SLOT",
+			"name": "PLAY_SLOT",
 			"value": 131
 		},
 		{
-			"name": "REVERSAL_SLOT_DELAY_FRAME",
+			"name": "PLAY_SLOT_WEIGHT",
 			"value": 132
 		},
 		{
-			"name": "REVERSAL_SLOT_COUNT",
+			"name": "REVERSAL_TYPE",
 			"value": 133
 		},
 		{
-			"name": "REVERSAL_NORMAL_ITEM",
+			"name": "REVERSAL_TYPE_0",
 			"value": 134
 		},
 		{
-			"name": "REVERSAL_COMMAND_NORMAL_ITEM",
+			"name": "REVERSAL_TYPE_1",
 			"value": 135
 		},
 		{
-			"name": "REVERSAL_SPECIAL_ITEM",
+			"name": "REVERSAL_TYPE_2",
 			"value": 136
 		},
 		{
-			"name": "REVERSAL_SA_ITEM",
+			"name": "REVERSAL_SLOT",
 			"value": 137
 		},
 		{
-			"name": "REVERSAL_RECORDING_ITEM",
+			"name": "REVERSAL_SLOT_DELAY_FRAME",
 			"value": 138
 		},
 		{
-			"name": "REVERSAL_COMMON_ITEM",
+			"name": "REVERSAL_SLOT_COUNT",
 			"value": 139
 		},
 		{
-			"name": "REVERSAL_MEATY_FRAME",
+			"name": "REVERSAL_NORMAL_ITEM",
 			"value": 140
 		},
 		{
-			"name": "PARAMETER_VITAL_1P",
+			"name": "REVERSAL_COMMAND_NORMAL_ITEM",
 			"value": 141
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_1P",
+			"name": "REVERSAL_SPECIAL_ITEM",
 			"value": 142
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_1P_0",
+			"name": "REVERSAL_SA_ITEM",
 			"value": 143
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_1P_1",
+			"name": "REVERSAL_RECORDING_ITEM",
 			"value": 144
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_1P_2",
+			"name": "REVERSAL_COMMON_ITEM",
 			"value": 145
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_TIME_1P",
+			"name": "REVERSAL_MEATY_FRAME",
 			"value": 146
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_1P",
+			"name": "PARAMETER_VITAL_1P",
 			"value": 147
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P",
+			"name": "PARAMETER_VITAL_HEAL_1P",
 			"value": 148
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_0",
+			"name": "PARAMETER_VITAL_HEAL_1P_0",
 			"value": 149
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_1",
+			"name": "PARAMETER_VITAL_HEAL_1P_1",
 			"value": 150
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_2",
+			"name": "PARAMETER_VITAL_HEAL_1P_2",
 			"value": 151
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_TIME_1P",
+			"name": "PARAMETER_VITAL_HEAL_TIME_1P",
 			"value": 152
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P",
+			"name": "PARAMETER_DRIVE_GAUGE_1P",
 			"value": 153
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P_0",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P",
 			"value": 154
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P_1",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_0",
 			"value": 155
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_1P",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_1",
 			"value": 156
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_1P",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_1P_2",
 			"value": 157
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_1P_0",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_TIME_1P",
 			"value": 158
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_1P_1",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P",
 			"value": 159
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_1P_2",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P_0",
 			"value": 160
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_TIME_1P",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_1P_1",
 			"value": 161
 		},
 		{
-			"name": "PARAMETER_VITAL_2P",
+			"name": "PARAMETER_SA_GAUGE_1P",
 			"value": 162
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_2P",
+			"name": "PARAMETER_SA_GAUGE_HEAL_1P",
 			"value": 163
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_2P_0",
+			"name": "PARAMETER_SA_GAUGE_HEAL_1P_0",
 			"value": 164
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_2P_1",
+			"name": "PARAMETER_SA_GAUGE_HEAL_1P_1",
 			"value": 165
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_2P_2",
+			"name": "PARAMETER_SA_GAUGE_HEAL_1P_2",
 			"value": 166
 		},
 		{
-			"name": "PARAMETER_VITAL_HEAL_TIME_2P",
+			"name": "PARAMETER_SA_GAUGE_HEAL_TIME_1P",
 			"value": 167
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_2P",
+			"name": "PARAMETER_VITAL_2P",
 			"value": 168
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P",
+			"name": "PARAMETER_VITAL_HEAL_2P",
 			"value": 169
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_0",
+			"name": "PARAMETER_VITAL_HEAL_2P_0",
 			"value": 170
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_1",
+			"name": "PARAMETER_VITAL_HEAL_2P_1",
 			"value": 171
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_2",
+			"name": "PARAMETER_VITAL_HEAL_2P_2",
 			"value": 172
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_HEAL_TIME_2P",
+			"name": "PARAMETER_VITAL_HEAL_TIME_2P",
 			"value": 173
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P",
+			"name": "PARAMETER_DRIVE_GAUGE_2P",
 			"value": 174
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P_0",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P",
 			"value": 175
 		},
 		{
-			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P_1",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_0",
 			"value": 176
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_2P",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_1",
 			"value": 177
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_2P",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_2P_2",
 			"value": 178
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_2P_0",
+			"name": "PARAMETER_DRIVE_GAUGE_HEAL_TIME_2P",
 			"value": 179
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_2P_1",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P",
 			"value": 180
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_2P_2",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P_0",
 			"value": 181
 		},
 		{
-			"name": "PARAMETER_SA_GAUGE_HEAL_TIME_2P",
+			"name": "PARAMETER_DRIVE_GAUGE_STATE_2P_1",
 			"value": 182
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE",
+			"name": "PARAMETER_SA_GAUGE_2P",
 			"value": 183
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001",
+			"name": "PARAMETER_SA_GAUGE_HEAL_2P",
 			"value": 184
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_0",
+			"name": "PARAMETER_SA_GAUGE_HEAL_2P_0",
 			"value": 185
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_1",
+			"name": "PARAMETER_SA_GAUGE_HEAL_2P_1",
 			"value": 186
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_2",
+			"name": "PARAMETER_SA_GAUGE_HEAL_2P_2",
 			"value": 187
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005",
+			"name": "PARAMETER_SA_GAUGE_HEAL_TIME_2P",
 			"value": 188
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_0",
+			"name": "PARAMETER_UNIQUE_GAUGE",
 			"value": 189
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001",
 			"value": 190
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_0",
 			"value": 191
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_1",
 			"value": 192
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_001_2",
 			"value": 193
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005",
 			"value": 194
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_0",
 			"value": 195
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_1",
 			"value": 196
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_2",
 			"value": 197
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_3",
 			"value": 198
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_005_4",
 			"value": 199
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012",
 			"value": 200
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_0",
 			"value": 201
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_1",
 			"value": 202
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_2",
 			"value": 203
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_3",
 			"value": 204
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_012_4",
 			"value": 205
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_5",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0",
 			"value": 206
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_6",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_0",
 			"value": 207
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_1",
 			"value": 208
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_2",
 			"value": 209
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_3",
 			"value": 210
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_4",
 			"value": 211
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_5",
 			"value": 212
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_0_6",
 			"value": 213
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1",
 			"value": 214
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_0",
 			"value": 215
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_1",
 			"value": 216
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_015_1_2",
 			"value": 217
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0",
 			"value": 218
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_0",
 			"value": 219
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_1",
 			"value": 220
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_2",
 			"value": 221
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_3",
 			"value": 222
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_0_4",
 			"value": 223
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1",
 			"value": 224
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_0",
 			"value": 225
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_1",
 			"value": 226
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_016_1_2",
 			"value": 227
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0",
 			"value": 228
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_0",
 			"value": 229
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_1",
 			"value": 230
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_018_0_2",
 			"value": 231
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_5",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0",
 			"value": 232
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_0",
 			"value": 233
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_1",
 			"value": 234
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_2",
 			"value": 235
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_3",
 			"value": 236
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_4",
 			"value": 237
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_0_5",
 			"value": 238
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1",
 			"value": 239
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_0",
 			"value": 240
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_1",
 			"value": 241
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_021_1_2",
 			"value": 242
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003",
 			"value": 243
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_0",
 			"value": 244
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_1",
 			"value": 245
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_2",
 			"value": 246
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_3",
 			"value": 247
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020",
 			"value": 248
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_0",
 			"value": 249
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_1",
 			"value": 250
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_2",
 			"value": 251
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_5",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0",
 			"value": 252
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_6",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_0",
 			"value": 253
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_1",
 			"value": 254
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_2",
 			"value": 255
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_3",
 			"value": 256
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_4",
 			"value": 257
 		},
 		{
-			"name": "DISP_ATTACK_ALL",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_5",
 			"value": 258
 		},
 		{
-			"name": "DISP_ATTACK_ALL_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_6",
 			"value": 259
 		},
 		{
-			"name": "DISP_ATTACK_ALL_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0",
 			"value": 260
 		},
 		{
-			"name": "DISP_DAMAGE",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_0",
 			"value": 261
 		},
 		{
-			"name": "DISP_DAMAGE_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_1",
 			"value": 262
 		},
 		{
-			"name": "DISP_DAMAGE_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_2",
 			"value": 263
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0",
 			"value": 264
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_0",
 			"value": 265
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_1",
 			"value": 266
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_2",
 			"value": 267
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_3",
 			"value": 268
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_4",
 			"value": 269
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_5",
 			"value": 270
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_0",
+			"name": "DISP_ATTACK_ALL",
 			"value": 271
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_1",
+			"name": "DISP_ATTACK_ALL_0",
 			"value": 272
 		},
 		{
-			"name": "DISP_ATKINFO",
+			"name": "DISP_ATTACK_ALL_1",
 			"value": 273
 		},
 		{
-			"name": "DISP_ATKINFO_0",
+			"name": "DISP_DAMAGE",
 			"value": 274
 		},
 		{
-			"name": "DISP_ATKINFO_1",
+			"name": "DISP_DAMAGE_0",
 			"value": 275
 		},
 		{
-			"name": "DISP_FRAMEMETER",
+			"name": "DISP_DAMAGE_1",
 			"value": 276
 		},
 		{
-			"name": "DISP_FRAMEMETER_0",
+			"name": "DISP_DAMAGE_CORRECTION",
 			"value": 277
 		},
 		{
-			"name": "DISP_FRAMEMETER_1",
+			"name": "DISP_DAMAGE_CORRECTION_0",
 			"value": 278
 		},
 		{
-			"name": "DISP_KEYDISP",
+			"name": "DISP_DAMAGE_CORRECTION_1",
 			"value": 279
 		},
 		{
-			"name": "DISP_KEYDISP_0",
+			"name": "DISP_DAMAGE_COMBODAMAGE",
 			"value": 280
 		},
 		{
-			"name": "DISP_KEYDISP_1",
+			"name": "DISP_DAMAGE_COMBODAMAGE_0",
 			"value": 281
 		},
 		{
-			"name": "DISP_KEYDISP_2",
+			"name": "DISP_DAMAGE_COMBODAMAGE_1",
 			"value": 282
 		},
 		{
-			"name": "DISP_KEYDISP_3",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE",
 			"value": 283
 		},
 		{
-			"name": "DISP_COMMAND",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_0",
 			"value": 284
 		},
 		{
-			"name": "DISP_COMMAND_0",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_1",
 			"value": 285
 		},
 		{
-			"name": "DISP_COMMAND_1",
+			"name": "DISP_ATKINFO",
 			"value": 286
 		},
 		{
-			"name": "DISP_SUPPORT",
+			"name": "DISP_ATKINFO_0",
 			"value": 287
 		},
 		{
-			"name": "DISP_SUPPORT_0",
+			"name": "DISP_ATKINFO_1",
 			"value": 288
 		},
 		{
-			"name": "DISP_SUPPORT_1",
+			"name": "DISP_FRAMEMETER",
 			"value": 289
 		},
 		{
-			"name": "DISP_SUPPORT_2",
+			"name": "DISP_FRAMEMETER_0",
 			"value": 290
 		},
 		{
-			"name": "DISP_CANCELTIMING",
+			"name": "DISP_FRAMEMETER_1",
 			"value": 291
 		},
 		{
-			"name": "DISP_CANCELTIMING_0",
+			"name": "DISP_KEYDISP",
 			"value": 292
 		},
 		{
-			"name": "DISP_CANCELTIMING_1",
+			"name": "DISP_KEYDISP_0",
 			"value": 293
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER",
+			"name": "DISP_KEYDISP_1",
 			"value": 294
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_0",
+			"name": "DISP_KEYDISP_2",
 			"value": 295
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_1",
+			"name": "DISP_KEYDISP_3",
 			"value": 296
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_2",
+			"name": "DISP_COMMAND",
 			"value": 297
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_3",
+			"name": "DISP_COMMAND_0",
 			"value": 298
 		},
 		{
-			"name": "DISP_HUD_SETTING",
+			"name": "DISP_COMMAND_1",
 			"value": 299
 		},
 		{
-			"name": "DISP_DAMAGE_COMBO_RESET",
+			"name": "DISP_SUPPORT",
 			"value": 300
 		},
 		{
-			"name": "EASY_SETTING_0",
+			"name": "DISP_SUPPORT_0",
 			"value": 301
 		},
 		{
-			"name": "EASY_SETTING_1",
+			"name": "DISP_SUPPORT_1",
 			"value": 302
 		},
 		{
-			"name": "EASY_SETTING_2",
+			"name": "DISP_SUPPORT_2",
 			"value": 303
 		},
 		{
-			"name": "EASY_SETTING_3",
+			"name": "DISP_CANCELTIMING",
 			"value": 304
 		},
 		{
-			"name": "EASY_SETTING_4",
+			"name": "DISP_CANCELTIMING_0",
 			"value": 305
 		},
 		{
-			"name": "EASY_SETTING_5",
+			"name": "DISP_CANCELTIMING_1",
 			"value": 306
 		},
 		{
-			"name": "EASY_SETTING_6",
+			"name": "DISP_VIRTUALCONTROLLER",
 			"value": 307
 		},
 		{
-			"name": "EASY_SETTING_7",
+			"name": "DISP_VIRTUALCONTROLLER_0",
 			"value": 308
 		},
 		{
-			"name": "EASY_SETTING_8",
+			"name": "DISP_VIRTUALCONTROLLER_1",
 			"value": 309
 		},
 		{
-			"name": "EASY_SETTING_9",
+			"name": "DISP_VIRTUALCONTROLLER_2",
 			"value": 310
 		},
 		{
-			"name": "EASY_SETTING_10",
+			"name": "DISP_VIRTUALCONTROLLER_3",
 			"value": 311
 		},
 		{
-			"name": "EASY_SAVE_MENU",
+			"name": "DISP_HUD_SETTING",
 			"value": 312
 		},
 		{
-			"name": "EASY_SAVE_MENU_SLOT",
+			"name": "DISP_DAMAGE_COMBO_RESET",
 			"value": 313
 		},
 		{
-			"name": "EASY_LOAD_MENU",
+			"name": "EASY_SETTING_0",
 			"value": 314
 		},
 		{
-			"name": "DYNAMIC",
+			"name": "EASY_SETTING_1",
 			"value": 315
 		},
 		{
-			"name": "MAX",
+			"name": "EASY_SETTING_2",
 			"value": 316
+		},
+		{
+			"name": "EASY_SETTING_3",
+			"value": 317
+		},
+		{
+			"name": "EASY_SETTING_4",
+			"value": 318
+		},
+		{
+			"name": "EASY_SETTING_5",
+			"value": 319
+		},
+		{
+			"name": "EASY_SETTING_6",
+			"value": 320
+		},
+		{
+			"name": "EASY_SETTING_7",
+			"value": 321
+		},
+		{
+			"name": "EASY_SETTING_8",
+			"value": 322
+		},
+		{
+			"name": "EASY_SETTING_9",
+			"value": 323
+		},
+		{
+			"name": "EASY_SETTING_10",
+			"value": 324
+		},
+		{
+			"name": "EASY_SAVE_MENU",
+			"value": 325
+		},
+		{
+			"name": "EASY_SAVE_MENU_SLOT",
+			"value": 326
+		},
+		{
+			"name": "EASY_LOAD_MENU",
+			"value": 327
+		},
+		{
+			"name": "DUMMY_BODY_SIZE",
+			"value": 328
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_SMALL",
+			"value": 329
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_MEDIUM",
+			"value": 330
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_LARGE",
+			"value": 331
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE",
+			"value": 332
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE_CASUAL",
+			"value": 333
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE_NORMAL",
+			"value": 334
+		},
+		{
+			"name": "DUMMY_STATUS_SETTING",
+			"value": 335
+		},
+		{
+			"name": "DYNAMIC",
+			"value": 336
+		},
+		{
+			"name": "MAX",
+			"value": 337
 		}
 	],
 	"app.UIPartsMatchingSettingBattle.MainListFocusType": [
@@ -98811,6 +100353,24 @@
 		},
 		{
 			"name": "ECpu",
+			"value": 3
+		}
+	],
+	"app.UIStartMenu.ExtraType": [
+		{
+			"name": "EXIT",
+			"value": 0
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 1
+		},
+		{
+			"name": "AMIIBO",
+			"value": 2
+		},
+		{
+			"name": "MAX",
 			"value": 3
 		}
 	],
@@ -99557,6 +101117,24 @@
 			"value": 6
 		}
 	],
+	"app.UIPartsAvatarMatchingSettingBattle.MainListFocusType": [
+		{
+			"name": "StageSelect",
+			"value": 0
+		},
+		{
+			"name": "OtherAccessorySetting",
+			"value": 1
+		},
+		{
+			"name": "BattleBGMSetting",
+			"value": 2
+		},
+		{
+			"name": "SideSetting",
+			"value": 3
+		}
+	],
 	"app.commentator.DamageConditionData.OptionFlag": [
 		{
 			"name": "Not",
@@ -100169,6 +101747,10 @@
 			"value": 296
 		},
 		{
+			"name": "DRIVE_ATEMI",
+			"value": 297
+		},
+		{
 			"name": "EMPTY",
 			"value": 298
 		},
@@ -100571,48 +102153,72 @@
 			"value": 34
 		},
 		{
-			"name": "WTM_END",
+			"name": "AVATAR_ROOM",
 			"value": 35
 		},
 		{
-			"name": "BATTLE_HUB",
+			"name": "AVATAR_TRAINING",
 			"value": 36
 		},
 		{
-			"name": "BATTLE_HUB_OFFLINE",
+			"name": "AVATAR_ARCADE_SPAR",
 			"value": 37
 		},
 		{
-			"name": "BATTLE_HUB_GALLERY_EVENT",
+			"name": "AVATAR_ARCADE_BATTLE_TOUR",
 			"value": 38
 		},
 		{
-			"name": "BHM_END",
+			"name": "AVATAR_RANDOM_MATCH",
 			"value": 39
 		},
 		{
-			"name": "BATTLE_ROYALE",
+			"name": "WTM_END",
 			"value": 40
 		},
 		{
-			"name": "MAME_MAIN",
+			"name": "BATTLE_HUB",
 			"value": 41
 		},
 		{
-			"name": "MAME_SPECTATE",
+			"name": "BATTLE_HUB_OFFLINE",
 			"value": 42
 		},
 		{
-			"name": "MODE_SELECT",
+			"name": "BATTLE_HUB_GALLERY_EVENT",
 			"value": 43
 		},
 		{
-			"name": "GALLERY",
+			"name": "BHM_END",
 			"value": 44
 		},
 		{
-			"name": "GALLERY_EVENT",
+			"name": "BATTLE_ROYALE",
 			"value": 45
+		},
+		{
+			"name": "MAME_MAIN",
+			"value": 46
+		},
+		{
+			"name": "MAME_SPECTATE",
+			"value": 47
+		},
+		{
+			"name": "MODE_SELECT",
+			"value": 48
+		},
+		{
+			"name": "GALLERY",
+			"value": 49
+		},
+		{
+			"name": "GALLERY_EVENT",
+			"value": 50
+		},
+		{
+			"name": "GALLERY_EVENT_ENDING",
+			"value": 51
 		}
 	],
 	"app.BattleHubManager.eBattleHubExit": [
@@ -101052,6 +102658,16 @@
 		},
 		{
 			"name": "IDENTITY",
+			"value": 1
+		}
+	],
+	"app.ReGameGuideConditions.BattleSetting.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsDefaultFighterProfile",
 			"value": 1
 		}
 	],
@@ -103032,6 +104648,16 @@
 			"value": 3
 		}
 	],
+	"app.ReGameGuideConditions.RankRankMatch.eSelectionOption": [
+		{
+			"name": "Highest",
+			"value": 0
+		},
+		{
+			"name": "Current",
+			"value": 1
+		}
+	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcAvatarBattleCancel.eState": [
 		{
 			"name": "Wait",
@@ -104556,6 +106182,12 @@
 		{
 			"name": "ID_004",
 			"value": 4
+		}
+	],
+	"app.worldtour.BattleTourMoveSettingUd.SituationName": [
+		{
+			"name": "BattleTourMove",
+			"value": 0
 		}
 	],
 	"app.network.api.Enum.ProgressEventEndIsSkip": [
@@ -110638,12 +112270,176 @@
 			"value": 11278
 		},
 		{
+			"name": "TitleplateId11279",
+			"value": 11279
+		},
+		{
+			"name": "TitleplateId11280",
+			"value": 11280
+		},
+		{
+			"name": "TitleplateId11281",
+			"value": 11281
+		},
+		{
+			"name": "TitleplateId11282",
+			"value": 11282
+		},
+		{
+			"name": "TitleplateId11283",
+			"value": 11283
+		},
+		{
+			"name": "TitleplateId11284",
+			"value": 11284
+		},
+		{
+			"name": "TitleplateId11285",
+			"value": 11285
+		},
+		{
+			"name": "TitleplateId11286",
+			"value": 11286
+		},
+		{
+			"name": "TitleplateId11287",
+			"value": 11287
+		},
+		{
+			"name": "TitleplateId11288",
+			"value": 11288
+		},
+		{
+			"name": "TitleplateId11289",
+			"value": 11289
+		},
+		{
+			"name": "TitleplateId11290",
+			"value": 11290
+		},
+		{
+			"name": "TitleplateId11291",
+			"value": 11291
+		},
+		{
+			"name": "TitleplateId11292",
+			"value": 11292
+		},
+		{
+			"name": "TitleplateId11293",
+			"value": 11293
+		},
+		{
+			"name": "TitleplateId11294",
+			"value": 11294
+		},
+		{
+			"name": "TitleplateId11295",
+			"value": 11295
+		},
+		{
+			"name": "TitleplateId11296",
+			"value": 11296
+		},
+		{
+			"name": "TitleplateId11297",
+			"value": 11297
+		},
+		{
+			"name": "TitleplateId11298",
+			"value": 11298
+		},
+		{
+			"name": "TitleplateId11299",
+			"value": 11299
+		},
+		{
+			"name": "TitleplateId11300",
+			"value": 11300
+		},
+		{
+			"name": "TitleplateId11301",
+			"value": 11301
+		},
+		{
+			"name": "TitleplateId11302",
+			"value": 11302
+		},
+		{
+			"name": "TitleplateId11303",
+			"value": 11303
+		},
+		{
+			"name": "TitleplateId11304",
+			"value": 11304
+		},
+		{
+			"name": "TitleplateId11305",
+			"value": 11305
+		},
+		{
+			"name": "TitleplateId11306",
+			"value": 11306
+		},
+		{
+			"name": "TitleplateId11307",
+			"value": 11307
+		},
+		{
+			"name": "TitleplateId11308",
+			"value": 11308
+		},
+		{
+			"name": "TitleplateId11309",
+			"value": 11309
+		},
+		{
+			"name": "TitleplateId11310",
+			"value": 11310
+		},
+		{
+			"name": "TitleplateId11311",
+			"value": 11311
+		},
+		{
+			"name": "TitleplateId11312",
+			"value": 11312
+		},
+		{
+			"name": "TitleplateId11313",
+			"value": 11313
+		},
+		{
+			"name": "TitleplateId11314",
+			"value": 11314
+		},
+		{
+			"name": "TitleplateId11315",
+			"value": 11315
+		},
+		{
+			"name": "TitleplateId11316",
+			"value": 11316
+		},
+		{
+			"name": "TitleplateId11317",
+			"value": 11317
+		},
+		{
+			"name": "TitleplateId11318",
+			"value": 11318
+		},
+		{
+			"name": "TitleplateId11319",
+			"value": 11319
+		},
+		{
 			"name": "TitleplateIdMaxValue",
-			"value": 11278
+			"value": 11319
 		},
 		{
 			"name": "TitleplateIdMaxCount",
-			"value": 1264
+			"value": 1305
 		}
 	],
 	"via.gui.FreePolygonUpdateArg.ParamType": [
@@ -110738,6 +112534,48 @@
 		{
 			"name": "PlayerTarget",
 			"value": 4
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu_Equip.TopFocusType": [
+		{
+			"name": "Style",
+			"value": 0
+		},
+		{
+			"name": "Equip_Head",
+			"value": 1
+		},
+		{
+			"name": "Equip_Body",
+			"value": 2
+		},
+		{
+			"name": "Equip_Leg",
+			"value": 3
+		},
+		{
+			"name": "Equip_Shoes",
+			"value": 4
+		},
+		{
+			"name": "Accessory_01",
+			"value": 5
+		},
+		{
+			"name": "Accessory_02",
+			"value": 6
+		},
+		{
+			"name": "Accessory_03",
+			"value": 7
+		},
+		{
+			"name": "MySet",
+			"value": 8
+		},
+		{
+			"name": "Max",
+			"value": 9
 		}
 	],
 	"via.render.LightPowerUnitType": [
@@ -110862,6 +112700,10 @@
 		{
 			"name": "EFg",
 			"value": 3
+		},
+		{
+			"name": "EHistory",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.PlayListEditDoing": [
@@ -114061,7 +115903,7 @@
 		},
 		{
 			"name": "GameGuideDisp",
-			"value": 177
+			"value": 178
 		},
 		{
 			"name": "GDPRSetting",
@@ -114094,6 +115936,10 @@
 		{
 			"name": "CrossPlay",
 			"value": 190
+		},
+		{
+			"name": "BHLiveEnable",
+			"value": 191
 		},
 		{
 			"name": "WorldTourBattleInputType",
@@ -114530,6 +116376,10 @@
 		{
 			"name": "SpModeBattleHudMatchWonNumberDisp",
 			"value": 824
+		},
+		{
+			"name": "SpModeNumberOfMatchesWon",
+			"value": 825
 		}
 	],
 	"via.render.Strands.SimulationStrandSize": [
@@ -115896,6 +117746,20 @@
 		{
 			"name": "PartyFind",
 			"value": 1
+		}
+	],
+	"app.UIPartsAvatarResultActionSkillPanel.eLockState": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "UNLOCK",
+			"value": 1
+		},
+		{
+			"name": "LOCK",
+			"value": 2
 		}
 	],
 	"app.AppDefine.CfnTagOptionDayOfWeek": [
@@ -118040,6 +119904,10 @@
 		{
 			"name": "BOTH",
 			"value": 3
+		},
+		{
+			"name": "AVATAR_RANDOM",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.ReplayRegistrationGameMode": [
@@ -118412,12 +120280,24 @@
 			"value": 1001
 		},
 		{
+			"name": "FGAvatarArcade",
+			"value": 1002
+		},
+		{
+			"name": "FGAvatarRandomMatch",
+			"value": 1003
+		},
+		{
+			"name": "FGAvatarTraining",
+			"value": 1004
+		},
+		{
 			"name": "PlayPointContentMaxValue",
-			"value": 1001
+			"value": 1004
 		},
 		{
 			"name": "PlayPointContentMaxCount",
-			"value": 24
+			"value": 27
 		}
 	],
 	"app.worldtour.avatar.AvatarControllBase.NaviRequestData.MoveActionType": [
@@ -118512,6 +120392,12 @@
 		{
 			"name": "SpinText",
 			"value": 1
+		}
+	],
+	"app.worldtour.AvatarRoomSettingUd.SituationName": [
+		{
+			"name": "AvatarRoom",
+			"value": 0
 		}
 	],
 	"app.commentator.CommentTypeSettingData.AttributeType": [
@@ -119370,6 +121256,16 @@
 		{
 			"name": "Xor",
 			"value": 4
+		}
+	],
+	"app.UIPartsAvatarRandomMatchRewardContentGridItem.ItemCountPanelPlayState": [
+		{
+			"name": "OFF",
+			"value": 0
+		},
+		{
+			"name": "ON",
+			"value": 1
 		}
 	],
 	"app.worldtour.WTHitDefine.Damage.Game.AttributeType": [
@@ -120691,6 +122587,16 @@
 		{
 			"name": "Empty",
 			"value": 3
+		}
+	],
+	"app.ReGameGuideConditions.RankVRival.eSelectionOption": [
+		{
+			"name": "Highest",
+			"value": 0
+		},
+		{
+			"name": "Current",
+			"value": 1
 		}
 	],
 	"app.NgWordType": [
@@ -122421,6 +124327,10 @@
 		{
 			"name": "BH_AVATAR",
 			"value": 4
+		},
+		{
+			"name": "FG_AVATARRANDOM",
+			"value": 5
 		}
 	],
 	"app.UITextInputDialog.InputType": [
@@ -124961,6 +126871,10 @@
 		{
 			"name": "EXIT",
 			"value": 13
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 14
 		}
 	],
 	"app.network.api.Enum.TeamVersusCustomSettingSaHangover": [
@@ -126025,6 +127939,20 @@
 			"value": 5
 		}
 	],
+	"app.UIPartsAvatarRandomMatchRewardContentGridItem.IconAddPanelPlayState": [
+		{
+			"name": "LOCK",
+			"value": 0
+		},
+		{
+			"name": "NONE",
+			"value": 1
+		},
+		{
+			"name": "PICK",
+			"value": 2
+		}
+	],
 	"app.FighterSkillUIDef.StrengthType": [
 		{
 			"name": "Cmn",
@@ -126103,8 +128031,16 @@
 			"value": 18
 		},
 		{
-			"name": "Max",
+			"name": "Stock",
 			"value": 19
+		},
+		{
+			"name": "Stock_OD",
+			"value": 20
+		},
+		{
+			"name": "Max",
+			"value": 21
 		}
 	],
 	"app.worldtour.UI75006.Param.UIElementShowedFlag": [
@@ -126843,6 +128779,10 @@
 		{
 			"name": "CALORIE",
 			"value": 512
+		},
+		{
+			"name": "AVATAR_RANDOM",
+			"value": 1024
 		}
 	],
 	"app.sound.SoundLanguage": [
@@ -127581,6 +129521,22 @@
 		{
 			"name": "BackToModeMenu",
 			"value": 75
+		},
+		{
+			"name": "AvatarRoom_Menu",
+			"value": 76
+		},
+		{
+			"name": "AvatarRoom_VsCharacterSelect",
+			"value": 77
+		},
+		{
+			"name": "AvatarRoom_VsBattle",
+			"value": 78
+		},
+		{
+			"name": "AvatarRoom_MatchMenu",
+			"value": 79
 		},
 		{
 			"name": "FGLocalSearch",
@@ -129876,6 +131832,10 @@
 		{
 			"name": "NoDmgCancel",
 			"value": 64
+		},
+		{
+			"name": "DrawOFF",
+			"value": 128
 		}
 	],
 	"app.network.api.Enum.SpectatingStartServerMode": [
@@ -131878,6 +133838,20 @@
 		{
 			"name": "RAYTRACING_INSTANCE_FLAG_TAPU_RESERVED",
 			"value": 0
+		}
+	],
+	"app.network.api.Enum.MasterBoutEndOperationType": [
+		{
+			"name": "EClassic",
+			"value": 1
+		},
+		{
+			"name": "EModern",
+			"value": 2
+		},
+		{
+			"name": "EDynamic",
+			"value": 3
 		}
 	],
 	"via.render.PQCurve": [
@@ -134104,6 +136078,16 @@
 		{
 			"name": "Square",
 			"value": 1
+		}
+	],
+	"app.network.api.Enum.AvatarTrainingStartMyPlayerSide": [
+		{
+			"name": "EPlayer1",
+			"value": 1
+		},
+		{
+			"name": "EPlayer2",
+			"value": 2
 		}
 	],
 	"via.gui.Capture.RenderTargetFormat": [
@@ -137770,6 +139754,16 @@
 			"value": 8
 		}
 	],
+	"app.worldtour.CaptureRoomAvatarRoomParam.eCameraPositionType": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "PlayerOnLeftSide",
+			"value": 1
+		}
+	],
 	"via.motion.IkLeg2.ContactMode": [
 		{
 			"name": "RayCast",
@@ -138568,6 +140562,10 @@
 		{
 			"name": "EAvatarMatch",
 			"value": 6
+		},
+		{
+			"name": "EAvatarRandomMatch",
+			"value": 7
 		}
 	],
 	"app.UICFNFightersProfileTabPlayChildTab3.ControlType": [
@@ -138578,6 +140576,20 @@
 		{
 			"name": "LIST",
 			"value": 1
+		}
+	],
+	"app.ReGameGuideConditions.FGConsecutiveLose.eTarget": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "RankMatch",
+			"value": 1
+		},
+		{
+			"name": "CasualMatch",
+			"value": 2
 		}
 	],
 	"app.network.api.Enum.BattleStartLocalRuleSelect": [
@@ -139988,6 +142000,20 @@
 			"value": 1
 		}
 	],
+	"app.worldtour.CaptureRoomRenderSettingAvatarRoom.PositionType": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "PLAYER_ON_LEFT_SIDE",
+			"value": 1
+		},
+		{
+			"name": "NUM",
+			"value": 2
+		}
+	],
 	"app.UIPartsRivalAiStampRewardButton.ReceivedPanelPlayState": [
 		{
 			"name": "DEFAULT",
@@ -141030,18 +143056,6 @@
 		{
 			"name": "IsRunWithoutLock",
 			"value": 8
-		},
-		{
-			"name": "Dummy_04",
-			"value": 16
-		},
-		{
-			"name": "Dummy_05",
-			"value": 32
-		},
-		{
-			"name": "Dummy_06",
-			"value": 64
 		}
 	],
 	"app.esports.BattleTimeLineManager.EClipType": [
@@ -141455,6 +143469,24 @@
 		},
 		{
 			"name": "TeamB",
+			"value": 3
+		}
+	],
+	"app.UIStatusMenu.StatusMenuMode": [
+		{
+			"name": "Normal",
+			"value": 0
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 1
+		},
+		{
+			"name": "AvatarArcade",
+			"value": 2
+		},
+		{
+			"name": "AvatarRandomMatch_Dummy",
 			"value": 3
 		}
 	],
@@ -141996,6 +144028,10 @@
 		{
 			"name": "AUTO_PILOT",
 			"value": 2251799813685248
+		},
+		{
+			"name": "UNIQUE_PARAM",
+			"value": 9007199254740992
 		},
 		{
 			"name": "FROM_RUSH",
@@ -144594,6 +146630,16 @@
 			"value": 7
 		}
 	],
+	"app.ReGameGuideConditions.ClubInfo.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsExistLeaderClub",
+			"value": 1
+		}
+	],
 	"app.UIFlowDialog.ItemGetParam.eLayout": [
 		{
 			"name": "Default",
@@ -145902,6 +147948,28 @@
 		{
 			"name": "Disable",
 			"value": 1
+		}
+	],
+	"app.network.api.Enum.MatchingInfoAvatarCommunicationStatusOpponent": [
+		{
+			"name": "EAll",
+			"value": 1
+		},
+		{
+			"name": "E25",
+			"value": 2
+		},
+		{
+			"name": "E35",
+			"value": 3
+		},
+		{
+			"name": "E45",
+			"value": 4
+		},
+		{
+			"name": "E5Only",
+			"value": 5
 		}
 	],
 	"app.training.KeyColorData.EColorType": [
@@ -147935,6 +150003,10 @@
 		{
 			"name": "FixedVehicle",
 			"value": 100
+		},
+		{
+			"name": "AvatarRandomMatchTransition",
+			"value": 101
 		}
 	],
 	"app.UIFlowWTDeviceMap.PinAddResult": [
@@ -148227,8 +150299,12 @@
 			"value": 27
 		},
 		{
-			"name": "NUM",
+			"name": "AvatarRandomMatch",
 			"value": 28
+		},
+		{
+			"name": "NUM",
+			"value": 29
 		}
 	],
 	"app.worldtour.PaintLocationTbl.PaintLocationID": [
@@ -148521,6 +150597,12 @@
 		{
 			"name": "Heavy",
 			"value": 3
+		}
+	],
+	"app.ReGameGuideConditions.AvatarArcadeNumeric.eTarget": [
+		{
+			"name": "BattleCount",
+			"value": 0
 		}
 	],
 	"app.worldtour.avatar.udWTAvatarLockData.MotionDataType": [
@@ -149557,12 +151639,16 @@
 			"value": 95
 		},
 		{
+			"name": "DailyTournamentTitleTemplate96",
+			"value": 96
+		},
+		{
 			"name": "DailyTournamentTitleTemplateMaxValue",
-			"value": 95
+			"value": 96
 		},
 		{
 			"name": "DailyTournamentTitleTemplateMaxCount",
-			"value": 96
+			"value": 97
 		}
 	],
 	"BattleHubSessionRpc.BATTLE_HUB_EVENT_PARAMATER_ELEMENTS": [
@@ -149819,8 +151905,16 @@
 			"value": 48
 		},
 		{
-			"name": "Max",
+			"name": "BattleTourCourseThumbnail",
 			"value": 49
+		},
+		{
+			"name": "HistoryMovieSortLogo",
+			"value": 50
+		},
+		{
+			"name": "Max",
+			"value": 51
 		}
 	],
 	"app.HudDef.TutorialGuide.EndAnnounceType": [
@@ -151433,6 +153527,16 @@
 			"value": 3
 		}
 	],
+	"app.network.api.Enum.EquipmentMasterstyleKind": [
+		{
+			"name": "EWtAvatarArcade",
+			"value": 1
+		},
+		{
+			"name": "EAvatarRandomMatch",
+			"value": 2
+		}
+	],
 	"via.hid.gamePlayer.DeviceSelectionRule": [
 		{
 			"name": "AssignButtonDown",
@@ -152255,6 +154359,20 @@
 			"value": 10
 		}
 	],
+	"app.ReGameGuideConditions.FGConsecutiveLose.eOperation": [
+		{
+			"name": "Reset",
+			"value": 0
+		},
+		{
+			"name": "Increment",
+			"value": 1
+		},
+		{
+			"name": "Decrement",
+			"value": 2
+		}
+	],
 	"app.worldtour.avatar.CancelableAction.ID": [
 		{
 			"name": "AnyStandAct",
@@ -152785,6 +154903,16 @@
 		{
 			"name": "CircleFlierTitleMaxCount",
 			"value": 52
+		}
+	],
+	"app.UIPartsStageSelect.StatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Clear",
+			"value": 1
 		}
 	],
 	"via.render.MPMRPipelineType": [
@@ -153727,6 +155855,10 @@
 		{
 			"name": "EWt",
 			"value": 3
+		},
+		{
+			"name": "EShared",
+			"value": 4
 		}
 	],
 	"app.training.TrainingManager.MenuType": [
@@ -154320,6 +156452,16 @@
 		{
 			"name": "HighScore",
 			"value": 0
+		}
+	],
+	"app.UIPartsStageFlagIcon.eStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Circle",
+			"value": 1
 		}
 	],
 	"via.render.RenderConfig.UpscaleAlgorithm": [
@@ -155190,6 +157332,10 @@
 		{
 			"name": "JoyBattle",
 			"value": 11
+		},
+		{
+			"name": "AvatarRandomMatch",
+			"value": 12
 		}
 	],
 	"app.worldtour.WTShopDefine.WTShopItemSortCategory": [
@@ -155350,6 +157496,28 @@
 		{
 			"name": "AnyButtonAndSkip",
 			"value": 1
+		}
+	],
+	"app.ReGameGuideConditions.RuntimeParamBase.eCollectResult": [
+		{
+			"name": "Success",
+			"value": 0
+		},
+		{
+			"name": "Failure",
+			"value": 1
+		},
+		{
+			"name": "NotNeeded",
+			"value": 2
+		},
+		{
+			"name": "NotNeeded_OnlineOnly",
+			"value": 3
+		},
+		{
+			"name": "NotNeeded_ExternalUpdateOnly",
+			"value": 4
 		}
 	],
 	"app.constant.scn.Index": [
@@ -155662,216 +157830,296 @@
 			"value": 76
 		},
 		{
-			"name": "eBattleHubInvite",
+			"name": "eAvatarRoomMain",
 			"value": 77
 		},
 		{
-			"name": "eBattleHubInit",
+			"name": "eAvatarRoomTrainingReady",
 			"value": 78
 		},
 		{
-			"name": "eBattleHubCheckAdmissionEvent",
+			"name": "eAvatarRoomTraining",
 			"value": 79
 		},
 		{
-			"name": "eBattleHubCheckLearningAiAdmissionEvent",
+			"name": "eAvatarRoomTrainingOut",
 			"value": 80
 		},
 		{
-			"name": "eBattleHubLearningAiNextRival",
+			"name": "eAvatarArcadeSparLegendSelect",
 			"value": 81
 		},
 		{
-			"name": "eBattleHubLearningAiCharacterSelect",
+			"name": "eAvatarArcadeSparBattleIn",
 			"value": 82
 		},
 		{
-			"name": "eBattleHubLearningAiQuit",
+			"name": "eAvatarArcadeSparEmote",
 			"value": 83
 		},
 		{
-			"name": "eBattleHubLogin",
+			"name": "eAvatarArcadeSparBattleReady",
 			"value": 84
 		},
 		{
-			"name": "eBattleHubMain",
+			"name": "eAvatarArcadeBattleTourMove",
 			"value": 85
 		},
 		{
-			"name": "eBattleHubAvatarBattleIn",
+			"name": "eAvatarArcadeBattleTourBattleIn",
 			"value": 86
 		},
 		{
-			"name": "eBattleHubAvatarBattleOut",
+			"name": "eAvatarArcadeBattleTourEmote",
 			"value": 87
 		},
 		{
-			"name": "eBattleHubCharacterCreateOpening",
+			"name": "eAvatarArcadeBattleTourBattleReady",
 			"value": 88
 		},
 		{
-			"name": "eBattleHubCharacterCreateShop",
+			"name": "eAvatarArcadeBattleTourCourseComplete",
 			"value": 89
 		},
 		{
-			"name": "eBattleHubIntroduction",
+			"name": "eAvatarRandomMatchEmote",
 			"value": 90
 		},
 		{
-			"name": "eBattleHubPlayContact",
+			"name": "eAvatarRoomCharacterCreateOpening",
 			"value": 91
 		},
 		{
-			"name": "eBattleHubPrePlayContact",
+			"name": "eAvatarResult",
 			"value": 92
 		},
 		{
-			"name": "eArcadeFighterSelect",
+			"name": "eBattleHubInvite",
 			"value": 93
 		},
 		{
-			"name": "eArcadeComicDemo",
+			"name": "eBattleHubInit",
 			"value": 94
 		},
 		{
-			"name": "eArcadeStageMove",
+			"name": "eBattleHubCheckAdmissionEvent",
 			"value": 95
 		},
 		{
-			"name": "eArcadeResult",
+			"name": "eBattleHubCheckLearningAiAdmissionEvent",
 			"value": 96
 		},
 		{
-			"name": "eArcadeContinue",
+			"name": "eBattleHubLearningAiNextRival",
 			"value": 97
 		},
 		{
-			"name": "eArcadeStaffRoll",
+			"name": "eBattleHubLearningAiCharacterSelect",
 			"value": 98
 		},
 		{
-			"name": "eArcadeEndCard",
+			"name": "eBattleHubLearningAiQuit",
 			"value": 99
 		},
 		{
-			"name": "eArcadePlayThanks",
+			"name": "eBattleHubLogin",
 			"value": 100
 		},
 		{
-			"name": "eLogin",
+			"name": "eBattleHubMain",
 			"value": 101
 		},
 		{
-			"name": "eGalleryTop",
+			"name": "eBattleHubAvatarBattleIn",
 			"value": 102
 		},
 		{
-			"name": "eGalleryEventCmn",
+			"name": "eBattleHubAvatarBattleOut",
 			"value": 103
 		},
 		{
-			"name": "eGalleryEventWT",
+			"name": "eBattleHubCharacterCreateOpening",
 			"value": 104
 		},
 		{
-			"name": "eGalleryEventBH",
+			"name": "eBattleHubCharacterCreateShop",
 			"value": 105
 		},
 		{
-			"name": "eGalleryEventFG",
+			"name": "eBattleHubIntroduction",
 			"value": 106
 		},
 		{
-			"name": "eMameMain",
+			"name": "eBattleHubPlayContact",
 			"value": 107
 		},
 		{
-			"name": "eMameSpectate",
+			"name": "eBattleHubPrePlayContact",
 			"value": 108
 		},
 		{
-			"name": "eEsfCmn00",
+			"name": "eArcadeFighterSelect",
 			"value": 109
 		},
 		{
-			"name": "eWtfCmn00",
+			"name": "eArcadeComicDemo",
 			"value": 110
 		},
 		{
-			"name": "eCntVersusDemo",
+			"name": "eArcadeStageMove",
 			"value": 111
 		},
 		{
-			"name": "eCommentatorResource",
+			"name": "eArcadeResult",
 			"value": 112
 		},
 		{
-			"name": "eCommentatorResourceWT",
+			"name": "eArcadeContinue",
 			"value": 113
 		},
 		{
-			"name": "eFGTrainingResource",
+			"name": "eArcadeStaffRoll",
 			"value": 114
 		},
 		{
-			"name": "eFGTutorialResource",
+			"name": "eArcadeEndCard",
 			"value": 115
 		},
 		{
-			"name": "eFGComboTrialResource",
+			"name": "eArcadePlayThanks",
 			"value": 116
 		},
 		{
-			"name": "eFGCharacterGuideResource",
+			"name": "eLogin",
 			"value": 117
 		},
 		{
-			"name": "eFGReplayResource",
+			"name": "eGalleryTop",
 			"value": 118
 		},
 		{
-			"name": "eBattleStats",
+			"name": "eGalleryEventCmn",
 			"value": 119
 		},
 		{
-			"name": "eCtrlBattleFlowSound",
+			"name": "eGalleryEventWT",
 			"value": 120
 		},
 		{
-			"name": "eCommentatorSystem",
+			"name": "eGalleryEventBH",
 			"value": 121
 		},
 		{
-			"name": "eCommentatorSystemWT",
+			"name": "eGalleryEventFG",
 			"value": 122
 		},
 		{
-			"name": "eReturnHome",
+			"name": "eGalleryEventHT",
 			"value": 123
 		},
 		{
-			"name": "eFlowMain",
+			"name": "eMameMain",
 			"value": 124
 		},
 		{
-			"name": "eInvite",
+			"name": "eMameSpectate",
 			"value": 125
 		},
 		{
-			"name": "eTransitionActivityFlow",
+			"name": "eEsfCmn00",
 			"value": 126
 		},
 		{
-			"name": "eTransitionFlowMain",
+			"name": "eWtfCmn00",
 			"value": 127
 		},
 		{
-			"name": "eResidentData",
+			"name": "eCntVersusDemo",
 			"value": 128
 		},
 		{
-			"name": "eResident",
+			"name": "eCommentatorResource",
 			"value": 129
+		},
+		{
+			"name": "eCommentatorResourceWT",
+			"value": 130
+		},
+		{
+			"name": "eFGTrainingResource",
+			"value": 131
+		},
+		{
+			"name": "eFGTutorialResource",
+			"value": 132
+		},
+		{
+			"name": "eFGComboTrialResource",
+			"value": 133
+		},
+		{
+			"name": "eFGCharacterGuideResource",
+			"value": 134
+		},
+		{
+			"name": "eFGReplayResource",
+			"value": 135
+		},
+		{
+			"name": "eBattleStats",
+			"value": 136
+		},
+		{
+			"name": "eAvatarRoomCmn",
+			"value": 137
+		},
+		{
+			"name": "eAvatarArcadeCmn",
+			"value": 138
+		},
+		{
+			"name": "eAvatarTrainingCmn",
+			"value": 139
+		},
+		{
+			"name": "eCtrlBattleFlowSound",
+			"value": 140
+		},
+		{
+			"name": "eCommentatorSystem",
+			"value": 141
+		},
+		{
+			"name": "eCommentatorSystemWT",
+			"value": 142
+		},
+		{
+			"name": "eReturnHome",
+			"value": 143
+		},
+		{
+			"name": "eFlowMain",
+			"value": 144
+		},
+		{
+			"name": "eInvite",
+			"value": 145
+		},
+		{
+			"name": "eTransitionActivityFlow",
+			"value": 146
+		},
+		{
+			"name": "eTransitionFlowMain",
+			"value": 147
+		},
+		{
+			"name": "eResidentData",
+			"value": 148
+		},
+		{
+			"name": "eResident",
+			"value": 149
 		}
 	],
 	"app.worldtour.WTAreaManager.Priority": [
@@ -156044,6 +158292,28 @@
 		{
 			"name": "Stoped",
 			"value": 1
+		}
+	],
+	"app.network.api.Enum.ApRankingJumpKind": [
+		{
+			"name": "EMyself",
+			"value": 1
+		},
+		{
+			"name": "ETopPlayers",
+			"value": 2
+		},
+		{
+			"name": "EFriend",
+			"value": 3
+		},
+		{
+			"name": "EFollow",
+			"value": 4
+		},
+		{
+			"name": "EClubMembers",
+			"value": 5
 		}
 	],
 	"app.network.api.Enum.LoginInfoClientPlatformId": [
@@ -162034,12 +164304,40 @@
 			"value": 1462
 		},
 		{
+			"name": "CommonMessage1463",
+			"value": 1463
+		},
+		{
+			"name": "CommonMessage1464",
+			"value": 1464
+		},
+		{
+			"name": "CommonMessage1465",
+			"value": 1465
+		},
+		{
+			"name": "CommonMessage1466",
+			"value": 1466
+		},
+		{
+			"name": "CommonMessage1467",
+			"value": 1467
+		},
+		{
+			"name": "CommonMessage1468",
+			"value": 1468
+		},
+		{
+			"name": "CommonMessage1469",
+			"value": 1469
+		},
+		{
 			"name": "CommonMessageMaxValue",
-			"value": 1462
+			"value": 1469
 		},
 		{
 			"name": "CommonMessageMaxCount",
-			"value": 1392
+			"value": 1399
 		}
 	],
 	"app.esports.PartsCtrlRequest.Type": [
@@ -162717,8 +165015,36 @@
 	"app.worldtour.TargetPointInfo.AttributeFlagType": [],
 	"app.esports.UI11440.SpeedType": [
 		{
-			"name": "_1",
+			"name": "_0_5",
 			"value": 0
+		},
+		{
+			"name": "_0_8",
+			"value": 1
+		},
+		{
+			"name": "_1",
+			"value": 2
+		},
+		{
+			"name": "_2",
+			"value": 3
+		},
+		{
+			"name": "_4",
+			"value": 4
+		},
+		{
+			"name": "_8",
+			"value": 5
+		},
+		{
+			"name": "stop",
+			"value": 6
+		},
+		{
+			"name": "bg",
+			"value": 7
 		}
 	],
 	"CharacterAsset.EventWorld.TYPE": [
@@ -163285,6 +165611,10 @@
 		{
 			"name": "UNAFFECT_TO_TARGET_BACK",
 			"value": 27
+		},
+		{
+			"name": "DRIVE_REVERSAL",
+			"value": 28
 		}
 	],
 	"app.UICityHud_Buff.eShowState": [
@@ -166609,6 +168939,20 @@
 			"value": 11
 		}
 	],
+	"app.UIFlowEntryNotice.ePattern": [
+		{
+			"name": "Entry",
+			"value": 0
+		},
+		{
+			"name": "AvatarContents_Entry",
+			"value": 1
+		},
+		{
+			"name": "AvatarContents_AllTechniquesLearned",
+			"value": 2
+		}
+	],
 	"app.worldtour.PressAttributeType": [
 		{
 			"name": "_Invalid",
@@ -167131,6 +169475,20 @@
 			"value": 7
 		}
 	],
+	"app.network.api.Enum.BattleTourEndDifficulty": [
+		{
+			"name": "EBeginner",
+			"value": 1
+		},
+		{
+			"name": "EIntermediate",
+			"value": 2
+		},
+		{
+			"name": "EAdvanced",
+			"value": 3
+		}
+	],
 	"app.HudDef.BattleHudGroupType": [
 		{
 			"name": "NONE",
@@ -167143,6 +169501,16 @@
 		{
 			"name": "DOWN",
 			"value": 2
+		}
+	],
+	"CharacterAsset.EBranchInputKind": [
+		{
+			"name": "RAW_INPUT",
+			"value": 0
+		},
+		{
+			"name": "TRIGGER",
+			"value": 1
 		}
 	],
 	"app.vfx.VfxGlobalVectorField.ePriority": [
@@ -167867,8 +170235,12 @@
 			"value": 1
 		},
 		{
-			"name": "Max",
+			"name": "EndingTitle",
 			"value": 2
+		},
+		{
+			"name": "Max",
+			"value": 3
 		}
 	],
 	"CharacterAsset.EMotionOptionFlag": [
@@ -169362,6 +171734,16 @@
 			"value": 2
 		}
 	],
+	"app.UIFlowAvatarVSInfo.FadeStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Forward",
+			"value": 1
+		}
+	],
 	"app.network.api.Enum.TutorialMenuDoing": [
 		{
 			"name": "ETutorialList",
@@ -169524,6 +171906,10 @@
 		{
 			"name": "FG",
 			"value": 3
+		},
+		{
+			"name": "AvatarRoom",
+			"value": 4
 		}
 	],
 	"app.network.api.Enum.TeamVersusSettingRematch": [
@@ -169828,6 +172214,20 @@
 		{
 			"name": "EXTRA",
 			"value": 4
+		}
+	],
+	"app.network.api.Enum.BattleTourEndOperationType": [
+		{
+			"name": "EClassic",
+			"value": 1
+		},
+		{
+			"name": "EModern",
+			"value": 2
+		},
+		{
+			"name": "EDynamic",
+			"value": 3
 		}
 	],
 	"app.UIFlowKeyConfig.CopyTool.RootGroupIndex": [
@@ -170890,6 +173290,20 @@
 		{
 			"name": "Normal",
 			"value": 1
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu.FADE_IN_TYPE": [
+		{
+			"name": "FADE_IN_OPEN",
+			"value": 0
+		},
+		{
+			"name": "FADE_IN_SLIDE",
+			"value": 1
+		},
+		{
+			"name": "FADE_IN",
+			"value": 2
 		}
 	],
 	"app.network.api.Enum.OneOnOneFgSupportMode": [
@@ -174070,6 +176484,20 @@
 			"value": 74
 		}
 	],
+	"app.ReGameGuideConditions.FightingPass.eState": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsPresent",
+			"value": 1
+		},
+		{
+			"name": "IsExistNotReceivedReward",
+			"value": 2
+		}
+	],
 	"CharacterAsset.EEventFacialOpe": [
 		{
 			"name": "TARGET_BANK_TYPE",
@@ -175474,6 +177902,16 @@
 			"value": 11
 		}
 	],
+	"app.UIFlowWorldMap.eLoadingVehicleType": [
+		{
+			"name": "Airplane",
+			"value": 0
+		},
+		{
+			"name": "DimensionalTravel",
+			"value": 1
+		}
+	],
 	"app.UITextInputDialog.ButtonType": [
 		{
 			"name": "CancelOk",
@@ -175904,6 +178342,20 @@
 		{
 			"name": "SegmentLayerNum",
 			"value": 2
+		}
+	],
+	"app.network.api.Enum.MasterBoutEndDifficulty": [
+		{
+			"name": "EBeginner",
+			"value": 1
+		},
+		{
+			"name": "EIntermediate",
+			"value": 2
+		},
+		{
+			"name": "EAdvanced",
+			"value": 3
 		}
 	],
 	"app.worldtour.WTTriggerAttr.Attr": [
@@ -177420,12 +179872,16 @@
 			"value": 25
 		},
 		{
+			"name": "ProfileTheme26",
+			"value": 26
+		},
+		{
 			"name": "ProfileThemeMaxValue",
-			"value": 25
+			"value": 26
 		},
 		{
 			"name": "ProfileThemeMaxCount",
-			"value": 26
+			"value": 27
 		}
 	],
 	"via.gui.CurrentOutRangeItemOrder": [
@@ -178522,6 +180978,20 @@
 			"value": 0
 		}
 	],
+	"app.TrialCurveBehaviour.CurveTrackType": [
+		{
+			"name": "Test1",
+			"value": 0
+		},
+		{
+			"name": "Test2",
+			"value": 1
+		},
+		{
+			"name": "Test3",
+			"value": 2
+		}
+	],
 	"app.network.api.Enum.TrainingEndDoing": [
 		{
 			"name": "EReturnToMainMenu",
@@ -178678,8 +181148,12 @@
 			"value": 13
 		},
 		{
-			"name": "MAX",
+			"name": "AVATAR_RANDOM_MATCH",
 			"value": 14
+		},
+		{
+			"name": "MAX",
+			"value": 15
 		}
 	],
 	"app.battle.VfxKey.eEndType": [
@@ -182131,6 +184605,10 @@
 		{
 			"name": "CoopShot",
 			"value": 6
+		},
+		{
+			"name": "AvatarRoomAccess",
+			"value": 7
 		}
 	],
 	"app.UIStaffroll.ScrollDirection": [
@@ -182757,6 +185235,16 @@
 			"value": 3
 		}
 	],
+	"app.ReGameGuideConditions.LeaguePointAndMasterRate.eSelectionOption": [
+		{
+			"name": "Highest",
+			"value": 0
+		},
+		{
+			"name": "Current",
+			"value": 1
+		}
+	],
 	"app.worldtour.om.Om028000.EventNames": [
 		{
 			"name": "RecieveDestroy",
@@ -183315,6 +185803,18 @@
 		{
 			"name": "JOY_BATTLE",
 			"value": 29
+		},
+		{
+			"name": "SPAR",
+			"value": 30
+		},
+		{
+			"name": "AVATAR_RANDOM_MATCH",
+			"value": 31
+		},
+		{
+			"name": "AVATAR_RANDOM_MATCH_TRAINING",
+			"value": 32
 		}
 	],
 	"via.hid.VibrationPriority": [
@@ -183667,6 +186167,32 @@
 			"value": 2
 		}
 	],
+	"app.avatarroom.BattleTourCourseData.RewardData.RewardCategory": [
+		{
+			"name": "Photo",
+			"value": 1
+		},
+		{
+			"name": "DeviceBg",
+			"value": 2
+		},
+		{
+			"name": "Movie",
+			"value": 3
+		},
+		{
+			"name": "Armor",
+			"value": 4
+		},
+		{
+			"name": "Skill",
+			"value": 5
+		},
+		{
+			"name": "ExColor",
+			"value": 6
+		}
+	],
 	"FAB.BRANCH.SURFACE.ID": [
 		{
 			"name": "FRONT",
@@ -183949,12 +186475,28 @@
 			"value": 39
 		},
 		{
+			"name": "DailyTournamentCharacterLimitSet40",
+			"value": 40
+		},
+		{
+			"name": "DailyTournamentCharacterLimitSet41",
+			"value": 41
+		},
+		{
+			"name": "DailyTournamentCharacterLimitSet42",
+			"value": 42
+		},
+		{
+			"name": "DailyTournamentCharacterLimitSet43",
+			"value": 43
+		},
+		{
 			"name": "DailyTournamentCharacterLimitSetMaxValue",
-			"value": 39
+			"value": 43
 		},
 		{
 			"name": "DailyTournamentCharacterLimitSetMaxCount",
-			"value": 40
+			"value": 44
 		}
 	],
 	"app.network.api.Enum.InvitedType": [
@@ -185291,6 +187833,16 @@
 			"value": 5
 		}
 	],
+	"app.network.api.Enum.MatchMakeSuccessAvatarClientNetworkInterfaceType": [
+		{
+			"name": "EWired",
+			"value": 1
+		},
+		{
+			"name": "EWireless",
+			"value": 2
+		}
+	],
 	"app.UIFlowShop.ColorStainingDetail.eNotChangeReason": [
 		{
 			"name": "None",
@@ -186001,6 +188553,32 @@
 		{
 			"name": "IGNORE_BK_CANCEL",
 			"value": 0
+		}
+	],
+	"app.UIFlowArcadeStageSelect.CourseDisplayData.RewardInfo.Category": [
+		{
+			"name": "Style",
+			"value": 0
+		},
+		{
+			"name": "CameraFrame",
+			"value": 1
+		},
+		{
+			"name": "Movie",
+			"value": 2
+		},
+		{
+			"name": "DeviceBg",
+			"value": 3
+		},
+		{
+			"name": "Armor",
+			"value": 4
+		},
+		{
+			"name": "EXColor",
+			"value": 5
 		}
 	],
 	"app.network.api.Enum.PlayMiniGameArcadeIsClear": [
@@ -186823,6 +189401,28 @@
 		{
 			"name": "WATCH",
 			"value": 1
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu.MenuType": [
+		{
+			"name": "Equip",
+			"value": 0
+		},
+		{
+			"name": "SpecialMoves",
+			"value": 1
+		},
+		{
+			"name": "SuperArts",
+			"value": 2
+		},
+		{
+			"name": "Max",
+			"value": 3
+		},
+		{
+			"name": "Start",
+			"value": 0
 		}
 	],
 	"app.BattleWatchManager.BattleWatchResult": [
@@ -188331,6 +190931,10 @@
 			"value": 52
 		},
 		{
+			"name": "UNIQUE_PARAM",
+			"value": 53
+		},
+		{
 			"name": "FROM_RUSH",
 			"value": 60
 		},
@@ -188911,6 +191515,10 @@
 		{
 			"name": "INFO",
 			"value": 3
+		},
+		{
+			"name": "AVATAR",
+			"value": 4
 		}
 	],
 	"app.gCollision.LayerId": [
@@ -190073,6 +192681,20 @@
 			"value": 1
 		}
 	],
+	"app.ReGameGuideConditions.AvatarRandomMatchNumeric.eTarget": [
+		{
+			"name": "ConsecutiveWinCount",
+			"value": 0
+		},
+		{
+			"name": "WinRate",
+			"value": 1
+		},
+		{
+			"name": "AvatarPoint",
+			"value": 2
+		}
+	],
 	"app.UIPartsServerSelectSpeechBubble.MainPlayState": [
 		{
 			"name": "QUICK_JOIN",
@@ -190413,6 +193035,10 @@
 		{
 			"name": "Mode01",
 			"value": 2
+		},
+		{
+			"name": "Mode02",
+			"value": 4
 		}
 	],
 	"via.navigation.FilterInfo.TraceDestination": [
@@ -191362,12 +193988,16 @@
 			"value": 31
 		},
 		{
+			"name": "BattlePass32",
+			"value": 32
+		},
+		{
 			"name": "BattlePassMaxValue",
-			"value": 31
+			"value": 32
 		},
 		{
 			"name": "BattlePassMaxCount",
-			"value": 32
+			"value": 33
 		}
 	],
 	"via.mame.KeyConfig.InputSequenceType": [
@@ -192038,6 +194668,10 @@
 		{
 			"name": "ReciperMemo",
 			"value": 16
+		},
+		{
+			"name": "PlayerNameAvatarRoom",
+			"value": 17
 		}
 	],
 	"app.worldtour.mg.UI71007.StatePatternPanelPlusTotalZenny": [
@@ -193084,6 +195718,16 @@
 			"value": 1
 		}
 	],
+	"app.network.api.Enum.BattleTourEndResult": [
+		{
+			"name": "EClear",
+			"value": 1
+		},
+		{
+			"name": "ESuspended",
+			"value": 2
+		}
+	],
 	"app.UIWidget_BHScreenRaidRanking.PlayerNo": [
 		{
 			"name": "Top",
@@ -193146,6 +195790,20 @@
 		{
 			"name": "Command",
 			"value": 1
+		}
+	],
+	"app.UIFlowAvatarResult.Param.eEvent": [
+		{
+			"name": "LevelUp",
+			"value": 0
+		},
+		{
+			"name": "SkillUnlock",
+			"value": 1
+		},
+		{
+			"name": "_Max",
+			"value": 2
 		}
 	],
 	"app.UICFNCircleMenuFriendInvite.SortMenuItem": [
@@ -194764,6 +197422,16 @@
 			"value": 7
 		}
 	],
+	"app.ReGameGuideConditions.Shop.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsOnSale",
+			"value": 1
+		}
+	],
 	"via.motion.IkLookAt.LookAtState": [
 		{
 			"name": "None",
@@ -194808,6 +197476,32 @@
 			"value": 6
 		}
 	],
+	"app.network.api.Enum.ApRankingJumpCategory": [
+		{
+			"name": "ELp",
+			"value": 1
+		},
+		{
+			"name": "EMr",
+			"value": 2
+		},
+		{
+			"name": "EArcade",
+			"value": 3
+		},
+		{
+			"name": "EPlayPoints",
+			"value": 4
+		},
+		{
+			"name": "EMame",
+			"value": 5
+		},
+		{
+			"name": "EAp",
+			"value": 6
+		}
+	],
 	"app.UIFlowCommentatorLanguageSelect.Param.eSelectItemType": [
 		{
 			"name": "SCROLL",
@@ -194846,56 +197540,64 @@
 			"value": 3
 		},
 		{
-			"name": "Arcade",
+			"name": "AvatarRandomMatch",
 			"value": 4
 		},
 		{
-			"name": "DeathMatch",
+			"name": "Arcade",
 			"value": 5
 		},
 		{
-			"name": "TagMatch",
+			"name": "AvatarArcade",
 			"value": 6
 		},
 		{
-			"name": "DramaticBattle",
+			"name": "DeathMatch",
 			"value": 7
 		},
 		{
-			"name": "TeamBattle",
+			"name": "TagMatch",
 			"value": 8
 		},
 		{
-			"name": "Training",
+			"name": "DramaticBattle",
 			"value": 9
 		},
 		{
-			"name": "Tutorial",
+			"name": "TeamBattle",
 			"value": 10
 		},
 		{
-			"name": "CharacterGuide",
+			"name": "Training",
 			"value": 11
 		},
 		{
-			"name": "ComboTrial",
+			"name": "Tutorial",
 			"value": 12
 		},
 		{
-			"name": "LocalMatch",
+			"name": "CharacterGuide",
 			"value": 13
 		},
 		{
-			"name": "AvatarMatch",
+			"name": "ComboTrial",
 			"value": 14
 		},
 		{
-			"name": "JoyMatch",
+			"name": "LocalMatch",
 			"value": 15
 		},
 		{
-			"name": "JoyBattle",
+			"name": "AvatarMatch",
 			"value": 16
+		},
+		{
+			"name": "JoyMatch",
+			"value": 17
+		},
+		{
+			"name": "JoyBattle",
+			"value": 18
 		}
 	],
 	"ZXing.EncodeHintType": [
@@ -196278,6 +198980,24 @@
 			"value": 3
 		}
 	],
+	"app.ReGameGuideConditions.WTPlayerDataNumeric.eTarget": [
+		{
+			"name": "AvatarLevel",
+			"value": 0
+		},
+		{
+			"name": "NumberOfMasters",
+			"value": 1
+		},
+		{
+			"name": "NumberOfOwnedStyles",
+			"value": 2
+		},
+		{
+			"name": "Money",
+			"value": 3
+		}
+	],
 	"via.crypto.pkc.Type": [
 		{
 			"name": "Type_1",
@@ -197390,6 +200110,10 @@
 		{
 			"name": "CustomRoom",
 			"value": 7
+		},
+		{
+			"name": "AvatarRandom",
+			"value": 8
 		}
 	],
 	"app.UICityHud_FavoritePoint.eCtrlState": [
@@ -197632,6 +200356,14 @@
 		{
 			"name": "AppShutdown",
 			"value": 98
+		},
+		{
+			"name": "HLSReqFailed",
+			"value": 129
+		},
+		{
+			"name": "GQLReqFailed",
+			"value": 130
 		}
 	],
 	"app.sound.SoundLoopRequestRefTablTrack.TriggerBranchType": [
@@ -202742,440 +205474,508 @@
 			"value": 220
 		},
 		{
-			"name": "UITipsBattleTutorial",
+			"name": "UIMoveToARMTrainingMode",
 			"value": 221
 		},
 		{
-			"name": "UISaveEquipPreset",
+			"name": "UIActionSkillMySet",
 			"value": 222
 		},
 		{
-			"name": "UIChangeEquipPresetName",
+			"name": "UIActionProfileChangeAvatar",
 			"value": 223
 		},
 		{
-			"name": "UIComboTrialRestart",
+			"name": "UITipsBattleTutorial",
 			"value": 224
 		},
 		{
-			"name": "UIComboTrialRestartReplay",
+			"name": "UISaveEquipPreset",
 			"value": 225
 		},
 		{
-			"name": "UIMoveToStylePointMove",
+			"name": "UIChangeEquipPresetName",
 			"value": 226
 		},
 		{
-			"name": "UITrainingRemoveRecord",
+			"name": "UIComboTrialRestart",
 			"value": 227
 		},
 		{
-			"name": "UITrainingMenuReset",
+			"name": "UIComboTrialRestartReplay",
 			"value": 228
 		},
 		{
-			"name": "UIBattleHubAvatarBattleCreate",
+			"name": "UIMoveToStylePointMove",
 			"value": 229
 		},
 		{
-			"name": "UIGalleryIllustChangeMenuDisp",
+			"name": "UITrainingRemoveRecord",
 			"value": 230
 		},
 		{
-			"name": "UIGalleryIllustFullScreen",
+			"name": "UITrainingMenuReset",
 			"value": 231
 		},
 		{
-			"name": "UIOpenCommandListExplanation",
+			"name": "UIBattleHubAvatarBattleCreate",
 			"value": 232
 		},
 		{
-			"name": "UIMatchingSettingEdit",
+			"name": "UIGalleryIllustChangeMenuDisp",
 			"value": 233
 		},
 		{
-			"name": "UIMatchingSettingSelectRelease",
+			"name": "UIGalleryIllustFullScreen",
 			"value": 234
 		},
 		{
-			"name": "UIMatchingSettingCollectiveSetting",
+			"name": "UIOpenCommandListExplanation",
 			"value": 235
 		},
 		{
-			"name": "UIMatchingSettingRandomStageSelect",
+			"name": "UIMatchingSettingEdit",
 			"value": 236
 		},
 		{
-			"name": "UIOpenCommandListMatchingSetting",
+			"name": "UIMatchingSettingSelectRelease",
 			"value": 237
 		},
 		{
-			"name": "UIPlatformStore",
+			"name": "UIMatchingSettingCollectiveSetting",
 			"value": 238
 		},
 		{
-			"name": "UIDecideStart",
+			"name": "UIMatchingSettingRandomStageSelect",
 			"value": 239
 		},
 		{
-			"name": "UIWTBattlePauseMenuActivatePhoto",
+			"name": "UIOpenCommandListMatchingSetting",
 			"value": 240
 		},
 		{
-			"name": "UIPhotoDecoRotateLeft",
+			"name": "UIPlatformStore",
 			"value": 241
 		},
 		{
-			"name": "UIPhotoDecoRotateRight",
+			"name": "UIDecideStart",
 			"value": 242
 		},
 		{
-			"name": "UISwitchLobby",
+			"name": "UIWTBattlePauseMenuActivatePhoto",
 			"value": 243
 		},
 		{
-			"name": "UIGamerCard",
+			"name": "UIPhotoDecoRotateLeft",
 			"value": 244
 		},
 		{
-			"name": "UIPauseMenu",
+			"name": "UIPhotoDecoRotateRight",
 			"value": 245
 		},
 		{
-			"name": "UIPhotoCameraMoveOn",
+			"name": "UISwitchLobby",
 			"value": 246
 		},
 		{
-			"name": "UIPhotoCameraRotateOn",
+			"name": "UIGamerCard",
 			"value": 247
 		},
 		{
-			"name": "UIMatchingSettingTitleDisplaySwitch",
+			"name": "UIPauseMenu",
 			"value": 248
 		},
 		{
-			"name": "UIBattleHubChairLeaveUI",
+			"name": "UIPhotoCameraMoveOn",
 			"value": 249
 		},
 		{
-			"name": "UIBattleHubChairWatchUI",
+			"name": "UIPhotoCameraRotateOn",
 			"value": 250
 		},
 		{
-			"name": "UIBattleHubChatViewChange",
+			"name": "UIMatchingSettingTitleDisplaySwitch",
 			"value": 251
 		},
 		{
-			"name": "UIBattleHubAvatarBattleCancel",
+			"name": "UIBattleHubChairLeaveUI",
 			"value": 252
 		},
 		{
-			"name": "UIKeyConfigEditPresetName",
+			"name": "UIBattleHubChairWatchUI",
 			"value": 253
 		},
 		{
-			"name": "UICustomRoomSearchMenu",
+			"name": "UIBattleHubChatViewChange",
 			"value": 254
 		},
 		{
-			"name": "UICustomRoomWatching",
+			"name": "UIBattleHubAvatarBattleCancel",
 			"value": 255
 		},
 		{
-			"name": "UIPhotoCameraReset",
+			"name": "UIKeyConfigEditPresetName",
 			"value": 256
 		},
 		{
-			"name": "UIKeyConfigInitialize",
+			"name": "UICustomRoomSearchMenu",
 			"value": 257
 		},
 		{
-			"name": "UITrainingOptionY",
+			"name": "UICustomRoomWatching",
 			"value": 258
 		},
 		{
-			"name": "UITrainingOptionX",
+			"name": "UIPhotoCameraReset",
 			"value": 259
 		},
 		{
-			"name": "UITrainingOptionStart",
+			"name": "UIKeyConfigInitialize",
 			"value": 260
 		},
 		{
-			"name": "UITrainingOptionBack",
+			"name": "UITrainingOptionY",
 			"value": 261
 		},
 		{
-			"name": "UITrainingOptionLB",
+			"name": "UITrainingOptionX",
 			"value": 262
 		},
 		{
-			"name": "UITrainingOptionRB",
+			"name": "UITrainingOptionStart",
 			"value": 263
 		},
 		{
-			"name": "UITrainingOptionLT",
+			"name": "UITrainingOptionBack",
 			"value": 264
 		},
 		{
-			"name": "UITrainingOptionRT",
+			"name": "UITrainingOptionLB",
 			"value": 265
 		},
 		{
-			"name": "UITrainingOptionL",
+			"name": "UITrainingOptionRB",
 			"value": 266
 		},
 		{
-			"name": "UITrainingOptionR",
+			"name": "UITrainingOptionLT",
 			"value": 267
 		},
 		{
-			"name": "UIOpenPadGuideAtWTBattlePause",
+			"name": "UITrainingOptionRT",
 			"value": 268
 		},
 		{
-			"name": "UIKeyConfigSwitchDevice",
+			"name": "UITrainingOptionL",
 			"value": 269
 		},
 		{
-			"name": "UICustomRoomWildLeave",
+			"name": "UITrainingOptionR",
 			"value": 270
 		},
 		{
-			"name": "UIDeviceFinish",
+			"name": "UIOpenPadGuideAtWTBattlePause",
 			"value": 271
 		},
 		{
-			"name": "UIRSB",
+			"name": "UIKeyConfigSwitchDevice",
 			"value": 272
 		},
 		{
-			"name": "UIOpenStatusMenuIconExplanation",
+			"name": "UICustomRoomWildLeave",
 			"value": 273
 		},
 		{
-			"name": "UICheckFighterCoinPolicy",
+			"name": "UIDeviceFinish",
 			"value": 274
 		},
 		{
-			"name": "UIPhotoDecoReset",
+			"name": "UIRSB",
 			"value": 275
 		},
 		{
-			"name": "UIArcadeContinueCountDown",
+			"name": "UIOpenStatusMenuIconExplanation",
 			"value": 276
 		},
 		{
-			"name": "UIArcadeContinue",
+			"name": "UICheckFighterCoinPolicy",
 			"value": 277
 		},
 		{
-			"name": "UIAccessoryEditReset",
+			"name": "UIPhotoDecoReset",
 			"value": 278
 		},
 		{
-			"name": "UIWTTrainingPlayGoReset",
+			"name": "UIArcadeContinueCountDown",
 			"value": 279
 		},
 		{
-			"name": "UIWTTrainingPlayGoEnd",
+			"name": "UIArcadeContinue",
 			"value": 280
 		},
 		{
-			"name": "UIOnlineShopLicenceConfirm",
+			"name": "UIAccessoryEditReset",
 			"value": 281
 		},
 		{
-			"name": "UICustomRoomSwitchPassCodeView",
+			"name": "UIWTTrainingPlayGoReset",
 			"value": 282
 		},
 		{
-			"name": "UIBattleHubAvatarBattleFighterProfileChange",
+			"name": "UIWTTrainingPlayGoEnd",
 			"value": 283
 		},
 		{
-			"name": "UIFighterReport",
+			"name": "UIOnlineShopLicenceConfirm",
 			"value": 284
 		},
 		{
-			"name": "UISwitchPlatformFriendList",
+			"name": "UICustomRoomSwitchPassCodeView",
 			"value": 285
 		},
 		{
-			"name": "UIArcadeScoreReset",
+			"name": "UIBattleHubAvatarBattleFighterProfileChange",
 			"value": 286
 		},
 		{
-			"name": "UIOnlineShopNewChallengerPreview",
+			"name": "UIFighterReport",
 			"value": 287
 		},
 		{
-			"name": "UITournamentRewardDetail",
+			"name": "UISwitchPlatformFriendList",
 			"value": 288
 		},
 		{
-			"name": "UIWorldMapButtonX",
+			"name": "UIArcadeScoreReset",
 			"value": 289
 		},
 		{
-			"name": "UICharaBgmSelectPlayOnOff",
+			"name": "UIOnlineShopNewChallengerPreview",
 			"value": 290
 		},
 		{
-			"name": "UISelectionAllOff",
+			"name": "UITournamentRewardDetail",
 			"value": 291
 		},
 		{
-			"name": "UIOpenCharaBgmSelectSetting",
+			"name": "UIWorldMapButtonX",
 			"value": 292
 		},
 		{
-			"name": "UIListCopy",
+			"name": "UICharaBgmSelectPlayOnOff",
 			"value": 293
 		},
 		{
-			"name": "UIShortcutTrainingMode",
+			"name": "UISelectionAllOff",
 			"value": 294
 		},
 		{
-			"name": "UIRivalAiStage",
+			"name": "UIOpenCharaBgmSelectSetting",
 			"value": 295
 		},
 		{
-			"name": "UIRivalAiRank",
+			"name": "UIListCopy",
 			"value": 296
 		},
 		{
-			"name": "UIOpenWorldMapStatusMenuMaster",
+			"name": "UIShortcutTrainingMode",
 			"value": 297
 		},
 		{
-			"name": "UIMusicSettingTraining",
+			"name": "UIRivalAiStage",
 			"value": 298
 		},
 		{
-			"name": "UIPlayerListFastTravel",
+			"name": "UIRivalAiRank",
 			"value": 299
 		},
 		{
-			"name": "UIMatchingSettingTitlePreviewSwitch",
+			"name": "UIOpenWorldMapStatusMenuMaster",
 			"value": 300
 		},
 		{
-			"name": "UICustomRoomRecover",
+			"name": "UIMusicSettingTraining",
 			"value": 301
 		},
 		{
-			"name": "UIItemPreviewFighterProfilePreview",
+			"name": "UIPlayerListFastTravel",
 			"value": 302
 		},
 		{
-			"name": "UIOptionExtraButton",
+			"name": "UIMatchingSettingTitlePreviewSwitch",
 			"value": 303
 		},
 		{
-			"name": "UIMatchingSettingMasterAct",
+			"name": "UICustomRoomRecover",
 			"value": 304
 		},
 		{
-			"name": "UIOnlineShopViewButton",
+			"name": "UIItemPreviewFighterProfilePreview",
 			"value": 305
 		},
 		{
-			"name": "UIReadInputPreset",
+			"name": "UIOptionExtraButton",
 			"value": 306
 		},
 		{
-			"name": "UIStartAlternative",
+			"name": "UIMatchingSettingMasterAct",
 			"value": 307
 		},
 		{
-			"name": "UIBackAlternative",
+			"name": "UIOnlineShopViewButton",
 			"value": 308
 		},
 		{
-			"name": "UIControllerDistribution",
+			"name": "UIReadInputPreset",
 			"value": 309
 		},
 		{
-			"name": "UILocalMatchBattleSettingOpen",
+			"name": "UIStartAlternative",
 			"value": 310
 		},
 		{
-			"name": "UILocalMatchUpdateInfo",
+			"name": "UIBackAlternative",
 			"value": 311
 		},
 		{
-			"name": "UIReplayPrevScene_Alt",
+			"name": "UIControllerDistribution",
 			"value": 312
 		},
 		{
-			"name": "UIReplayNextScene_Alt",
+			"name": "UILocalMatchBattleSettingOpen",
 			"value": 313
 		},
 		{
-			"name": "UIChangeCasualCommandType_Alt",
+			"name": "UILocalMatchUpdateInfo",
 			"value": 314
 		},
 		{
-			"name": "UIJoyManualOpen",
+			"name": "UIReplayPrevScene_Alt",
 			"value": 315
 		},
 		{
-			"name": "UIDriveLink",
+			"name": "UIReplayNextScene_Alt",
 			"value": 316
 		},
 		{
-			"name": "UIDriveLinkCustomRoomSetting",
+			"name": "UIChangeCasualCommandType_Alt",
 			"value": 317
 		},
 		{
-			"name": "UIDriveLinkCustomRoomCreate",
+			"name": "UIJoyManualOpen",
 			"value": 318
 		},
 		{
-			"name": "UINovelSpTalkStart",
+			"name": "UIDriveLink",
 			"value": 319
 		},
 		{
-			"name": "UINovelSpTalkBack",
+			"name": "UIDriveLinkCustomRoomSetting",
 			"value": 320
 		},
 		{
-			"name": "UIModeSelectEventNewsShortCut",
+			"name": "UIDriveLinkCustomRoomCreate",
 			"value": 321
 		},
 		{
-			"name": "UIMatchingSettingBattleHudSetting",
+			"name": "UINovelSpTalkStart",
 			"value": 322
 		},
 		{
-			"name": "UIOnlineShopBattleHudPreview",
+			"name": "UINovelSpTalkBack",
 			"value": 323
 		},
 		{
-			"name": "UIRivalAiSuggestBattle",
+			"name": "UIModeSelectEventNewsShortCut",
 			"value": 324
 		},
 		{
-			"name": "UIVehicle_GetOff",
+			"name": "UIMatchingSettingBattleHudSetting",
 			"value": 325
 		},
 		{
-			"name": "UIVehicle_RevvingA",
+			"name": "UIOnlineShopBattleHudPreview",
 			"value": 326
 		},
 		{
-			"name": "UIVehicle_RevvingB",
+			"name": "UIRivalAiSuggestBattle",
 			"value": 327
 		},
 		{
-			"name": "UIReloadLiveStreamingMovie",
+			"name": "UIVehicle_GetOff",
 			"value": 328
 		},
 		{
-			"name": "Max",
+			"name": "UIVehicle_RevvingA",
 			"value": 329
+		},
+		{
+			"name": "UIVehicle_RevvingB",
+			"value": 330
+		},
+		{
+			"name": "UIBattleTourStartMenu",
+			"value": 331
+		},
+		{
+			"name": "UIAvatarRoomBattleSettingIcon",
+			"value": 332
+		},
+		{
+			"name": "UIAvatarRoomBattleSetting",
+			"value": 333
+		},
+		{
+			"name": "UIAvatarRoomStatusMenuIcon",
+			"value": 334
+		},
+		{
+			"name": "UIAvatarRoomStatusMenu",
+			"value": 335
+		},
+		{
+			"name": "UIAvatarRoomModeChangeIcon",
+			"value": 336
+		},
+		{
+			"name": "UIAvatarRoomModeChange",
+			"value": 337
+		},
+		{
+			"name": "UIAvatarArcadeGetGauge",
+			"value": 338
+		},
+		{
+			"name": "UIAvatarResultSkip",
+			"value": 339
+		},
+		{
+			"name": "UIOpponentCosSettingToggleAllColors",
+			"value": 340
+		},
+		{
+			"name": "UIOpponentCosSettingToggleEXDXColors",
+			"value": 341
+		},
+		{
+			"name": "UIOpponentCosSettingOffEXDXColorsEachChar",
+			"value": 342
+		},
+		{
+			"name": "UIStopAvatarRandomMatching",
+			"value": 343
+		},
+		{
+			"name": "UIOverlappingCommandDisp",
+			"value": 344
+		},
+		{
+			"name": "UIReloadLiveStreamingMovie",
+			"value": 345
+		},
+		{
+			"name": "Max",
+			"value": 346
 		}
 	],
 	"app.network.api.Enum.EquipmentPerformanceInfoChangeFlag": [
@@ -203239,6 +206039,28 @@
 		},
 		{
 			"name": "Num",
+			"value": 4
+		}
+	],
+	"app.UIPartsAvatarMatchingSettingMatching.SettingType": [
+		{
+			"name": "SearchRange",
+			"value": 0
+		},
+		{
+			"name": "SignalStrength",
+			"value": 1
+		},
+		{
+			"name": "PlatformMulti",
+			"value": 2
+		},
+		{
+			"name": "Confirmation",
+			"value": 3
+		},
+		{
+			"name": "Max",
 			"value": 4
 		}
 	],
@@ -203984,6 +206806,28 @@
 			"value": 2
 		}
 	],
+	"app.UIWidget_ReGameGuide.eStatePattern": [
+		{
+			"name": "LeftT",
+			"value": 0
+		},
+		{
+			"name": "LeftB",
+			"value": 1
+		},
+		{
+			"name": "RightT",
+			"value": 2
+		},
+		{
+			"name": "RightB",
+			"value": 3
+		},
+		{
+			"name": "_Max",
+			"value": 4
+		}
+	],
 	"nBattle.Extreme.CHB.EType": [
 		{
 			"name": "NONE",
@@ -204266,8 +207110,16 @@
 			"value": 41
 		},
 		{
-			"name": "Max",
+			"name": "EndingTitle",
 			"value": 42
+		},
+		{
+			"name": "NoFilter",
+			"value": 43
+		},
+		{
+			"name": "Max",
+			"value": 44
 		},
 		{
 			"name": "Start",
@@ -204275,7 +207127,7 @@
 		},
 		{
 			"name": "End",
-			"value": 41
+			"value": 43
 		}
 	],
 	"app.UIFlowShop.SellCategory": [
@@ -206280,12 +209132,28 @@
 			"value": 52
 		},
 		{
+			"name": "DailyTournamentTitleAddInfo53",
+			"value": 53
+		},
+		{
+			"name": "DailyTournamentTitleAddInfo54",
+			"value": 54
+		},
+		{
+			"name": "DailyTournamentTitleAddInfo55",
+			"value": 55
+		},
+		{
+			"name": "DailyTournamentTitleAddInfo56",
+			"value": 56
+		},
+		{
 			"name": "DailyTournamentTitleAddInfoMaxValue",
-			"value": 52
+			"value": 56
 		},
 		{
 			"name": "DailyTournamentTitleAddInfoMaxCount",
-			"value": 48
+			"value": 52
 		}
 	],
 	"app.RESIDENT_UI.WIDGET_TYPE_COMMON": [
@@ -206518,6 +209386,44 @@
 			"value": 3
 		}
 	],
+	"app.network.api.Enum.MatchingInfoAvatarRoute": [
+		{
+			"name": "EFgTopMenu",
+			"value": 1
+		},
+		{
+			"name": "EBhField",
+			"value": 2
+		},
+		{
+			"name": "EFighterProfile",
+			"value": 3
+		},
+		{
+			"name": "ECustomRoom",
+			"value": 4
+		},
+		{
+			"name": "ETremo",
+			"value": 5
+		},
+		{
+			"name": "EArcade",
+			"value": 6
+		},
+		{
+			"name": "EComboTrial",
+			"value": 7
+		},
+		{
+			"name": "EAvatarRoom",
+			"value": 8
+		},
+		{
+			"name": "EAvatarTremo",
+			"value": 9
+		}
+	],
 	"via.render.TextureScaler.DebugDrawModeType": [
 		{
 			"name": "RGBA",
@@ -206692,6 +209598,16 @@
 		{
 			"name": "AboveNotice",
 			"value": 3
+		}
+	],
+	"app.UIFlowAvatarResult.Param.Phase_0_Base.eGroupStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Nostyle",
+			"value": 1
 		}
 	],
 	"app.worldtour.CaptureRoomRenderSettingAvatarEquip.BodyCorrectType": [
@@ -206900,6 +209816,10 @@
 			"value": 36
 		},
 		{
+			"name": "PL_037",
+			"value": 37
+		},
+		{
 			"name": "PL_099",
 			"value": 99
 		},
@@ -206917,7 +209837,7 @@
 		},
 		{
 			"name": "MAX",
-			"value": 46
+			"value": 47
 		}
 	],
 	"via.render.SparseShadowTreeReductionPixel": [
@@ -207387,7 +210307,7 @@
 		},
 		{
 			"name": "ESF_007",
-			"value": 9
+			"value": 7
 		},
 		{
 			"name": "ESF_008",
@@ -207403,11 +210323,11 @@
 		},
 		{
 			"name": "ESF_011",
-			"value": 8
+			"value": 6
 		},
 		{
 			"name": "ESF_012",
-			"value": 36
+			"value": 37
 		},
 		{
 			"name": "ESF_013",
@@ -207423,7 +210343,7 @@
 		},
 		{
 			"name": "ESF_016",
-			"value": 33
+			"value": 30
 		},
 		{
 			"name": "ESF_017",
@@ -207439,7 +210359,7 @@
 		},
 		{
 			"name": "ESF_020",
-			"value": 11
+			"value": 13
 		},
 		{
 			"name": "ESF_021",
@@ -207447,7 +210367,7 @@
 		},
 		{
 			"name": "ESF_022",
-			"value": 12
+			"value": 14
 		},
 		{
 			"name": "ESF_023",
@@ -207463,15 +210383,15 @@
 		},
 		{
 			"name": "ESF_026",
-			"value": 6
+			"value": 9
 		},
 		{
 			"name": "ESF_027",
-			"value": 15
+			"value": 12
 		},
 		{
 			"name": "ESF_028",
-			"value": 30
+			"value": 31
 		},
 		{
 			"name": "ESF_029",
@@ -207479,11 +210399,11 @@
 		},
 		{
 			"name": "ESF_030",
-			"value": 10
+			"value": 8
 		},
 		{
 			"name": "ESF_031",
-			"value": 14
+			"value": 11
 		},
 		{
 			"name": "ESF_032",
@@ -207491,7 +210411,7 @@
 		},
 		{
 			"name": "ESF_033",
-			"value": 31
+			"value": 36
 		},
 		{
 			"name": "ESF_034",
@@ -207499,11 +210419,15 @@
 		},
 		{
 			"name": "ESF_101",
-			"value": 13
+			"value": 15
 		},
 		{
 			"name": "ESF_102",
-			"value": 7
+			"value": 10
+		},
+		{
+			"name": "ESF_103",
+			"value": 33
 		}
 	],
 	"app.worldtour.avatar.AvatarBase.JumpBehaviorTreeNodeType": [
@@ -208088,6 +211012,28 @@
 			"value": 6
 		}
 	],
+	"app.network.api.Enum.MatchingInfoAvatarPlatform": [
+		{
+			"name": "EAll",
+			"value": 1
+		},
+		{
+			"name": "EPcOnly",
+			"value": 2
+		},
+		{
+			"name": "EPsOnly",
+			"value": 3
+		},
+		{
+			"name": "EXboxOnly",
+			"value": 4
+		},
+		{
+			"name": "ESwitch2Only",
+			"value": 5
+		}
+	],
 	"app.network.api.Enum.ReplayPlaybackP1Rental": [
 		{
 			"name": "ERental",
@@ -208152,6 +211098,16 @@
 		{
 			"name": "_Comma",
 			"value": 10
+		}
+	],
+	"app.OtherFighterSettingSaveData.eVerifyResult": [
+		{
+			"name": "OK",
+			"value": 0
+		},
+		{
+			"name": "NoValidColor",
+			"value": 1
 		}
 	],
 	"app.UIPartsRewardBattlePassTier.ButtonType": [
@@ -208424,6 +211380,14 @@
 		{
 			"name": "ECustomroom",
 			"value": 11
+		},
+		{
+			"name": "EAvatararcade",
+			"value": 12
+		},
+		{
+			"name": "EAvatarrandommatch",
+			"value": 13
 		}
 	],
 	"via.gui.MouseButton": [
@@ -209494,6 +212458,14 @@
 		{
 			"name": "Room",
 			"value": 3
+		},
+		{
+			"name": "AvatarRandom",
+			"value": 4
+		},
+		{
+			"name": "Intrusion",
+			"value": 5
 		}
 	],
 	"app.network.api.Enum.BattlehubReloadContentType": [
@@ -209988,16 +212960,20 @@
 			"value": 10
 		},
 		{
-			"name": "WorldTour",
+			"name": "AvatarRoom",
 			"value": 11
 		},
 		{
-			"name": "Other",
+			"name": "WorldTour",
 			"value": 12
 		},
 		{
-			"name": "max",
+			"name": "Other",
 			"value": 13
+		},
+		{
+			"name": "max",
+			"value": 14
 		}
 	],
 	"via.simplewwise.User": [
@@ -211308,12 +214284,28 @@
 			"value": 273
 		},
 		{
-			"name": "UNIQUE_WTF_274",
+			"name": "UNIQUE_WTF032_0",
 			"value": 274
 		},
 		{
 			"name": "UNIQUE_WTF007_0",
 			"value": 275
+		},
+		{
+			"name": "UNIQUE_WTF_276",
+			"value": 276
+		},
+		{
+			"name": "UNIQUE_WTF_277",
+			"value": 277
+		},
+		{
+			"name": "UNIQUE_WTF_278",
+			"value": 278
+		},
+		{
+			"name": "UNIQUE_WTF_279",
+			"value": 279
 		}
 	],
 	"app.worldtour.mg.WTMiniGameUtility02.DroneUniqueParamIndex": [
@@ -211760,6 +214752,16 @@
 		{
 			"name": "ERanking",
 			"value": 4
+		}
+	],
+	"app.UIFlowLegendSelectInfo.FadeStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Forward",
+			"value": 1
 		}
 	],
 	"app.network.api.Enum.CustomInviteClientUserSearchType": [
@@ -212585,6 +215587,20 @@
 		},
 		{
 			"name": "Num",
+			"value": 2
+		}
+	],
+	"app.ReGameGuideConditions.WTMission.eCheckFlags": [
+		{
+			"name": "_None",
+			"value": 0
+		},
+		{
+			"name": "IsClearMission",
+			"value": 1
+		},
+		{
+			"name": "IsNotClearMission",
 			"value": 2
 		}
 	],
@@ -214056,6 +217072,16 @@
 		{
 			"name": "Half_Res",
 			"value": 1
+		}
+	],
+	"app.network.api.Enum.AvatarTrainingStartKind": [
+		{
+			"name": "EAvatarTremo",
+			"value": 1
+		},
+		{
+			"name": "ETrialTremo",
+			"value": 2
 		}
 	],
 	"app.network.api.Enum.ClubDetailSearchCrossPlay": [
@@ -218526,6 +221552,16 @@
 			"value": 4
 		}
 	],
+	"app.UIPartsGeneralItemThumbnail.ItemGeneralPlayState": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "BG",
+			"value": 1
+		}
+	],
 	"via.effect.script.EventEffectDataElement.PlayState": [
 		{
 			"name": "Idle",
@@ -219019,6 +222055,28 @@
 		},
 		{
 			"name": "EShortcutApp",
+			"value": 4
+		}
+	],
+	"app.worldtour.shell.WTShell.eLockOnState": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "LockMissed",
+			"value": 1
+		},
+		{
+			"name": "CheckAndFollow",
+			"value": 2
+		},
+		{
+			"name": "FollowOnly",
+			"value": 3
+		},
+		{
+			"name": "FollowEnd",
 			"value": 4
 		}
 	],
@@ -220348,6 +223406,16 @@
 			"value": 2
 		}
 	],
+	"app.UIPartsAvatarResultPlayGaugeSkill.eGaugeState": [
+		{
+			"name": "DEFAULT",
+			"value": 0
+		},
+		{
+			"name": "MAX",
+			"value": 1
+		}
+	],
 	"app.UIPartsSelectColorGridItem.StatePattern": [
 		{
 			"name": "DEFAULT",
@@ -221058,12 +224126,16 @@
 			"value": 5
 		},
 		{
-			"name": "Num",
+			"name": "BattleTourMove",
 			"value": 6
 		},
 		{
-			"name": "None",
+			"name": "Num",
 			"value": 7
+		},
+		{
+			"name": "None",
+			"value": 8
 		}
 	],
 	"via.navigation.map.SectionType": [
@@ -221406,6 +224478,24 @@
 		{
 			"name": "CalcOnly",
 			"value": 1
+		}
+	],
+	"app.UIFlowAvatarResult.Param.eGroupOnTop": [
+		{
+			"name": "Level",
+			"value": 0
+		},
+		{
+			"name": "Skill",
+			"value": 1
+		},
+		{
+			"name": "Item",
+			"value": 2
+		},
+		{
+			"name": "_Max",
+			"value": 3
 		}
 	],
 	"via.navigation.RelationMapInfo.Attribute": [
@@ -222752,6 +225842,10 @@
 		{
 			"name": "ReciperMemo",
 			"value": 16
+		},
+		{
+			"name": "PlayerNameAvatarRoom",
+			"value": 17
 		}
 	],
 	"app.worldtour.UIFlowWTTournamentResult.Param.ENpcInfoState": [
@@ -223980,6 +227074,10 @@
 		{
 			"name": "NotSell",
 			"value": 2
+		},
+		{
+			"name": "NotEnhanceable",
+			"value": 4
 		}
 	],
 	"app.FrameMeterNumAnim.FrameType": [
@@ -224504,6 +227602,20 @@
 		{
 			"name": "EQUAL",
 			"value": 4
+		}
+	],
+	"app.udAvatarTrainingDummySetting.eEditPresetType": [
+		{
+			"name": "Small",
+			"value": 0
+		},
+		{
+			"name": "Normal",
+			"value": 1
+		},
+		{
+			"name": "Large",
+			"value": 2
 		}
 	],
 	"app.UIBattleHud_Notice.ePosType": [
@@ -225150,6 +228262,150 @@
 		{
 			"name": "RankingSearchFilterPlayPointCharacterMaxCount",
 			"value": 5
+		}
+	],
+	"app.UIAvatarTrainingDummyStatusMenu_Equip.EditCheckResult": [
+		{
+			"name": "Allow",
+			"value": 0
+		},
+		{
+			"name": "DisableSlot",
+			"value": 1
+		},
+		{
+			"name": "NotSupport",
+			"value": 2
+		}
+	],
+	"app.Kpi.WT.WTItemOperationTypeForKPI": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "Add_BuyItem",
+			"value": 1
+		},
+		{
+			"name": "Add_DropItem",
+			"value": 2
+		},
+		{
+			"name": "Add_BattleRewardItem",
+			"value": 3
+		},
+		{
+			"name": "Add_QuestRewardItem",
+			"value": 4
+		},
+		{
+			"name": "Add_MiniGameRewardItem",
+			"value": 5
+		},
+		{
+			"name": "Add_ContactItem",
+			"value": 6
+		},
+		{
+			"name": "Add_SystemItem",
+			"value": 7
+		},
+		{
+			"name": "Add_OnlineItem",
+			"value": 8
+		},
+		{
+			"name": "Add_DlcItem",
+			"value": 9
+		},
+		{
+			"name": "Add_ChangeItem",
+			"value": 10
+		},
+		{
+			"name": "Add_OMGetItem",
+			"value": 11
+		},
+		{
+			"name": "Add_IMGetItem",
+			"value": 12
+		},
+		{
+			"name": "Add_SkllTreeItem",
+			"value": 13
+		},
+		{
+			"name": "Add_FlightTicketItem",
+			"value": 14
+		},
+		{
+			"name": "Add_DebugItem",
+			"value": 15
+		},
+		{
+			"name": "Add_ReadingGetItem",
+			"value": 16
+		},
+		{
+			"name": "Sub_UseItem",
+			"value": 18
+		},
+		{
+			"name": "Sub_SellItem",
+			"value": 19
+		},
+		{
+			"name": "Sub_DiscardItem",
+			"value": 20
+		},
+		{
+			"name": "Sub_QuestUseItem",
+			"value": 21
+		},
+		{
+			"name": "Sub_ContactItem",
+			"value": 22
+		},
+		{
+			"name": "Sub_ChangeItem",
+			"value": 23
+		},
+		{
+			"name": "Sub_DlcItem",
+			"value": 24
+		},
+		{
+			"name": "Sub_AccountChangeDeleteItem",
+			"value": 25
+		},
+		{
+			"name": "Sub_DebugItem",
+			"value": 26
+		},
+		{
+			"name": "Add_BuyItemInAvatarRoom",
+			"value": 28
+		},
+		{
+			"name": "Add_TreasureBoxInAvatarArcade",
+			"value": 29
+		},
+		{
+			"name": "Sub_UseItemInAvatarRoom",
+			"value": 30
+		},
+		{
+			"name": "Sub_SellItemInAvatarRoom",
+			"value": 31
+		},
+		{
+			"name": "Sub_UseItemInAvatarSpar",
+			"value": 32
+		},
+		{
+			"name": "Sub_UseItemInAvatarBattleTour",
+			"value": 33
 		}
 	],
 	"via.network.native.MacAppStoreTransactionEvent.EventType": [
@@ -226279,6 +229535,24 @@
 			"value": 1
 		}
 	],
+	"CharacterAsset.EIkLockID": [
+		{
+			"name": "ReferenceMyJoint",
+			"value": 0
+		},
+		{
+			"name": "TargetIsThrower",
+			"value": 1
+		},
+		{
+			"name": "LocalRotation",
+			"value": 2
+		},
+		{
+			"name": "IsRunWithoutLock",
+			"value": 3
+		}
+	],
 	"nBattle.RESOURCE_ID": [
 		{
 			"name": "P1",
@@ -226401,6 +229675,16 @@
 		{
 			"name": "BlueNoiseSpp_Max",
 			"value": 9
+		}
+	],
+	"app.UICFNFightersProfileTabAvatar.FlowParam.AvatarMode": [
+		{
+			"name": "NORMAL",
+			"value": 0
+		},
+		{
+			"name": "RANDOM_MATCH",
+			"value": 1
 		}
 	],
 	"app.worldtour.mg.UI75004.Param.PartsStatePattern": [
