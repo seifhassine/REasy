@@ -709,14 +709,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         else:
             glDisableClientState(GL_COLOR_ARRAY)
 
-        textured = bool(use_textures and buffer_set.uvs_vbo is not None and self._texture_ids)
-        if textured:
-            buffer_set.uvs_vbo.bind()
+        uvs_vbo = buffer_set.uvs_vbo
+        if use_textures and uvs_vbo is not None and self._texture_ids:
+            uvs_vbo.bind()
             glEnableClientState(GL_TEXTURE_COORD_ARRAY)
             glTexCoordPointer(2, GL_FLOAT, 0, None)
-        else:
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        return textured
+            return True
+
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+        return False
 
     def _unbind_arrays(self, buffer_set: _SceneBufferSet, *, textured: bool):
         if textured and buffer_set.uvs_vbo is not None:
