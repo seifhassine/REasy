@@ -257,6 +257,7 @@ class ProjectManager(QDockWidget):
         self._pak_selected_paks: list[str] = []
         self._pak_cached_reader: CachedPakReader | None = None
         self._pak_population_paths: list[str] = []
+        self._pak_index_dirty = False
         self._pak_flat_model: QStringListModel | None = None
         self._project_load_ticket = 0
         self._project_load_started_at = 0.0
@@ -465,20 +466,12 @@ class ProjectManager(QDockWidget):
 
     def _apply_pak_root(self, path):
         self.pak_dir = os.path.abspath(path)
-        
-        try:
-            paks = scan_pak_files(self.pak_dir, ignore_mod_paks=self.pak_ignore_mods_cb.isChecked())
-        except Exception as e:
-            QMessageBox.critical(self, self.tr("Scan failed"), str(e))
-            return
-        if not paks:
-            QMessageBox.warning(self, self.tr("Invalid folder"), self.tr("No .pak files found in the selected directory."))
-        
         self._update_project_cfg({"pak_game_dir": self.pak_dir})
         self._active_tab = "pak"
         self._update_path_label()
         self._scan_paks()
-        self._try_autoload_default_pak_list()
+        if self._pak_selected_paks:
+            self._try_autoload_default_pak_list()
         self._update_placeholders()
 
     # Public wrapper for use by by main window
@@ -514,6 +507,8 @@ class ProjectManager(QDockWidget):
         self.btn_sys.setChecked(tab == "sys")
         self.btn_proj.setChecked(tab == "proj")
         self.btn_pak_files.setChecked(tab == "pak")
+        if tab == "pak" and self._pak_index_dirty:
+            self._rebuild_pak_index(verify_paths=False)
         self.tree_sys.setVisible(tab == "sys")
         self.tree_proj.setVisible(tab == "proj")
         self.tree_pak.setVisible(tab == "pak")
@@ -571,6 +566,7 @@ class ProjectManager(QDockWidget):
             self.pak_list_edit.setText("")
             self._pak_selected_paks = []
             self._pak_cached_reader = None
+            self._pak_index_dirty = False
             self.pak_dir = None
             
             self.unpacked_dir = None
@@ -592,6 +588,7 @@ class ProjectManager(QDockWidget):
             self.pak_list_edit.setText("")
             self._pak_selected_paks = []
             self._pak_cached_reader = None
+            self._pak_index_dirty = False
             self.pak_dir = None
             
             self.unpacked_dir = None
@@ -646,9 +643,11 @@ class ProjectManager(QDockWidget):
                     self._load_pak_list_file(path, rebuild=False)
                     pak_state_changed = True
                 if pak_state_changed:
-                    self._set_loading_overlay(True, self.tr("Building PAK index..."))
-                    QApplication.processEvents()
-                    self._rebuild_pak_index()
+                    self._pak_index_dirty = True
+                    if self._active_tab == "pak":
+                        self._set_loading_overlay(True, self.tr("Preparing PAK list..."))
+                        QApplication.processEvents()
+                        self._rebuild_pak_index(verify_paths=False)
         except Exception:
             pass
         finally:
@@ -686,12 +685,18 @@ class ProjectManager(QDockWidget):
         if not paks:
             QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
             self._pak_selected_paks = []
+            self._pak_cached_reader = None
+            self._pak_all_paths = []
+            self._pak_population_paths = []
+            self._pak_index_dirty = False
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
+            self._update_placeholders()
             return
         self._pak_selected_paks = paks
         
         self._pak_cached_reader = None
+        self._pak_index_dirty = True
         if rebuild:
             self._rebuild_pak_index()
 
@@ -723,36 +728,60 @@ class ProjectManager(QDockWidget):
         self._update_project_cfg({"pak_list_path": path})
         
         self._pak_cached_reader = None
-        self._rebuild_pak_index()
+        self._pak_index_dirty = True
         if rebuild:
             self._rebuild_pak_index()
 
-    def _rebuild_pak_index(self):
+    def _rebuild_pak_index(self, *, verify_paths: bool = True):
         
         if not self._pak_selected_paks:
             
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
+            self._pak_index_dirty = False
             self._update_placeholders()
             return
         if not self._pak_base_paths:
             
             self._pak_tree_model = None
             self.tree_pak.setModel(None)
+            self._pak_index_dirty = False
             self._update_placeholders()
             return
         try:
-            r = self._ensure_project_pak_reader()
+            if not verify_paths:
+                display = sorted(self._pak_base_paths)
+                self._pak_all_paths = display
+                self._pak_population_paths = display
+                self._build_pak_tree_model(display)
+                self._apply_pak_filter_now()
+                self._pak_index_dirty = False
+                self._update_placeholders()
+                return
+
+            r = self._ensure_project_pak_reader(full_cache=False)
 
             cache_keys = r._cache_keys_set or set()
+            path_hashes = r._path_to_hashes
+
+            def path_is_cached(path: str) -> bool:
+                hashes = path_hashes.get(path)
+                if hashes is None:
+                    return filepath_hash(path) in cache_keys
+                return any(h in cache_keys for h in hashes)
+
             display = sorted(
                 p for p in self._pak_base_paths
-                if filepath_hash(p) in cache_keys
+                if path_is_cached(p)
             )
             self._pak_all_paths = display
             pop = set(display)
             try:
-                if self._pak_cached_reader and self._pak_cached_reader._cache:
+                if (
+                    self._pak_cached_reader
+                    and self._pak_cached_reader._cache
+                    and getattr(self._pak_cached_reader, "_cache_complete", True)
+                ):
                     for h, (_pak, e) in self._pak_cached_reader._cache.items():
                         if e.path is None:
                             pop.add(f"__Unknown/{h:016X}")
@@ -761,6 +790,7 @@ class ProjectManager(QDockWidget):
             self._pak_population_paths = sorted(pop)
             self._build_pak_tree_model(display)
             self._apply_pak_filter_now()
+            self._pak_index_dirty = False
             self._update_placeholders()
         except Exception as e:
             QMessageBox.critical(self, self.tr("Index failed"), str(e))
@@ -768,7 +798,7 @@ class ProjectManager(QDockWidget):
             self.tree_pak.setModel(None)
             self._update_placeholders()
 
-    def _ensure_project_pak_reader(self) -> CachedPakReader:
+    def _ensure_project_pak_reader(self, *, full_cache: bool = False) -> CachedPakReader:
         r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
         selected = list(self._pak_selected_paks)
         if not r:
@@ -776,15 +806,20 @@ class ProjectManager(QDockWidget):
         if r.pak_file_priority != selected:
             r = CachedPakReader()
         r.pak_file_priority = selected
-        if r._cache is None:
+        base_paths = list(self._pak_base_paths or [])
+        if full_cache:
+            if r._cache is None:
+                r.reset_file_list()
+                if base_paths:
+                    r.add_files(*base_paths)
+            if r._cache is None or not getattr(r, "_cache_complete", True):
+                r.cache_entries(assign_paths=False)
+        elif r._cache is None:
             r.reset_file_list()
-            r.cache_entries(assign_paths=False)
-            base_paths = list(self._pak_base_paths or [])
             if base_paths:
-                try:
-                    r.assign_paths(base_paths)
-                except Exception:
-                    pass
+                r.cache_entries_for_paths(base_paths)
+            else:
+                r.cache_entries(assign_paths=False)
         self._pak_cached_reader = r
         return r
 
@@ -902,9 +937,10 @@ class ProjectManager(QDockWidget):
             self._extract_from_paks_to_project(sorted(set(to_add)))
 
     def _extract_folder_by_prefix(self, folder_prefix: str):
-        if not self._pak_cached_reader:
+        if not self._pak_selected_paks:
             return
         try:
+            r = self._ensure_project_pak_reader(full_cache=False)
             base_name = os.path.basename(folder_prefix.rstrip('/'))
             if QMessageBox.question(
                 self,
@@ -913,9 +949,7 @@ class ProjectManager(QDockWidget):
                 QMessageBox.Yes | QMessageBox.No
             ) != QMessageBox.Yes:
                 return
-            if self._pak_cached_reader._cache is None:
-                self._pak_cached_reader.cache_entries(assign_paths=False)
-            named = set(self._pak_cached_reader.cached_paths(include_unknown=True))
+            named = set(r.cached_paths(include_unknown=False))
             targets = [p for p in named if p.startswith(folder_prefix)]
             if self._pak_base_paths:
                 for p in self._pak_base_paths:

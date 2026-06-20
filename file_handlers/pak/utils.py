@@ -45,6 +45,7 @@ _MANIFEST_PATH = "__MANIFEST/MANIFEST.TXT"
 _MODINFO_PATH = "modinfo.ini"
 _MANIFEST_HASH = None
 _MODINFO_HASH = None
+_MOD_PAK_CACHE: dict[tuple[str, int, int], bool] = {}
 
 
 def _ensure_hashes_initialized() -> None:
@@ -55,53 +56,81 @@ def _ensure_hashes_initialized() -> None:
         _MODINFO_HASH = filepath_hash(_MODINFO_PATH)
 
 
+def _mod_pak_cache_key(pak_path: str) -> tuple[str, int, int] | None:
+    try:
+        st = os.stat(pak_path)
+    except OSError:
+        return None
+    mtime_ns = getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))
+    return (os.path.abspath(pak_path), int(st.st_size), int(mtime_ns))
+
+
 def is_mod_pak(pak_path: str) -> bool:
     """Return True if the PAK contains a manifest or modinfo.ini."""
+    from .pakfile import PAK_FLAG_ENTRY_TABLE_KEY, _skip_optional_header_sections
+
     _ensure_hashes_initialized()
-    size = os.path.getsize(pak_path)
+    cache_key = _mod_pak_cache_key(pak_path)
+    if cache_key is not None:
+        cached = _MOD_PAK_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+        size = cache_key[1]
+    else:
+        size = os.path.getsize(pak_path)
+
+    result = False
     if size <= 16:
-        return False
-    with open(pak_path, "rb") as f:
-        header = f.read(16)
-        if len(header) != 16:
-            return False
-        magic, maj, minr, features, file_count, _ = struct.unpack("<IBBhII", header)
-        if magic != 0x414B504B:
-            return False
-        if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
-            return False
+        if cache_key is not None:
+            _MOD_PAK_CACHE[cache_key] = result
+        return result
 
-        entry_size = 48 if maj == 4 else 24
-        table_size = file_count * entry_size
-        table = bytearray(f.read(table_size))
-        if len(table) != table_size:
-            return False
-
-        if (features & 16) != 0:
-            f.seek(4, 1)
-
-        if features != 0:
-            key = bytearray(f.read(128))
-            if len(key) != 128:
+    try:
+        with open(pak_path, "rb") as f:
+            header = f.read(16)
+            if len(header) != 16:
                 return False
-            _decrypt_pak_entry_data(table, key)
+            magic, maj, minr, features, file_count, _ = struct.unpack("<IBBhII", header)
+            if magic != 0x414B504B:
+                return False
+            if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
+                return False
 
-        off = 0
-        if maj == 4:
-            while off < table_size:
-                hash_lower, hash_upper = struct.unpack_from("<II", table, off)
-                combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
-                if combined == _MANIFEST_HASH or combined == _MODINFO_HASH:
-                    return True
-                off += 48
-        else:
-            while off < table_size:
-                _, _, hash_upper, hash_lower = struct.unpack_from("<qqII", table, off)
-                combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
-                if combined == _MANIFEST_HASH or combined == _MODINFO_HASH:
-                    return True
-                off += 24
-        return False
+            entry_size = 48 if maj == 4 else 24
+            table_size = file_count * entry_size
+            table = bytearray(f.read(table_size))
+            if len(table) != table_size:
+                return False
+
+            _skip_optional_header_sections(f, features)
+
+            if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
+                key = bytearray(f.read(128))
+                if len(key) != 128:
+                    return False
+                _decrypt_pak_entry_data(table, key)
+
+            off = 0
+            if maj == 4:
+                while off < table_size:
+                    hash_lower, hash_upper = struct.unpack_from("<II", table, off)
+                    combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
+                    if combined == _MANIFEST_HASH or combined == _MODINFO_HASH:
+                        result = True
+                        break
+                    off += 48
+            else:
+                while off < table_size:
+                    _, _, hash_upper, hash_lower = struct.unpack_from("<qqII", table, off)
+                    combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
+                    if combined == _MANIFEST_HASH or combined == _MODINFO_HASH:
+                        result = True
+                        break
+                    off += 24
+    finally:
+        if cache_key is not None:
+            _MOD_PAK_CACHE[cache_key] = result
+    return result
 
 
 def scan_pak_files(directory: str | os.PathLike, ignore_mod_paks: bool = True) -> List[str]:

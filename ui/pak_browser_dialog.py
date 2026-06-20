@@ -182,22 +182,12 @@ class PakBrowserDialog(QDialog):
 		for p in paks:
 			self.pak_list.addItem(p)
 		self._refresh_index()
-		if not self._base_paths and not self.ignore_mods_cb.isChecked():
-			manifest_only = self._auto_merge_manifest()
-			if manifest_only:
-				self._base_paths = manifest_only
-				self._refresh_index()
-		self._recompute_display()
 
 	def _on_ignore_mods_toggled(self, checked: bool):
 		root = self.dir_edit.text().strip()
 		if root and os.path.isdir(root):
 			self._scan_dir()
 			return
-		if not checked and not self._base_paths:
-			manifest_only = self._auto_merge_manifest()
-			if manifest_only:
-				self._base_paths = manifest_only
 		self._refresh_index()
 
 	def _add_paks(self):
@@ -207,11 +197,6 @@ class PakBrowserDialog(QDialog):
 				self.pak_list.addItem(f)
 		if files:
 			self._refresh_index()
-			if not self._base_paths and not self.ignore_mods_cb.isChecked():
-				manifest_only = self._auto_merge_manifest()
-				if manifest_only:
-					self._base_paths = manifest_only
-					self._refresh_index()
 
 	def _remove_paks(self):
 		for it in self.pak_list.selectedItems():
@@ -241,12 +226,23 @@ class PakBrowserDialog(QDialog):
 	
 	def _on_show_unknown_toggled(self, _checked: bool):
 		with self._loading(self.tr("Updating file list...")):
+			try:
+				if self.show_unknown_cb.isChecked():
+					self._ensure_cache(full=True)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				return
 			self._recompute_display()
 
 	def _on_show_only_valid_toggled(self, _checked: bool):
 		with self._loading(self.tr("Updating file list...")):
-			self._update_dump_button_visibility()
-			self._apply_filter_now()
+			try:
+				if self.show_only_valid_cb.isChecked():
+					self._ensure_cache(validate=True)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				return
+			self._recompute_display()
 
 	def _on_filter_text_changed(self, _=None):
 		self._filter_timer.start(120)
@@ -378,6 +374,51 @@ class PakBrowserDialog(QDialog):
 			return
 		self._recompute_display()
 
+	def _current_reader(self) -> CachedPakReader | None:
+		paks = self._selected_paks()
+		if not paks:
+			self._cached_reader = None
+			self._cache_outdated = False
+			return None
+
+		r = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
+		if r is None or r.pak_file_priority != paks or self._cache_outdated:
+			r = CachedPakReader()
+			r.pak_file_priority = paks
+			self._cached_reader = r
+			self._cache_outdated = False
+		return r
+
+	def _ensure_cache(self, *, full: bool = False, validate: bool = False) -> CachedPakReader | None:
+		r = self._current_reader()
+		if r is None:
+			self._valid_paths = set()
+			return None
+
+		known = sorted(set(self._base_paths))
+		if full:
+			had_cache = r._cache is not None
+			if r._cache is None:
+				r.reset_file_list()
+				if known:
+					r.add_files(*known)
+			if r._cache is None or not getattr(r, "_cache_complete", True):
+				r.cache_entries(assign_paths=False)
+			elif known and had_cache:
+				r.assign_paths(known)
+		elif validate:
+			if not known:
+				self._valid_paths = set()
+				return r
+			if r._cache is None:
+				r.cache_entries_for_paths(known)
+			elif getattr(r, "_cache_complete", True):
+				r.assign_paths(known)
+
+		if full or validate:
+			self._valid_paths = {p.lower() for p in r.cached_paths(include_unknown=False)}
+		return r
+
 	def _refresh_index(self):
 		paks = self._selected_paks()
 		if not paks:
@@ -387,45 +428,23 @@ class PakBrowserDialog(QDialog):
 			self._cache_outdated = False
 			self._apply_filter()
 			return
-		
-		if self._cached_reader and self._cached_reader.pak_file_priority == paks and not self._cache_outdated:
-			try:
-				self._cached_reader.assign_paths(self._base_paths, replace_existing=True)
-				self._valid_paths = set()
-				if self._cached_reader._cache:
-					all_cached = self._cached_reader.cached_paths(include_unknown=True)
-					self._valid_paths = {p.lower() for p in all_cached}
-				self._recompute_display()
-				return
-			except RuntimeError:
-				pass
-		
-		r = CachedPakReader()
-		r.pak_file_priority = paks
-		try:
 
-			known = list(set(self._base_paths)) if self._base_paths else []
-			if not known and not self.ignore_mods_cb.isChecked():
+		try:
+			if not self._base_paths and not self.ignore_mods_cb.isChecked():
 				manifest_only = self._auto_merge_manifest()
 				if manifest_only:
-					known = manifest_only
-			if known:
-				r.add_files(*known)
-				r.cache_entries(assign_paths=False)
-			else:
+					self._base_paths = sorted(set(p.lower() for p in manifest_only))
 
-				r.cache_entries(assign_paths=False)
+			if self.show_unknown_cb.isChecked():
+				self._ensure_cache(full=True)
+			elif self.show_only_valid_cb.isChecked():
+				self._ensure_cache(validate=True)
+			else:
+				self._valid_paths = set()
 		except Exception as e:
 			QMessageBox.critical(self, self.tr("Index failed"), str(e))
 			return
-		self._cached_reader = r
-		self._cache_outdated = False
-		
-		self._valid_paths = set()
-		if self._cached_reader and self._cached_reader._cache:
-			all_cached = self._cached_reader.cached_paths(include_unknown=True)
-			self._valid_paths = {p.lower() for p in all_cached}
-		
+
 		self._recompute_display()
 
 	def _recompute_display(self):
@@ -479,21 +498,13 @@ class PakBrowserDialog(QDialog):
 			self._base_paths = merged
 
 			_t3a = time.perf_counter()
-			if self._cached_reader:
-				try:
-					self._cached_reader.assign_paths(self._base_paths, replace_existing=True)
-					self._valid_paths = set()
-					if self._cached_reader._cache:
-						all_cached = self._cached_reader.cached_paths(include_unknown=True)
-						self._valid_paths = {p.lower() for p in all_cached}
-				except Exception:
-					self._refresh_index()
-			else:
-				self._refresh_index()
+			self._cached_reader = None
+			self._valid_paths = set()
+			self._cache_outdated = False
+			self._refresh_index()
 			_t3b = time.perf_counter()
 			if _profile:
-				_sections.append(("Resolve names (assign/index)", ( _t3b - _t3a ) * 1000.0))
-			self._recompute_display()
+				_sections.append(("Refresh display/index", ( _t3b - _t3a ) * 1000.0))
 		_t4 = time.perf_counter()
 		if _profile:
 			_sections.append(("Build UI model", ( _t4 - _t3b ) * 1000.0))
@@ -523,7 +534,7 @@ class PakBrowserDialog(QDialog):
 		self._extract(targets)
 
 	def _extract_all(self):
-		targets = list(self._all_manifest_paths)
+		targets = list(self._iter_display_paths())
 		self._extract(targets)
 
 	def _collect_selected_paths(self) -> List[str]:
@@ -663,21 +674,16 @@ class PakBrowserDialog(QDialog):
 			return
 		Path(outdir).mkdir(parents=True, exist_ok=True)
 
-		if self._cache_outdated:
-			self._refresh_index()
-		
 		if any(t.startswith("__Unknown/") for t in targets):
 
-			rc = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
+			try:
+				rc = self._ensure_cache(full=True)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				return
 			if not rc:
-				rc = CachedPakReader()
-				rc.pak_file_priority = paks
-				try:
-
-					rc.cache_entries(assign_paths=False)
-				except Exception as e:
-					QMessageBox.critical(self, self.tr("Index failed"), str(e))
-					return
+				QMessageBox.critical(self, self.tr("Index failed"), self.tr("Could not build PAK index."))
+				return
 			missing: List[str] = []
 			count = self._run_extraction_with_progress(
 				lambda: rc,
@@ -692,18 +698,18 @@ class PakBrowserDialog(QDialog):
 			QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))
 			return
 
-
-		r = CachedPakReader()
-		r.pak_file_priority = paks
+		try:
+			r = self._ensure_cache(validate=True)
+		except Exception as e:
+			QMessageBox.critical(self, self.tr("Index failed"), str(e))
+			return
+		if not r:
+			QMessageBox.critical(self, self.tr("Index failed"), self.tr("Could not build PAK index."))
+			return
 		missing: List[str] = []
 
-		def known_path_reader():
-			if self._cached_reader and isinstance(self._cached_reader, CachedPakReader):
-				r._cache = self._cached_reader._cache
-			return r
-
 		count = self._run_extraction_with_progress(
-			known_path_reader,
+			lambda: r,
 			lambda: outdir,
 			targets,
 			missing

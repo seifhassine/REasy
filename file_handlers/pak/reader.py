@@ -240,9 +240,10 @@ class CachedPakReader(PakReader):
         super().__init__()
         self._cache: Optional[Dict[int, tuple[PakFile, PakEntry]]] = None
         self._cache_keys_set: Optional[set[int]] = None
+        self._cache_complete: bool = True
 
     def cache_entries(self, assign_paths: bool = False) -> None:
-        if self._cache:
+        if self._cache is not None and self._cache_complete:
             return
         self._cache = {}
 
@@ -257,6 +258,25 @@ class CachedPakReader(PakReader):
                     self._cache[h] = (pak, e)
 
         self._cache_keys_set = set(self._cache.keys())
+        self._cache_complete = True
+
+    def cache_entries_for_paths(self, paths: Iterable[str]) -> None:
+        """Build a lightweight cache containing only known list paths."""
+        if self._cache is not None:
+            return
+
+        self.reset_file_list()
+        self.add_files(*paths)
+        self._cache = {}
+
+        for pak in self._enumerate_paks(assign_paths=True):
+            for e in pak.entries:
+                h = e.combined_hash
+                if h not in self._cache:
+                    self._cache[h] = (pak, e)
+
+        self._cache_keys_set = set(self._cache.keys())
+        self._cache_complete = False
 
     def assign_paths(self, paths: Iterable[str], replace_existing: bool = False) -> int:
         """Fast path: assign known names into the existing cache without rebuilding.
@@ -313,6 +333,9 @@ class CachedPakReader(PakReader):
             if self._cache is None:
                 raise RuntimeError("Failed to build cache")
         hit = self._cache.get(h)
+        if not hit and not self._cache_complete:
+            self.cache_entries(assign_paths=False)
+            hit = self._cache.get(h) if self._cache else None
         if not hit:
             return None
         pak, e = hit
@@ -328,6 +351,8 @@ class CachedPakReader(PakReader):
             self.cache_entries()
             if self._cache is None:
                 return []
+        elif include_unknown and not self._cache_complete:
+            self.cache_entries()
 
         named = []
         unknown = []
@@ -476,6 +501,9 @@ class CachedPakReader(PakReader):
                 missing_local.append(p)
                 continue
             hit = self._cache.get(h)
+            if not hit and not self._cache_complete:
+                self.cache_entries(assign_paths=False)
+                hit = self._cache.get(h) if self._cache else None
             if not hit:
                 missing_local.append(p)
                 continue
