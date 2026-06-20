@@ -1597,11 +1597,6 @@ Your contributions help keep this project going.</source>
         <source>PAK Browser</source>
         <translation>PAK 浏览器</translation>
     </message>
-    <message>
-        <location filename="../../REasy.py" line="1247"/>
-        <source>REF Script Creator</source>
-        <translation>REF 脚本创建器</translation>
-    </message>
 </context>
 <context>
     <name>StringInput</name>

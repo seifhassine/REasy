@@ -1306,10 +1306,6 @@ class REasyEditorApp(QMainWindow):
         rsz_differ_act.triggered.connect(self.open_rsz_differ)
         tools_menu.addAction(rsz_differ_act)
 
-        script_creator_act = QAction(self.tr("REF Script Creator"), self)
-        script_creator_act.triggered.connect(self.open_script_creator)
-        tools_menu.addAction(script_creator_act)
-        
         pak_browser_act = QAction(self.tr("PAK Browser"), self)
         pak_browser_act.triggered.connect(self.open_pak_browser)
         tools_menu.addAction(pak_browser_act)
@@ -1469,18 +1465,6 @@ class REasyEditorApp(QMainWindow):
         min_w = max(360, self.proj_dock.minimumSizeHint().width())
         self.resizeDocks([self.proj_dock], [min_w], Qt.Horizontal)
         
-    def open_script_creator(self):
-        """
-        Opens (or focuses) the standalone REF Script Creator window.
-        We keep a single instance around so multiple clicks just raise it.
-        """
-        if not hasattr(self, "_script_creator") or self._script_creator is None:
-            from tools.ref_script_creator import ScriptCreatorWindow
-            self._script_creator = ScriptCreatorWindow(self)
-        self._script_creator.show()
-        self._script_creator.raise_()
-        self._script_creator.activateWindow()
-    
     def open_pak_browser(self):
         if self._pak_browser is None:
             self._pak_browser = PakBrowserDialog(self)
