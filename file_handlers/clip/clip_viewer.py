@@ -69,6 +69,9 @@ KEY_REF_ROLES = (
     ("Extra 2", "extra_key2_ref"),
     ("Extra 3", "extra_key3_ref"),
 )
+ROOT_NODES_LABEL = "Root Nodes"
+USER_DATA_ASSETS_LABEL = "User Data Assets"
+INVALID_FIELD_STYLE = "border: 1px solid #cc3333;"
 
 
 def _node_type_value(node: Node) -> int:
@@ -226,7 +229,7 @@ class ClipTimelineCanvas(QWidget):
         } | _clip_root_node_ids(self.parsed)
         loose_roots = [node for node in self.parsed.root_nodes if id(node) not in referenced]
         if loose_roots:
-            self.rows.append(self._row("section", None, 0, "Root Nodes", meta=f"{len(loose_roots)} roots"))
+            self.rows.append(self._row("section", None, 0, ROOT_NODES_LABEL, meta=f"{len(loose_roots)} roots"))
             for node in loose_roots:
                 self._add_node_rows(node, 1)
         self._filter_rows()
@@ -941,10 +944,10 @@ class ClipTimelineCanvas(QWidget):
     def insert_root_node_row(self, node: Node) -> bool:
         if self.row_index_for(node) >= 0:
             return False
-        section_index = next((i for i, row in enumerate(self.rows) if row["kind"] == "section" and row["label"] == "Root Nodes"), -1)
+        section_index = next((i for i, row in enumerate(self.rows) if row["kind"] == "section" and row["label"] == ROOT_NODES_LABEL), -1)
         if section_index < 0:
             section_index = len(self.rows)
-            self.rows.append(self._row("section", None, 0, "Root Nodes", meta="1 roots"))
+            self.rows.append(self._row("section", None, 0, ROOT_NODES_LABEL, meta="1 roots"))
         elif self.parsed:
             self.rows[section_index]["meta"] = f"{len(self.parsed.root_nodes)} roots"
         rows = self._captured_rows(lambda: self._add_node_rows(node, self.rows[section_index].get("depth", 0) + 1))
@@ -1519,7 +1522,7 @@ class ClipViewer(QWidget):
             owner = self.current.get("owner_prop") if self.current else self._property_for_key(obj)
             return ([*self._object_path(owner)] if owner else []) + [self._title(obj)]
         if isinstance(obj, UserDataAssetInfo):
-            return ["User Data Assets", self._title(obj)]
+            return [USER_DATA_ASSETS_LABEL, self._title(obj)]
         return [self._title(obj)]
 
     def _node_path_to(self, target: Node):
@@ -1546,7 +1549,7 @@ class ClipViewer(QWidget):
                 if found:
                     return found
         for node in self.parsed.root_nodes:
-            found = walk(node, ["Root Nodes"])
+            found = walk(node, [ROOT_NODES_LABEL])
             if found:
                 return found
         return [self._title(target)]
@@ -1603,7 +1606,7 @@ class ClipViewer(QWidget):
                 edit.setStyleSheet("")
                 self._object_changed(obj)
             except Exception:
-                edit.setStyleSheet("border: 1px solid #cc3333;")
+                edit.setStyleSheet(INVALID_FIELD_STYLE)
         edit.editingFinished.connect(commit)
         self.form.addRow(label, edit)
 
@@ -1618,7 +1621,7 @@ class ClipViewer(QWidget):
                 edit.setStyleSheet("")
                 self._object_changed(obj)
             except Exception:
-                edit.setStyleSheet("border: 1px solid #cc3333;")
+                edit.setStyleSheet(INVALID_FIELD_STYLE)
         edit.editingFinished.connect(commit)
         self.form.addRow(label, edit)
 
@@ -1695,7 +1698,7 @@ class ClipViewer(QWidget):
             ("Clip Infos", len(self.parsed.clip_infos)),
             ("Nodes", len(self.parsed.nodes)),
             ("Properties", len(self.parsed.properties)),
-            ("User Data Assets", len(self.parsed.user_data_assets)),
+            (USER_DATA_ASSETS_LABEL, len(self.parsed.user_data_assets)),
             ("OWords", len(self.parsed.owords)),
         ))
         self._related_section("Tracks")
@@ -1704,7 +1707,7 @@ class ClipViewer(QWidget):
             self._related_section("Clip Infos")
             self._related(self.parsed.clip_infos, "clip_info", owner_list=self.parsed.clip_infos)
         if self.parsed.user_data_assets:
-            self._related_section("User Data Assets")
+            self._related_section(USER_DATA_ASSETS_LABEL)
             self._related(self.parsed.user_data_assets, "user_data_asset", owner_list=self.parsed.user_data_assets)
         if self.parsed.owords:
             self._related_section("OWords")
@@ -1732,7 +1735,7 @@ class ClipViewer(QWidget):
                 self._mark_modified()
                 self.timeline.update()
             except Exception:
-                edit.setStyleSheet("border: 1px solid #cc3333;")
+                edit.setStyleSheet(INVALID_FIELD_STYLE)
         edit.editingFinished.connect(commit)
         self.form.addRow("Path Point", edit)
 
@@ -1970,7 +1973,7 @@ class ClipViewer(QWidget):
                     edit.setStyleSheet("")
                     self._object_changed(key)
             except Exception:
-                edit.setStyleSheet("border: 1px solid #cc3333;")
+                edit.setStyleSheet(INVALID_FIELD_STYLE)
         edit.editingFinished.connect(commit)
         self.form.addRow("Value", edit)
 
@@ -2012,7 +2015,7 @@ class ClipViewer(QWidget):
                 edit.setStyleSheet("")
                 self._object_changed(key)
             except Exception:
-                edit.setStyleSheet("border: 1px solid #cc3333;")
+                edit.setStyleSheet(INVALID_FIELD_STYLE)
         edit.editingFinished.connect(commit)
         self.form.addRow("Curve Controls", edit)
 

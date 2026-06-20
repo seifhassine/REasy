@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from file_handlers.base_handler import BaseFileHandler
 from .wel_file import WELFile, WELEventEntry
@@ -111,18 +111,6 @@ class WelHandler(BaseFileHandler):
         parent.appendRow([free_area_item, QStandardItem("")])
         for field in ("mFreeArea0to7", "mFreeArea8to11", "mFreeArea12to15"):
             free_area_item.appendRow([QStandardItem(field), QStandardItem(str(getattr(event.mFreeArea, field)))])
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
-        return None
-
-    def add_variables(self, target, prefix: str, count: int):
-        return None
-
-    def update_strings(self):
-        return None
 
     def create_viewer(self):
         from .wel_viewer import WelViewer

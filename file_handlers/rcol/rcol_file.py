@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 import struct
 from .base_model import FileHandler
 from .rcol_structures import Header, RcolGroup, RCOL_MAGIC, calc_hash
@@ -38,7 +38,7 @@ class RcolFile:
     
 
         
-    def read(self, data: Union[bytes, bytearray], file_version: int = 0, file_path: str = "") -> bool:
+    def read(self, data: bytes | bytearray, file_version: int = 0, file_path: str = "") -> bool:
         """Read RCOL file from bytes"""
         self.file_version = file_version if file_version > 0 else 25
         if self.file_version < 10 or self.file_version == 38:

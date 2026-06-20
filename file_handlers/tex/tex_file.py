@@ -268,7 +268,7 @@ class TexFile:
         h = self.header
         w = max(1, h.width >> level)
         hh = max(1, h.height >> level)
-        expected_size, expected_pitch, row_step = self._expected_mip_layout(w, hh)
+        expected_size, expected_pitch, _ = self._expected_mip_layout(w, hh)
         raw_mip = self._read_mip_bytes(idx, mh)
         if mh.pitch > expected_pitch:
             data = self._read_mip_with_pitch(raw_mip, w, hh, mh.pitch)

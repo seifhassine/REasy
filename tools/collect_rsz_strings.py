@@ -30,7 +30,6 @@ def _build_extension_variants(ext_json_path, verbose=False):
         can_not_have_x64 = meta.get("CanNotHaveX64", False) or not can_have_x64
         # Some JSONs omit CanHaveStm; infer if both x64 flags exist (fallback false)
         can_have_stm = meta.get("CanHaveStm", False)
-        can_not_have_stm = meta.get("CanNotHaveStm", False) or not can_have_stm
         can_have_lang = meta.get("CanHaveLang", False)
         can_not_have_lang = meta.get("CanNotHaveLang", False) or not can_have_lang
         locales = [l for l in meta.get("Locales", []) if l in known_langs] if can_have_lang else []
@@ -168,7 +167,7 @@ def collect_strings_from_rsz_files(directory, output_file, extensions=None, excl
     if not extensions:
         extensions = ['.pfb', '.scn', '.user', '.tex', '.mot', '.mesh', '.mdf2']
     # Normalize extensions: ensure leading dot, compare lowercase
-    norm_exts = set(e if e.startswith('.') else f'.{e}' for e in extensions)
+    norm_exts = {e if e.startswith('.') else f'.{e}' for e in extensions}
     # We'll match endings; convert to lowercase for comparison
     lowercase_exts = {e.lower() for e in norm_exts}
 

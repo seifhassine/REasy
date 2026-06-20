@@ -35,6 +35,13 @@ DEFAULT_SETTINGS = {
     "last_seen_version": "",
     "enum_prompt_checked_json_path": "",
     "mesh_viewer_prefer_streaming_tex": False,
+    "mesh_viewer_fps_limit": 60,
+    "mesh_viewer_wireframe_mode": "off",
+    "mesh_viewer_lighting_mode": "fixed",
+    "mesh_viewer_line_width": 1.5,
+    "mesh_viewer_ambient": 0.35,
+    "mesh_viewer_diffuse": 0.65,
+    "mesh_viewer_show_bones": False,
 }
 
 

@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, TYPE_CHECKING, Any
+from typing import List, Optional, TYPE_CHECKING, Any
 import uuid
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ from .config import MAX_VARIABLES
 from utils.hash_util import murmur3_hash
 
 class UVarFile(BaseModel):
-    def __init__(self, handler: Optional[Union[FileHandler, bytes, bytearray]] = None, is_embedded: bool = False):
+    def __init__(self, handler: FileHandler | bytes | bytearray | None = None, is_embedded: bool = False):
         super().__init__()
         self.header = HeaderStruct()
         self.variables: List[Variable] = []
@@ -204,7 +204,7 @@ class UVarFile(BaseModel):
             
         return True
             
-    def read(self, data: Union[bytes, bytearray]) -> bool:
+    def read(self, data: bytes | bytearray) -> bool:
         handler = FileHandler(data)
         return self.do_read(handler)
         
@@ -221,7 +221,7 @@ class UVarFile(BaseModel):
         for embed in self.embedded_uvars:
             embed.update_strings()
             
-    def add_variable(self, name: str, var_type: Union[int, 'TypeKind'], value: Any = None) -> Variable:
+    def add_variable(self, name: str, var_type: int | TypeKind, value: Any = None) -> Variable:
         from .uvar_types import TypeKind
         
         var = Variable()

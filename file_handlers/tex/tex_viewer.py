@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
 
 from .texture_decoder import decode_dds_mip, decode_tex_mip
 
+EXPORT_TEX_TITLE = "Export TEX"
+
 class DraggableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -157,9 +159,6 @@ class TexViewer(QWidget):
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
 
-        #self.export_tex_btn = QPushButton("Export TEX")
-        #self.export_tex_btn.clicked.connect(self._export_tex)
-        #exp.addWidget(self.export_tex_btn)
         exp.addStretch()
         layout.addLayout(exp)
 
@@ -356,7 +355,7 @@ class TexViewer(QWidget):
                 from .tex_file import TexFile
                 dds_bytes = getattr(self.handler, 'raw_data', b"")
                 if not dds_bytes:
-                    QMessageBox.warning(self, "Export TEX", "No DDS data loaded.")
+                    QMessageBox.warning(self, EXPORT_TEX_TITLE, "No DDS data loaded.")
                     return
                 import struct as _st
                 height = _st.unpack_from('<I', dds_bytes, 12)[0]
@@ -368,7 +367,7 @@ class TexViewer(QWidget):
                 levels = []
                 w = width
                 h = height
-                for i in range(mip_count):
+                for _ in range(mip_count):
                     if w == 0 or h == 0:
                         break
                     from .dxgi import top_mip_size_bytes
@@ -406,8 +405,8 @@ class TexViewer(QWidget):
                     with open(path, 'wb') as f:
                         f.write(tex_bytes)
                 else:
-                    QMessageBox.information(self, "Export TEX", "Save cancelled.")
+                    QMessageBox.information(self, EXPORT_TEX_TITLE, "Save cancelled.")
             else:
-                QMessageBox.warning(self, "Export TEX", "Open a DDS file first.")
+                QMessageBox.warning(self, EXPORT_TEX_TITLE, "Open a DDS file first.")
         except Exception as e:
             QMessageBox.critical(self, "Export TEX failed", str(e))

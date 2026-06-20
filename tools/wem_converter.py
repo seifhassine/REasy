@@ -10,6 +10,7 @@ from pathlib import Path
 POPULAR_WEM_CODECS: list[tuple[str, int]] = [
     ("PCM S16LE (sample/default)", 0xFFFE),
 ]
+PCM_S16LE_ONLY_MESSAGE = "Only PCM s16le WAV input is supported."
 
 
 def get_codec_profile(codec_tag: int) -> tuple[str, int]:
@@ -77,18 +78,18 @@ def _wav_to_wem_bytes(wav_data: bytes, *, codec_tag: int) -> bytes:
 
     audio_format, channels, sample_rate, byte_rate, block_align, bits = struct.unpack_from("<HHIIHH", fmt, 0)
     if bits != 16:
-        raise ValueError("Only PCM s16le WAV input is supported.")
+        raise ValueError(PCM_S16LE_ONLY_MESSAGE)
     if audio_format == 0xFFFE:
         if len(fmt) < 40:
             raise ValueError("Extensible WAV input is missing required fields.")
         source_channel_mask = struct.unpack_from("<I", fmt, 20)[0]
         subformat = fmt[24:40]
         if subformat != _PCM_SUBFORMAT_GUID:
-            raise ValueError("Only PCM s16le WAV input is supported.")
+            raise ValueError(PCM_S16LE_ONLY_MESSAGE)
     elif audio_format == 0x0001:
         source_channel_mask = _default_channel_mask(channels)
     else:
-        raise ValueError("Only PCM s16le WAV input is supported.")
+        raise ValueError(PCM_S16LE_ONLY_MESSAGE)
 
     wem_fmt = struct.pack(
         "<HHIIHHHHI16s",

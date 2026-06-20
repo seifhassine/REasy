@@ -7,13 +7,13 @@ by different file format handlers to avoid code duplication.
 
 import struct
 import uuid
-from typing import Any, Union, List, Tuple
+from typing import Any, List, Tuple
 from contextlib import contextmanager
 
 
 class BinaryHandler:
     
-    def __init__(self, data: Union[bytes, bytearray], offset: int = 0, file_version: int = 0, file_path: str = ""):
+    def __init__(self, data: bytes | bytearray, offset: int = 0, file_version: int = 0, file_path: str = ""):
         self.data = bytearray(data) if isinstance(data, bytes) else data
         self.position = 0
         self.offset = offset

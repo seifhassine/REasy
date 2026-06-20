@@ -39,12 +39,6 @@ class SoundHandler(FileHandler):
         self._replacements[int(source_id)] = bytes(wem_data)
         self.modified = True
 
-    def populate_treeview(self, tree, parent_item, metadata_map: dict): pass
-    def get_context_menu(self, tree, item, meta: dict): pass
-    def handle_edit(self, meta: dict, new_val, old_val, item): pass
-    def add_variables(self, target, prefix: str, count: int): pass
-    def update_strings(self): pass
-
     def create_viewer(self):
         try:
             from .sound_viewer import SoundViewer

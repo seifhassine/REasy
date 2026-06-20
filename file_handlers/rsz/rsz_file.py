@@ -454,7 +454,6 @@ class RszResourceInfo:
 class RszPrefabInfo:
     __slots__ = ("string_offset","parent_id")
     SIZE = 8
-    SIZE = 8
     def __init__(self):
         self.string_offset = 0
         self.parent_id = 0
@@ -1021,8 +1020,8 @@ class RszFile:
             return
 
         cache = self._rsz_type_cache
-        NON_ARRAY_PARSERS_get = NON_ARRAY_PARSERS.get
-        RawBytesData_parse = RawBytesData.parse
+        non_array_parsers_get = NON_ARRAY_PARSERS.get
+        raw_bytes_data_parse = RawBytesData.parse
         
         for field in fields_def:
             if "_parse_cache" in field:
@@ -1053,8 +1052,8 @@ class RszFile:
                 rsz_type = get_type_class(*key)
                 cache[key] = rsz_type
 
-            parser_func = NON_ARRAY_PARSERS_get(rsz_type, RawBytesData_parse)
-            default_element_cls = rsz_type if parser_func is not RawBytesData_parse else RawBytesData
+            parser_func = non_array_parsers_get(rsz_type, raw_bytes_data_parse)
+            default_element_cls = rsz_type if parser_func is not raw_bytes_data_parse else RawBytesData
 
             field["_parse_cache"] = (
                 field_name or "<unnamed>",
@@ -2123,7 +2122,7 @@ class RszFile:
                                 set_parent(candidate, current_instance_index)
                             else:
                                 raw_values.append(raw_value)
-                            for i in range(1, count):
+                            for _ in range(1, count):
                                 configure_pos(pos, field_align)
                                 candidate, raw_value = read_value_with_raw(parser_unpack_uint, fsize)
                                 pos = non_array_parser.pos

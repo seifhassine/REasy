@@ -65,7 +65,7 @@ def is_mod_pak(pak_path: str) -> bool:
         header = f.read(16)
         if len(header) != 16:
             return False
-        magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBhII", header)
+        magic, maj, minr, features, file_count, _ = struct.unpack("<IBBhII", header)
         if magic != 0x414B504B:
             return False
         if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:

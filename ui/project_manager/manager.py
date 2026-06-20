@@ -38,6 +38,7 @@ def _custom_message_handler(mode, ctx, msg):
     return None
 
 _prev_handler = qInstallMessageHandler(_custom_message_handler)
+ADD_TO_PROJECT_TITLE = "Add to project"
 
 def _get_base_dir() -> Path:
     if getattr(sys, "frozen", False):
@@ -791,10 +792,8 @@ class ProjectManager(QDockWidget):
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels([self.tr("Paths")])
         
-        display_paths = list(paths)
-        
         root: dict[str, dict] = {}
-        for p in sorted(set(display_paths)):
+        for p in sorted(set(paths)):
             parts = p.split('/')
             node = root
             for part in parts:
@@ -936,7 +935,7 @@ class ProjectManager(QDockWidget):
         if not idx.isValid():
             return
         menu = QMenu(self)
-        add_act = menu.addAction(self.tr("Add to project"))
+        add_act = menu.addAction(self.tr(ADD_TO_PROJECT_TITLE))
         open_act = menu.addAction(self.tr("Open"))
         chosen = menu.exec(self.tree_pak.viewport().mapToGlobal(pos))
         if chosen is add_act:
@@ -1007,10 +1006,10 @@ class ProjectManager(QDockWidget):
         if not paths:
             return
         if not self.project_dir:
-            QMessageBox.information(self, self.tr("Add to project"), self.tr("Open a project first."))
+            QMessageBox.information(self, self.tr(ADD_TO_PROJECT_TITLE), self.tr("Open a project first."))
             return
         if not self._pak_selected_paks:
-            QMessageBox.information(self, self.tr("Add to project"), self.tr("Scan for .pak files first."))
+            QMessageBox.information(self, self.tr(ADD_TO_PROJECT_TITLE), self.tr("Scan for .pak files first."))
             return
         try:            
             r = self._ensure_project_pak_reader()
@@ -1039,7 +1038,7 @@ class ProjectManager(QDockWidget):
             return
 
         menu = QMenu(self)
-        add_act = menu.addAction(self.tr("Add to project"))
+        add_act = menu.addAction(self.tr(ADD_TO_PROJECT_TITLE))
 
         chosen = menu.exec(self.tree_sys.viewport().mapToGlobal(pos))
         if chosen is add_act:

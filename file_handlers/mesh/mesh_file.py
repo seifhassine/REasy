@@ -408,7 +408,6 @@ class MeshBuffer:
         self,
         payload: MeshBufferPayload,
         *,
-        preserve_signs: bool = False,
         has_32bit_indices: bool = False,
     ) -> None:
         vert_count = 0
@@ -510,11 +509,10 @@ class MeshBuffer:
                 vertex_elements=vertex_elements,
             )
 
-    def finalize_payloads(self, *, preserve_signs: bool = False) -> None:
+    def finalize_payloads(self) -> None:
         for buffer_index, payload in self.buffer_payloads.items():
             self._decode_payload(
                 payload,
-                preserve_signs=preserve_signs,
                 has_32bit_indices=self.has_32bit_indices,
             )
             if buffer_index == 0:
@@ -533,7 +531,6 @@ class MeshBuffer:
         self,
         h: BinaryHandler,
         *,
-        preserve_signs: bool = False,
         streaming_info: Optional[MeshStreamingInfo] = None,
         streaming_data: Optional[bytes] = None,
     ) -> bool:
@@ -1426,7 +1423,7 @@ class MeshFile:
         with h.seek_temp(offset):
             return [h.read_matrix4x4() for _ in range(count)]
 
-    def _parse_bones(self, h: BinaryHandler, sorted_offsets: List[int]):
+    def _parse_bones(self, h: BinaryHandler):
         self.bones = []
         self.bone_remap_indices = []
         self.local_matrices = []
@@ -1468,7 +1465,6 @@ class MeshFile:
         data: bytes,
         *,
         read_extras: bool = False,
-        preserve_signs: bool = False,
         file_version: int = 0,
         streaming_data: Optional[bytes] = None,
     ) -> bool:
@@ -1493,7 +1489,6 @@ class MeshFile:
             self.mesh_buffer = MeshBuffer(self.header.format_version)
             self.mesh_buffer.read(
                 h,
-                preserve_signs=preserve_signs,
                 streaming_info=self.streaming_info,
                 streaming_data=streaming_data,
             )
@@ -1505,7 +1500,7 @@ class MeshFile:
             self.meshes.append(md)
 
         sorted_offsets = self._collect_section_offsets()
-        self._parse_bones(h, sorted_offsets)
+        self._parse_bones(h)
         self._parse_bone_indices(data, sorted_offsets)
         
         if read_extras:
@@ -1560,5 +1555,5 @@ class MeshFile:
 
         return True
 
-    def build(self, *, preserve_signs: bool = False) -> bytes:
+    def build(self) -> bytes:
         return bytes(self._raw)

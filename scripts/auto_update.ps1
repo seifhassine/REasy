@@ -162,7 +162,7 @@ else {
     if (-not (Test-Path -LiteralPath $zipPath)) { throw "Downloaded archive not found at: $zipPath" }
     [System.IO.Directory]::CreateDirectory($unpackDir) | Out-Null
     try {
-        try { Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue } catch {}
+        try { Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue } catch { Write-Verbose "System.IO.Compression.FileSystem could not be loaded." }
         [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $unpackDir)
     } catch {
         throw "Failed to extract archive: $($_.Exception.Message)"

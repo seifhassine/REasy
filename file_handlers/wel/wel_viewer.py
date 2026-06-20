@@ -22,6 +22,9 @@ from PySide6.QtWidgets import (
 from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
 
 
+SELECT_EVENT_PROMPT = "Select an event to edit"
+
+
 class WelViewer(QWidget):
     modified_changed = Signal(bool)
 
@@ -85,7 +88,7 @@ class WelViewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        self.detail_title = QLabel("Select an event to edit")
+        self.detail_title = QLabel(SELECT_EVENT_PROMPT)
         layout.addWidget(self.detail_title)
 
         scroll = QScrollArea()
@@ -249,7 +252,7 @@ class WelViewer(QWidget):
         wel = self.handler.wel
         if not wel or row < 0 or row >= len(wel.events):
             self._set_detail_enabled(False)
-            self.detail_title.setText("Select an event to edit")
+            self.detail_title.setText(SELECT_EVENT_PROMPT)
             return
 
         self._set_detail_enabled(True)
@@ -430,7 +433,7 @@ class WelViewer(QWidget):
             self.event_list.setCurrentRow(min(row, len(wel.events) - 1))
         else:
             self._set_detail_enabled(False)
-            self.detail_title.setText("Select an event to edit")
+            self.detail_title.setText(SELECT_EVENT_PROMPT)
 
         self._set_modified(True)
 

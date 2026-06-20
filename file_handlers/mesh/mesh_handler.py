@@ -1,6 +1,6 @@
 import struct
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
 from .mesh_file import MeshFile, MESH_MAGIC, MPLY_MAGIC
@@ -80,7 +80,6 @@ class MeshHandler(BaseFileHandler):
             getattr(proj, "unpacked_dir", None),
             path_prefix,
             getattr(proj, "_pak_cached_reader", None),
-            getattr(proj, "_pak_selected_paks", None),
         ) if proj is not None else None
         if resolved:
             self._streaming_data_cache[self.filepath] = resolved[1]
@@ -104,21 +103,6 @@ class MeshHandler(BaseFileHandler):
         mf.read(data, file_version=file_version, streaming_data=stream_data)
         self.mesh = mf
         self.modified = False
-
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        return
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
-        pass
-
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
-    def update_strings(self):
-        pass
 
     def create_viewer(self):
         from .mesh_viewer import MeshViewer

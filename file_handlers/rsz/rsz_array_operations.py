@@ -79,8 +79,6 @@ class RszArrayOperations:
         instance_id = object_ops._create_userdata_instance_for_field(element_type, next_instance_id, final_string)
         
         if instance_id is not None and instance_id >= 0:
-            userdata = UserDataData(instance_id, userdata_string or "", element_type)
-            
             if not hasattr(self.scn, 'has_embedded_rsz') or not self.scn.has_embedded_rsz:
                 crc_val = int(type_info.get("crc", "0"), 16) if type_info else 0
                 object_ops._ensure_header_userdata_string(final_string, type_id, crc_val)

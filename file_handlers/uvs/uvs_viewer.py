@@ -1186,7 +1186,6 @@ class UvsViewer(QWidget):
             getattr(proj, "unpacked_dir", None),
             path_prefix,
             getattr(proj, "_pak_cached_reader", None),
-            getattr(proj, "_pak_selected_paks", None),
             self,
         )
         

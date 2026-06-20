@@ -42,6 +42,9 @@ _COMPONENT_INPUT_STYLE = """
     }
 """
 
+ADD_RESOURCE_TITLE = "Add Resource"
+OPEN_RESOURCE_TITLE = "Open Resource"
+
 
 def _set_invalid_state(widget, invalid):
     widget.setProperty("invalid", invalid)
@@ -1395,16 +1398,16 @@ class StringInput(BaseValueWidget):
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, self.tr("Open Resource"), self.tr("Resource path is empty"))
+            QMessageBox.information(self, self.tr(OPEN_RESOURCE_TITLE), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, self.tr("Open Resource"), self.tr("Unable to access application window"))
+            QMessageBox.warning(self, self.tr(OPEN_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
         if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, self.tr("Open Resource"),
+            QMessageBox.information(self, self.tr(OPEN_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
@@ -1416,16 +1419,16 @@ class StringInput(BaseValueWidget):
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, self.tr("Add Resource"), self.tr("Resource path is empty"))
+            QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, self.tr("Add Resource"), self.tr("Unable to access application window"))
+            QMessageBox.warning(self, self.tr(ADD_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
         if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, self.tr("Add Resource"),
+            QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
@@ -1443,7 +1446,7 @@ class StringInput(BaseValueWidget):
         if add_to_project:
             project_dir = proj_dock.project_dir
             if not project_dir:
-                QMessageBox.information(self, self.tr("Add Resource"),
+                QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
                     self.tr("No project is currently open."))
                 return
             
@@ -1465,7 +1468,6 @@ class StringInput(BaseValueWidget):
                 proj_dock.unpacked_dir,
                 path_prefix,
                 proj_dock._pak_cached_reader,
-                proj_dock._pak_selected_paks,
                 should_overwrite=_confirm_overwrite,
                 selection_parent=self,
             )
@@ -1473,12 +1475,12 @@ class StringInput(BaseValueWidget):
             if dest_path:
                 if hasattr(proj_dock, '_refresh_proj'):
                     proj_dock._refresh_proj()
-                QMessageBox.information(self, self.tr("Add Resource"),
+                QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
                     f"File added to project:\n{dest_path}")
             else:
                 if overwrite_state["asked"] and not overwrite_state["accepted"]:
                     return
-                QMessageBox.critical(self, self.tr("Add Resource"),
+                QMessageBox.critical(self, self.tr(ADD_RESOURCE_TITLE),
                     f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
             return
         
@@ -1489,7 +1491,6 @@ class StringInput(BaseValueWidget):
             proj_dock.unpacked_dir,
             path_prefix,
             proj_dock._pak_cached_reader,
-            proj_dock._pak_selected_paks,
             self,
         )
 
@@ -1497,7 +1498,7 @@ class StringInput(BaseValueWidget):
             file_path, file_data = resolved
             app_window.add_tab(file_path, file_data)
         else:
-            QMessageBox.critical(self, self.tr("Open Resource"),
+            QMessageBox.critical(self, self.tr(OPEN_RESOURCE_TITLE),
                 f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
 
     def _on_text_changed(self, text):

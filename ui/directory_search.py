@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+PAK_SEARCH_TITLE = "PAK Search"
+
 def ask_max_size_bytes(parent):
     """Get maximum file size from user"""
     val, ok = QInputDialog.getDouble(
@@ -304,7 +306,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
 
     paks = scan_pak_files(directory, ignore_mod_paks=ignore_mod_paks)
     if not paks:
-        QMessageBox.information(parent, "PAK Search", "No .pak files found.")
+        QMessageBox.information(parent, PAK_SEARCH_TITLE, "No .pak files found.")
         return
 
     reader = CachedPakReader()
@@ -365,9 +367,9 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
                 entry_data = item.data(Qt.UserRole)
                 item.setText(resolved_label(entry_data))
                 item.setData(Qt.UserRole, entry_data)
-            QMessageBox.information(parent, "PAK Search", f"Loaded list and resolved {updated} cached entries.")
+            QMessageBox.information(parent, PAK_SEARCH_TITLE, f"Loaded list and resolved {updated} cached entries.")
         except Exception as e:
-            QMessageBox.critical(parent, "PAK Search", str(e))
+            QMessageBox.critical(parent, PAK_SEARCH_TITLE, str(e))
 
     items = [(path, entry_data_for(path)) for path in entry_paths]
     search_items_with_progress(

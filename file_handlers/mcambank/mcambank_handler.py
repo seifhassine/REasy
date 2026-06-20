@@ -1,5 +1,5 @@
 import struct
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
 from .mcambank_file import McambankFile, MCAMBANK_MAGIC
@@ -33,21 +33,6 @@ class McambankHandler(BaseFileHandler):
         result = self.mcambank.write()
         self.modified = False
         return result
-
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        return
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
-        pass
-
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
-    def update_strings(self):
-        pass
 
     def create_viewer(self):
         try:

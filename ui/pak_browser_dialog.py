@@ -25,6 +25,9 @@ from ui.project_manager.pak_file_lists import find_suggested_pak_list_paths_for_
 from ui.widgets_utils import create_list_file_help_widget
 
 
+DUMP_VALID_PATHS_TITLE = "Dump Valid Paths"
+
+
 class PakBrowserDialog(QDialog):
 	_ITEM_EXTRACT_PATH_ROLE = Qt.UserRole + 32
 	_ITEM_IS_DIR_ROLE = Qt.UserRole + 33
@@ -112,7 +115,7 @@ class PakBrowserDialog(QDialog):
 		out.addWidget(self.out_edit, 1)
 		out.addWidget(QPushButton(self.tr("Choose…"), clicked=self._choose_out))
 		out.addStretch(1)
-		self.dump_valid_btn = QPushButton(self.tr("Dump Valid Paths"), clicked=self._dump_valid_files)
+		self.dump_valid_btn = QPushButton(self.tr(DUMP_VALID_PATHS_TITLE), clicked=self._dump_valid_files)
 		self.dump_valid_btn.setVisible(False)
 		self.dump_valid_btn.setStyleSheet(f"QPushButton {{ background-color: {self._highlight_color.name()}; color: white; }}")
 		out.addWidget(self.dump_valid_btn)
@@ -585,11 +588,11 @@ class PakBrowserDialog(QDialog):
 	
 	def _dump_valid_files(self):
 		if not self._flat_model_valid_only or self._flat_model_valid_only.rowCount() == 0:
-			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
+			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
 			return
 		valid_paths = [p for p in self._flat_model_valid_only.stringList() if not p.startswith("__Unknown/")]
 		if not valid_paths:
-			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
+			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
 			return
 		path, _ = QFileDialog.getSaveFileName(self, self.tr("Save valid paths list"), "valid_paths.list", self.tr("List files (*.list *.txt);;All files (*)"))
 		if not path:

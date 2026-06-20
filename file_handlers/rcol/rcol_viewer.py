@@ -52,6 +52,10 @@ from utils.number_format import format_display_value
 from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
 
 
+MESH_LOAD_FAILED_TITLE = "Mesh Load Failed"
+NONE_TEXT = "(none)"
+
+
 @dataclass(frozen=True)
 class NavPayload:
     kind: str
@@ -589,7 +593,7 @@ class RcolViewer(QWidget):
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
-            QMessageBox.warning(self, "Mesh Load Failed", f"Unable to load mesh:\n{exc}")
+            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to load mesh:\n{exc}")
 
     def _on_load_mesh_from_pak_clicked(self):
         app = getattr(self.handler, "app", None)
@@ -614,11 +618,10 @@ class RcolViewer(QWidget):
             getattr(proj, "unpacked_dir", None),
             path_prefix,
             getattr(proj, "_pak_cached_reader", None),
-            getattr(proj, "_pak_selected_paks", None),
             self,
         )
         if not resolved:
-            QMessageBox.warning(self, "Mesh Load Failed", f"Unable to resolve mesh path:\n{resource_path}")
+            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to resolve mesh path:\n{resource_path}")
             return
 
         resolved_path, mesh_data = resolved
@@ -629,7 +632,7 @@ class RcolViewer(QWidget):
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
-            QMessageBox.warning(self, "Mesh Load Failed", f"Unable to load mesh:\n{exc}")
+            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to load mesh:\n{exc}")
 
     def _rebuild_attached_mesh_list(self):
         if self._attached_mesh_list is None:
@@ -828,7 +831,7 @@ class RcolViewer(QWidget):
         bottom = matrix[3]
         if not (abs(float(bottom[0])) < 1e-3 and abs(float(bottom[1])) < 1e-3 and abs(float(bottom[2])) < 1e-3):
             return False
-        if not abs(float(bottom[3]) - 1.0) < 1e-2:
+        if abs(float(bottom[3]) - 1.0) >= 1e-2:
             return False
         translation = matrix[:3, 3]
         if np.linalg.norm(translation) > 1e6:
@@ -874,7 +877,7 @@ class RcolViewer(QWidget):
         self.detail_form.addRow(label, value_label)
 
     def _row_multiline_text(self, label: str, lines: list[str], *, max_lines: int = 10):
-        text = "\n".join(lines) if lines else "(none)"
+        text = "\n".join(lines) if lines else NONE_TEXT
         editor = QTextEdit()
         editor.setReadOnly(True)
         editor.setPlainText(text)
@@ -940,7 +943,6 @@ class RcolViewer(QWidget):
         for obj_index, instance_id in enumerate(object_table):
             if instance_id not in id_set:
                 continue
-            instance_id = object_table[obj_index]
             rows.append(f"[{obj_index}] -> Instance {instance_id} ({self._resolve_instance_type_name(instance_id)})")
         return rows
 
@@ -1552,7 +1554,7 @@ class RcolViewer(QWidget):
         self._row_text("GUID", self._format_guid(group.info.guid))
         self._row_text("Layer GUID", self._format_guid(group.info.layer_guid))
         mask_guid_lines = [self._format_guid(mask_guid) for mask_guid in (group.info.mask_guids or [])]
-        self._row_multiline_text("Mask GUIDs", mask_guid_lines or ["(none)"], max_lines=12)
+        self._row_multiline_text("Mask GUIDs", mask_guid_lines or [NONE_TEXT], max_lines=12)
         self._row_text("Regular Shapes", str(len(group.shapes)))
         if self._supports_mirror_shapes():
             self._row_text("Mirror Shapes", str(len(group.extra_shapes or [])))
@@ -1602,7 +1604,7 @@ class RcolViewer(QWidget):
         self._combo("Shape Type", type_options, int(shape.info.shape_type), lambda value: self._set_shape_type(payload, int(value)))
         self._render_shape_geometry_fields(payload, shape)
         associated_shape_object_ids = self._get_shape_object_id_entries(payload)
-        self._row_multiline_text("Associated RSZ Object ID", associated_shape_object_ids or ["(none)"], max_lines=10)
+        self._row_multiline_text("Associated RSZ Object ID", associated_shape_object_ids or [NONE_TEXT], max_lines=10)
 
         self._action_button("Delete Shape", lambda: self._remove_shape(payload))
 

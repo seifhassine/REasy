@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
 from tools.file_list_generator import ExtensionAnalyzer, validate_game_executable, PathCollector, ExePathExtractor
 
 
+EXPORT_ERROR_TITLE = "Export Error"
+
+
 class ExtensionDumperThread(QThread):
     finished = Signal(bool, str)
     
@@ -447,7 +450,7 @@ class FileListGeneratorDialog(QDialog):
             QApplication.processEvents()
             return False
         
-        success, error, paths_found = self.path_collector.collect_from_pak_files(pak_directory, progress_callback=update_progress)
+        success, error, _ = self.path_collector.collect_from_pak_files(pak_directory, progress_callback=update_progress)
         progress.close()
         
         if collection_stopped:
@@ -516,7 +519,7 @@ class FileListGeneratorDialog(QDialog):
             status = "validated" if validated_paths else "collected"
             QMessageBox.information(self, "Export Complete", f"Successfully exported {final_count} {status} paths!\n\nOutput: lowercase, sorted\nSaved to: {output_path}")
         else:
-            QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
+            QMessageBox.critical(self, EXPORT_ERROR_TITLE, f"Failed to export paths:\n\n{error}")
     
     def _read_list_paths(self, list_file_path):
         paths = set()
@@ -615,7 +618,7 @@ class FileListGeneratorDialog(QDialog):
 
         success, error = self.path_collector.export_to_file(output_path, export_paths)
         if not success:
-            QMessageBox.critical(self, "Export Error", f"Failed to export improved list:\n\n{error}")
+            QMessageBox.critical(self, EXPORT_ERROR_TITLE, f"Failed to export improved list:\n\n{error}")
             return
 
         append_summary = (
@@ -770,7 +773,7 @@ class FileListGeneratorDialog(QDialog):
                 f"Saved to: {output_path}"
             )
         else:
-            QMessageBox.critical(self, "Export Error", f"Failed to export paths:\n\n{error}")
+            QMessageBox.critical(self, EXPORT_ERROR_TITLE, f"Failed to export paths:\n\n{error}")
 
     def _extract_paths_from_dump(self):
         if not self.analyzer.combined_extensions:

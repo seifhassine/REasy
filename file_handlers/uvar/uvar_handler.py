@@ -706,9 +706,6 @@ class UvarHandler(BaseFileHandler):
             
         return menu if menu.actions() else None
         
-    def handle_edit(self, meta: Dict, new_val: Any, old_val: Any, item: 'QTreeWidgetItem'):
-        pass
-        
     def add_variables(self, target: Any, prefix: str, count: int):
         if isinstance(target, UVarFile):
             self.modified = True

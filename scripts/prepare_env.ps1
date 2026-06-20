@@ -38,7 +38,7 @@ function Prep {
     return $true
 }
 function Try-Python($exe, [string[]] $prefix, $name) {
-    Write-Host "Trying $name..."
+    Write-Output "Trying $name..."
     if (-not (OK $exe ($prefix + @("-c", $check)))) { return $false }
     Clean
     if (-not (OK $exe ($prefix + @("-m", "venv", "--system-site-packages", $venv)))) { return $false }

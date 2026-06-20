@@ -10,6 +10,9 @@ from PySide6.QtWidgets import (
 from utils.number_format import format_display_value, format_float_sequence
 
 
+ADVANCED_INFO_LABEL = "Advanced Information"
+
+
 class BetterFindDialog(QDockWidget):
 
     @staticmethod
@@ -297,7 +300,7 @@ class BetterFindDialog(QDockWidget):
                 if item is None:
                     return
                 name = str(item.text(0) or "")
-                if not include_advanced and not names_path and name == "Advanced Information":
+                if not include_advanced and not names_path and name == ADVANCED_INFO_LABEL:
                     return
                 cmp_name = name if case else name.lower()
 
@@ -361,7 +364,7 @@ class BetterFindDialog(QDockWidget):
 
                 def walk_items(item, rows_path, names_path):
                     name = get_item_name(item)
-                    if not include_advanced and not names_path and name == "Advanced Information":
+                    if not include_advanced and not names_path and name == ADVANCED_INFO_LABEL:
                         return
                     cmp_name = name if case else name.lower()
 
@@ -434,7 +437,7 @@ class BetterFindDialog(QDockWidget):
                             continue
 
                         name = str(idx0.data(Qt.DisplayRole) or "")
-                        if not include_advanced and not path and name == "Advanced Information":
+                        if not include_advanced and not path and name == ADVANCED_INFO_LABEL:
                             continue
                         item = idx0.internalPointer()
 

@@ -8,12 +8,12 @@ UTF16_NULL = b"\x00\x00"
 
 def pad_to_alignment(out: bytearray, alignment: int = 16):
     while len(out) % alignment != 0:
-        out += b"\x00"
+        out.extend(b"\x00")
 
 
 def pad_to_offset(out: bytearray, offset: int):
     while len(out) < offset:
-        out += b"\x00"
+        out.extend(b"\x00")
 
 
 def encode_wstring(value: str) -> bytes:
@@ -47,39 +47,39 @@ def write_wstring_entries(out: bytearray, *offset_maps):
     pad_to_offset(out, entries[0][0])
     for offset, string_data in entries:
         pad_to_offset(out, offset)
-        out += string_data
+        out.extend(string_data)
 
 
 def write_scn_gameobjects(out: bytearray, gameobjects, prefab_before_ukn: bool):
     for go in gameobjects:
-        out += go.guid
-        out += struct.pack("<i", go.id)
-        out += struct.pack("<i", go.parent_id)
-        out += struct.pack("<H", go.component_count)
+        out.extend(go.guid)
+        out.extend(struct.pack("<i", go.id))
+        out.extend(struct.pack("<i", go.parent_id))
+        out.extend(struct.pack("<H", go.component_count))
         if prefab_before_ukn:
-            out += struct.pack("<h", go.prefab_id)
-            out += struct.pack("<i", go.ukn)
+            out.extend(struct.pack("<h", go.prefab_id))
+            out.extend(struct.pack("<i", go.ukn))
         else:
-            out += struct.pack("<h", go.ukn)
-            out += struct.pack("<i", go.prefab_id)
+            out.extend(struct.pack("<h", go.ukn))
+            out.extend(struct.pack("<i", go.prefab_id))
 
 
 def write_resource_info_table(out: bytearray, resource_infos, resource_offsets):
     for ri in resource_infos:
         ri.string_offset = resource_offsets[ri]
-        out += struct.pack("<II", ri.string_offset, ri.reserved)
+        out.extend(struct.pack("<II", ri.string_offset, ri.reserved))
 
 
 def write_prefab_info_table(out: bytearray, prefab_infos, prefab_offsets):
     for pi in prefab_infos:
         pi.string_offset = prefab_offsets[pi]
-        out += struct.pack("<II", pi.string_offset, pi.parent_id)
+        out.extend(struct.pack("<II", pi.string_offset, pi.parent_id))
 
 
 def write_userdata_info_table(out: bytearray, userdata_infos, userdata_offsets):
     for ui in userdata_infos:
         ui.string_offset = userdata_offsets[ui]
-        out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
+        out.extend(struct.pack("<IIQ", ui.hash, 0, ui.string_offset))
 
 
 def write_resource_userdata_tables(

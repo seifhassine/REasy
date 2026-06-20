@@ -127,8 +127,7 @@ class MdfTemplateManager:
     def get_all_tags(cls) -> List[str]:
         tags = set()
         for info in cls.get_template_list():
-            for tag in info.get("tags", []):
-                tags.add(tag)
+            tags.update(info.get("tags", []))
         return sorted(tags)
 
     @classmethod
@@ -217,7 +216,7 @@ class MdfTemplateManager:
 
     @classmethod
     def get_template_preview(cls, template_id: str) -> Dict[str, Any]:
-        metadata, templates = cls._load_templates()
+        _, templates = cls._load_templates()
         info = templates.get(template_id)
         if not info:
             return {}

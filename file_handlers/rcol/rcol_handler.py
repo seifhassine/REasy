@@ -1,6 +1,5 @@
 import os
 import struct
-from typing import Any
 
 from file_handlers.base_handler import BaseFileHandler
 from utils.registry_manager import RegistryManager
@@ -25,11 +24,11 @@ class RcolHandler(BaseFileHandler):
     def can_handle(cls, data: bytes) -> bool:
         return len(data) >= 4 and struct.unpack_from("<I", data, 0)[0] == RCOL_MAGIC
 
-    def init_type_registry(self):
-        if hasattr(self, "app") and self.app:
+    def init_type_registry(self, json_path=""):
+        if not json_path and hasattr(self, "app") and self.app:
             json_path = self.app.settings.get("rcol_json_path")
-            if json_path:
-                self.type_registry = RegistryManager.instance().get_registry(json_path)
+        if json_path:
+            self.type_registry = RegistryManager.instance().get_registry(json_path)
 
     def _infer_file_version(self) -> int:
         if not self.filepath:
@@ -61,22 +60,6 @@ class RcolHandler(BaseFileHandler):
         result = self.rcol.write(file_version=self.file_version)
         self.modified = False
         return result
-
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        if hasattr(tree, "__class__") and tree.__class__.__name__ == "QTreeView":
-            return
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: dict[str, Any], new_val, old_val, item):
-        pass
-
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
-    def update_strings(self):
-        pass
 
     def create_viewer(self):
         try:

@@ -1193,7 +1193,7 @@ class RszEmbeddedArrayOperations:
                             self.viewer.tree.setIndexWidget(child_index, widget_container)
         return True
 
-    def _create_embedded_reference_node_data(self, ref_id, index, element, embedded_context, type_name):
+    def _create_embedded_reference_node_data(self, index, element, embedded_context, type_name):
         node_data = DataTreeBuilder.create_data_node(
             f"{index}: ({type_name})",
             "",
@@ -1218,7 +1218,7 @@ class RszEmbeddedArrayOperations:
                         type_name = userdata_info.name
                     break
         node_data, context_chain = self._create_embedded_reference_node_data(
-            ref_id, index, element, embedded_context, type_name
+            index, element, embedded_context, type_name
         )
         if userdata_rui and hasattr(userdata_rui, 'embedded_instances'):
             root_instance_id = None
@@ -1248,7 +1248,7 @@ class RszEmbeddedArrayOperations:
                     if type_info and "name" in type_info:
                         type_name = type_info["name"]
         node_data, context_chain = self._create_embedded_reference_node_data(
-            ref_id, index, element, embedded_context, type_name
+            index, element, embedded_context, type_name
         )
         node_data["instance_id"] = ref_id
         node_data["children"] = []

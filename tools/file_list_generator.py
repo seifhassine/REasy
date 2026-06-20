@@ -5,6 +5,9 @@ import mmap
 from collections import defaultdict
 
 
+NATIVE_PREFIX = "natives/"
+
+
 VARIATION_SUFFIXES = [
     ".x64",
     ".stm",
@@ -174,7 +177,7 @@ class ExtensionAnalyzer:
             with open(list_file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
-                    if not line or line.startswith('#') or not line.startswith('natives/'):
+                    if not line or line.startswith('#') or not line.startswith(NATIVE_PREFIX):
                         continue
                     
                     last_slash_idx = line.rfind('/')
@@ -381,7 +384,7 @@ class ExePathExtractor:
             progress_callback("Generating version combinations...", 60, 100)
 
         for base in base_paths:
-            if not base.startswith('natives/'):
+            if not base.startswith(NATIVE_PREFIX):
                 base = self.path_prefix + base
 
             parts = base.split('.')
@@ -492,7 +495,7 @@ class PathCollector:
 
     def _rewrite_stem_prefix(self, stem):
         stem = stem.lower()
-        if not stem.startswith('natives/'):
+        if not stem.startswith(NATIVE_PREFIX):
             return f"{self.path_prefix}{stem.lstrip('/')}"
 
         parts = stem.split('/', 2)
@@ -507,7 +510,7 @@ class PathCollector:
         with open(list_file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith('#') or not line.startswith('natives/'):
+                if not line or line.startswith('#') or not line.startswith(NATIVE_PREFIX):
                     continue
 
                 stem, _, extension = self._parse_list_path_components(line)
@@ -694,7 +697,7 @@ class PathCollector:
         min_length = 10
         return _extract_utf16le_strings(data, min_length) + _extract_utf8_strings(data, min_length)
     
-    def _process_entry(self, entry, f, entry_idx):
+    def _process_entry(self, entry, f):
         from file_handlers.pak.pakfile import _read_entry_raw
         
         if self.should_skip_entry(entry):
@@ -715,7 +718,7 @@ class PathCollector:
                     path_normalized = string.replace('\\', '/')
                     if path_normalized.startswith('@'):
                         path_normalized = path_normalized[1:]
-                    if not path_normalized.lower().startswith('natives/'):
+                    if not path_normalized.lower().startswith(NATIVE_PREFIX):
                         path_normalized = self.path_prefix + path_normalized
                     
                     parts = path_normalized.split('.')
@@ -729,7 +732,7 @@ class PathCollector:
                             self.collected_paths.add(path_normalized.lower())
             
             return strings_extracted, strings_matched
-        except:
+        except Exception:
             return 0, 0
     
     def collect_from_pak_files(self, pak_directory, progress_callback=None):
@@ -785,7 +788,7 @@ class PathCollector:
                                         stopped = True
                                         break
                             
-                            extracted, matched = self._process_entry(entry, f, entry_idx)
+                            extracted, matched = self._process_entry(entry, f)
                             pak_strings_extracted += extracted
                             pak_strings_matched += matched
                     
@@ -800,7 +803,7 @@ class PathCollector:
                 status = "Collection stopped" if stopped else "Collection complete"
                 progress_callback(status, len(pak_files), len(pak_files))
             
-            print(f"\n=== Collection Summary ===")
+            print("\n=== Collection Summary ===")
             print(f"Total strings extracted: {total_strings_extracted}")
             print(f"Strings matching extensions: {total_strings_matched}")
             print(f"Unique paths collected: {len(self.collected_paths)}")
@@ -817,7 +820,7 @@ class PathCollector:
             with open(list_file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
-                    if not line or line.startswith('#') or not line.startswith('natives/'):
+                    if not line or line.startswith('#') or not line.startswith(NATIVE_PREFIX):
                         continue
 
                     _, path_without_version, extension = self._parse_list_path_components(line)

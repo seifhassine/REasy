@@ -130,7 +130,12 @@ def _read_pak_path(path: str, pak_cached_reader) -> Optional[Tuple[str, bytes]]:
             ext = guess_extension_from_header(data[:64])
         except Exception:
             ext = None
-        name = path if "." in os.path.basename(path) else (path + ("." + ext.lower() if ext else ""))
+        if "." in os.path.basename(path):
+            name = path
+        elif ext:
+            name = f"{path}.{ext.lower()}"
+        else:
+            name = path
         return name, data
     except Exception as e:
         print(f"PAK search error: {e}")
@@ -156,7 +161,6 @@ def resolve_resource_data(
     unpacked_dir: str,
     path_prefix: str,
     pak_cached_reader,
-    pak_selected_paks,
     selection_parent=None,
 ) -> Optional[Tuple[str, bytes]]:
     candidates = _resource_path_candidates(resource_path)
@@ -179,7 +183,7 @@ def resolve_resource_data(
     return None
 
 
-def find_resource_in_paks(resource_path: str, pak_cached_reader, pak_selected_paks, selection_parent=None) -> Optional[Tuple[str, bytes]]:
+def find_resource_in_paks(resource_path: str, pak_cached_reader, selection_parent=None) -> Optional[Tuple[str, bytes]]:
     match = find_matching_pak_path(pak_cached_reader, _resource_path_candidates(resource_path), selection_parent)
     return _read_pak_path(match, pak_cached_reader) if match else None
 
@@ -218,7 +222,6 @@ def copy_resource_to_project(
     unpacked_dir: str,
     path_prefix: str,
     pak_cached_reader=None,
-    pak_selected_paks=None,
     should_overwrite: Callable[[str], bool] | None = None,
     selection_parent=None,
 ) -> Optional[str]:
@@ -228,7 +231,6 @@ def copy_resource_to_project(
         unpacked_dir,
         path_prefix,
         pak_cached_reader,
-        pak_selected_paks,
         selection_parent,
     )
     if not resolved:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from file_handlers.base_handler import BaseFileHandler
 
 
@@ -19,21 +17,6 @@ class TextureViewerHandler(BaseFileHandler):
 
     def rebuild(self) -> bytes:
         return bytes(self.raw_data)
-
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        return
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: dict[str, Any], new_val, old_val, item, *args):
-        pass
-
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
-    def update_strings(self):
-        pass
 
     def create_viewer(self):
         from .tex_viewer import TexViewer

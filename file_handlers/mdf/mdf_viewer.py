@@ -325,7 +325,6 @@ class MdfViewer(QWidget):
 
 	def _set_header_tooltip(self, table: QTableWidget, column: int, tooltip: str):
 		"""Set a tooltip for a specific column header."""
-		header = table.horizontalHeader()
 		model = table.model()
 		if model:
 			model.setHeaderData(column, Qt.Horizontal, tooltip, Qt.ToolTipRole)
@@ -893,8 +892,7 @@ class MdfViewer(QWidget):
 			table.setItem(row, 3 + i, item)
 		
 		name_lower = (p.name or "").lower()
-		is_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
-				  or name_lower.endswith("color3")) and p.component_count in (3, 4)
+		is_color = name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4)
 		
 		color_item = QTableWidgetItem("")
 		if is_color:
@@ -1262,9 +1260,7 @@ class MdfViewer(QWidget):
 			arr[idx] = float(val)
 			p.parameter = tuple(arr)
 			name_lower = (p.name or "").lower()
-			if ((name_lower.endswith("color") or name_lower.endswith("color1") or 
-				 name_lower.endswith("color2") or name_lower.endswith("color3")) 
-				and p.component_count in (3, 4)):
+			if name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4):
 				table.blockSignals(True)
 				self._populate_param_row_in_table(table, pi, p)
 				table.blockSignals(False)
@@ -1360,8 +1356,7 @@ class MdfViewer(QWidget):
 		p = md.parameters[pi]
 		name_lower = (p.name or "").lower()
 		is_layer = name_lower.startswith("layercolor_")
-		is_normal_color = (name_lower.endswith("color") or name_lower.endswith("color1") or 
-						   name_lower.endswith("color2") or name_lower.endswith("color3")) and p.component_count in (3, 4)
+		is_normal_color = name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4)
 
 		if is_normal_color and not is_layer:
 			x, y, z, w = p.parameter

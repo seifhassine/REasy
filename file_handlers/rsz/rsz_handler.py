@@ -49,6 +49,13 @@ RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot ma
 
 ADVANCED_SECTION_TITLE = "Advanced Information"
 DATA_BLOCK_TITLE = "Data Block"
+USERDATA_INFO_TBL_LABEL = "UserData Info Tbl"
+DATA_OFFSET_LABEL = "Data Offset"
+INFO_COUNT_LABEL = "Info Count"
+RESOURCE_COUNT_LABEL = "Resource Count"
+USERDATA_COUNT_LABEL = "UserData Count"
+RESOURCE_INFO_TBL_LABEL = "Resource Info Tbl"
+PARENT_ID_LABEL = "Parent ID"
 
 class RszHandler(BaseFileHandler):
     """Handler for SCN/PFB/USR files"""
@@ -470,9 +477,14 @@ class RszViewer(QWidget):
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         root_dict["type"] = "root"
-        file_type = "WCC" if getattr(self.scn, "is_headless", False) else (
-            "USR" if self.scn.is_usr else "PFB" if self.scn.is_pfb else "SCN"
-        )
+        if getattr(self.scn, "is_headless", False):
+            file_type = "WCC"
+        elif self.scn.is_usr:
+            file_type = "USR"
+        elif self.scn.is_pfb:
+            file_type = "PFB"
+        else:
+            file_type = "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
             advanced_children = [
@@ -518,18 +530,18 @@ class RszViewer(QWidget):
     def _create_scn_header_pairs(self, header, signature, include_userdata_info_tbl):
         header_pairs = [
             ("Signature", signature),
-            ("Info Count", header.info_count),
-            ("Resource Count", header.resource_count),
+            (INFO_COUNT_LABEL, header.info_count),
+            (RESOURCE_COUNT_LABEL, header.resource_count),
             ("Folder Count", header.folder_count),
             ("Prefab Count", header.prefab_count),
-            ("UserData Count", header.userdata_count),
+            (USERDATA_COUNT_LABEL, header.userdata_count),
             ("Folder Tbl", f"0x{header.folder_tbl:X}"),
-            ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
+            (RESOURCE_INFO_TBL_LABEL, f"0x{header.resource_info_tbl:X}"),
             ("Prefab Info Tbl", f"0x{header.prefab_info_tbl:X}"),
         ]
         if include_userdata_info_tbl:
-            header_pairs.append(("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"))
-        header_pairs.append(("Data Offset", f"0x{header.data_offset:X}"))
+            header_pairs.append((USERDATA_INFO_TBL_LABEL, f"0x{header.userdata_info_tbl:X}"))
+        header_pairs.append((DATA_OFFSET_LABEL, f"0x{header.data_offset:X}"))
         return header_pairs
 
     def _create_header_info(self):
@@ -540,28 +552,28 @@ class RszViewer(QWidget):
         if self.scn.is_pfb:
             header_pairs = [
                 ("Signature", signature),
-                ("Info Count", header.info_count),
-                ("Resource Count", header.resource_count),
+                (INFO_COUNT_LABEL, header.info_count),
+                (RESOURCE_COUNT_LABEL, header.resource_count),
                 ("GameObjectRefInfo Count", header.gameobject_ref_info_count),
                 ("GameObjectRefInfo Tbl", f"0x{header.gameobject_ref_info_tbl:X}"),
-                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
-                ("Data Offset", f"0x{header.data_offset:X}"),
+                (RESOURCE_INFO_TBL_LABEL, f"0x{header.resource_info_tbl:X}"),
+                (DATA_OFFSET_LABEL, f"0x{header.data_offset:X}"),
             ]
             if not self.scn.filepath.lower().endswith('.16'):
                 header_pairs.extend([
-                    ("UserData Count", header.userdata_count),
+                    (USERDATA_COUNT_LABEL, header.userdata_count),
                     ("Reserved", header.reserved),
-                    ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
+                    (USERDATA_INFO_TBL_LABEL, f"0x{header.userdata_info_tbl:X}"),
                 ])
         elif self.scn.is_usr:
             header_pairs = [
                 ("Signature", signature),
-                ("Resource Count", header.resource_count),
-                ("UserData Count", header.userdata_count),
-                ("Info Count", header.info_count),
-                ("Resource Info Tbl", f"0x{header.resource_info_tbl:X}"),
-                ("UserData Info Tbl", f"0x{header.userdata_info_tbl:X}"),
-                ("Data Offset", f"0x{header.data_offset:X}"),
+                (RESOURCE_COUNT_LABEL, header.resource_count),
+                (USERDATA_COUNT_LABEL, header.userdata_count),
+                (INFO_COUNT_LABEL, header.info_count),
+                (RESOURCE_INFO_TBL_LABEL, f"0x{header.resource_info_tbl:X}"),
+                (USERDATA_INFO_TBL_LABEL, f"0x{header.userdata_info_tbl:X}"),
+                (DATA_OFFSET_LABEL, f"0x{header.data_offset:X}"),
                 ("Reserved", header.reserved),
             ]
         elif self.scn.filepath.lower().endswith('.18'):
@@ -630,7 +642,7 @@ class RszViewer(QWidget):
             instance_name = self.name_helper.get_gameobject_name(instance_index, f"GameObject[{i}]")
             field_pairs = [
                 ("ID", go.id),
-                ("Parent ID", go.parent_id),
+                (PARENT_ID_LABEL, go.parent_id),
                 ("Component Count", go.component_count),
             ]
             if not self.scn.is_pfb:
@@ -659,7 +671,7 @@ class RszViewer(QWidget):
                 [
                     ("ID", folder.id),
                     ("Instance ID", self.scn.object_table[folder.id]),
-                    ("Parent ID", folder.parent_id),
+                    (PARENT_ID_LABEL, folder.parent_id),
                 ],
             )
             node["children"].append(folder_node)
@@ -675,7 +687,7 @@ class RszViewer(QWidget):
                 f"{i}: {self.scn.get_prefab_string(prefab)}",
                 [
                     ("string_offset", prefab.string_offset),
-                    ("Parent ID", prefab.parent_id),
+                    (PARENT_ID_LABEL, prefab.parent_id),
                 ],
             )
             node["children"].append(prefab_node)

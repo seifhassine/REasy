@@ -607,7 +607,7 @@ class FileTab:
         return tuple(reversed(path))
 
     def on_double_click(self, index):
-        if not self.tree:
+        if not self.tree or not self.handler or not self.handler.supports_tree_editing():
             return
         if not index.isValid():
             return
@@ -626,7 +626,7 @@ class FileTab:
             self.tree, "Edit Value", "Value:", text=str(old_val)
         )
 
-        if ok and new_val != old_val and self.handler:
+        if ok and new_val != old_val:
             try:
                 if self.handler.validate_edit(meta, new_val, old_val):
                     self.handler.handle_edit(meta, new_val, old_val, None, self.tree)
@@ -636,7 +636,7 @@ class FileTab:
                 QMessageBox.critical(None, "Error", f"Failed to update value: {e}")
 
     def on_tree_edit(self, top_left, bottom_right, roles):
-        if not self.handler or not self.handler.supports_editing():
+        if not self.handler or not self.handler.supports_tree_editing():
             return
 
         if Qt.UserRole not in roles:
@@ -963,7 +963,7 @@ class FileTab:
         self.original_data = None
         self.viewer = None
 
-        for key in list(self._search_widgets.keys()):
+        for key in self._search_widgets.keys():
             self._search_widgets[key] = None
 
         if hasattr(self.notebook_widget, "parent_tab"):
@@ -1340,6 +1340,7 @@ class REasyEditorApp(QMainWindow):
         self.highlight_menu_controller.create_menu(menubar)
 
     def _create_toolbar(self):
+        # Toolbar setup is handled by the main window actions and menus.
         pass
     
     def _update_highlight_menu_visibility(self):
@@ -1903,7 +1904,7 @@ class REasyEditorApp(QMainWindow):
                 try:
                     with open(new_json_path, "r") as f:
                         data = json.load(f)
-                    if not isinstance(data, dict) or not data or "fields" not in list(data.values())[0]:
+                    if not isinstance(data, dict) or not data or "fields" not in next(iter(data.values())):
                         QMessageBox.critical(dialog, "Error", "Invalid RSZ type registry JSON file.")
                         return
                 except Exception as _:

@@ -140,7 +140,7 @@ class MeshMaterialResolver:
             if tex.tex_type in PREFERRED_ALBEDO_TEXTURE_TYPES:
                 if first_preferred is None:
                     first_preferred = tex
-                if first_preferred_non_null is None and "null" not in tex_path.lower():
+                if "null" not in tex_path.lower():
                     first_preferred_non_null = tex
                     break
         chosen = first_preferred_non_null or first_preferred
@@ -224,17 +224,15 @@ class MeshMaterialResolver:
     @staticmethod
     def iter_mdf_candidates(mesh_filepath: str) -> Iterable[str]:
         if not mesh_filepath:
-            return ()
+            return
         normalized = mesh_filepath.replace("\\", "/")
         idx = normalized.lower().rfind(".mesh")
         if idx == -1:
-            return ()
+            return
         base = normalized[:idx]
-        return (
-            f"{base}.mdf2",
-            f"{base}_Mat.mdf2",
-            f"{base}_00.mdf2",
-        )
+        yield f"{base}.mdf2"
+        yield f"{base}_Mat.mdf2"
+        yield f"{base}_00.mdf2"
 
     @classmethod
     def _resolve_resource(cls, handler, resource_path: str):
@@ -247,7 +245,6 @@ class MeshMaterialResolver:
                 getattr(proj, "unpacked_dir", None),
                 path_prefix,
                 getattr(proj, "_pak_cached_reader", None),
-                getattr(proj, "_pak_selected_paks", None),
             )
             if hit is not None:
                 return hit
