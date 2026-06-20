@@ -333,6 +333,18 @@
 		{
 			"name": "SubSkill_06",
 			"value": 6
+		},
+		{
+			"name": "SubSkill_07",
+			"value": 7
+		},
+		{
+			"name": "SubSkill_08",
+			"value": 8
+		},
+		{
+			"name": "SubSkill_09",
+			"value": 9
 		}
 	],
 	"app.charaedit.ch000.Eyes.EyeState": [
@@ -8375,16 +8387,36 @@
 			"value": 52
 		},
 		{
-			"name": "Sort",
+			"name": "Notice_SelectPass_Far_NotPass",
 			"value": 53
 		},
 		{
-			"name": "Out",
+			"name": "Notice_SelectPass_MaxErr_NotPass",
 			"value": 54
 		},
 		{
-			"name": "End",
+			"name": "Notice_SelectPass_MaxErr_NotFullPass",
 			"value": 55
+		},
+		{
+			"name": "SelectPassItem",
+			"value": 56
+		},
+		{
+			"name": "SelectPassTarget",
+			"value": 57
+		},
+		{
+			"name": "Sort",
+			"value": 58
+		},
+		{
+			"name": "Out",
+			"value": 59
+		},
+		{
+			"name": "End",
+			"value": 60
 		}
 	],
 	"app.actinter.cmd.HighTouchBase.RoutineType": [
@@ -11922,6 +11954,14 @@
 		{
 			"name": "Type40",
 			"value": 40
+		},
+		{
+			"name": "Type44",
+			"value": 44
+		},
+		{
+			"name": "Type45",
+			"value": 45
 		},
 		{
 			"name": "Type48",
@@ -15948,7 +15988,7 @@
 	],
 	"app.CustomCharacterStatusID": [
 		{
-			"name": "DevelopFreeStatus",
+			"name": "DummyStatus00",
 			"value": 0
 		},
 		{
@@ -15970,6 +16010,18 @@
 		{
 			"name": "None",
 			"value": 5
+		},
+		{
+			"name": "DummyStatus06",
+			"value": 6
+		},
+		{
+			"name": "DeadStatusWithItemDrop",
+			"value": 7
+		},
+		{
+			"name": "PawnSubSkill09ForBoss",
+			"value": 8
 		}
 	],
 	"app.CameraSweetLightChanger.RequestType": [
@@ -17092,6 +17144,14 @@
 		{
 			"name": "Tu193",
 			"value": 193
+		},
+		{
+			"name": "Tu222",
+			"value": 222
+		},
+		{
+			"name": "Tu233",
+			"value": 233
 		}
 	],
 	"via.motion.Chain.WindDirection": [
@@ -21582,6 +21642,10 @@
 		{
 			"name": "Door",
 			"value": 5
+		},
+		{
+			"name": "HitFromContext",
+			"value": 6
 		}
 	],
 	"via.clr.ExceptionTranslationFlag": [
@@ -28882,6 +28946,10 @@
 		{
 			"name": "BarTimeSkip",
 			"value": 38
+		},
+		{
+			"name": "OxcartStopover",
+			"value": 42
 		}
 	],
 	"via.audiorender.MemoryPool.MemoryPoolType": [
@@ -33261,6 +33329,34 @@
 		{
 			"name": "ChangeDispModelType",
 			"value": 56
+		},
+		{
+			"name": "ChangeDispEqStatusType",
+			"value": 57
+		},
+		{
+			"name": "CameraMoveForward",
+			"value": 58
+		},
+		{
+			"name": "CameraMoveBackward",
+			"value": 59
+		},
+		{
+			"name": "CameraMoveRightward",
+			"value": 60
+		},
+		{
+			"name": "CameraMoveLeftward",
+			"value": 61
+		},
+		{
+			"name": "CameraMoveUpward",
+			"value": 62
+		},
+		{
+			"name": "CameraMoveDownward",
+			"value": 63
 		}
 	],
 	"via.render.GlobalSparseShadowDebugDrawMode": [
@@ -47399,6 +47495,10 @@
 		{
 			"name": "UseDungeonSearch",
 			"value": 41
+		},
+		{
+			"name": "SelectPass",
+			"value": 42
 		}
 	],
 	"via.hid.virtualKeyboard.nsw.TextCheckResult": [
@@ -47695,6 +47795,14 @@
 		{
 			"name": "DisableActInterMoveFailedNavigationBreak",
 			"value": 45
+		},
+		{
+			"name": "IsSubSkill09InCampWander",
+			"value": 46
+		},
+		{
+			"name": "IsSubSkill09InCampWanderArrival",
+			"value": 47
 		}
 	],
 	"app.WrestleCtrl.ActionExcuteTypeEnum": [
@@ -48683,596 +48791,604 @@
 			"value": 4
 		},
 		{
-			"name": "Job04_LightAttackShort",
+			"name": "Job04_SubNormalAttack",
 			"value": 5
 		},
 		{
-			"name": "Job04_LightAttackMove",
+			"name": "Job04_LightAttackShort",
 			"value": 6
 		},
 		{
-			"name": "Job04_HeavyAttackShort",
+			"name": "Job04_LightAttackMove",
 			"value": 7
 		},
 		{
-			"name": "Job04_HeavyAttackMove",
+			"name": "Job04_LightAttackStep",
 			"value": 8
 		},
 		{
-			"name": "Job04_LightAttackStep",
+			"name": "Job04_LightAttackAir",
 			"value": 9
 		},
 		{
-			"name": "Job04_HeavyAttackToHoldDownFront",
+			"name": "Job04_LightAttackDash",
 			"value": 10
 		},
 		{
-			"name": "Job04_LightAttackAir",
+			"name": "Job04_LightAttackCling",
 			"value": 11
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishFront",
+			"name": "Job04_LightAttackTurn",
 			"value": 12
 		},
 		{
-			"name": "Job04_HeavyDownAttackShort",
+			"name": "Job04_LightAttackHoldDown",
 			"value": 13
 		},
 		{
-			"name": "Job04_HeavyDownAttackMove",
+			"name": "Job04_LoopAttack",
 			"value": 14
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishBack",
+			"name": "Job04_LoopAttackCling",
 			"value": 15
 		},
 		{
-			"name": "Job04_HeavyAttackToHoldDownBack",
+			"name": "Job04_LoopAttackHoldDown",
 			"value": 16
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishDown",
+			"name": "Job04_LoopAttackClingEnd",
 			"value": 17
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishLarge",
+			"name": "Job04_LoopAttackHoldDownEnd",
 			"value": 18
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishLargeBelow",
+			"name": "Job04_LoopAttackEnd",
 			"value": 19
 		},
 		{
-			"name": "Job04_LightAttackDash",
+			"name": "Job04_Dodge",
 			"value": 20
 		},
 		{
-			"name": "Job04_LightAttackCling",
+			"name": "Job04_LightAttackDodge",
 			"value": 21
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelow",
+			"name": "Job04_LightAttackKickWall",
 			"value": 22
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishFront",
+			"name": "Job04_LightAttackKickWallLanding",
 			"value": 23
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishFront",
+			"name": "Job04_LightAttackKickWallLandingAfterAttack",
 			"value": 24
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishBack",
+			"name": "Job04_CS01",
 			"value": 25
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishDown",
+			"name": "Job04_CS02",
 			"value": 26
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishLarge",
+			"name": "Job04_CS03",
 			"value": 27
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishLargeBelow",
+			"name": "Job04_CS04",
 			"value": 28
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishBack",
+			"name": "Job04_CS05",
 			"value": 29
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishDown",
+			"name": "Job04_CS06",
 			"value": 30
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishLarge",
+			"name": "Job04_CS07",
 			"value": 31
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishLargeBelow",
+			"name": "Job04_CS08",
 			"value": 32
 		},
 		{
-			"name": "Job04_LightAttackTurn",
+			"name": "Job04_CS09",
 			"value": 33
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishLargeBelow",
+			"name": "Job04_CS11",
 			"value": 34
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishLarge",
+			"name": "Job04_CS12",
 			"value": 35
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishDown",
+			"name": "Job04_CS10",
 			"value": 36
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishBack",
+			"name": "Job04_CS13",
 			"value": 37
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishFront",
+			"name": "Job04_CuttingWindStartCombo",
 			"value": 38
 		},
 		{
-			"name": "Job04_HeavyAttackAir",
+			"name": "Job04_CuttingWindFinish",
 			"value": 39
 		},
 		{
-			"name": "Job04_HeavyAttackAirLanding",
+			"name": "Job04_CuttingWindLoop",
 			"value": 40
 		},
 		{
-			"name": "Job04_LightAttackHoldDown",
+			"name": "Job04_CuttingWindStart",
 			"value": 41
 		},
 		{
-			"name": "Job04_HeavyAttackDash",
+			"name": "Job04_GuillotineStartAir",
 			"value": 42
 		},
 		{
-			"name": "Job04_HeavyAttackCling",
+			"name": "Job04_GuillotineEnd",
 			"value": 43
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishFront",
+			"name": "Job04_GuillotineLoop",
 			"value": 44
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishBack",
+			"name": "Job04_GuillotineStart",
 			"value": 45
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishDown",
+			"name": "Job04_AttractLargeFail",
 			"value": 46
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishLarge",
+			"name": "Job04_AttractLargeSuccess",
 			"value": 47
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishLargeBelow",
+			"name": "Job04_AttractLarge",
 			"value": 48
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishLanding",
+			"name": "Job04_Attract",
 			"value": 49
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishLargeBelow",
+			"name": "Job04_ParryCounterAir",
 			"value": 50
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishLarge",
+			"name": "Job04_ParryCounterFinishLanding",
 			"value": 51
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishDown",
+			"name": "Job04_ParryCounterAirStartClimb",
 			"value": 52
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishBack",
+			"name": "Job04_ParryCounterFinishAir",
 			"value": 53
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishFront",
+			"name": "Job04_ParryCounterFinishFront",
 			"value": 54
 		},
 		{
-			"name": "Job04_HeavyAttackHoldDown",
+			"name": "Job04_ParryCounterClingFinishLanding",
 			"value": 55
 		},
 		{
-			"name": "Job04_HeavyAttackHoldDownDraw",
+			"name": "Job04_ParryCounterClingFinish",
 			"value": 56
 		},
 		{
-			"name": "Job04_HeavyAttackClingStart",
+			"name": "Job04_ParryCounterFinishBack",
 			"value": 57
 		},
 		{
-			"name": "Job04_LoopAttack",
+			"name": "Job04_ParryCounterStartClimb",
 			"value": 58
 		},
 		{
-			"name": "Job04_LoopAttackCling",
+			"name": "Job04_ParryCounter",
 			"value": 59
 		},
 		{
-			"name": "Job04_LoopAttackHoldDown",
+			"name": "Job04_ParryCounterFinish",
 			"value": 60
 		},
 		{
-			"name": "Job04_LoopAttackClingEnd",
+			"name": "Job04_AbsoluteAvoidanceAvoid",
 			"value": 61
 		},
 		{
-			"name": "Job04_LoopAttackHoldDownEnd",
+			"name": "Job04_AbsoluteAvoidanceStart",
 			"value": 62
 		},
 		{
-			"name": "Job04_LoopAttackEnd",
+			"name": "Job04_HollowOutLanding",
 			"value": 63
 		},
 		{
-			"name": "Job04_Dodge",
+			"name": "Job04_HollowOutHoldDown",
 			"value": 64
 		},
 		{
-			"name": "Job04_LightAttackDodge",
+			"name": "Job04_HollowOutCling",
 			"value": 65
 		},
 		{
-			"name": "Job04_HeavyDownAttackToHoldDownFrontFaceDown",
+			"name": "Job04_FlameBladeCling",
 			"value": 66
 		},
 		{
-			"name": "Job04_HeavyDownAttackToHoldDownFrontFaceUp",
+			"name": "Job04_FlameBladeHoldDown",
 			"value": 67
 		},
 		{
-			"name": "Job04_HeavyDownAttackToHoldDownBackFaceUp",
+			"name": "Job04_FlameBlade",
 			"value": 68
 		},
 		{
-			"name": "Job04_HeavyDownAttackToHoldDownBackFaceDown",
+			"name": "Job04_SmokeScreenAir",
 			"value": 69
 		},
 		{
-			"name": "Job04_HeavyAttackAirToHoldDownFront",
+			"name": "Job04_SmokeScreen",
 			"value": 70
 		},
 		{
-			"name": "Job04_HeavyAttackAirToHoldDownBack",
+			"name": "Job04_SmokeScreenHoldDown",
 			"value": 71
 		},
 		{
-			"name": "Job04_HeavyAttackAirClingStart",
+			"name": "Job04_SmokeScreenCling",
 			"value": 72
 		},
 		{
-			"name": "Job04_LightAttackKickWall",
+			"name": "Job04_PlantPowderHoldDown",
 			"value": 73
 		},
 		{
-			"name": "Job04_LightAttackKickWallLanding",
+			"name": "Job04_PlantPowderLargeBelow",
 			"value": 74
 		},
 		{
-			"name": "Job04_LightAttackKickWallLandingAfterAttack",
+			"name": "Job04_PlantPowderCling",
 			"value": 75
 		},
 		{
-			"name": "Job04_HeavyAttackMoveFinishLargeLow",
+			"name": "Job04_PlantPowder",
 			"value": 76
 		},
 		{
-			"name": "Job04_HeavyAttackShortFinishLargeLow",
+			"name": "Job04_DetonatePowderCling",
 			"value": 77
 		},
 		{
-			"name": "Job04_HeavyDownAttackFinishLargeLow",
+			"name": "Job04_DetonatePowderAir",
 			"value": 78
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowFinishLargeLow",
+			"name": "Job04_DetonatePowder",
 			"value": 79
 		},
 		{
-			"name": "Job04_HeavyAttackAirFinishLargeLow",
+			"name": "Job04_DetonatePowderHoldDown",
 			"value": 80
 		},
 		{
-			"name": "Job04_HeavyAttackAirLandingFinishLargeLow",
+			"name": "Job04_WindWaveEndNeutral",
 			"value": 81
 		},
 		{
-			"name": "Job04_HeavyAttackLargeBelowClingStart",
+			"name": "Job04_WindWaveEndRight",
 			"value": 82
 		},
 		{
-			"name": "Job04_CS01",
+			"name": "Job04_WindWaveEndLeft",
 			"value": 83
 		},
 		{
-			"name": "Job04_CS02",
+			"name": "Job04_WindWaveEndGround",
 			"value": 84
 		},
 		{
-			"name": "Job04_CS03",
+			"name": "Job04_WindWaveNeutralAir",
 			"value": 85
 		},
 		{
-			"name": "Job04_CS04",
+			"name": "Job04_WindWaveNeutral",
 			"value": 86
 		},
 		{
-			"name": "Job04_CS05",
+			"name": "Job04_WindWaveAir",
 			"value": 87
 		},
 		{
-			"name": "Job04_CS06",
+			"name": "Job04_WindWave",
 			"value": 88
 		},
 		{
-			"name": "Job04_CS07",
+			"name": "Job04_Stealth",
 			"value": 89
 		},
 		{
-			"name": "Job04_CS08",
+			"name": "Job04_SnatchHoldDown",
 			"value": 90
 		},
 		{
-			"name": "Job04_CS09",
+			"name": "Job04_SnatchCling",
 			"value": 91
 		},
 		{
-			"name": "Job04_CS11",
+			"name": "Job04_FakeMaster",
 			"value": 92
 		},
 		{
-			"name": "Job04_CS12",
+			"name": "Job04_FakeMasterHoldDown",
 			"value": 93
 		},
 		{
-			"name": "Job04_CS10",
+			"name": "Job04_FakeMasterCling",
 			"value": 94
 		},
 		{
-			"name": "Job04_CS13",
+			"name": "Job04_HeavyAttackLargeBelowClingStart",
 			"value": 95
 		},
 		{
-			"name": "Job04_CuttingWindStartCombo",
+			"name": "Job04_HeavyAttackAirLandingFinishLargeLow",
 			"value": 96
 		},
 		{
-			"name": "Job04_CuttingWindFinish",
+			"name": "Job04_HeavyAttackAirFinishLargeLow",
 			"value": 97
 		},
 		{
-			"name": "Job04_CuttingWindLoop",
+			"name": "Job04_HeavyAttackLargeBelowFinishLargeLow",
 			"value": 98
 		},
 		{
-			"name": "Job04_CuttingWindStart",
+			"name": "Job04_HeavyDownAttackFinishLargeLow",
 			"value": 99
 		},
 		{
-			"name": "Job04_GuillotineStartAir",
+			"name": "Job04_HeavyAttackShortFinishLargeLow",
 			"value": 100
 		},
 		{
-			"name": "Job04_GuillotineEnd",
+			"name": "Job04_HeavyAttackMoveFinishLargeLow",
 			"value": 101
 		},
 		{
-			"name": "Job04_GuillotineLoop",
+			"name": "Job04_HeavyAttackAirClingStart",
 			"value": 102
 		},
 		{
-			"name": "Job04_GuillotineStart",
+			"name": "Job04_HeavyAttackAirToHoldDownBack",
 			"value": 103
 		},
 		{
-			"name": "Job04_AttractLargeFail",
+			"name": "Job04_HeavyAttackAirToHoldDownFront",
 			"value": 104
 		},
 		{
-			"name": "Job04_AttractLargeSuccess",
+			"name": "Job04_HeavyDownAttackToHoldDownBackFaceDown",
 			"value": 105
 		},
 		{
-			"name": "Job04_AttractLarge",
+			"name": "Job04_HeavyDownAttackToHoldDownBackFaceUp",
 			"value": 106
 		},
 		{
-			"name": "Job04_Attract",
+			"name": "Job04_HeavyDownAttackToHoldDownFrontFaceUp",
 			"value": 107
 		},
 		{
-			"name": "Job04_ParryCounterAir",
+			"name": "Job04_HeavyDownAttackToHoldDownFrontFaceDown",
 			"value": 108
 		},
 		{
-			"name": "Job04_ParryCounterFinishLanding",
+			"name": "Job04_HeavyAttackClingStart",
 			"value": 109
 		},
 		{
-			"name": "Job04_ParryCounterAirStartClimb",
+			"name": "Job04_HeavyAttackHoldDownDraw",
 			"value": 110
 		},
 		{
-			"name": "Job04_ParryCounterFinishAir",
+			"name": "Job04_HeavyAttackHoldDown",
 			"value": 111
 		},
 		{
-			"name": "Job04_ParryCounterFinishFront",
+			"name": "Job04_HeavyAttackAirLandingFinishFront",
 			"value": 112
 		},
 		{
-			"name": "Job04_ParryCounterClingFinishLanding",
+			"name": "Job04_HeavyAttackAirLandingFinishBack",
 			"value": 113
 		},
 		{
-			"name": "Job04_ParryCounterClingFinish",
+			"name": "Job04_HeavyAttackAirLandingFinishDown",
 			"value": 114
 		},
 		{
-			"name": "Job04_ParryCounterFinishBack",
+			"name": "Job04_HeavyAttackAirLandingFinishLarge",
 			"value": 115
 		},
 		{
-			"name": "Job04_ParryCounterStartClimb",
+			"name": "Job04_HeavyAttackAirLandingFinishLargeBelow",
 			"value": 116
 		},
 		{
-			"name": "Job04_ParryCounter",
+			"name": "Job04_HeavyAttackAirFinishLanding",
 			"value": 117
 		},
 		{
-			"name": "Job04_AbsoluteAvoidanceAvoid",
+			"name": "Job04_HeavyAttackAirFinishLargeBelow",
 			"value": 118
 		},
 		{
-			"name": "Job04_AbsoluteAvoidanceStart",
+			"name": "Job04_HeavyAttackAirFinishLarge",
 			"value": 119
 		},
 		{
-			"name": "Job04_HollowOutLanding",
+			"name": "Job04_HeavyAttackAirFinishDown",
 			"value": 120
 		},
 		{
-			"name": "Job04_HollowOutHoldDown",
+			"name": "Job04_HeavyAttackAirFinishBack",
 			"value": 121
 		},
 		{
-			"name": "Job04_HollowOutCling",
+			"name": "Job04_HeavyAttackAirFinishFront",
 			"value": 122
 		},
 		{
-			"name": "Job04_FlameBladeCling",
+			"name": "Job04_HeavyAttackCling",
 			"value": 123
 		},
 		{
-			"name": "Job04_FlameBladeHoldDown",
+			"name": "Job04_HeavyAttackDash",
 			"value": 124
 		},
 		{
-			"name": "Job04_FlameBlade",
+			"name": "Job04_HeavyAttackAirLanding",
 			"value": 125
 		},
 		{
-			"name": "Job04_SmokeScreenAir",
+			"name": "Job04_HeavyAttackAir",
 			"value": 126
 		},
 		{
-			"name": "Job04_SmokeScreen",
+			"name": "Job04_HeavyAttackMoveFinishFront",
 			"value": 127
 		},
 		{
-			"name": "Job04_SmokeScreenHoldDown",
+			"name": "Job04_HeavyAttackMoveFinishBack",
 			"value": 128
 		},
 		{
-			"name": "Job04_SmokeScreenCling",
+			"name": "Job04_HeavyAttackMoveFinishDown",
 			"value": 129
 		},
 		{
-			"name": "Job04_PlantPowderHoldDown",
+			"name": "Job04_HeavyAttackMoveFinishLarge",
 			"value": 130
 		},
 		{
-			"name": "Job04_PlantPowderLargeBelow",
+			"name": "Job04_HeavyAttackMoveFinishLargeBelow",
 			"value": 131
 		},
 		{
-			"name": "Job04_PlantPowderCling",
+			"name": "Job04_HeavyAttackLargeBelowFinishLargeBelow",
 			"value": 132
 		},
 		{
-			"name": "Job04_PlantPowder",
+			"name": "Job04_HeavyAttackLargeBelowFinishLarge",
 			"value": 133
 		},
 		{
-			"name": "Job04_DetonatePowderCling",
+			"name": "Job04_HeavyAttackLargeBelowFinishDown",
 			"value": 134
 		},
 		{
-			"name": "Job04_DetonatePowderAir",
+			"name": "Job04_HeavyAttackLargeBelowFinishBack",
 			"value": 135
 		},
 		{
-			"name": "Job04_DetonatePowder",
+			"name": "Job04_HeavyDownAttackFinishLargeBelow",
 			"value": 136
 		},
 		{
-			"name": "Job04_DetonatePowderHoldDown",
+			"name": "Job04_HeavyDownAttackFinishLarge",
 			"value": 137
 		},
 		{
-			"name": "Job04_WindWaveEndNeutral",
+			"name": "Job04_HeavyDownAttackFinishDown",
 			"value": 138
 		},
 		{
-			"name": "Job04_WindWaveEndRight",
+			"name": "Job04_HeavyDownAttackFinishBack",
 			"value": 139
 		},
 		{
-			"name": "Job04_WindWaveEndLeft",
+			"name": "Job04_HeavyAttackLargeBelowFinishFront",
 			"value": 140
 		},
 		{
-			"name": "Job04_WindWaveEndGround",
+			"name": "Job04_HeavyAttackLargeBelow",
 			"value": 141
 		},
 		{
-			"name": "Job04_WindWaveNeutralAir",
+			"name": "Job04_HeavyAttackShortFinishLargeBelow",
 			"value": 142
 		},
 		{
-			"name": "Job04_WindWaveNeutral",
+			"name": "Job04_HeavyAttackShortFinishLarge",
 			"value": 143
 		},
 		{
-			"name": "Job04_WindWaveAir",
+			"name": "Job04_HeavyAttackShortFinishDown",
 			"value": 144
 		},
 		{
-			"name": "Job04_WindWave",
+			"name": "Job04_HeavyAttackToHoldDownBack",
 			"value": 145
 		},
 		{
-			"name": "Job04_Stealth",
+			"name": "Job04_HeavyAttackShortFinishBack",
 			"value": 146
 		},
 		{
-			"name": "Job04_SnatchHoldDown",
+			"name": "Job04_HeavyDownAttackMove",
 			"value": 147
 		},
 		{
-			"name": "Job04_SnatchCling",
+			"name": "Job04_HeavyDownAttackShort",
 			"value": 148
 		},
 		{
-			"name": "Job04_FakeMaster",
+			"name": "Job04_HeavyAttackShortFinishFront",
 			"value": 149
 		},
 		{
-			"name": "Job04_FakeMasterHoldDown",
+			"name": "Job04_HeavyAttackToHoldDownFront",
 			"value": 150
 		},
 		{
-			"name": "Job04_FakeMasterCling",
+			"name": "Job04_HeavyAttackMove",
 			"value": 151
 		},
 		{
-			"name": "None",
+			"name": "Job04_HeavyAttackShort",
 			"value": 152
+		},
+		{
+			"name": "Job04_HeavyDownAttackFinishFront",
+			"value": 153
+		},
+		{
+			"name": "None",
+			"value": 154
 		}
 	],
 	"app.SpatialEventType": [
@@ -56186,6 +56302,10 @@
 		{
 			"name": "WareHouseOutSelectMulti",
 			"value": 13
+		},
+		{
+			"name": "ItemFullPass",
+			"value": 14
 		}
 	],
 	"app.EmThkChkNPCCheckSentiment.CompType": [
@@ -59324,6 +59444,10 @@
 		{
 			"name": "DisableDetectGroundCache",
 			"value": 36028797018963968
+		},
+		{
+			"name": "ConsiderPushedByPreventFall",
+			"value": 144115188075855872
 		},
 		{
 			"name": "None",
@@ -70977,6 +71101,20 @@
 			"value": 0
 		}
 	],
+	"app.ui023301.SubSkillAction": [
+		{
+			"name": "Type0",
+			"value": 0
+		},
+		{
+			"name": "Type1",
+			"value": 1
+		},
+		{
+			"name": "Type3",
+			"value": 2
+		}
+	],
 	"app.Job04KickWall.RoutineType": [
 		{
 			"name": "Start",
@@ -75316,64 +75454,68 @@
 			"value": 28
 		},
 		{
-			"name": "Slot00",
+			"name": "FirstAuto",
 			"value": 29
 		},
 		{
-			"name": "Slot01",
+			"name": "Slot00",
 			"value": 30
 		},
 		{
-			"name": "Slot02",
+			"name": "Slot01",
 			"value": 31
 		},
 		{
-			"name": "Slot03",
+			"name": "Slot02",
 			"value": 32
 		},
 		{
-			"name": "removeSlot00_01",
+			"name": "Slot03",
 			"value": 33
 		},
 		{
-			"name": "removeSlot00_01_03",
+			"name": "removeSlot00_01",
 			"value": 34
 		},
 		{
-			"name": "removeSlot00_01_02",
+			"name": "removeSlot00_01_03",
 			"value": 35
 		},
 		{
-			"name": "removeSlot01_02",
+			"name": "removeSlot00_01_02",
 			"value": 36
 		},
 		{
-			"name": "removeSlot02_03",
+			"name": "removeSlot01_02",
 			"value": 37
 		},
 		{
-			"name": "removeSlot00_sys",
+			"name": "removeSlot02_03",
 			"value": 38
 		},
 		{
-			"name": "removeSlot01_03",
+			"name": "removeSlot00_sys",
 			"value": 39
 		},
 		{
-			"name": "removeSlot01_sys",
+			"name": "removeSlot01_03",
 			"value": 40
 		},
 		{
-			"name": "removeSlot02_sys",
+			"name": "removeSlot01_sys",
 			"value": 41
 		},
 		{
-			"name": "removeSlot03_sys",
+			"name": "removeSlot02_sys",
 			"value": 42
 		},
 		{
-			"name": "Debug",
+			"name": "removeSlot03_sys",
 			"value": 43
+		},
+		{
+			"name": "Debug",
+			"value": 44
 		}
 	],
 	"app.ItemSubCategory": [
@@ -77332,6 +77474,24 @@
 		{
 			"name": "Overlay",
 			"value": 1
+		}
+	],
+	"app.OxcartStopDispArgs.StopStatus": [
+		{
+			"name": "Active",
+			"value": 0
+		},
+		{
+			"name": "Disable_Near",
+			"value": 1
+		},
+		{
+			"name": "Disable_Passed",
+			"value": 2
+		},
+		{
+			"name": "Deactive",
+			"value": 3
 		}
 	],
 	"app.Ch253001WingMaterialCtrl.WingMaterialRequestStatus": [
@@ -80898,6 +81058,10 @@
 		{
 			"name": "NoService",
 			"value": 11
+		},
+		{
+			"name": "OxcartStopover",
+			"value": 12
 		}
 	],
 	"app.Ch221004.Ch221004OriginalFlag": [
@@ -101827,6 +101991,12 @@
 			"value": 5
 		}
 	],
+	"app.OxcartStopoverNode.OxcartStopoverEnum": [
+		{
+			"name": "ViewUI",
+			"value": 0
+		}
+	],
 	"app.Sm81_049.StateId": [
 		{
 			"name": "Off",
@@ -102125,6 +102295,34 @@
 		{
 			"name": "Destination",
 			"value": 2060215854
+		},
+		{
+			"name": "PhotoFreeCameraMove",
+			"value": 989589272
+		},
+		{
+			"name": "PhotoFreeCameraMoveForward",
+			"value": 895693732
+		},
+		{
+			"name": "PhotoFreeCameraMoveBackward",
+			"value": 337943468
+		},
+		{
+			"name": "PhotoFreeCameraMoveRightward",
+			"value": 786276624
+		},
+		{
+			"name": "PhotoFreeCameraMoveUpward",
+			"value": 81840910
+		},
+		{
+			"name": "PhotoFreeCameraMoveDownward",
+			"value": 783587428
+		},
+		{
+			"name": "MapWarpCursor",
+			"value": 1960219389
 		}
 	],
 	"app.ui070403.GuideSet.GuideState": [
@@ -102559,6 +102757,16 @@
 		{
 			"name": "Highest",
 			"value": 6
+		}
+	],
+	"app.quest.condition.CheckCh259ConditionParam.CheckTypeEnum": [
+		{
+			"name": "StartThrow",
+			"value": 0
+		},
+		{
+			"name": "IsPetrification",
+			"value": 1
 		}
 	],
 	"app.Gm80_102Param.AppearKind": [
@@ -113604,6 +113812,14 @@
 		{
 			"name": "MoveItem",
 			"value": 10
+		},
+		{
+			"name": "SubSkill",
+			"value": 11
+		},
+		{
+			"name": "BrokenCamp",
+			"value": 12
 		}
 	],
 	"via.audiorender.Channel_71ch": [
@@ -114410,6 +114626,10 @@
 		{
 			"name": "CheckHaveDeliverParam",
 			"value": 45
+		},
+		{
+			"name": "CheckCh259ConditionParam",
+			"value": 46
 		}
 	],
 	"via.gui.GridCursorType": [
@@ -118841,24 +119061,44 @@
 			"value": 13
 		},
 		{
-			"name": "EquipTarget",
+			"name": "Notice_SelectPass_Far_NotPass",
 			"value": 14
 		},
 		{
-			"name": "PassWarehouseConfirm",
+			"name": "Notice_SelectPass_MaxErr_NotPass",
 			"value": 15
 		},
 		{
-			"name": "Notice_MaxErr_NotEquip",
+			"name": "Notice_SelectPass_MaxErr_NotFullPass",
 			"value": 16
 		},
 		{
-			"name": "JewelryTarget",
+			"name": "EquipTarget",
 			"value": 17
 		},
 		{
-			"name": "End",
+			"name": "PassWarehouseConfirm",
 			"value": 18
+		},
+		{
+			"name": "Notice_MaxErr_NotEquip",
+			"value": 19
+		},
+		{
+			"name": "JewelryTarget",
+			"value": 20
+		},
+		{
+			"name": "SelectPassItem",
+			"value": 21
+		},
+		{
+			"name": "SelectPassTarget",
+			"value": 22
+		},
+		{
+			"name": "End",
+			"value": 23
 		}
 	],
 	"via.network.session.NswInvitationParam.Language": [
@@ -122585,6 +122825,18 @@
 		{
 			"name": "It000612",
 			"value": 612
+		},
+		{
+			"name": "It000619",
+			"value": 619
+		},
+		{
+			"name": "It000664",
+			"value": 664
+		},
+		{
+			"name": "It000668",
+			"value": 668
 		},
 		{
 			"name": "It001000",
@@ -146512,6 +146764,10 @@
 		{
 			"name": "VisorDown",
 			"value": 13
+		},
+		{
+			"name": "SelectPass",
+			"value": 14
 		}
 	],
 	"app.ui070406_01.InterfaceType": [
@@ -148127,6 +148383,16 @@
 			"value": 6
 		}
 	],
+	"app.PhotoCameraController.OperationMode": [
+		{
+			"name": "Orbit",
+			"value": 0
+		},
+		{
+			"name": "Free",
+			"value": 1
+		}
+	],
 	"app.Ch253000.BattleChangeTypeEnum": [
 		{
 			"name": "Patrol",
@@ -149449,6 +149715,10 @@
 		{
 			"name": "Effect_Other_04",
 			"value": 28
+		},
+		{
+			"name": "Camera_03",
+			"value": 29
 		}
 	],
 	"app.actinter.cmd.ActLoop.LoopType": [
@@ -150279,6 +150549,22 @@
 		{
 			"name": "OnArriveExploredDungeon",
 			"value": 120
+		},
+		{
+			"name": "OnOxCartStopover",
+			"value": 121
+		},
+		{
+			"name": "OnPaidMoneyOxcart",
+			"value": 122
+		},
+		{
+			"name": "OnInvokeSubSkill09InOxcart",
+			"value": 123
+		},
+		{
+			"name": "OnInvokeSubSkill09InCamp",
+			"value": 124
 		}
 	],
 	"app.GuiManager.TextLanguagePhase": [
@@ -150475,16 +150761,20 @@
 	],
 	"app.CharacterEditDefine.LogLevel": [
 		{
-			"name": "Info",
+			"name": "Debug",
 			"value": 0
 		},
 		{
-			"name": "Warning",
+			"name": "Info",
 			"value": 1
 		},
 		{
-			"name": "Error",
+			"name": "Warning",
 			"value": 2
+		},
+		{
+			"name": "Error",
+			"value": 3
 		}
 	],
 	"app.BackpackStyle": [
@@ -151729,6 +152019,10 @@
 		{
 			"name": "Suggest",
 			"value": 15
+		},
+		{
+			"name": "OxcartArrive",
+			"value": 16
 		}
 	],
 	"app.Ch255.Ch255MoveSpeedTypeID": [
@@ -152819,24 +153113,28 @@
 			"value": 99
 		},
 		{
-			"name": "TGS_StartPosSelect",
+			"name": "MapDirect",
 			"value": 100
 		},
 		{
-			"name": "TGS_Timer",
+			"name": "TGS_StartPosSelect",
 			"value": 101
 		},
 		{
-			"name": "TGS_ThankYou",
+			"name": "TGS_Timer",
 			"value": 102
 		},
 		{
-			"name": "TGS_UnderDevelopment",
+			"name": "TGS_ThankYou",
 			"value": 103
 		},
 		{
-			"name": "TGS_Title",
+			"name": "TGS_UnderDevelopment",
 			"value": 104
+		},
+		{
+			"name": "TGS_Title",
+			"value": 105
 		}
 	],
 	"app.charaedit.ch110.EyebrowsEditPresetID": [
@@ -168492,6 +168790,10 @@
 		{
 			"name": "ShopChoice035",
 			"value": 35
+		},
+		{
+			"name": "ShopChoice038",
+			"value": 38
 		}
 	],
 	"app.actinter.cmd.ActInterPlayActionIDRandom.RoutineType": [
@@ -172232,7 +172534,7 @@
 			"value": 17592186044416
 		},
 		{
-			"name": "Group45",
+			"name": "PhotoMode",
 			"value": 35184372088832
 		},
 		{
@@ -204776,7 +205078,7 @@
 			"value": 44
 		},
 		{
-			"name": "Group45",
+			"name": "PhotoMode",
 			"value": 45
 		},
 		{
@@ -209780,68 +210082,88 @@
 			"value": 0
 		},
 		{
-			"name": "WorldFade",
+			"name": "WaitDirectInFade_In",
 			"value": 1
 		},
 		{
-			"name": "World",
+			"name": "WorldFade",
 			"value": 2
 		},
 		{
-			"name": "DetailFade",
+			"name": "World",
 			"value": 3
 		},
 		{
-			"name": "Detail",
+			"name": "DetailFade",
 			"value": 4
 		},
 		{
-			"name": "Marker",
+			"name": "Detail",
 			"value": 5
 		},
 		{
-			"name": "MarkerConfirm",
+			"name": "Marker",
 			"value": 6
 		},
 		{
-			"name": "MarkerDeleteConfirm",
+			"name": "MarkerConfirm",
 			"value": 7
 		},
 		{
-			"name": "Warp",
+			"name": "MarkerDeleteConfirm",
 			"value": 8
 		},
 		{
-			"name": "WarpConfirm",
+			"name": "Warp",
 			"value": 9
 		},
 		{
-			"name": "WarpNotice",
+			"name": "WarpConfirm",
 			"value": 10
 		},
 		{
-			"name": "QuestList",
+			"name": "WarpNotice",
 			"value": 11
 		},
 		{
-			"name": "QuestConfirm",
+			"name": "QuestList",
 			"value": 12
 		},
 		{
-			"name": "SearchList",
+			"name": "QuestConfirm",
 			"value": 13
 		},
 		{
-			"name": "SearchSkill",
+			"name": "SearchList",
 			"value": 14
 		},
 		{
-			"name": "Out",
+			"name": "SearchSkill",
 			"value": 15
 		},
 		{
-			"name": "End",
+			"name": "SelectOxcartStop",
 			"value": 16
+		},
+		{
+			"name": "SelectOxcartStopConfirm",
+			"value": 17
+		},
+		{
+			"name": "DirectWarpConfirm",
+			"value": 18
+		},
+		{
+			"name": "WarpDisableConfirm",
+			"value": 19
+		},
+		{
+			"name": "Out",
+			"value": 20
+		},
+		{
+			"name": "End",
+			"value": 21
 		}
 	],
 	"via.navigation.FilterInfo.TraceDestination": [
@@ -210687,6 +211009,10 @@
 		{
 			"name": "RequestNPCGenerate_NoAction",
 			"value": 14
+		},
+		{
+			"name": "RequestNPCGenerate_DeadOrCoffin",
+			"value": 15
 		}
 	],
 	"app.ThinkValueController.ValueType": [
@@ -241390,6 +241716,62 @@
 		{
 			"name": "qu030240_009",
 			"value": 3455
+		},
+		{
+			"name": "OxcartRoute_001",
+			"value": 3456
+		},
+		{
+			"name": "OxcartRoute_002",
+			"value": 3457
+		},
+		{
+			"name": "OxcartRoute_003",
+			"value": 3458
+		},
+		{
+			"name": "OxcartRoute_004",
+			"value": 3459
+		},
+		{
+			"name": "OxcartRoute_005",
+			"value": 3460
+		},
+		{
+			"name": "OxcartRoute_006",
+			"value": 3461
+		},
+		{
+			"name": "OxcartRoute_007",
+			"value": 3462
+		},
+		{
+			"name": "OxcartRoute_008",
+			"value": 3463
+		},
+		{
+			"name": "OxcartRoute_009",
+			"value": 3464
+		},
+		{
+			"name": "OxcartRoute_010",
+			"value": 3465
+		},
+		{
+			"name": "OxcartRoute_011",
+			"value": 3466
+		},
+		{
+			"name": "OxcartRoute_012",
+			"value": 3467
+		},
+		{
+			"name": "OxcartRoute_013",
+			"value": 3468
+		},
+		{
+			"name": "OxcartRoute_014",
+			"value": 3469
 		}
 	],
 	"app.WeaponID2": [
@@ -241598,6 +241980,10 @@
 		{
 			"name": "ForceMove",
 			"value": 6
+		},
+		{
+			"name": "Reset",
+			"value": 7
 		}
 	],
 	"app.PLPartyTalkController.PawnTalkRequestInfo.RequestType": [
@@ -256431,6 +256817,18 @@
 		{
 			"name": "PlayMode",
 			"value": 162
+		},
+		{
+			"name": "EnablePawnEmploymentProposal",
+			"value": 163
+		},
+		{
+			"name": "EnableHighfive",
+			"value": 164
+		},
+		{
+			"name": "EnableDragonEnhanceEffects",
+			"value": 165
 		}
 	],
 	"app.Gm80_187.StateId": [
@@ -256953,6 +257351,10 @@
 		{
 			"name": "Bool",
 			"value": 2
+		},
+		{
+			"name": "DeathFromContext",
+			"value": 3
 		}
 	],
 	"app.Ch256StartAndLoopExitTimeMotion.RoutineType": [
@@ -266299,6 +266701,16 @@
 		{
 			"name": "Finished",
 			"value": 9
+		}
+	],
+	"app.decision.condition.DifferentJobType.TargetTypeEnum": [
+		{
+			"name": "Self",
+			"value": 0
+		},
+		{
+			"name": "MainPawn",
+			"value": 1
 		}
 	],
 	"via.network.native.MacAppStoreTransactionEvent.EventType": [
