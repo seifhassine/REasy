@@ -47,6 +47,7 @@ from .shape_types import ShapeType, create_shape
 from .rcol_scene import SceneAttachment, build_scene_meshes
 from file_handlers.mesh.mesh_file import MeshFile
 from file_handlers.mesh.mesh_handler import MeshHandler
+from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_preview import SceneDrawMesh, ScenePreviewWidget
 from utils.number_format import format_display_value
 from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
@@ -693,6 +694,11 @@ class RcolViewer(QWidget):
             color=mesh.color,
             force_solid=mesh.force_solid,
             ignore_highlight_filter=mesh.ignore_highlight_filter,
+            normals=mesh.normals,
+            uvs=mesh.uvs,
+            colors=mesh.colors,
+            material_name=mesh.material_name,
+            batches=mesh.batches,
         )
 
     def _offset_joint_map(self, transforms: dict[str, np.ndarray], translation_delta: np.ndarray) -> dict[str, np.ndarray]:
@@ -725,62 +731,21 @@ class RcolViewer(QWidget):
         )
 
     def _build_mesh_draw(self, mesh: MeshFile, key: str) -> SceneDrawMesh | None:
-        mesh_buffer = getattr(mesh, "mesh_buffer", None)
-        if mesh_buffer is None or not getattr(mesh, "meshes", None):
-            return None
-        vertex_chunks: list[np.ndarray] = []
-        index_chunks: list[np.ndarray] = []
-        vertex_base = 0
-        lod0 = mesh.meshes[0].lods[0] if mesh.meshes and mesh.meshes[0].lods else None
-        if lod0 is None:
-            return None
-
-        for group in lod0.mesh_groups:
-            for submesh in group.submeshes:
-                payload = mesh_buffer.buffer_payloads.get(int(getattr(submesh, "buffer_index", 0)))
-                if payload is None:
-                    payload = mesh_buffer.buffer_payloads.get(0)
-                if payload is None:
-                    continue
-
-                payload_verts = np.asarray(getattr(payload, "positions", []), dtype=np.float32).reshape(-1, 3)
-                if payload_verts.size == 0:
-                    continue
-                payload_indices_raw = getattr(payload, "integer_faces", None)
-                if payload_indices_raw is None:
-                    payload_indices_raw = getattr(payload, "faces", None)
-                if payload_indices_raw is None:
-                    continue
-                payload_indices = np.asarray(payload_indices_raw, dtype=np.uint32).reshape(-1)
-
-                start = int(submesh.faces_index_offset)
-                count = int(submesh.indices_count)
-                if count <= 0:
-                    continue
-                local = payload_indices[start:start + count]
-                if local.size < 3:
-                    continue
-                usable = (local.size // 3) * 3
-                local = local[:usable] + np.uint32(int(submesh.verts_index_offset))
-                valid = local < len(payload_verts)
-                valid = valid.reshape(-1, 3).all(axis=1)
-                if not np.any(valid):
-                    continue
-                triangle_indices = local.reshape(-1, 3)[valid].reshape(-1)
-
-                vertex_chunks.append(payload_verts)
-                index_chunks.append(triangle_indices + np.uint32(vertex_base))
-                vertex_base += len(payload_verts)
-
-        if not vertex_chunks or not index_chunks:
-            return None
-        verts = np.concatenate(vertex_chunks, axis=0).astype(np.float32, copy=False)
-        indices = np.concatenate(index_chunks, axis=0).astype(np.uint32, copy=False)
-        return SceneDrawMesh(
+        meshes = build_mesh_scene(
+            mesh,
             key=key,
-            vertices=verts,
-            indices=indices,
-            color=(0.35, 0.35, 0.38),
+            color=(0.35, 0.35, 0.38, 1.0),
+            force_solid=True,
+            ignore_highlight_filter=True,
+        )
+        if not meshes:
+            return None
+        draw_mesh = meshes[0]
+        return SceneDrawMesh(
+            key=draw_mesh.key,
+            vertices=draw_mesh.vertices,
+            indices=draw_mesh.indices,
+            color=(0.35, 0.35, 0.38, 1.0),
             force_solid=True,
             ignore_highlight_filter=True,
         )

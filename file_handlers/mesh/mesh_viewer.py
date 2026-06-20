@@ -1,124 +1,68 @@
 from __future__ import annotations
 
-import time
 from collections import deque
 
+import numpy as np
+from OpenGL.GL import (
+    GL_BLEND,
+    GL_CULL_FACE,
+    GL_DEPTH_TEST,
+    GL_FILL,
+    GL_FLOAT,
+    GL_FRAGMENT_SHADER,
+    GL_FRONT_AND_BACK,
+    GL_LIGHTING,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_QUADS,
+    GL_SRC_ALPHA,
+    GL_TEXTURE_2D,
+    GL_TEXTURE_COORD_ARRAY,
+    GL_VERTEX_ARRAY,
+    GL_VERTEX_SHADER,
+    glBindTexture,
+    glBlendFunc,
+    glColor4f,
+    glDeleteProgram,
+    glDeleteTextures,
+    glDisable,
+    glDisableClientState,
+    glDisableVertexAttribArray,
+    glDrawArrays,
+    glEnable,
+    glEnableClientState,
+    glEnableVertexAttribArray,
+    glGenTextures,
+    glGetAttribLocation,
+    glGetUniformLocation,
+    glPolygonMode,
+    glTexCoordPointer,
+    glUniform1i,
+    glUniform2f,
+    glUseProgram,
+    glVertexAttribPointer,
+    glVertexPointer,
+)
+from OpenGL.GL.shaders import compileProgram, compileShader
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFontMetrics, QImage, QPixmap, QSurfaceFormat, QPainter
+from PySide6.QtGui import QFontMetrics, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QSizePolicy,
-    QLabel,
-    QSpinBox,
-    QFrame,
-    QHBoxLayout,
-    QComboBox,
-    QDoubleSpinBox,
     QCheckBox,
+    QHBoxLayout,
     QHeaderView,
+    QLabel,
     QPushButton,
+    QSizePolicy,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
-import numpy as np
-from OpenGL.arrays import vbo
-from OpenGL.GL import (
-    glClearColor,
-    glClear,
-    GL_COLOR_BUFFER_BIT,
-    GL_DEPTH_BUFFER_BIT,
-    glEnable,
-    glDisable,
-    GL_DEPTH_TEST,
-    glRotatef,
-    glTranslatef,
-    glScalef,
-    glLoadIdentity,
-    glMatrixMode,
-    GL_PROJECTION,
-    GL_MODELVIEW,
-    glViewport,
-    glLightfv,
-    GL_LIGHTING,
-    GL_LIGHT0,
-    GL_POSITION,
-    GL_COLOR_MATERIAL,
-    GL_CULL_FACE,
-    glCullFace,
-    glFrontFace,
-    GL_BACK,
-    GL_CCW,
-    GL_NORMALIZE,
-    glEnableClientState,
-    glDisableClientState,
-    glVertexPointer,
-    glNormalPointer,
-    glColorPointer,
-    glTexCoordPointer,
-    glColor4f,
-    glDrawElements,
-    GL_TRIANGLES,
-    GL_LINES,
-    GL_FLOAT,
-    GL_UNSIGNED_INT,
-    GL_VERTEX_ARRAY,
-    GL_NORMAL_ARRAY,
-    GL_COLOR_ARRAY,
-    GL_TEXTURE_COORD_ARRAY,
-    GL_ELEMENT_ARRAY_BUFFER,
-    GL_BLEND,
-    glPolygonMode,
-    GL_FRONT_AND_BACK,
-    GL_LINE,
-    GL_FILL,
-    glLineWidth,
-    glShadeModel,
-    GL_SMOOTH,
-    glDepthMask,
-    GL_AMBIENT,
-    GL_DIFFUSE,
-    glBindTexture,
-    glBlendFunc,
-    glGenTextures,
-    glDeleteTextures,
-    glTexParameteri,
-    glTexImage2D,
-    glPixelStorei,
-    glTexEnvi,
-    glDrawArrays,
-    glUseProgram,
-    glGetAttribLocation,
-    glGetUniformLocation,
-    glUniform1i,
-    glUniform2f,
-    glEnableVertexAttribArray,
-    glDisableVertexAttribArray,
-    glVertexAttribPointer,
-    glDeleteProgram,
-    GL_TEXTURE_2D,
-    GL_TEXTURE_MIN_FILTER,
-    GL_TEXTURE_MAG_FILTER,
-    GL_LINEAR,
-    GL_RGBA,
-    GL_UNSIGNED_BYTE,
-    GL_UNPACK_ALIGNMENT,
-    GL_TEXTURE_ENV,
-    GL_TEXTURE_ENV_MODE,
-    GL_MODULATE,
-    GL_SRC_ALPHA,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_QUADS,
-    GL_VERTEX_SHADER,
-    GL_FRAGMENT_SHADER,
-)
-from OpenGL.GL.shaders import compileProgram, compileShader
-from OpenGL.GLU import gluPerspective
 
 from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
 from settings import save_settings
+from ui.scene.mesh_scene import build_mesh_scene
+from ui.scene.scene_preview import ScenePreviewWidget
 from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
 
 MATERIAL_TEXTURE_MAX_DIMENSION = 1024
@@ -153,6 +97,7 @@ void main()
     gl_FragColor = texture2D(labelTexture, labelTexCoord);
 }
 """
+
 
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
@@ -436,229 +381,9 @@ class MeshViewer(QWidget):
         return image
 
 
-class _MeshGLWidget(QOpenGLWidget):
-    SETTINGS_DEFAULTS = {
-        "mesh_viewer_fps_limit": 60,
-        "mesh_viewer_wireframe_mode": "off",
-        "mesh_viewer_lighting_mode": "fixed",
-        "mesh_viewer_line_width": 1.5,
-        "mesh_viewer_ambient": 0.35,
-        "mesh_viewer_diffuse": 0.65,
-        "mesh_viewer_show_bones": False,
-    }
-    WIREFRAME_MODES = ("off", "polygon", "lines_depth", "lines_overlay")
-    LIGHTING_MODES = ("off", "fixed", "software")
-
+class _MeshGLWidget(ScenePreviewWidget):
     def __init__(self, mesh, settings: dict | None = None):
-        fmt = QSurfaceFormat()
-        fmt.setDepthBufferSize(24)
-        fmt.setSwapInterval(0)
-        fmt.setVersion(2, 1)
-        fmt.setProfile(QSurfaceFormat.CompatibilityProfile)
-        fmt.setRenderableType(QSurfaceFormat.OpenGL)
-        QSurfaceFormat.setDefaultFormat(fmt)
-        super().__init__()
-        self.setFormat(fmt)
-
         self.mesh = mesh
-        self._settings = settings if isinstance(settings, dict) else None
-        self.rot_x = 0.0
-        self.rot_y = 0.0
-        self.distance = 3.0
-        self.last_pos = None
-        self.fps = 0.0
-        self._frame_count = 0
-        self._last_time = time.time()
-        self._timer = QTimer(self)
-        self._timer.setTimerType(Qt.PreciseTimer)
-        self._timer.timeout.connect(self.update)
-        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 60, 0, 240)
-        self._update_timer_state()
-        self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", "off", self.WIREFRAME_MODES)
-        self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", "fixed", self.LIGHTING_MODES)
-        self.line_width = self._setting_float("mesh_viewer_line_width", 1.5, 0.5, 8.0)
-        self.color_source = "vertex"
-        self.ambient = self._setting_float("mesh_viewer_ambient", 0.35, 0.0, 1.0)
-        self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.65, 0.0, 1.0)
-        self.show_bone_labels = self._setting_bool("mesh_viewer_show_bones", False)
-
-        self.overlay = QFrame(self)
-        self.overlay.setStyleSheet(
-            "background-color: rgba(0, 0, 0, 160); color: #39ff14;"
-        )
-        olayout = QVBoxLayout(self.overlay)
-        olayout.setContentsMargins(4, 4, 4, 4)
-        self.fps_label = QLabel("0 FPS", self.overlay)
-        olayout.addWidget(self.fps_label)
-
-        limit_layout = QHBoxLayout()
-        limit_layout.addWidget(QLabel("Limit", self.overlay))
-        self.fps_spin = QSpinBox(self.overlay)
-        self.fps_spin.setRange(0, 240)
-        self.fps_spin.setFixedWidth(50)
-        limit_layout.addWidget(self.fps_spin)
-        self.fps_spin.setValue(self._fps_limit)
-        self.fps_spin.valueChanged.connect(self._change_fps_limit)
-        olayout.addLayout(limit_layout)
-
-        row1 = QHBoxLayout()
-        row1.addWidget(QLabel("WF Mode", self.overlay))
-        self.wf_combo = QComboBox(self.overlay)
-        self.wf_combo.addItems(["off", "polygon", "lines_depth", "lines_overlay"])
-        self.wf_combo.setCurrentText(self.wireframe_mode)
-        self.wf_combo.currentTextChanged.connect(self._set_wireframe_mode)
-        row1.addWidget(self.wf_combo)
-        row1.addWidget(QLabel("Line", self.overlay))
-        self.line_spin = QDoubleSpinBox(self.overlay)
-        self.line_spin.setRange(0.5, 8.0)
-        self.line_spin.setSingleStep(0.1)
-        self.line_spin.setValue(self.line_width)
-        self.line_spin.valueChanged.connect(self._set_line_width)
-        row1.addWidget(self.line_spin)
-        olayout.addLayout(row1)
-
-        row2 = QHBoxLayout()
-        row2.addWidget(QLabel("Light", self.overlay))
-        self.light_combo = QComboBox(self.overlay)
-        self.light_combo.addItems(["off", "fixed", "software"])
-        self.light_combo.setCurrentText(self.lighting_mode)
-        self.light_combo.currentTextChanged.connect(self._set_lighting_mode)
-        row2.addWidget(self.light_combo)
-        if getattr(mesh, "streaming_buffer_count", 0):
-            stream_status = "Loaded" if getattr(mesh, "streaming_data_loaded", False) else "Missing"
-            row2.addWidget(QLabel(f"Stream {stream_status}", self.overlay))
-        row2.addWidget(QLabel("Amb", self.overlay))
-        self.amb_spin = QDoubleSpinBox(self.overlay)
-        self.amb_spin.setRange(0.0, 1.0)
-        self.amb_spin.setSingleStep(0.05)
-        self.amb_spin.setValue(self.ambient)
-        self.amb_spin.valueChanged.connect(self._set_ambient)
-        row2.addWidget(self.amb_spin)
-        row2.addWidget(QLabel("Diff", self.overlay))
-        self.diff_spin = QDoubleSpinBox(self.overlay)
-        self.diff_spin.setRange(0.0, 1.0)
-        self.diff_spin.setSingleStep(0.05)
-        self.diff_spin.setValue(self.diffuse)
-        self.diff_spin.valueChanged.connect(self._set_diffuse)
-        row2.addWidget(self.diff_spin)
-        olayout.addLayout(row2)
-        
-        row3 = QHBoxLayout()
-        self.bone_labels_check = QCheckBox("Bones", self.overlay)
-        self.bone_labels_check.setChecked(self.show_bone_labels)
-        self.bone_labels_check.toggled.connect(self._set_show_bone_labels)
-        row3.addWidget(self.bone_labels_check)
-        olayout.addLayout(row3)
-
-        self.overlay.adjustSize()
-        self.overlay.move(10, 10)
-
-        mb = mesh.mesh_buffer
-        payloads = getattr(mb, "buffer_payloads", {}) or {0: mb}
-        vertex_chunks: list[np.ndarray] = []
-        normal_chunks: list[np.ndarray] = []
-        color_chunks: list[np.ndarray] = []
-        uv_chunks: list[np.ndarray] = []
-        payload_base: dict[int, int] = {}
-        running_base = 0
-        for buffer_index in sorted(payloads.keys()):
-            payload = payloads[buffer_index]
-            if not getattr(payload, "positions", None):
-                continue
-            verts = np.array(payload.positions, dtype=np.float32).reshape(-1, 3)
-            payload_base[buffer_index] = running_base
-            running_base += len(verts)
-            vertex_chunks.append(verts)
-            if getattr(payload, "normals", None):
-                normal_chunks.append(np.array(payload.normals, dtype=np.float32).reshape(-1, 3))
-            else:
-                normal_chunks.append(np.zeros((len(verts), 3), dtype=np.float32))
-            if getattr(payload, "colors", None):
-                color_chunks.append(np.array(payload.colors, dtype=np.uint8).reshape(-1, 4).astype(np.float32) / 255.0)
-            else:
-                color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
-            if getattr(payload, "uv0", None):
-                uvs = np.array(payload.uv0, dtype=np.float32).reshape(-1, 2)
-                if len(uvs) == len(verts):
-                    uv_chunks.append(1.0 - uvs)
-                else:
-                    uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
-            else:
-                uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
-        self.vertices = np.concatenate(vertex_chunks, axis=0) if vertex_chunks else np.zeros((0, 3), dtype=np.float32)
-        self.normals = np.concatenate(normal_chunks, axis=0) if normal_chunks else None
-        if self.normals is not None and len(self.normals):
-            lengths = np.linalg.norm(self.normals, axis=1)
-            safe_normals = np.zeros_like(self.normals, dtype=np.float32)
-            np.divide(self.normals, lengths[:, np.newaxis], out=safe_normals, where=lengths[:, np.newaxis] > 0)
-            invalid_mask = ~np.isfinite(safe_normals).all(axis=1)
-            if np.any(invalid_mask):
-                safe_normals[invalid_mask] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
-            self.normals = safe_normals
-        self.colors = np.concatenate(color_chunks, axis=0) if color_chunks else None
-        self.uvs = np.concatenate(uv_chunks, axis=0) if uv_chunks else None
-        self.base_colors = self.colors.copy() if self.colors is not None and len(self.colors) == len(self.vertices) else np.ones((len(self.vertices), 4), dtype=np.float32)
-
-        index_chunks: list[np.ndarray] = []
-        self._draw_batches_data: list[tuple[str, np.ndarray]] = []
-        material_names = list(getattr(mesh, "material_names", []) or [])
-        if mesh.meshes:
-            for m in mesh.meshes:
-                if not m.lods:
-                    continue
-                lod0 = m.lods[0]
-                for mg in lod0.parts:
-                    for sm in mg.submeshes:
-                        payload = payloads.get(getattr(sm, "buffer_index", 0), payloads.get(0))
-                        if payload is None:
-                            continue
-                        face_array = payload.integer_faces if getattr(payload, "integer_faces", None) is not None else payload.faces
-                        start = sm.faces_index_offset
-                        end = start + sm.indices_count
-                        base = payload_base.get(getattr(sm, "buffer_index", 0), 0) + sm.verts_index_offset
-                        batch_indices = np.asarray(face_array[start:end], dtype=np.uint32) + np.uint32(base)
-                        index_chunks.append(batch_indices)
-                        material_name = ""
-                        material_idx = getattr(sm, "material_index", -1)
-                        if 0 <= material_idx < len(material_names):
-                            material_name = material_names[material_idx]
-                        self._draw_batches_data.append((material_name, batch_indices))
-        if not index_chunks:
-            payload0 = payloads.get(0)
-            if payload0 is not None:
-                face_array = payload0.integer_faces if getattr(payload0, "integer_faces", None) is not None else payload0.faces
-                fallback_indices = np.asarray(face_array, dtype=np.uint32)
-                index_chunks.append(fallback_indices)
-                self._draw_batches_data.append(("", fallback_indices))
-        self.indices = np.concatenate(index_chunks) if index_chunks else np.zeros((0,), dtype=np.uint32)
-
-        self.indices_lines = None
-
-        mins = self.vertices.min(axis=0)
-        maxs = self.vertices.max(axis=0)
-        self.center = (mins + maxs) / 2.0
-        extent = float(np.max(maxs - mins))
-        self.scale = 1.0 / extent if extent else 1.0
-
-        self.vbo_vertices = None
-        self.vbo_normals = None
-        self.vbo_uvs = None
-        self.vbo_colors = None
-        self.vbo_indices = None
-        self.vbo_indices_lines = None
-        self._draw_batches: list[tuple[str, vbo.VBO, int]] = []
-        self._texture_ids: dict[str, int] = {}
-        self._pending_material_images: dict[str, tuple[str, QImage]] = {}
-        self._colors_dirty = True
-        self._texture_sources: dict[str, str] = {}        
-        self._bone_labels, self._bone_points = self._build_bone_label_points()
-        self._bone_label_atlas, bone_label_rects = self._build_bone_label_atlas()
-        (
-            self._bone_label_centers,
-            self._bone_label_offsets,
-            self._bone_label_texcoords,
-        ) = self._build_bone_label_quad_arrays(bone_label_rects)
-        self._bone_label_vertex_count = len(self._bone_label_centers)
         self._bone_label_texture_id = None
         self._bone_label_centers_vbo = None
         self._bone_label_offsets_vbo = None
@@ -667,38 +392,22 @@ class _MeshGLWidget(QOpenGLWidget):
         self._bone_label_offset_attr = -1
         self._bone_label_viewport_uniform = -1
         self._bone_label_texture_uniform = -1
-
-    def _setting_value(self, key: str):
-        if self._settings is None:
-            return self.SETTINGS_DEFAULTS[key]
-        return self._settings.get(key, self.SETTINGS_DEFAULTS[key])
-
-    def _setting_bool(self, key: str, default: bool) -> bool:
-        return bool(self._setting_value(key)) if key in self.SETTINGS_DEFAULTS else default
-
-    def _setting_int(self, key: str, default: int, minimum: int, maximum: int) -> int:
-        try:
-            value = int(self._setting_value(key))
-        except (TypeError, ValueError):
-            value = default
-        return max(minimum, min(maximum, value))
-
-    def _setting_float(self, key: str, default: float, minimum: float, maximum: float) -> float:
-        try:
-            value = float(self._setting_value(key))
-        except (TypeError, ValueError):
-            value = default
-        return max(minimum, min(maximum, value))
-
-    def _setting_choice(self, key: str, default: str, choices: tuple[str, ...]) -> str:
-        value = str(self._setting_value(key))
-        return value if value in choices else default
-
-    def _save_view_setting(self, key: str, value):
-        if self._settings is None:
-            return
-        self._settings[key] = value
-        save_settings(self._settings)
+        super().__init__(
+            controls="mesh",
+            settings=settings,
+            initial_rotation=(0.0, 0.0),
+            initial_distance=3.0,
+            background=(0.1, 0.1, 0.1, 1.0),
+        )
+        self.set_scene(build_mesh_scene(mesh, key="mesh"))
+        self._bone_labels, self._bone_points = self._build_bone_label_points()
+        self._bone_label_atlas, bone_label_rects = self._build_bone_label_atlas()
+        (
+            self._bone_label_centers,
+            self._bone_label_offsets,
+            self._bone_label_texcoords,
+        ) = self._build_bone_label_quad_arrays(bone_label_rects)
+        self._bone_label_vertex_count = len(self._bone_label_centers)
 
     def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
         joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
@@ -779,6 +488,29 @@ class _MeshGLWidget(QOpenGLWidget):
             texcoords[base:base + 4] = ((u0, v0), (u1, v0), (u1, v1), (u0, v1))
         return centers, offsets, texcoords
 
+    def _after_gl_initialized(self):
+        self._sync_bone_label_gl_resources()
+
+    def _after_scene_draw(self):
+        self._draw_bone_labels_gl()
+
+    def _cleanup_extra_gl(self):
+        if self._bone_label_texture_id is not None:
+            glDeleteTextures([self._bone_label_texture_id])
+            self._bone_label_texture_id = None
+        if self._bone_label_centers_vbo is not None:
+            self._bone_label_centers_vbo.delete()
+            self._bone_label_centers_vbo = None
+        if self._bone_label_offsets_vbo is not None:
+            self._bone_label_offsets_vbo.delete()
+            self._bone_label_offsets_vbo = None
+        if self._bone_label_texcoords_vbo is not None:
+            self._bone_label_texcoords_vbo.delete()
+            self._bone_label_texcoords_vbo = None
+        if self._bone_label_shader is not None:
+            glDeleteProgram(self._bone_label_shader)
+            self._bone_label_shader = None
+
     def _sync_bone_label_gl_resources(self):
         if self._bone_label_texture_id is None and self._bone_label_atlas is not None:
             self._bone_label_texture_id = glGenTextures(1)
@@ -792,9 +524,9 @@ class _MeshGLWidget(QOpenGLWidget):
             self._bone_label_viewport_uniform = glGetUniformLocation(self._bone_label_shader, "viewport")
             self._bone_label_texture_uniform = glGetUniformLocation(self._bone_label_shader, "labelTexture")
         if self._bone_label_centers_vbo is None and self._bone_label_vertex_count > 0:
-            self._bone_label_centers_vbo = vbo.VBO(self._bone_label_centers)
-            self._bone_label_offsets_vbo = vbo.VBO(self._bone_label_offsets)
-            self._bone_label_texcoords_vbo = vbo.VBO(self._bone_label_texcoords)
+            self._bone_label_centers_vbo = self._array_vbo(self._bone_label_centers)
+            self._bone_label_offsets_vbo = self._array_vbo(self._bone_label_offsets)
+            self._bone_label_texcoords_vbo = self._array_vbo(self._bone_label_texcoords)
 
     def _draw_bone_labels_gl(self):
         if (
@@ -846,440 +578,3 @@ class _MeshGLWidget(QOpenGLWidget):
         glEnable(GL_CULL_FACE)
         if self.lighting_mode == "fixed":
             glEnable(GL_LIGHTING)
-        if self.wireframe_mode == "polygon":
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-
-    def _ensure_color_vbo_for_current_mode(self):
-        base = self.base_colors if self.color_source == "vertex" else np.ones((len(self.vertices), 4), dtype=np.float32)
-        apply_lighting = self.lighting_mode == "software"
-        if apply_lighting:
-            if self.normals is None or not np.isfinite(self.normals).all():
-                normals_used = np.tile(np.array([0.0, 0.0, 1.0], dtype=np.float32), (len(self.vertices), 1))
-            else:
-                normals_used = self.normals
-            light_dir = np.array([0.4, 0.8, 0.4], dtype=np.float32)
-            n = np.linalg.norm(light_dir)
-            light_dir = light_dir / (n if n != 0 else 1.0)
-            ambient = float(self.ambient)
-            diffuse_scale = float(self.diffuse)
-            intensity = np.clip((normals_used @ light_dir) * diffuse_scale + ambient, 0.0, 1.0).astype(np.float32)
-            colors_now = base.copy()
-            colors_now[:, :3] *= intensity[:, np.newaxis]
-            colors_now[:, 3] = 1.0
-        else:
-            colors_now = base
-        self.vbo_colors = vbo.VBO(colors_now)
-        self._colors_dirty = False
-
-    def _ensure_line_indices(self):
-        if self.indices_lines is not None:
-            return
-        if len(self.indices) % 3 == 0:
-            tris_edges = np.concatenate([
-                self.indices.reshape(-1, 3)[:, [0, 1]],
-                self.indices.reshape(-1, 3)[:, [1, 2]],
-                self.indices.reshape(-1, 3)[:, [2, 0]],
-            ], axis=0)
-            self.indices_lines = tris_edges.astype(np.uint32).reshape(-1)
-        else:
-            self.indices_lines = self.indices.copy()
-
-    def _cleanup_gl(self):
-        self.makeCurrent()
-        self._clear_gl_textures()
-        for _, batch_vbo, _ in self._draw_batches:
-            batch_vbo.delete()
-        self._draw_batches.clear()
-        if self._bone_label_centers_vbo is not None:
-            self._bone_label_centers_vbo.delete()
-            self._bone_label_centers_vbo = None
-        if self._bone_label_offsets_vbo is not None:
-            self._bone_label_offsets_vbo.delete()
-            self._bone_label_offsets_vbo = None
-        if self._bone_label_texcoords_vbo is not None:
-            self._bone_label_texcoords_vbo.delete()
-            self._bone_label_texcoords_vbo = None
-        if self._bone_label_shader is not None:
-            glDeleteProgram(self._bone_label_shader)
-            self._bone_label_shader = None
-        if self.vbo_indices_lines is not None:
-            self.vbo_indices_lines.delete()
-            self.vbo_indices_lines = None
-        if self.vbo_indices is not None:
-            self.vbo_indices.delete()
-            self.vbo_indices = None
-        if self.vbo_uvs is not None:
-            self.vbo_uvs.delete()
-            self.vbo_uvs = None
-        if self.vbo_colors is not None:
-            self.vbo_colors.delete()
-            self.vbo_colors = None
-        if self.vbo_normals is not None:
-            self.vbo_normals.delete()
-            self.vbo_normals = None
-        if self.vbo_vertices is not None:
-            self.vbo_vertices.delete()
-            self.vbo_vertices = None
-        self.doneCurrent()
-
-    def set_material_images(self, images: dict[str, tuple[str, QImage]]):
-        self._pending_material_images = dict(images)
-        if self.context() is None:
-            self.update()
-            return
-        self.makeCurrent()
-        self._sync_gl_textures()
-        self.doneCurrent()
-        self.update()
-
-    def _sync_gl_textures(self):
-        stale = set(self._texture_ids) - set(self._pending_material_images)
-        for name in stale:
-            glDeleteTextures([self._texture_ids.pop(name)])
-            self._texture_sources.pop(name, None)
-        for name, (source_path, image) in self._pending_material_images.items():
-            if image.isNull():
-                continue
-            texture_id = self._texture_ids.get(name)
-            if texture_id is not None and self._texture_sources.get(name) == source_path:
-                continue
-            if texture_id is None:
-                texture_id = glGenTextures(1)
-                self._texture_ids[name] = texture_id
-            self._upload_texture(texture_id, image)
-            self._texture_sources[name] = source_path
-
-    def _clear_gl_textures(self):
-        if self._texture_ids:
-            glDeleteTextures(list(self._texture_ids.values()))
-            self._texture_ids.clear()
-        if self._bone_label_texture_id is not None:
-            glDeleteTextures([self._bone_label_texture_id])
-            self._bone_label_texture_id = None
-        self._texture_sources.clear()
-
-    @staticmethod
-    def _upload_texture(texture_id: int, image: QImage):
-        rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
-        bits = rgba.bits()
-        size = rgba.sizeInBytes()
-        glBindTexture(GL_TEXTURE_2D, texture_id)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGBA,
-            rgba.width(),
-            rgba.height(),
-            0,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            bytes(bits[:size]),
-        )
-        glBindTexture(GL_TEXTURE_2D, 0)
-
-    def _ensure_normals_vbo_for_lighting(self):
-        if self.vbo_normals is not None:
-            return
-        if self.normals is not None and np.isfinite(self.normals).all():
-            self.vbo_normals = vbo.VBO(self.normals)
-            return
-        if len(self.indices) % 3 == 0 and len(self.vertices) > 0:
-            tris = self.indices.reshape(-1, 3)
-            v0 = self.vertices[tris[:, 0]]
-            v1 = self.vertices[tris[:, 1]]
-            v2 = self.vertices[tris[:, 2]]
-            edge1 = v1 - v0
-            edge2 = v2 - v0
-            face_normals = np.cross(edge1, edge2)
-            vertex_normals = np.zeros_like(self.vertices, dtype=np.float32)
-            np.add.at(vertex_normals, tris[:, 0], face_normals)
-            np.add.at(vertex_normals, tris[:, 1], face_normals)
-            np.add.at(vertex_normals, tris[:, 2], face_normals)
-            lengths_v = np.linalg.norm(vertex_normals, axis=1)
-            safe_vertex_normals = np.zeros_like(vertex_normals, dtype=np.float32)
-            np.divide(
-                vertex_normals,
-                lengths_v[:, np.newaxis],
-                out=safe_vertex_normals,
-                where=lengths_v[:, np.newaxis] > 0,
-            )
-            invalid_v = ~np.isfinite(safe_vertex_normals).all(axis=1)
-            if np.any(invalid_v):
-                safe_vertex_normals[invalid_v] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
-            self.normals = safe_vertex_normals.astype(np.float32)
-            self.vbo_normals = vbo.VBO(self.normals)
-
-    def initializeGL(self):
-        glClearColor(0.1, 0.1, 0.1, 1.0)
-        glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_LIGHT0)
-        glEnable(GL_COLOR_MATERIAL)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
-        glFrontFace(GL_CCW)
-        glEnable(GL_NORMALIZE)
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1.0))
-
-        ctx = self.context()
-        ctx.aboutToBeDestroyed.connect(self._cleanup_gl)
-
-        self.vbo_vertices = vbo.VBO(self.vertices)
-        self.vbo_indices = vbo.VBO(self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
-        if self.uvs is not None and len(self.uvs) == len(self.vertices):
-            self.vbo_uvs = vbo.VBO(self.uvs.astype(np.float32))
-        if self.normals is not None:
-            self.vbo_normals = vbo.VBO(self.normals)
-        self._draw_batches = [
-            (material_name, vbo.VBO(indices, target=GL_ELEMENT_ARRAY_BUFFER), len(indices))
-            for material_name, indices in self._draw_batches_data
-            if len(indices) > 0
-        ]
-        self._ensure_color_vbo_for_current_mode()
-        self._sync_gl_textures()
-        self._sync_bone_label_gl_resources()
-
-    def resizeGL(self, w: int, h: int):
-        glViewport(0, 0, w, max(h, 1))
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        aspect = w / h if h else 1.0
-        gluPerspective(45.0, aspect, 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        self.overlay.move(10, 10)
-        self.overlay.raise_()
-
-    def _apply_render_state(self):
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-            glEnable(GL_LIGHT0)
-            glEnable(GL_COLOR_MATERIAL)
-            glEnable(GL_NORMALIZE)
-            glShadeModel(GL_SMOOTH)
-            glLightfv(GL_LIGHT0, GL_DIFFUSE, (self.diffuse, self.diffuse, self.diffuse, 1.0))
-            glLightfv(GL_LIGHT0, GL_AMBIENT, (self.ambient, self.ambient, self.ambient, 1.0))
-        else:
-            glDisable(GL_LIGHTING)
-            glDisable(GL_LIGHT0)
-
-        if self.wireframe_mode == "polygon":
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glLineWidth(self.line_width)
-        else:
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            glLineWidth(1.0)
-
-    def paintGL(self):
-        glDisable(GL_BLEND)
-        self._apply_render_state()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
-        glTranslatef(0.0, 0.0, -self.distance)
-        glRotatef(self.rot_x, 1.0, 0.0, 0.0)
-        glRotatef(self.rot_y, 0.0, 1.0, 0.0)
-        glScalef(self.scale, self.scale, self.scale)
-        glTranslatef(-self.center[0], -self.center[1], -self.center[2])
-        glColor4f(1.0, 1.0, 1.0, 1.0)
-
-        if self.vbo_vertices is not None:
-            self.vbo_vertices.bind()
-            glEnableClientState(GL_VERTEX_ARRAY)
-            glVertexPointer(3, GL_FLOAT, 0, None)
-            textured = self.vbo_uvs is not None and bool(self._texture_ids)
-            if textured:
-                self.vbo_uvs.bind()
-                glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-                glTexCoordPointer(2, GL_FLOAT, 0, None)
-            else:
-                glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-
-            glDisableClientState(GL_NORMAL_ARRAY)
-            glDisableClientState(GL_COLOR_ARRAY)
-
-            bound_normals = False
-            used_color_array = False
-            if self.lighting_mode == "fixed":
-                self._ensure_normals_vbo_for_lighting()
-                if self.vbo_normals is not None:
-                    self.vbo_normals.bind()
-                    glEnableClientState(GL_NORMAL_ARRAY)
-                    glNormalPointer(GL_FLOAT, 0, None)
-                    bound_normals = True
-            else:
-                if self._colors_dirty or self.vbo_colors is None:
-                    self._ensure_color_vbo_for_current_mode()
-                if self.vbo_colors is not None:
-                    self.vbo_colors.bind()
-                    glEnableClientState(GL_COLOR_ARRAY)
-                    glColorPointer(4, GL_FLOAT, 0, None)
-                    used_color_array = True
-
-            if self._draw_batches:
-                for material_name, batch_vbo, count in self._draw_batches:
-                    tex_id = self._texture_ids.get(material_name)
-                    if tex_id:
-                        glEnable(GL_TEXTURE_2D)
-                        glBindTexture(GL_TEXTURE_2D, tex_id)
-                    else:
-                        glBindTexture(GL_TEXTURE_2D, 0)
-                        glDisable(GL_TEXTURE_2D)
-                    batch_vbo.bind()
-                    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
-                    batch_vbo.unbind()
-                glBindTexture(GL_TEXTURE_2D, 0)
-                glDisable(GL_TEXTURE_2D)
-            else:
-                self.vbo_indices.bind()
-                glDrawElements(GL_TRIANGLES, len(self.indices), GL_UNSIGNED_INT, None)
-                self.vbo_indices.unbind()
-
-            if self.vbo_indices_lines is not None and self.wireframe_mode in ("lines_depth", "lines_overlay"):
-                if used_color_array:
-                    glDisableClientState(GL_COLOR_ARRAY)
-                    self.vbo_colors.unbind()
-                    used_color_array = False
-                if bound_normals:
-                    glDisableClientState(GL_NORMAL_ARRAY)
-                    self.vbo_normals.unbind()
-                    bound_normals = False
-                was_lighting = (self.lighting_mode == "fixed")
-                if was_lighting:
-                    glDisable(GL_LIGHTING)
-                glDisable(GL_CULL_FACE)
-                glLineWidth(self.line_width)
-                glColor4f(0.2, 1.0, 0.2, 1.0)
-                if self.wireframe_mode == "lines_overlay":
-                    glDisable(GL_DEPTH_TEST)
-                    glDepthMask(False)
-                self.vbo_indices_lines.bind()
-                glDrawElements(GL_LINES, len(self.indices_lines), GL_UNSIGNED_INT, None)
-                self.vbo_indices_lines.unbind()
-                if self.wireframe_mode == "lines_overlay":
-                    glDepthMask(True)
-                    glEnable(GL_DEPTH_TEST)
-                glEnable(GL_CULL_FACE)
-                if was_lighting:
-                    glEnable(GL_LIGHTING)
-
-            if used_color_array:
-                glDisableClientState(GL_COLOR_ARRAY)
-                self.vbo_colors.unbind()
-            if bound_normals:
-                glDisableClientState(GL_NORMAL_ARRAY)
-                self.vbo_normals.unbind()
-            if textured:
-                glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-                self.vbo_uvs.unbind()
-            glDisableClientState(GL_VERTEX_ARRAY)
-            self.vbo_vertices.unbind()
-
-        self._draw_bone_labels_gl()
-
-        now = time.time()
-        self._frame_count += 1
-        elapsed = now - self._last_time
-        if elapsed >= 1.0:
-            self.fps = self._frame_count / elapsed
-            self._frame_count = 0
-            self._last_time = now
-            self.fps_label.setText(f"{self.fps:.1f} FPS")
-
-    def mousePressEvent(self, event):
-        self.last_pos = event.position()
-
-    def mouseMoveEvent(self, event):
-        if self.last_pos is None:
-            return
-        dx = event.position().x() - self.last_pos.x()
-        dy = event.position().y() - self.last_pos.y()
-        if event.buttons() & Qt.LeftButton:
-            self.rot_x += dy * 0.5
-            self.rot_y += dx * 0.5
-            if self._fps_limit == 0:
-                self.update()
-        self.last_pos = event.position()
-
-    def wheelEvent(self, event):
-        delta = event.angleDelta().y() / 120.0
-        self.distance *= 0.9 ** delta
-        if self._fps_limit == 0:
-            self.update()
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self._update_timer_state()
-
-    def hideEvent(self, event):
-        self._timer.stop()
-        super().hideEvent(event)
-
-    def _update_timer_state(self):
-        if not self.isVisible():
-            self._timer.stop()
-            return
-        interval = 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
-        self._timer.start(interval)
-
-    def _change_fps_limit(self, value: int):
-        self._fps_limit = value
-        self._save_view_setting("mesh_viewer_fps_limit", int(value))
-        self._update_timer_state()
-
-    def _set_wireframe_mode(self, mode: str):
-        if mode not in self.WIREFRAME_MODES:
-            return
-        self.wireframe_mode = mode
-        self._save_view_setting("mesh_viewer_wireframe_mode", mode)
-        if mode in ("lines_depth", "lines_overlay") and self.vbo_indices_lines is None:
-            self._ensure_line_indices()
-            if self.indices_lines is not None and len(self.indices_lines) > 0:
-                self.makeCurrent()
-                self.vbo_indices_lines = vbo.VBO(self.indices_lines, target=GL_ELEMENT_ARRAY_BUFFER)
-                self.doneCurrent()
-        self.makeCurrent()
-        self._apply_render_state()
-        self.doneCurrent()
-        self.update()
-
-    def _set_lighting_mode(self, mode: str):
-        if mode not in self.LIGHTING_MODES:
-            return
-        self.lighting_mode = mode
-        self._save_view_setting("mesh_viewer_lighting_mode", mode)
-        self._colors_dirty = True
-        self.makeCurrent()
-        self._apply_render_state()
-        self.doneCurrent()
-        self.update()
-
-    def _set_line_width(self, value: float):
-        self.line_width = float(value)
-        self._save_view_setting("mesh_viewer_line_width", self.line_width)
-        self.update()
-
-    def _set_ambient(self, value: float):
-        self.ambient = float(value)
-        self._save_view_setting("mesh_viewer_ambient", self.ambient)
-        self._colors_dirty = True
-        self.update()
-    def _set_diffuse(self, value: float):
-        self.diffuse = float(value)
-        self._save_view_setting("mesh_viewer_diffuse", self.diffuse)
-        self._colors_dirty = True
-        self.update()
-        
-    def _set_show_bone_labels(self, checked: bool):
-        self.show_bone_labels = bool(checked)
-        self._save_view_setting("mesh_viewer_show_bones", self.show_bone_labels)
-        self.update()
-
