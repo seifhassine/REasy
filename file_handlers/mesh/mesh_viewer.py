@@ -4,7 +4,7 @@ import time
 from collections import deque
 
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QImage, QPixmap, QSurfaceFormat, QPainter
+from PySide6.QtGui import QFontMetrics, QImage, QPixmap, QSurfaceFormat, QPainter
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -81,12 +81,23 @@ from OpenGL.GL import (
     GL_AMBIENT,
     GL_DIFFUSE,
     glBindTexture,
+    glBlendFunc,
     glGenTextures,
     glDeleteTextures,
     glTexParameteri,
     glTexImage2D,
     glPixelStorei,
     glTexEnvi,
+    glDrawArrays,
+    glUseProgram,
+    glGetAttribLocation,
+    glGetUniformLocation,
+    glUniform1i,
+    glUniform2f,
+    glEnableVertexAttribArray,
+    glDisableVertexAttribArray,
+    glVertexAttribPointer,
+    glDeleteProgram,
     GL_TEXTURE_2D,
     GL_TEXTURE_MIN_FILTER,
     GL_TEXTURE_MAG_FILTER,
@@ -97,7 +108,13 @@ from OpenGL.GL import (
     GL_TEXTURE_ENV,
     GL_TEXTURE_ENV_MODE,
     GL_MODULATE,
+    GL_SRC_ALPHA,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_QUADS,
+    GL_VERTEX_SHADER,
+    GL_FRAGMENT_SHADER,
 )
+from OpenGL.GL.shaders import compileProgram, compileShader
 from OpenGL.GLU import gluPerspective
 
 from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
@@ -106,6 +123,36 @@ from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
 
 MATERIAL_TEXTURE_MAX_DIMENSION = 1024
 
+BONE_LABEL_VERTEX_SHADER = """
+#version 120
+attribute vec2 labelOffset;
+uniform vec2 viewport;
+varying vec2 labelTexCoord;
+
+void main()
+{
+    vec4 clip = gl_ModelViewProjectionMatrix * gl_Vertex;
+    labelTexCoord = gl_MultiTexCoord0.st;
+    if (clip.w <= 0.0 || clip.z < -clip.w || clip.z > clip.w) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        return;
+    }
+    vec2 ndcOffset = vec2(labelOffset.x * 2.0 / viewport.x, -labelOffset.y * 2.0 / viewport.y) * clip.w;
+    clip.xy += ndcOffset;
+    gl_Position = clip;
+}
+"""
+
+BONE_LABEL_FRAGMENT_SHADER = """
+#version 120
+uniform sampler2D labelTexture;
+varying vec2 labelTexCoord;
+
+void main()
+{
+    gl_FragColor = texture2D(labelTexture, labelTexCoord);
+}
+"""
 
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
@@ -133,7 +180,7 @@ class MeshViewer(QWidget):
         mesh = getattr(self.handler, "mesh", None)
         if mesh and getattr(mesh, "mesh_buffer", None) and mesh.mesh_buffer.positions:
             try:
-                self.gl_widget = _MeshGLWidget(mesh)
+                self.gl_widget = _MeshGLWidget(mesh, self._settings_store())
                 self.preview_splitter.insertWidget(0, self.gl_widget)
                 self.preview_splitter.setStretchFactor(0, 4)
                 self.preview_splitter.setStretchFactor(1, 2)
@@ -390,7 +437,19 @@ class MeshViewer(QWidget):
 
 
 class _MeshGLWidget(QOpenGLWidget):
-    def __init__(self, mesh):
+    SETTINGS_DEFAULTS = {
+        "mesh_viewer_fps_limit": 60,
+        "mesh_viewer_wireframe_mode": "off",
+        "mesh_viewer_lighting_mode": "fixed",
+        "mesh_viewer_line_width": 1.5,
+        "mesh_viewer_ambient": 0.35,
+        "mesh_viewer_diffuse": 0.65,
+        "mesh_viewer_show_bones": False,
+    }
+    WIREFRAME_MODES = ("off", "polygon", "lines_depth", "lines_overlay")
+    LIGHTING_MODES = ("off", "fixed", "software")
+
+    def __init__(self, mesh, settings: dict | None = None):
         fmt = QSurfaceFormat()
         fmt.setDepthBufferSize(24)
         fmt.setSwapInterval(0)
@@ -402,6 +461,7 @@ class _MeshGLWidget(QOpenGLWidget):
         self.setFormat(fmt)
 
         self.mesh = mesh
+        self._settings = settings if isinstance(settings, dict) else None
         self.rot_x = 0.0
         self.rot_y = 0.0
         self.distance = 3.0
@@ -412,15 +472,15 @@ class _MeshGLWidget(QOpenGLWidget):
         self._timer = QTimer(self)
         self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self.update)
-        self._fps_limit = 60
+        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 60, 0, 240)
         self._update_timer_state()
-        self.wireframe_mode = "off"
-        self.lighting_mode = "fixed"
-        self.line_width = 1.5
+        self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", "off", self.WIREFRAME_MODES)
+        self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", "fixed", self.LIGHTING_MODES)
+        self.line_width = self._setting_float("mesh_viewer_line_width", 1.5, 0.5, 8.0)
         self.color_source = "vertex"
-        self.ambient = 0.35
-        self.diffuse = 0.65        
-        self.show_bone_labels = False
+        self.ambient = self._setting_float("mesh_viewer_ambient", 0.35, 0.0, 1.0)
+        self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.65, 0.0, 1.0)
+        self.show_bone_labels = self._setting_bool("mesh_viewer_show_bones", False)
 
         self.overlay = QFrame(self)
         self.overlay.setStyleSheet(
@@ -436,9 +496,9 @@ class _MeshGLWidget(QOpenGLWidget):
         self.fps_spin = QSpinBox(self.overlay)
         self.fps_spin.setRange(0, 240)
         self.fps_spin.setFixedWidth(50)
-        self.fps_spin.valueChanged.connect(self._change_fps_limit)
         limit_layout.addWidget(self.fps_spin)
         self.fps_spin.setValue(self._fps_limit)
+        self.fps_spin.valueChanged.connect(self._change_fps_limit)
         olayout.addLayout(limit_layout)
 
         row1 = QHBoxLayout()
@@ -592,6 +652,53 @@ class _MeshGLWidget(QOpenGLWidget):
         self._colors_dirty = True
         self._texture_sources: dict[str, str] = {}        
         self._bone_labels, self._bone_points = self._build_bone_label_points()
+        self._bone_label_atlas, bone_label_rects = self._build_bone_label_atlas()
+        (
+            self._bone_label_centers,
+            self._bone_label_offsets,
+            self._bone_label_texcoords,
+        ) = self._build_bone_label_quad_arrays(bone_label_rects)
+        self._bone_label_vertex_count = len(self._bone_label_centers)
+        self._bone_label_texture_id = None
+        self._bone_label_centers_vbo = None
+        self._bone_label_offsets_vbo = None
+        self._bone_label_texcoords_vbo = None
+        self._bone_label_shader = None
+        self._bone_label_offset_attr = -1
+        self._bone_label_viewport_uniform = -1
+        self._bone_label_texture_uniform = -1
+
+    def _setting_value(self, key: str):
+        if self._settings is None:
+            return self.SETTINGS_DEFAULTS[key]
+        return self._settings.get(key, self.SETTINGS_DEFAULTS[key])
+
+    def _setting_bool(self, key: str, default: bool) -> bool:
+        return bool(self._setting_value(key)) if key in self.SETTINGS_DEFAULTS else default
+
+    def _setting_int(self, key: str, default: int, minimum: int, maximum: int) -> int:
+        try:
+            value = int(self._setting_value(key))
+        except (TypeError, ValueError):
+            value = default
+        return max(minimum, min(maximum, value))
+
+    def _setting_float(self, key: str, default: float, minimum: float, maximum: float) -> float:
+        try:
+            value = float(self._setting_value(key))
+        except (TypeError, ValueError):
+            value = default
+        return max(minimum, min(maximum, value))
+
+    def _setting_choice(self, key: str, default: str, choices: tuple[str, ...]) -> str:
+        value = str(self._setting_value(key))
+        return value if value in choices else default
+
+    def _save_view_setting(self, key: str, value):
+        if self._settings is None:
+            return
+        self._settings[key] = value
+        save_settings(self._settings)
 
     def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
         joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
@@ -614,50 +721,133 @@ class _MeshGLWidget(QOpenGLWidget):
                 labels.append(f"bone_{i}")
         return labels, points
 
-    def _project_points(self, points: np.ndarray) -> np.ndarray:
-        w = max(1, self.width())
-        h = max(1, self.height())
-        aspect = w / h
-        f = 1.0 / np.tan(np.radians(45.0) / 2.0)
-        cx, sx = np.cos(np.radians(self.rot_x)), np.sin(np.radians(self.rot_x))
-        cy, sy = np.cos(np.radians(self.rot_y)), np.sin(np.radians(self.rot_y))
-        center = self.center.astype(np.float64)
+    def _build_bone_label_atlas(self) -> tuple[QImage | None, list[tuple[int, int, int, int]]]:
+        if not self._bone_labels:
+            return None, []
+        metrics = QFontMetrics(self.font())
+        max_width = 2048
+        label_sizes = [
+            (max(1, metrics.horizontalAdvance(label) + 2), max(1, metrics.height() + 2))
+            for label in self._bone_labels
+        ]
+        atlas_width = min(max_width, max(width for width, _ in label_sizes))
+        atlas_width = max(atlas_width, min(max_width, 512))
+        x = y = row_height = 0
+        rects: list[tuple[int, int, int, int]] = []
+        for width, height in label_sizes:
+            if x and x + width > atlas_width:
+                x = 0
+                y += row_height
+                row_height = 0
+            rects.append((x, y, width, height))
+            x += width
+            row_height = max(row_height, height)
 
-        t0 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, -self.distance], [0, 0, 0, 1]], dtype=np.float64)
-        rx = np.array([[1, 0, 0, 0], [0, cx, -sx, 0], [0, sx, cx, 0], [0, 0, 0, 1]], dtype=np.float64)
-        ry = np.array([[cy, 0, sy, 0], [0, 1, 0, 0], [-sy, 0, cy, 0], [0, 0, 0, 1]], dtype=np.float64)
-        s = np.array([[self.scale, 0, 0, 0], [0, self.scale, 0, 0], [0, 0, self.scale, 0], [0, 0, 0, 1]], dtype=np.float64)
-        tc = np.array([[1, 0, 0, -center[0]], [0, 1, 0, -center[1]], [0, 0, 1, -center[2]], [0, 0, 0, 1]], dtype=np.float64)
-        model = t0 @ rx @ ry @ s @ tc
-        proj = np.array([
-            [f / aspect, 0.0, 0.0, 0.0],
-            [0.0, f, 0.0, 0.0],
-            [0.0, 0.0, -1.002002002002002, -0.20020020020020018],
-            [0.0, 0.0, -1.0, 0.0],
-        ], dtype=np.float64)
-
-        pts = np.c_[points.astype(np.float64), np.ones((len(points), 1), dtype=np.float64)]
-        clip = (proj @ model @ pts.T).T
-        ndc = clip[:, :3] / clip[:, 3:4]
-        w_non_zero = ~np.isclose(clip[:, 3], 0.0, rtol=0.0, atol=1e-12)
-        visible = w_non_zero & (ndc[:, 2] >= -1.0) & (ndc[:, 2] <= 1.0)
-        screen = np.column_stack(((ndc[:, 0] * 0.5 + 0.5) * w, (1.0 - (ndc[:, 1] * 0.5 + 0.5)) * h))
-        return np.column_stack((screen, visible.astype(np.float64)))
-
-    def _draw_bone_labels(self):
-        if not self.show_bone_labels or len(self._bone_points) == 0:
-            return
-        projected = self._project_points(self._bone_points)
-        painter = QPainter(self)
+        atlas = QImage(atlas_width, max(1, y + row_height), QImage.Format.Format_RGBA8888)
+        atlas.fill(Qt.transparent)
+        painter = QPainter(atlas)
         painter.setRenderHint(QPainter.TextAntialiasing, True)
         painter.setPen(Qt.yellow)
-        for i, label in enumerate(self._bone_labels):
-            x, y, visible = projected[i]
-            if not visible:
-                continue
-            if 0 <= x <= self.width() and 0 <= y <= self.height():
-                painter.drawText(int(x) + 4, int(y) - 4, label)
+        for label, (x, y, _width, _height) in zip(self._bone_labels, rects):
+            painter.drawText(x + 1, y + metrics.ascent() + 1, label)
         painter.end()
+        return atlas, rects
+
+    def _build_bone_label_quad_arrays(
+        self,
+        rects: list[tuple[int, int, int, int]],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self._bone_label_atlas is None or not rects:
+            empty2 = np.zeros((0, 2), dtype=np.float32)
+            return np.zeros((0, 3), dtype=np.float32), empty2, empty2
+
+        atlas_w = max(1, self._bone_label_atlas.width())
+        atlas_h = max(1, self._bone_label_atlas.height())
+        centers = np.repeat(self._bone_points[:len(rects)], 4, axis=0).astype(np.float32, copy=False)
+        offsets = np.empty((len(rects) * 4, 2), dtype=np.float32)
+        texcoords = np.empty_like(offsets)
+        for i, (rx, ry, rw, rh) in enumerate(rects):
+            base = i * 4
+            offsets[base:base + 4] = (
+                (4.0, -rh - 4.0),
+                (rw + 4.0, -rh - 4.0),
+                (rw + 4.0, -4.0),
+                (4.0, -4.0),
+            )
+            u0, v0 = rx / atlas_w, ry / atlas_h
+            u1, v1 = (rx + rw) / atlas_w, (ry + rh) / atlas_h
+            texcoords[base:base + 4] = ((u0, v0), (u1, v0), (u1, v1), (u0, v1))
+        return centers, offsets, texcoords
+
+    def _sync_bone_label_gl_resources(self):
+        if self._bone_label_texture_id is None and self._bone_label_atlas is not None:
+            self._bone_label_texture_id = glGenTextures(1)
+            self._upload_texture(self._bone_label_texture_id, self._bone_label_atlas)
+        if self._bone_label_shader is None and self._bone_label_vertex_count > 0:
+            self._bone_label_shader = compileProgram(
+                compileShader(BONE_LABEL_VERTEX_SHADER, GL_VERTEX_SHADER),
+                compileShader(BONE_LABEL_FRAGMENT_SHADER, GL_FRAGMENT_SHADER),
+            )
+            self._bone_label_offset_attr = glGetAttribLocation(self._bone_label_shader, "labelOffset")
+            self._bone_label_viewport_uniform = glGetUniformLocation(self._bone_label_shader, "viewport")
+            self._bone_label_texture_uniform = glGetUniformLocation(self._bone_label_shader, "labelTexture")
+        if self._bone_label_centers_vbo is None and self._bone_label_vertex_count > 0:
+            self._bone_label_centers_vbo = vbo.VBO(self._bone_label_centers)
+            self._bone_label_offsets_vbo = vbo.VBO(self._bone_label_offsets)
+            self._bone_label_texcoords_vbo = vbo.VBO(self._bone_label_texcoords)
+
+    def _draw_bone_labels_gl(self):
+        if (
+            not self.show_bone_labels
+            or self._bone_label_texture_id is None
+            or self._bone_label_shader is None
+            or self._bone_label_offset_attr < 0
+            or self._bone_label_vertex_count <= 0
+        ):
+            return
+        w = max(1, self.width())
+        h = max(1, self.height())
+
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_CULL_FACE)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self._bone_label_texture_id)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glColor4f(1.0, 1.0, 1.0, 1.0)
+        glUseProgram(self._bone_label_shader)
+        glUniform2f(self._bone_label_viewport_uniform, float(w), float(h))
+        glUniform1i(self._bone_label_texture_uniform, 0)
+
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+        glEnableVertexAttribArray(self._bone_label_offset_attr)
+        self._bone_label_centers_vbo.bind()
+        glVertexPointer(3, GL_FLOAT, 0, None)
+        self._bone_label_texcoords_vbo.bind()
+        glTexCoordPointer(2, GL_FLOAT, 0, None)
+        self._bone_label_offsets_vbo.bind()
+        glVertexAttribPointer(self._bone_label_offset_attr, 2, GL_FLOAT, False, 0, None)
+        glDrawArrays(GL_QUADS, 0, self._bone_label_vertex_count)
+        self._bone_label_offsets_vbo.unbind()
+        self._bone_label_texcoords_vbo.unbind()
+        self._bone_label_centers_vbo.unbind()
+        glDisableVertexAttribArray(self._bone_label_offset_attr)
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+        glDisableClientState(GL_VERTEX_ARRAY)
+
+        glUseProgram(0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        if self.lighting_mode == "fixed":
+            glEnable(GL_LIGHTING)
+        if self.wireframe_mode == "polygon":
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
     def _ensure_color_vbo_for_current_mode(self):
         base = self.base_colors if self.color_source == "vertex" else np.ones((len(self.vertices), 4), dtype=np.float32)
@@ -700,6 +890,18 @@ class _MeshGLWidget(QOpenGLWidget):
         for _, batch_vbo, _ in self._draw_batches:
             batch_vbo.delete()
         self._draw_batches.clear()
+        if self._bone_label_centers_vbo is not None:
+            self._bone_label_centers_vbo.delete()
+            self._bone_label_centers_vbo = None
+        if self._bone_label_offsets_vbo is not None:
+            self._bone_label_offsets_vbo.delete()
+            self._bone_label_offsets_vbo = None
+        if self._bone_label_texcoords_vbo is not None:
+            self._bone_label_texcoords_vbo.delete()
+            self._bone_label_texcoords_vbo = None
+        if self._bone_label_shader is not None:
+            glDeleteProgram(self._bone_label_shader)
+            self._bone_label_shader = None
         if self.vbo_indices_lines is not None:
             self.vbo_indices_lines.delete()
             self.vbo_indices_lines = None
@@ -751,6 +953,9 @@ class _MeshGLWidget(QOpenGLWidget):
         if self._texture_ids:
             glDeleteTextures(list(self._texture_ids.values()))
             self._texture_ids.clear()
+        if self._bone_label_texture_id is not None:
+            glDeleteTextures([self._bone_label_texture_id])
+            self._bone_label_texture_id = None
         self._texture_sources.clear()
 
     @staticmethod
@@ -838,6 +1043,7 @@ class _MeshGLWidget(QOpenGLWidget):
         ]
         self._ensure_color_vbo_for_current_mode()
         self._sync_gl_textures()
+        self._sync_bone_label_gl_resources()
 
     def resizeGL(self, w: int, h: int):
         glViewport(0, 0, w, max(h, 1))
@@ -847,6 +1053,7 @@ class _MeshGLWidget(QOpenGLWidget):
         gluPerspective(45.0, aspect, 0.1, 100.0)
         glMatrixMode(GL_MODELVIEW)
         self.overlay.move(10, 10)
+        self.overlay.raise_()
 
     def _apply_render_state(self):
         glEnable(GL_DEPTH_TEST)
@@ -976,6 +1183,8 @@ class _MeshGLWidget(QOpenGLWidget):
             glDisableClientState(GL_VERTEX_ARRAY)
             self.vbo_vertices.unbind()
 
+        self._draw_bone_labels_gl()
+
         now = time.time()
         self._frame_count += 1
         elapsed = now - self._last_time
@@ -984,7 +1193,6 @@ class _MeshGLWidget(QOpenGLWidget):
             self._frame_count = 0
             self._last_time = now
             self.fps_label.setText(f"{self.fps:.1f} FPS")
-        self._draw_bone_labels()
 
     def mousePressEvent(self, event):
         self.last_pos = event.position()
@@ -1024,10 +1232,14 @@ class _MeshGLWidget(QOpenGLWidget):
 
     def _change_fps_limit(self, value: int):
         self._fps_limit = value
+        self._save_view_setting("mesh_viewer_fps_limit", int(value))
         self._update_timer_state()
 
     def _set_wireframe_mode(self, mode: str):
+        if mode not in self.WIREFRAME_MODES:
+            return
         self.wireframe_mode = mode
+        self._save_view_setting("mesh_viewer_wireframe_mode", mode)
         if mode in ("lines_depth", "lines_overlay") and self.vbo_indices_lines is None:
             self._ensure_line_indices()
             if self.indices_lines is not None and len(self.indices_lines) > 0:
@@ -1040,7 +1252,10 @@ class _MeshGLWidget(QOpenGLWidget):
         self.update()
 
     def _set_lighting_mode(self, mode: str):
+        if mode not in self.LIGHTING_MODES:
+            return
         self.lighting_mode = mode
+        self._save_view_setting("mesh_viewer_lighting_mode", mode)
         self._colors_dirty = True
         self.makeCurrent()
         self._apply_render_state()
@@ -1049,18 +1264,22 @@ class _MeshGLWidget(QOpenGLWidget):
 
     def _set_line_width(self, value: float):
         self.line_width = float(value)
+        self._save_view_setting("mesh_viewer_line_width", self.line_width)
         self.update()
 
     def _set_ambient(self, value: float):
         self.ambient = float(value)
+        self._save_view_setting("mesh_viewer_ambient", self.ambient)
         self._colors_dirty = True
         self.update()
     def _set_diffuse(self, value: float):
         self.diffuse = float(value)
+        self._save_view_setting("mesh_viewer_diffuse", self.diffuse)
         self._colors_dirty = True
         self.update()
         
     def _set_show_bone_labels(self, checked: bool):
         self.show_bone_labels = bool(checked)
+        self._save_view_setting("mesh_viewer_show_bones", self.show_bone_labels)
         self.update()
 
