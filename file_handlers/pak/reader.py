@@ -258,18 +258,28 @@ class CachedPakReader(PakReader):
 
         self._cache_keys_set = set(self._cache.keys())
 
-    def assign_paths(self, paths: Iterable[str]) -> int:
+    def assign_paths(self, paths: Iterable[str], replace_existing: bool = False) -> int:
         """Fast path: assign known names into the existing cache without rebuilding.
 
         Returns number of entries newly named.
         """
+        norm_paths = list({_normalize_for_hash(p) for p in paths})
+        if replace_existing:
+            self.reset_file_list()
+            if norm_paths:
+                self.add_files(*norm_paths)
+
         if self._cache is None:
             self.cache_entries(assign_paths=False)
             if self._cache is None:
                 return 0
 
+        if replace_existing:
+            for _pak, entry in self._cache.values():
+                entry.path = None
+            if not norm_paths:
+                return 0
 
-        norm_paths = list({_normalize_for_hash(p) for p in paths})
         fast = ensure_fast_pakresolve()
         if fast is None:
             raise RuntimeError("fast_pakresolve native module is required but not available")

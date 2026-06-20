@@ -389,17 +389,16 @@ class PakBrowserDialog(QDialog):
 			return
 		
 		if self._cached_reader and self._cached_reader.pak_file_priority == paks and not self._cache_outdated:
-			if self._base_paths:
-				try:
-					self._cached_reader.assign_paths(self._base_paths)
-					self._valid_paths = set()
-					if self._cached_reader._cache:
-						all_cached = self._cached_reader.cached_paths(include_unknown=True)
-						self._valid_paths = {p.lower() for p in all_cached}
-					self._recompute_display()
-					return
-				except RuntimeError:
-					pass
+			try:
+				self._cached_reader.assign_paths(self._base_paths, replace_existing=True)
+				self._valid_paths = set()
+				if self._cached_reader._cache:
+					all_cached = self._cached_reader.cached_paths(include_unknown=True)
+					self._valid_paths = {p.lower() for p in all_cached}
+				self._recompute_display()
+				return
+			except RuntimeError:
+				pass
 		
 		r = CachedPakReader()
 		r.pak_file_priority = paks
@@ -482,7 +481,7 @@ class PakBrowserDialog(QDialog):
 			_t3a = time.perf_counter()
 			if self._cached_reader:
 				try:
-					self._cached_reader.assign_paths(self._base_paths)
+					self._cached_reader.assign_paths(self._base_paths, replace_existing=True)
 					self._valid_paths = set()
 					if self._cached_reader._cache:
 						all_cached = self._cached_reader.cached_paths(include_unknown=True)
