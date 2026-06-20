@@ -412,7 +412,7 @@ class PakBrowserDialog(QDialog):
 					known = manifest_only
 			if known:
 				r.add_files(*known)
-				r.cache_entries(assign_paths=True)
+				r.cache_entries(assign_paths=False)
 			else:
 
 				r.cache_entries(assign_paths=False)
