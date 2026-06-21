@@ -197,6 +197,13 @@ class FileListGeneratorDialog(QDialog):
         self.improve_list_swap_ext_btn.setFont(improve_font)
         bottom_layout.addWidget(self.improve_list_swap_ext_btn)
 
+        self.improve_list_tex_mdf2_mesh_btn = QPushButton("Improve List (Tex/MDF2/Mesh)")
+        self.improve_list_tex_mdf2_mesh_btn.clicked.connect(self._improve_list_tex_mdf2_mesh)
+        self.improve_list_tex_mdf2_mesh_btn.setVisible(False)
+        self.improve_list_tex_mdf2_mesh_btn.setMinimumHeight(35)
+        self.improve_list_tex_mdf2_mesh_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.improve_list_tex_mdf2_mesh_btn)
+
         self.cross_game_improve_btn = QPushButton("Improve Using Another Game List")
         self.cross_game_improve_btn.clicked.connect(self._improve_list_from_other_game)
         self.cross_game_improve_btn.setVisible(False)
@@ -239,6 +246,8 @@ class FileListGeneratorDialog(QDialog):
                 self.improve_list_tex_btn.setEnabled(True)
             if hasattr(self, 'improve_list_swap_ext_btn'):
                 self.improve_list_swap_ext_btn.setEnabled(True)
+            if hasattr(self, 'improve_list_tex_mdf2_mesh_btn'):
+                self.improve_list_tex_mdf2_mesh_btn.setEnabled(True)
             if hasattr(self, 'cross_game_improve_btn'):
                 self.cross_game_improve_btn.setEnabled(True)
     
@@ -253,6 +262,8 @@ class FileListGeneratorDialog(QDialog):
             self.improve_list_tex_btn.setEnabled(False)
         if hasattr(self, 'improve_list_swap_ext_btn'):
             self.improve_list_swap_ext_btn.setEnabled(False)
+        if hasattr(self, 'improve_list_tex_mdf2_mesh_btn'):
+            self.improve_list_tex_mdf2_mesh_btn.setEnabled(False)
         if hasattr(self, 'cross_game_improve_btn'):
             self.cross_game_improve_btn.setEnabled(False)
     
@@ -366,11 +377,13 @@ class FileListGeneratorDialog(QDialog):
         self.improve_list_btn.setVisible(True)
         self.improve_list_tex_btn.setVisible(True)
         self.improve_list_swap_ext_btn.setVisible(True)
+        self.improve_list_tex_mdf2_mesh_btn.setVisible(True)
         self.cross_game_improve_btn.setVisible(True)
         has_list = bool(self.list_file_path)
         self.improve_list_btn.setEnabled(has_list)
         self.improve_list_tex_btn.setEnabled(has_list)
         self.improve_list_swap_ext_btn.setEnabled(has_list)
+        self.improve_list_tex_mdf2_mesh_btn.setEnabled(has_list)
         self.cross_game_improve_btn.setEnabled(has_list)
         self.extract_exe_btn.setEnabled(True)
         self.extract_dump_btn.setEnabled(True)
@@ -548,7 +561,7 @@ class FileListGeneratorDialog(QDialog):
             QMessageBox.Yes
         ) == QMessageBox.Yes
 
-    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False, keep_source_paths=True):
+    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False, include_tex_mdf2_mesh_swaps=False, keep_source_paths=True):
         if not source_list_path:
             QMessageBox.warning(self, "No List File", "Please select a source list file first.")
             return
@@ -570,7 +583,8 @@ class FileListGeneratorDialog(QDialog):
             include_variations=False if ignore_extra_options else self.include_variations,
             include_streaming=False if ignore_extra_options else self.include_streaming,
             include_tex_variants=include_tex_variants,
-            include_extension_swaps=include_extension_swaps
+            include_extension_swaps=include_extension_swaps,
+            include_tex_mdf2_mesh_swaps=include_tex_mdf2_mesh_swaps
         )
 
         progress = QProgressDialog("Improving list entries...", None, 0, 100, self)
@@ -673,6 +687,16 @@ class FileListGeneratorDialog(QDialog):
             override_prefix=False,
             include_tex_variants=False,
             include_extension_swaps=True,
+        )
+
+    def _improve_list_tex_mdf2_mesh(self):
+        self._run_improver_mode(
+            "Improve Existing List (Tex/MDF2/Mesh)",
+            "For tex, mdf2, and mesh paths, tries sibling asset extensions and validates matches against PAK hashes.",
+            title="Current Game List Improver (Tex/MDF2/Mesh)",
+            override_prefix=False,
+            ignore_extra_options=True,
+            include_tex_mdf2_mesh_swaps=True,
         )
 
     def _improve_list_from_other_game(self):

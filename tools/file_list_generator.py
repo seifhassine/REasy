@@ -58,6 +58,7 @@ TEX_VARIANT_SUFFIXES = [
     "_iam", "_lut", "_fbi", "_add", "_emm", "_lym", "_cvt", "_vns", "_lin", "_pos", "_fur", "_im", "_disp",
 ]
 UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
+TEX_MDF2_MESH_SWAP_EXTENSIONS = ("tex", "mdf2", "mesh")
 MAX_LAST_NUMBER_VARIANTS = 1000
 LINKED_DUAL_TAIL_FIRST_WINDOW = 32
 MAX_LINKED_DUAL_TAIL_COMBINATIONS = 5000
@@ -433,7 +434,8 @@ class PathCollector:
         include_variations=False,
         include_streaming=False,
         include_tex_variants=False,
-        include_extension_swaps=False
+        include_extension_swaps=False,
+        include_tex_mdf2_mesh_swaps=False
     ):
         self.extensions = [ext.lower() for ext in extensions]
         self.extension_versions = {}
@@ -446,6 +448,7 @@ class PathCollector:
         self.include_streaming = include_streaming
         self.include_tex_variants = include_tex_variants
         self.include_extension_swaps = include_extension_swaps
+        self.include_tex_mdf2_mesh_swaps = include_tex_mdf2_mesh_swaps
         self._linked_dual_tail_values = {}
         self._linked_dual_tail_context_cache = {}
         self._processed_numeric_replacement_families = None
@@ -993,6 +996,46 @@ class PathCollector:
             suffix_info_cache[extension] = suffix_infos
         return suffix_infos
 
+    def _get_tex_mdf2_mesh_suffix_infos(self, source_extension, suffix_info_cache):
+        cache_key = ('tex_mdf2_mesh', source_extension)
+        suffix_infos = suffix_info_cache.get(cache_key)
+        if suffix_infos is not None:
+            return suffix_infos
+
+        known_extensions = set(self.extensions) | set(self.extension_versions.keys())
+        suffix_infos = []
+        yielded = set()
+        if source_extension in TEX_MDF2_MESH_SWAP_EXTENSIONS:
+            for target_extension in TEX_MDF2_MESH_SWAP_EXTENSIONS:
+                if target_extension == source_extension or target_extension not in known_extensions:
+                    continue
+                for suffix in self._iter_extension_suffixes(target_extension):
+                    if suffix in yielded:
+                        continue
+                    yielded.add(suffix)
+                    suffix_infos.append((suffix, self._suffix_extension(suffix)))
+
+        suffix_infos = tuple(suffix_infos)
+        suffix_info_cache[cache_key] = suffix_infos
+        return suffix_infos
+
+    def _iter_tex_mdf2_mesh_candidates(self, stem, extension, suffix_infos):
+        base_stem = self._split_tex_stem_variant(stem)[0] if extension == 'tex' else stem
+        yielded = set()
+        for suffix, suffix_extension in suffix_infos:
+            if suffix_extension == 'tex':
+                candidate_stems = [base_stem]
+                candidate_stems.extend(f"{base_stem}{tex_suffix}" for tex_suffix in UNIQUE_TEX_VARIANT_SUFFIXES)
+            else:
+                candidate_stems = [base_stem]
+
+            for candidate_stem in candidate_stems:
+                candidate = f"{candidate_stem}.{suffix}"
+                if candidate in yielded:
+                    continue
+                yielded.add(candidate)
+                yield candidate, candidate_stem, suffix_extension
+
     def _can_fast_hash_generated_candidates(self):
         return (
             self.path_prefix.islower()
@@ -1004,6 +1047,14 @@ class PathCollector:
     def _is_cross_game_version_swap_mode(self, override_prefix):
         return (
             override_prefix
+            and not self.include_tex_variants
+            and not self.include_extension_swaps
+        )
+
+    def _is_tex_mdf2_mesh_swap_mode(self, override_prefix):
+        return (
+            not override_prefix
+            and self.include_tex_mdf2_mesh_swaps
             and not self.include_tex_variants
             and not self.include_extension_swaps
         )
@@ -1021,7 +1072,8 @@ class PathCollector:
                 return False, "No valid list entries found to improve", None, set()
 
             version_swap_only = self._is_cross_game_version_swap_mode(override_prefix)
-            if version_swap_only:
+            tex_mdf2_mesh_swap_only = self._is_tex_mdf2_mesh_swap_mode(override_prefix)
+            if version_swap_only or tex_mdf2_mesh_swap_only:
                 self._linked_dual_tail_values = {}
             else:
                 self._linked_dual_tail_context_cache.clear()
@@ -1031,8 +1083,9 @@ class PathCollector:
             if not ok:
                 return False, error, None, set()
 
-            self._processed_numeric_replacement_families = None if version_swap_only else set()
-            self._processed_power_of_two_families = None if version_swap_only else set()
+            simple_swap_only = version_swap_only or tex_mdf2_mesh_swap_only
+            self._processed_numeric_replacement_families = None if simple_swap_only else set()
+            self._processed_power_of_two_families = None if simple_swap_only else set()
             try:
                 validated_paths = set()
                 generated_candidates = 0
@@ -1040,6 +1093,7 @@ class PathCollector:
                 for remaining_stem, remaining_extension in entries:
                     remaining_entries_by_extension[remaining_extension].add(remaining_stem)
                 suffix_info_cache = {}
+                processed_tex_mdf2_mesh_candidates = set()
 
                 progress_update_interval = 5000
                 progress_entry_update_interval = 100
@@ -1057,6 +1111,7 @@ class PathCollector:
                     and not self.include_streaming
                 )
                 use_version_swap_candidates = version_swap_only
+                use_tex_mdf2_mesh_candidates = tex_mdf2_mesh_swap_only
 
                 for idx, (stem, extension) in enumerate(entries, 1):
                     remaining_stems = remaining_entries_by_extension.get(extension)
@@ -1064,7 +1119,10 @@ class PathCollector:
                         continue
 
                     remaining_stems.discard(stem)
-                    suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
+                    if use_tex_mdf2_mesh_candidates:
+                        suffix_infos = self._get_tex_mdf2_mesh_suffix_infos(extension, suffix_info_cache)
+                    else:
+                        suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
                     generated_in_entry = 0
 
                     if use_version_swap_candidates:
@@ -1074,6 +1132,34 @@ class PathCollector:
                                 remaining_candidate_stems.discard(stem)
 
                             candidate = f"{stem}.{suffix}"
+                            generated_candidates += 1
+                            generated_in_entry += 1
+                            candidate_hash = candidate_hash_func(candidate)
+                            if candidate_hash in pak_hashes:
+                                validated_paths.add(candidate)
+                                pak_hashes.discard(candidate_hash)
+                                if not pak_hashes:
+                                    break
+
+                            if progress_callback and generated_in_entry % progress_update_interval == 0:
+                                progress_callback(
+                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                                    f"Generated in current entry: {generated_in_entry}\n"
+                                    f"Generated so far: {generated_candidates}\n"
+                                    f"Valid so far: {len(validated_paths)}",
+                                    idx,
+                                    len(entries)
+                                )
+                    elif use_tex_mdf2_mesh_candidates:
+                        for candidate, candidate_stem, candidate_extension in self._iter_tex_mdf2_mesh_candidates(stem, extension, suffix_infos):
+                            if candidate in processed_tex_mdf2_mesh_candidates:
+                                continue
+                            processed_tex_mdf2_mesh_candidates.add(candidate)
+
+                            remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
+                            if remaining_candidate_stems:
+                                remaining_candidate_stems.discard(candidate_stem)
+
                             generated_candidates += 1
                             generated_in_entry += 1
                             candidate_hash = candidate_hash_func(candidate)
