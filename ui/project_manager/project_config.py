@@ -25,10 +25,10 @@ def load_project_config(project_dir: Path | str) -> dict:
         return {}
     return config if isinstance(config, dict) else {}
 
-
 def save_project_config(project_dir: Path | str, config: Mapping[str, object]) -> None:
-    project_config_path(project_dir).write_text(json.dumps(dict(config), indent=2), encoding="utf-8")
-
+    path = project_config_path(project_dir)
+    path.relative_to(PROJECTS_ROOT.resolve())
+    path.write_text(json.dumps(dict(config), indent=2), encoding="utf-8")
 
 def update_project_config(project_dir: Path | str, updates: Mapping[str, object]) -> None:
     config = load_project_config(project_dir)
