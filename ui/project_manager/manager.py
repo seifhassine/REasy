@@ -47,11 +47,16 @@ _prev_handler = qInstallMessageHandler(_custom_message_handler)
 ADD_TO_PROJECT_TITLE = "Add to project"
 
 def _get_base_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(sys.argv[0]).resolve().parent
-    else:
-        return Path(__file__).resolve().parent.parent.parent
-    
+    return Path(sys.argv[0]).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent.parent
+
+def _safe_path(path, root=None):
+    try:
+        path = Path(path).expanduser().resolve(strict=True)
+        path.relative_to(Path(root or path.anchor).resolve(strict=True))
+        return path
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return None
+
 __all__ = ["ProjectManager"]  
 
 class _LoadingSpinner(QWidget):
@@ -164,7 +169,6 @@ class ProjectManager(QDockWidget):
         self._active_tab   = "sys"
         self._pak_list_path: str | None = None
 
-        # -- UI scaffold -----------------------------------------------------
         c = QWidget(self)
         self.setWidget(c)
         lay = QVBoxLayout(c)
@@ -503,7 +507,6 @@ class ProjectManager(QDockWidget):
             )
         self._update_placeholders()
 
-    # Public wrapper for use by by main window
     def apply_unpacked_root(self, path: str):
         self._apply_unpacked_root(path)
 
@@ -527,17 +530,18 @@ class ProjectManager(QDockWidget):
             self._try_autoload_default_pak_list()
         self._update_placeholders()
 
-    # Public wrapper for use by by main window
     def apply_pak_root(self, path: str):
         self._apply_pak_root(path)
 
     def _check_folder(self, root):  
         exp = self._expected_native()
-        return not exp or os.path.isdir(os.path.join(root,*exp))
+        root = _safe_path(root)
+        return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
 
     def check_unpacked_folder(self, root: str, game: str | None = None) -> bool:
         exp = EXPECTED_NATIVE.get(game or (self.current_game or ""), ())
-        return not exp or os.path.isdir(os.path.join(root, *exp))
+        root = _safe_path(root)
+        return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
 
     def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
         return EXPECTED_NATIVE.get(game or (self.current_game or ""), ())
@@ -573,14 +577,12 @@ class ProjectManager(QDockWidget):
         self._switch_tab(tab)
 
     def _update_placeholders(self):
-        # System Files placeholder
         sys_ok = bool(self.unpacked_dir) and self._check_folder(self.unpacked_dir)
         if self._active_tab == "sys":
             self.tree_sys.setVisible(sys_ok)
             self.sys_placeholder.setVisible(not sys_ok)
         else:
             self.sys_placeholder.setVisible(False)
-        # PAK Files placeholder
         if self._active_tab == "pak":
             if not self.pak_dir:
                 self.pak_placeholder.setText(self.tr("Please choose game directory (contains .pak) using the Browse button above"))
@@ -671,28 +673,28 @@ class ProjectManager(QDockWidget):
 
             cfg = load_project_config(proj_dir)
             if cfg:
-                udir = cfg.get("unpacked_dir")
-                if udir and os.path.isdir(udir):
-                    self.unpacked_dir = udir
+                udir = _safe_path(cfg.get("unpacked_dir"))
+                if udir and udir.is_dir():
+                    self.unpacked_dir = str(udir)
                     self.model_sys.setRootPath(self.unpacked_dir)
                     self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
                 self._update_path_label()
-                gdir = cfg.get("pak_game_dir")
-                path = cfg.get("pak_list_path")
+                gdir = _safe_path(cfg.get("pak_game_dir"))
+                path = _safe_path(cfg.get("pak_list_path"))
                 pak_state_changed = False
-                if gdir and os.path.isdir(gdir):
-                    self.pak_dir = gdir
+                if gdir and gdir.is_dir():
+                    self.pak_dir = str(gdir)
                     self._update_path_label()
                     self._set_loading_overlay(True, self.tr("Loading PAKs..."))
                     QApplication.processEvents()
                     self._scan_paks(rebuild=False)
                     pak_state_changed = True
-                if path and os.path.isfile(path):
-                    self._pak_list_path = path
-                    self.pak_list_edit.setText(path)
+                if path and path.is_file():
+                    self._pak_list_path = str(path)
+                    self.pak_list_edit.setText(str(path))
                     self._set_loading_overlay(True, self.tr("Loading PAK list..."))
                     QApplication.processEvents()
-                    self._load_pak_list_file(path, rebuild=False)
+                    self._load_pak_list_file(str(path), rebuild=False)
                     pak_state_changed = True
                 if pak_state_changed:
                     self._pak_index_dirty = True
@@ -705,10 +707,6 @@ class ProjectManager(QDockWidget):
         finally:
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
-
-
-
-
     def _hide_loading_overlay(self, ticket: int):
         if ticket != self._project_load_ticket:
             return
@@ -724,7 +722,6 @@ class ProjectManager(QDockWidget):
         if hasattr(self, "loading_overlay"):
             self.loading_overlay.setGeometry(self.widget().rect())
 
-    # ---------------- PAK integration ----------------
     def _scan_paks(self, rebuild: bool = True):
         if not self.pak_dir:
             QMessageBox.information(self, self.tr("Scan"), self.tr("Select a game directory first."))
@@ -761,7 +758,10 @@ class ProjectManager(QDockWidget):
 
     def _load_pak_list_file(self, path: str, rebuild: bool = True):
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            list_path = _safe_path(path)
+            if list_path is None:
+                raise OSError(self.tr("Invalid list file path."))
+            with list_path.open("r", encoding="utf-8") as f:
                 seen: set[str] = set()
                 items: list[str] = []
                 for ln in f:
