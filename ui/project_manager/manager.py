@@ -2,7 +2,6 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-import json
 import sys
 from time import monotonic
 from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
@@ -19,6 +18,13 @@ from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate   import _ActionsDelegate, _PakActionsDelegate
 from .trees      import _DndTree, _DropTree
 from .pak_file_lists import find_default_pak_list_path
+from .project_config import (
+    load_project_config,
+    project_config_path,
+    save_project_config,
+    update_project_config,
+)
+from .rsz_jsons import resolve_rsz_json_path
 
 from ui.project_manager.project_settings_dialog import ProjectSettingsDialog
 from tools.fluffy_exporter import create_fluffy_zip
@@ -384,18 +390,12 @@ class ProjectManager(QDockWidget):
             if candidate in game_names:
                 return game_names[candidate]
 
-        cfg_path = path / ".reasy_project.json"
-        if cfg_path.is_file():
-            try:
-                cfg = json.loads(cfg_path.read_text())
-            except Exception:
-                cfg = None
-            if isinstance(cfg, dict):
-                candidate = cfg.get("game")
-                if isinstance(candidate, str):
-                    candidate = candidate.upper()
-                    if candidate in game_names:
-                        return game_names[candidate]
+        cfg = load_project_config(path)
+        candidate = cfg.get("game")
+        if isinstance(candidate, str):
+            candidate = candidate.upper()
+            if candidate in game_names:
+                return game_names[candidate]
 
         return None
 
@@ -404,17 +404,70 @@ class ProjectManager(QDockWidget):
         if not self.project_dir or not updates:
             return
         try:
-            cfg_path = Path(self.project_dir) / ".reasy_project.json"
-            cfg = {}
-            if cfg_path.exists():
-                try:
-                    cfg = json.loads(cfg_path.read_text())
-                except Exception:
-                    cfg = {}
-            cfg.update(updates)
-            cfg_path.write_text(json.dumps(cfg, indent=2))
+            update_project_config(self.project_dir, updates)
         except Exception:
             pass
+
+    @staticmethod
+    def _path_key(path: str | os.PathLike | None) -> str:
+        if not path:
+            return ""
+        return os.path.normcase(os.path.abspath(os.path.expanduser(os.fspath(path))))
+
+    def sync_project_rsz_json(
+        self,
+        project_dir: Path | str,
+        game: str | None,
+        *,
+        prompt_to_change_current: bool,
+    ) -> None:
+        game = game or self.infer_project_game(project_dir)
+        config = load_project_config(project_dir)
+        resolved_path = resolve_rsz_json_path(
+            project_dir,
+            game,
+            _get_base_dir(),
+            config.get("rsz_json_path"),
+        )
+        if not resolved_path:
+            return
+        json_path = str(resolved_path)
+
+        config_changed = self._path_key(config.get("rsz_json_path")) != self._path_key(json_path)
+        if config_changed:
+            config["rsz_json_path"] = json_path
+        if game and config.get("game") != game:
+            config["game"] = game
+            config_changed = True
+        if config_changed:
+            try:
+                save_project_config(project_dir, config)
+            except Exception:
+                pass
+
+        settings = getattr(self.app_win, "settings", None)
+        current_json_path = settings.get("rcol_json_path", "") if settings else ""
+        if self._path_key(current_json_path) == self._path_key(json_path):
+            return
+
+        if prompt_to_change_current:
+            current_label = current_json_path or self.tr("<not set>")
+            answer = QMessageBox.question(
+                self.app_win or self,
+                self.tr("Change RSZ JSON?"),
+                self.tr(
+                    "This project's RSZ JSON is different from the currently configured RSZ JSON.\n\n"
+                    "Project:\n{}\n\n"
+                    "Current:\n{}\n\n"
+                    "Use the project's RSZ JSON now?"
+                ).format(json_path, current_label),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            if answer != QMessageBox.Yes:
+                return
+
+        self.app_win.set_rsz_json_path(json_path)
 
     def _update_path_label(self):
         if self._active_tab == "pak":
@@ -616,9 +669,8 @@ class ProjectManager(QDockWidget):
             if self.current_game:
                 self._update_project_cfg({"game": self.current_game})
 
-            cfg_path = Path(proj_dir) / ".reasy_project.json"
-            if cfg_path.exists():
-                cfg = json.loads(cfg_path.read_text())
+            cfg = load_project_config(proj_dir)
+            if cfg:
                 udir = cfg.get("unpacked_dir")
                 if udir and os.path.isdir(udir):
                     self.unpacked_dir = udir
@@ -1242,7 +1294,7 @@ class ProjectManager(QDockWidget):
             return
 
         proj     = Path(self.project_dir)
-        cfg_path = proj / ".reasy_project.json"
+        cfg_path = project_config_path(proj)
         if not cfg_path.exists():
             if QMessageBox.question(
                 self, self.tr("Missing info"),
@@ -1256,7 +1308,7 @@ class ProjectManager(QDockWidget):
         base_dir    = _get_base_dir()
         mods_folder = base_dir / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
-        cfg  = json.loads(cfg_path.read_text())
+        cfg = load_project_config(proj)
         name = cfg.get("name", proj.name)
         zip_path = mods_folder / f"{name}.zip"
 
@@ -1348,8 +1400,4 @@ class ProjectManager(QDockWidget):
         QTimer.singleShot(100, _poll)
         
 def quitely_get_pak_name(project_dir: Path) -> str | None:
-    try:
-        cfg = json.loads((project_dir/".reasy_project.json").read_text())
-        return cfg.get("pak_name")
-    except Exception:
-        return None
+    return load_project_config(project_dir).get("pak_name")

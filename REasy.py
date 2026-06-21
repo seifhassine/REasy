@@ -1405,6 +1405,7 @@ class REasyEditorApp(QMainWindow):
         os.makedirs(mod_dir, exist_ok=True)
 
         self.current_game = game
+        self.proj_dock.sync_project_rsz_json(mod_dir, game, prompt_to_change_current=False)
         
         self._activate_project(mod_dir)
         if use_paks:
@@ -1454,6 +1455,7 @@ class REasyEditorApp(QMainWindow):
 
         self.current_game = game
         self.proj_dock.current_game = game
+        self.proj_dock.sync_project_rsz_json(project_path, game, prompt_to_change_current=True)
 
         self._activate_project(str(project_path))
 
@@ -1654,6 +1656,13 @@ class REasyEditorApp(QMainWindow):
 
     def save_settings(self):
         save_settings(self.settings)
+
+    def set_rsz_json_path(self, json_path: str, *, save: bool = True) -> None:
+        if json_path != self.settings.get("rcol_json_path", ""):
+            self.settings["enum_prompt_checked_json_path"] = ""
+        self.settings["rcol_json_path"] = json_path
+        if save:
+            self.save_settings()
 
     def closeEvent(self, event):
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
@@ -1916,9 +1925,7 @@ class REasyEditorApp(QMainWindow):
                 QMessageBox.critical(dialog, self.tr("Error"), self.tr("The specified JSON file does not exist."))
                 return
 
-            if new_json_path != self.settings.get("rcol_json_path", ""):
-                self.settings["enum_prompt_checked_json_path"] = ""
-            self.settings["rcol_json_path"] = new_json_path
+            self.set_rsz_json_path(new_json_path, save=False)
             self.settings["vgmstream_cli_path"] = vgmstream_entry.text().strip()
             self.settings["dark_mode"] = dark_box.isChecked()
             self.settings["show_debug_console"] = debug_box.isChecked()

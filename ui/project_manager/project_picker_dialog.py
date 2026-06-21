@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,8 +24,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-
-CONFIG_NAME = ".reasy_project.json"
+from .project_config import load_project_config, project_config_path
 
 
 @dataclass(frozen=True)
@@ -68,7 +66,7 @@ def discover_projects(projects_root: Path, games: Sequence[str]) -> list[Project
 
 
 def _entry_from_dir(project_dir: Path, fallback_game: str) -> ProjectEntry:
-    cfg = _read_project_config(project_dir / CONFIG_NAME)
+    cfg = load_project_config(project_dir)
     cfg_game = cfg.get("game")
     game = cfg_game if isinstance(cfg_game, str) and cfg_game.strip() else fallback_game
     source = "Folder"
@@ -77,7 +75,8 @@ def _entry_from_dir(project_dir: Path, fallback_game: str) -> ProjectEntry:
     elif cfg.get("unpacked_dir"):
         source = "Unpacked"
 
-    cfg_mtime = (project_dir / CONFIG_NAME).stat().st_mtime if (project_dir / CONFIG_NAME).exists() else 0
+    cfg_path = project_config_path(project_dir)
+    cfg_mtime = cfg_path.stat().st_mtime if cfg_path.exists() else 0
     modified = max(project_dir.stat().st_mtime, cfg_mtime)
     return ProjectEntry(
         path=project_dir,
@@ -90,17 +89,6 @@ def _entry_from_dir(project_dir: Path, fallback_game: str) -> ProjectEntry:
         screenshot=str(cfg.get("screenshot") or ""),
         modified=modified,
     )
-
-
-def _read_project_config(path: Path) -> dict:
-    if not path.is_file():
-        return {}
-    try:
-        data = json.loads(path.read_text())
-    except Exception:
-        return {}
-    return data if isinstance(data, dict) else {}
-
 
 class ProjectPickerDialog(QDialog):
     def __init__(

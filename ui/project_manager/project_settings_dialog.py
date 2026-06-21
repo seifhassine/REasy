@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 from pathlib import Path
 
 from PySide6.QtCore    import Qt
@@ -9,23 +8,16 @@ from PySide6.QtWidgets import (
     QPushButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
 )
 
-class ProjectSettingsDialog(QDialog):
-    CONFIG_NAME = ".reasy_project.json"
+from .project_config import load_project_config, save_project_config
 
+
+class ProjectSettingsDialog(QDialog):
     def __init__(self, project_dir: Path, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Fluffy Settings"))
         self.setModal(True)
         self.project_dir = project_dir
-        self.cfg_path    = project_dir / self.CONFIG_NAME
-
-        if self.cfg_path.exists():
-            try:
-                self.cfg = json.loads(self.cfg_path.read_text())
-            except Exception:
-                self.cfg = {}
-        else:
-            self.cfg = {}
+        self.cfg = load_project_config(project_dir)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -108,7 +100,7 @@ class ProjectSettingsDialog(QDialog):
         })
 
         try:
-            self.cfg_path.write_text(json.dumps(self.cfg, indent=2))
+            save_project_config(self.project_dir, self.cfg)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Save failed"), str(e))
             return
