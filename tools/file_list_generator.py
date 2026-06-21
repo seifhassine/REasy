@@ -4,6 +4,14 @@ import re
 import mmap
 from collections import defaultdict
 
+from utils.native_build import ensure_fast_string_scan
+
+
+_fast_string_scan = ensure_fast_string_scan()
+if _fast_string_scan is None:
+    raise ImportError("fast_string_scan native module could not be loaded or built")
+_extract_strings = _fast_string_scan.extract_strings
+
 
 NATIVE_PREFIX = "natives/"
 
@@ -63,68 +71,13 @@ MAX_LAST_NUMBER_VARIANTS = 1000
 LINKED_DUAL_TAIL_FIRST_WINDOW = 32
 MAX_LINKED_DUAL_TAIL_COMBINATIONS = 5000
 POWER_OF_TWO_VALUES = tuple(1 << exp for exp in range(19))
-
-
-def _is_valid_extracted_char(char):
-    return char.isprintable()
-
-
-def _extract_utf16le_strings(data, min_len):
-    strings = []
-    data_len = len(data)
-    min_bytes = min_len * 2
-
-    for start_parity in (0, 1):
-        i = start_parity
-        while i <= data_len - min_bytes:
-            if not (32 <= data[i] <= 126 and data[i + 1] == 0):
-                i += 2
-                continue
-
-            j = i
-            chars = []
-
-            while j <= data_len - 2:
-                codepoint = data[j] | (data[j + 1] << 8)
-                if codepoint == 0:
-                    break
-
-                char = chr(codepoint)
-                if not _is_valid_extracted_char(char):
-                    break
-
-                chars.append(char)
-                j += 2
-
-            if len(chars) >= min_len:
-                strings.append(''.join(chars))
-                i = j + 2
-            else:
-                i += 2
-
-    return strings
-
-
-_UTF8_CANDIDATE_PATTERN = re.compile(rb'[\x20-\x7E\x80-\xFF]{10,}')
-
-
-def _extract_utf8_strings(data, min_len):
-    strings = []
-
-    for match in _UTF8_CANDIDATE_PATTERN.finditer(data):
-        chunk = match.group(0)
-        if len(chunk) < min_len:
-            continue
-
-        try:
-            decoded = chunk.decode('utf-8')
-        except UnicodeDecodeError:
-            continue
-
-        if all(_is_valid_extracted_char(ch) for ch in decoded):
-            strings.append(decoded)
-
-    return strings
+SMART_NUMERIC_LOCAL_RADIUS = 32
+SMART_NUMERIC_OBSERVED_RADIUS = 3
+SMART_NUMERIC_DIRECTORY_RADIUS = 8
+SMART_NUMERIC_GAP_LIMIT = 12
+SMART_NUMERIC_BOUNDARY_SIZE = 24
+SMART_NUMERIC_PROBE_STEP = 16
+SMART_NUMERIC_EXHAUSTIVE_OBSERVED_THRESHOLD = 24
 
 
 def expand_with_variations(paths):
@@ -313,7 +266,7 @@ class ExePathExtractor:
         self.include_streaming = include_streaming
     
     def _extract_strings(self, data, min_len=10):
-        return _extract_utf16le_strings(data, min_len) + _extract_utf8_strings(data, min_len)
+        return _extract_strings(data, min_len)
     
     def _extract_strings_from_large_mmap(self, mm, progress_callback=None, source_label="binary file"):
         strings = []
@@ -438,6 +391,7 @@ class PathCollector:
         include_tex_mdf2_mesh_swaps=False
     ):
         self.extensions = [ext.lower() for ext in extensions]
+        self._extension_suffixes = tuple(f'.{ext}' for ext in self.extensions)
         self.extension_versions = {}
         if extension_versions:
             for ext, versions in extension_versions.items():
@@ -453,13 +407,13 @@ class PathCollector:
         self._linked_dual_tail_context_cache = {}
         self._processed_numeric_replacement_families = None
         self._processed_power_of_two_families = None
+        self._processed_linked_dual_tail_families = None
+        self._numeric_structure_values = {}
+        self._numeric_structure_context_cache = {}
+        self._smart_number_values_cache = {}
     
     def filter_path_by_extensions(self, path):
-        path_lower = path.lower()
-        for ext in self.extensions:
-            if path_lower.endswith(f'.{ext}'):
-                return True
-        return False
+        return path.lower().endswith(self._extension_suffixes)
     
     def should_skip_entry(self, entry):
         return entry.decompressed_size > 50 * 1024 * 1024 or entry.decompressed_size < 100
@@ -568,49 +522,212 @@ class PathCollector:
             return False
         return value > 0 and (value & (value - 1)) == 0
 
-    def _replace_match_number(self, stem, match, value):
-        token = match.group(0)
+    def _get_numeric_replacement_groups(self, stem, source_extension=None):
+        numeric_search_stem = (
+            self._split_tex_stem_variant(stem)[0]
+            if source_extension == 'tex'
+            else stem
+        )
+        matches = list(re.finditer(r'\d+', numeric_search_stem))
+        if not matches:
+            return []
+
+        basename_start = stem.rfind('/') + 1
+        parent_end = basename_start - 1
+        parent_start = stem.rfind('/', 0, parent_end) + 1 if parent_end >= 0 else 0
+        parent_segment = stem[parent_start:parent_end] if parent_end >= 0 else ''
+        basename = stem[basename_start:]
+
+        parent_matches_by_span = {
+            (match.start() - parent_start, match.end() - parent_start): (index, match)
+            for index, match in enumerate(matches)
+            if parent_start <= match.start() < parent_end
+        }
+
+        used_indices = set()
+        groups = []
+        for index, match in enumerate(matches):
+            if index in used_indices or match.start() < basename_start:
+                continue
+
+            grouped_matches = [match]
+            relative_span = (match.start() - basename_start, match.end() - basename_start)
+            parent_match_info = parent_matches_by_span.get(relative_span)
+            if (
+                parent_match_info is not None
+                and parent_segment
+                and basename.startswith(parent_segment)
+                and parent_match_info[1].group(0) == match.group(0)
+            ):
+                parent_index, parent_match = parent_match_info
+                grouped_matches.insert(0, parent_match)
+                used_indices.add(parent_index)
+
+            used_indices.add(index)
+            groups.append((tuple(grouped_matches), True))
+
+        for index, match in enumerate(matches):
+            if index not in used_indices:
+                groups.append(((match,), False))
+
+        groups.sort(key=lambda item: item[0][-1].start())
+        return groups
+
+    def _replace_match_group_number(self, stem, matches, value):
+        token = matches[-1].group(0)
         is_zero_padded = token.startswith('0') and len(token) > 1
         rendered = str(value).zfill(len(token)) if is_zero_padded else str(value)
-        return f"{stem[:match.start()]}{rendered}{stem[match.end():]}"
+        candidate = stem
+        for match in reversed(matches):
+            candidate = f"{candidate[:match.start()]}{rendered}{candidate[match.end():]}"
+        return candidate
 
-    def _numeric_replacement_family_key(self, stem, match):
-        token = match.group(0)
+    def _numeric_replacement_group_family_key(self, stem, matches):
+        token = matches[-1].group(0)
         digit_count = len(token)
         max_value = (10 ** digit_count) - 1
         capped_max = min(max_value, MAX_LAST_NUMBER_VARIANTS - 1)
         zfill_width = digit_count if token.startswith('0') and digit_count > 1 else 0
-        return (stem[:match.start()], stem[match.end():], capped_max, zfill_width)
 
-    def _get_linked_dual_tail_context(self, stem):
-        if stem in self._linked_dual_tail_context_cache:
-            return self._linked_dual_tail_context_cache[stem]
+        parts = []
+        previous_end = 0
+        for match in matches:
+            parts.append(stem[previous_end:match.start()])
+            parts.append('{N}')
+            previous_end = match.end()
+        parts.append(stem[previous_end:])
+        return (''.join(parts), capped_max, zfill_width)
 
-        matches = list(re.finditer(r'\d+', stem))
+    def _numeric_structure_keys(self, stem, extension):
+        cache_key = (stem, extension)
+        cached = self._numeric_structure_context_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        canonical_stem = self._split_tex_stem_variant(stem)[0] if extension == 'tex' else stem
+        groups = self._get_numeric_replacement_groups(canonical_stem, extension)
+        template = re.sub(r'\d+', lambda match: f"{{d{len(match.group(0))}}}", canonical_stem)
+        keys = tuple(
+            (extension, template, group_index, is_filename_group)
+            for group_index, (_, is_filename_group) in enumerate(groups)
+        )
+        self._numeric_structure_context_cache[cache_key] = keys
+        return keys
+
+    def _build_numeric_structure_values(self, entries):
+        values = defaultdict(set)
+        self._numeric_structure_context_cache.clear()
+        for stem, extension in entries:
+            groups = self._get_numeric_replacement_groups(stem, extension)
+            structure_keys = self._numeric_structure_keys(stem, extension)
+            for group_index, (matches, _) in enumerate(groups):
+                if group_index < len(structure_keys):
+                    values[structure_keys[group_index]].add(int(matches[-1].group(0)))
+        return values
+
+    def _iter_smart_number_values(self, token, observed_values, is_filename_group):
+        observed = tuple(sorted(observed_values or (int(token),)))
+        cache_key = (token, observed, is_filename_group)
+        cached = self._smart_number_values_cache.get(cache_key)
+        if cached is not None:
+            yield from cached
+            return
+
+        digit_count = len(token)
+        original_value = int(token)
+        max_value = (10 ** digit_count) - 1
+        values = set()
+
+        def add_range(start, end):
+            values.update(range(max(0, start), min(max_value, end) + 1))
+
+        if is_filename_group and digit_count <= 2:
+            values.update(range(max_value + 1))
+        elif is_filename_group:
+            add_range(
+                original_value - SMART_NUMERIC_LOCAL_RADIUS,
+                original_value + SMART_NUMERIC_LOCAL_RADIUS
+            )
+            for value in observed:
+                values.add(value)
+                add_range(
+                    value - SMART_NUMERIC_OBSERVED_RADIUS,
+                    value + SMART_NUMERIC_OBSERVED_RADIUS
+                )
+
+            for first, second in zip(observed, observed[1:]):
+                if second - first <= SMART_NUMERIC_GAP_LIMIT:
+                    add_range(first, second)
+
+            probe_max = min(max_value, MAX_LAST_NUMBER_VARIANTS - 1)
+            if len(observed) >= SMART_NUMERIC_EXHAUSTIVE_OBSERVED_THRESHOLD:
+                values.update(range(probe_max + 1))
+            else:
+                add_range(0, SMART_NUMERIC_BOUNDARY_SIZE - 1)
+                add_range(
+                    probe_max - SMART_NUMERIC_BOUNDARY_SIZE + 1,
+                    probe_max
+                )
+                values.update(range(0, probe_max + 1, SMART_NUMERIC_PROBE_STEP))
+            values.update(value for value in POWER_OF_TWO_VALUES if value <= max_value)
+        else:
+            add_range(
+                original_value - SMART_NUMERIC_DIRECTORY_RADIUS,
+                original_value + SMART_NUMERIC_DIRECTORY_RADIUS
+            )
+            for value in observed:
+                values.add(value)
+                add_range(value - 2, value + 2)
+
+            if digit_count <= 2:
+                add_range(0, min(max_value, 15))
+            if original_value in POWER_OF_TWO_VALUES:
+                values.update(value for value in POWER_OF_TWO_VALUES if value <= max_value)
+
+        values.discard(original_value)
+        result = tuple(sorted(values))
+        self._smart_number_values_cache[cache_key] = result
+        yield from result
+
+    def _get_linked_dual_tail_context(self, stem, source_extension=None):
+        cache_key = (stem, source_extension)
+        if cache_key in self._linked_dual_tail_context_cache:
+            return self._linked_dual_tail_context_cache[cache_key]
+
+        numeric_search_stem = (
+            self._split_tex_stem_variant(stem)[0]
+            if source_extension == 'tex'
+            else stem
+        )
+        matches = list(re.finditer(r'\d+', numeric_search_stem))
         if len(matches) < 2:
-            self._linked_dual_tail_context_cache[stem] = None
+            self._linked_dual_tail_context_cache[cache_key] = None
             return None
 
         first = matches[-2]
         second = matches[-1]
 
         if stem[first.end():second.start()] != '_':
-            self._linked_dual_tail_context_cache[stem] = None
+            self._linked_dual_tail_context_cache[cache_key] = None
             return None
 
         first_token = first.group(0)
         second_token = second.group(0)
         if len(first_token) != 3 or len(second_token) != 2:
-            self._linked_dual_tail_context_cache[stem] = None
+            self._linked_dual_tail_context_cache[cache_key] = None
             return None
 
         first_pattern = re.compile(rf'(?<=[_/]){re.escape(first_token)}(?=[_/]|$)')
         if len(list(first_pattern.finditer(stem))) < 2:
-            self._linked_dual_tail_context_cache[stem] = None
+            self._linked_dual_tail_context_cache[cache_key] = None
             return None
 
         key_with_second_placeholder = f"{stem[:second.start()]}{{B}}"
         family_key = first_pattern.sub('{A}', key_with_second_placeholder)
+        generation_key_with_tail = (
+            f"{stem[:second.start()]}{{B}}{stem[second.end():]}"
+        )
+        generation_family_key = first_pattern.sub('{A}', generation_key_with_tail)
 
         context = {
             'first_token': first_token,
@@ -618,24 +735,26 @@ class PathCollector:
             'first_pattern': first_pattern,
             'second_span': (second.start(), second.end()),
             'family_key': family_key,
+            'generation_family_key': generation_family_key,
         }
-        self._linked_dual_tail_context_cache[stem] = context
+        self._linked_dual_tail_context_cache[cache_key] = context
         return context
 
     def _build_linked_dual_tail_values(self, entries):
         values = {}
-        for stem, _ in entries:
-            context = self._get_linked_dual_tail_context(stem)
+        for stem, extension in entries:
+            context = self._get_linked_dual_tail_context(stem, extension)
             if not context:
                 continue
 
-            family = values.setdefault(context['family_key'], {'first': set(), 'second': set()})
+            family_key = (extension, context['family_key'])
+            family = values.setdefault(family_key, {'first': set(), 'second': set()})
             family['first'].add(int(context['first_token']))
             family['second'].add(int(context['second_token']))
         return values
 
-    def _iter_linked_dual_tail_candidates(self, stem):
-        context = self._get_linked_dual_tail_context(stem)
+    def _iter_linked_dual_tail_candidates(self, stem, source_extension=None):
+        context = self._get_linked_dual_tail_context(stem, source_extension)
         if not context:
             return
 
@@ -644,7 +763,9 @@ class PathCollector:
         first_pattern = context['first_pattern']
         second_start, second_end = context['second_span']
 
-        observed = self._linked_dual_tail_values.get(context['family_key'])
+        observed = self._linked_dual_tail_values.get(
+            (source_extension, context['family_key'])
+        )
         if observed:
             first_values = sorted(observed['first'])
             second_values = sorted(observed['second'])
@@ -665,42 +786,64 @@ class PathCollector:
                 if generated >= max_combinations:
                     return
 
-    def _iter_numeric_stem_combinations(self, stem, family_scope=None):
-        number_matches = list(re.finditer(r'\d+', stem))
-        if not number_matches:
+    def _iter_numeric_stem_combinations(self, stem, family_scope=None, source_extension=None):
+        replacement_groups = self._get_numeric_replacement_groups(stem, source_extension)
+        if not replacement_groups:
             yield stem
             return
 
         seen = set()
         processed_numeric_families = self._processed_numeric_replacement_families
         processed_power_families = self._processed_power_of_two_families
+        processed_linked_families = self._processed_linked_dual_tail_families
+        structure_keys = self._numeric_structure_keys(stem, source_extension) if source_extension else ()
 
         seen.add(stem)
         yield stem
 
-        for match in number_matches:
-            family_key = self._numeric_replacement_family_key(stem, match)
+        for group_index, (matches, is_filename_group) in enumerate(replacement_groups):
+            family_key = self._numeric_replacement_group_family_key(stem, matches)
             scoped_family_key = (family_scope, family_key)
             if processed_numeric_families is not None:
                 if scoped_family_key in processed_numeric_families:
                     continue
                 processed_numeric_families.add(scoped_family_key)
 
-            for value in self._iter_number_values(match.group(0)):
-                candidate = self._replace_match_number(stem, match, value)
+            observed_values = None
+            if group_index < len(structure_keys):
+                observed_values = self._numeric_structure_values.get(structure_keys[group_index])
+
+            for value in self._iter_smart_number_values(
+                matches[-1].group(0),
+                observed_values,
+                is_filename_group
+            ):
+                candidate = self._replace_match_group_number(stem, matches, value)
                 if candidate not in seen:
                     seen.add(candidate)
                     yield candidate
 
-        for linked_candidate in self._iter_linked_dual_tail_candidates(stem):
-            if linked_candidate not in seen:
-                seen.add(linked_candidate)
-                yield linked_candidate
+        linked_context = self._get_linked_dual_tail_context(stem, source_extension)
+        scoped_linked_key = (
+            family_scope,
+            linked_context['generation_family_key']
+        ) if linked_context else None
+        if (
+            scoped_linked_key is None
+            or processed_linked_families is None
+            or scoped_linked_key not in processed_linked_families
+        ):
+            if processed_linked_families is not None and scoped_linked_key is not None:
+                processed_linked_families.add(scoped_linked_key)
+            for linked_candidate in self._iter_linked_dual_tail_candidates(stem, source_extension):
+                if linked_candidate not in seen:
+                    seen.add(linked_candidate)
+                    yield linked_candidate
 
-        for match in number_matches:
-            if not self._is_power_of_two_token(match.group(0)):
+        for matches, _ in replacement_groups:
+            if not self._is_power_of_two_token(matches[-1].group(0)):
                 continue
-            family_key = self._numeric_replacement_family_key(stem, match)
+            family_key = self._numeric_replacement_group_family_key(stem, matches)
             scoped_family_key = (family_scope, family_key)
             if processed_power_families is not None:
                 if scoped_family_key in processed_power_families:
@@ -709,12 +852,12 @@ class PathCollector:
 
             skip_values_up_to = None
             if processed_numeric_families is not None and scoped_family_key in processed_numeric_families:
-                skip_values_up_to = family_key[2]
+                skip_values_up_to = family_key[1]
 
             for value in POWER_OF_TWO_VALUES:
                 if skip_values_up_to is not None and value <= skip_values_up_to:
                     continue
-                candidate = self._replace_match_number(stem, match, value)
+                candidate = self._replace_match_group_number(stem, matches, value)
                 if candidate not in seen:
                     seen.add(candidate)
                     yield candidate
@@ -738,10 +881,6 @@ class PathCollector:
                 continue
             yield f"{base_stem}{suffix}"
     
-    def extract_strings_from_data(self, data):
-        min_length = 10
-        return _extract_utf16le_strings(data, min_length) + _extract_utf8_strings(data, min_length)
-    
     def _process_entry(self, entry, f):
         from file_handlers.pak.pakfile import _read_entry_raw
         
@@ -753,7 +892,7 @@ class PathCollector:
             _read_entry_raw(entry, f, buf)
             data = buf.getvalue()
             
-            extracted_strings = self.extract_strings_from_data(data)
+            extracted_strings = _extract_strings(data, 10)
             strings_extracted = len(extracted_strings)
             strings_matched = 0
             
@@ -955,7 +1094,11 @@ class PathCollector:
             if self.include_tex_variants or self.include_extension_swaps:
                 numeric_iter = [variant_stem]
             else:
-                numeric_iter = self._iter_numeric_stem_combinations(variant_stem, family_scope=suffix_infos)
+                numeric_iter = self._iter_numeric_stem_combinations(
+                    variant_stem,
+                    family_scope=suffix_infos,
+                    source_extension=extension
+                )
             for numeric_stem in numeric_iter:
                 for suffix, suffix_extension in suffix_infos:
                     if on_base_candidate:
@@ -1086,6 +1229,11 @@ class PathCollector:
             simple_swap_only = version_swap_only or tex_mdf2_mesh_swap_only
             self._processed_numeric_replacement_families = None if simple_swap_only else set()
             self._processed_power_of_two_families = None if simple_swap_only else set()
+            self._processed_linked_dual_tail_families = None if simple_swap_only else set()
+            self._numeric_structure_values = (
+                {} if simple_swap_only else self._build_numeric_structure_values(entries)
+            )
+            self._smart_number_values_cache.clear()
             try:
                 validated_paths = set()
                 generated_candidates = 0
@@ -1098,12 +1246,39 @@ class PathCollector:
                 progress_update_interval = 5000
                 progress_entry_update_interval = 100
                 if self._can_fast_hash_generated_candidates():
+                    pak_hashes_by_lower = defaultdict(set)
+                    for pak_hash in pak_hashes:
+                        pak_hashes_by_lower[pak_hash & 0xFFFFFFFF].add(pak_hash)
+
                     def candidate_hash_func(candidate, murmur3_hash=murmur3_hash):
                         lower = murmur3_hash(candidate.encode("utf-16le")) & 0xFFFFFFFF
+                        if lower not in pak_hashes_by_lower:
+                            return None
                         upper = murmur3_hash(candidate.upper().encode("utf-16le")) & 0xFFFFFFFF
                         return ((upper << 32) | lower) & 0xFFFFFFFFFFFFFFFF
+
+                    def discard_candidate_hash(candidate_hash):
+                        pak_hashes.discard(candidate_hash)
+                        lower = candidate_hash & 0xFFFFFFFF
+                        matching_hashes = pak_hashes_by_lower.get(lower)
+                        if matching_hashes is not None:
+                            matching_hashes.discard(candidate_hash)
+                            if not matching_hashes:
+                                del pak_hashes_by_lower[lower]
                 else:
                     candidate_hash_func = filepath_hash
+
+                    def discard_candidate_hash(candidate_hash):
+                        pak_hashes.discard(candidate_hash)
+
+                def validate_candidate(candidate):
+                    candidate_hash = candidate_hash_func(candidate)
+                    if candidate_hash is None or candidate_hash not in pak_hashes:
+                        return False
+                    validated_paths.add(candidate)
+                    discard_candidate_hash(candidate_hash)
+                    return True
+
                 use_direct_base_candidates = (
                     not self.include_tex_variants
                     and not self.include_extension_swaps
@@ -1134,12 +1309,9 @@ class PathCollector:
                             candidate = f"{stem}.{suffix}"
                             generated_candidates += 1
                             generated_in_entry += 1
-                            candidate_hash = candidate_hash_func(candidate)
-                            if candidate_hash in pak_hashes:
-                                validated_paths.add(candidate)
-                                pak_hashes.discard(candidate_hash)
-                                if not pak_hashes:
-                                    break
+                            validate_candidate(candidate)
+                            if not pak_hashes:
+                                break
 
                             if progress_callback and generated_in_entry % progress_update_interval == 0:
                                 progress_callback(
@@ -1162,12 +1334,9 @@ class PathCollector:
 
                             generated_candidates += 1
                             generated_in_entry += 1
-                            candidate_hash = candidate_hash_func(candidate)
-                            if candidate_hash in pak_hashes:
-                                validated_paths.add(candidate)
-                                pak_hashes.discard(candidate_hash)
-                                if not pak_hashes:
-                                    break
+                            validate_candidate(candidate)
+                            if not pak_hashes:
+                                break
 
                             if progress_callback and generated_in_entry % progress_update_interval == 0:
                                 progress_callback(
@@ -1179,7 +1348,11 @@ class PathCollector:
                                     len(entries)
                                 )
                     elif use_direct_base_candidates:
-                        for numeric_stem in self._iter_numeric_stem_combinations(stem, family_scope=suffix_infos):
+                        for numeric_stem in self._iter_numeric_stem_combinations(
+                            stem,
+                            family_scope=suffix_infos,
+                            source_extension=extension
+                        ):
                             for suffix, suffix_extension in suffix_infos:
                                 remaining_candidate_stems = remaining_entries_by_extension.get(suffix_extension)
                                 if remaining_candidate_stems:
@@ -1188,12 +1361,9 @@ class PathCollector:
                                 candidate = f"{numeric_stem}.{suffix}"
                                 generated_candidates += 1
                                 generated_in_entry += 1
-                                candidate_hash = candidate_hash_func(candidate)
-                                if candidate_hash in pak_hashes:
-                                    validated_paths.add(candidate)
-                                    pak_hashes.discard(candidate_hash)
-                                    if not pak_hashes:
-                                        break
+                                validate_candidate(candidate)
+                                if not pak_hashes:
+                                    break
 
                                 if progress_callback and generated_in_entry % progress_update_interval == 0:
                                     progress_callback(
@@ -1215,12 +1385,9 @@ class PathCollector:
                         for candidate in self._iter_improver_candidates(stem, extension, suffix_infos, on_base_candidate=consume_matching_entry):
                             generated_candidates += 1
                             generated_in_entry += 1
-                            candidate_hash = candidate_hash_func(candidate)
-                            if candidate_hash in pak_hashes:
-                                validated_paths.add(candidate)
-                                pak_hashes.discard(candidate_hash)
-                                if not pak_hashes:
-                                    break
+                            validate_candidate(candidate)
+                            if not pak_hashes:
+                                break
 
                             if progress_callback and generated_in_entry % progress_update_interval == 0:
                                 progress_callback(
@@ -1259,6 +1426,10 @@ class PathCollector:
                 self._linked_dual_tail_context_cache.clear()
                 self._processed_numeric_replacement_families = None
                 self._processed_power_of_two_families = None
+                self._processed_linked_dual_tail_families = None
+                self._numeric_structure_values = {}
+                self._numeric_structure_context_cache.clear()
+                self._smart_number_values_cache.clear()
         except Exception as e:
             return False, f"List improver error: {e}", None, set()
 

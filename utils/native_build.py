@@ -63,5 +63,9 @@ def ensure_fast_pakresolve():
     return _build_native_module('fast_pakresolve')
 
 
+def ensure_fast_string_scan():
+    return _build_native_module('fast_string_scan')
+
+
 def ensure_fastmesh():
     return _build_native_module('fastmesh')

@@ -29,7 +29,7 @@ function Fresh($stamp, $inputs, $outputs) {
     -not (Get-ChildItem $inputs -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -gt $t | Select-Object -First 1)
 }
 function Prep {
-    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fastmesh*.pyd", "resources\i18n\*.qm"))) { return $true }
+    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "resources\i18n\*.qm"))) { return $true }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "pip", "--disable-pip-version-check", "install", "-r", "requirements.txt"))) { return $false }
     if (-not (OK $py @("setup.py", "build_ext", "--inplace"))) { return $false }
