@@ -96,6 +96,7 @@ fast_pakresolve = ensure_fast_pakresolve()
 fastmesh = ensure_fastmesh()
 
 from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
+from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
 from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog 
@@ -1160,7 +1161,7 @@ class REasyEditorApp(QMainWindow):
         open_act.triggered.connect(self.on_open)
 
         new_proj_act = QAction(self.tr("New Project (Create Mod)..."), self)
-        open_proj_act = QAction(self.tr("Open Project..."), self)
+        open_proj_act = QAction(self.tr("Project Library..."), self)
         close_proj_act = QAction(self.tr("Close Project"), self)
         new_proj_act.triggered.connect(self.new_project)
         open_proj_act.triggered.connect(self.open_project)
@@ -1413,32 +1414,46 @@ class REasyEditorApp(QMainWindow):
             self.proj_dock.apply_unpacked_root(folder)
 
     def open_project(self):
-        start_root = str(PROJECTS_ROOT)
-        dir_ = QFileDialog.getExistingDirectory(
-            self,
-            self.tr("Open REasy Project"),
-            start_root,
-            QFileDialog.ShowDirsOnly
+        dlg = ProjectPickerDialog(
+            PROJECTS_ROOT,
+            GAMES,
+            current_project=self.current_project,
+            parent=self,
         )
-        if not dir_:
+        if dlg.exec() != QDialog.Accepted:
             return
 
-        project_path = Path(dir_).resolve()
-        game = self.proj_dock.infer_project_game(project_path)
+        if dlg.wants_new_project():
+            self.new_project()
+            return
+
+        entry = dlg.selected_project()
+        if not entry:
+            return
+
+        self._open_project_path(entry.path, entry.game)
+
+    def _open_project_path(self, project_path: Path | str, game: str | None = None):
+        project_path = Path(project_path).resolve()
+        if not project_path.is_dir():
+            QMessageBox.warning(
+                self,
+                self.tr("Project not found"),
+                self.tr("That project folder no longer exists.")
+            )
+            return
+
+        game = game or self.proj_dock.infer_project_game(project_path)
 
         if not game:
             QMessageBox.warning(
                 self, self.tr("Invalid selection"),
-                self.tr("Please pick a mod folder *directly* inside one of the game "
-                        "directories (e.g. projects/RE4/YourMod).")
+                self.tr("This folder is not a recognized REasy project.")
             )
             return
 
         self.current_game = game
         self.proj_dock.current_game = game
-
-        self.settings["last_game"] = game
-        self.save_settings()
 
         self._activate_project(str(project_path))
 
@@ -1454,6 +1469,9 @@ class REasyEditorApp(QMainWindow):
         """Make <path> the current project and show the dock."""
         self.current_project = path
         self.proj_dock.current_game = self.current_game
+        if self.current_game:
+            self.settings["last_game"] = self.current_game
+        self.save_settings()
         self.proj_dock.show()
         self._shrink_project_dock()   
         QApplication.processEvents()

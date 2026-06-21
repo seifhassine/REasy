@@ -35,7 +35,7 @@ class HomePageWidget(QWidget):
         for text, callback in (
             ("Open File…", on_open_file),
             ("New Project…", on_new_project),
-            ("Open Project…", on_open_project),
+            ("Project Library...", on_open_project),
             ("Reopen Last Closed", on_reopen_last),
         ):
             btn = QPushButton(text)
