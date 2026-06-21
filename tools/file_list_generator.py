@@ -54,7 +54,7 @@ TEX_VARIANT_SUFFIXES = [
     "_acot", "_albd", "_nrmr", "_msr", "_mskm", "_scot", "_nrca", "_msk4", "_alb", "_nrma",
     "_nrm", "_albs", "_atos", "_faketex", "_dslut", "_msk3", "_emi", "_msk1", "_colormask.",
     "_selectionmask", "_hgt", "_nrrc", "_hdr", "_mask", "_msk", "_nrra", "_albm", "_albh",
-    "_nrro", "_rocm", "_occ", "_lymo", "_alba", "_nrca", "_alp", "_nmr", "_rgh", "_met",
+    "_nrro", "_rocm", "_occ", "_lymo", "_alba", "_nrca", "_alp", "_nmr", "_rgh", "_met", "_nrrh",
     "_iam", "_lut", "_fbi", "_add", "_emm", "_lym", "_cvt", "_vns", "_lin", "_pos", "_fur", "_im", "_disp",
 ]
 UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
@@ -447,6 +447,9 @@ class PathCollector:
         self.include_tex_variants = include_tex_variants
         self.include_extension_swaps = include_extension_swaps
         self._linked_dual_tail_values = {}
+        self._linked_dual_tail_context_cache = {}
+        self._processed_numeric_replacement_families = None
+        self._processed_power_of_two_families = None
     
     def filter_path_by_extensions(self, path):
         path_lower = path.lower()
@@ -568,36 +571,53 @@ class PathCollector:
         rendered = str(value).zfill(len(token)) if is_zero_padded else str(value)
         return f"{stem[:match.start()]}{rendered}{stem[match.end():]}"
 
+    def _numeric_replacement_family_key(self, stem, match):
+        token = match.group(0)
+        digit_count = len(token)
+        max_value = (10 ** digit_count) - 1
+        capped_max = min(max_value, MAX_LAST_NUMBER_VARIANTS - 1)
+        zfill_width = digit_count if token.startswith('0') and digit_count > 1 else 0
+        return (stem[:match.start()], stem[match.end():], capped_max, zfill_width)
+
     def _get_linked_dual_tail_context(self, stem):
+        if stem in self._linked_dual_tail_context_cache:
+            return self._linked_dual_tail_context_cache[stem]
+
         matches = list(re.finditer(r'\d+', stem))
         if len(matches) < 2:
+            self._linked_dual_tail_context_cache[stem] = None
             return None
 
         first = matches[-2]
         second = matches[-1]
 
         if stem[first.end():second.start()] != '_':
+            self._linked_dual_tail_context_cache[stem] = None
             return None
 
         first_token = first.group(0)
         second_token = second.group(0)
         if len(first_token) != 3 or len(second_token) != 2:
+            self._linked_dual_tail_context_cache[stem] = None
             return None
 
         first_pattern = re.compile(rf'(?<=[_/]){re.escape(first_token)}(?=[_/]|$)')
         if len(list(first_pattern.finditer(stem))) < 2:
+            self._linked_dual_tail_context_cache[stem] = None
             return None
 
         key_with_second_placeholder = f"{stem[:second.start()]}{{B}}"
         family_key = first_pattern.sub('{A}', key_with_second_placeholder)
 
-        return {
+        context = {
             'first_token': first_token,
             'second_token': second_token,
             'first_pattern': first_pattern,
             'second_span': (second.start(), second.end()),
             'family_key': family_key,
         }
+        self._linked_dual_tail_context_cache[stem] = context
+        return context
 
     def _build_linked_dual_tail_values(self, entries):
         values = {}
@@ -642,18 +662,27 @@ class PathCollector:
                 if generated >= max_combinations:
                     return
 
-    def _iter_numeric_stem_combinations(self, stem):
+    def _iter_numeric_stem_combinations(self, stem, family_scope=None):
         number_matches = list(re.finditer(r'\d+', stem))
         if not number_matches:
             yield stem
             return
 
         seen = set()
+        processed_numeric_families = self._processed_numeric_replacement_families
+        processed_power_families = self._processed_power_of_two_families
 
         seen.add(stem)
         yield stem
 
         for match in number_matches:
+            family_key = self._numeric_replacement_family_key(stem, match)
+            scoped_family_key = (family_scope, family_key)
+            if processed_numeric_families is not None:
+                if scoped_family_key in processed_numeric_families:
+                    continue
+                processed_numeric_families.add(scoped_family_key)
+
             for value in self._iter_number_values(match.group(0)):
                 candidate = self._replace_match_number(stem, match, value)
                 if candidate not in seen:
@@ -668,7 +697,20 @@ class PathCollector:
         for match in number_matches:
             if not self._is_power_of_two_token(match.group(0)):
                 continue
+            family_key = self._numeric_replacement_family_key(stem, match)
+            scoped_family_key = (family_scope, family_key)
+            if processed_power_families is not None:
+                if scoped_family_key in processed_power_families:
+                    continue
+                processed_power_families.add(scoped_family_key)
+
+            skip_values_up_to = None
+            if processed_numeric_families is not None and scoped_family_key in processed_numeric_families:
+                skip_values_up_to = family_key[2]
+
             for value in POWER_OF_TWO_VALUES:
+                if skip_values_up_to is not None and value <= skip_values_up_to:
+                    continue
                 candidate = self._replace_match_number(stem, match, value)
                 if candidate not in seen:
                     seen.add(candidate)
@@ -903,41 +945,72 @@ class PathCollector:
 
         return True, None, pak_hashes
 
-    def _iter_improver_candidates(self, stem, extension, suffixes, on_base_candidate=None):
+    def _iter_improver_candidates(self, stem, extension, suffix_infos, on_base_candidate=None):
         stem_iter = self._iter_tex_stem_variants(stem, extension)
 
         for variant_stem in stem_iter:
             if self.include_tex_variants or self.include_extension_swaps:
                 numeric_iter = [variant_stem]
             else:
-                numeric_iter = self._iter_numeric_stem_combinations(variant_stem)
+                numeric_iter = self._iter_numeric_stem_combinations(variant_stem, family_scope=suffix_infos)
             for numeric_stem in numeric_iter:
-                for suffix in suffixes:
+                for suffix, suffix_extension in suffix_infos:
                     if on_base_candidate:
-                        on_base_candidate(numeric_stem, self._suffix_extension(suffix))
+                        on_base_candidate(numeric_stem, suffix_extension)
                     base_candidate = f"{numeric_stem}.{suffix}"
-                    for candidate in self._iter_expanded_variants(base_candidate):
-                        yield candidate
+                    if not self.include_variations and not self.include_streaming:
+                        yield base_candidate
+                    else:
+                        for candidate in self._iter_expanded_variants(base_candidate):
+                            yield candidate
 
     def _iter_expanded_variants(self, base_candidate):
-        candidates = [base_candidate]
+        yield base_candidate
+
+        if self.include_variations:
+            for variation_suffix in VARIATION_SUFFIXES:
+                if not base_candidate.endswith(variation_suffix):
+                    yield f"{base_candidate}{variation_suffix}"
 
         if self.include_streaming:
             prefix = self.path_prefix.lower()
             streaming_prefix = f"{prefix}streaming/"
             if base_candidate.startswith(prefix) and not base_candidate.startswith(streaming_prefix):
-                candidates.append(f"{streaming_prefix}{base_candidate[len(prefix):]}")
+                streaming_candidate = f"{streaming_prefix}{base_candidate[len(prefix):]}"
+                yield streaming_candidate
+                if self.include_variations:
+                    for variation_suffix in VARIATION_SUFFIXES:
+                        if not streaming_candidate.endswith(variation_suffix):
+                            yield f"{streaming_candidate}{variation_suffix}"
 
-        for candidate in candidates:
-            yield candidate
-            if self.include_variations:
-                for variation_suffix in VARIATION_SUFFIXES:
-                    if not candidate.endswith(variation_suffix):
-                        yield f"{candidate}{variation_suffix}"
+    def _get_improver_suffix_infos(self, extension, suffix_info_cache):
+        suffix_infos = suffix_info_cache.get(extension)
+        if suffix_infos is None:
+            suffix_infos = tuple(
+                (suffix, self._suffix_extension(suffix))
+                for suffix in self._iter_improver_suffixes(extension)
+            )
+            suffix_info_cache[extension] = suffix_infos
+        return suffix_infos
+
+    def _can_fast_hash_generated_candidates(self):
+        return (
+            self.path_prefix.islower()
+            and '\\' not in self.path_prefix
+            and '//' not in self.path_prefix
+            and self.path_prefix == self.path_prefix.strip()
+        )
+
+    def _is_cross_game_version_swap_mode(self, override_prefix):
+        return (
+            override_prefix
+            and not self.include_tex_variants
+            and not self.include_extension_swaps
+        )
 
     def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None, override_prefix=False):
         try:
-            from file_handlers.pak.utils import filepath_hash
+            from file_handlers.pak.utils import filepath_hash, murmur3_hash
 
             if not os.path.exists(list_file_path):
                 return False, f"List file not found: {list_file_path}", None, set()
@@ -947,41 +1020,139 @@ class PathCollector:
             if not entries:
                 return False, "No valid list entries found to improve", None, set()
 
-            self._linked_dual_tail_values = self._build_linked_dual_tail_values(entries)
+            version_swap_only = self._is_cross_game_version_swap_mode(override_prefix)
+            if version_swap_only:
+                self._linked_dual_tail_values = {}
+            else:
+                self._linked_dual_tail_context_cache.clear()
+                self._linked_dual_tail_values = self._build_linked_dual_tail_values(entries)
 
             ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
             if not ok:
                 return False, error, None, set()
 
-            validated_paths = set()
-            generated_candidates = 0
-            remaining_entries = set(entries)
+            self._processed_numeric_replacement_families = None if version_swap_only else set()
+            self._processed_power_of_two_families = None if version_swap_only else set()
+            try:
+                validated_paths = set()
+                generated_candidates = 0
+                remaining_entries_by_extension = defaultdict(set)
+                for remaining_stem, remaining_extension in entries:
+                    remaining_entries_by_extension[remaining_extension].add(remaining_stem)
+                suffix_info_cache = {}
 
-            progress_update_interval = 5000
+                progress_update_interval = 5000
+                progress_entry_update_interval = 100
+                if self._can_fast_hash_generated_candidates():
+                    def candidate_hash_func(candidate, murmur3_hash=murmur3_hash):
+                        lower = murmur3_hash(candidate.encode("utf-16le")) & 0xFFFFFFFF
+                        upper = murmur3_hash(candidate.upper().encode("utf-16le")) & 0xFFFFFFFF
+                        return ((upper << 32) | lower) & 0xFFFFFFFFFFFFFFFF
+                else:
+                    candidate_hash_func = filepath_hash
+                use_direct_base_candidates = (
+                    not self.include_tex_variants
+                    and not self.include_extension_swaps
+                    and not self.include_variations
+                    and not self.include_streaming
+                )
+                use_version_swap_candidates = version_swap_only
 
-            for idx, (stem, extension) in enumerate(entries, 1):
-                current_entry = (stem, extension)
-                if current_entry not in remaining_entries:
-                    continue
+                for idx, (stem, extension) in enumerate(entries, 1):
+                    remaining_stems = remaining_entries_by_extension.get(extension)
+                    if not remaining_stems or stem not in remaining_stems:
+                        continue
 
-                remaining_entries.discard(current_entry)
-                suffixes = list(self._iter_improver_suffixes(extension))
-                generated_in_entry = 0
+                    remaining_stems.discard(stem)
+                    suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
+                    generated_in_entry = 0
 
-                def consume_matching_entry(candidate_stem, candidate_extension):
-                    remaining_entries.discard((candidate_stem, candidate_extension))
+                    if use_version_swap_candidates:
+                        for suffix, suffix_extension in suffix_infos:
+                            remaining_candidate_stems = remaining_entries_by_extension.get(suffix_extension)
+                            if remaining_candidate_stems:
+                                remaining_candidate_stems.discard(stem)
 
-                for candidate in self._iter_improver_candidates(stem, extension, suffixes, on_base_candidate=consume_matching_entry):
-                    generated_candidates += 1
-                    generated_in_entry += 1
-                    candidate_hash = filepath_hash(candidate)
-                    if candidate_hash in pak_hashes:
-                        validated_paths.add(candidate)
-                        pak_hashes.discard(candidate_hash)
+                            candidate = f"{stem}.{suffix}"
+                            generated_candidates += 1
+                            generated_in_entry += 1
+                            candidate_hash = candidate_hash_func(candidate)
+                            if candidate_hash in pak_hashes:
+                                validated_paths.add(candidate)
+                                pak_hashes.discard(candidate_hash)
+                                if not pak_hashes:
+                                    break
 
-                    if progress_callback and generated_in_entry % progress_update_interval == 0:
+                            if progress_callback and generated_in_entry % progress_update_interval == 0:
+                                progress_callback(
+                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                                    f"Generated in current entry: {generated_in_entry}\n"
+                                    f"Generated so far: {generated_candidates}\n"
+                                    f"Valid so far: {len(validated_paths)}",
+                                    idx,
+                                    len(entries)
+                                )
+                    elif use_direct_base_candidates:
+                        for numeric_stem in self._iter_numeric_stem_combinations(stem, family_scope=suffix_infos):
+                            for suffix, suffix_extension in suffix_infos:
+                                remaining_candidate_stems = remaining_entries_by_extension.get(suffix_extension)
+                                if remaining_candidate_stems:
+                                    remaining_candidate_stems.discard(numeric_stem)
+
+                                candidate = f"{numeric_stem}.{suffix}"
+                                generated_candidates += 1
+                                generated_in_entry += 1
+                                candidate_hash = candidate_hash_func(candidate)
+                                if candidate_hash in pak_hashes:
+                                    validated_paths.add(candidate)
+                                    pak_hashes.discard(candidate_hash)
+                                    if not pak_hashes:
+                                        break
+
+                                if progress_callback and generated_in_entry % progress_update_interval == 0:
+                                    progress_callback(
+                                        f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                                        f"Generated in current entry: {generated_in_entry}\n"
+                                        f"Generated so far: {generated_candidates}\n"
+                                        f"Valid so far: {len(validated_paths)}",
+                                        idx,
+                                        len(entries)
+                                    )
+                            if not pak_hashes:
+                                break
+                    else:
+                        def consume_matching_entry(candidate_stem, candidate_extension):
+                            remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
+                            if remaining_candidate_stems:
+                                remaining_candidate_stems.discard(candidate_stem)
+
+                        for candidate in self._iter_improver_candidates(stem, extension, suffix_infos, on_base_candidate=consume_matching_entry):
+                            generated_candidates += 1
+                            generated_in_entry += 1
+                            candidate_hash = candidate_hash_func(candidate)
+                            if candidate_hash in pak_hashes:
+                                validated_paths.add(candidate)
+                                pak_hashes.discard(candidate_hash)
+                                if not pak_hashes:
+                                    break
+
+                            if progress_callback and generated_in_entry % progress_update_interval == 0:
+                                progress_callback(
+                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                                    f"Generated in current entry: {generated_in_entry}\n"
+                                    f"Generated so far: {generated_candidates}\n"
+                                    f"Valid so far: {len(validated_paths)}",
+                                    idx,
+                                    len(entries)
+                                )
+
+                    if progress_callback and (
+                        generated_in_entry >= progress_update_interval
+                        or idx % progress_entry_update_interval == 0
+                        or idx == len(entries)
+                    ):
                         progress_callback(
-                            f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                            f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension}) complete\n"
                             f"Generated in current entry: {generated_in_entry}\n"
                             f"Generated so far: {generated_candidates}\n"
                             f"Valid so far: {len(validated_paths)}",
@@ -989,25 +1160,19 @@ class PathCollector:
                             len(entries)
                         )
 
-                if progress_callback:
-                    progress_callback(
-                        f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension}) complete\n"
-                        f"Generated in current entry: {generated_in_entry}\n"
-                        f"Generated so far: {generated_candidates}\n"
-                        f"Valid so far: {len(validated_paths)}",
-                        idx,
-                        len(entries)
-                    )
+                    if not pak_hashes:
+                        break
 
-                if not pak_hashes:
-                    break
-
-            stats = {
-                'source_entries': len(entries),
-                'generated_candidates': generated_candidates,
-                'validated_paths': len(validated_paths),
-            }
-            return True, None, stats, validated_paths
+                stats = {
+                    'source_entries': len(entries),
+                    'generated_candidates': generated_candidates,
+                    'validated_paths': len(validated_paths),
+                }
+                return True, None, stats, validated_paths
+            finally:
+                self._linked_dual_tail_context_cache.clear()
+                self._processed_numeric_replacement_families = None
+                self._processed_power_of_two_families = None
         except Exception as e:
             return False, f"List improver error: {e}", None, set()
 

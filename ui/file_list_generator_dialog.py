@@ -548,7 +548,7 @@ class FileListGeneratorDialog(QDialog):
             QMessageBox.Yes
         ) == QMessageBox.Yes
 
-    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False):
+    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False, keep_source_paths=True):
         if not source_list_path:
             QMessageBox.warning(self, "No List File", "Please select a source list file first.")
             return
@@ -606,7 +606,7 @@ class FileListGeneratorDialog(QDialog):
             return
 
         export_paths = set(validated_paths)
-        source_paths = self._read_list_paths(source_list_path)
+        source_paths = self._read_list_paths(source_list_path) if keep_source_paths else set()
         source_path_count = len(source_paths)
         export_paths.update(source_paths)
 
@@ -621,13 +621,14 @@ class FileListGeneratorDialog(QDialog):
             QMessageBox.critical(self, EXPORT_ERROR_TITLE, f"Failed to export improved list:\n\n{error}")
             return
 
-        append_summary = (
-            f"Source list paths kept: {source_path_count}\n"
-            f"Final exported paths: {len(export_paths)}\n"
-        )
+        summary_lines = []
+        if keep_source_paths:
+            summary_lines.append(f"Source list paths kept: {source_path_count}")
         if append_from_list_path:
-            append_summary += f"Base list paths kept: {base_path_count}\n"
-        append_summary += "\n"
+            base_label = "Existing list paths kept" if not keep_source_paths else "Base list paths kept"
+            summary_lines.append(f"{base_label}: {base_path_count}")
+        summary_lines.append(f"Final exported paths: {len(export_paths)}")
+        append_summary = "\n".join(summary_lines) + "\n\n"
 
         QMessageBox.information(
             self,
@@ -693,7 +694,9 @@ class FileListGeneratorDialog(QDialog):
             title="Cross-Game List Improver",
             override_prefix=True,
             append_from_list_path=self.list_file_path,
-            include_tex_variants=False
+            ignore_extra_options=True,
+            include_tex_variants=False,
+            keep_source_paths=False
         )
 
     def _extract_paths_from_exe(self):
