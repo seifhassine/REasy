@@ -11,7 +11,7 @@ CONFIG_NAME = ".reasy_project.json"
 
 def project_config_path(project_dir: Path | str) -> Path:
     path = (Path(project_dir).resolve() / CONFIG_NAME).resolve()
-    path.relative_to(PROJECTS_ROOT.resolve())
+    if not path.is_relative_to(PROJECTS_ROOT.resolve()): raise ValueError("Invalid project path")
     return path
 
 
@@ -27,7 +27,7 @@ def load_project_config(project_dir: Path | str) -> dict:
 
 def save_project_config(project_dir: Path | str, config: Mapping[str, object]) -> None:
     path = project_config_path(project_dir)
-    path.relative_to(PROJECTS_ROOT.resolve())
+    if not path.is_relative_to(PROJECTS_ROOT.resolve()): raise ValueError("Invalid project path")
     path.write_text(json.dumps(dict(config), indent=2), encoding="utf-8")
 
 def update_project_config(project_dir: Path | str, updates: Mapping[str, object]) -> None:
