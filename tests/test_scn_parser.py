@@ -25,6 +25,7 @@ from file_handlers.rsz.rsz_file import RszFile
 # ───────────────────────── game‑table ─────────────────────────
 GAME_CONFIGS = {
     "mhwilds":{"registry_json": "rszmhwilds.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
+    "oniwots":{"registry_json": "rszoniwots.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "pragmata":{"registry_json": "rszpragmata.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "kunitsugami":{"registry_json": "rszkunitsugami.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"]},
     "mhst3":{"registry_json": "rszmhst3.json",   "scn_exts": [".21"], "usr_exts": [".3"],  "pfb_exts": [".18"],
