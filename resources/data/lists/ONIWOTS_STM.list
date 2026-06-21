@@ -4945,6 +4945,7 @@ natives/stm/art/model/item/it6/it642_0000/textures/it642_0000_00_a_03_nrmr.tex.2
 natives/stm/art/model/item/it6/it642_0000/textures/it642_0000_00_a_04_albd.tex.251111100
 natives/stm/art/model/item/it6/it642_0000/textures/it642_0000_00_a_04_mat__p_env_base_ghost_ghost_msk1.tex.251111100
 natives/stm/art/model/item/it6/it642_0000/textures/it642_0000_00_a_04_nrmr.tex.251111100
+natives/stm/art/model/slash_lodsettings.lod.4
 natives/stm/art/model/stagemodel/sm11/sm11_0000/sm11_0000_01.stmesh.260116225
 natives/stm/art/model/stagemodel/sm11/sm11_0000/sm11_0000_01_a.mdf2.50
 natives/stm/art/model/stagemodel/sm11/sm11_0000/textures/sm11_0000_00_cluster_0000_albd.tex.251111100
@@ -10097,6 +10098,7 @@ natives/stm/art/stage/st201/st201_002/st201_002_spline04_mesh.sdftex.501527429
 natives/stm/art/stage/st201/st201_dynamictexturesetdata.user.3
 natives/stm/art/stage/st201/st201_vsm_shm_msk2.tex.251111100
 natives/stm/art/vfx/cameradummyskeleton.skeleton.7
+natives/stm/art/vfx/collision.fxct.4
 natives/stm/art/vfx/effecteditor/common/attack/19_attack_00_002.efx.5834247
 natives/stm/art/vfx/effecteditor/common/attack/19_attack_01_000.efx.5834247
 natives/stm/art/vfx/effecteditor/common/attack/19_attack_01_001.efx.5834247
@@ -11150,6 +11152,7 @@ natives/stm/art/vfx/effecteditor/weapon/wp00_000/19_wp000_001_001.efx.5834247
 natives/stm/art/vfx/effecteditor/weapon/wp00_000/19_wp000_001_002.efx.5834247
 natives/stm/art/vfx/effecteditor/weapon/wp00_000/19_wp000_001_010.efx.5834247
 natives/stm/art/vfx/effecteditor/weapon/wp00_000/19_wp000_001_011.efx.5834247
+natives/stm/art/vfx/effectemitmask.eem.0
 natives/stm/art/vfx/effectprovider/common/epvr_common.pfb.18
 natives/stm/art/vfx/effectprovider/enemy/em100/80_epvs_em100_shell.pfb.18
 natives/stm/art/vfx/effectprovider/enemy/em100/epvr_em100_00_shell.pfb.18
@@ -12836,6 +12839,7 @@ natives/stm/art/vfx/vsdf/ribbontotfco.vsdf.251112820
 natives/stm/art/vfx/vsdf/ribbontotffm.vsdf.251112820
 natives/stm/art/vfx/vsdf/ribbontotffmqd.vsdf.251112820
 natives/stm/art/vfx/vsdf/ribbontotfqd.vsdf.251112820
+natives/stm/art/vfx/vsdf/vfxshaderlist.vsdflist.1
 natives/stm/boot/masterscene.scn.21
 natives/stm/gamedesign/action/ai/btable/orderlist/aiactioncommonbtableorderlist.user.3
 natives/stm/gamedesign/action/ai/btable/orderlist/commoncheckbtableorderlist.user.3
@@ -17410,6 +17414,7 @@ natives/stm/gamedesign/system/setting/cameramanagersetting.user.3
 natives/stm/gamedesign/system/setting/ccspassthroughsetting.user.3
 natives/stm/gamedesign/system/setting/chainmanagersetting.user.3
 natives/stm/gamedesign/system/setting/clothmanagersetting.user.3
+natives/stm/gamedesign/system/setting/collision/definition/common.cdef.7
 natives/stm/gamedesign/system/setting/collision/filter/character/attack_chain.cfil.7
 natives/stm/gamedesign/system/setting/collision/filter/character/chain_terrain.cfil.7
 natives/stm/gamedesign/system/setting/collision/filter/character/chain_terrain_character.cfil.7
@@ -17438,6 +17443,7 @@ natives/stm/gamedesign/system/setting/collision/press/pressweightunique.user.3
 natives/stm/gamedesign/system/setting/cpuscorecalculatedata.user.3
 natives/stm/gamedesign/system/setting/dialoguemanagersetting.user.3
 natives/stm/gamedesign/system/setting/dualheightfieldtrailsettingbase.user.3
+natives/stm/gamedesign/system/setting/dynamics/definition/common.def.6
 natives/stm/gamedesign/system/setting/dynamics/filter/common/groundmanagerhitterrain.finf.2
 natives/stm/gamedesign/system/setting/eventmanagersetting.user.3
 natives/stm/gamedesign/system/setting/foliagemanagersetting.user.3
@@ -17451,9 +17457,12 @@ natives/stm/gamedesign/system/setting/graphicssettingusedvramsize.user.3
 natives/stm/gamedesign/system/setting/growthnode/growthnodegraph_pl000.user.3
 natives/stm/gamedesign/system/setting/itemadditionalparam.user.3
 natives/stm/gamedesign/system/setting/meshmanagersetting.user.3
+natives/stm/gamedesign/system/setting/network/networkconfig.ncf.11
 natives/stm/gamedesign/system/setting/passthroughsettinglist.user.3
 natives/stm/gamedesign/system/setting/pointgraphmanagersetting.user.3
 natives/stm/gamedesign/system/setting/posteffectmanagerbasesetting.user.3
+natives/stm/gamedesign/system/setting/rebe/prd-tmbti-p-ww.rcf.7
+natives/stm/gamedesign/system/setting/shadertimer/shadertimersetting.sts.1
 natives/stm/gamedesign/system/setting/speedtreemanagersetting.user.3
 natives/stm/gamedesign/system/setting/variousdatamanagersetting.user.3
 natives/stm/gamedesign/system/setting/vortexelgeometrymanagersetting.user.3
@@ -18809,6 +18818,7 @@ natives/stm/materialshader/master/ui/material/mat_dead_glass01_02.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_distortedline.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_emblem.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_guide_press.mdf2.50
+natives/stm/materialshader/master/ui/material/mat_guisrgbtex_colordeficiencyfilter.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_map_icon_effect.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_miasma.mdf2.50
 natives/stm/materialshader/master/ui/material/mat_movie_drawer.mdf2.50
@@ -18849,6 +18859,7 @@ natives/stm/materialshader/master/vfx/vfx_transparent_inverse.mmtr.251112814
 natives/stm/materialshader/master/vfx/vfx_transparent_uber.mmtr.251112814
 natives/stm/materialshader/master/vfx/vfx_uvscroll_uber.mmtr.251112814
 natives/stm/materialshader/master/vfx/vfx_wetdecal.mmtr.251112814
+natives/stm/materialshader/raytracematerialredirect_sla.rtmr.7
 natives/stm/materialshader/sss_profile/base_sss_prof_001.sss.6
 natives/stm/materialshader/texture/blood_gradation.tex.251111100
 natives/stm/materialshader/texture/blood_sample_msk3.tex.251111100
@@ -20246,11 +20257,13 @@ natives/stm/motion/talk/pl/body/talk_stand_pl_gesture_ub/talk_stand_pl_gesture_u
 natives/stm/re_engine_library/gui/mastermaterial/lib_guisrgbtex.mmtr.251112814
 natives/stm/re_engine_library/gui/mastermaterial/lib_guitexeditoralpha.mmtr.251112814
 natives/stm/re_engine_library/gui/material/lib_guisrgbtex.mdf2.50
+natives/stm/re_engine_library/gui/material/lib_guitexeditoralpha.mdf2.50
 natives/stm/re_engine_library/materialshader/mastermaterial/master/env_alpha.mmtr.251112814
 natives/stm/re_engine_library/utility/barcode2d/lib_barcode2d28x128.gpbf.3
 natives/stm/re_engine_library/utility/barcode2d/lib_barcode2dtortt.mdf2.50
 natives/stm/re_engine_library/utility/barcode2d/lib_barcode2dtortt.mmtr.251112814
 natives/stm/re_engine_library/vfx_library/texture/tex_vectorfield/tex_capcom_vectorfield_0003_msk4.tex.251111100
+natives/stm/sound/hdvibration_mixer.amix.3
 natives/stm/sound/memorysettings.swms.1
 natives/stm/sound/prefab/environment/soundrainypos.pfb.18
 natives/stm/sound/prefab/gui/snd_gui_language.pfb.18
@@ -29097,6 +29110,7 @@ natives/stm/systems/develop/ecotope/v20/_v20.mmtr.251112814
 natives/stm/systems/develop/ecotope/v30/_v30_template.mmtr.251112814
 natives/stm/systems/develop/ecotopemapbaker.sdf.251112814
 natives/stm/systems/develop/geometrybrush.sdf.251112814
+natives/stm/systems/develop/geometrybrushdummyrmesh.rmesh.26013
 natives/stm/systems/develop/ground/defaultheightmap.tex.251111100
 natives/stm/systems/develop/landform.sdf.251112814
 natives/stm/systems/develop/meshshader/tess/config.gpbf.3
