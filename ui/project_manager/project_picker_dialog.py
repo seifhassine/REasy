@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 from PySide6.QtCore import QEvent, Qt, QSize
 from PySide6.QtGui import QColor, QFont, QPixmap
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSplitter,
     QTreeWidget,
@@ -97,6 +99,7 @@ class ProjectPickerDialog(QDialog):
         games: Sequence[str],
         *,
         current_project: str | None = None,
+        on_project_deleted: Callable[[Path], None] | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -112,6 +115,7 @@ class ProjectPickerDialog(QDialog):
         self._selected: ProjectEntry | None = None
         self._wants_new_project = False
         self._preferred_path = Path(current_project).resolve() if current_project else None
+        self._on_project_deleted = on_project_deleted
         self._drag_offset = None
 
         root = QVBoxLayout(self)
@@ -233,11 +237,15 @@ class ProjectPickerDialog(QDialog):
 
         buttons = QDialogButtonBox(QDialogButtonBox.Cancel, self)
         self.new_btn = buttons.addButton(self.tr("New Project..."), QDialogButtonBox.ActionRole)
+        self.delete_btn = buttons.addButton(self.tr("Delete"), QDialogButtonBox.ActionRole)
         self.open_btn = buttons.addButton(self.tr("Open"), QDialogButtonBox.AcceptRole)
         self.new_btn.setObjectName("secondaryButton")
+        self.delete_btn.setObjectName("dangerButton")
         self.open_btn.setObjectName("primaryButton")
+        self.delete_btn.setEnabled(False)
         self.open_btn.setEnabled(False)
         self.new_btn.clicked.connect(self._new_project)
+        self.delete_btn.clicked.connect(self._delete_selected)
         self.open_btn.clicked.connect(self._open_selected)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
@@ -358,6 +366,7 @@ class ProjectPickerDialog(QDialog):
         entry = self._entry_by_path.get(key) if isinstance(key, str) else None
         self._selected = entry
         self.open_btn.setEnabled(entry is not None)
+        self.delete_btn.setEnabled(entry is not None)
 
         if entry is None:
             self.preview.clear()
@@ -412,6 +421,39 @@ class ProjectPickerDialog(QDialog):
     def _new_project(self):
         self._wants_new_project = True
         self.accept()
+
+    def _delete_selected(self):
+        entry = self._selected
+        if entry is None:
+            return
+
+        root = self.projects_root.resolve()
+        path = entry.path.resolve()
+        if path == root or not path.is_relative_to(root):
+            QMessageBox.warning(self, self.tr("Delete project"), self.tr("Invalid project path."))
+            return
+
+        answer = QMessageBox.question(
+            self,
+            self.tr("Delete project?"),
+            self.tr("Delete project \"{}\"?\n\nThis will permanently remove:\n{}").format(entry.name, path),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+
+        try:
+            shutil.rmtree(path)
+        except Exception as exc:
+            QMessageBox.critical(self, self.tr("Delete failed"), str(exc))
+            return
+
+        if self._preferred_path and path == self._preferred_path:
+            self._preferred_path = None
+        if self._on_project_deleted:
+            self._on_project_deleted(path)
+        self.refresh()
 
     def _project_count_label(self, count: int) -> str:
         return self.tr("{} project").format(count) if count == 1 else self.tr("{} projects").format(count)
@@ -520,6 +562,11 @@ class ProjectPickerDialog(QDialog):
                 background-color: {colors['disabled_bg']};
                 border-color: {border};
                 color: {muted};
+            }}
+            QPushButton#dangerButton:hover {{
+                background-color: #c42b1c;
+                border-color: #c42b1c;
+                color: white;
             }}
             QTreeWidget#projectTree {{
                 background-color: {surface};

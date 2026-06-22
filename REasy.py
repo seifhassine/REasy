@@ -1419,6 +1419,7 @@ class REasyEditorApp(QMainWindow):
             PROJECTS_ROOT,
             GAMES,
             current_project=self.current_project,
+            on_project_deleted=self._on_project_deleted,
             parent=self,
         )
         if dlg.exec() != QDialog.Accepted:
@@ -1433,6 +1434,10 @@ class REasyEditorApp(QMainWindow):
             return
 
         self._open_project_path(entry.path, entry.game)
+
+    def _on_project_deleted(self, project_path: Path):
+        if self.current_project and Path(self.current_project).resolve() == project_path.resolve():
+            self.close_project()
 
     def _open_project_path(self, project_path: Path | str, game: str | None = None):
         project_path = Path(project_path).resolve()
