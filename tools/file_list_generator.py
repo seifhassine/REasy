@@ -3,6 +3,7 @@ import io
 import re
 import mmap
 from collections import defaultdict
+from enum import Enum
 
 from utils.native_build import ensure_fast_string_scan
 
@@ -78,6 +79,14 @@ SMART_NUMERIC_GAP_LIMIT = 12
 SMART_NUMERIC_BOUNDARY_SIZE = 24
 SMART_NUMERIC_PROBE_STEP = 16
 SMART_NUMERIC_EXHAUSTIVE_OBSERVED_THRESHOLD = 24
+
+
+class ImproverMode(Enum):
+    NUMERIC = "numeric"
+    TEX_VARIANTS = "tex_variants"
+    EXTENSION_SWAPS = "extension_swaps"
+    TEX_MDF2_MESH_SWAPS = "tex_mdf2_mesh_swaps"
+    CROSS_GAME_VERSION_SWAPS = "cross_game_version_swaps"
 
 
 def expand_with_variations(paths):
@@ -386,9 +395,7 @@ class PathCollector:
         path_prefix="natives/stm/",
         include_variations=False,
         include_streaming=False,
-        include_tex_variants=False,
-        include_extension_swaps=False,
-        include_tex_mdf2_mesh_swaps=False
+        improver_mode=ImproverMode.NUMERIC
     ):
         self.extensions = [ext.lower() for ext in extensions]
         self._extension_suffixes = tuple(f'.{ext}' for ext in self.extensions)
@@ -400,9 +407,7 @@ class PathCollector:
         self.collected_paths = set()
         self.include_variations = include_variations
         self.include_streaming = include_streaming
-        self.include_tex_variants = include_tex_variants
-        self.include_extension_swaps = include_extension_swaps
-        self.include_tex_mdf2_mesh_swaps = include_tex_mdf2_mesh_swaps
+        self.improver_mode = ImproverMode(improver_mode)
         self._linked_dual_tail_values = {}
         self._linked_dual_tail_context_cache = {}
         self._processed_numeric_replacement_families = None
@@ -493,7 +498,7 @@ class PathCollector:
         return suffix.split('.', 1)[0].lower()
 
     def _iter_improver_suffixes(self, source_extension):
-        if not self.include_extension_swaps:
+        if self.improver_mode is not ImproverMode.EXTENSION_SWAPS:
             yield from self._iter_extension_suffixes(source_extension)
             return
 
@@ -870,8 +875,7 @@ class PathCollector:
         return stem, None
 
     def _iter_tex_stem_variants(self, stem, extension):
-        if extension != 'tex' or not self.include_tex_variants:
-            yield stem
+        if self.improver_mode is not ImproverMode.TEX_VARIANTS or extension != 'tex':
             return
 
         base_stem, used_variant = self._split_tex_stem_variant(stem)
@@ -1087,47 +1091,25 @@ class PathCollector:
 
         return True, None, pak_hashes
 
-    def _iter_improver_candidates(self, stem, extension, suffix_infos, on_base_candidate=None):
-        stem_iter = self._iter_tex_stem_variants(stem, extension)
+    def _iter_improver_candidates(self, stem, extension, suffix_infos):
+        if self.improver_mode is ImproverMode.TEX_VARIANTS:
+            stem_iter = self._iter_tex_stem_variants(stem, extension)
+        elif self.improver_mode is ImproverMode.NUMERIC:
+            stem_iter = self._iter_numeric_stem_combinations(
+                stem,
+                family_scope=suffix_infos,
+                source_extension=extension
+            )
+        else:
+            stem_iter = (stem,)
 
-        for variant_stem in stem_iter:
-            if self.include_tex_variants or self.include_extension_swaps:
-                numeric_iter = [variant_stem]
-            else:
-                numeric_iter = self._iter_numeric_stem_combinations(
-                    variant_stem,
-                    family_scope=suffix_infos,
-                    source_extension=extension
+        for candidate_stem in stem_iter:
+            for suffix, suffix_extension in suffix_infos:
+                yield (
+                    f"{candidate_stem}.{suffix}",
+                    candidate_stem,
+                    suffix_extension
                 )
-            for numeric_stem in numeric_iter:
-                for suffix, suffix_extension in suffix_infos:
-                    if on_base_candidate:
-                        on_base_candidate(numeric_stem, suffix_extension)
-                    base_candidate = f"{numeric_stem}.{suffix}"
-                    if not self.include_variations and not self.include_streaming:
-                        yield base_candidate
-                    else:
-                        for candidate in self._iter_expanded_variants(base_candidate):
-                            yield candidate
-
-    def _iter_expanded_variants(self, base_candidate):
-        yield base_candidate
-
-        if self.include_variations:
-            for variation_suffix in VARIATION_SUFFIXES:
-                if not base_candidate.endswith(variation_suffix):
-                    yield f"{base_candidate}{variation_suffix}"
-
-        if self.include_streaming:
-            prefix = self.path_prefix.lower()
-            streaming_prefix = f"{prefix}streaming/"
-            if base_candidate.startswith(prefix) and not base_candidate.startswith(streaming_prefix):
-                streaming_candidate = f"{streaming_prefix}{base_candidate[len(prefix):]}"
-                yield streaming_candidate
-                if self.include_variations:
-                    for variation_suffix in VARIATION_SUFFIXES:
-                        if not streaming_candidate.endswith(variation_suffix):
-                            yield f"{streaming_candidate}{variation_suffix}"
 
     def _get_improver_suffix_infos(self, extension, suffix_info_cache):
         suffix_infos = suffix_info_cache.get(extension)
@@ -1164,20 +1146,25 @@ class PathCollector:
 
     def _iter_tex_mdf2_mesh_candidates(self, stem, extension, suffix_infos):
         base_stem = self._split_tex_stem_variant(stem)[0] if extension == 'tex' else stem
-        yielded = set()
         for suffix, suffix_extension in suffix_infos:
+            candidate_stems = [base_stem]
             if suffix_extension == 'tex':
-                candidate_stems = [base_stem]
-                candidate_stems.extend(f"{base_stem}{tex_suffix}" for tex_suffix in UNIQUE_TEX_VARIANT_SUFFIXES)
-            else:
-                candidate_stems = [base_stem]
+                candidate_stems.extend(
+                    f"{base_stem}{tex_suffix}"
+                    for tex_suffix in UNIQUE_TEX_VARIANT_SUFFIXES
+                )
 
             for candidate_stem in candidate_stems:
-                candidate = f"{candidate_stem}.{suffix}"
-                if candidate in yielded:
-                    continue
-                yielded.add(candidate)
-                yield candidate, candidate_stem, suffix_extension
+                yield f"{candidate_stem}.{suffix}", candidate_stem, suffix_extension
+
+    def _iter_mode_candidates(self, stem, extension, suffix_info_cache):
+        if self.improver_mode is ImproverMode.TEX_MDF2_MESH_SWAPS:
+            suffix_infos = self._get_tex_mdf2_mesh_suffix_infos(extension, suffix_info_cache)
+            yield from self._iter_tex_mdf2_mesh_candidates(stem, extension, suffix_infos)
+            return
+
+        suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
+        yield from self._iter_improver_candidates(stem, extension, suffix_infos)
 
     def _can_fast_hash_generated_candidates(self):
         return (
@@ -1187,36 +1174,21 @@ class PathCollector:
             and self.path_prefix == self.path_prefix.strip()
         )
 
-    def _is_cross_game_version_swap_mode(self, override_prefix):
-        return (
-            override_prefix
-            and not self.include_tex_variants
-            and not self.include_extension_swaps
-        )
-
-    def _is_tex_mdf2_mesh_swap_mode(self, override_prefix):
-        return (
-            not override_prefix
-            and self.include_tex_mdf2_mesh_swaps
-            and not self.include_tex_variants
-            and not self.include_extension_swaps
-        )
-
-    def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None, override_prefix=False):
+    def improve_list_with_chunked_validation(self, list_file_path, pak_directory, progress_callback=None):
         try:
             from file_handlers.pak.utils import filepath_hash, murmur3_hash
 
             if not os.path.exists(list_file_path):
                 return False, f"List file not found: {list_file_path}", None, set()
 
+            override_prefix = self.improver_mode is ImproverMode.CROSS_GAME_VERSION_SWAPS
             entries = sorted(self._collect_improver_entries(list_file_path, override_prefix=override_prefix))
 
             if not entries:
                 return False, "No valid list entries found to improve", None, set()
 
-            version_swap_only = self._is_cross_game_version_swap_mode(override_prefix)
-            tex_mdf2_mesh_swap_only = self._is_tex_mdf2_mesh_swap_mode(override_prefix)
-            if version_swap_only or tex_mdf2_mesh_swap_only:
+            uses_numeric_generation = self.improver_mode is ImproverMode.NUMERIC
+            if not uses_numeric_generation:
                 self._linked_dual_tail_values = {}
             else:
                 self._linked_dual_tail_context_cache.clear()
@@ -1226,12 +1198,11 @@ class PathCollector:
             if not ok:
                 return False, error, None, set()
 
-            simple_swap_only = version_swap_only or tex_mdf2_mesh_swap_only
-            self._processed_numeric_replacement_families = None if simple_swap_only else set()
-            self._processed_power_of_two_families = None if simple_swap_only else set()
-            self._processed_linked_dual_tail_families = None if simple_swap_only else set()
+            self._processed_numeric_replacement_families = set() if uses_numeric_generation else None
+            self._processed_power_of_two_families = set() if uses_numeric_generation else None
+            self._processed_linked_dual_tail_families = set() if uses_numeric_generation else None
             self._numeric_structure_values = (
-                {} if simple_swap_only else self._build_numeric_structure_values(entries)
+                self._build_numeric_structure_values(entries) if uses_numeric_generation else {}
             )
             self._smart_number_values_cache.clear()
             try:
@@ -1279,125 +1250,43 @@ class PathCollector:
                     discard_candidate_hash(candidate_hash)
                     return True
 
-                use_direct_base_candidates = (
-                    not self.include_tex_variants
-                    and not self.include_extension_swaps
-                    and not self.include_variations
-                    and not self.include_streaming
-                )
-                use_version_swap_candidates = version_swap_only
-                use_tex_mdf2_mesh_candidates = tex_mdf2_mesh_swap_only
-
                 for idx, (stem, extension) in enumerate(entries, 1):
                     remaining_stems = remaining_entries_by_extension.get(extension)
                     if not remaining_stems or stem not in remaining_stems:
                         continue
 
                     remaining_stems.discard(stem)
-                    if use_tex_mdf2_mesh_candidates:
-                        suffix_infos = self._get_tex_mdf2_mesh_suffix_infos(extension, suffix_info_cache)
-                    else:
-                        suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
                     generated_in_entry = 0
 
-                    if use_version_swap_candidates:
-                        for suffix, suffix_extension in suffix_infos:
-                            remaining_candidate_stems = remaining_entries_by_extension.get(suffix_extension)
-                            if remaining_candidate_stems:
-                                remaining_candidate_stems.discard(stem)
-
-                            candidate = f"{stem}.{suffix}"
-                            generated_candidates += 1
-                            generated_in_entry += 1
-                            validate_candidate(candidate)
-                            if not pak_hashes:
-                                break
-
-                            if progress_callback and generated_in_entry % progress_update_interval == 0:
-                                progress_callback(
-                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
-                                    f"Generated in current entry: {generated_in_entry}\n"
-                                    f"Generated so far: {generated_candidates}\n"
-                                    f"Valid so far: {len(validated_paths)}",
-                                    idx,
-                                    len(entries)
-                                )
-                    elif use_tex_mdf2_mesh_candidates:
-                        for candidate, candidate_stem, candidate_extension in self._iter_tex_mdf2_mesh_candidates(stem, extension, suffix_infos):
+                    for candidate, candidate_stem, candidate_extension in self._iter_mode_candidates(
+                        stem,
+                        extension,
+                        suffix_info_cache
+                    ):
+                        if self.improver_mode is ImproverMode.TEX_MDF2_MESH_SWAPS:
                             if candidate in processed_tex_mdf2_mesh_candidates:
                                 continue
                             processed_tex_mdf2_mesh_candidates.add(candidate)
 
-                            remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
-                            if remaining_candidate_stems:
-                                remaining_candidate_stems.discard(candidate_stem)
+                        remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
+                        if remaining_candidate_stems:
+                            remaining_candidate_stems.discard(candidate_stem)
 
-                            generated_candidates += 1
-                            generated_in_entry += 1
-                            validate_candidate(candidate)
-                            if not pak_hashes:
-                                break
+                        generated_candidates += 1
+                        generated_in_entry += 1
+                        validate_candidate(candidate)
+                        if not pak_hashes:
+                            break
 
-                            if progress_callback and generated_in_entry % progress_update_interval == 0:
-                                progress_callback(
-                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
-                                    f"Generated in current entry: {generated_in_entry}\n"
-                                    f"Generated so far: {generated_candidates}\n"
-                                    f"Valid so far: {len(validated_paths)}",
-                                    idx,
-                                    len(entries)
-                                )
-                    elif use_direct_base_candidates:
-                        for numeric_stem in self._iter_numeric_stem_combinations(
-                            stem,
-                            family_scope=suffix_infos,
-                            source_extension=extension
-                        ):
-                            for suffix, suffix_extension in suffix_infos:
-                                remaining_candidate_stems = remaining_entries_by_extension.get(suffix_extension)
-                                if remaining_candidate_stems:
-                                    remaining_candidate_stems.discard(numeric_stem)
-
-                                candidate = f"{numeric_stem}.{suffix}"
-                                generated_candidates += 1
-                                generated_in_entry += 1
-                                validate_candidate(candidate)
-                                if not pak_hashes:
-                                    break
-
-                                if progress_callback and generated_in_entry % progress_update_interval == 0:
-                                    progress_callback(
-                                        f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
-                                        f"Generated in current entry: {generated_in_entry}\n"
-                                        f"Generated so far: {generated_candidates}\n"
-                                        f"Valid so far: {len(validated_paths)}",
-                                        idx,
-                                        len(entries)
-                                    )
-                            if not pak_hashes:
-                                break
-                    else:
-                        def consume_matching_entry(candidate_stem, candidate_extension):
-                            remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
-                            if remaining_candidate_stems:
-                                remaining_candidate_stems.discard(candidate_stem)
-
-                        for candidate in self._iter_improver_candidates(stem, extension, suffix_infos, on_base_candidate=consume_matching_entry):
-                            generated_candidates += 1
-                            generated_in_entry += 1
-                            validate_candidate(candidate)
-                            if not pak_hashes:
-                                break
-
-                            if progress_callback and generated_in_entry % progress_update_interval == 0:
-                                progress_callback(
-                                    f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
-                                    f"Generated in current entry: {generated_in_entry}\n"
-                                    f"Generated so far: {generated_candidates}\n"
-                                    f"Valid so far: {len(validated_paths)}",
-                                    idx,
-                                    len(entries)
-                                )
+                        if progress_callback and generated_in_entry % progress_update_interval == 0:
+                            progress_callback(
+                                f"Improving list entries...\nEntry {idx}/{len(entries)} ({extension})\n"
+                                f"Generated in current entry: {generated_in_entry}\n"
+                                f"Generated so far: {generated_candidates}\n"
+                                f"Valid so far: {len(validated_paths)}",
+                                idx,
+                                len(entries)
+                            )
 
                     if progress_callback and (
                         generated_in_entry >= progress_update_interval

@@ -6,7 +6,13 @@ from PySide6.QtWidgets import (
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame,
     QLineEdit, QInputDialog, QCheckBox
 )
-from tools.file_list_generator import ExtensionAnalyzer, validate_game_executable, PathCollector, ExePathExtractor
+from tools.file_list_generator import (
+    ExePathExtractor,
+    ExtensionAnalyzer,
+    ImproverMode,
+    PathCollector,
+    validate_game_executable,
+)
 
 
 EXPORT_ERROR_TITLE = "Export Error"
@@ -104,11 +110,11 @@ class FileListGeneratorDialog(QDialog):
         prefix_layout.addWidget(self.prefix_input)
         config_layout.addLayout(prefix_layout)
 
-        self.variation_checkbox = QCheckBox("Add extra x64/language variations to each entry")
+        self.variation_checkbox = QCheckBox("Add extra x64/language variations when collecting or extracting paths")
         self.variation_checkbox.toggled.connect(self._on_variations_toggled)
         config_layout.addWidget(self.variation_checkbox)
 
-        self.streaming_checkbox = QCheckBox("Add streaming/ variant after the prefix for each entry")
+        self.streaming_checkbox = QCheckBox("Add streaming/ variants when collecting or extracting paths")
         self.streaming_checkbox.toggled.connect(self._on_streaming_toggled)
         config_layout.addWidget(self.streaming_checkbox)
         
@@ -561,7 +567,14 @@ class FileListGeneratorDialog(QDialog):
             QMessageBox.Yes
         ) == QMessageBox.Yes
 
-    def _run_list_improver(self, source_list_path, title, override_prefix=False, append_from_list_path=None, ignore_extra_options=False, include_tex_variants=False, include_extension_swaps=False, include_tex_mdf2_mesh_swaps=False, keep_source_paths=True):
+    def _run_list_improver(
+        self,
+        source_list_path,
+        title,
+        improver_mode,
+        append_from_list_path=None,
+        keep_source_paths=True
+    ):
         if not source_list_path:
             QMessageBox.warning(self, "No List File", "Please select a source list file first.")
             return
@@ -580,11 +593,7 @@ class FileListGeneratorDialog(QDialog):
             extensions,
             extension_versions=self.analyzer.combined_extensions,
             path_prefix=self.path_prefix,
-            include_variations=False if ignore_extra_options else self.include_variations,
-            include_streaming=False if ignore_extra_options else self.include_streaming,
-            include_tex_variants=include_tex_variants,
-            include_extension_swaps=include_extension_swaps,
-            include_tex_mdf2_mesh_swaps=include_tex_mdf2_mesh_swaps
+            improver_mode=improver_mode
         )
 
         progress = QProgressDialog("Improving list entries...", None, 0, 100, self)
@@ -603,8 +612,7 @@ class FileListGeneratorDialog(QDialog):
         success, error, stats, validated_paths = self.path_collector.improve_list_with_chunked_validation(
             source_list_path,
             pak_directory,
-            progress_callback=update_progress,
-            override_prefix=override_prefix
+            progress_callback=update_progress
         )
         progress.close()
 
@@ -665,8 +673,7 @@ class FileListGeneratorDialog(QDialog):
             "Improve Existing List",
             "Generates numeric path variants, validates against PAK hashes, and keeps original source paths.",
             title="Current Game List Improver",
-            override_prefix=False,
-            include_tex_variants=False,
+            improver_mode=ImproverMode.NUMERIC,
         )
 
     def _improve_list_tex(self):
@@ -674,29 +681,23 @@ class FileListGeneratorDialog(QDialog):
             "Improve Existing List (Tex Variants)",
             "For .tex paths, tries configured texture suffix variants without numeric expansion; keeps other source paths.",
             title="Current Game List Improver (Tex Variants)",
-            override_prefix=False,
-            ignore_extra_options=True,
-            include_tex_variants=True,
+            improver_mode=ImproverMode.TEX_VARIANTS,
         )
 
     def _improve_list_swap_extensions(self):
         self._run_improver_mode(
             "Improve Existing List (Swap Extensions)",
-            "Keeps each stem and tries all known extension/version combinations, then validates against PAK hashes.",
+            "Keeps each stem and only tries known extension/version combinations, then validates against PAK hashes.",
             title="Current Game List Improver (Swap Extensions)",
-            override_prefix=False,
-            include_tex_variants=False,
-            include_extension_swaps=True,
+            improver_mode=ImproverMode.EXTENSION_SWAPS,
         )
 
     def _improve_list_tex_mdf2_mesh(self):
         self._run_improver_mode(
             "Improve Existing List (Tex/MDF2/Mesh)",
-            "For tex, mdf2, and mesh paths, tries sibling asset extensions and validates matches against PAK hashes.",
+            "For tex, mdf2, and mesh paths, tries sibling asset extensions and the texture suffix family for generated .tex paths.",
             title="Current Game List Improver (Tex/MDF2/Mesh)",
-            override_prefix=False,
-            ignore_extra_options=True,
-            include_tex_mdf2_mesh_swaps=True,
+            improver_mode=ImproverMode.TEX_MDF2_MESH_SWAPS,
         )
 
     def _improve_list_from_other_game(self):
@@ -716,10 +717,8 @@ class FileListGeneratorDialog(QDialog):
         self._run_list_improver(
             other_list_path,
             title="Cross-Game List Improver",
-            override_prefix=True,
+            improver_mode=ImproverMode.CROSS_GAME_VERSION_SWAPS,
             append_from_list_path=self.list_file_path,
-            ignore_extra_options=True,
-            include_tex_variants=False,
             keep_source_paths=False
         )
 
