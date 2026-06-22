@@ -98,7 +98,9 @@ fastmesh = ensure_fastmesh()
 from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
-from ui.project_manager import ProjectManager, PROJECTS_ROOT, ensure_projects_root  # noqa: E402
+from ui.project_manager import (  # noqa: E402
+    ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
+)
 from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog 
 
 CURRENT_VERSION = "0.7.0"
@@ -714,7 +716,10 @@ class FileTab:
         if not self.handler:
             QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
             return False
-        if self.pak_source_path and not self.app.proj_dock.prepare_pak_tab_direct_save(self):
+        session = self.app.project_workspace.sessions.session_for_tab(self)
+        if self.pak_source_path and not self.app.proj_dock.prepare_pak_tab_direct_save(
+            self, session.path if session else None
+        ):
             return False
         if not self.filename:
             return self.on_save()
@@ -1033,10 +1038,10 @@ class REasyEditorApp(QMainWindow):
         self.notebook.setMinimumSize(50, 50)    
         self.notebook.app_instance = self
         self.notebook._set_icon_callback = set_app_icon
+        self.tabs = weakref.WeakValueDictionary()
         self.home_stack = HomePageStack(self.notebook, self.home_widget)
         main_layout.addWidget(self.home_stack.widget)
 
-        self.tabs = weakref.WeakValueDictionary()
         self._shared_find_dialog = None
         self._pak_browser = None
         self._guid_converter_dialog = None
@@ -1083,6 +1088,9 @@ class REasyEditorApp(QMainWindow):
         self.console_widget.setVisible(self.settings.get("show_debug_console", True))
         main_layout.addWidget(self.console_widget)
 
+        self.project_workspace = ProjectWorkspaceController(self, self.notebook, self.tabs)
+        main_layout.addWidget(self.project_workspace.tab_bar)
+
         if self.settings.get("show_debug_console", True):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
             sys.stderr = ConsoleRedirector(self.console_widget, sys.stderr)
@@ -1101,7 +1109,7 @@ class REasyEditorApp(QMainWindow):
         show_notebook = self.notebook.count() > 0 or self.proj_dock.isVisible()
         recent_label = "No recently closed files yet."
         if self._closed_file_history:
-            _, decoded_target = ProjectManager.decode_pak_history_entry(self._closed_file_history[-1])
+            _, _, decoded_target = ProjectManager.decode_history_entry(self._closed_file_history[-1])
             recent_label = f"Last closed: {os.path.basename(decoded_target)}"
         self.home_stack.refresh(show_notebook, recent_label)
 
@@ -1404,10 +1412,7 @@ class REasyEditorApp(QMainWindow):
         mod_dir = os.path.join(PROJECTS_ROOT, game, name.strip())
         os.makedirs(mod_dir, exist_ok=True)
 
-        self.current_game = game
-        self.proj_dock.sync_project_rsz_json(mod_dir, game, prompt_to_change_current=False)
-        
-        self._activate_project(mod_dir)
+        self.project_workspace.activate(mod_dir, game)
         if use_paks:
             self.proj_dock.switch_tab("pak")
             self.proj_dock.apply_pak_root(folder)
@@ -1419,7 +1424,7 @@ class REasyEditorApp(QMainWindow):
             PROJECTS_ROOT,
             GAMES,
             current_project=self.current_project,
-            on_project_deleted=self._on_project_deleted,
+            on_project_delete=self.project_workspace.delete_project,
             parent=self,
         )
         if dlg.exec() != QDialog.Accepted:
@@ -1433,58 +1438,37 @@ class REasyEditorApp(QMainWindow):
         if not entry:
             return
 
-        self._open_project_path(entry.path, entry.game)
-
-    def _on_project_deleted(self, project_path: Path):
-        if self.current_project and Path(self.current_project).resolve() == project_path.resolve():
-            self.close_project()
-
-    def _open_project_path(self, project_path: Path | str, game: str | None = None):
-        project_path = Path(project_path).resolve()
-        if not project_path.is_dir():
-            QMessageBox.warning(
-                self,
-                self.tr("Project not found"),
-                self.tr("That project folder no longer exists.")
-            )
-            return
-
-        game = game or self.proj_dock.infer_project_game(project_path)
-
-        if not game:
-            QMessageBox.warning(
-                self, self.tr("Invalid selection"),
-                self.tr("This folder is not a recognized REasy project.")
-            )
-            return
-
-        self.current_game = game
-        self.proj_dock.current_game = game
-        self.proj_dock.sync_project_rsz_json(project_path, game, prompt_to_change_current=True)
-
-        self._activate_project(str(project_path))
+        self.project_workspace.open(entry.path, entry.game)
 
     def close_project(self):
-        if not self.current_project: 
-            return
-        self.current_project = None
-        self.proj_dock.set_project(None)
-        self.proj_dock.hide()
-        self.status_bar.showMessage("Project closed", 3000)
+        self.project_workspace.close()
 
-    def _activate_project(self, path: str):
-        """Make <path> the current project and show the dock."""
-        self.current_project = path
-        self.proj_dock.current_game = self.current_game
-        if self.current_game:
-            self.settings["last_game"] = self.current_game
-        self.save_settings()
-        self.proj_dock.show()
-        self._shrink_project_dock()   
-        QApplication.processEvents()
-        self.proj_dock.set_project(path) 
-        self.status_bar.showMessage(
-            f"Project: {os.path.basename(path)}", 3000)
+    def _confirm_tabs_close(self, tabs, *, apply_discards=True) -> bool:
+        discard_tabs = []
+        for tab in tabs:
+            if not tab or not tab.modified:
+                continue
+            filename = os.path.basename(tab.filename) if tab.filename else "Untitled"
+            answer = QMessageBox.question(
+                self,
+                UNSAVED_CHANGES_STR,
+                f"The file {filename} has unsaved changes.\nSave before closing?",
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+            )
+            if answer == QMessageBox.Cancel:
+                return False
+            if answer == QMessageBox.Yes:
+                tab.on_save()
+                if tab.modified:
+                    return False
+            else:
+                discard_tabs.append(tab)
+
+        if apply_discards:
+            for tab in discard_tabs:
+                tab.modified = False
+                tab.update_tab_title()
+        return True
 
     def _shrink_project_dock(self):
         min_w = max(360, self.proj_dock.minimumSizeHint().width())
@@ -1675,32 +1659,16 @@ class REasyEditorApp(QMainWindow):
                 self._shared_find_dialog.close()
             except RuntimeError:
                 pass
-        for tab in self.tabs.values():
-            if tab.modified:
-                ans = QMessageBox.question(
-                    self,
-                    UNSAVED_CHANGES_STR,
-                    f"File {os.path.basename(tab.filename)} has unsaved changes.\nSave before closing?",
-                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-                )
-                if ans == QMessageBox.Cancel:
-                    event.ignore()
-                    return
-                elif ans == QMessageBox.Yes:
-                    tab.on_save()
-                    if tab.modified:
-                        event.ignore()
-                        return
-                tab.modified = False
-        
-        event.accept()
+        event.accept() if self._confirm_tabs_close(list(self.tabs.values())) else event.ignore()
 
     def update_from_app_settings(self):
         """Update handler settings from the application settings"""
+        active_tabs = set(self.project_workspace.sessions.active_tabs())
         for tab in self.tabs.values():
             if hasattr(tab, 'handler') and isinstance(tab.handler, RszHandler):
-                    tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
-                    tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
+                tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
+                tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
+                if tab in active_tabs:
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
         
     def _refresh_ffmpeg_status_label(self, label):
@@ -2148,7 +2116,7 @@ class REasyEditorApp(QMainWindow):
     def add_tab(self, filename=None, data=None):
         if filename:
             abs_fn = os.path.abspath(filename)
-            for tab in self.tabs.values():
+            for tab in self.project_workspace.sessions.active_tabs():
                 if tab.filename and os.path.abspath(tab.filename) == abs_fn:
                     if tab.modified:
                         ans = QMessageBox.question(
@@ -2167,6 +2135,11 @@ class REasyEditorApp(QMainWindow):
                     index = self.notebook.indexOf(tab.notebook_widget)
                     if index != -1:
                         self.notebook.setCurrentIndex(index)
+                    else:
+                        for window in self.project_workspace.sessions.windows_for([tab]):
+                            window.show()
+                            window.raise_()
+                            window.activateWindow()
                     return tab
 
         tab = None
@@ -2197,6 +2170,7 @@ class REasyEditorApp(QMainWindow):
             tab_label = os.path.basename(filename) if filename else "Untitled"
             _ = self.notebook.addTab(tab.notebook_widget, tab_label)
             self.tabs[tab.notebook_widget] = tab
+            self.project_workspace.sessions.add_tab(tab)
             self.notebook.setCurrentWidget(tab.notebook_widget)
             self._update_highlight_menu_visibility()
             self._refresh_homepage()
@@ -2212,19 +2186,14 @@ class REasyEditorApp(QMainWindow):
             return None
 
     def get_active_tab(self):
+        active_tabs = self.project_workspace.sessions.active_tabs()
         aw = QApplication.activeWindow()
+        widgets = [self.notebook.currentWidget(), QApplication.focusWidget()]
         if isinstance(aw, FloatingTabWindow):
-            tab = self._resolve_tab_from_widget(aw.centralWidget())
-            if tab:
+            widgets.insert(0, aw.centralWidget())
+        for widget in widgets:
+            if (tab := self._resolve_tab_from_widget(widget)) in active_tabs:
                 return tab
-        current_widget = self.notebook.currentWidget()
-        tab = self.tabs.get(current_widget, None)
-        if tab:
-            return tab
-        fw = QApplication.focusWidget()
-        tab = self._resolve_tab_from_widget(fw)
-        if tab:
-            return tab
         return None
 
     def get_active_tree(self):
@@ -2280,22 +2249,17 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to reload."))
 
     def close_current_tab(self):
-        aw = QApplication.activeWindow()
-        if aw is not None and hasattr(aw, 'centralWidget'):
-            tab = self._resolve_tab_from_widget(aw.centralWidget())
-            if tab is not None and hasattr(tab, 'notebook_widget'):
-                if aw is not self:
-                    try:
-                        aw.close()
-                    except Exception:
-                        pass
-                idx = self.notebook.indexOf(tab.notebook_widget)
-                if idx >= 0:
-                    self.close_tab(idx)
-                    return
-        current_index = self.notebook.currentIndex()
-        if current_index >= 0:
-            self.close_tab(current_index)
+        tab = self.get_active_tab()
+        if not tab:
+            return
+        index = self.notebook.indexOf(tab.notebook_widget)
+        if index == -1:
+            windows = self.project_workspace.sessions.windows_for([tab])
+            if windows:
+                windows[0].close()
+                index = self.notebook.indexOf(tab.notebook_widget)
+        if index != -1:
+            self.close_tab(index)
 
     def _resolve_tab_from_widget(self, widget):
         w = widget
@@ -2339,15 +2303,24 @@ class REasyEditorApp(QMainWindow):
         attempted = False
         for target in candidates:
             attempted = True
-            is_pak_entry, decoded_target = ProjectManager.decode_pak_history_entry(target)
+            project_dir, is_pak_entry, decoded_target = ProjectManager.decode_history_entry(target)
 
-            if is_pak_entry:
-                if self.proj_dock.reopen_pak_history_entry(decoded_target):
-                    self._closed_file_history.remove(target)
-                    self._save_closed_file_history()
-                    self._refresh_homepage()
+            if project_dir and not self.project_workspace.is_active(project_dir):
+                if not os.path.isdir(project_dir):
+                    success = False
+                else:
+                    self.project_workspace.activate(
+                        project_dir,
+                        on_loaded=lambda target=target: self.reopen_closed_file(target),
+                    )
                     return
-            elif self._open_path(decoded_target):
+            else:
+                success = (
+                    self.proj_dock.reopen_pak_history_entry(decoded_target)
+                    if is_pak_entry else self._open_path(decoded_target)
+                )
+
+            if success:
                 self._closed_file_history.remove(target)
                 self._save_closed_file_history()
                 self._refresh_homepage()
@@ -2378,7 +2351,7 @@ class REasyEditorApp(QMainWindow):
             return
 
         for filename in reversed(self._closed_file_history):
-            _, display_path = ProjectManager.decode_pak_history_entry(filename)
+            _, _, display_path = ProjectManager.decode_history_entry(filename)
             action = self.recently_closed_menu.addAction(os.path.basename(display_path))
             action.setToolTip(display_path)
             action.triggered.connect(lambda _checked=False, fn=filename: self.reopen_closed_file(fn))
@@ -2389,41 +2362,35 @@ class REasyEditorApp(QMainWindow):
     def reopen_last_closed_file(self):
         self.reopen_closed_file(notify_if_empty=True)
 
+    def _close_tab_object(self, tab, *, record_history=True):
+        widget = tab.notebook_widget
+        for window in self.project_workspace.sessions.windows_for([tab]):
+            try:
+                window.close_without_reattach()
+            except RuntimeError:
+                pass
+
+        if record_history and tab.filename:
+            session = self.project_workspace.sessions.session_for_tab(tab)
+            self._record_closed_file(ProjectManager.encode_history_entry(
+                tab.pak_source_path or tab.filename,
+                session.path if session else None,
+                is_pak=bool(tab.pak_source_path),
+            ))
+
+        self.tabs.pop(widget, None)
+        if (index := self.notebook.indexOf(widget)) != -1:
+            self.notebook.removeTab(index)
+        self.project_workspace.sessions.remove_tab(tab)
+        tab.cleanup()
+        self._check_and_close_shared_find_dialog()
+        self._refresh_homepage()
+
     def close_tab(self, index):
         widget = self.notebook.widget(index)
         tab = self.tabs.get(widget)
-        
-        if tab and tab.modified:
-            ans = QMessageBox.question(
-                self,
-                UNSAVED_CHANGES_STR,
-                f"The file {os.path.basename(tab.filename)} has unsaved changes.\nSave before closing?",
-                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-            )
-            if ans == QMessageBox.Cancel:
-                return
-            elif ans == QMessageBox.Yes:
-                tab.on_save()
-            else:
-                tab.modified = False
-                tab.update_tab_title()
-                
-        if tab and tab.filename:
-            if tab.pak_source_path:
-                self._record_closed_file(ProjectManager.encode_pak_history_entry(tab.pak_source_path))
-            else:
-                self._record_closed_file(tab.filename)
-
-        if widget in self.tabs:
-            del self.tabs[widget]
-            
-        self.notebook.removeTab(index)
-        if tab is not None:
-            tab.cleanup()
-        elif widget is not None:
-            widget.deleteLater()
-        self._check_and_close_shared_find_dialog()
-        self._refresh_homepage()
+        if tab and self._confirm_tabs_close([tab]):
+            self._close_tab_object(tab)
 
     def show_about(self):
         dialog = AboutDialog(self)

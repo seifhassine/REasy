@@ -4,12 +4,13 @@ import shutil
 from pathlib import Path
 import sys
 from time import monotonic
+from urllib.parse import quote, unquote
 from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
     QHeaderView, QMenu, QDialogButtonBox, QDialog, QComboBox, QTextEdit, QProgressBar,
-    QTreeView, QAbstractItemView, QCheckBox, QLineEdit, QStyle, QSizePolicy, QFrame, QApplication
+    QTreeView, QAbstractItemView, QCheckBox, QLineEdit, QStyle, QSizePolicy, QFrame
 )
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QDesktopServices, QPainter, QPen, QColor
 from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
@@ -96,21 +97,31 @@ class ProjectManager(QDockWidget):
       • delegate.py    – icon handling
     """
     PAK_HISTORY_PREFIX = "pak://"
+    PROJECT_HISTORY_PREFIX = "project://"
 
     @classmethod
-    def encode_pak_history_entry(cls, pak_path: str) -> str:
-        return f"{cls.PAK_HISTORY_PREFIX}{pak_path}"
+    def encode_history_entry(cls, target: str, project_dir: str | None = None, *, is_pak: bool = False) -> str:
+        if project_dir:
+            return cls.PROJECT_HISTORY_PREFIX + "|".join((
+                quote(project_dir, safe=""),
+                str(int(is_pak)),
+                quote(target, safe=""),
+            ))
+        return f"{cls.PAK_HISTORY_PREFIX}{target}" if is_pak else target
 
     @classmethod
-    def decode_pak_history_entry(cls, entry: str) -> tuple[bool, str]:
-        if isinstance(entry, str) and entry.startswith(cls.PAK_HISTORY_PREFIX):
-            return True, entry[len(cls.PAK_HISTORY_PREFIX):]
-        return False, entry
+    def decode_history_entry(cls, entry: str) -> tuple[str | None, bool, str]:
+        if entry.startswith(cls.PROJECT_HISTORY_PREFIX):
+            project_dir, is_pak, target = entry[len(cls.PROJECT_HISTORY_PREFIX):].split("|", 2)
+            return unquote(project_dir), is_pak == "1", unquote(target)
+        is_pak = entry.startswith(cls.PAK_HISTORY_PREFIX)
+        return None, is_pak, entry[len(cls.PAK_HISTORY_PREFIX):] if is_pak else entry
 
-    def prepare_pak_tab_direct_save(self, tab) -> bool:
+    def prepare_pak_tab_direct_save(self, tab, project_dir: str | None = None) -> bool:
         pak_source_path = tab.pak_source_path
+        project_dir = project_dir or self.project_dir
 
-        if not self.project_dir:
+        if not project_dir:
             QMessageBox.information(
                 tab.notebook_widget,
                 "Save",
@@ -118,7 +129,7 @@ class ProjectManager(QDockWidget):
             )
             return tab.on_save()
 
-        project_target = os.path.join(self.project_dir, *pak_source_path.split("/"))
+        project_target = os.path.join(project_dir, *pak_source_path.split("/"))
         if os.path.abspath(getattr(tab, "filename", "") or "") == os.path.abspath(project_target):
             return True
 
@@ -272,9 +283,8 @@ class ProjectManager(QDockWidget):
         self._project_load_ticket = 0
         self._project_load_started_at = 0.0
         self._project_load_min_visible_ms = 300
-        self._pak_filter_proxy = QSortFilterProxyModel(self)
-        self._pak_filter_proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self._pak_filter_proxy.setFilterKeyColumn(0)
+        self._project_pak_states = {}
+        self._pak_filter_proxy = self._new_pak_filter_proxy()
         hdr_p = self.tree_pak.header()
         hdr_p.setSectionResizeMode(0, QHeaderView.Interactive)
         hdr_p.setMinimumSectionSize(160)
@@ -605,52 +615,156 @@ class ProjectManager(QDockWidget):
             widgets_to_control.append(self.list_help_label)
         for w in widgets_to_control:
             w.setVisible(on_pak)
-            w.setEnabled(on_pak)
+            w.setEnabled(on_pak and self.tree_pak.isEnabled())
 
-    def set_project(self, proj_dir):
+    def _new_pak_filter_proxy(self):
+        proxy = QSortFilterProxyModel(self)
+        proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        proxy.setFilterKeyColumn(0)
+        return proxy
+
+    def _reset_project_sources(self):
+        self._pak_base_paths, self._pak_selected_paks = [], []
+        self._pak_all_paths, self._pak_population_paths = [], []
+        self._pak_list_path = self._pak_cached_reader = self._pak_tree_model = None
+        self._pak_flat_model = None
+        self._pak_filter_proxy = self._new_pak_filter_proxy()
+        self._pak_index_dirty = False
+        self.pak_dir = None
+        self.pak_list_edit.clear()
+        self.tree_pak.setModel(None)
+
+        self.unpacked_dir = None
+        self.model_sys.setRootPath("")
+        self.tree_sys.setRootIndex(self.model_sys.index(""))
+        self._update_path_label()
+
+    @staticmethod
+    def _file_signature(path: str | None):
+        if not path:
+            return None
+        stat = os.stat(path)
+        return os.path.normcase(os.path.abspath(path)), stat.st_size, stat.st_mtime_ns
+
+    def _pak_signature(self, selected_paks, list_path):
+        try:
+            return (
+                tuple(self._file_signature(path) for path in selected_paks),
+                self._file_signature(list_path),
+            )
+        except OSError:
+            return None
+
+    def _save_project_state(self) -> None:
+        if (
+            not self.project_dir
+            or not self.tree_pak.isEnabled()
+            or not self._pak_selected_paks
+            or not self._pak_list_path
+        ):
+            return
+        signature = self._pak_signature(self._pak_selected_paks, self._pak_list_path)
+        if not signature:
+            return
+        self._project_pak_states[self._path_key(self.project_dir)] = {
+            "selected_paks": self._pak_selected_paks,
+            "base_paths": self._pak_base_paths,
+            "all_paths": self._pak_all_paths,
+            "population_paths": self._pak_population_paths,
+            "reader": self._pak_cached_reader,
+            "tree_model": self._pak_tree_model,
+            "filter_proxy": self._pak_filter_proxy,
+            "filter_text": self.pak_filter_edit.text(),
+            "ignore_mods": self.pak_ignore_mods_cb.isChecked(),
+            "signature": (self._path_key(self.pak_dir), signature),
+        }
+
+    def _restore_project_state(self, project_dir: str) -> bool:
+        state = self._project_pak_states.get(self._path_key(project_dir))
+        if not state:
+            return False
+        try:
+            config = load_project_config(project_dir)
+            pak_dir = str(_safe_path(config.get("pak_game_dir")) or "")
+            list_path = str(_safe_path(config.get("pak_list_path")) or "")
+            unpacked_dir = str(_safe_path(config.get("unpacked_dir")) or "")
+            if state.get("signature") != (
+                self._path_key(pak_dir),
+                self._pak_signature(
+                    state.get("selected_paks", []), list_path
+                ),
+            ):
+                raise ValueError("Stale PAK state")
+
+            self.pak_dir = pak_dir
+            self._pak_list_path = list_path
+            self._pak_selected_paks = state.get("selected_paks", [])
+            self._pak_base_paths = state.get("base_paths", [])
+            self._pak_all_paths = state.get("all_paths", [])
+            self._pak_population_paths = state.get("population_paths", [])
+            self._pak_cached_reader = state.get("reader")
+            self._pak_tree_model = state.get("tree_model")
+            self._pak_filter_proxy = state.get("filter_proxy")
+            self._pak_flat_model = self._pak_filter_proxy.sourceModel()
+            self.unpacked_dir = unpacked_dir
+            self.pak_ignore_mods_cb.setChecked(state.get("ignore_mods", True))
+            self.pak_list_edit.setText(self._pak_list_path or "")
+            previous = self.pak_filter_edit.blockSignals(True)
+            self.pak_filter_edit.setText(state.get("filter_text", ""))
+            self.pak_filter_edit.blockSignals(previous)
+            if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
+                self.model_sys.setRootPath(self.unpacked_dir)
+                self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+            self.tree_pak.setModel(
+                self._pak_filter_proxy if state.get("filter_text") else self._pak_tree_model
+            )
+            self._pak_index_dirty = False
+            self._update_path_label()
+            return True
+        except (OSError, ValueError, TypeError):
+            self.discard_project_state(project_dir)
+            return False
+
+    def discard_project_state(self, project_dir: str | os.PathLike) -> None:
+        state = self._project_pak_states.pop(self._path_key(project_dir), None)
+        if not state:
+            return
+        seen = set()
+        proxy = state.get("filter_proxy")
+        for obj in (state.get("tree_model"), proxy.sourceModel() if proxy else None, proxy):
+            if obj is not None and id(obj) not in seen:
+                seen.add(id(obj))
+                obj.deleteLater()
+
+    def set_project(self, proj_dir, on_loaded=None):
+        if self.project_dir and self.project_dir != proj_dir:
+            self._save_project_state()
         self.project_dir = proj_dir
+        self._project_load_ticket += 1
+        ticket = self._project_load_ticket
+        self._reset_project_sources()
+        self.tree_pak.setEnabled(not proj_dir)
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
         if proj_dir:
             self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
-
-            self._pak_base_paths = []
-            self._pak_list_path = None
-            self.pak_list_edit.setText("")
-            self._pak_selected_paks = []
-            self._pak_cached_reader = None
-            self._pak_index_dirty = False
-            self.pak_dir = None
-            
-            self.unpacked_dir = None
-            self.model_sys.setRootPath("")
-            self.tree_sys.setRootIndex(self.model_sys.index(""))
-            self._update_path_label()
+            if self._restore_project_state(proj_dir):
+                self.tree_pak.setEnabled(True)
+                self._update_pak_controls_state()
+                self._update_placeholders()
+                if on_loaded:
+                    on_loaded()
+                return
             self._set_loading_overlay(True, self.tr("Loading project..."))
             self._project_load_started_at = monotonic()
-            QApplication.processEvents()
-            self._project_load_ticket += 1
-            ticket = self._project_load_ticket
-            QTimer.singleShot(120, lambda: self._finish_project_load(ticket, proj_dir))
+            QTimer.singleShot(120, lambda: self._finish_project_load(ticket, proj_dir, on_loaded))
         else:
             self.project_label.setText(self.tr("<i>No project open</i>"))
             self.tree_proj .setRootIndex(QModelIndex())
-            
-            self._pak_base_paths = []
-            self._pak_list_path = None
-            self.pak_list_edit.setText("")
-            self._pak_selected_paks = []
-            self._pak_cached_reader = None
-            self._pak_index_dirty = False
-            self.pak_dir = None
-            
-            self.unpacked_dir = None
-            self.model_sys.setRootPath("")
-            self.tree_sys.setRootIndex(self.model_sys.index(""))
-            self._update_path_label()
             self._set_loading_overlay(False)
+        self._update_pak_controls_state()
         self._update_placeholders()
 
     def _set_loading_overlay(self, visible: bool, text: str | None = None):
@@ -660,7 +774,7 @@ class ProjectManager(QDockWidget):
         self.loading_overlay.setVisible(visible)
         self.loading_overlay.raise_()
 
-    def _finish_project_load(self, ticket: int, proj_dir: str):
+    def _finish_project_load(self, ticket: int, proj_dir: str, on_loaded=None):
         if ticket != self._project_load_ticket or self.project_dir != proj_dir:
             return
         try:
@@ -686,27 +800,30 @@ class ProjectManager(QDockWidget):
                     self.pak_dir = str(gdir)
                     self._update_path_label()
                     self._set_loading_overlay(True, self.tr("Loading PAKs..."))
-                    QApplication.processEvents()
                     self._scan_paks(rebuild=False)
                     pak_state_changed = True
                 if path and path.is_file():
                     self._pak_list_path = str(path)
                     self.pak_list_edit.setText(str(path))
                     self._set_loading_overlay(True, self.tr("Loading PAK list..."))
-                    QApplication.processEvents()
                     self._load_pak_list_file(str(path), rebuild=False)
                     pak_state_changed = True
                 if pak_state_changed:
                     self._pak_index_dirty = True
                     if self._active_tab == "pak":
                         self._set_loading_overlay(True, self.tr("Preparing PAK list..."))
-                        QApplication.processEvents()
                         self._rebuild_pak_index(verify_paths=False)
         except Exception:
             pass
         finally:
+            is_current = ticket == self._project_load_ticket and self.project_dir == proj_dir
+            if is_current:
+                self.tree_pak.setEnabled(True)
+                self._update_pak_controls_state()
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
+            if is_current and on_loaded:
+                on_loaded()
     def _hide_loading_overlay(self, ticket: int):
         if ticket != self._project_load_ticket:
             return
@@ -1056,7 +1173,7 @@ class ProjectManager(QDockWidget):
             self._open_pak_path_in_editor(path)
 
     def _open_pak_path_in_editor(self, path: str):
-        if not self._pak_selected_paks:
+        if not self.tree_pak.isEnabled() or not self._pak_selected_paks:
             return False
         try:
             r = self._ensure_project_pak_reader()
@@ -1073,20 +1190,22 @@ class ProjectManager(QDockWidget):
             tab = self.app_win.add_tab(name, data)
             if tab:
                 tab.pak_source_path = path
-                tab.pak_data_loader = self._read_pak_file_data
+                project_dir = self.project_dir
+                tab.pak_data_loader = lambda source_path: self.read_project_pak_file(
+                    project_dir, source_path
+                )
             return True
         except Exception as e:
             QMessageBox.critical(self, self.tr("Open failed"), str(e))
             return False
 
-    def _read_pak_file_data(self, path: str) -> bytes | None:
-        if not path or not self._pak_selected_paks:
+    def read_project_pak_file(self, project_dir: str, path: str) -> bytes | None:
+        if not project_dir or not path:
             return None
-        r = self._ensure_project_pak_reader()
-        stream = r.get_file(path)
-        if not stream:
-            return None
-        return stream.read()
+        state = self._project_pak_states.get(self._path_key(project_dir), {})
+        reader = (self._pak_cached_reader if self.project_dir == project_dir else None) or state.get("reader")
+        stream = reader.get_file(path) if reader else None
+        return stream.read() if stream else None
 
     def _extract_from_paks_to_project(self, paths: list[str]):
         if not paths:
@@ -1357,7 +1476,8 @@ class ProjectManager(QDockWidget):
         mods_folder.mkdir(parents=True, exist_ok=True)
 
         from ui.project_manager.manager import quitely_get_pak_name
-        pak_name = quitely_get_pak_name(Path(self.project_dir)) or Path(self.project_dir).name
+        project_dir = self.project_dir
+        pak_name = quitely_get_pak_name(Path(project_dir)) or Path(project_dir).name
         if not pak_name.lower().endswith(".pak"):
             pak_name += ".pak"
         dest_path = mods_folder / pak_name
@@ -1377,7 +1497,7 @@ class ProjectManager(QDockWidget):
         exec_ = ThreadPoolExecutor(max_workers=1)
 
         def _work():
-            return run_packer(self.project_dir, str(dest_path))
+            return run_packer(project_dir, str(dest_path))
 
         fut = exec_.submit(_work)
 

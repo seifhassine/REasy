@@ -44,6 +44,12 @@ class FloatingTabWindow(QMainWindow):
 	def _reattach_now(self):
 		self.close()
 
+	def close_without_reattach(self):
+		page = self.takeCentralWidget()
+		self.close()
+		if page:
+			page.setParent(None)
+
 	def closeEvent(self, event):
 		if self.file_tab and hasattr(self.file_tab, '_find_dialog'):
 			try:

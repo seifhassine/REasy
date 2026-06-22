@@ -99,7 +99,7 @@ class ProjectPickerDialog(QDialog):
         games: Sequence[str],
         *,
         current_project: str | None = None,
-        on_project_deleted: Callable[[Path], None] | None = None,
+        on_project_delete: Callable[[Path], bool] | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -115,7 +115,7 @@ class ProjectPickerDialog(QDialog):
         self._selected: ProjectEntry | None = None
         self._wants_new_project = False
         self._preferred_path = Path(current_project).resolve() if current_project else None
-        self._on_project_deleted = on_project_deleted
+        self._on_project_delete = on_project_delete
         self._drag_offset = None
 
         root = QVBoxLayout(self)
@@ -443,16 +443,18 @@ class ProjectPickerDialog(QDialog):
         if answer != QMessageBox.Yes:
             return
 
-        try:
-            shutil.rmtree(path)
-        except Exception as exc:
-            QMessageBox.critical(self, self.tr("Delete failed"), str(exc))
-            return
+        if self._on_project_delete:
+            if not self._on_project_delete(path):
+                return
+        else:
+            try:
+                shutil.rmtree(path)
+            except Exception as exc:
+                QMessageBox.critical(self, self.tr("Delete failed"), str(exc))
+                return
 
         if self._preferred_path and path == self._preferred_path:
             self._preferred_path = None
-        if self._on_project_deleted:
-            self._on_project_deleted(path)
         self.refresh()
 
     def _project_count_label(self, count: int) -> str:
