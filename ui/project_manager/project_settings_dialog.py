@@ -73,12 +73,25 @@ class ProjectSettingsDialog(QDialog):
             "Images (*.png *.jpg *.jpeg *.bmp)")
         if not fn:
             return
-        self.pic_edit.setText(fn)
+        self.pic_edit.setText(self._stored_screenshot_path(Path(fn)))
         self._reload_preview()
 
+    def _stored_screenshot_path(self, path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(self.project_dir.resolve()))
+        except (OSError, RuntimeError, ValueError):
+            return str(path)
+
+    def _screenshot_path(self) -> Path | None:
+        text = self.pic_edit.text().strip()
+        if not text:
+            return None
+        path = Path(text)
+        return path if path.is_absolute() else self.project_dir / path
+
     def _reload_preview(self):
-        pic_path = Path(self.pic_edit.text().strip())
-        if pic_path.is_file():
+        pic_path = self._screenshot_path()
+        if pic_path and pic_path.is_file():
             pix = QPixmap(str(pic_path))
             self.preview.setPixmap(pix.scaled(
                 self.preview.size(),

@@ -11,20 +11,21 @@ _INVALID_PROJECT_PATH = "Invalid project path"
 
 
 def _validated_project_dir(project_dir: Path | str) -> Path:
-    root = PROJECTS_ROOT.resolve(strict=True)
     try:
+        root = PROJECTS_ROOT.resolve(strict=True)
         requested = Path(project_dir).resolve(strict=True)
-        game = requested.parent.name
-        project = requested.name
-        trusted = (root / game / project).resolve(strict=True)
-        trusted.relative_to(root)
     except (OSError, RuntimeError, ValueError) as exc:
         raise ValueError(_INVALID_PROJECT_PATH) from exc
 
-    if trusted != requested or not trusted.is_dir():
-        raise ValueError(_INVALID_PROJECT_PATH)
+    for project in root.glob("*/*"):
+        try:
+            trusted = project.resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        if trusted == requested and trusted.is_relative_to(root) and project.is_dir():
+            return project
 
-    return trusted
+    raise ValueError(_INVALID_PROJECT_PATH)
 
 
 def project_config_path(project_dir: Path | str) -> Path:
