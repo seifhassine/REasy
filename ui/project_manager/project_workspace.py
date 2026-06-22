@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from PySide6.QtCore import QSignalBlocker, Qt
-from PySide6.QtWidgets import QMessageBox, QTabBar
+from PySide6.QtWidgets import QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
 from .project_sessions import ProjectSessionManager
 
@@ -12,16 +12,53 @@ class ProjectWorkspaceController:
     def __init__(self, host, notebook, tab_lookup):
         self.host = host
         self.sessions = ProjectSessionManager(notebook, tab_lookup)
-        self.tab_bar = QTabBar(host)
-        self.tab_bar.setShape(QTabBar.RoundedSouth)
-        self.tab_bar.setTabsClosable(True)
-        self.tab_bar.setExpanding(False)
-        self.tab_bar.setElideMode(Qt.ElideRight)
-        self.tab_bar.hide()
+
+        self.toolbar = QToolBar(host.tr("Projects"), host)
+        self.toolbar.setObjectName("projectWorkspaceBar")
+        self.toolbar.setMovable(False)
+        self.toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.toolbar.toggleViewAction().setVisible(False)
+        self.toolbar.hide()
+
+        self.tab_bar = QTabBar(self.toolbar)
+        self.tab_bar.setObjectName("projectWorkspaceTabs")
+        self.tab_bar.setExpanding(True)
+        self.tab_bar.setElideMode(Qt.ElideMiddle)
+        self.tab_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.tab_bar.setMinimumHeight(36)
         self.tab_bar.currentChanged.connect(self._on_tab_changed)
-        self.tab_bar.tabCloseRequested.connect(
-            lambda index: self.close(self.tab_bar.tabData(index))
+        self.toolbar.addWidget(self.tab_bar)
+        self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
+        self.set_dark_mode(getattr(host, "dark_mode", False))
+
+    def set_dark_mode(self, dark_mode: bool):
+        accent = self.host._theme_accent_color().name()
+        bar_bg, tab_bg, hover_bg, foreground, muted, border = (
+            ("#242424", "#343434", "#3f3f3f", "#f2f2f2", "#c4c4c4", "#505050")
+            if dark_mode else ("#f3f4f6", "#fff", "#e7e9ed", "#1d1d1f", "#555b65", "#c9cdd3")
         )
+        self.toolbar.setStyleSheet(f"""
+            QToolBar#projectWorkspaceBar {{ background: {bar_bg}; border: none;
+                border-bottom: 1px solid {border}; padding: 0; spacing: 0; }}
+            QTabBar#projectWorkspaceTabs {{ background: {bar_bg}; border: none; }}
+            QTabBar#projectWorkspaceTabs::tab {{ background: transparent; color: {muted};
+                border: none; border-right: 1px solid {border}; padding: 8px 14px; min-width: 120px; }}
+            QTabBar#projectWorkspaceTabs::tab:hover:!selected {{ background: {hover_bg}; color: {foreground}; }}
+            QTabBar#projectWorkspaceTabs::tab:selected {{ background: {tab_bg}; color: {foreground};
+                border-bottom: 3px solid {accent}; font-weight: 600; }}
+            QToolButton#projectTabClose {{ background: transparent; color: {muted}; border: none;
+                border-radius: 3px; font-size: 16px; font-weight: 600; }}
+            QToolButton#projectTabClose:hover {{ background: #d32f2f; color: white; }}
+        """)
+
+    def _close_button(self, key):
+        button = QToolButton(self.tab_bar)
+        button.setObjectName("projectTabClose")
+        button.setText("×")
+        button.setToolTip(self.host.tr("Close project"))
+        button.setFixedSize(20, 20)
+        button.clicked.connect(lambda: self.close(key))
+        return button
 
     def is_active(self, project_dir) -> bool:
         return ProjectSessionManager.key_for(project_dir) == self.sessions.active_key
@@ -118,12 +155,15 @@ class ProjectWorkspaceController:
             while self.tab_bar.count():
                 self.tab_bar.removeTab(0)
             for session in self.sessions.project_sessions():
-                index = self.tab_bar.addTab(session.title)
+                icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
+                index = self.tab_bar.addTab(icon, session.title)
                 self.tab_bar.setTabData(index, session.key)
                 self.tab_bar.setTabToolTip(index, session.path)
+                self.tab_bar.setTabButton(index, QTabBar.RightSide, self._close_button(session.key))
                 if session.key == self.sessions.active_key:
                     self.tab_bar.setCurrentIndex(index)
-        self.tab_bar.setVisible(self.tab_bar.count() > 0)
+        has_projects = self.tab_bar.count() > 0
+        self.toolbar.setVisible(has_projects)
         self.host._refresh_homepage()
 
     def _on_tab_changed(self, index: int):

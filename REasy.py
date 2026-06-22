@@ -1089,7 +1089,6 @@ class REasyEditorApp(QMainWindow):
         main_layout.addWidget(self.console_widget)
 
         self.project_workspace = ProjectWorkspaceController(self, self.notebook, self.tabs)
-        main_layout.addWidget(self.project_workspace.tab_bar)
 
         if self.settings.get("show_debug_console", True):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
@@ -1508,6 +1507,8 @@ class REasyEditorApp(QMainWindow):
 
         self.notebook.set_dark_mode(state)
         self._update_tab_viewers(state)
+        if hasattr(self, "project_workspace"):
+            self.project_workspace.set_dark_mode(state)
 
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
             self._shared_find_dialog.set_dark_mode(state)

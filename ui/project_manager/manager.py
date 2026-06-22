@@ -574,8 +574,7 @@ class ProjectManager(QDockWidget):
         self.btn_sys.setChecked(tab == "sys")
         self.btn_proj.setChecked(tab == "proj")
         self.btn_pak_files.setChecked(tab == "pak")
-        if tab == "pak" and self._pak_index_dirty:
-            self._rebuild_pak_index(verify_paths=False)
+        self._prepare_pak_index()
         self.tree_sys.setVisible(tab == "sys")
         self.tree_proj.setVisible(tab == "proj")
         self.tree_pak.setVisible(tab == "pak")
@@ -585,6 +584,10 @@ class ProjectManager(QDockWidget):
 
     def switch_tab(self, tab: str):
         self._switch_tab(tab)
+
+    def _prepare_pak_index(self):
+        if self._active_tab == "pak" and self._pak_index_dirty:
+            self._rebuild_pak_index(verify_paths=False)
 
     def _update_placeholders(self):
         sys_ok = bool(self.unpacked_dir) and self._check_folder(self.unpacked_dir)
@@ -676,6 +679,7 @@ class ProjectManager(QDockWidget):
             "filter_proxy": self._pak_filter_proxy,
             "filter_text": self.pak_filter_edit.text(),
             "ignore_mods": self.pak_ignore_mods_cb.isChecked(),
+            "index_dirty": self._pak_index_dirty,
             "signature": (self._path_key(self.pak_dir), signature),
         }
 
@@ -718,7 +722,7 @@ class ProjectManager(QDockWidget):
             self.tree_pak.setModel(
                 self._pak_filter_proxy if state.get("filter_text") else self._pak_tree_model
             )
-            self._pak_index_dirty = False
+            self._pak_index_dirty = state.get("index_dirty", self._pak_tree_model is None)
             self._update_path_label()
             return True
         except (OSError, ValueError, TypeError):
@@ -752,6 +756,7 @@ class ProjectManager(QDockWidget):
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
             if self._restore_project_state(proj_dir):
                 self.tree_pak.setEnabled(True)
+                self._prepare_pak_index()
                 self._update_pak_controls_state()
                 self._update_placeholders()
                 if on_loaded:
@@ -812,7 +817,7 @@ class ProjectManager(QDockWidget):
                     self._pak_index_dirty = True
                     if self._active_tab == "pak":
                         self._set_loading_overlay(True, self.tr("Preparing PAK list..."))
-                        self._rebuild_pak_index(verify_paths=False)
+                    self._prepare_pak_index()
         except Exception:
             pass
         finally:
