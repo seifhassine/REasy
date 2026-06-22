@@ -10,6 +10,7 @@ DEFAULT_RSZ_JSONS: dict[str, str] = {
     "MHST3": "rszmhst3.json",
     "MHWilds": "rszmhwilds.json",
     "O2": "rszo2.json",
+    "OnimushaWOTS": "rszoniwots.json",
     "Pragmata": "rszpragmata.json",
     "RE2RT": "rszre2rt.json",
     "RE2": "rszre2.json",

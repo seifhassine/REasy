@@ -22,6 +22,7 @@ class RszEnumPromptController:
         ("sf6", "SF6"), 
         ("dd2", "DD2"), 
         ("o2", "O2"),
+        ("oniwots", "OnimushaWOTS"),
         ("re8", "RE8"), 
         ("re7", "RE7"), 
         ("re4", "RE4"), 

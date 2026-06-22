@@ -33,6 +33,7 @@ class EnumManager:
             "DMC5": "resources/data/enums/dmc5_enums.json",
             "SF6": "resources/data/enums/sf6_enums.json",
             "O2": "resources/data/enums/o2_enums.json",
+            "OnimushaWOTS": "resources/data/enums/oniwots_enums.json",
             "DD2": "resources/data/enums/dd2_enums.json",
             "KunitsuGami": "resources/data/enums/kunitsugami_enums.json",
             "RE9": "resources/data/enums/re9_enums.json",
