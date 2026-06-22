@@ -32,8 +32,11 @@ def find_default_rsz_json_path(game: str | None, base_dir: Path) -> Path | None:
     if not json_name:
         return None
 
-    candidate = base_dir / "resources" / "data" / "dumps" / json_name
-    return candidate if candidate.is_file() else None
+    candidates = (
+        base_dir / "resources" / "data" / "dumps" / json_name,
+        base_dir / json_name,
+    )
+    return next((candidate for candidate in candidates if candidate.is_file()), None)
 
 
 def resolve_rsz_json_path(
