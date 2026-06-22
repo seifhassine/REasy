@@ -7,12 +7,28 @@ from pathlib import Path
 from .constants import PROJECTS_ROOT
 
 CONFIG_NAME = ".reasy_project.json"
+_INVALID_PROJECT_PATH = "Invalid project path"
+
+
+def _validated_project_dir(project_dir: Path | str) -> Path:
+    root = PROJECTS_ROOT.resolve(strict=True)
+    try:
+        requested = Path(project_dir).resolve(strict=True)
+        game = requested.parent.name
+        project = requested.name
+        trusted = (root / game / project).resolve(strict=True)
+        trusted.relative_to(root)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ValueError(_INVALID_PROJECT_PATH) from exc
+
+    if trusted != requested or not trusted.is_dir():
+        raise ValueError(_INVALID_PROJECT_PATH)
+
+    return trusted
 
 
 def project_config_path(project_dir: Path | str) -> Path:
-    path = (Path(project_dir).resolve() / CONFIG_NAME).resolve()
-    if not path.is_relative_to(PROJECTS_ROOT.resolve()): raise ValueError("Invalid project path")
-    return path
+    return _validated_project_dir(project_dir) / CONFIG_NAME
 
 
 def load_project_config(project_dir: Path | str) -> dict:
@@ -25,10 +41,11 @@ def load_project_config(project_dir: Path | str) -> dict:
         return {}
     return config if isinstance(config, dict) else {}
 
+
 def save_project_config(project_dir: Path | str, config: Mapping[str, object]) -> None:
     path = project_config_path(project_dir)
-    if not path.is_relative_to(PROJECTS_ROOT.resolve()): raise ValueError("Invalid project path")
-    path.write_text(json.dumps(dict(config), indent=2), encoding="utf-8")
+    path.write_text(json.dumps(dict(config), indent=2) + "\n", encoding="utf-8")
+
 
 def update_project_config(project_dir: Path | str, updates: Mapping[str, object]) -> None:
     config = load_project_config(project_dir)
