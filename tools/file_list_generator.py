@@ -59,13 +59,22 @@ LARGE_FILE_THRESHOLD = 512 * 1024 * 1024
 MMAP_WINDOW_SIZE = 64 * 1024 * 1024
 MMAP_OVERLAP_SIZE = 1 * 1024 * 1024
 
-TEX_VARIANT_SUFFIXES = [
-    "_acot", "_albd", "_nrmr", "_msr", "_mskm", "_scot", "_nrca", "_msk4", "_alb", "_nrma",
-    "_nrm", "_albs", "_atos", "_faketex", "_dslut", "_msk3", "_emi", "_msk1", "_colormask.",
-    "_selectionmask", "_hgt", "_nrrc", "_hdr", "_mask", "_msk", "_nrra", "_albm", "_albh",
-    "_nrro", "_rocm", "_occ", "_lymo", "_alba", "_nrca", "_alp", "_nmr", "_rgh", "_met", "_nrrh",
-    "_iam", "_lut", "_fbi", "_add", "_emm", "_lym", "_cvt", "_vns", "_lin", "_pos", "_fur", "_im", "_disp",
-]
+TEX_VARIANT_SUFFIXES = """
+_acot _atoc _albd _nrmr _msr _mskm _scot _nrca _msk4 _alb _nrma _nrm _albs _atos
+_faketex _dslut _msk3 _emi _msk1 _colormask. _selectionmask _hgt _nrrc _hdr _mask
+_msk _nrra _albm _albh _nrro _rocm _occ _lymo _alba _alp _nmr _rgh _met _nrrh _iam
+_lut _fbi _add _emm _lym _cvt _vns _lin _pos _fur _im _disp _dark _position _albr
+_nor _gradientcolormap _mskinside _dmgr _gradetioncolorc _gradetioncolorb
+_gradetioncolora _emissivemap _fakeclothmask _emirainbow _fakesphermaskmap _wmask
+_flw _dmgmask _cwmask _cmr _dsp _off _dtl _fakesphere _spc _mak1 _alp1 _hight _mtos
+_atod _albmsc _rainbow_map _mskhair _vec _reindowmap _nram _nrrt _dmask _cmask _nrda
+_alpm _shape _normal _nrme _array _nrrm _reindowmask _smask _preview _evening
+_earlymorning _day _night _event _hit _nrmd _msk2 _colormask _sss _dmr _cma _hires
+_itm _color _gradetionmaska _gradetionmaskb _gradetionmaskc _grd _edit _cc _ver2 _out
+_inside _ver6 _all _fp32 _localcubemap _alpg _msc _flowmap _fm _atex
+_reinbowemissivemask _white _drt _ats _morning _trs mask24_array mask12_array
+mask41_array msk3_array _albo _vecm _ocdh _gradientcolor _gradient
+""".split()
 UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
 TEX_MDF2_MESH_SWAP_EXTENSIONS = ("tex", "mdf2", "mesh")
 MAX_LAST_NUMBER_VARIANTS = 1000
@@ -874,17 +883,19 @@ class PathCollector:
                 return stem[:-len(variant)], variant
         return stem, None
 
-    def _iter_tex_stem_variants(self, stem, extension):
+    def _iter_tex_stem_variants(self, stem, extension, source_stems=()):
         if self.improver_mode is not ImproverMode.TEX_VARIANTS or extension != 'tex':
             return
 
-        base_stem, used_variant = self._split_tex_stem_variant(stem)
-
+        base_stem, _ = self._split_tex_stem_variant(stem)
+        source_stems = source_stems or {stem}
+        if base_stem not in source_stems:
+            yield base_stem
         for suffix in UNIQUE_TEX_VARIANT_SUFFIXES:
-            if used_variant and suffix == used_variant:
-                continue
-            yield f"{base_stem}{suffix}"
-    
+            candidate_stem = f"{base_stem}{suffix}"
+            if candidate_stem not in source_stems:
+                yield candidate_stem
+
     def _process_entry(self, entry, f):
         from file_handlers.pak.pakfile import _read_entry_raw
         
@@ -1091,9 +1102,9 @@ class PathCollector:
 
         return True, None, pak_hashes
 
-    def _iter_improver_candidates(self, stem, extension, suffix_infos):
+    def _iter_improver_candidates(self, stem, extension, suffix_infos, tex_source_stems=None):
         if self.improver_mode is ImproverMode.TEX_VARIANTS:
-            stem_iter = self._iter_tex_stem_variants(stem, extension)
+            stem_iter = self._iter_tex_stem_variants(stem, extension, tex_source_stems)
         elif self.improver_mode is ImproverMode.NUMERIC:
             stem_iter = self._iter_numeric_stem_combinations(
                 stem,
@@ -1157,14 +1168,14 @@ class PathCollector:
             for candidate_stem in candidate_stems:
                 yield f"{candidate_stem}.{suffix}", candidate_stem, suffix_extension
 
-    def _iter_mode_candidates(self, stem, extension, suffix_info_cache):
+    def _iter_mode_candidates(self, stem, extension, suffix_info_cache, tex_source_stems=None):
         if self.improver_mode is ImproverMode.TEX_MDF2_MESH_SWAPS:
             suffix_infos = self._get_tex_mdf2_mesh_suffix_infos(extension, suffix_info_cache)
             yield from self._iter_tex_mdf2_mesh_candidates(stem, extension, suffix_infos)
             return
 
         suffix_infos = self._get_improver_suffix_infos(extension, suffix_info_cache)
-        yield from self._iter_improver_candidates(stem, extension, suffix_infos)
+        yield from self._iter_improver_candidates(stem, extension, suffix_infos, tex_source_stems)
 
     def _can_fast_hash_generated_candidates(self):
         return (
@@ -1213,6 +1224,11 @@ class PathCollector:
                     remaining_entries_by_extension[remaining_extension].add(remaining_stem)
                 suffix_info_cache = {}
                 processed_tex_mdf2_mesh_candidates = set()
+                tex_variant_bases = set()
+                tex_source_stems = {
+                    stem for stem, extension in entries
+                    if self.improver_mode is ImproverMode.TEX_VARIANTS and extension == 'tex'
+                }
 
                 progress_update_interval = 5000
                 progress_entry_update_interval = 100
@@ -1255,13 +1271,22 @@ class PathCollector:
                     if not remaining_stems or stem not in remaining_stems:
                         continue
 
+                    entry_tex_source_stems = None
+                    if tex_source_stems and extension == 'tex':
+                        tex_family_base, _ = self._split_tex_stem_variant(stem)
+                        if tex_family_base in tex_variant_bases:
+                            continue
+                        tex_variant_bases.add(tex_family_base)
+                        entry_tex_source_stems = tex_source_stems
+
                     remaining_stems.discard(stem)
                     generated_in_entry = 0
 
                     for candidate, candidate_stem, candidate_extension in self._iter_mode_candidates(
                         stem,
                         extension,
-                        suffix_info_cache
+                        suffix_info_cache,
+                        entry_tex_source_stems
                     ):
                         if self.improver_mode is ImproverMode.TEX_MDF2_MESH_SWAPS:
                             if candidate in processed_tex_mdf2_mesh_candidates:
