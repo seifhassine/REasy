@@ -21,6 +21,61 @@ class ArrayData:
     def parse(cls, _ctx):
         raise NotImplementedError("ArrayData parsing is handled separately")
 
+
+class LazyRawValues:
+    """For keeping large unedited arrays as raw bytes"""
+    def __init__(self, count, materializer, raw_bytes=None, raw_copy_safe=True):
+        self._count = count
+        self._materializer = materializer
+        self._raw_bytes = raw_bytes
+        self._raw_copy_safe = raw_copy_safe
+        self._values = None
+
+    def __len__(self):
+        return len(self._values) if self._values is not None else self._count
+
+    def __bool__(self):
+        return len(self) > 0
+
+    def __iter__(self):
+        return iter(self._materialize())
+
+    def __getitem__(self, index):
+        return self._materialize()[index]
+
+    def __setitem__(self, index, value):
+        self._materialize()[index] = value
+
+    def __delitem__(self, index):
+        del self._materialize()[index]
+
+    def append(self, value):
+        self._materialize().append(value)
+
+    def insert(self, index, value):
+        self._materialize().insert(index, value)
+
+    def pop(self, index=-1):
+        return self._materialize().pop(index)
+
+    def clear(self):
+        self._materialize().clear()
+
+    def extend(self, values):
+        self._materialize().extend(values)
+
+    def _materialize(self):
+        if self._values is None:
+            self._values = self._materializer()
+            self._raw_bytes = None
+        return self._values
+
+    def raw_bytes_if_available(self):
+        if self._values is None and self._raw_copy_safe and self._raw_bytes is not None:
+            return self._raw_bytes
+        return None
+
+
 class StructData:
     """Container for struct type that can hold 0 or more embedded structures"""
     def __init__(self, values=None, orig_type: str = ""):

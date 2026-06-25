@@ -8,7 +8,7 @@ from file_handlers.rsz.rsz_data_types import (
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
     ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
-    RectData, NON_ARRAY_PARSERS
+    RectData, NON_ARRAY_PARSERS, LazyRawValues
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
@@ -540,6 +540,33 @@ class TypeRegistryValidationError(ValueError):
         self.issues = issues
         super().__init__("RSZ type registry validation failed. Please make sure you selected the correct RSZ dump (rszxxx.json)")
 
+
+_LAZY_PRIMITIVE_ARRAY_THRESHOLD = 128
+_LAZY_STRUCT_ARRAY_THRESHOLD = 4096
+
+_LAZY_PRIMITIVE_ARRAY_TYPES = frozenset({
+    S8Data, U8Data, BoolData,
+    S16Data, U16Data,
+    S32Data, U32Data,
+    S64Data, U64Data,
+    F32Data, F64Data,
+})
+
+_FIXED_STRUCT_FIELD_TYPES = frozenset({
+    S8Data, U8Data, BoolData,
+    S16Data, U16Data,
+    S32Data, U32Data,
+    S64Data, U64Data,
+    F32Data, F64Data,
+    Vec2Data, Float2Data, PointData, SizeData, RangeData, RangeIData,
+    Int2Data, Uint2Data, Float3Data, PositionData, Int3Data, Int4Data,
+    Int4ColorData, Uint3Data, Float4Data, QuaternionData, ColorData,
+    Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, OBBData, RawBytesData,
+    CapsuleData, AABBData, RectData, AreaData, AreaDataOld, GuidData,
+    GameObjectRefData,
+})
+
+
 class RszFile:
 
     def __init__(self):
@@ -962,6 +989,142 @@ class RszFile:
     def get_rsz_userdata_string(self, rui):
         return self._rsz_userdata_str_map.get(rui, "")
 
+    @staticmethod
+    def _aligned_pos(pos: int, align: int, base_mod: int) -> int:
+        if align <= 1:
+            return pos
+        rem = (pos + base_mod) % align
+        return pos if rem == 0 else pos + (align - rem)
+
+    @classmethod
+    def _skip_repeated_fixed_values(cls, pos: int, count: int, field_size: int, field_align: int, base_mod: int) -> int:
+        if count <= 0:
+            return pos
+        if field_align <= 1:
+            return pos + count * field_size
+        first = cls._aligned_pos(pos, field_align, base_mod)
+        if field_size % field_align == 0:
+            return first + count * field_size
+        current = pos
+        for _ in range(count):
+            current = cls._aligned_pos(current, field_align, base_mod) + field_size
+        return current
+
+    def _fixed_struct_layout(self, fields_def: list):
+        if not fields_def:
+            return None
+        self._prepare_field_definitions(fields_def)
+        max_align = 1
+        for field in fields_def:
+            (
+                _field_name,
+                rsz_type,
+                _fsize,
+                field_align,
+                is_array,
+                _original_type,
+                _parser_func,
+                _default_element_class,
+            ) = field["_parse_cache"]
+            if is_array or rsz_type not in _FIXED_STRUCT_FIELD_TYPES:
+                return None
+            max_align = max(max_align, field_align)
+        return max_align
+
+    def _skip_fixed_structs(self, pos: int, count: int, fields_def: list, base_mod: int) -> int:
+        current = pos
+        for _ in range(count):
+            for field in fields_def:
+                (
+                    _field_name,
+                    _rsz_type,
+                    fsize,
+                    field_align,
+                    _is_array,
+                    _original_type,
+                    _parser_func,
+                    _default_element_class,
+                ) = field["_parse_cache"]
+                current = self._aligned_pos(current, field_align, base_mod) + fsize
+        return current
+
+    def _lazy_primitive_values(
+        self,
+        count: int,
+        raw_start: int,
+        raw_end: int,
+        field_size: int,
+        field_align: int,
+        original_type: str,
+        parser_func,
+        element_class,
+        base_mod: int,
+    ):
+        raw = self.data[raw_start:raw_end]
+        raw_copy_safe = base_mod == 0 and field_align <= 4
+
+        def materialize():
+            parser = _NonArrayFieldParser(self)
+            parser.reset_context(
+                base_mod,
+                [],
+                lambda _idx, _parent: None,
+                lambda _candidate: False,
+                None,
+                self._rsz_userdata_dict,
+                self._rsz_userdata_str_map,
+            )
+            parser.data = self.data
+            parser.field_size = field_size
+            parser.field_align = field_align
+            parser.original_type = original_type
+            values = []
+            append = values.append
+            pos = raw_start
+            for _ in range(count):
+                parser.configure(pos, field_size, field_align, original_type)
+                append(parser_func(parser))
+                pos = parser.pos
+            return values
+
+        return LazyRawValues(count, materialize, raw, raw_copy_safe)
+
+    def _lazy_struct_values(
+        self,
+        count: int,
+        raw_start: int,
+        raw_end: int,
+        parse_start: int,
+        struct_fields_def: list,
+        current_instance_index: int,
+        original_type: str,
+        max_align: int,
+        base_mod: int,
+    ):
+        raw = self.data[raw_start:raw_end]
+        raw_copy_safe = base_mod == 0 and max_align <= 4
+
+        def materialize():
+            struct_values = []
+            current_pos = parse_start
+            parsed_elements = self.parsed_elements.setdefault(current_instance_index, {})
+            for _ in range(count):
+                struct_element = {}
+                self.parsed_elements[current_instance_index] = struct_element
+                next_pos = self.parse_instance_fields(
+                    offset=current_pos,
+                    fields_def=struct_fields_def,
+                    current_instance_index=current_instance_index,
+                )
+                if next_pos <= current_pos or not struct_element:
+                    break
+                struct_values.append(struct_element)
+                current_pos = next_pos
+            self.parsed_elements[current_instance_index] = parsed_elements
+            return struct_values
+
+        return LazyRawValues(count, materialize, raw, raw_copy_safe)
+
     def _parse_instances(self, data, skip = False):
         """Parse instance data with optimizations"""
         if skip:
@@ -1079,6 +1242,11 @@ class RszFile:
                 out.extend(b'\x00')
             count = len(data_obj.values)
             out.extend(pack_uint(count))
+            raw_values = getattr(data_obj.values, "raw_bytes_if_available", None)
+            raw_bytes = raw_values() if raw_values else None
+            if raw_bytes is not None:
+                out.extend(raw_bytes)
+                return
             if count:
                 original_type = getattr(data_obj, "orig_type", None)
                 if original_type and self.type_registry:
@@ -1097,6 +1265,11 @@ class RszFile:
 
             count = len(data_obj.values)
             out.extend(pack_uint(count))
+            raw_values = getattr(data_obj.values, "raw_bytes_if_available", None)
+            raw_bytes = raw_values() if raw_values else None
+            if raw_bytes is not None:
+                out.extend(raw_bytes)
+                return
             
             for element in data_obj.values:
                 while (len(out) - base_mod) % field_align != 0:
@@ -2088,21 +2261,40 @@ class RszFile:
                             if struct_type_info:
                                 struct_fields_def = struct_type_info.get("fields", [])
                                 current_pos = _align(current_pos, field_align)
-                                temp_parsed = parsed_elements
-                                for _ in range(count):
-                                    struct_element = {}
-                                    self.parsed_elements[current_instance_index] = struct_element
-                                    next_pos = self.parse_instance_fields(
-                                        offset=current_pos,
-                                        fields_def=struct_fields_def,
-                                        current_instance_index=current_instance_index,
+                                layout = self._fixed_struct_layout(struct_fields_def)
+                                if count >= _LAZY_STRUCT_ARRAY_THRESHOLD and layout is not None:
+                                    raw_start = pos
+                                    raw_end = self._skip_fixed_structs(
+                                        current_pos, count, struct_fields_def, base_mod
                                     )
-                                    if next_pos > current_pos and struct_element:
-                                        struct_values.append(struct_element)
-                                        current_pos = next_pos
-                                    else:
-                                        break
-                                self.parsed_elements[current_instance_index] = temp_parsed
+                                    struct_values = self._lazy_struct_values(
+                                        count,
+                                        raw_start,
+                                        raw_end,
+                                        current_pos,
+                                        struct_fields_def,
+                                        current_instance_index,
+                                        original_type,
+                                        max(layout, field_align),
+                                        base_mod,
+                                    )
+                                    current_pos = raw_end
+                                else:
+                                    temp_parsed = parsed_elements
+                                    for _ in range(count):
+                                        struct_element = {}
+                                        self.parsed_elements[current_instance_index] = struct_element
+                                        next_pos = self.parse_instance_fields(
+                                            offset=current_pos,
+                                            fields_def=struct_fields_def,
+                                            current_instance_index=current_instance_index,
+                                        )
+                                        if next_pos > current_pos and struct_element:
+                                            struct_values.append(struct_element)
+                                            current_pos = next_pos
+                                        else:
+                                            break
+                                    self.parsed_elements[current_instance_index] = temp_parsed
                                 pos = current_pos
                         data_obj = StructData(struct_values, original_type)
 
@@ -2148,6 +2340,24 @@ class RszFile:
                     else:
                         if count == 0:
                             data_obj = ArrayData([], default_element_class, original_type)
+                        elif count >= _LAZY_PRIMITIVE_ARRAY_THRESHOLD and rsz_type in _LAZY_PRIMITIVE_ARRAY_TYPES:
+                            raw_start = pos
+                            raw_end = self._skip_repeated_fixed_values(
+                                pos, count, fsize, field_align, base_mod
+                            )
+                            values = self._lazy_primitive_values(
+                                count,
+                                raw_start,
+                                raw_end,
+                                fsize,
+                                field_align,
+                                original_type,
+                                parser_func,
+                                default_element_class,
+                                base_mod,
+                            )
+                            pos = raw_end
+                            data_obj = ArrayData(values, default_element_class, original_type)
                         elif count == 1:
                             configure(pos, fsize, field_align, original_type)
                             value = parser_func(non_array_parser)

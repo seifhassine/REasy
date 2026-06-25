@@ -210,15 +210,19 @@ class RszLazyNodeBuilder:
 
         return children
     
-    def create_lazy_reference_node(self, field_name: str, ref_id: int, ref_type: str, embedded_context=None) -> dict:
+    def create_lazy_reference_node(self, field_name: str, ref_id: int, ref_type: str, embedded_context=None, data_obj=None) -> dict:
         if ref_type == "UserData":
             display_value = self.name_helper.get_userdata_display_value(ref_id) if self.name_helper else f"UserData (ID: {ref_id})"
+            label = f"{field_name}: {display_value}"
         else:
             type_name = self.name_helper.get_type_name_for_instance(ref_id) if self.name_helper else f"Object (ID: {ref_id})"
-            display_value = f"({type_name})"
+            label = f"{field_name}: ({type_name})"
         
         ref_node = DataTreeBuilder.create_data_node(
-            f"{field_name}: ({display_value})", "", None, None
+            label,
+            "",
+            data_obj.__class__.__name__ if data_obj is not None else None,
+            data_obj,
         )
         
         has_content = False

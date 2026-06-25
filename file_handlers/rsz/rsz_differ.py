@@ -1,4 +1,5 @@
 import tempfile
+from itertools import islice
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from pathlib import Path
@@ -1194,14 +1195,14 @@ class RszDiffer:
             if len(val1.values) != len(val2.values):
                 changes.append(f"{path}: array size {len(val1.values)} → {len(val2.values)}")
             else:
-                for i, (elem1, elem2) in enumerate(list(zip(val1.values, val2.values))[:10]):
+                for i, (elem1, elem2) in enumerate(islice(zip(val1.values, val2.values), 10)):
                     changes.extend(self.compare_field_values(elem1, elem2, f"{path}[{i}]", depth + 1, in_embedded))
 
         elif isinstance(val1, StructData):
             if len(val1.values) != len(val2.values):
                 changes.append(f"{path}: struct count {len(val1.values)} → {len(val2.values)}")
             else:
-                for i, (struct1, struct2) in enumerate(list(zip(val1.values, val2.values))[:5]):
+                for i, (struct1, struct2) in enumerate(islice(zip(val1.values, val2.values), 5)):
                     for key in set(struct1.keys()) | set(struct2.keys()):
                         if key in struct1 and key in struct2:
                             changes.extend(self.compare_field_values(struct1[key], struct2[key], f"{path}[{i}].{key}", depth + 1, in_embedded))

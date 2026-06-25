@@ -28,6 +28,7 @@ from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError
 from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import DataTreeBuilder
+from ..pyside.tree_core import DeferredChildBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
 from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
@@ -487,15 +488,14 @@ class RszViewer(QWidget):
             file_type = "SCN"
         root_dict["data"][0] = f"{file_type}_File"
         if self.show_advanced:
-            advanced_children = [
-                node for node in self._iter_advanced_sections() if node is not None
-            ]
-            if advanced_children:
-                advanced_node = DataTreeBuilder.create_data_node(
-                    ADVANCED_SECTION_TITLE, ""
-                )
-                advanced_node["children"].extend(advanced_children)
-                root_dict["children"].append(advanced_node)
+            advanced_node = DataTreeBuilder.create_data_node(
+                ADVANCED_SECTION_TITLE, ""
+            )
+            advanced_node["deferred_builder"] = DeferredChildBuilder(
+                lambda: [node for node in self._iter_advanced_sections() if node is not None]
+            )
+            advanced_node["expandable"] = True
+            root_dict["children"].append(advanced_node)
         data_node = DataTreeBuilder.create_data_node(DATA_BLOCK_TITLE, "")
         root_dict["children"].append(data_node)
         self._add_data_block(data_node)
@@ -824,19 +824,32 @@ class RszViewer(QWidget):
             nodes[go.id] = (go_dict, go.parent_id)
             settings_node = {"data": ["Settings", ""], "children": []}
             go_dict["children"].append(settings_node)
-            if not self.scn.is_pfb:
-                guid_data = create_guid_data(go.guid)
-                guid_data.gameobject = go
-                guid_field = self._create_field_dict("GUID", guid_data)
-                settings_node["children"].insert(0, guid_field)
-            
-            if go_instance_id in self.scn.parsed_elements:
-                fields = self.scn.parsed_elements[go_instance_id]
-                for field_name, field_data in fields.items():
-                    field_node = self._create_field_dict(field_name, field_data, embedded_context=None)
-                    if len(settings_node["children"]) == 1:
-                        field_data.is_gameobject_or_folder_name = go_dict
-                    settings_node["children"].append(field_node)
+
+            fields = self.scn.parsed_elements.get(go_instance_id)
+            if fields is not None:
+                def build_gameobject_settings(go=go, go_dict=go_dict, fields=fields):
+                    children = []
+                    if not self.scn.is_pfb:
+                        guid_data = create_guid_data(go.guid)
+                        guid_data.gameobject = go
+                        children.append(self._create_field_dict("GUID", guid_data))
+                    first_field = True
+                    for field_name, field_data in fields.items():
+                        if first_field:
+                            field_data.is_gameobject_or_folder_name = go_dict
+                            first_field = False
+                        children.append(self._create_field_dict(field_name, field_data, embedded_context=None))
+                    return children
+                settings_node["deferred_builder"] = DeferredChildBuilder(build_gameobject_settings)
+                settings_node["expandable"] = True
+            elif not self.scn.is_pfb:
+                def build_guid_only(go=go):
+                    guid_data = create_guid_data(go.guid)
+                    guid_data.gameobject = go
+                    return [self._create_field_dict("GUID", guid_data)]
+                settings_node["deferred_builder"] = DeferredChildBuilder(build_guid_only)
+                settings_node["expandable"] = True
+
             processed.add(go_instance_id)
             if go.component_count > 0:
                 comp_node = {"data": ["Components", ""], "children": []}
@@ -859,8 +872,13 @@ class RszViewer(QWidget):
                     comp_node["children"].append(comp_dict)
                     if comp_instance_id in self.scn.parsed_elements:
                         fields = self.scn.parsed_elements[comp_instance_id]
-                        for f_name, f_data in fields.items():
-                            comp_dict["children"].append(self._create_field_dict(f_name, f_data))
+                        comp_dict["deferred_builder"] = DeferredChildBuilder(
+                            lambda fields=fields: [
+                                self._create_field_dict(f_name, f_data)
+                                for f_name, f_data in fields.items()
+                            ]
+                        )
+                        comp_dict["expandable"] = bool(fields)
                     processed.add(comp_instance_id)
             gameobjects_folder["children"].append(go_dict)
         for folder in self.scn.folder_infos:
@@ -885,16 +903,17 @@ class RszViewer(QWidget):
             folder_dict["children"].append(settings_node)
             if folder_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[folder_instance_id]
-                first_field = True
-                for field_name, field_data in fields.items():
-                    if first_field:
-                        field_data.is_gameobject_or_folder_name = folder_dict
-                        first_field = False
-                
-                for field_name, field_data in fields.items():
-                    settings_node["children"].append(
-                        self._create_field_dict(field_name, field_data)
-                    )
+                def build_folder_settings(folder_dict=folder_dict, fields=fields):
+                    children = []
+                    first_field = True
+                    for field_name, field_data in fields.items():
+                        if first_field:
+                            field_data.is_gameobject_or_folder_name = folder_dict
+                            first_field = False
+                        children.append(self._create_field_dict(field_name, field_data))
+                    return children
+                settings_node["deferred_builder"] = DeferredChildBuilder(build_folder_settings)
+                settings_node["expandable"] = bool(fields)
             processed.add(folder_instance_id)
             folders_folder["children"].append(folder_dict)
         for id_, (node_dict, parent_id) in nodes.items():
@@ -1221,6 +1240,10 @@ class RszViewer(QWidget):
             )
         
         # Object reference
+        if hasattr(self, 'lazy_builder') and self.lazy_builder:
+            return self.lazy_builder.create_lazy_reference_node(
+                field_name, ref_id, "Object", None, data_obj
+            )
         type_name = self.name_helper.get_type_name_for_instance(ref_id)
         children = []
         if ref_id in scn.parsed_elements:
