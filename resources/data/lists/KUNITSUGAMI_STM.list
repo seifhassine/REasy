@@ -12721,6 +12721,7 @@ natives/stm/environment/st/st24/st24_001/st24_001_fol_edit_effectdefault.mcol.24
 natives/stm/environment/st/st24/st24_001/st24_001_fol_edit_terraincamerapass.mcol.24021
 natives/stm/environment/st/st24/st24_001/st24_001_mat.mdf2.40
 natives/stm/environment/st/st24/st24_001/st24_001_t.mcol.24021
+natives/stm/environment/st/st24/st24_002/st24_002_t.mcol.24021
 natives/stm/environment/st/st24/st24_999/st24_999_00_c.mcol.24021
 natives/stm/environment/st/st25/ground/collision/p0p0e9_effectdefault.chf.2
 natives/stm/environment/st/st25/ground/collision/p0p0e9_terrainall.chf.2
@@ -12763,6 +12764,7 @@ natives/stm/environment/st/st27/st27_000/st27_000_mat.mdf2.40
 natives/stm/environment/st/st27/st27_000/st27_000_t.mcol.24021
 natives/stm/environment/st/st27/st27_002/st27_002.mesh.240306278
 natives/stm/environment/st/st27/st27_002/st27_002.sdftex.1759051780
+natives/stm/environment/st/st27/st27_002/st27_002_mat.mdf2.40
 natives/stm/environment/st/st27/st27_002/st27_002_t.mcol.24021
 natives/stm/environment/st/st27/st27_003/st27_003.mesh.240306278
 natives/stm/environment/st/st27/st27_003/st27_003.sdftex.1759051780
@@ -12777,6 +12779,7 @@ natives/stm/environment/st/st27/st27_004/st27_004.mesh.240306278
 natives/stm/environment/st/st27/st27_004/st27_004.sdftex.1759051780
 natives/stm/environment/st/st27/st27_004/st27_004_e.mcol.24021
 natives/stm/environment/st/st27/st27_004/st27_004_mat.mdf2.40
+natives/stm/environment/st/st27/st27_004/st27_004_t.mcol.24021
 natives/stm/environment/st/st28/ground/collision/p0p0e9_effectdefault.chf.2
 natives/stm/environment/st/st28/ground/collision/p0p0e9_terrainall.chf.2
 natives/stm/environment/st/st28/ground/developloc28ground.grnd.1759053839
@@ -21995,6 +21998,7 @@ natives/stm/streaming/environment/st/st23/st23_001/st23_001.mesh.240306278
 natives/stm/streaming/environment/st/st24/st24_001/st24_001.mesh.240306278
 natives/stm/streaming/environment/st/st26/st26_000/st26_000.mesh.240306278
 natives/stm/streaming/environment/st/st27/st27_000/st27_000.mesh.240306278
+natives/stm/streaming/environment/st/st27/st27_002/st27_002.mesh.240306278
 natives/stm/streaming/environment/st/st27/st27_003/st27_003.mesh.240306278
 natives/stm/streaming/environment/st/st27/st27_004/st27_004.mesh.240306278
 natives/stm/streaming/environment/st/st29/st29_001/st29_001_00.mesh.240306278

@@ -10939,6 +10939,7 @@ natives/stm/character/enemy/em3000/em3050/em3050_face_blend_atos.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_face_blend_nrmr.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_face_intensity_msk4.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_face_msk.tex.35
+natives/stm/character/enemy/em3000/em3050/em3050_face_mtos.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_face_nrmr.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_glass_albm.tex.35
 natives/stm/character/enemy/em3000/em3050/em3050_glass_atos.tex.35
@@ -11488,6 +11489,7 @@ natives/stm/character/enemy/em8000/em8050/em8050_face_blend_atos.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_face_blend_nrmr.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_face_intensity_msk4.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_face_msk.tex.35
+natives/stm/character/enemy/em8000/em8050/em8050_face_mtos.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_face_nrmr.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_glass_albm.tex.35
 natives/stm/character/enemy/em8000/em8050/em8050_glass_nrmr.tex.35
@@ -44147,6 +44149,7 @@ natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_albm.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_blend_atos.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_blend_nrmr.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_msk.tex.35
+natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_mtos.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_face_nrmr.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_glass_albm.tex.35
 natives/stm/streaming/character/enemy/em3000/em3050/em3050_glass_atos.tex.35
@@ -44432,6 +44435,7 @@ natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_albm.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_blend_atos.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_blend_nrmr.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_msk.tex.35
+natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_mtos.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_face_nrmr.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_glass_albm.tex.35
 natives/stm/streaming/character/enemy/em8000/em8050/em8050_glass_nrmr.tex.35
