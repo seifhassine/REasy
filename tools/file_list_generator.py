@@ -60,23 +60,34 @@ MMAP_WINDOW_SIZE = 64 * 1024 * 1024
 MMAP_OVERLAP_SIZE = 1 * 1024 * 1024
 
 TEX_VARIANT_SUFFIXES = """
-_acot _atoc _albd _nrmr _msr _mskm _scot _nrca _msk4 _alb _nrma _nrm _albs _atos
-_faketex _dslut _msk3 _emi _msk1 _colormask. _selectionmask _hgt _nrrc _hdr _mask
-_msk _nrra _albm _albh _nrro _rocm _occ _lymo _alba _alp _nmr _rgh _met _nrrh _iam
-_lut _fbi _add _emm _lym _cvt _vns _lin _pos _fur _im _disp _dark _position _albr
-_nor _gradientcolormap _mskinside _dmgr _gradetioncolorc _gradetioncolorb
-_gradetioncolora _emissivemap _fakeclothmask _emirainbow _fakesphermaskmap _wmask
-_flw _dmgmask _cwmask _cmr _dsp _off _dtl _fakesphere _spc _mak1 _alp1 _hight _mtos
-_atod _albmsc _rainbow_map _mskhair _vec _reindowmap _nram _nrrt _dmask _cmask _nrda
-_alpm _shape _normal _nrme _array _nrrm _reindowmask _smask _preview _evening
-_earlymorning _day _night _event _hit _nrmd _msk2 _colormask _sss _dmr _cma _hires
-_itm _color _gradetionmaska _gradetionmaskb _gradetionmaskc _grd _edit _cc _ver2 _out
-_inside _ver6 _all _fp32 _localcubemap _alpg _msc _flowmap _fm _atex
-_reinbowemissivemask _white _drt _ats _morning _trs mask24_array mask12_array
-mask41_array msk3_array _albo _vecm _ocdh _gradientcolor _gradient
+_acot _atoc _albd _nrmr _fakemetalliccolora _fakemetalliccolorb _msr _mskm _scot _nrca _msk4 _alb _nrma _nrm _hgh _albs _atos _cm1
+_faketex _dslut _msk3 _pupple _emi _msk1 _basecolor _height _alphamaskrange _colormask _selectionmask _hgt _nrrc _hdr _mask _cm2
+_msk _nrra _albm _albh _nrro _rocm _occ _lymo _optm _alba _alp _nmr _rgh _met _nrrh _iam
+_lut _fbi _add _sphere _colr _emm _lym _cvt _vns _ldoa _talb _ocnm _lin _nrm1 _pos _fur _im _disp _dark _position _albr _detail
+_nor _gradientcolormap _cooa _ddov _yellow _blend _albg _wpfx _emfx _teth _roughness _mskinside _dmgr _gradetioncolorc _gradetioncolorb _nroc _after
+_gradetioncolora _red _dem _emissivemap _fakeclothmask _albc _emms _emirainbow _fakesphermaskmap _wmask _blendmask
+_flw _dmgmask _hbl _ditailmask _mask_mm _addlayer _multiplylayer _tls _cwmask _msb _cmr _dsp _off _dtl _fakesphere _spc _mak1 _alp1 _hight _mtos
+_atod _albmsc _fl _sde _fms _vfx _rainbow_map _wam _tala _hair _wpms _mask3ch _mskhair _vec _reindowmap _nram _nrrt _dmask _cmask _nrda
+_alpm _shape _scroll _kihoumap _fi _brown _clh _toc _dtal _interior _rcm _emitmaskmap _normal _bml _pn _nrme _array _nrrm _reindowmask _smask _preview _evening _stoc
+_earlymorning _msdf _vamask _fxemi _wave _kekkanmap _nm _alb_b _cole _mud _rcto _day _night _event _hit _nrmd _msk2 _ani _sss _dmr _cma _hires _stoc _master
+_itm _color _msdf _fvm _fka _sem _mask1 _sr _demi _flowemi _albe _blue _spec _coll _rgba _grooming _gradetionmaska _gradetionmaskb _gradetionmaskc _grd _edit _cc _ver2 _out
+_inside _flm _stcf _emd _hm _old _cubemap _eqfx _lava lym0 _auroracol _nroe _wing _ver6 _flow _msa _all _bm _bm2 _fp32 _localcubemap _alpg _msc _flowmap _fm _atex _ocma _hgal _mask4
+_reinbowemissivemask _cmv _fvn _demc _cm _ms3 _rem _bde _remi _emipng _bclo _fakesphare _em _ho _cmm _fx _hairover _wind _bam _nml _white _drt _ats _morning _trs _mask24_array _mask12_array _ems
+_mask41_array _green _emie _centermask _eyeb _eyec _vt _wemi _cmb _fkb _lensmap _pr _fkot _idm _fcmr _fcm _fxmap2 _vet _glittermask _emifx _nrof _over _specs _direction _pulse _windmask _nrrs _stcm _msk3_array _albo _vecm _ocdh _gradientcolor _gradient e_ssoc _emissive
 """.split()
 UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
 TEX_MDF2_MESH_SWAP_EXTENSIONS = ("tex", "mdf2", "mesh")
+STEM_SUFFIX_PROBE_STRINGS = (
+    " -",
+    "-",
+    " (1)",
+    " (2)",
+    " (3)",
+    " (4)",
+    " _",
+    "_",
+    " ",
+)
 MAX_LAST_NUMBER_VARIANTS = 1000
 LINKED_DUAL_TAIL_FIRST_WINDOW = 32
 MAX_LINKED_DUAL_TAIL_COMBINATIONS = 5000
@@ -95,6 +106,7 @@ class ImproverMode(Enum):
     TEX_VARIANTS = "tex_variants"
     EXTENSION_SWAPS = "extension_swaps"
     TEX_MDF2_MESH_SWAPS = "tex_mdf2_mesh_swaps"
+    STEM_SUFFIX_PROBES = "stem_suffix_probes"
     CROSS_GAME_VERSION_SWAPS = "cross_game_version_swaps"
 
 
@@ -896,6 +908,15 @@ class PathCollector:
             if candidate_stem not in source_stems:
                 yield candidate_stem
 
+    def _iter_stem_suffix_probe_variants(self, stem):
+        seen = set()
+        for probe in STEM_SUFFIX_PROBE_STRINGS:
+            candidate_stem = f"{stem}{probe}"
+            if candidate_stem in seen:
+                continue
+            seen.add(candidate_stem)
+            yield candidate_stem
+
     def _process_entry(self, entry, f):
         from file_handlers.pak.pakfile import _read_entry_raw
         
@@ -1111,6 +1132,8 @@ class PathCollector:
                 family_scope=suffix_infos,
                 source_extension=extension
             )
+        elif self.improver_mode is ImproverMode.STEM_SUFFIX_PROBES:
+            stem_iter = self._iter_stem_suffix_probe_variants(stem)
         else:
             stem_iter = (stem,)
 
