@@ -210,6 +210,13 @@ class FileListGeneratorDialog(QDialog):
         self.improve_list_tex_mdf2_mesh_btn.setFont(improve_font)
         bottom_layout.addWidget(self.improve_list_tex_mdf2_mesh_btn)
 
+        self.improve_list_stem_suffix_btn = QPushButton("Improve List (Stem Suffix Probes)")
+        self.improve_list_stem_suffix_btn.clicked.connect(self._improve_list_stem_suffix_probes)
+        self.improve_list_stem_suffix_btn.setVisible(False)
+        self.improve_list_stem_suffix_btn.setMinimumHeight(35)
+        self.improve_list_stem_suffix_btn.setFont(improve_font)
+        bottom_layout.addWidget(self.improve_list_stem_suffix_btn)
+
         self.cross_game_improve_btn = QPushButton("Improve Using Another Game List")
         self.cross_game_improve_btn.clicked.connect(self._improve_list_from_other_game)
         self.cross_game_improve_btn.setVisible(False)
@@ -254,6 +261,8 @@ class FileListGeneratorDialog(QDialog):
                 self.improve_list_swap_ext_btn.setEnabled(True)
             if hasattr(self, 'improve_list_tex_mdf2_mesh_btn'):
                 self.improve_list_tex_mdf2_mesh_btn.setEnabled(True)
+            if hasattr(self, 'improve_list_stem_suffix_btn'):
+                self.improve_list_stem_suffix_btn.setEnabled(True)
             if hasattr(self, 'cross_game_improve_btn'):
                 self.cross_game_improve_btn.setEnabled(True)
     
@@ -270,6 +279,8 @@ class FileListGeneratorDialog(QDialog):
             self.improve_list_swap_ext_btn.setEnabled(False)
         if hasattr(self, 'improve_list_tex_mdf2_mesh_btn'):
             self.improve_list_tex_mdf2_mesh_btn.setEnabled(False)
+        if hasattr(self, 'improve_list_stem_suffix_btn'):
+            self.improve_list_stem_suffix_btn.setEnabled(False)
         if hasattr(self, 'cross_game_improve_btn'):
             self.cross_game_improve_btn.setEnabled(False)
     
@@ -384,12 +395,14 @@ class FileListGeneratorDialog(QDialog):
         self.improve_list_tex_btn.setVisible(True)
         self.improve_list_swap_ext_btn.setVisible(True)
         self.improve_list_tex_mdf2_mesh_btn.setVisible(True)
+        self.improve_list_stem_suffix_btn.setVisible(True)
         self.cross_game_improve_btn.setVisible(True)
         has_list = bool(self.list_file_path)
         self.improve_list_btn.setEnabled(has_list)
         self.improve_list_tex_btn.setEnabled(has_list)
         self.improve_list_swap_ext_btn.setEnabled(has_list)
         self.improve_list_tex_mdf2_mesh_btn.setEnabled(has_list)
+        self.improve_list_stem_suffix_btn.setEnabled(has_list)
         self.cross_game_improve_btn.setEnabled(has_list)
         self.extract_exe_btn.setEnabled(True)
         self.extract_dump_btn.setEnabled(True)
@@ -698,6 +711,14 @@ class FileListGeneratorDialog(QDialog):
             "For tex, mdf2, and mesh paths, tries sibling asset extensions and the texture suffix family for generated .tex paths.",
             title="Current Game List Improver (Tex/MDF2/Mesh)",
             improver_mode=ImproverMode.TEX_MDF2_MESH_SWAPS,
+        )
+
+    def _improve_list_stem_suffix_probes(self):
+        self._run_improver_mode(
+            "Improve Existing List (Stem Suffix Probes)",
+            "For every path, tries common strings before the extension/version: ' -', '-', ' (1)', ' (2)', ' (3)', ' (4)', ' _', ' ', and '_'.",
+            title="Current Game List Improver (Stem Suffix Probes)",
+            improver_mode=ImproverMode.STEM_SUFFIX_PROBES,
         )
 
     def _improve_list_from_other_game(self):
