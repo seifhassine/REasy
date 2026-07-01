@@ -15,6 +15,7 @@ from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.clip.clip_handler import ClipHandler
 from file_handlers.wel.wel_handler import WelHandler
 from file_handlers.wcc.wcc_handler import WccHandler
+from file_handlers.fol.fol_handler import FolHandler
 
 
 def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
@@ -38,6 +39,7 @@ def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
         ClipHandler,
         UvsHandler,
         RcolHandler,
+        FolHandler,
     ]:
         if handler_class.can_handle(data):
             return handler_class()
