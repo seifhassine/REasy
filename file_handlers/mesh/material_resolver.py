@@ -74,6 +74,7 @@ class MeshMaterialResolver:
         cls,
         handler,
         *,
+        explicit_mdf_path: str = "",
         prefer_streaming: bool = False,
         resolve_textures: bool = True,
         parse_in_subprocess: bool = False,
@@ -84,7 +85,14 @@ class MeshMaterialResolver:
         if not material_names:
             return None, []
 
-        resolved_mdf = cls.resolve_mdf_for_handler(handler, parse_in_subprocess=parse_in_subprocess)
+        if explicit_mdf_path:
+            resolved_mdf = cls.resolve_mdf_path_for_handler(
+                handler,
+                explicit_mdf_path,
+                parse_in_subprocess=parse_in_subprocess,
+            )
+        else:
+            resolved_mdf = cls.resolve_mdf_for_handler(handler, parse_in_subprocess=parse_in_subprocess)
         if resolved_mdf is None:
             return None, [MeshMaterialBinding(name, status="MDF not found") for name in material_names]
 
@@ -128,6 +136,33 @@ class MeshMaterialResolver:
                 )
             )
         return resolved_mdf, bindings
+
+    @classmethod
+    def resolve_mdf_path_for_handler(
+        cls,
+        handler,
+        mdf_path: str,
+        *,
+        parse_in_subprocess: bool = False,
+    ) -> ResolvedMdf | None:
+        normalized = (mdf_path or "").replace("\\", "/").lstrip("@/").rstrip("\x00")
+        if not normalized:
+            return None
+        resolved = cls._resolve_resource(handler, normalized)
+        if resolved is None:
+            return None
+        actual_path, data = resolved
+        try:
+            material_textures = cls._parse_mdf_material_textures(
+                data,
+                actual_path,
+                parse_in_subprocess=parse_in_subprocess,
+            )
+        except Exception:
+            return None
+        if not material_textures:
+            return None
+        return ResolvedMdf(path=actual_path, material_textures=material_textures)
 
     @staticmethod
     def pick_primary_texture(material: MatData) -> TexHeader | None:

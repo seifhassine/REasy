@@ -89,6 +89,7 @@ from ui.highlight_manager import HighlightManager
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.highlight_delegate import HighlightDelegate
 from ui.homepage import HomePageStack, HomePageWidget
+from ui.scene.scn_scene_workspace import ScnSceneController
 from tools.hash_calculator import HashCalculator
 
 from utils.native_build import ensure_fast_pakresolve, ensure_fastmesh
@@ -369,6 +370,9 @@ class FileTab:
             "result_list": None,
             "tree_ref": None,
         }
+
+    def tr(self, text: str) -> str:
+        return QObject.tr(text)
 
     def _invalidate_search_dialog_tree(self):
         dialogs = []
@@ -761,23 +765,20 @@ class FileTab:
         self._release_resources_before_reload()
 
         try:
-            data = None
-            if self.pak_source_path and not os.path.isfile(self.filename) and callable(self.pak_data_loader):
-                data = self.pak_data_loader(self.pak_source_path)
-            else:
-                with open(self.filename, "rb") as f:
-                    data = f.read()
-
+            data = self._read_reload_data()
             if data is None:
                 raise FileNotFoundError(f"Unable to read source data for: {self.filename}")
 
             success = self.load_file(self.filename, data)
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
-                
+
             self.modified = False
-            self.viewer.modified = False
+            if self.viewer and hasattr(self.viewer, "modified"):
+                self.viewer.modified = False
             self.update_tab_title()
+            if self.app and hasattr(self.app, "scenes"):
+                self.app.scenes.sync_tab(self)
 
 
         except Exception as e:
@@ -785,6 +786,26 @@ class FileTab:
             import traceback
 
             traceback.print_exc()
+
+    def _read_reload_data(self) -> bytes | None:
+        if self.pak_source_path and callable(self.pak_data_loader):
+            data = self.pak_data_loader(self.pak_source_path)
+            if data is not None:
+                return data
+        if self.filename and os.path.isfile(self.filename):
+            with open(self.filename, "rb") as f:
+                return f.read()
+        if not self.app or not self.filename:
+            return None
+        from utils.resource_file_utils import resolve_app_resource_data
+
+        hit = resolve_app_resource_data(
+            self.app,
+            self.filename,
+            None,
+            allow_selection_dialog=False,
+        )
+        return hit[1] if hit else None
 
     def open_find_dialog(self):
         if isinstance(self.handler, MsgHandler):
@@ -910,6 +931,8 @@ class FileTab:
                 delete_later = getattr(self.handler, "deleteLater", None)
                 if callable(delete_later):
                     delete_later()
+            except RuntimeError:
+                pass
             except Exception as e:
                 print(f"Warning: Error scheduling handler deletion before reload: {e}")
 
@@ -1052,6 +1075,8 @@ class REasyEditorApp(QMainWindow):
         history = self.settings.get("recently_closed_files", [])
         self._closed_file_history = [f for f in history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
         self.recently_closed_menu = None
+        self.scene_menu = None
+        self.scenes = ScnSceneController(self)
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
@@ -1062,7 +1087,9 @@ class REasyEditorApp(QMainWindow):
         self._create_toolbar()
         
         self.notebook.currentChanged.connect(self._update_highlight_menu_visibility)
+        self.notebook.currentChanged.connect(lambda _index: self.scenes.refresh_actions())
         self.notebook.currentChanged.connect(lambda _index: self._refresh_homepage())
+        QApplication.instance().focusChanged.connect(lambda *_: self._update_general_shortcut_state())
         self.proj_dock.visibilityChanged.connect(lambda _visible: self._refresh_homepage())
 
         self.status_bar = QStatusBar()
@@ -1297,6 +1324,9 @@ class REasyEditorApp(QMainWindow):
         )
         view_menu.addAction(dbg_act)
 
+        self.scene_menu = menubar.addMenu(self.tr("Scene"))
+        self.scene_menu.aboutToShow.connect(lambda: self.scenes.populate_scene_menu(self.scene_menu))
+
         tools_menu = menubar.addMenu(self.tr("Tools"))
         guid_conv_act = QAction(self.tr("GUID Converter"), self)
         guid_conv_act.triggered.connect(self.open_guid_converter)
@@ -1353,6 +1383,18 @@ class REasyEditorApp(QMainWindow):
         if current_tab and hasattr(current_tab, 'handler'):
             is_rsz = isinstance(current_tab.handler, RszHandler)
         self.highlight_menu_controller.update_menu_visibility(is_rsz)
+        self._update_general_shortcut_state()
+
+    def _update_general_shortcut_state(self):
+        disabled = bool(getattr(self.get_active_tab(), "suppress_general_shortcuts", False))
+        shortcuts = self.settings.get("keyboard_shortcuts", {})
+        for action in self.findChildren(QAction):
+            try:
+                name = action.objectName()
+                if name in shortcuts:
+                    action.setShortcut(QKeySequence() if disabled else QKeySequence(shortcuts.get(name, "")))
+            except RuntimeError:
+                pass
 
     def new_project(self):
         name, ok = QInputDialog.getText(self, self.tr("New Project"), self.tr("Project name:"))
@@ -1660,7 +1702,15 @@ class REasyEditorApp(QMainWindow):
                 self._shared_find_dialog.close()
             except RuntimeError:
                 pass
-        event.accept() if self._confirm_tabs_close(list(self.tabs.values())) else event.ignore()
+        if not self._confirm_tabs_close(list(self.tabs.values())):
+            event.ignore()
+            return
+        for tab in list(self.tabs.values()):
+            try:
+                tab.cleanup()
+            except Exception as exc:
+                print(f"Warning: Error cleaning up tab during shutdown: {exc}")
+        event.accept()
 
     def update_from_app_settings(self):
         """Update handler settings from the application settings"""
@@ -1988,6 +2038,7 @@ class REasyEditorApp(QMainWindow):
                         print(f"Applied shortcut: {action_name} -> {shortcut_text}")
                     except Exception as e:
                         print(f"Error setting shortcut for {action_name}: {e}")
+        self._update_general_shortcut_state()
         
         if hasattr(self, "menuBar"):
             menubar = self.menuBar()
@@ -2174,6 +2225,8 @@ class REasyEditorApp(QMainWindow):
             self.project_workspace.sessions.add_tab(tab)
             self.notebook.setCurrentWidget(tab.notebook_widget)
             self._update_highlight_menu_visibility()
+            self.scenes.refresh_actions()
+            self.scenes.refresh_buttons()
             self._refresh_homepage()
             return tab
             
@@ -2185,6 +2238,18 @@ class REasyEditorApp(QMainWindow):
                 except Exception as e:
                     print(f"Error closing tab: {e}")
             return None
+
+    def attach_pak_source_tab(self, tab, pak_path: str, project_dir: str | None = None) -> None:
+        if tab is None or not pak_path:
+            return
+        tab.pak_source_path = pak_path
+        project_dir = project_dir or getattr(self.proj_dock, "project_dir", None)
+        tab.pak_data_loader = lambda source_path: self.proj_dock.read_project_pak_file(
+            project_dir,
+            source_path,
+        )
+        self.scenes.refresh_actions()
+        self.scenes.refresh_buttons()
 
     def get_active_tab(self):
         active_tabs = self.project_workspace.sessions.active_tabs()
@@ -2320,6 +2385,9 @@ class REasyEditorApp(QMainWindow):
                     self.proj_dock.reopen_pak_history_entry(decoded_target)
                     if is_pak_entry else self._open_path(decoded_target)
                 )
+                if not success and project_dir and not is_pak_entry and not os.path.isabs(decoded_target):
+                    project_target = os.path.join(project_dir, *decoded_target.replace("\\", "/").split("/"))
+                    success = self._open_path(project_target)
 
             if success:
                 self._closed_file_history.remove(target)
@@ -2385,6 +2453,8 @@ class REasyEditorApp(QMainWindow):
         self.project_workspace.sessions.remove_tab(tab)
         tab.cleanup()
         self._check_and_close_shared_find_dialog()
+        self.scenes.refresh_actions()
+        self.scenes.refresh_buttons()
         self._refresh_homepage()
 
     def close_tab(self, index):

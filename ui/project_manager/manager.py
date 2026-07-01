@@ -543,7 +543,7 @@ class ProjectManager(QDockWidget):
     def apply_pak_root(self, path: str):
         self._apply_pak_root(path)
 
-    def _check_folder(self, root):  
+    def _check_folder(self, root):
         exp = self._expected_native()
         root = _safe_path(root)
         return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
@@ -1194,11 +1194,7 @@ class ProjectManager(QDockWidget):
             name = path if ('.' in os.path.basename(path)) else (path + ('.' + ext.lower() if ext else ''))
             tab = self.app_win.add_tab(name, data)
             if tab:
-                tab.pak_source_path = path
-                project_dir = self.project_dir
-                tab.pak_data_loader = lambda source_path: self.read_project_pak_file(
-                    project_dir, source_path
-                )
+                self.app_win.attach_pak_source_tab(tab, path, self.project_dir)
             return True
         except Exception as e:
             QMessageBox.critical(self, self.tr("Open failed"), str(e))

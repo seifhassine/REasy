@@ -9,6 +9,7 @@ firebase-admin
 zstandard
 texture2ddecoder
 PyOpenGL
+PyOpenGL_accelerate
 numpy
 capstone
 pefile

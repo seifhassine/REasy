@@ -1,11 +1,27 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from PySide6.QtGui import QImage, QPixmap
 
 from .tex_handler import TexHandler
 from .texture_decoder import decode_tex_mip
+
+
+@dataclass(slots=True)
+class TexPreviewUpload:
+    gl_format: int
+    width: int
+    height: int
+    data: bytes
+
+
+_GL_COMPRESSED_FORMATS = {
+    71: 0x83F1, 72: 0x83F1, 74: 0x83F2, 75: 0x83F2, 77: 0x83F3, 78: 0x83F3,
+    80: 0x8DBB, 81: 0x8DBC, 83: 0x8DBD, 84: 0x8DBE, 95: 0x8E8F, 96: 0x8E8E,
+    98: 0x8E8C, 99: 0x8E8D,
+}
 
 
 def parse_tex_bytes(tex_bytes: bytes):
@@ -15,6 +31,22 @@ def parse_tex_bytes(tex_bytes: bytes):
     except Exception:
         return None
     return handler.tex
+
+
+def build_tex_preview_upload(tex, *, mip_selector: Callable[[object], int] | None = None) -> TexPreviewUpload | None:
+    header = getattr(tex, "header", None)
+    if tex is None or header is None:
+        return None
+    gl_format = _GL_COMPRESSED_FORMATS.get(header.format)
+    if gl_format is None:
+        return None
+    mip = mip_selector(tex) if callable(mip_selector) else 0
+    if header.format_is_block_compressed() and not tex.header_is_power_of_two():
+        data, width, height = tex.read_non_pot_level(mip, 0)
+    else:
+        level = tex.get_mip_map_data(mip, 0)
+        data, width, height = level.data, level.width, level.height
+    return TexPreviewUpload(gl_format, width, height, data) if data else None
 
 
 def _decode_qimage_from_tex(

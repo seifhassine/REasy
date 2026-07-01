@@ -14,7 +14,7 @@ class FloatingTabWindow(QMainWindow):
 		self.setWindowTitle(title)
 		self.setCentralWidget(page)
 		self.page.show()
-		
+
 		self.file_tab = None
 		if hasattr(page, 'parent_tab'):
 			self.file_tab = page.parent_tab
@@ -30,7 +30,7 @@ class FloatingTabWindow(QMainWindow):
 		act.triggered.connect(self._reattach_now)
 		menu.addAction(act)
 		main_window = self._get_main_window()
-		if main_window is not None:
+		if main_window is not None and not getattr(self.file_tab, "skip_detached_menus", False):
 			self._mirror_menubar_from(main_window)
 			self._create_find_action(main_window)
 			actions = self._collect_all_actions(main_window)
@@ -57,7 +57,7 @@ class FloatingTabWindow(QMainWindow):
 					self.file_tab._find_dialog.close()
 			except RuntimeError:
 				pass
-		
+
 		page = self.centralWidget()
 		if page is not None:
 			self.takeCentralWidget()
@@ -147,7 +147,7 @@ class FloatingTabWindow(QMainWindow):
 			QMessageBox.warning(self, "Warning", "Cannot open find dialog for this tab")
 	
 	def keyPressEvent(self, event):
-		if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_F:
+		if not getattr(self.file_tab, "suppress_general_shortcuts", False) and event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_F:
 			self.open_find_dialog()
 			event.accept()
 			return

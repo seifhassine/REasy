@@ -8,7 +8,7 @@ This file contains:
 
 import functools
 from PySide6.QtCore import Signal, QModelIndex
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QToolButton, QHBoxLayout, QMenu
 
 from utils.enum_manager import EnumManager
 from utils.registry_manager import RegistryManager
@@ -302,6 +302,7 @@ class RszViewer(QWidget):
         self.confirmation_prompt = False
         self._cleanup_pending = False
         self.tree = AdvancedTreeView(self)
+        self.scene_button = None
         layout = QVBoxLayout(self)
         layout.addWidget(self.tree)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -317,6 +318,9 @@ class RszViewer(QWidget):
             self.modified_changed.emit(True)
             if self.handler:
                 self.handler.modified = True
+                app = getattr(self.handler, "app", None)
+                if app is not None and hasattr(app, "scenes"):
+                    app.scenes.mark_stale(self.handler)
 
     @property
     def modified(self):
@@ -371,7 +375,48 @@ class RszViewer(QWidget):
         print("Populating tree")
         self.tree.setModelData(self._build_tree_data())
         self.embed_forms()
-        
+        self._configure_scene_actions()
+
+    def _configure_scene_actions(self):
+        if not getattr(self.scn, "is_scn", False):
+            return
+        if self.scene_button is not None:
+            return
+        scene_bar = QWidget(self)
+        row = QHBoxLayout(scene_bar)
+        row.setContentsMargins(4, 4, 4, 0)
+        row.addStretch(1)
+        self.scene_button = QToolButton(scene_bar)
+        self.scene_button.setPopupMode(QToolButton.InstantPopup)
+        self.scene_button.setMenu(QMenu(self.scene_button))
+        row.addWidget(self.scene_button)
+        self.layout().insertWidget(0, scene_bar)
+        self.refresh_scene_button()
+
+    def refresh_scene_button(self):
+        if self.scene_button is None:
+            return
+        menu = self.scene_button.menu()
+        menu.clear()
+        app = getattr(self.handler, "app", None)
+        if app is None:
+            self.scene_button.setEnabled(False)
+            self.scene_button.setText("Add to Scene")
+            return
+        from ui.scene.scn_scene_workspace import scn_source_from_tab
+        from file_handlers.rsz.scn_scene_loader import scn_identity_keys
+
+        tab = app._resolve_tab_from_widget(self) if hasattr(app, "_resolve_tab_from_widget") else None
+        source = scn_source_from_tab(tab)
+        owner = app.scenes.owner_for(scn_identity_keys(source.path)) if source is not None else None
+        if owner is not None:
+            self.scene_button.setText(f"In {owner.title}")
+            self.scene_button.setEnabled(False)
+        else:
+            self.scene_button.setText("Add to Scene")
+            self.scene_button.setEnabled(source is not None)
+            app.scenes.populate_add_to_scene_menu(menu, source)
+
     def _find_model_item_by_prefix(self, label_prefix: str):
         model = self.tree.model()
         if model is None:

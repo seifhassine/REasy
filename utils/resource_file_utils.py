@@ -34,10 +34,12 @@ def _iter_lookup_keys(path: str):
         current = current[:dot_idx]
 
 
-def _select_matching_path(paths: list[str], parent=None) -> Optional[str]:
+def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool = True) -> Optional[str]:
     if not paths:
         return None
     if len(paths) == 1:
+        return paths[0]
+    if not allow_dialog:
         return paths[0]
 
     try:
@@ -56,7 +58,13 @@ def _select_matching_path(paths: list[str], parent=None) -> Optional[str]:
         return paths[0]
 
 
-def find_matching_pak_path(pak_cached_reader, patterns: Iterable[str], parent=None) -> Optional[str]:
+def find_matching_pak_path(
+    pak_cached_reader,
+    patterns: Iterable[str],
+    parent=None,
+    *,
+    allow_selection_dialog: bool = True,
+) -> Optional[str]:
     if not pak_cached_reader:
         return None
 
@@ -75,7 +83,11 @@ def find_matching_pak_path(pak_cached_reader, patterns: Iterable[str], parent=No
             continue
         matches = cached_norm.get(needle)
         if matches:
-            return _select_matching_path(matches, parent)
+            return _select_matching_path(
+                matches,
+                parent,
+                allow_dialog=allow_selection_dialog,
+            )
     return None
 
 
@@ -162,6 +174,8 @@ def resolve_resource_data(
     path_prefix: str,
     pak_cached_reader,
     selection_parent=None,
+    *,
+    allow_selection_dialog: bool = True,
 ) -> Optional[Tuple[str, bytes]]:
     candidates = _resource_path_candidates(resource_path)
 
@@ -170,7 +184,12 @@ def resolve_resource_data(
         if hit:
             return hit
 
-    match = find_matching_pak_path(pak_cached_reader, candidates, selection_parent)
+    match = find_matching_pak_path(
+        pak_cached_reader,
+        candidates,
+        selection_parent,
+        allow_selection_dialog=allow_selection_dialog,
+    )
     pak_hit = _read_pak_path(match, pak_cached_reader) if match else None
     if pak_hit:
         return pak_hit
@@ -181,6 +200,29 @@ def resolve_resource_data(
             return hit
 
     return None
+
+
+def resolve_app_resource_data(app, resource_path: str, selection_parent=None, *, allow_selection_dialog: bool = True):
+    if app is None:
+        return None
+    proj = getattr(app, "proj_dock", None)
+    if proj is None:
+        return None
+    game = str(
+        getattr(proj, "current_game", "")
+        or getattr(app, "current_game", "")
+        or getattr(getattr(app, "project_manager", None), "current_game", "")
+        or ""
+    )
+    return resolve_resource_data(
+        resource_path,
+        getattr(proj, "project_dir", None),
+        getattr(proj, "unpacked_dir", None),
+        get_path_prefix_for_game(game),
+        getattr(proj, "_pak_cached_reader", None),
+        selection_parent,
+        allow_selection_dialog=allow_selection_dialog,
+    )
 
 
 def find_resource_in_paks(resource_path: str, pak_cached_reader, selection_parent=None) -> Optional[Tuple[str, bytes]]:

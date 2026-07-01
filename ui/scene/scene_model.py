@@ -24,3 +24,5 @@ class SceneDrawMesh:
     colors: np.ndarray | None = None
     material_name: str = ""
     batches: list[SceneDrawBatch] = field(default_factory=list)
+    transform_matrix: np.ndarray | None = None
+    geometry_key: str = ""

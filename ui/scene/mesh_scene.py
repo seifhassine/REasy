@@ -12,6 +12,7 @@ def build_mesh_scene(
     color: tuple[float, float, float] | tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0),
     force_solid: bool = False,
     ignore_highlight_filter: bool = False,
+    include_vertex_colors: bool = True,
 ) -> list[SceneDrawMesh]:
     mesh_buffer = getattr(mesh, "mesh_buffer", None)
     if mesh_buffer is None:
@@ -47,14 +48,15 @@ def build_mesh_scene(
         else:
             normal_chunks.append(np.zeros((len(verts), 3), dtype=np.float32))
 
-        colors = getattr(payload, "colors", None)
+        colors = getattr(payload, "colors", None) if include_vertex_colors else None
         if colors is not None and len(colors):
             raw_colors = np.asarray(colors, dtype=np.uint8).reshape(-1)
-            if raw_colors.size == len(verts) * 4:
-                color_chunks.append(raw_colors.reshape(-1, 4).astype(np.float32) / 255.0)
-            else:
-                color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
-        else:
+            color_chunks.append(
+                raw_colors.reshape(-1, 4).astype(np.float32) / 255.0
+                if raw_colors.size == len(verts) * 4
+                else np.ones((len(verts), 4), dtype=np.float32)
+            )
+        elif include_vertex_colors:
             color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
 
         uv0 = getattr(payload, "uv0", None)
@@ -72,7 +74,7 @@ def build_mesh_scene(
 
     vertices = np.concatenate(vertex_chunks, axis=0)
     normals = np.concatenate(normal_chunks, axis=0) if normal_chunks else None
-    colors = np.concatenate(color_chunks, axis=0) if color_chunks else None
+    colors = np.concatenate(color_chunks, axis=0) if color_chunks and len(color_chunks) == len(vertex_chunks) else None
     uvs = np.concatenate(uv_chunks, axis=0) if uv_chunks else None
 
     index_chunks: list[np.ndarray] = []
@@ -116,10 +118,10 @@ def build_mesh_scene(
         payload0 = payloads.get(0)
         if payload0 is not None:
             face_array = payload0.integer_faces if getattr(payload0, "integer_faces", None) is not None else payload0.faces
-            fallback_indices = np.asarray(face_array, dtype=np.uint32)
-            if fallback_indices.size:
-                index_chunks.append(fallback_indices)
-                batches.append(SceneDrawBatch(indices=fallback_indices))
+            all_indices = np.asarray(face_array, dtype=np.uint32)
+            if all_indices.size:
+                index_chunks.append(all_indices)
+                batches.append(SceneDrawBatch(indices=all_indices))
 
     if not index_chunks:
         return []

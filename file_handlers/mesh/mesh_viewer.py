@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import time
 from collections import deque
+from contextlib import suppress
 
 import numpy as np
+from ui.scene.scene_preview import ScenePreviewWidget
 from OpenGL.GL import (
     GL_BLEND,
     GL_CULL_FACE,
@@ -59,13 +62,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
+from file_handlers.tex.qt_image_utils import TexPreviewUpload, build_tex_preview_upload, decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
 from settings import save_settings
 from ui.scene.mesh_scene import build_mesh_scene
-from ui.scene.scene_preview import ScenePreviewWidget
 from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
 
-MATERIAL_TEXTURE_MAX_DIMENSION = 1024
+MATERIAL_TEXTURE_MAX_DIMENSION = 512
 
 BONE_LABEL_VERTEX_SHADER = """
 #version 120
@@ -108,7 +110,8 @@ class MeshViewer(QWidget):
         self.handler = handler
         self._resolved_mdf = None
         self._material_bindings: list[MeshMaterialBinding] = []
-        self._texture_cache: dict[str, QImage | None] = {}
+        self._texture_cache: dict[str, TexPreviewUpload | None] = {}
+        self._texture_preview_cache: dict[str, QImage | None] = {}
         self._texture_buffer_refs: dict[str, bytes] = {}
         self._parsed_tex_cache: dict[str, object | None] = {}
         self._resolved_texture_cache: dict[tuple[bool, str], tuple[str, bytes] | None] = {}
@@ -208,6 +211,7 @@ class MeshViewer(QWidget):
             for path, image in self._texture_cache.items()
             if path in active_paths
         }
+        self._texture_preview_cache = {path: image for path, image in self._texture_preview_cache.items() if path in active_paths}
         self._texture_buffer_refs = {
             path: buffer_ref
             for path, buffer_ref in self._texture_buffer_refs.items()
@@ -273,7 +277,7 @@ class MeshViewer(QWidget):
             self.texture_preview.setText(binding.status)
             return
 
-        image = self._load_texture_image(binding)
+        image = self._load_texture_preview_image(binding)
         if not image or image.isNull():
             self.texture_preview.setPixmap(QPixmap())
             self.texture_preview.setText(f"{binding.status}\n{binding.resolved_texture_path}")
@@ -292,13 +296,13 @@ class MeshViewer(QWidget):
     def _apply_materials_to_gl_widget(self):
         if not self.gl_widget:
             return
-        images: dict[str, tuple[str, QImage]] = {}
+        images: dict[str, tuple[str, TexPreviewUpload]] = {}
         for binding in self._material_bindings:
             if not binding.resolved_texture_path:
                 continue
-            image = self._texture_cache.get(binding.resolved_texture_path)
-            if image is not None and not image.isNull():
-                images[binding.mesh_material_name] = (binding.resolved_texture_path, image)
+            texture = self._texture_cache.get(binding.resolved_texture_path)
+            if texture is not None:
+                images[binding.mesh_material_name] = (binding.resolved_texture_path, texture)
         self.gl_widget.set_material_images(images)
 
     def _schedule_texture_warmup(self):
@@ -314,18 +318,21 @@ class MeshViewer(QWidget):
     def _warm_material_textures_step(self):
         if not self._texture_warmup_queue:
             return
-        did_load = False
-        for _ in range(min(2, len(self._texture_warmup_queue))):
+        deadline = time.perf_counter() + 0.02
+        loaded = {}
+        processed = 0
+        while self._texture_warmup_queue and (processed == 0 or time.perf_counter() < deadline):
+            processed += 1
             binding = self._texture_warmup_queue.popleft()
-            image = self._load_texture_image(binding)
-            if image is not None and not image.isNull():
-                did_load = True
-        if did_load:
-            self._apply_materials_to_gl_widget()
+            texture = self._load_texture_image(binding)
+            if texture is not None:
+                loaded[binding.mesh_material_name] = (binding.resolved_texture_path, texture)
+        if loaded and self.gl_widget:
+            self.gl_widget.update_material_images(loaded)
         if self._texture_warmup_queue:
             self._texture_warmup_timer.start(0)
 
-    def _load_texture_image(self, binding: MeshMaterialBinding) -> QImage | None:
+    def _load_texture_image(self, binding: MeshMaterialBinding) -> TexPreviewUpload | None:
         if not binding.resolved_texture_path:
             if not binding.texture_path:
                 return None
@@ -347,8 +354,19 @@ class MeshViewer(QWidget):
             return cached
 
         tex_bytes = binding.resolved_texture_data
-        image = self._decode_texture_image(binding.resolved_texture_path, tex_bytes) if tex_bytes else None
-        self._texture_cache[binding.resolved_texture_path] = image
+        tex = self._parse_texture(binding.resolved_texture_path, tex_bytes) if tex_bytes else None
+        self._texture_cache[binding.resolved_texture_path] = build_tex_preview_upload(tex, mip_selector=self._choose_preview_mip) if tex is not None else None
+        return self._texture_cache[binding.resolved_texture_path]
+
+    def _load_texture_preview_image(self, binding: MeshMaterialBinding) -> QImage | None:
+        self._load_texture_image(binding)
+        path = binding.resolved_texture_path
+        if not path:
+            return None
+        if path in self._texture_preview_cache:
+            return self._texture_preview_cache[path]
+        image = self._decode_texture_image(path, binding.resolved_texture_data) if binding.resolved_texture_data else None
+        self._texture_preview_cache[path] = image
         return image
 
     @staticmethod
@@ -364,10 +382,7 @@ class MeshViewer(QWidget):
         return mip_index
 
     def _decode_texture_image(self, resolved_texture_path: str, tex_bytes: bytes) -> QImage | None:
-        parsed_tex = self._parsed_tex_cache.get(resolved_texture_path)
-        if resolved_texture_path not in self._parsed_tex_cache:
-            parsed_tex = parse_tex_bytes(tex_bytes)
-            self._parsed_tex_cache[resolved_texture_path] = parsed_tex
+        parsed_tex = self._parse_texture(resolved_texture_path, tex_bytes)
         if parsed_tex is None:
             return None
         decoded = decode_parsed_tex_to_qimage_with_buffer(
@@ -379,6 +394,11 @@ class MeshViewer(QWidget):
         image, backing_buffer = decoded
         self._texture_buffer_refs[resolved_texture_path] = backing_buffer
         return image
+
+    def _parse_texture(self, resolved_texture_path: str, tex_bytes: bytes):
+        if resolved_texture_path not in self._parsed_tex_cache:
+            self._parsed_tex_cache[resolved_texture_path] = parse_tex_bytes(tex_bytes)
+        return self._parsed_tex_cache[resolved_texture_path]
 
 
 class _MeshGLWidget(ScenePreviewWidget):
@@ -496,25 +516,21 @@ class _MeshGLWidget(ScenePreviewWidget):
 
     def _cleanup_extra_gl(self):
         if self._bone_label_texture_id is not None:
-            glDeleteTextures([self._bone_label_texture_id])
+            with suppress(Exception):
+                glDeleteTextures([self._bone_label_texture_id])
             self._bone_label_texture_id = None
-        if self._bone_label_centers_vbo is not None:
-            self._bone_label_centers_vbo.delete()
-            self._bone_label_centers_vbo = None
-        if self._bone_label_offsets_vbo is not None:
-            self._bone_label_offsets_vbo.delete()
-            self._bone_label_offsets_vbo = None
-        if self._bone_label_texcoords_vbo is not None:
-            self._bone_label_texcoords_vbo.delete()
-            self._bone_label_texcoords_vbo = None
+        for name in ("_bone_label_centers_vbo", "_bone_label_offsets_vbo", "_bone_label_texcoords_vbo"):
+            self._dispose_vbo(getattr(self, name))
+            setattr(self, name, None)
         if self._bone_label_shader is not None:
-            glDeleteProgram(self._bone_label_shader)
+            with suppress(Exception):
+                glDeleteProgram(self._bone_label_shader)
             self._bone_label_shader = None
 
     def _sync_bone_label_gl_resources(self):
         if self._bone_label_texture_id is None and self._bone_label_atlas is not None:
             self._bone_label_texture_id = glGenTextures(1)
-            self._upload_texture(self._bone_label_texture_id, self._bone_label_atlas)
+            self._upload_qimage_texture(self._bone_label_texture_id, self._bone_label_atlas)
         if self._bone_label_shader is None and self._bone_label_vertex_count > 0:
             self._bone_label_shader = compileProgram(
                 compileShader(BONE_LABEL_VERTEX_SHADER, GL_VERTEX_SHADER),

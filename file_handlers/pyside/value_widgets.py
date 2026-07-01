@@ -13,6 +13,7 @@ from PySide6.QtGui import (
 )
 import uuid
 import re
+import os
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
@@ -1496,7 +1497,9 @@ class StringInput(BaseValueWidget):
 
         if resolved:
             file_path, file_data = resolved
-            app_window.add_tab(file_path, file_data)
+            tab = app_window.add_tab(file_path, file_data)
+            if tab and not os.path.isabs(file_path):
+                app_window.attach_pak_source_tab(tab, file_path, proj_dock.project_dir)
         else:
             QMessageBox.critical(self, self.tr(OPEN_RESOURCE_TITLE),
                 f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
