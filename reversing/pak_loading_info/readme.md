@@ -23,6 +23,6 @@ game or press `Ctrl+C` to print:
 - Actual successful mount order
 - Effective lookup order, highest precedence first
 
-Signatures are included for the Village, RE4, 2024 modern, Pragmata, and
+Signatures are included for the Village, RE4, Pragmata, and
 MHST3/Requiem engine generations. Unsupported or changed builds fail safely
 instead of hooking an ambiguous address.
