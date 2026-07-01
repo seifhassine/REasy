@@ -8,6 +8,7 @@ settings.json
 myevn/
 .sonar/**
 tools/reasy_tex_gdeflate_helper/bin/
+tools/diff_lists.py
 tools/reasy_tex_gdeflate_helper/obj/
 
 # Distribution / packaging
