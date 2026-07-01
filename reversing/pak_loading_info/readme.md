@@ -5,7 +5,7 @@ Traces the successful PAK mount order and effective lookup priority at runtime.
 ## Setup
 
 ```
-py -3.14 -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ py -3.14 -m pip install -r requirements.txt
 Run the script from the game directory:
 
 ```
-py -3.14 pak_load_trace.py re8.exe
+python pak_load_trace.py re8.exe
 ```
 
 The script automatically spawns the game, detects its Steam AppID when
