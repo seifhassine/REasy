@@ -296,13 +296,12 @@ class MeshViewer(QWidget):
     def _apply_materials_to_gl_widget(self):
         if not self.gl_widget:
             return
-        images: dict[str, tuple[str, TexPreviewUpload]] = {}
-        for binding in self._material_bindings:
-            if not binding.resolved_texture_path:
-                continue
-            texture = self._texture_cache.get(binding.resolved_texture_path)
-            if texture is not None:
-                images[binding.mesh_material_name] = (binding.resolved_texture_path, texture)
+        self.gl_widget.set_material_profiles({b.mesh_material_name: b.surface for b in self._material_bindings if b.surface is not None})
+        images: dict[str, tuple[str, TexPreviewUpload]] = {
+            b.mesh_material_name: (b.resolved_texture_path, texture)
+            for b in self._material_bindings
+            if b.resolved_texture_path and (texture := self._texture_cache.get(b.resolved_texture_path)) is not None
+        }
         self.gl_widget.set_material_images(images)
 
     def _schedule_texture_warmup(self):

@@ -232,7 +232,7 @@ class RcolViewer(QWidget):
         self._attached_mesh_list.itemChanged.connect(self._on_attached_mesh_item_changed)
         self._attached_mesh_list.setMaximumHeight(110)
         preview_layout.addWidget(self._attached_mesh_list)
-        self._scene_preview = ScenePreviewWidget(preview_tab)
+        self._scene_preview = ScenePreviewWidget(preview_tab, settings=getattr(getattr(self.handler, "app", None), "settings", None))
         self._scene_preview.setMinimumHeight(300)
         preview_layout.addWidget(self._scene_preview, 1)
         self._preview_tabs.addTab(preview_tab, "3D")

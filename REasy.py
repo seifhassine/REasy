@@ -2244,6 +2244,7 @@ class REasyEditorApp(QMainWindow):
             return
         tab.pak_source_path = pak_path
         project_dir = project_dir or getattr(self.proj_dock, "project_dir", None)
+        tab.pak_project_dir = project_dir
         tab.pak_data_loader = lambda source_path: self.proj_dock.read_project_pak_file(
             project_dir,
             source_path,
@@ -2258,7 +2259,8 @@ class REasyEditorApp(QMainWindow):
         if isinstance(aw, FloatingTabWindow):
             widgets.insert(0, aw.centralWidget())
         for widget in widgets:
-            if (tab := self._resolve_tab_from_widget(widget)) in active_tabs:
+            tab = self._resolve_tab_from_widget(widget)
+            if tab in active_tabs or getattr(tab, "suppress_general_shortcuts", False):
                 return tab
         return None
 
@@ -2433,6 +2435,14 @@ class REasyEditorApp(QMainWindow):
 
     def _close_tab_object(self, tab, *, record_history=True):
         widget = tab.notebook_widget
+        leave_fullscreen = getattr(tab, "leave_view_fullscreen", None)
+        if callable(leave_fullscreen):
+            try:
+                leave_fullscreen(defer_update=False)
+            except TypeError:
+                leave_fullscreen()
+            except RuntimeError:
+                pass
         for window in self.project_workspace.sessions.windows_for([tab]):
             try:
                 window.close_without_reattach()

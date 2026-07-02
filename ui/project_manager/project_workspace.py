@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 from PySide6.QtCore import QSignalBlocker, Qt
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
 from .project_sessions import ProjectSessionManager
@@ -12,6 +13,7 @@ class ProjectWorkspaceController:
     def __init__(self, host, notebook, tab_lookup):
         self.host = host
         self.sessions = ProjectSessionManager(notebook, tab_lookup)
+        self._scene_icon = self._make_scene_icon()
 
         self.toolbar = QToolBar(host.tr("Projects"), host)
         self.toolbar.setObjectName("projectWorkspaceBar")
@@ -29,6 +31,7 @@ class ProjectWorkspaceController:
         self.tab_bar.currentChanged.connect(self._on_tab_changed)
         self.toolbar.addWidget(self.tab_bar)
         self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
+        notebook.currentChanged.connect(lambda _index: self._sync_tabs())
         self.set_dark_mode(getattr(host, "dark_mode", False))
 
     def set_dark_mode(self, dark_mode: bool):
@@ -51,14 +54,29 @@ class ProjectWorkspaceController:
             QToolButton#projectTabClose:hover {{ background: #d32f2f; color: white; }}
         """)
 
-    def _close_button(self, key):
+    def _close_button(self, callback, tip):
         button = QToolButton(self.tab_bar)
         button.setObjectName("projectTabClose")
         button.setText("×")
-        button.setToolTip(self.host.tr("Close project"))
+        button.setToolTip(self.host.tr(tip))
         button.setFixedSize(20, 20)
-        button.clicked.connect(lambda: self.close(key))
+        button.clicked.connect(lambda _checked=False: callback())
         return button
+
+    @staticmethod
+    def _make_scene_icon() -> QIcon:
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(QColor("#cfd8e3"), 1.4))
+        painter.setBrush(QColor("#1f2a36"))
+        painter.drawRoundedRect(2, 5, 12, 8, 2, 2)
+        painter.drawEllipse(6, 7, 4, 4)
+        painter.drawLine(5, 5, 8, 2)
+        painter.drawLine(8, 2, 11, 5)
+        painter.end()
+        return QIcon(pixmap)
 
     def is_active(self, project_dir) -> bool:
         return ProjectSessionManager.key_for(project_dir) == self.sessions.active_key
@@ -111,6 +129,8 @@ class ProjectWorkspaceController:
     def delete_project(self, project_path: Path) -> bool:
         key = ProjectSessionManager.key_for(project_path)
         session = self.sessions.get(key)
+        if self._scene_blocks_project_close(project_path):
+            return False
         if session and not self.host._confirm_tabs_close(session.tabs, apply_discards=False):
             return False
         try:
@@ -126,6 +146,8 @@ class ProjectWorkspaceController:
         key = key or self.sessions.active_key
         session = self.sessions.get(key)
         if not key or not session:
+            return False
+        if self._scene_blocks_project_close(session.path):
             return False
         if confirm and not self.host._confirm_tabs_close(session.tabs):
             return False
@@ -150,7 +172,18 @@ class ProjectWorkspaceController:
         self._sync_tabs()
         return True
 
+    def _scene_blocks_project_close(self, project_path) -> bool:
+        scenes = getattr(self.host, "scenes", None)
+        scene = scenes.scene_using_project(str(project_path)) if scenes and project_path else None
+        if scene is None:
+            return False
+        message = f'Scene "{scene.title}" contains SCNs from this project. Delete the scene first.'
+        QMessageBox.information(self.host, self.host.tr("Scene uses project"), self.host.tr(message))
+        return True
+
     def _sync_tabs(self):
+        scenes = getattr(self.host, "scenes", None)
+        scene_tabs = scenes.tabs() if scenes else ()
         with QSignalBlocker(self.tab_bar):
             while self.tab_bar.count():
                 self.tab_bar.removeTab(0)
@@ -159,15 +192,29 @@ class ProjectWorkspaceController:
                 index = self.tab_bar.addTab(icon, session.title)
                 self.tab_bar.setTabData(index, session.key)
                 self.tab_bar.setTabToolTip(index, session.path)
-                self.tab_bar.setTabButton(index, QTabBar.RightSide, self._close_button(session.key))
+                close_button = self._close_button(lambda key=session.key: self.close(key), "Close project")
+                self.tab_bar.setTabButton(index, QTabBar.RightSide, close_button)
                 if session.key == self.sessions.active_key:
                     self.tab_bar.setCurrentIndex(index)
-        has_projects = self.tab_bar.count() > 0
-        self.toolbar.setVisible(has_projects)
+            current = self.host.tabs.get(self.sessions.notebook.currentWidget())
+            for scene in scene_tabs:
+                index = self.tab_bar.addTab(self._scene_icon, scene.title)
+                self.tab_bar.setTabData(index, ("scene", scene))
+                self.tab_bar.setTabToolTip(index, scene.title)
+                close_button = self._close_button(lambda scene=scene: self.host.scenes.close_scene(scene), "Close scene")
+                self.tab_bar.setTabButton(index, QTabBar.RightSide, close_button)
+                if scene is current:
+                    self.tab_bar.setCurrentIndex(index)
+        fullscreen = any(scene.is_view_fullscreen() for scene in scene_tabs)
+        self.toolbar.setVisible(self.tab_bar.count() > 0 and not fullscreen)
         self.host._refresh_homepage()
 
     def _on_tab_changed(self, index: int):
-        key = self.tab_bar.tabData(index)
+        data = self.tab_bar.tabData(index)
+        if isinstance(data, tuple) and data[0] == "scene":
+            self.host.scenes.focus(data[1])
+            return
+        key = data
         if key and key != self.sessions.active_key:
             session = self.sessions.get(key)
             self.activate(session.path, session.game)

@@ -69,6 +69,12 @@ class MeshHandler(BaseFileHandler):
             return None
 
         resource_path = "/".join((*parts[natives_idx : natives_idx + 2], "streaming", *parts[natives_idx + 2 :]))
+        context = getattr(self, "_resource_context", None)
+        resolved = resolve_resource_data(resource_path, *context) if context else None
+        if resolved:
+            self._streaming_data_cache[self.filepath] = resolved[1]
+            return resolved[1]
+
         app = getattr(self, "app", None)
         proj = getattr(app, "proj_dock", None) if app is not None else None
         proj_mgr = getattr(app, "project_manager", None) if app is not None else None

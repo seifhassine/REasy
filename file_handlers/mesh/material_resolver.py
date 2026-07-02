@@ -22,6 +22,15 @@ PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
 
 
 @dataclass(slots=True)
+class MdfSurfaceProfile:
+    material_name: str
+    tint: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
+    two_sided: bool = False
+    texture_type: str = ""
+    texture_path: str = ""
+
+
+@dataclass(slots=True)
 class MeshMaterialBinding:
     mesh_material_name: str
     mdf_material_name: str = ""
@@ -29,29 +38,34 @@ class MeshMaterialBinding:
     texture_path: str = ""
     resolved_texture_path: str = ""
     resolved_texture_data: bytes | None = None
+    surface: MdfSurfaceProfile | None = None
     status: str = "Missing MDF material"
 
 
 @dataclass(slots=True)
 class ResolvedMdf:
     path: str
-    material_textures: dict[str, tuple[str, str]]
+    surfaces: dict[str, MdfSurfaceProfile]
 
 
 _MDF_PARSE_POOL: ProcessPoolExecutor | None = None
+_TWO_SIDED_FLAGS = (1 << 0) | (1 << 8)
 
 
-def _extract_primary_material_textures(mdf_data: bytes, actual_path: str) -> dict[str, tuple[str, str]]:
+def _extract_surface_profiles(mdf_data: bytes, actual_path: str) -> dict[str, MdfSurfaceProfile]:
     mdf = MdfFile()
     if not mdf.read(mdf_data, actual_path):
         return {}
-    resolved: dict[str, tuple[str, str]] = {}
+    resolved: dict[str, MdfSurfaceProfile] = {}
     for material in mdf.materials:
         texture = MeshMaterialResolver.pick_primary_texture(material)
-        if texture is None:
-            resolved[material.header.mat_name] = ("", "")
-        else:
-            resolved[material.header.mat_name] = (texture.tex_type, texture.tex_path)
+        resolved[material.header.mat_name] = MdfSurfaceProfile(
+            material_name=material.header.mat_name,
+            tint=MeshMaterialResolver.base_color(material),
+            two_sided=bool(material.header.material_flags & _TWO_SIDED_FLAGS),
+            texture_type=texture.tex_type if texture else "",
+            texture_path=texture.tex_path if texture else "",
+        )
     return resolved
 
 
@@ -98,17 +112,17 @@ class MeshMaterialResolver:
 
         bindings: list[MeshMaterialBinding] = []
         for mesh_name in material_names:
-            material_info = resolved_mdf.material_textures.get(mesh_name)
-            if material_info is None:
+            surface = resolved_mdf.surfaces.get(mesh_name)
+            if surface is None:
                 bindings.append(MeshMaterialBinding(mesh_name, status="Missing MDF material"))
                 continue
-            tex_type, tex_path = material_info
 
-            if not tex_path:
+            if not surface.texture_path:
                 bindings.append(
                     MeshMaterialBinding(
                         mesh_material_name=mesh_name,
                         mdf_material_name=mesh_name,
+                        surface=surface,
                         status="No usable texture",
                     )
                 )
@@ -119,7 +133,7 @@ class MeshMaterialResolver:
             if resolve_textures:
                 resolved_tex = cls.resolve_texture_path(
                     handler,
-                    tex_path,
+                    surface.texture_path,
                     prefer_streaming=prefer_streaming,
                     resource_cache=resource_cache,
                 )
@@ -128,10 +142,11 @@ class MeshMaterialResolver:
                 MeshMaterialBinding(
                     mesh_material_name=mesh_name,
                     mdf_material_name=mesh_name,
-                    texture_type=tex_type,
-                    texture_path=tex_path,
+                    texture_type=surface.texture_type,
+                    texture_path=surface.texture_path,
                     resolved_texture_path=resolved_tex[0] if resolved_tex else "",
                     resolved_texture_data=resolved_tex[1] if resolved_tex else None,
+                    surface=surface,
                     status=status,
                 )
             )
@@ -148,21 +163,25 @@ class MeshMaterialResolver:
         normalized = (mdf_path or "").replace("\\", "/").lstrip("@/").rstrip("\x00")
         if not normalized:
             return None
-        resolved = cls._resolve_resource(handler, normalized)
+        return cls._read_mdf(cls._resolve_resource(handler, normalized), parse_in_subprocess=parse_in_subprocess)
+
+    @classmethod
+    def _read_mdf(cls, resolved, *, parse_in_subprocess: bool = False) -> ResolvedMdf | None:
         if resolved is None:
             return None
         actual_path, data = resolved
         try:
-            material_textures = cls._parse_mdf_material_textures(
-                data,
-                actual_path,
-                parse_in_subprocess=parse_in_subprocess,
-            )
+            surfaces = cls._parse_mdf_surfaces(data, actual_path, parse_in_subprocess=parse_in_subprocess)
         except Exception:
             return None
-        if not material_textures:
-            return None
-        return ResolvedMdf(path=actual_path, material_textures=material_textures)
+        return ResolvedMdf(path=actual_path, surfaces=surfaces) if surfaces else None
+
+    @staticmethod
+    def base_color(material: MatData) -> tuple[float, float, float, float]:
+        for param in material.parameters:
+            if param.name == "BaseColor" and param.component_count == 4:
+                return tuple(float(value) for value in param.parameter)
+        return (1.0, 1.0, 1.0, 1.0)
 
     @staticmethod
     def pick_primary_texture(material: MatData) -> TexHeader | None:
@@ -187,35 +206,22 @@ class MeshMaterialResolver:
     def resolve_mdf_for_handler(cls, handler, *, parse_in_subprocess: bool = False) -> ResolvedMdf | None:
         filepath = str(getattr(handler, "filepath", "") or "")
         for candidate in cls.iter_mdf_candidates(filepath):
-            resolved = cls._resolve_resource(handler, candidate)
-            if resolved is None:
-                continue
-            actual_path, data = resolved
-            try:
-                material_textures = cls._parse_mdf_material_textures(
-                    data,
-                    actual_path,
-                    parse_in_subprocess=parse_in_subprocess,
-                )
-                if not material_textures:
-                    continue
-            except Exception:
-                continue
-            return ResolvedMdf(path=actual_path, material_textures=material_textures)
+            if resolved := cls._read_mdf(cls._resolve_resource(handler, candidate), parse_in_subprocess=parse_in_subprocess):
+                return resolved
         return None
 
     @classmethod
-    def _parse_mdf_material_textures(
+    def _parse_mdf_surfaces(
         cls,
         data: bytes,
         actual_path: str,
         *,
         parse_in_subprocess: bool = False,
-    ) -> dict[str, tuple[str, str]]:
+    ) -> dict[str, MdfSurfaceProfile]:
         if not parse_in_subprocess:
-            return _extract_primary_material_textures(data, actual_path)
+            return _extract_surface_profiles(data, actual_path)
         pool = cls._mdf_parse_pool()
-        future = pool.submit(_extract_primary_material_textures, data, actual_path)
+        future = pool.submit(_extract_surface_profiles, data, actual_path)
         return future.result(timeout=5.0)
 
     @staticmethod
@@ -271,6 +277,12 @@ class MeshMaterialResolver:
 
     @classmethod
     def _resolve_resource(cls, handler, resource_path: str):
+        context = getattr(handler, "_resource_context", None)
+        if context:
+            hit = resolve_resource_data(resource_path, *context)
+            if hit is not None:
+                return hit
+
         proj, path_prefix = cls._project_resolution_context(handler)
 
         if proj is not None:

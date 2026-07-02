@@ -68,6 +68,9 @@ class ProjectSessionManager:
     def add_tab(self, tab: Any) -> None:
         self.get(self.active_key).tabs.append(tab)
 
+    def add_global_tab(self, tab: Any) -> None:
+        self._scratch.tabs.append(tab)
+
     def remove_tab(self, tab: Any) -> None:
         for session in [self._scratch, *self._sessions.values()]:
             if tab in session.tabs:
@@ -96,9 +99,12 @@ class ProjectSessionManager:
             if tab in detached:
                 continue
             widget = tab.notebook_widget
-            if self.notebook.indexOf(widget) == -1:
-                self.notebook.addTab(widget, "")
+            index = self.notebook.indexOf(widget)
+            if index == -1:
+                index = self.notebook.addTab(widget, "")
             tab.update_tab_title()
+            if getattr(tab, "hide_notebook_tab", False):
+                self.notebook.tabBar().setTabVisible(index, False)
 
         if session.current_widget and self.notebook.indexOf(session.current_widget) != -1:
             self.notebook.setCurrentWidget(session.current_widget)

@@ -404,16 +404,17 @@ class RszViewer(QWidget):
             self.scene_button.setText("Add to Scene")
             return
         from ui.scene.scn_scene_workspace import scn_source_from_tab
-        from file_handlers.rsz.scn_scene_loader import scn_identity_keys
 
         tab = app._resolve_tab_from_widget(self) if hasattr(app, "_resolve_tab_from_widget") else None
         source = scn_source_from_tab(tab)
-        owner = app.scenes.owner_for(scn_identity_keys(source.path)) if source is not None else None
+        owner = app.scenes.owner_for_source(source)
         if owner is not None:
             self.scene_button.setText(f"In {owner.title}")
+            self.scene_button.setToolTip(f"Already in {owner.title}")
             self.scene_button.setEnabled(False)
         else:
             self.scene_button.setText("Add to Scene")
+            self.scene_button.setToolTip("Add this SCN to a scene")
             self.scene_button.setEnabled(source is not None)
             app.scenes.populate_add_to_scene_menu(menu, source)
 

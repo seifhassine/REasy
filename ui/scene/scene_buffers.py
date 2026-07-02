@@ -100,9 +100,23 @@ def build_scene_buffer_set(
 def scene_index_buffers(buffer_set: SceneBufferSet, hidden_keys: set[str], *, include_lines: bool = True) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
     if not hidden_keys:
         return buffer_set.indices, buffer_set.batches, triangle_line_indices(buffer_set.indices) if include_lines else np.zeros((0,), dtype=np.uint32)
+    return _chunk_index_buffers(
+        ((material_name, indices) for key, material_name, indices in buffer_set.triangle_chunks if key not in hidden_keys),
+        include_lines=include_lines,
+    )
+
+
+def scene_key_index_buffers(buffer_set: SceneBufferSet, keys: set[str], *, include_lines: bool = True) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
+    return _chunk_index_buffers(
+        ((material_name, indices) for key, material_name, indices in buffer_set.triangle_chunks if key in keys),
+        include_lines=include_lines,
+    )
+
+
+def _chunk_index_buffers(chunks, *, include_lines: bool) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
     by_material: dict[str, list[np.ndarray]] = {}
-    for key, material_name, indices in buffer_set.triangle_chunks:
-        if key in hidden_keys or not len(indices):
+    for material_name, indices in chunks:
+        if not len(indices):
             continue
         by_material.setdefault(material_name, []).append(indices)
     if not by_material:
@@ -197,7 +211,7 @@ class _SceneBufferBuilder:
         for mesh in meshes:
             if not self._visible(mesh):
                 continue
-            key = mesh.geometry_key if mesh.transform_matrix is not None and mesh.key not in self.highlighted_keys else ""
+            key = mesh.geometry_key if mesh.transform_matrix is not None else ""
             groups.setdefault(key, []).append(mesh) if key else singles.append(mesh)
         return singles, groups
 
@@ -238,7 +252,7 @@ class _SceneBufferBuilder:
                 return np.concatenate([raw.reshape(-1, 3), np.ones((vertex_count, 1), dtype=np.float32)], axis=1)
             if raw.size == vertex_count * 4:
                 return raw.reshape(-1, 4)
-        color = (1.0, 1.0, 0.25, 1.0) if mesh.key in self.highlighted_keys else mesh.color
+        color = mesh.color
         rgba = np.ones(4, dtype=np.float32)
         raw = np.asarray(color, dtype=np.float32).reshape(-1)
         rgba[:min(len(raw), 4)] = raw[:4]
