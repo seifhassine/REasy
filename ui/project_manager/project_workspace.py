@@ -209,6 +209,11 @@ class ProjectWorkspaceController:
         self.toolbar.setVisible(self.tab_bar.count() > 0 and not fullscreen)
         self.host._refresh_homepage()
 
+    def activate_current_project_tab(self) -> None:
+        data = self.tab_bar.tabData(self.tab_bar.currentIndex())
+        if not isinstance(data, tuple) and (session := self.sessions.get(data)) and session.path:
+            self.activate(session.path, session.game)
+
     def _on_tab_changed(self, index: int):
         data = self.tab_bar.tabData(index)
         if isinstance(data, tuple) and data[0] == "scene":

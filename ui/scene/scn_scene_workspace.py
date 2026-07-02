@@ -38,17 +38,24 @@ def scn_source_from_tab(tab) -> ScnSceneSource | None:
     rsz_file = getattr(handler, "rsz_file", None)
     if not isinstance(handler, RszHandler) or not getattr(rsz_file, "is_scn", False):
         return None
-    path = str(getattr(tab, "pak_source_path", None) or "")
-    if not path:
-        return None
     session = getattr(getattr(getattr(handler, "app", None), "project_workspace", None), "sessions", None)
     session = session.session_for_tab(tab) if session is not None else None
+    project_dir = str(getattr(tab, "pak_project_dir", None) or getattr(session, "path", "") or "")
+    path = str(getattr(tab, "pak_source_path", None) or "")
+    if not path and project_dir and getattr(tab, "filename", None):
+        try:
+            rel = os.path.relpath(tab.filename, project_dir).replace("\\", "/")
+            path = rel if not rel.startswith("../") and rel != ".." else ""
+        except ValueError:
+            pass
+    if not path:
+        return None
     label = Path(path.replace("\\", "/")).name or "SCN"
     return ScnSceneSource(
         path=path,
         handler=handler,
         label=label,
-        project_dir=str(getattr(tab, "pak_project_dir", None) or getattr(session, "path", "") or ""),
+        project_dir=project_dir,
         game_version=str(getattr(session, "game", "") or getattr(handler, "game_version", "") or ""),
     )
 
@@ -851,8 +858,12 @@ class ScnSceneController:
 
     def _close_scene_tab(self, scene_tab: ScnSceneTab) -> None:
         if scene_tab.notebook_widget in self.app.tabs:
+            last_scene = len(self.tabs()) == 1
             self.app._close_tab_object(scene_tab, record_history=False)
-            self.app.project_workspace._sync_tabs()
+            workspace = self.app.project_workspace
+            workspace._sync_tabs()
+            if last_scene and workspace.sessions.active_key is None:
+                QTimer.singleShot(0, workspace.activate_current_project_tab)
 
     def populate_scene_menu(self, menu: QMenu, *, clear: bool = True) -> None:
         if clear:

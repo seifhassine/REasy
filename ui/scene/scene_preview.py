@@ -111,6 +111,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QHBo
 from file_handlers.tex.qt_image_utils import TexPreviewUpload
 from settings import save_settings
 from ui.opengl_camera import OrbitCameraMixin
+from .freecam_controller import FreecamController
 from .scene_buffers import (
     SceneBufferSet,
     build_scene_buffer_set,
@@ -120,6 +121,7 @@ from .scene_buffers import (
     scene_key_index_buffers,
 )
 from .scene_model import SceneDrawMesh
+from .viewport_overlay import ViewportOverlayManager
 
 
 @dataclass(slots=True)
@@ -171,10 +173,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     }
     WIREFRAME_MODES = ("off", "polygon", "lines_depth", "lines_overlay")
     LIGHTING_MODES = ("off", "fixed", "software")
-    FREECAM_MOD_KEYS = {Qt.Key_Shift, Qt.Key_Control}
-    FREECAM_SCANCODES = {17: "forward", 31: "back", 30: "left", 32: "right", 16: "down", 18: "up"}
-    FREECAM_TEXT_FALLBACK = {"w": "forward", "s": "back", "a": "left", "d": "right", "q": "down", "e": "up"}
-
     def __init__(
         self,
         parent=None,
@@ -207,16 +205,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.scale = 1.0
         self.extent = 1.0
         self.center = np.zeros(3, dtype=np.float32)
-        self.freecam_pos = np.zeros(3, dtype=np.float32)
-        self.freecam_yaw = 0.0
-        self.freecam_pitch = -10.0
-        self._freecam_base_speed = 1.0
-        self.freecam_speed = 1.0
-        self._freecam_keys: set[str] = set()
-        self._freecam_mods: set[int] = set()
-        self._last_freecam_time = time.perf_counter()
-        self._cursor_lock_pos = None
-        self._drag_overlay = self._drag_offset = self._resize_overlay = self._fullscreen_restore = None
+        self.freecam = FreecamController()
+        self._cursor_lock_pos = self._fullscreen_restore = None
 
         self._meshes: list[SceneDrawMesh] = []
         self._highlighted_keys: set[str] = set()
@@ -273,6 +263,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._timer = QTimer(self)
         self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self.update)
+        self._overlays = ViewportOverlayManager(self, HOVER_DETECT_KEY)
 
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
@@ -332,21 +323,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return button
 
     def setup_viewport_overlay(self, widget: QWidget, body: QWidget | None = None, fold_button: QToolButton | None = None):
-        widget._viewport_body = body
-        if fold_button is not None:
-            widget._viewport_fold_button = fold_button
-            fold_button.clicked.connect(lambda: self._toggle_overlay_fold(widget))
-        grip = QLabel("///", widget)
-        grip.setObjectName("overlayResizeGrip")
-        grip.setAlignment(Qt.AlignRight)
-        grip.setCursor(Qt.SizeFDiagCursor)
-        grip.setFixedHeight(10)
-        grip._viewport_resize_overlay = widget
-        if widget.layout() is not None:
-            widget.layout().addWidget(grip)
-        for child in (widget, *widget.findChildren(QWidget)):
-            child._viewport_drag_overlay = widget
-            child.installEventFilter(self)
+        self._overlays.setup(widget, body, fold_button)
 
     def _toggle_view_fullscreen(self):
         owner = getattr(self, "_external_fullscreen_owner", None)
@@ -408,81 +385,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.update()
 
     def eventFilter(self, obj, event):
-        overlay = getattr(obj, "_viewport_drag_overlay", None)
-        if not overlay:
-            return super().eventFilter(obj, event)
-        kind = event.type()
-        if kind in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease) and self._controls != "mesh" and event.key() == HOVER_DETECT_KEY:
-            (self.keyPressEvent if kind == QEvent.Type.KeyPress else self.keyReleaseEvent)(event)
-            return True
-        active = "resize" if self._resize_overlay is overlay else "drag" if self._drag_overlay is overlay else ""
-        if active and kind == QEvent.Type.MouseMove and event.buttons() & Qt.LeftButton:
-            if active == "resize":
-                self._resize_overlay_to(overlay, event.globalPosition().toPoint())
-            else:
-                self._move_overlay(overlay, self.mapFromGlobal(event.globalPosition().toPoint()) - self._drag_offset)
-            return True
-        if active and kind == QEvent.Type.MouseButtonRelease:
-            overlay.releaseMouse()
-            self._resize_overlay = None
-            self._drag_overlay = self._drag_offset = None
-            return True
-        if kind == QEvent.Type.MouseButtonPress and event.button() == Qt.LeftButton:
-            if getattr(obj, "_viewport_resize_overlay", None) is overlay:
-                self._resize_overlay = overlay
-            elif self._can_drag_overlay_from(obj):
-                self._drag_overlay = overlay
-                self._drag_offset = overlay.mapFromGlobal(event.globalPosition().toPoint())
-            else:
-                return super().eventFilter(obj, event)
-            overlay.viewport_anchor = "manual"
-            overlay.raise_()
-            overlay.grabMouse()
-            return True
-        return super().eventFilter(obj, event)
-
-    @staticmethod
-    def _can_drag_overlay_from(widget) -> bool:
-        blocked = ("QAbstractButton", "QAbstractSpinBox", "QComboBox", "QAbstractItemView", "QTextEdit", "QScrollBar")
-        while widget is not None:
-            if any(widget.inherits(name) for name in blocked):
-                return False
-            if getattr(widget, "_viewport_drag_overlay", None) is widget:
-                return True
-            widget = widget.parentWidget()
-        return True
-
-    def _move_overlay(self, overlay: QWidget, pos):
-        margin = 4
-        overlay.viewport_anchor = "manual"
-        overlay.move(
-            max(margin, min(pos.x(), max(margin, self.width() - overlay.width() - margin))),
-            max(margin, min(pos.y(), max(margin, self.height() - overlay.height() - margin))),
-        )
-
-    def _resize_overlay_to(self, overlay: QWidget, global_pos):
-        margin = 4
-        local = overlay.mapFromGlobal(global_pos)
-        max_w = min(overlay.maximumWidth(), self.width() - overlay.x() - margin)
-        max_h = min(overlay.maximumHeight(), self.height() - overlay.y() - margin)
-        overlay.resize(
-            max(overlay.minimumWidth(), min(local.x(), max_w)),
-            max(overlay.minimumHeight(), min(local.y(), max_h)),
-        )
-
-    def _toggle_overlay_fold(self, overlay: QWidget):
-        body = getattr(overlay, "_viewport_body", None)
-        if body is None:
-            return
-        body.setVisible(not body.isVisible())
-        button = getattr(overlay, "_viewport_fold_button", None)
-        if button is not None:
-            button.setText(">" if not body.isVisible() else "v")
-        if body.isVisible():
-            overlay.resize(max(overlay.width(), overlay.sizeHint().width()), max(overlay.height(), overlay.sizeHint().height()))
-        else:
-            overlay.adjustSize()
-        self.place_viewport_overlays()
+        handled = self._overlays.event_filter(obj, event)
+        return super().eventFilter(obj, event) if handled is None else handled
 
     def _build_scene_controls(self, layout: QVBoxLayout):
         self.scene_mode_combo = self._data_combo((("Wireframe", "wire"), ("Solid + Wire", "hybrid"), ("Solid", "solid")), self._set_render_mode, self.render_mode)
@@ -615,7 +519,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._recompute_bounds()
         self._refresh_selection_bounds()
         if reset_camera:
-            self._reset_freecam()
+            self.freecam.reset(self.center, self.extent, self.camera_speed)
         self._upload_buffers()
         self.update()
 
@@ -649,10 +553,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self.center = self._selection_center.copy()
             self.distance = extent * 2.2
         else:
-            forward = self._freecam_rotation() @ np.array((0.0, 0.0, -1.0), dtype=np.float32)
-            forward /= np.linalg.norm(forward) or 1.0
-            self.freecam_pos = self._selection_center - forward * max(extent * 1.8, 1.0)
-            self._last_freecam_time = time.perf_counter()
+            self.freecam.focus(self._selection_center, extent)
 
     def set_hidden_keys(self, keys: set[str], *, refresh: bool = True):
         keys = set(keys)
@@ -769,7 +670,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             super().wheelEvent(event)
             return
         steps = event.angleDelta().y() / 120.0
-        self._move_freecam_local(np.array((0.0, 0.0, -steps * self.freecam_speed * self.camera_wheel), dtype=np.float32))
+        self.freecam.move_local(np.array((0.0, 0.0, -steps * self.freecam.speed * self.camera_wheel), dtype=np.float32))
         self._update_after_camera_change()
 
     def keyPressEvent(self, event):
@@ -787,14 +688,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                     self._update_scene_hover(np.array((pos.x(), pos.y()), dtype=np.float32), force=True)
             event.accept()
             return
-        action = self._freecam_key_action(event)
+        action = self.freecam.key_action(event)
         if self._controls != "mesh" and action:
-            self._freecam_keys.add(action)
+            self.freecam.keys.add(action)
             event.accept()
             self._update_after_camera_change()
             return
-        if self._controls != "mesh" and event.key() in self.FREECAM_MOD_KEYS:
-            self._freecam_mods.add(event.key())
+        if self._controls != "mesh" and event.key() in self.freecam.MOD_KEYS:
+            self.freecam.mods.add(event.key())
             event.accept()
             return
         super().keyPressEvent(event)
@@ -806,15 +707,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self._set_hover_key("")
             event.accept()
             return
-        action = self._freecam_key_action(event)
+        action = self.freecam.key_action(event)
         if self._controls != "mesh" and action:
             if not event.isAutoRepeat():
-                self._freecam_keys.discard(action)
+                self.freecam.keys.discard(action)
             event.accept()
             return
-        if self._controls != "mesh" and event.key() in self.FREECAM_MOD_KEYS:
+        if self._controls != "mesh" and event.key() in self.freecam.MOD_KEYS:
             if not event.isAutoRepeat():
-                self._freecam_mods.discard(event.key())
+                self.freecam.mods.discard(event.key())
             event.accept()
             return
         super().keyReleaseEvent(event)
@@ -824,8 +725,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._finish_gizmo_drag(commit=True)
         self._set_hover_key("")
         self._hover_detect_down, self._last_hover_pick_pos = False, None
-        self._freecam_keys.clear()
-        self._freecam_mods.clear()
+        self.freecam.clear_input()
         super().focusOutEvent(event)
 
     def leaveEvent(self, event):
@@ -859,8 +759,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _move_scene_camera(self, dx: float, dy: float, buttons) -> None:
         if buttons & Qt.RightButton:
-            self.freecam_yaw -= dx * self.camera_look
-            self.freecam_pitch = max(-80.0, min(80.0, self.freecam_pitch - dy * self.camera_look))
+            self.freecam.look(dx, dy, self.camera_look)
 
     def _lock_scene_cursor(self, pos) -> None:
         self._cursor_lock_pos = pos
@@ -892,61 +791,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         visible = {mesh.key for mesh in self._meshes if mesh.key not in self._hidden_keys}
         return bool(visible) and visible <= self._selection_keys
 
-    def _reset_freecam(self) -> None:
-        self.freecam_yaw = 0.0
-        self.freecam_pitch = -10.0
-        self._freecam_base_speed = max(self.extent * 0.6, 1.0)
-        self.freecam_speed = self._freecam_base_speed * self.camera_speed
-        self.freecam_pos = self.center + np.array((0.0, self.extent * 0.2, self.extent * 1.4), dtype=np.float32)
-        self._last_freecam_time = time.perf_counter()
-
-    def _freecam_rotation(self) -> np.ndarray:
-        yaw = np.deg2rad(self.freecam_yaw)
-        pitch = np.deg2rad(self.freecam_pitch)
-        cy, sy = np.cos(yaw), np.sin(yaw)
-        cp, sp = np.cos(pitch), np.sin(pitch)
-        return (
-            np.array(((cy, 0.0, sy), (0.0, 1.0, 0.0), (-sy, 0.0, cy)), dtype=np.float32)
-            @ np.array(((1.0, 0.0, 0.0), (0.0, cp, -sp), (0.0, sp, cp)), dtype=np.float32)
-        )
-
-    def _move_freecam_local(self, local_delta: np.ndarray) -> None:
-        self.freecam_pos += self._freecam_rotation() @ local_delta
-
-    def _freecam_key_action(self, event) -> str:
-        try:
-            scan_code = int(event.nativeScanCode())
-        except Exception:
-            scan_code = 0
-        if scan_code:
-            return self.FREECAM_SCANCODES.get(scan_code, "")
-        return self.FREECAM_TEXT_FALLBACK.get((event.text() or "").lower(), "")
-
-    def _freecam_move_vector(self) -> np.ndarray:
-        keys = self._freecam_keys
-        move = np.array((
-            ("right" in keys) - ("left" in keys),
-            ("up" in keys) - ("down" in keys),
-            ("back" in keys) - ("forward" in keys),
-        ), dtype=np.float32)
-        length = float(np.linalg.norm(move))
-        return move / length if length > 1e-6 else move
-
-    def _step_freecam(self) -> None:
-        now = time.perf_counter()
-        dt = min(now - self._last_freecam_time, 0.05)
-        self._last_freecam_time = now
-        if self._controls == "mesh" or not self._freecam_keys:
-            return
-        move = self._freecam_move_vector()
-        if np.any(move):
-            speed = self.freecam_speed * (self.camera_boost if Qt.Key_Shift in self._freecam_mods else 1.0)
-            speed *= self.camera_slow if Qt.Key_Control in self._freecam_mods else 1.0
-            self._move_freecam_local(move * speed * dt)
-
     def _gizmo_size(self) -> float:
         if self._controls != "mesh" and self._selection_center is not None:
-            distance = max(float(np.linalg.norm(self._selection_center - self.freecam_pos)), 1.0)
+            distance = max(float(np.linalg.norm(self._selection_center - self.freecam.pos)), 1.0)
             return max(2.0 * distance * np.tan(np.deg2rad(22.5)) * 120.0 / max(self.height(), 1), self.extent * 0.004, 0.1)
         return max(float(self._selection_extent) * 0.45, max(float(self.extent) * 0.025, 0.25))
 
@@ -1985,30 +1832,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.place_viewport_overlays()
 
     def place_viewport_overlays(self):
-        margin = 12
-        self.overlay.adjustSize()
-        if getattr(self.overlay, "viewport_anchor", "") == "manual":
-            self._clamp_overlay(self.overlay, margin)
-        else:
-            self.overlay.move(margin, margin)
-        self.overlay.raise_()
-        for widget in self.children():
-            if not isinstance(widget, QWidget):
-                continue
-            anchor = getattr(widget, "viewport_anchor", "")
-            if anchor == "right":
-                width = min(max(widget.width(), widget.minimumWidth()), widget.maximumWidth(), self.width() - margin * 2)
-                height = min(max(widget.height(), widget.minimumHeight()), widget.maximumHeight(), self.height() - margin * 2)
-                widget.setGeometry(max(margin, self.width() - width - margin), margin, width, height)
-                widget.raise_()
-            elif anchor == "manual":
-                self._clamp_overlay(widget, margin)
-
-    def _clamp_overlay(self, widget: QWidget, margin: int) -> None:
-        x = max(margin, min(widget.x(), max(margin, self.width() - widget.width() - margin)))
-        y = max(margin, min(widget.y(), max(margin, self.height() - widget.height() - margin)))
-        widget.move(x, y)
-        widget.raise_()
+        self._overlays.place()
 
     def _apply_projection(self, w: int, h: int):
         glViewport(0, 0, max(int(w), 1), max(int(h), 1))
@@ -2050,10 +1874,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glScalef(self.scale, self.scale, self.scale)
             glTranslatef(-self.center[0], -self.center[1], -self.center[2])
             return
-        self._step_freecam()
-        glRotatef(-self.freecam_pitch, 1.0, 0.0, 0.0)
-        glRotatef(-self.freecam_yaw, 0.0, 1.0, 0.0)
-        glTranslatef(-self.freecam_pos[0], -self.freecam_pos[1], -self.freecam_pos[2])
+        self.freecam.step(self.camera_boost, self.camera_slow)
+        glRotatef(-self.freecam.pitch, 1.0, 0.0, 0.0)
+        glRotatef(-self.freecam.yaw, 0.0, 1.0, 0.0)
+        glTranslatef(-self.freecam.pos[0], -self.freecam.pos[1], -self.freecam.pos[2])
 
     def _bind_arrays(self, buffer_set: _GlBufferSet, *, use_textures: bool):
         buffer_set.vertices_vbo.bind()
@@ -2302,8 +2126,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def hideEvent(self, event):
         self._unlock_scene_cursor()
         self._timer.stop()
-        self._freecam_keys.clear()
-        self._freecam_mods.clear()
+        self.freecam.clear_input()
         super().hideEvent(event)
 
     def _change_fps_limit(self, value: int):
@@ -2314,7 +2137,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _set_camera_setting(self, attr: str, key: str, value: float):
         setattr(self, attr, float(value))
         if attr == "camera_speed":
-            self.freecam_speed = self._freecam_base_speed * self.camera_speed
+            self.freecam.update_speed(self.camera_speed)
         self._save_view_setting(key, float(value))
 
     def _set_wireframe_mode(self, mode: str):
