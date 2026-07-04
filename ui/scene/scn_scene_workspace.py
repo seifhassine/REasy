@@ -777,7 +777,6 @@ class ScnSceneTab:
                 children.setdefault(parent, []).append(scene_object)
         subtree_cache: dict[str, set[str]] = {}
         object_cache: dict[tuple[str, object], set[str]] = {}
-        visible_cache: dict[tuple[str, object], bool] = {}
 
         def subtree_keys(instance_id: str) -> set[str]:
             if instance_id not in subtree_cache:
@@ -800,28 +799,19 @@ class ScnSceneTab:
             object_cache[cache_key] = keys
             return keys
 
-        def object_visible(instance_id: str, scene_object) -> bool:
-            cache_key = (instance_id, scene_object.id)
-            if cache_key not in visible_cache:
-                visible_cache[cache_key] = False
-                visible_cache[cache_key] = bool(
-                    object_keys(instance_id, scene_object)
-                    or linked_by_folder.get(cache_key)
-                    or any(object_visible(instance_id, child) for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()))
-                )
-            return visible_cache[cache_key]
-
         def add_object(parent_item: QTreeWidgetItem, instance_id: str, scene_object) -> None:
+            cache_key = (instance_id, scene_object.id)
             keys = object_keys(instance_id, scene_object)
-            if not object_visible(instance_id, scene_object):
+            link_children = linked_by_folder.get(cache_key, ())
+            if not keys and not link_children:
                 return
-            direct = by_object.get((instance_id, scene_object.id), ())
+            direct = by_object.get(cache_key, ())
             object_item = self._gameobject_item(scene_object, keys, direct)
-            for renderable in sorted(composite_by_object.get((instance_id, scene_object.id), ()), key=lambda r: (r.source_group_instance_id or 0, r.source_transform_instance_id or 0, r.key)):
+            for renderable in sorted(composite_by_object.get(cache_key, ()), key=lambda r: (r.source_group_instance_id or 0, r.source_transform_instance_id or 0, r.key)):
                 object_item.addChild(self._renderable_item(renderable))
             for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()):
                 add_object(object_item, instance_id, child)
-            for child in linked_by_folder.get((instance_id, scene_object.id), ()):
+            for child in link_children:
                 add_document(object_item, child.instance_id)
             parent_item.addChild(object_item)
 
