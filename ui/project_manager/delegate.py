@@ -79,7 +79,7 @@ class _ActionsDelegate(QStyledItemDelegate):
         open_r = open_l + ICON_W
         # Second icon (open) - only for files
         if open_l <= relx <= open_r and not is_dir:
-            self.mgr._open_in_editor(path)
+            self.mgr._open_in_editor(path, warn_project_copy=not self.for_project)
             return True
         
         return False

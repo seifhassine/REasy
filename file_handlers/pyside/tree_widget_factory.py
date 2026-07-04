@@ -138,7 +138,7 @@ class TreeWidgetFactory:
             layout.addWidget(input_widget)
             
             if on_modified:
-                input_widget.modified_changed.connect(on_modified)
+                input_widget.modified_changed.connect(lambda _=False, obj=data_obj: on_modified(obj))
         
         elif node_type in TreeWidgetFactory.WIDGET_TYPES and data_obj:
             label = QLabel(name_text)
@@ -151,7 +151,7 @@ class TreeWidgetFactory:
             layout.addWidget(input_widget)
             
             if on_modified:
-                input_widget.modified_changed.connect(on_modified)
+                input_widget.modified_changed.connect(lambda _=False, obj=data_obj: on_modified(obj))
             
             if node_type == "GuidData" and hasattr(data_obj, 'gameobject'):
                 def _on_guid_changed(new_guid: str, d=data_obj):

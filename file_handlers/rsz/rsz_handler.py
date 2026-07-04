@@ -311,16 +311,16 @@ class RszViewer(QWidget):
         self.name_helper = None
         self.object_operations = None
 
-    def mark_modified(self):
+    def mark_modified(self, changed_obj=None):
         """Mark the viewer as modified and emit signal"""
         if not self._modified:
             self._modified = True
             self.modified_changed.emit(True)
-            if self.handler:
-                self.handler.modified = True
-                app = getattr(self.handler, "app", None)
-                if app is not None and hasattr(app, "scenes"):
-                    app.scenes.mark_stale(self.handler)
+        if self.handler:
+            self.handler.modified = True
+            app = getattr(self.handler, "app", None)
+            if app is not None and hasattr(app, "scenes"):
+                app.scenes.mark_stale(self.handler, changed_obj)
 
     @property
     def modified(self):
@@ -407,7 +407,7 @@ class RszViewer(QWidget):
 
         tab = app._resolve_tab_from_widget(self) if hasattr(app, "_resolve_tab_from_widget") else None
         source = scn_source_from_tab(tab)
-        owner = app.scenes.owner_for_source(source)
+        owner, can_add = app.scenes.source_add_state(source)
         if owner is not None:
             self.scene_button.setText(f"In {owner.title}")
             self.scene_button.setToolTip(f"Already in {owner.title}")
@@ -415,7 +415,7 @@ class RszViewer(QWidget):
         else:
             self.scene_button.setText("Add to Scene")
             self.scene_button.setToolTip("Add this SCN to a scene")
-            self.scene_button.setEnabled(source is not None)
+            self.scene_button.setEnabled(can_add)
             app.scenes.populate_add_to_scene_menu(menu, source)
 
     def _find_model_item_by_prefix(self, label_prefix: str):
@@ -1539,8 +1539,8 @@ class RszViewer(QWidget):
         return count
 
     def embed_forms(self):
-        def on_modified():
-            self.mark_modified()
+        def on_modified(changed_obj=None):
+            self.mark_modified(changed_obj)
         self.tree.embed_forms(parent_modified_callback=on_modified)
 
     def rebuild(self) -> bytes:

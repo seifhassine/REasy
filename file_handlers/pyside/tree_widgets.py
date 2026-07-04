@@ -1,9 +1,11 @@
 import traceback
+from weakref import WeakSet
 from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QPushButton)
 from PySide6.QtGui import QCursor, QPalette
-from PySide6.QtCore import Qt, QModelIndex, QEvent
+from PySide6.QtCore import Qt, QEvent, QSignalBlocker
+from shiboken6 import isValid
 
 
 from .tree_core import TreeModel
@@ -93,6 +95,7 @@ class AdvancedTreeView(QTreeView):
             char_limit=self.TRANSLATION_CHAR_LIMIT,
         )
         self._translation_in_progress = False
+        self._refresh_widgets_by_data = {}
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.clicked.connect(self._on_item_click)
 
@@ -210,6 +213,22 @@ class AdvancedTreeView(QTreeView):
         header = self.header()
         header.setSectionResizeMode(0, QHeaderView.Stretch) 
 
+    def setModel(self, model):
+        self._refresh_widgets_by_data.clear()
+        super().setModel(model)
+
+    def setIndexWidget(self, index, widget):
+        super().setIndexWidget(index, widget)
+        if widget is not None:
+            self._register_refresh_widgets(widget)
+
+    def _register_refresh_widgets(self, widget):
+        for editor in (widget, *widget.findChildren(QWidget)):
+            refresh = getattr(editor, "update_display", None)
+            get_data = getattr(editor, "get_data", None)
+            if callable(refresh) and callable(get_data) and (data := get_data()) is not None:
+                self._refresh_widgets_by_data.setdefault(id(data), WeakSet()).add(editor)
+
     def embed_forms(self, parent_modified_callback=None):
         """Use TreeWidgetFactory for embedding widgets consistently"""
         self.parent_modified_callback = parent_modified_callback
@@ -296,6 +315,19 @@ class AdvancedTreeView(QTreeView):
                     widget.findChild(StringInput).valueChanged.connect(
                         lambda _=index0: self._on_resource_name_changed()
                     )
+
+    def refresh_widgets_for(self, data_objects):
+        for data_id in {id(obj) for obj in data_objects if obj is not None}:
+            editors = self._refresh_widgets_by_data.get(data_id)
+            for editor in tuple(editors or ()):
+                if not isValid(editor):
+                    editors.discard(editor)
+                    continue
+                blockers = [QSignalBlocker(editor), *(QSignalBlocker(child) for child in editor.findChildren(QWidget))]
+                editor.update_display()
+                del blockers
+            if editors is not None and not editors:
+                self._refresh_widgets_by_data.pop(data_id, None)
 
     def _on_resource_name_changed(self):
         self.resources_outdated = True

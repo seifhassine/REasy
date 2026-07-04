@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,9 +11,9 @@ from .scn_scene_graph import (
     ScnSceneDiagnostic,
     ScnSceneGraph,
     ScnSceneGraphBuilder,
-    normalize_document_id,
     normalize_scene_path,
 )
+from .scn_document_store import ScnDocumentStore, scoped_document_path
 
 
 @dataclass(slots=True)
@@ -24,6 +23,7 @@ class ScnSceneSource:
     label: str = ""
     project_dir: str = ""
     game_version: str = ""
+    origin: str = ""
 
 
 def scn_identity_keys(path: str) -> set[str]:
@@ -45,19 +45,12 @@ def scn_identity_keys(path: str) -> set[str]:
 
 
 def scn_source_identity_keys(source: ScnSceneSource) -> set[str]:
-    return scn_identity_keys(_scoped_document_path(source.project_dir, source.path))
-
-
-def _scoped_document_path(project_dir: str, path: str) -> str:
-    normalized = normalize_scene_path(path)
-    if project_dir and normalized and not Path(normalized).is_absolute():
-        project_key = os.path.normcase(os.path.abspath(project_dir)).replace("\\", "/")
-        return f"{project_key}|{normalized}"
-    return path
+    return scn_identity_keys(scoped_document_path(source.project_dir, source.path))
 
 
 class ScnSceneLoader:
-    def __init__(self):
+    def __init__(self, document_store: ScnDocumentStore | None = None):
+        self.document_store = document_store or ScnDocumentStore()
         self._source_by_document: dict[str, ScnSceneSource] = {}
         self._source_by_graph: dict[int, ScnSceneSource] = {}
         self._building_source: ScnSceneSource | None = None
@@ -78,22 +71,22 @@ class ScnSceneLoader:
         if not valid_sources:
             return []
 
-        first = valid_sources[0].handler
-        builder = ScnSceneGraphBuilder(
-            getattr(first, "type_registry", None),
-            resource_resolver=self.resolve_resource,
-            game_version=str(getattr(first, "game_version", "") or ""),
-            max_depth=max_depth,
-        )
         graphs: list[ScnSceneGraph] = []
         seen_document_ids = set(skip_document_ids or ())
         for source in valid_sources:
             handler = source.handler
-            root_path = self._document_path(source, str(source.path or getattr(handler, "filepath", "") or getattr(handler.rsz_file, "filepath", "") or ""))
-            self._source_by_document[normalize_document_id(root_path)] = source
+            builder = ScnSceneGraphBuilder(
+                getattr(handler, "type_registry", None),
+                resource_resolver=self.resolve_resource,
+                game_version=str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or ""),
+                max_depth=max_depth,
+            )
+            root_path = scoped_document_path(source.project_dir, str(source.path or getattr(handler, "filepath", "") or getattr(handler.rsz_file, "filepath", "") or ""))
+            document = self.document_store.attach_source(source, handler.rsz_file, handler)
+            self._source_by_document[document.document_id] = source
             self._building_source = source
             try:
-                graph = builder.build(handler.rsz_file, root_path=root_path)
+                graph = builder.build(document.rsz_file, root_path=root_path)
             finally:
                 self._building_source = None
             self._source_by_graph[id(graph)] = source
@@ -143,21 +136,56 @@ class ScnSceneLoader:
             return None
 
         handler = source.handler if source is not None else None
+        is_scn = ".scn" in normalized.lower() and source is not None
         context = self.resource_context_for_source(source)
+        def found(path: str, data: bytes) -> ScnResolvedResource:
+            if is_scn and context:
+                path = self._project_resource_path(path, context[0], context[1], context[2])
+            return self._linked_scn_resource(source, path, data) if is_scn else ScnResolvedResource(path=path, data=data)
+
         hit = resolve_resource_data(normalized, *context, allow_selection_dialog=False) if context else resolve_app_resource_data(getattr(handler, "app", None), normalized, allow_selection_dialog=False)
         if hit is not None:
-            return ScnResolvedResource(path=self._document_path(source, hit[0]) if ".scn" in normalized.lower() else hit[0], data=hit[1])
+            return found(hit[0], hit[1])
 
         direct = Path(normalized)
         if direct.is_file():
-            return ScnResolvedResource(path=str(direct), data=direct.read_bytes())
+            return found(str(direct), direct.read_bytes())
 
         source_path = Path(str((source.path if source is not None else "") or getattr(handler, "filepath", "") or ""))
         if source_path.is_file():
             sibling = source_path.parent / direct.name
             if sibling.is_file():
-                return ScnResolvedResource(path=str(sibling), data=sibling.read_bytes())
+                return found(str(sibling), sibling.read_bytes())
         return None
+
+    def _linked_scn_resource(self, source: ScnSceneSource, path: str, data: bytes) -> ScnResolvedResource:
+        handler = getattr(source, "handler", None)
+        doc = self.document_store.load_linked(
+            source,
+            path,
+            data,
+            getattr(handler, "type_registry", None),
+            str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or ""),
+        )
+        self._source_by_document[doc.document_id] = source
+        return ScnResolvedResource(path=scoped_document_path(doc.project_dir, doc.resource_path), rsz_file=doc.rsz_file)
+
+    @staticmethod
+    def _project_resource_path(path: str, project_dir: str, unpacked_dir: str, path_prefix: str) -> str:
+        for root in (project_dir, unpacked_dir):
+            if not root:
+                continue
+            try:
+                rel = os.path.relpath(path, root).replace("\\", "/")
+                if not rel.startswith("../") and rel != "..":
+                    return normalize_scene_path(rel)
+            except (TypeError, ValueError):
+                pass
+        normalized = normalize_scene_path(path)
+        prefix = path_prefix.strip("/")
+        if Path(path).is_absolute() or normalized.lower().startswith(prefix.lower() + "/"):
+            return normalized
+        return normalize_scene_path(f"{prefix}/{normalized}")
 
     def resource_context_for_source(self, source: ScnSceneSource | None):
         handler = source.handler if source is not None else None
@@ -167,25 +195,5 @@ class ScnSceneLoader:
         game = str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or getattr(app, "current_game", "") or "")
         if not project_dir or proj is None:
             return None
-        if self._same_path(project_dir, getattr(proj, "project_dir", "")):
-            unpacked_dir, reader = getattr(proj, "unpacked_dir", None), getattr(proj, "_pak_cached_reader", None)
-        else:
-            state = getattr(proj, "_project_pak_states", {}).get(proj._path_key(project_dir), {})
-            unpacked_dir, reader = self._project_unpacked_dir(project_dir), state.get("reader")
+        unpacked_dir, reader = proj.ensure_project_pak_context(project_dir)
         return project_dir, unpacked_dir, get_path_prefix_for_game(game), reader
-
-    @staticmethod
-    def _same_path(a, b) -> bool:
-        return bool(a and b) and os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
-
-    @staticmethod
-    def _project_unpacked_dir(project_dir: str) -> str:
-        try:
-            with open(Path(project_dir) / ".reasy_project.json", "r", encoding="utf-8") as f:
-                return str((json.load(f) or {}).get("unpacked_dir") or "")
-        except Exception:
-            return ""
-
-    @staticmethod
-    def _document_path(source: ScnSceneSource | None, path: str) -> str:
-        return _scoped_document_path(str(getattr(source, "project_dir", "") or ""), path)

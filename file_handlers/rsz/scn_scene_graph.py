@@ -13,11 +13,9 @@ from file_handlers.rsz.rsz_data_types import (
     BoolData,
     ObjectData,
     PositionData,
-    QuaternionData,
     ResourceData,
     StringData,
     StructData,
-    Vec3Data,
 )
 from file_handlers.rsz.rsz_file import RszFile
 
@@ -287,10 +285,6 @@ def _object_ref_id(value) -> int:
     return int(value.value or 0) if isinstance(value, ObjectData) else int(value) if isinstance(value, int) else 0
 
 
-def _is_vec3_value(value) -> bool:
-    return all(hasattr(value, axis) for axis in ("x", "y", "z")) and not hasattr(value, "w")
-
-
 def _first_name(fields: Mapping[str, object], fallback: str) -> str:
     return next((text for _name, text in _resource_string_fields(fields) if text), fallback)
 
@@ -445,18 +439,17 @@ class ScnSceneGraphBuilder:
             self._add_object(document, folder, "folder", graph)
 
     def _extract_transform(self, component, graph, object_id) -> ScnTransform | None:
-        values = list(component.fields.values())
-        if len(values) < 3:
+        from .scn_scene_adapters import TransformAdapter
+
+        try:
+            return TransformAdapter(component.fields).read()
+        except ValueError:
             self._warn(
                 graph, "invalid_transform",
-                "via.Transform does not have at least three fields.",
+                "via.Transform does not have usable TRS fields.",
                 object_id.document_id, object_id=object_id, component_id=component.id,
             )
             return None
-        position = _vector3(values[0])
-        rotation = _quaternion(values[1])
-        scale = _vector3(values[2], (1.0, 1.0, 1.0))
-        return ScnTransform(position, rotation, scale, make_trs_matrix(position, rotation, scale))
 
     def _compute_document_world_matrices(self, document: ScnSceneDocument, graph: ScnSceneGraph) -> None:
         visiting: set[ScnObjectId] = set()
@@ -509,10 +502,9 @@ class ScnSceneGraphBuilder:
             )
 
     def _folder_link_path(self, fields: Mapping[str, object]) -> str:
-        for _name, value in reversed(_resource_string_fields(fields)):
-            if value and ".scn" in value.lower():
-                return normalize_scene_path(value)
-        return ""
+        from .scn_scene_adapters import FolderLinkAdapter
+
+        return FolderLinkAdapter(fields).scene_path()
 
     def _folder_offset(self, fields: Mapping[str, object]) -> tuple[float, float, float] | None:
         return next((_vector3(value) for value in fields.values() if isinstance(value, PositionData)), None)
@@ -788,27 +780,17 @@ class ScnSceneGraphBuilder:
         return True
 
     def _extract_composite_transform(self, fields: Mapping[str, object]) -> ScnTransform | None:
-        values = list(fields.values())
-        for index, value in enumerate(values):
-            if not _is_vec3_value(value):
-                continue
-            rotation_value = values[index + 1] if index + 1 < len(values) else None
-            if not all(hasattr(rotation_value, axis) for axis in ("x", "y", "z", "w")):
-                continue
-            scale_value = values[index + 2] if index + 2 < len(values) else None
-            position = _vector3(value)
-            rotation = _quaternion(rotation_value)
-            scale = _vector3(scale_value, (1.0, 1.0, 1.0))
-            return ScnTransform(position, rotation, scale, make_trs_matrix(position, rotation, scale))
-        return None
+        from .scn_scene_adapters import CompositeMeshAdapter
+
+        try:
+            return CompositeMeshAdapter(fields).read_transform()
+        except ValueError:
+            return None
 
     def _mesh_paths_from_fields(self, fields: Mapping[str, object]) -> tuple[str, str]:
-        values = [value for _name, value in _resource_string_fields(fields) if value]
-        index = next((idx for idx, value in enumerate(values) if ".mesh" in value.lower()), 0 if values else -1)
-        return (
-            normalize_scene_path(values[index]),
-            normalize_scene_path(values[index + 1]) if index + 1 < len(values) else "",
-        ) if index >= 0 else ("", "")
+        from .scn_scene_adapters import MeshAdapter
+
+        return MeshAdapter(fields).paths()
 
     def _foliage_path(self, fields: Mapping[str, object]) -> str:
         values = [value for _name, value in _resource_string_fields(fields) if value]

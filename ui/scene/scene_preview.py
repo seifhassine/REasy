@@ -153,6 +153,7 @@ HOVER_DETECT_KEY = Qt.Key_H
 
 class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     object_clicked = Signal(str)
+    gizmo_transform_committed = Signal(object)
 
     SETTINGS_DEFAULTS = {
         "mesh_viewer_fps_limit": 60,
@@ -538,6 +539,29 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._refresh_selection_buffer_sets()
         if focus:
             self.focus_selection()
+        self.update()
+
+    def update_mesh_transforms(self, matrices: dict[str, np.ndarray]) -> None:
+        if not matrices:
+            return
+        deltas: dict[str, np.ndarray] = {}
+        for mesh in self._meshes:
+            if mesh.key in matrices:
+                old = np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else IDENTITY4, dtype=np.float32)
+                new = np.asarray(matrices[mesh.key], dtype=np.float32)
+                if not np.allclose(old, new):
+                    deltas[mesh.key] = new @ np.linalg.inv(old)
+                mesh.transform_matrix = new
+        self._recompute_bounds()
+        self._refresh_selection_bounds()
+        if deltas:
+            if not self._scene_matrix_is_identity():
+                self._upload_buffers()
+            elif self._apply_transform_deltas(deltas):
+                self._rebuild_pick_entries()
+                self._refresh_hover_colors()
+            else:
+                raise RuntimeError("Incremental mesh transform upload failed")
         self.update()
 
     def set_gizmo_mode(self, mode: str) -> None:
@@ -1123,11 +1147,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if drag is None:
             return
         matrix = drag.get("matrix")
+        committed = {}
         if commit and matrix is not None:
             for mesh in self._meshes:
                 start = drag["matrices"].get(mesh.key)
                 if start is not None:
                     mesh.transform_matrix = (matrix @ start).astype(np.float32, copy=False)
+                    committed[mesh.key] = mesh.transform_matrix.copy()
             if drag.get("whole_scene"):
                 self._scene_matrix = (matrix @ self._scene_matrix).astype(np.float32, copy=False)
             elif drag.get("deferred_geometry"):
@@ -1137,6 +1163,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         deferred = bool(drag.get("deferred_geometry"))
         moved_geometry = bool(matrix is not None and not drag.get("whole_scene"))
         self._gizmo_drag = None
+        if committed:
+            self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
         if deferred:
             self._refresh_main_index_sets()
         if moved_geometry:
@@ -1214,6 +1242,35 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._upload_changed_geometry(buffer_set, indices)
             if not current:
                 self.doneCurrent()
+
+    def _scene_matrix_is_identity(self) -> bool:
+        return np.array_equal(self._scene_matrix, IDENTITY4)
+
+    def _apply_transform_deltas(self, deltas: dict[str, np.ndarray]) -> bool:
+        if not deltas:
+            return self._scene_matrix_is_identity()
+        made_current = self.context() is not None
+        if made_current:
+            try:
+                self.makeCurrent()
+            except Exception:
+                return False
+        data_seen = False
+        for buffer_set in (self._regular_set, self._solid_set):
+            if buffer_set is None or buffer_set.data is None:
+                continue
+            data_seen = True
+            for key, matrix in deltas.items():
+                rows = self._hover_vertices(buffer_set.data, key)
+                if len(rows):
+                    self._apply_gizmo_snapshot(buffer_set, {
+                        "indices": rows,
+                        "vertices": buffer_set.data.vertices[rows].copy(),
+                        "normals": buffer_set.data.normals[rows].copy() if buffer_set.data.normals is not None else None,
+                    }, matrix, current=made_current)
+        if made_current:
+            self.doneCurrent()
+        return data_seen
 
     @staticmethod
     def _translation_matrix(offset: np.ndarray) -> np.ndarray:
@@ -1407,36 +1464,37 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._pick_bound_maxs = np.asarray(maxs_list, dtype=np.float32) if maxs_list else np.zeros((0, 3), dtype=np.float32)
 
     @staticmethod
-    def _dispose_vbo(handle) -> None:
+    def _dispose_vbo(handle, *, delete_gl: bool = True) -> None:
         if handle is None:
             return
-        with suppress(Exception):
-            handle.delete()
+        if delete_gl:
+            with suppress(Exception):
+                handle.delete()
         buffers = getattr(handle, "buffers", None)
         if hasattr(buffers, "clear"):
             buffers.clear()
 
-    def _delete_buffer_set(self, buffer_set: _GlBufferSet | None):
+    def _delete_buffer_set(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
         if buffer_set is None:
             return
         for name in ("vertices_vbo", "normals_vbo", "colors_vbo", "uvs_vbo"):
-            self._dispose_vbo(getattr(buffer_set, name))
+            self._dispose_vbo(getattr(buffer_set, name), delete_gl=delete_gl)
             setattr(buffer_set, name, None)
         buffer_set.colors = None
-        self._delete_index_vbos(buffer_set)
+        self._delete_index_vbos(buffer_set, delete_gl=delete_gl)
 
-    def _delete_selection_buffer_sets(self) -> None:
-        self._delete_index_vbos(self._selection_regular_set)
-        self._delete_index_vbos(self._selection_solid_set)
+    def _delete_selection_buffer_sets(self, *, delete_gl: bool = True) -> None:
+        self._delete_index_vbos(self._selection_regular_set, delete_gl=delete_gl)
+        self._delete_index_vbos(self._selection_solid_set, delete_gl=delete_gl)
         self._selection_regular_set = self._selection_solid_set = None
 
-    def _delete_index_vbos(self, buffer_set: _GlBufferSet | None):
+    def _delete_index_vbos(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
         if buffer_set is None:
             return
         for handle in (buffer_set.indices_vbo, buffer_set.line_indices_vbo):
-            self._dispose_vbo(handle)
+            self._dispose_vbo(handle, delete_gl=delete_gl)
         for _, batch_vbo, _ in buffer_set.batch_vbos:
-            self._dispose_vbo(batch_vbo)
+            self._dispose_vbo(batch_vbo, delete_gl=delete_gl)
         buffer_set.indices_vbo = None
         buffer_set.line_indices_vbo = None
         buffer_set.batch_vbos.clear()
@@ -1572,8 +1630,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _refresh_selection_buffer_sets(self, *, current: bool = False) -> None:
         if self.context() is None:
             return
-        if not current:
-            self.makeCurrent()
+        if not current and not self._make_current_or_queue_upload():
+            return
         self._delete_selection_buffer_sets()
         if not self._selection_is_whole_scene():
             keys = self._selection_keys - self._hidden_keys
@@ -1586,8 +1644,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self.context() is None:
             self.update()
             return
-        if not current:
-            self.makeCurrent()
+        if not current and not self._make_current_or_queue_upload():
+            return
         self._upload_index_vbos(self._regular_set)
         self._upload_index_vbos(self._solid_set)
         self._refresh_hover_colors(current=True)
@@ -1691,8 +1749,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self._scene_matrix = IDENTITY4.copy()
         if self.context() is None:
             return
-        if not current:
-            self.makeCurrent()
+        if not current and not self._make_current_or_queue_upload():
+            return
         self._delete_selection_buffer_sets()
         self._delete_buffer_set(self._regular_set)
         self._delete_buffer_set(self._solid_set)
@@ -1703,6 +1761,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not current:
             self.doneCurrent()
         self._needs_gl_upload = False
+
+    def _make_current_or_queue_upload(self) -> bool:
+        try:
+            self.makeCurrent()
+            return True
+        except Exception:
+            self._needs_gl_upload = True
+            self.update()
+            return False
 
     def _clear_gl_textures(self):
         if self._texture_source_ids:
@@ -1764,11 +1831,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self.makeCurrent()
                 made_current = True
                 self._clear_gl_textures()
-        self._delete_buffer_set(self._regular_set)
-        self._delete_buffer_set(self._solid_set)
-        self._delete_selection_buffer_sets()
-        with suppress(Exception):
-            self._cleanup_extra_gl()
+        self._delete_buffer_set(self._regular_set, delete_gl=made_current)
+        self._delete_buffer_set(self._solid_set, delete_gl=made_current)
+        self._delete_selection_buffer_sets(delete_gl=made_current)
+        if made_current:
+            with suppress(Exception):
+                self._cleanup_extra_gl()
         if made_current:
             with suppress(Exception):
                 self.doneCurrent()

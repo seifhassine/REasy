@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QStyle, QTextEdit, QToolButton, QVBoxLayout, QWidget
 
@@ -18,7 +19,10 @@ from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
 from ui.scene.scene_preview import ScenePreviewWidget
 
 from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
+from .scn_document_store import ScnDocumentStore
+from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
 from .scn_scene_graph import (
+    ScnSceneDiagnostic,
     ScnRenderableMesh,
     ScnSceneGraph,
     normalize_scene_path,
@@ -47,6 +51,8 @@ class ScnScenePreviewWidget(QWidget):
         owner,
         sources_getter: Callable[[], list[ScnSceneSource]] | None = None,
         graphs_changed_callback: Callable[[], None] | None = None,
+        edits_changed_callback: Callable[[set[str], list[object]], None] | None = None,
+        document_store: ScnDocumentStore | None = None,
         settings: dict | None = None,
     ):
         super().__init__(owner)
@@ -54,9 +60,10 @@ class ScnScenePreviewWidget(QWidget):
         self.handler = getattr(owner, "handler", None)
         self._sources_getter = sources_getter
         self._graphs_changed_callback = graphs_changed_callback
+        self._edits_changed_callback = edits_changed_callback
         self.graph: ScnSceneGraph | None = None
         self.graphs: list[ScnSceneGraph] = []
-        self.loader = ScnSceneLoader()
+        self.loader = ScnSceneLoader(document_store)
         self._loaded = False
         self._stale = False
         self._mesh_cache: dict[str, tuple[MeshHandler | None, SceneDrawMesh | None]] = {}
@@ -102,6 +109,7 @@ class ScnScenePreviewWidget(QWidget):
         self.refresh_button.clicked.connect(self.request_refresh)
 
         self.preview = ScenePreviewWidget(self, settings=settings)
+        self.preview.gizmo_transform_committed.connect(self._commit_gizmo_transforms)
         self.preview.setMinimumHeight(320)
         layout.addWidget(self.preview, 1)
 
@@ -132,6 +140,12 @@ class ScnScenePreviewWidget(QWidget):
         self._stale = True
         if self._loaded:
             self.status_label.setText("Scene preview is stale. Refresh to rebuild from the edited SCN.")
+
+    def sync_raw_transform_field(self, document_ids: set[str], changed_field: object) -> TransformEditResult:
+        result = RawTransformFieldCommand(self.graphs, self.loader.document_store, document_ids, changed_field).execute()
+        if result.handled:
+            self._apply_transform_result(result, force_upload=True)
+        return result
 
     def _stop_timers(self) -> None:
         self._mesh_timer.stop()
@@ -279,6 +293,27 @@ class ScnScenePreviewWidget(QWidget):
     def _notify_graphs_changed(self) -> None:
         if self._graphs_changed_callback is not None:
             self._graphs_changed_callback()
+
+    def _commit_gizmo_transforms(self, payload) -> None:
+        matrices, whole_scene = payload if isinstance(payload, tuple) else (payload, False)
+        result = TransformSelectionCommand(self.graphs, self.loader.document_store, matrices).execute()
+        self._apply_transform_result(result, matrices, whole_scene)
+
+    def _apply_transform_result(self, result: TransformEditResult, source_matrices: dict[str, object] | None = None, whole_scene: bool = False, *, force_upload: bool = False) -> None:
+        if result.matrices and (force_upload or self._needs_transform_upload(result.matrices, source_matrices or {}, whole_scene)):
+            self.preview.update_mesh_transforms(result.matrices)
+        if result.skipped and self.graphs:
+            self.graphs[0].diagnostics.extend(
+                self._diagnostic_for_key("warning", "transform_edit_skipped", reason, key)
+                for key, reason in result.skipped.items()
+            )
+        self._update_diagnostics()
+        if result.dirty_documents and self._edits_changed_callback is not None:
+            self._edits_changed_callback(result.dirty_documents, result.changed_fields)
+
+    @staticmethod
+    def _needs_transform_upload(result: dict[str, object], source: dict[str, object], whole_scene: bool) -> bool:
+        return whole_scene or set(result) != set(source) or any(not np.allclose(result[key], source[key]) for key in result)
 
     def _queue_renderables(self, graphs: list[ScnSceneGraph]) -> None:
         self._pending_renderables.extend(
@@ -550,8 +585,6 @@ class ScnScenePreviewWidget(QWidget):
 
     @staticmethod
     def _diagnostic(severity: str, code: str, message: str, renderable: ScnRenderableMesh):
-        from .scn_scene_graph import ScnSceneDiagnostic
-
         return ScnSceneDiagnostic(
             severity=severity,
             code=code,
@@ -562,3 +595,10 @@ class ScnScenePreviewWidget(QWidget):
             component_id=renderable.source_component_id,
             path=renderable.mesh_path,
         )
+
+    def _diagnostic_for_key(self, severity: str, code: str, message: str, key: str):
+        for graph in self.graphs:
+            for renderable in graph.renderables:
+                if renderable.key == key:
+                    return self._diagnostic(severity, code, message, renderable)
+        return ScnSceneDiagnostic(severity, code, message)

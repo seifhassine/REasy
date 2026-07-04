@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, scn_source_identity_keys
 from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+from file_handlers.rsz.scn_document_store import ScnDocumentStore
 from file_handlers.rsz.rsz_handler import RszHandler
 
 
@@ -42,10 +43,12 @@ def scn_source_from_tab(tab) -> ScnSceneSource | None:
     session = session.session_for_tab(tab) if session is not None else None
     project_dir = str(getattr(tab, "pak_project_dir", None) or getattr(session, "path", "") or "")
     path = str(getattr(tab, "pak_source_path", None) or "")
+    origin = "pak" if path else ""
     if not path and project_dir and getattr(tab, "filename", None):
         try:
             rel = os.path.relpath(tab.filename, project_dir).replace("\\", "/")
-            path = rel if not rel.startswith("../") and rel != ".." else ""
+            if not rel.startswith("../") and rel != "..":
+                path, origin = rel, "project"
         except ValueError:
             pass
     if not path:
@@ -57,7 +60,13 @@ def scn_source_from_tab(tab) -> ScnSceneSource | None:
         label=label,
         project_dir=project_dir,
         game_version=str(getattr(session, "game", "") or getattr(handler, "game_version", "") or ""),
+        origin=origin,
     )
+
+
+def scn_source_exact_key(source: ScnSceneSource) -> str:
+    project = os.path.normcase(os.path.abspath(source.project_dir)).replace("\\", "/") if source.project_dir else ""
+    return f"{source.origin or 'source'}|{project}|{source.path}".replace("\\", "/").lower()
 
 
 def _source_project_name(source: ScnSceneSource) -> str:
@@ -110,6 +119,8 @@ class ScnSceneTab:
             self.notebook_widget,
             sources_getter=lambda: self.sources,
             graphs_changed_callback=self._on_graphs_changed,
+            edits_changed_callback=self._on_scene_edited,
+            document_store=self.app.scenes.document_store,
             settings=getattr(self.app, "settings", None),
         )
         self.preview.preview.object_clicked.connect(self._select_renderable_from_view)
@@ -357,12 +368,12 @@ class ScnSceneTab:
         if not sources:
             body.addWidget(QLabel("Open an SCN from a PAK first.", panel))
         for source in sources:
-            owner = self.app.scenes.owner_for_source(source)
+            owner, can_add = self.app.scenes.source_add_state(source)
             label = _source_display_name(source) + (f" | In {owner.title}" if owner else "")
             actions = [(
                 f"In {owner.title}" if owner else "Add",
                 lambda src=source: self.app.scenes.add_to_scene(self, src),
-                owner is None,
+                can_add,
             )]
             self._add_popup_row(label, actions)
         self._show_popup_at(self.add_button.mapToGlobal(self.add_button.rect().bottomLeft()))
@@ -534,13 +545,21 @@ class ScnSceneTab:
     def _on_graphs_changed(self) -> None:
         if self.app is not None:
             self.rebuild_owned_scn_paths(self.preview.graphs)
+            self.app.scenes.document_store.claim_graphs(self, self.preview.graphs)
             self.update_source_summary()
             self._refresh_warning()
             self.app.scenes.refresh_actions()
             self.app.scenes.refresh_buttons()
 
+    def _on_scene_edited(self, document_ids=None, changed_fields=None) -> None:
+        if document_ids:
+            self.app.scenes.refresh_document_views(document_ids, changed_fields or ())
+        self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
+        self.update_tab_title()
+
     def cleanup(self) -> None:
         self.leave_view_fullscreen(defer_update=False)
+        self.app.scenes.document_store.release_owner(self)
         self.sources.clear()
         self._owned_scn_paths.clear()
         self.preview.cleanup()
@@ -548,11 +567,24 @@ class ScnSceneTab:
         self.notebook_widget.parent_tab = None
         self.notebook_widget.deleteLater()
 
+    def discard_changes(self) -> None:
+        self.app.scenes.document_store.discard_owner(self)
+        self.modified = False
+        self.update_tab_title()
+
     def on_save(self) -> bool:
-        return False
+        return self.direct_save()
 
     def direct_save(self) -> bool:
-        return False
+        try:
+            count = self.app.scenes.document_store.save_graphs(self.preview.graphs)
+        except Exception as exc:
+            self.app.status_bar.showMessage(f"Scene save failed: {exc}", 5000)
+            return False
+        self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
+        self.update_tab_title()
+        self.app.status_bar.showMessage(f"Saved {count} SCN file{'s' if count != 1 else ''}.", 3000)
+        return True
 
     def reload_file(self) -> None:
         self.preview.request_refresh()
@@ -587,7 +619,7 @@ class ScnSceneTab:
 
     def _find_renderable_item(self, key: str) -> QTreeWidgetItem | None:
         matches = [item for item in self._tree_items() if key in (item.data(1, Qt.UserRole) or ())]
-        return next((item for item in matches if item.data(0, Qt.UserRole + 1) == "renderable"), None) or next((item for item in matches if item.data(0, Qt.UserRole + 1) != "scn"), None)
+        return next((item for item in matches if key in (item.data(0, Qt.UserRole + 2) or ())), None) or next((item for item in matches if item.data(0, Qt.UserRole + 1) != "scn"), None)
 
     def _refresh_warning(self, include_overlap: bool = False) -> None:
         show = include_overlap or any(d.code == "duplicate_linked_scn" for graph in self.preview.graphs for d in graph.diagnostics)
@@ -599,7 +631,7 @@ class ScnSceneTab:
         if include_source_actions:
             self._add_popup_row("Selection", [("Remove SCN", self.remove_selected_sources, self.remove_button.isEnabled())])
         active_source = scn_source_from_tab(self.app.get_active_tab())
-        source_owner = self.app.scenes.owner_for_source(active_source)
+        source_owner, can_add_source = self.app.scenes.source_add_state(active_source)
         scenes = self.app.scenes.tabs()
         if not scenes:
             body.addWidget(QLabel("No scenes.", panel))
@@ -610,7 +642,7 @@ class ScnSceneTab:
                 actions.append((
                     text,
                     lambda tab=scene, src=active_source: self._add_active_source_to_scene(tab, src),
-                    source_owner is None,
+                    can_add_source,
                 ))
             actions += [
                 ("Go To", lambda tab=scene: self._go_to_scene(tab), True),
@@ -699,11 +731,12 @@ class ScnSceneTab:
         self._set_visibility_keys(item, keys)
         return item
 
-    def _gameobject_item(self, scene_object, keys=()) -> QTreeWidgetItem:
+    def _gameobject_item(self, scene_object, keys=(), direct_keys=()) -> QTreeWidgetItem:
         label = scene_object.name or scene_object.type_name or f"GameObject {scene_object.id.local_object_id}"
         item = QTreeWidgetItem([label, ""])
-        item.setIcon(0, self._gameobject_icon)
+        item.setIcon(0, self._scn_icon if scene_object.kind == "folder" else self._gameobject_icon)
         item.setData(0, Qt.UserRole + 1, "object")
+        item.setData(0, Qt.UserRole + 2, tuple(direct_keys))
         self._set_visibility_keys(item, keys)
         return item
 
@@ -715,31 +748,82 @@ class ScnSceneTab:
         item = QTreeWidgetItem([label, ""])
         item.setIcon(0, self._gameobject_icon)
         item.setData(0, Qt.UserRole + 1, "renderable")
+        item.setData(0, Qt.UserRole + 2, (renderable.key,))
         self._set_visibility_keys(item, (renderable.key,))
         return item
 
     def _populate_graph_item(self, root_item: QTreeWidgetItem, graph, linked_item_factory=None, linked_document_ids=()) -> None:
-        children: dict[str, list] = {}
+        instance_children: dict[str, list] = {}
+        linked_by_folder: dict[tuple[str, object], list] = {}
         for instance in graph.document_instances.values():
             if instance.parent_instance_id:
-                children.setdefault(instance.parent_instance_id, []).append(instance)
+                instance_children.setdefault(instance.parent_instance_id, []).append(instance)
+                link = graph.links[instance.source_link_index] if instance.source_link_index is not None and instance.source_link_index < len(graph.links) else None
+                if link is not None:
+                    linked_by_folder.setdefault((instance.parent_instance_id, link.source_folder_id), []).append(instance)
         by_instance: dict[str, set[str]] = {}
         by_object: dict[tuple[str, object], set[str]] = {}
         composite_by_object: dict[tuple[str, object], list] = {}
+        object_children: dict[str, dict[object, list]] = {}
         for renderable in graph.renderables:
             by_instance.setdefault(renderable.document_instance_id, set()).add(renderable.key)
             by_object.setdefault((renderable.document_instance_id, renderable.source_object_id), set()).add(renderable.key)
             if renderable.source_kind == "composite_mesh":
                 composite_by_object.setdefault((renderable.document_instance_id, renderable.source_object_id), []).append(renderable)
+        for document in graph.documents.values():
+            children = object_children.setdefault(document.document_id, {})
+            for scene_object in document.objects.values():
+                parent = document.object_by_local_id.get(scene_object.parent_id)
+                children.setdefault(parent, []).append(scene_object)
         subtree_cache: dict[str, set[str]] = {}
+        object_cache: dict[tuple[str, object], set[str]] = {}
+        visible_cache: dict[tuple[str, object], bool] = {}
 
         def subtree_keys(instance_id: str) -> set[str]:
             if instance_id not in subtree_cache:
                 keys = set(by_instance.get(instance_id, ()))
-                for child in children.get(instance_id, ()):
+                for child in instance_children.get(instance_id, ()):
                     keys.update(subtree_keys(child.instance_id))
                 subtree_cache[instance_id] = keys
             return subtree_cache[instance_id]
+
+        def object_keys(instance_id: str, scene_object) -> set[str]:
+            cache_key = (instance_id, scene_object.id)
+            if cache_key in object_cache:
+                return object_cache[cache_key]
+            object_cache[cache_key] = set()
+            keys = set(by_object.get(cache_key, ()))
+            for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()):
+                keys.update(object_keys(instance_id, child))
+            for child in linked_by_folder.get(cache_key, ()):
+                keys.update(subtree_keys(child.instance_id))
+            object_cache[cache_key] = keys
+            return keys
+
+        def object_visible(instance_id: str, scene_object) -> bool:
+            cache_key = (instance_id, scene_object.id)
+            if cache_key not in visible_cache:
+                visible_cache[cache_key] = False
+                visible_cache[cache_key] = bool(
+                    object_keys(instance_id, scene_object)
+                    or linked_by_folder.get(cache_key)
+                    or any(object_visible(instance_id, child) for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()))
+                )
+            return visible_cache[cache_key]
+
+        def add_object(parent_item: QTreeWidgetItem, instance_id: str, scene_object) -> None:
+            keys = object_keys(instance_id, scene_object)
+            if not object_visible(instance_id, scene_object):
+                return
+            direct = by_object.get((instance_id, scene_object.id), ())
+            object_item = self._gameobject_item(scene_object, keys, direct)
+            for renderable in sorted(composite_by_object.get((instance_id, scene_object.id), ()), key=lambda r: (r.source_group_instance_id or 0, r.source_transform_instance_id or 0, r.key)):
+                object_item.addChild(self._renderable_item(renderable))
+            for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()):
+                add_object(object_item, instance_id, child)
+            for child in linked_by_folder.get((instance_id, scene_object.id), ()):
+                add_document(object_item, child.instance_id)
+            parent_item.addChild(object_item)
 
         def add_document(parent_item: QTreeWidgetItem, instance_id: str, root: bool = False) -> None:
             instance = graph.document_instances.get(instance_id)
@@ -756,14 +840,8 @@ class ScnSceneTab:
                 self._set_visibility_keys(item, subtree_keys(instance_id))
             if not root:
                 parent_item.addChild(item)
-            for child in children.get(instance_id, []):
-                add_document(item, child.instance_id)
-            for scene_object in document.objects.values():
-                if keys := by_object.get((instance_id, scene_object.id), ()):
-                    object_item = self._gameobject_item(scene_object, keys)
-                    for renderable in sorted(composite_by_object.get((instance_id, scene_object.id), ()), key=lambda r: (r.source_group_instance_id or 0, r.source_transform_instance_id or 0, r.key)):
-                        object_item.addChild(self._renderable_item(renderable))
-                    item.addChild(object_item)
+            for scene_object in object_children.get(document.document_id, {}).get(None, ()):
+                add_object(item, instance_id, scene_object)
 
         add_document(root_item, graph.root_instance_id, True)
 
@@ -772,7 +850,7 @@ class ScnSceneController:
     def __init__(self, app):
         self.app = app
         self.counter = 0
-        self.loader = ScnSceneLoader()
+        self.document_store = ScnDocumentStore()
         self._identity_cache: dict[tuple[int, str], set[str]] = {}
 
     def tabs(self) -> list[ScnSceneTab]:
@@ -785,7 +863,8 @@ class ScnSceneController:
         return next(
             (
                 scene for scene in self.tabs()
-                if any(source.project_dir and self._project_key(source.project_dir) == key for source in scene.sources)
+                if any(self._project_key(doc.project_dir) == key for doc in self.document_store.documents_for_owner(scene))
+                or any(source.project_dir and self._project_key(source.project_dir) == key for source in scene.sources)
             ),
             None,
         )
@@ -810,28 +889,26 @@ class ScnSceneController:
         self.app._refresh_homepage()
         return tab
 
-    def add_active_scn(self) -> None:
-        source = scn_source_from_tab(self.app.get_active_tab())
-        self.add_to_scene(source=source, scene_tab=None if source is not None else self.active_scene())
-
     def add_to_scene(self, scene_tab: ScnSceneTab | None = None, source: ScnSceneSource | None = None) -> None:
-        source = source or scn_source_from_tab(self.app.get_active_tab()) or self._choose_open_source()
+        source = source or scn_source_from_tab(self.app.get_active_tab())
         if source is None:
             self._notice("Open an SCN from a PAK first.")
             return
         owner = self.owner_for_source(source)
-        if owner is not None and owner is not scene_tab:
+        if owner is not None:
             self.focus(owner)
             self._notice(f"{_source_display_name(source)} is already open in {owner.title}.")
             return
-        owned_keys = self.source_identity_keys(source)
+        owned_keys = self._checked_source_identity_keys(source)
+        if owned_keys is None:
+            return
+        scene_tab = scene_tab or self._choose_tab()
+        if scene_tab is None:
+            return
         conflict = self.owner_for(owned_keys, exclude=scene_tab)
-        if conflict is not None and conflict is not owner:
+        if conflict is not None:
             self.focus(conflict)
             self._notice(f"{_source_display_name(source)} is already open in {conflict.title}.")
-            return
-        scene_tab = scene_tab or owner or self._choose_tab()
-        if scene_tab is None:
             return
         if scene_tab.add_source(source, owned_keys):
             self.focus(scene_tab)
@@ -869,7 +946,7 @@ class ScnSceneController:
         if clear:
             menu.clear()
         active_source = scn_source_from_tab(self.app.get_active_tab())
-        source_owner = self.owner_for_source(active_source)
+        source_owner, can_add_source = self.source_add_state(active_source)
         scenes = self.tabs()
         if scenes:
             for scene in scenes:
@@ -877,7 +954,7 @@ class ScnSceneController:
                 if active_source is not None:
                     text = f"In {source_owner.title}" if source_owner else f"Add {_source_display_name(active_source)}"
                     add_act = scene_menu.addAction(text, lambda _checked=False, tab=scene, source=active_source: self.add_to_scene(tab, source))
-                    add_act.setEnabled(source_owner is None)
+                    add_act.setEnabled(can_add_source)
                     scene_menu.addSeparator()
                 scene_menu.addAction("Go To", lambda _checked=False, tab=scene: self.focus(tab))
                 scene_menu.addAction("Delete", lambda _checked=False, tab=scene: self.close_scene(tab))
@@ -894,45 +971,89 @@ class ScnSceneController:
             action.setEnabled(False)
             return
         scenes = self.tabs()
-        owner = self.owner_for_source(source)
+        owner, can_add = self.source_add_state(source)
         for scene in scenes:
             text = f"In {scene.title}" if scene is owner else scene.title
             action = menu.addAction(text, lambda _checked=False, tab=scene, src=source: self.add_to_scene(tab, src))
-            action.setEnabled(owner is None)
+            action.setEnabled(can_add)
         if scenes:
             menu.addSeparator()
         action = menu.addAction("Add to New Scene", lambda _checked=False, src=source: self.add_to_new_scene(src))
-        action.setEnabled(owner is None)
+        action.setEnabled(can_add)
 
-    def add_to_new_scene(self, source: ScnSceneSource) -> ScnSceneTab:
+    def add_to_new_scene(self, source: ScnSceneSource) -> ScnSceneTab | None:
         if owner := self.owner_for_source(source):
             self.focus(owner)
             return owner
+        owned_keys = self._checked_source_identity_keys(source)
+        if owned_keys is None:
+            return None
+        if conflict := self.owner_for(owned_keys):
+            self.focus(conflict)
+            self._notice(f"{_source_display_name(source)} is already open in {conflict.title}.")
+            return conflict
         scene = self.create_tab()
         self.add_to_scene(scene, source)
         return scene
 
-    def sync_tab(self, tab) -> None:
+    def sync_tab(self, tab, *, reloaded: bool = False) -> None:
         source = scn_source_from_tab(tab)
         if source is None:
             return
-        keys = scn_source_identity_keys(source)
+        self.attach_tab_document(tab)
+        source_key = scn_source_exact_key(source)
+        nested_owner = self.owner_for_nested_source(source)
         for scene in self.tabs():
+            matched = False
             for existing in scene.sources:
-                if scn_source_identity_keys(existing) & keys:
+                if scn_source_exact_key(existing) == source_key:
                     existing.path, existing.handler, existing.label = source.path, source.handler, source.label
-                    existing.project_dir, existing.game_version = source.project_dir, source.game_version
-                    scene.update_source_summary()
-                    scene.rebuild_owned_scn_paths()
-                    scene.preview.set_stale()
+                    existing.project_dir, existing.game_version, existing.origin = source.project_dir, source.game_version, source.origin
+                    matched = True
+            if matched:
+                scene.update_source_summary()
+                scene.rebuild_owned_scn_paths()
+                scene.preview.request_refresh() if reloaded else scene.preview.set_stale()
+            elif nested_owner is scene:
+                scene.preview.request_refresh() if reloaded else scene.preview.set_stale()
         self.refresh_actions()
         self.refresh_buttons()
+
+    def attach_tab_document(self, tab, *, replace: bool = False) -> None:
+        source = scn_source_from_tab(tab)
+        if source is not None:
+            if source.origin == "pak" and self.owner_for_open_source(source) is None and not replace:
+                return
+            if replace:
+                self._identity_cache.clear()
+            self.document_store.attach_source(source, replace=replace)
 
     def owner_for(self, keys: set[str], *, exclude: ScnSceneTab | None = None) -> ScnSceneTab | None:
         return next((scene for scene in self.tabs() if scene is not exclude and scene.owned_scn_paths() & keys), None)
 
     def owner_for_source(self, source: ScnSceneSource | None, *, exclude: ScnSceneTab | None = None) -> ScnSceneTab | None:
         return self.owner_for(scn_source_identity_keys(source), exclude=exclude) if source is not None else None
+
+    def owner_for_exact_source(self, source: ScnSceneSource | None, *, exclude: ScnSceneTab | None = None) -> ScnSceneTab | None:
+        key = scn_source_exact_key(source) if source is not None else ""
+        return next((scene for scene in self.tabs() if scene is not exclude and any(scn_source_exact_key(existing) == key for existing in scene.sources)), None)
+
+    def owner_for_nested_source(self, source: ScnSceneSource | None, *, exclude: ScnSceneTab | None = None) -> ScnSceneTab | None:
+        keys = scn_source_identity_keys(source) if source is not None else set()
+        return next((
+            scene for scene in self.tabs()
+            if scene is not exclude and scene.owned_scn_paths() & keys
+            and not any(scn_source_identity_keys(existing) & keys for existing in scene.sources)
+        ), None)
+
+    def owner_for_open_source(self, source: ScnSceneSource | None, *, exclude: ScnSceneTab | None = None) -> ScnSceneTab | None:
+        return self.owner_for_exact_source(source, exclude=exclude) or self.owner_for_nested_source(source, exclude=exclude)
+
+    def source_add_state(self, source: ScnSceneSource | None) -> tuple[ScnSceneTab | None, bool]:
+        return (self.owner_for_open_source(source), self.owner_for_source(source) is None) if source is not None else (None, False)
+
+    def scene_owning_tab(self, tab) -> ScnSceneTab | None:
+        return self.owner_for_open_source(scn_source_from_tab(tab))
 
     def active_scene(self) -> ScnSceneTab | None:
         tab = self.app.get_active_tab()
@@ -942,13 +1063,17 @@ class ScnSceneController:
         key = self._identity_cache_key(source)
         if key not in self._identity_cache:
             keys = scn_source_identity_keys(source)
-            try:
-                graphs = self.loader.build_graphs([source])
-                keys.update(ScnSceneLoader.document_identity_keys(graphs))
-            except Exception:
-                pass
+            graphs = ScnSceneLoader(self.document_store).build_graphs([source])
+            keys.update(ScnSceneLoader.document_identity_keys(graphs))
             self._identity_cache[key] = keys
         return set(self._identity_cache[key])
+
+    def _checked_source_identity_keys(self, source: ScnSceneSource) -> set[str] | None:
+        try:
+            return self.source_identity_keys(source)
+        except Exception as exc:
+            self._notice(f"Failed to inspect {_source_display_name(source)}: {exc}")
+            return None
 
     def sources_identity_keys(self, sources: list[ScnSceneSource], graphs=None) -> set[str]:
         if graphs is None:
@@ -983,6 +1108,8 @@ class ScnSceneController:
         index = self.app.notebook.indexOf(tab.notebook_widget)
         if index != -1:
             self.app.notebook.setCurrentIndex(index)
+            if scene_tab:
+                tab.preview.ensure_loaded()
             workspace._sync_tabs()
             return
         for window in self.app.project_workspace.sessions.windows_for([tab]):
@@ -1004,12 +1131,43 @@ class ScnSceneController:
             if callable(refresh):
                 refresh()
 
-    def mark_stale(self, handler) -> None:
+    def refresh_dirty_flags(self) -> None:
+        for scene in self.tabs():
+            scene.modified = bool(self.document_store.dirty_documents(scene.preview.graphs))
+            scene.update_tab_title()
+
+    def refresh_document_views(self, document_ids, changed_fields=()) -> None:
+        for document_id in document_ids:
+            doc = self.document_store.get(document_id)
+            tree = getattr(getattr(getattr(doc, "handler", None), "_viewer", None), "tree", None)
+            refresh = getattr(tree, "refresh_widgets_for", None)
+            if callable(refresh):
+                refresh(changed_fields)
+
+    def mark_stale(self, handler, changed_obj=None) -> None:
         stale_id = id(getattr(handler, "rsz_file", None))
         self._identity_cache = {key: value for key, value in self._identity_cache.items() if key[0] != stale_id}
+        changed_documents = self._document_ids_for_handler(handler)
+        handled_documents = set()
         for scene in self.tabs():
-            if any(source.handler is handler for source in scene.sources):
+            touched = {document_id for graph in scene.preview.graphs for document_id in graph.documents} & changed_documents
+            result = scene.preview.sync_raw_transform_field(touched, changed_obj) if touched and changed_obj is not None else None
+            if result is not None and result.handled and result.dirty_documents:
+                handled_documents.update(result.dirty_documents)
+                continue
+            if touched or any(source.handler is handler for source in scene.sources):
                 scene.preview.set_stale()
+        for document_id in changed_documents - handled_documents:
+            self.document_store.mark_dirty(document_id)
+        self.refresh_dirty_flags()
+
+    def _document_ids_for_handler(self, handler) -> set[str]:
+        document_ids = set()
+        for tab in self.app.tabs.values():
+            source = scn_source_from_tab(tab) if getattr(tab, "handler", None) is handler else None
+            if source is not None and (source.origin != "pak" or self.owner_for_open_source(source) is not None):
+                document_ids.add(self.document_store.attach_source(source).document_id)
+        return document_ids
 
     def open_scn_sources(self) -> list[ScnSceneSource]:
         sources: list[ScnSceneSource] = []
@@ -1018,21 +1176,12 @@ class ScnSceneController:
             source = scn_source_from_tab(tab)
             if source is None:
                 continue
-            keys = scn_source_identity_keys(source)
-            key = min(keys) if keys else source.path
+            key = scn_source_exact_key(source)
             if key in seen:
                 continue
             seen.add(key)
             sources.append(source)
         return sources
-
-    def _choose_open_source(self) -> ScnSceneSource | None:
-        sources = self.open_scn_sources()
-        if len(sources) <= 1:
-            return sources[0] if sources else None
-        labels = [_source_display_name(source) for source in sources]
-        label, ok = QInputDialog.getItem(self.app, "Add SCN to Scene", "Open SCN:", labels, 0, False)
-        return sources[labels.index(label)] if ok and label in labels else None
 
     def _choose_tab(self) -> ScnSceneTab | None:
         scenes = self.tabs()

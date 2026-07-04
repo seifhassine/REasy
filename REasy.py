@@ -278,7 +278,7 @@ def create_search_patterns(search_type, value):
 class FileTab:
 
 
-    def __init__(self, parent_notebook, filename=None, data=None, app=None):
+    def __init__(self, parent_notebook, filename=None, data=None, app=None, pak_source_path=None, pak_project_dir=None):
         self.parent_notebook = parent_notebook
         self.notebook_widget = QWidget()
         self.notebook_widget.parent_tab = self
@@ -291,7 +291,8 @@ class FileTab:
         self.app = app
         self.viewer = None 
         self.original_data = data 
-        self.pak_source_path: str | None = None
+        self.pak_source_path: str | None = pak_source_path
+        self.pak_project_dir: str | None = pak_project_dir
         self.pak_data_loader = None
 
         self.status_label = QLabel(NO_FILE_LOADED_STR)
@@ -473,7 +474,7 @@ class FileTab:
         except Exception as e:
             raise ValueError(f"Handler setup failed: {e}")
 
-    def load_file(self, filename, data):
+    def load_file(self, filename, data, *, replace_scene_document=False):
         layout = self.notebook_widget.layout()
         
         try:
@@ -492,6 +493,8 @@ class FileTab:
             try:
                 if isinstance(self.handler, RszHandler):
                     self.handler.read(data, validate_type_registry=self.app.settings.get("verify_rsz_crc_on_open", True))
+                    if self.app and hasattr(self.app, "scenes"):
+                        self.app.scenes.attach_tab_document(self, replace=replace_scene_document)
                 else:
                     self.handler.read(data)
             except Exception as e:
@@ -687,6 +690,9 @@ class FileTab:
             self.original_data = data
             self.modified = False
             self.update_tab_title()
+            if self.app and hasattr(self.app, "scenes"):
+                self.app.scenes.document_store.clear_handler(self.handler)
+                self.app.scenes.refresh_dirty_flags()
             
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Saved: {file_path}", 3000)
@@ -696,6 +702,14 @@ class FileTab:
         except Exception as e:
             QMessageBox.critical(None, "Save Error", str(e))
             return False
+
+    def discard_changes(self):
+        if self.app and hasattr(self.app, "scenes") and self.handler:
+            self.app.scenes.document_store.discard_handler(self.handler)
+        self.modified = False
+        if self.viewer and hasattr(self.viewer, "modified"):
+            self.viewer.modified = False
+        self.update_tab_title()
 
     def create_backup(self, file_path, data):
         try:
@@ -769,7 +783,7 @@ class FileTab:
             if data is None:
                 raise FileNotFoundError(f"Unable to read source data for: {self.filename}")
 
-            success = self.load_file(self.filename, data)
+            success = self.load_file(self.filename, data, replace_scene_document=True)
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
 
@@ -778,7 +792,7 @@ class FileTab:
                 self.viewer.modified = False
             self.update_tab_title()
             if self.app and hasattr(self.app, "scenes"):
-                self.app.scenes.sync_tab(self)
+                self.app.scenes.sync_tab(self, reloaded=True)
 
 
         except Exception as e:
@@ -870,7 +884,7 @@ class FileTab:
             if self.viewer:
                 self._cleanup_viewer()
             
-            success = self.load_file(self.filename, data)
+            success = self.load_file(self.filename, data, replace_scene_document=True)
             
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage("Backup restored successfully")
@@ -907,6 +921,8 @@ class FileTab:
                         break
             
             if self.viewer:
+                if self.handler and getattr(self.handler, "_viewer", None) is self.viewer:
+                    self.handler._viewer = None
                 self.viewer.deleteLater()
             self._invalidate_search_dialog_tree()
             self.viewer = None
@@ -921,6 +937,8 @@ class FileTab:
             print(f"Warning: Error while releasing viewer resources: {e}")
 
         if self.handler:
+            if self.app and hasattr(self.app, "scenes"):
+                self.app.scenes.document_store.detach_handler(self.handler)
             try:
                 cleanup_fn = getattr(self.handler, "cleanup", None)
                 if callable(cleanup_fn):
@@ -967,6 +985,8 @@ class FileTab:
             self.tree = None
 
         if self.handler:
+            if self.app and hasattr(self.app, "scenes"):
+                self.app.scenes.document_store.detach_handler(self.handler)
             try:
                 cleanup_fn = getattr(self.handler, "cleanup", None)
                 if callable(cleanup_fn):
@@ -1089,7 +1109,6 @@ class REasyEditorApp(QMainWindow):
         self.notebook.currentChanged.connect(self._update_highlight_menu_visibility)
         self.notebook.currentChanged.connect(lambda _index: self.scenes.refresh_actions())
         self.notebook.currentChanged.connect(lambda _index: self._refresh_homepage())
-        QApplication.instance().focusChanged.connect(lambda *_: self._update_general_shortcut_state())
         self.proj_dock.visibilityChanged.connect(lambda _visible: self._refresh_homepage())
 
         self.status_bar = QStatusBar()
@@ -1485,6 +1504,19 @@ class REasyEditorApp(QMainWindow):
         self.project_workspace.close()
 
     def _confirm_tabs_close(self, tabs, *, apply_discards=True) -> bool:
+        closing = set(tabs)
+        for tab in tabs:
+            scene = self.scenes.scene_owning_tab(tab)
+            if scene is not None and scene not in closing:
+                path = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None) or "This SCN"
+                name = os.path.basename(str(path).replace("\\", "/"))
+                QMessageBox.information(
+                    self,
+                    self.tr("SCN is open in a scene"),
+                    self.tr(f'{name} is open in "{scene.title}". Remove it from the scene or delete the scene before closing its raw tab.'),
+                )
+                return False
+
         discard_tabs = []
         for tab in tabs:
             if not tab or not tab.modified:
@@ -1507,8 +1539,12 @@ class REasyEditorApp(QMainWindow):
 
         if apply_discards:
             for tab in discard_tabs:
-                tab.modified = False
-                tab.update_tab_title()
+                discard = getattr(tab, "discard_changes", None)
+                if callable(discard):
+                    discard()
+                else:
+                    tab.modified = False
+                    tab.update_tab_title()
         return True
 
     def _shrink_project_dock(self):
@@ -2030,14 +2066,12 @@ class REasyEditorApp(QMainWindow):
         shortcuts = self.settings.get("keyboard_shortcuts", {})
         for action in self.findChildren(QAction):
             action_name = action.objectName()
-            if action_name in shortcuts:
-                shortcut_text = shortcuts[action_name]
-                if shortcut_text:
-                    try:
-                        action.setShortcut(QKeySequence(shortcut_text))
-                        print(f"Applied shortcut: {action_name} -> {shortcut_text}")
-                    except Exception as e:
-                        print(f"Error setting shortcut for {action_name}: {e}")
+            if action_name in shortcuts and (shortcut_text := shortcuts[action_name]):
+                try:
+                    action.setShortcut(QKeySequence(shortcut_text))
+                    print(f"Applied shortcut: {action_name} -> {shortcut_text}")
+                except Exception as e:
+                    print(f"Error setting shortcut for {action_name}: {e}")
         self._update_general_shortcut_state()
         
         if hasattr(self, "menuBar"):
@@ -2165,7 +2199,7 @@ class REasyEditorApp(QMainWindow):
             except RuntimeError:
                 pass
 
-    def add_tab(self, filename=None, data=None):
+    def add_tab(self, filename=None, data=None, pak_source_path=None, pak_project_dir=None):
         if filename:
             abs_fn = os.path.abspath(filename)
             for tab in self.project_workspace.sessions.active_tabs():
@@ -2211,7 +2245,7 @@ class REasyEditorApp(QMainWindow):
                         self.open_settings_dialog()
                     return None
 
-            tab = FileTab(None, filename, data, app=self)
+            tab = FileTab(None, filename, data, app=self, pak_source_path=pak_source_path, pak_project_dir=self._source_project_dir(filename, pak_project_dir))
             if data is not None and not getattr(tab, "initial_load_complete", True):
                 if tab.notebook_widget:
                     tab.notebook_widget.deleteLater()
@@ -2239,6 +2273,15 @@ class REasyEditorApp(QMainWindow):
                     print(f"Error closing tab: {e}")
             return None
 
+    def _source_project_dir(self, filename: str | None, explicit: str | None = None) -> str | None:
+        if explicit or not filename:
+            return explicit
+        root = getattr(self.project_workspace.sessions.get(self.project_workspace.sessions.active_key), "path", None)
+        try:
+            return root if root and os.path.commonpath([os.path.abspath(filename), os.path.abspath(root)]) == os.path.abspath(root) else None
+        except ValueError:
+            return None
+
     def attach_pak_source_tab(self, tab, pak_path: str, project_dir: str | None = None) -> None:
         if tab is None or not pak_path:
             return
@@ -2249,6 +2292,7 @@ class REasyEditorApp(QMainWindow):
             project_dir,
             source_path,
         )
+        self.scenes.attach_tab_document(tab)
         self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
 

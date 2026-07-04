@@ -14,6 +14,7 @@ from PySide6.QtGui import (
 import uuid
 import re
 import os
+import math
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
@@ -167,9 +168,8 @@ class BaseValueWidget(QWidget):
 
     def mark_modified(self):
         """Mark data as modified and notify"""
-        if not self._modified:
-            self._modified = True
-            self.modified_changed.emit(True)
+        self._modified = True
+        self.modified_changed.emit(True)
 
     def get_data(self):
         return self._data
@@ -309,6 +309,7 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
         values = self._data_values()
         for input_field, val in zip(self.inputs, values):
             input_field.setText(format_full_float(val, self.precision))
+            input_field.setStyleSheet("")
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
@@ -324,10 +325,17 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
         try:
             new_values = tuple(self._parse_input_value(input_field) for input_field in self.inputs)
             self._set_data_values(new_values)
+            for input_field in self.inputs:
+                input_field.setStyleSheet("")
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
-            pass
+            for input_field in self.inputs:
+                try:
+                    self._parse_input_value(input_field)
+                    input_field.setStyleSheet("")
+                except ValueError:
+                    input_field.setStyleSheet("border: 1px solid red;")
 
     def _data_values(self):
         return tuple(getattr(self._data, field) for field in self.fields)
@@ -337,10 +345,13 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
             setattr(self._data, field, value)
 
     def _parse_input_value(self, input_field):
-        text = input_field.text()
-        if not text or text == "-":
-            return 0.0
-        return float(text)
+        text = input_field.text().strip()
+        if text in {"", "-", "+", ".", "-.", "+."}:
+            raise ValueError("Incomplete float")
+        value = float(text)
+        if not math.isfinite(value):
+            raise ValueError("Non-finite float")
+        return value
 
 
 class SizeInput(FloatVectorInput):
@@ -1497,7 +1508,7 @@ class StringInput(BaseValueWidget):
 
         if resolved:
             file_path, file_data = resolved
-            tab = app_window.add_tab(file_path, file_data)
+            tab = app_window.add_tab(file_path, file_data, pak_source_path=file_path if not os.path.isabs(file_path) else None, pak_project_dir=proj_dock.project_dir)
             if tab and not os.path.isabs(file_path):
                 app_window.attach_pak_source_tab(tab, file_path, proj_dock.project_dir)
         else:

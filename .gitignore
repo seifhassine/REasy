@@ -41,5 +41,7 @@ Thumbs.db
 /tests/**
 !/tests/test_scn_parser.py
 !/tests/test_motbank_roundtrip.py
+!/tests/test_scn_scene_editing.py
 resources/i18n/REasy_zh-CN.qm
 secrets
+tests/test_scn_scene_editing.py

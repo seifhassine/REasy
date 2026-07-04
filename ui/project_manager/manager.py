@@ -129,7 +129,7 @@ class ProjectManager(QDockWidget):
             )
             return tab.on_save()
 
-        project_target = os.path.join(project_dir, *pak_source_path.split("/"))
+        project_target = self._project_target(project_dir, pak_source_path)
         if os.path.abspath(getattr(tab, "filename", "") or "") == os.path.abspath(project_target):
             return True
 
@@ -156,6 +156,27 @@ class ProjectManager(QDockWidget):
             QMessageBox.No,
         )
         return answer == QMessageBox.Yes
+
+    @staticmethod
+    def _project_target(project_dir: str, rel_path: str) -> str:
+        return os.path.join(project_dir, *rel_path.replace("\\", "/").split("/"))
+
+    def _warn_if_project_copy_exists(self, source_path: str, *, pak: bool = False) -> None:
+        if not self.project_dir:
+            return
+        try:
+            rel = source_path.replace("\\", "/") if pak else os.path.relpath(source_path, self.unpacked_dir).replace("\\", "/")
+            if rel.startswith("../") or rel == "..":
+                return
+            target = self._project_target(self.project_dir, rel)
+        except (TypeError, ValueError):
+            return
+        if os.path.isfile(target):
+            QMessageBox.information(
+                self,
+                self.tr("Project copy exists"),
+                self.tr("A copy already exists in project files and may override this fresh source:\n{}").format(target),
+            )
 
     def reopen_pak_history_entry(self, pak_path: str) -> bool:
         if not self.project_dir:
@@ -997,6 +1018,53 @@ class ProjectManager(QDockWidget):
         self._pak_cached_reader = r
         return r
 
+    def ensure_project_pak_context(self, project_dir: str) -> tuple[str, CachedPakReader | None]:
+        key = self._path_key(project_dir)
+        if not key:
+            return "", None
+        if key == self._path_key(self.project_dir):
+            if self._pak_selected_paks and self._pak_base_paths:
+                return self.unpacked_dir or "", self._ensure_project_pak_reader(full_cache=False)
+            if state := self._load_project_pak_state(project_dir):
+                self.pak_dir, self._pak_list_path, self.unpacked_dir = state["pak_dir"], state["list_path"], state["unpacked_dir"]
+                self._pak_selected_paks, self._pak_base_paths = state["selected_paks"], state["base_paths"]
+                self._pak_all_paths = self._pak_population_paths = state["base_paths"]
+                self._pak_cached_reader = state["reader"]
+            return self.unpacked_dir or "", self._pak_cached_reader
+        state = self._project_pak_states.get(key)
+        if not getattr((state or {}).get("reader"), "_cache", None):
+            state = self._load_project_pak_state(project_dir)
+        return (state or {}).get("unpacked_dir", ""), (state or {}).get("reader")
+
+    def _load_project_pak_state(self, project_dir: str) -> dict:
+        cfg = load_project_config(project_dir)
+        pak_dir = str(_safe_path(cfg.get("pak_game_dir")) or "")
+        list_path = str(_safe_path(cfg.get("pak_list_path")) or "")
+        unpacked_dir = str(_safe_path(cfg.get("unpacked_dir")) or "")
+        if not pak_dir or not list_path:
+            return {}
+        with open(list_path, "r", encoding="utf-8") as f:
+            base_paths = sorted({line.strip().replace("\\", "/").lower() for line in f if line.strip()})
+        ignore_mods = self.pak_ignore_mods_cb.isChecked() if self._path_key(project_dir) == self._path_key(self.project_dir) else True
+        reader = CachedPakReader()
+        paks = scan_pak_files(pak_dir, ignore_mod_paks=ignore_mods)
+        reader.pak_file_priority = paks
+        reader.cache_entries_for_paths(base_paths)
+        state = {
+            "pak_dir": pak_dir,
+            "list_path": list_path,
+            "selected_paks": paks,
+            "base_paths": base_paths,
+            "reader": reader,
+            "tree_model": None,
+            "filter_proxy": self._new_pak_filter_proxy(),
+            "ignore_mods": ignore_mods,
+            "unpacked_dir": unpacked_dir,
+            "signature": (self._path_key(pak_dir), self._pak_signature(paks, list_path)),
+        }
+        self._project_pak_states[self._path_key(project_dir)] = state
+        return state
+
     def _build_pak_tree_model(self, paths: list[str]):
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels([self.tr("Paths")])
@@ -1181,6 +1249,7 @@ class ProjectManager(QDockWidget):
         if not self.tree_pak.isEnabled() or not self._pak_selected_paks:
             return False
         try:
+            self._warn_if_project_copy_exists(path, pak=True)
             r = self._ensure_project_pak_reader()
             stream = r.get_file(path)
             if not stream:
@@ -1192,7 +1261,7 @@ class ProjectManager(QDockWidget):
             except Exception:
                 ext = None
             name = path if ('.' in os.path.basename(path)) else (path + ('.' + ext.lower() if ext else ''))
-            tab = self.app_win.add_tab(name, data)
+            tab = self.app_win.add_tab(name, data, pak_source_path=path, pak_project_dir=self.project_dir)
             if tab:
                 self.app_win.attach_pak_source_tab(tab, path, self.project_dir)
             return True
@@ -1203,8 +1272,7 @@ class ProjectManager(QDockWidget):
     def read_project_pak_file(self, project_dir: str, path: str) -> bytes | None:
         if not project_dir or not path:
             return None
-        state = self._project_pak_states.get(self._path_key(project_dir), {})
-        reader = (self._pak_cached_reader if self.project_dir == project_dir else None) or state.get("reader")
+        _unpacked_dir, reader = self.ensure_project_pak_context(project_dir)
         stream = reader.get_file(path) if reader else None
         return stream.read() if stream else None
 
@@ -1222,7 +1290,7 @@ class ProjectManager(QDockWidget):
             missing: list[str] = []
             targets = []
             for pak_path in sorted(set(paths)):
-                project_target = os.path.join(self.project_dir, *pak_path.split("/"))
+                project_target = self._project_target(self.project_dir, pak_path)
                 if os.path.exists(project_target) and not self._confirm_project_overwrite(project_target):
                     continue
                 targets.append(pak_path)
@@ -1266,7 +1334,7 @@ class ProjectManager(QDockWidget):
         if not self.project_dir or not self._check_folder(self.unpacked_dir):
             return
         rel = os.path.relpath(src, self.unpacked_dir)
-        dst = os.path.join(self.project_dir, rel)
+        dst = self._project_target(self.project_dir, rel)
 
         if os.path.isdir(src) and QMessageBox.question(
                 self, self.tr("Confirm Add"), self.tr(f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?"),
@@ -1339,19 +1407,22 @@ class ProjectManager(QDockWidget):
         if self.project_dir:
             self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
 
-    def _open_in_editor(self, path):
+    def _open_in_editor(self, path, *, warn_project_copy: bool = False):
         if os.path.isfile(path):
             try:
+                if warn_project_copy:
+                    self._warn_if_project_copy_exists(path)
                 with open(path, "rb") as f:
                     data = f.read()
-                self.app_win.add_tab(path, data)
+                project_dir = self.project_dir if self.project_dir and self._path_key(path).startswith(self._path_key(self.project_dir) + os.sep) else None
+                self.app_win.add_tab(path, data, pak_project_dir=project_dir)
             except Exception as e:
                 QMessageBox.critical(self, self.tr("Open failed"), str(e))
 
     def _on_double(self, idx, in_project):
         path = (self.model_proj if in_project else self.model_sys).filePath(idx)
         if os.path.isfile(path):
-            self._open_in_editor(path)
+            self._open_in_editor(path, warn_project_copy=not in_project)
 
     def _choose_game(self) -> str | None:
         dlg = QDialog(self)
