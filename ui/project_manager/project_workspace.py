@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from PySide6.QtCore import QSignalBlocker, Qt
+from PySide6.QtCore import QSignalBlocker, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
@@ -60,7 +60,7 @@ class ProjectWorkspaceController:
         button.setText("×")
         button.setToolTip(self.host.tr(tip))
         button.setFixedSize(20, 20)
-        button.clicked.connect(lambda _checked=False: callback())
+        button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, callback))
         return button
 
     @staticmethod
