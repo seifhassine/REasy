@@ -181,29 +181,41 @@ class ProjectWorkspaceController:
         QMessageBox.information(self.host, self.host.tr("Scene uses project"), self.host.tr(message))
         return True
 
+    def _tab_index(self, data) -> int:
+        return next((i for i in range(self.tab_bar.count()) if self.tab_bar.tabData(i) == data), -1)
+
     def _sync_tabs(self):
         scenes = getattr(self.host, "scenes", None)
         scene_tabs = scenes.tabs() if scenes else ()
+        project_icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
+        entries = [
+            (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), "Close project")
+            for session in self.sessions.project_sessions()
+        ] + [
+            (("scene", scene), self._scene_icon, scene.title, scene.title, lambda scene=scene: self.host.scenes.close_scene(scene), "Close scene")
+            for scene in scene_tabs
+        ]
+        current = self.host.tabs.get(self.sessions.notebook.currentWidget())
+        active_data = ("scene", current) if current in scene_tabs else self.sessions.active_key
+
         with QSignalBlocker(self.tab_bar):
-            while self.tab_bar.count():
-                self.tab_bar.removeTab(0)
-            for session in self.sessions.project_sessions():
-                icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
-                index = self.tab_bar.addTab(icon, session.title)
-                self.tab_bar.setTabData(index, session.key)
-                self.tab_bar.setTabToolTip(index, session.path)
-                close_button = self._close_button(lambda key=session.key: self.close(key), "Close project")
-                self.tab_bar.setTabButton(index, QTabBar.RightSide, close_button)
-                if session.key == self.sessions.active_key:
-                    self.tab_bar.setCurrentIndex(index)
-            current = self.host.tabs.get(self.sessions.notebook.currentWidget())
-            for scene in scene_tabs:
-                index = self.tab_bar.addTab(self._scene_icon, scene.title)
-                self.tab_bar.setTabData(index, ("scene", scene))
-                self.tab_bar.setTabToolTip(index, scene.title)
-                close_button = self._close_button(lambda scene=scene: self.host.scenes.close_scene(scene), "Close scene")
-                self.tab_bar.setTabButton(index, QTabBar.RightSide, close_button)
-                if scene is current:
+            wanted = {data for data, *_ in entries}
+            for index in reversed(range(self.tab_bar.count())):
+                if self.tab_bar.tabData(index) not in wanted:
+                    self.tab_bar.removeTab(index)
+            for target, (data, icon, title, tip, callback, close_tip) in enumerate(entries):
+                index = self._tab_index(data)
+                if index == -1:
+                    index = self.tab_bar.insertTab(target, icon, title)
+                    self.tab_bar.setTabData(index, data)
+                    self.tab_bar.setTabButton(index, QTabBar.RightSide, self._close_button(callback, close_tip))
+                elif index != target:
+                    self.tab_bar.moveTab(index, target)
+                    index = target
+                self.tab_bar.setTabIcon(index, icon)
+                self.tab_bar.setTabText(index, title)
+                self.tab_bar.setTabToolTip(index, tip)
+                if data == active_data:
                     self.tab_bar.setCurrentIndex(index)
         fullscreen = any(scene.is_view_fullscreen() for scene in scene_tabs)
         self.toolbar.setVisible(self.tab_bar.count() > 0 and not fullscreen)
