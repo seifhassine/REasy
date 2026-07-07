@@ -214,13 +214,6 @@ def _vector3(value, default=(0.0, 0.0, 0.0)) -> tuple[float, float, float]:
         return default
 
 
-def _quaternion(value, default=(0.0, 0.0, 0.0, 1.0)) -> tuple[float, float, float, float]:
-    try:
-        return _normalize_quaternion_values((value.x, value.y, value.z, value.w))
-    except (AttributeError, TypeError, ValueError):
-        return default
-
-
 def _translation_matrix(position: tuple[float, float, float]) -> np.ndarray:
     matrix = _identity()
     matrix[:3, 3] = np.asarray(position, dtype=np.float32)
@@ -253,7 +246,10 @@ def make_trs_matrix(
     rotation: tuple[float, float, float, float],
     scale: tuple[float, float, float],
 ) -> np.ndarray:
-    return (_translation_matrix(position) @ _quaternion_matrix(rotation) @ _scale_matrix(scale)).astype(np.float32)
+    matrix = _quaternion_matrix(rotation)
+    matrix[:3, :3] *= np.asarray(scale, dtype=np.float32)
+    matrix[:3, 3] = np.asarray(position, dtype=np.float32)
+    return matrix
 
 
 def _normalize_quaternion_values(values) -> tuple[float, float, float, float]:
@@ -470,11 +466,11 @@ class ScnSceneGraphBuilder:
 
             visiting.add(scene_object.id)
             local_matrix = scene_object.transform.local_matrix if scene_object.transform else _identity()
-            parent_matrix = _identity()
             parent_object_id = document.object_by_local_id.get(scene_object.parent_id)
             if parent_object_id is not None and parent_object_id in document.objects:
-                parent_matrix = compute(document.objects[parent_object_id])
-            scene_object.document_world_matrix = (parent_matrix @ local_matrix).astype(np.float32)
+                scene_object.document_world_matrix = (compute(document.objects[parent_object_id]) @ local_matrix).astype(np.float32)
+            else:
+                scene_object.document_world_matrix = local_matrix.copy()
             scene_object.world_matrix = scene_object.document_world_matrix.copy()
             visiting.discard(scene_object.id)
             visited.add(scene_object.id)
@@ -526,8 +522,9 @@ class ScnSceneGraphBuilder:
             base_world_matrix.astype(np.float32),
         )
 
+        root_instance = parent_instance_id is None
         for source_object in document.objects.values():
-            source_object.world_matrix = (base_world_matrix @ source_object.document_world_matrix).astype(np.float32)
+            source_object.world_matrix = source_object.document_world_matrix.copy() if root_instance else (base_world_matrix @ source_object.document_world_matrix).astype(np.float32)
             self._collect_renderables_for_object(
                 graph,
                 document,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import suppress
+from ctypes import c_void_p
 from dataclasses import dataclass, field
 
 import OpenGL
@@ -22,6 +23,7 @@ from OpenGL.GL import (
     GL_DEPTH_BUFFER_BIT,
     GL_DEPTH_TEST,
     GL_DIFFUSE,
+    GL_DITHER,
     GL_ARRAY_BUFFER,
     GL_ELEMENT_ARRAY_BUFFER,
     GL_FILL,
@@ -32,10 +34,13 @@ from OpenGL.GL import (
     GL_LINE,
     GL_LINES,
     GL_LINEAR,
+    GL_LEQUAL,
+    GL_LESS,
     GL_LINE_STRIP,
     GL_MODELVIEW,
     GL_MODELVIEW_MATRIX,
     GL_MODULATE,
+    GL_MULTISAMPLE,
     GL_NORMAL_ARRAY,
     GL_NORMALIZE,
     GL_ONE_MINUS_SRC_ALPHA,
@@ -43,6 +48,8 @@ from OpenGL.GL import (
     GL_PROJECTION,
     GL_PROJECTION_MATRIX,
     GL_QUADS,
+    GL_RGBA,
+    GL_SCISSOR_TEST,
     GL_SMOOTH,
     GL_SRC_ALPHA,
     GL_TEXTURE_2D,
@@ -53,6 +60,7 @@ from OpenGL.GL import (
     GL_TEXTURE_MIN_FILTER,
     GL_TRIANGLES,
     GL_UNPACK_ALIGNMENT,
+    GL_UNSIGNED_BYTE,
     GL_UNSIGNED_INT,
     GL_VIEWPORT,
     GL_DYNAMIC_DRAW,
@@ -70,6 +78,7 @@ from OpenGL.GL import (
     glCullFace,
     glDeleteTextures,
     glDepthMask,
+    glDepthFunc,
     glDisable,
     glDisableClientState,
     glDrawElements,
@@ -90,7 +99,9 @@ from OpenGL.GL import (
     glPolygonMode,
     glPopMatrix,
     glPushMatrix,
+    glReadPixels,
     glRotatef,
+    glScissor,
     glScalef,
     glShadeModel,
     glTexCoordPointer,
@@ -102,7 +113,7 @@ from OpenGL.GL import (
     glVertexPointer,
     glViewport,
 )
-from OpenGL.GLU import gluPerspective, gluProject, gluUnProject
+from OpenGL.GLU import gluPerspective, gluProject
 from PySide6.QtCore import QEvent, QTimer, Qt, Signal
 from PySide6.QtGui import QCursor, QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
@@ -132,6 +143,7 @@ class _GlBufferSet:
     colors: np.ndarray | None = None
     colors_vbo: object | None = None
     uvs_vbo: object | None = None
+    span_indices_vbo: object | None = None
     indices_vbo: object | None = None
     line_indices_vbo: object | None = None
     batch_vbos: list[tuple[str, object, int]] = field(default_factory=list)
@@ -147,7 +159,6 @@ GIZMO_PLANES = ((0, 1, (1.0, 0.85, 0.12, 0.24)), (0, 2, (0.9, 0.15, 1.0, 0.22)),
 IDENTITY4 = np.identity(4, dtype=np.float32)
 HOVER_PICK_INTERVAL = 1.0 / 15.0
 HOVER_PICK_MIN_PIXELS = 4.0
-HOVER_PICK_BATCH = 6
 HOVER_DETECT_KEY = Qt.Key_H
 
 
@@ -224,10 +235,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
         self._hover_vertex_cache: dict[int, dict[str, np.ndarray]] = {}
-        self._pick_entries: list[tuple[str, np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = []
-        self._pick_bound_keys: list[str] = []
-        self._pick_bound_mins = np.zeros((0, 3), dtype=np.float32)
-        self._pick_bound_maxs = np.zeros((0, 3), dtype=np.float32)
+        self._pending_scene_pick: tuple[str, np.ndarray] | None = None
         self._last_hover_pick_time = 0.0
         self._last_hover_pick_pos: np.ndarray | None = None
         self._scene_matrix = IDENTITY4.copy()
@@ -350,7 +358,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.setWindowTitle("Scene Preview")
         self.fullscreen_button.setText("x")
         self.showFullScreen()
-        QTimer.singleShot(0, self._after_fullscreen_change)
+        QTimer.singleShot(0, self, self._after_fullscreen_change)
 
     def _leave_view_fullscreen(self):
         if self._fullscreen_restore is None:
@@ -368,7 +376,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self.setParent(parent)
         self.fullscreen_button.setText("⛶")
         self.show()
-        QTimer.singleShot(0, self._after_fullscreen_change)
+        QTimer.singleShot(0, self, self._after_fullscreen_change)
 
     def _after_fullscreen_change(self):
         self.setMouseTracking(True)
@@ -378,7 +386,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self.activateWindow()
         self.setFocus(Qt.OtherFocusReason)
         self._gizmo_projection = None
-        self._rebuild_pick_entries()
         missing_regular = self._regular_set is None and self._regular_data is not None
         missing_solid = self._solid_set is None and self._solid_data is not None
         self._needs_gl_upload = self._needs_gl_upload or missing_regular or missing_solid
@@ -413,6 +420,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         note = QLabel("Hold H to hover/select viewport objects.", self.overlay)
         note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
         layout.addWidget(note)
+        shortcut_note = QLabel("Main REasy shortcuts are disabled in Scene tabs.", self.overlay)
+        shortcut_note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
+        layout.addWidget(shortcut_note)
 
     def _add_fps_limit_control(self, layout: QVBoxLayout):
         fps_spin = QSpinBox(self.overlay)
@@ -535,8 +545,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._refresh_selection_bounds()
         if self.show_only_highlighted:
             self._upload_buffers()
-        else:
-            self._refresh_selection_buffer_sets()
         if focus:
             self.focus_selection()
         self.update()
@@ -557,10 +565,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if deltas:
             if not self._scene_matrix_is_identity():
                 self._upload_buffers()
-            elif self._apply_transform_deltas(deltas):
-                self._rebuild_pick_entries()
-                self._refresh_hover_colors()
-            else:
+            elif not self._apply_transform_deltas(deltas):
                 raise RuntimeError("Incremental mesh transform upload failed")
         self.update()
 
@@ -596,7 +601,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._upload_index_vbos(self._regular_set)
         self._upload_index_vbos(self._solid_set)
         self._refresh_selection_buffer_sets(current=True)
-        self._refresh_hover_colors(current=True)
         self.doneCurrent()
         self.update()
 
@@ -640,10 +644,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if self._begin_gizmo_drag(event):
                 event.accept()
                 return
-            if self._hover_detect_down and (key := self._pick_scene_key(self._screen_pos(event), precise=True)):
-                self.object_clicked.emit(key)
-                self._hover_block_key = key
-                self._set_hover_key("")
+            if self._hover_detect_down:
+                self._queue_scene_pick("click", self._screen_pos(event))
             else:
                 self.object_clicked.emit("")
             self._set_gizmo_hover(self._pick_gizmo_axis(self._screen_pos(event)))
@@ -779,7 +781,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._last_hover_pick_pos = pos.copy()
         axis = self._pick_gizmo_axis(pos)
         self._set_gizmo_hover(axis)
-        self._set_hover_key("" if axis is not None else self._pick_scene_key(pos, precise=False))
+        if axis is None:
+            self._queue_scene_pick("hover", pos)
+        else:
+            self._set_hover_key("")
+
+    def _queue_scene_pick(self, kind: str, pos: np.ndarray) -> None:
+        self._pending_scene_pick = (kind, np.asarray(pos, dtype=np.float32).copy())
+        self.update()
 
     def _move_scene_camera(self, dx: float, dy: float, buttons) -> None:
         if buttons & Qt.RightButton:
@@ -914,150 +923,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         key = key if key and key not in self._active_hidden_keys() else ""
         if key == self._hover_key:
             return
-        old_key = self._hover_key
         self._hover_key = key
-        self._refresh_hover_colors(old_key, key)
         self.update()
-
-    def _pick_scene_key(self, pos: np.ndarray, *, precise: bool) -> str:
-        ray = self._scene_pick_ray(pos)
-        if ray is None:
-            return ""
-        origin, direction = ray
-        hidden = self._active_hidden_keys()
-        if not precise:
-            return self._pick_hover_key(origin, direction, hidden)
-        best_key, best_t = "", float("inf")
-        for key, mins, maxs, vertices, triangles in self._pick_entries:
-            if key in hidden:
-                continue
-            box_t = self._ray_aabb_distance(origin, direction, mins, maxs)
-            if box_t is None or box_t > best_t:
-                continue
-            tri_t = self._ray_triangles(origin, direction, vertices, triangles)
-            if tri_t is not None and tri_t < best_t:
-                best_key, best_t = key, tri_t
-        return best_key
-
-    def _pick_hover_key(self, origin: np.ndarray, direction: np.ndarray, hidden: set[str]) -> str:
-        distances = self._pick_bound_distances(origin, direction, hidden)
-        if distances is None:
-            return ""
-        candidates = np.flatnonzero(np.isfinite(distances))
-        if not len(candidates):
-            return ""
-        best_key, best_t = "", float("inf")
-        order = candidates[np.argsort(distances[candidates])]
-        for start in range(0, len(order), HOVER_PICK_BATCH):
-            batch = order[start:start + HOVER_PICK_BATCH]
-            if distances[batch[0]] > best_t:
-                break
-            key, tri_t = self._ray_entry_batch(origin, direction, batch)
-            if tri_t is not None and tri_t < best_t:
-                best_key, best_t = key, tri_t
-        return best_key
-
-    def _ray_entry_batch(self, origin: np.ndarray, direction: np.ndarray, entry_indices: np.ndarray):
-        tris, owners = [], []
-        for entry_index in entry_indices:
-            _key, _mins, _maxs, vertices, triangles = self._pick_entries[int(entry_index)]
-            tris.append(vertices[triangles])
-            owners.append(np.full(len(triangles), int(entry_index), dtype=np.int32))
-        hits = self._ray_triangle_distances(origin, direction, np.concatenate(tris, axis=0))
-        if not np.isfinite(hits).any():
-            return "", None
-        hit_index = int(np.argmin(hits))
-        return self._pick_entries[int(np.concatenate(owners)[hit_index])][0], float(hits[hit_index])
-
-    def _pick_bound_distances(self, origin: np.ndarray, direction: np.ndarray, hidden: set[str]) -> np.ndarray | None:
-        if not self._pick_bound_keys:
-            return None
-        mins, maxs = self._pick_bound_mins, self._pick_bound_maxs
-        valid = np.ones(len(self._pick_bound_keys), dtype=bool) if not hidden else np.fromiter((key not in hidden for key in self._pick_bound_keys), dtype=bool, count=len(self._pick_bound_keys))
-        lo = np.full(len(self._pick_bound_keys), -np.inf, dtype=np.float32)
-        hi = np.full(len(self._pick_bound_keys), np.inf, dtype=np.float32)
-        for axis in range(3):
-            d = float(direction[axis])
-            if abs(d) < 1e-8:
-                valid &= (origin[axis] >= mins[:, axis]) & (origin[axis] <= maxs[:, axis])
-                continue
-            a = (mins[:, axis] - origin[axis]) / d
-            b = (maxs[:, axis] - origin[axis]) / d
-            lo = np.maximum(lo, np.minimum(a, b))
-            hi = np.minimum(hi, np.maximum(a, b))
-        valid &= hi >= np.maximum(lo, 0.0)
-        if not np.any(valid):
-            return None
-        return np.where(valid, np.maximum(lo, 0.0), np.inf)
-
-    def _scene_pick_ray(self, pos: np.ndarray):
-        if self._gizmo_projection is None:
-            return None
-        model, projection, viewport, dpr = self._gizmo_projection
-        try:
-            x, y = float(pos[0] * dpr), float((self.height() - pos[1]) * dpr)
-            origin = np.array(gluUnProject(x, y, 0.0, model, projection, viewport), dtype=np.float32)
-            far = np.array(gluUnProject(x, y, 1.0, model, projection, viewport), dtype=np.float32)
-            if (matrix := self._active_scene_matrix()) is not None:
-                inv = np.linalg.inv(matrix).astype(np.float32)
-                origin, far = self._transform_point(origin, inv), self._transform_point(far, inv)
-        except Exception:
-            return None
-        direction = far - origin
-        length = float(np.linalg.norm(direction))
-        return (origin, direction / length) if length > 1e-6 else None
-
-    @staticmethod
-    def _ray_aabb_distance(origin: np.ndarray, direction: np.ndarray, mins: np.ndarray, maxs: np.ndarray):
-        t0, t1 = 0.0, float("inf")
-        for axis in range(3):
-            d = float(direction[axis])
-            if abs(d) < 1e-8:
-                if origin[axis] < mins[axis] or origin[axis] > maxs[axis]:
-                    return None
-                continue
-            a, b = (float(mins[axis] - origin[axis]) / d, float(maxs[axis] - origin[axis]) / d)
-            if a > b:
-                a, b = b, a
-            t0, t1 = max(t0, a), min(t1, b)
-            if t1 < t0:
-                return None
-        return t0
-
-    @staticmethod
-    def _ray_triangles(origin: np.ndarray, direction: np.ndarray, vertices: np.ndarray, triangles: np.ndarray):
-        hits = ScenePreviewWidget._ray_triangle_distances(origin, direction, vertices[triangles])
-        hit = float(hits.min()) if len(hits) else float("inf")
-        return hit if np.isfinite(hit) else None
-
-    @staticmethod
-    def _ray_triangle_distances(origin: np.ndarray, direction: np.ndarray, tris: np.ndarray) -> np.ndarray:
-        hits = np.full(len(tris), np.inf, dtype=np.float32)
-        if not len(tris):
-            return hits
-        v0, e1, e2 = tris[:, 0], tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0]
-        p = np.cross(direction, e2)
-        det = np.einsum("ij,ij->i", e1, p)
-        idx = np.flatnonzero(np.abs(det) > 1e-6)
-        if not len(idx):
-            return hits
-        tvec, inv = origin - v0[idx], 1.0 / det[idx]
-        p = p[idx]
-        u = np.einsum("ij,ij->i", tvec, p) * inv
-        keep = np.flatnonzero((u >= 0.0) & (u <= 1.0))
-        if not len(keep):
-            return hits
-        idx, tvec, inv, u = idx[keep], tvec[keep], inv[keep], u[keep]
-        q = np.cross(tvec, e1[idx])
-        v = np.einsum("j,ij->i", direction, q) * inv
-        keep = np.flatnonzero((v >= 0.0) & (u + v <= 1.0))
-        if not len(keep):
-            return hits
-        idx, q, inv = idx[keep], q[keep], inv[keep]
-        t = np.einsum("ij,ij->i", e2[idx], q) * inv
-        keep = t > 1e-4
-        hits[idx[keep]] = t[keep]
-        return hits
 
     def _begin_gizmo_drag(self, event) -> bool:
         handle = self._pick_gizmo_axis(self._screen_pos(event))
@@ -1161,15 +1028,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         elif not commit and not drag.get("whole_scene") and not drag.get("deferred_geometry"):
             self._apply_gizmo_drag_matrix(IDENTITY4)
         deferred = bool(drag.get("deferred_geometry"))
-        moved_geometry = bool(matrix is not None and not drag.get("whole_scene"))
         self._gizmo_drag = None
         if committed:
             self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
         if deferred:
             self._refresh_main_index_sets()
-        if moved_geometry:
-            self._rebuild_pick_entries()
-            self._refresh_hover_colors()
         self._refresh_selection_bounds()
         self.update()
 
@@ -1206,22 +1069,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _apply_gizmo_drag_matrix(self, matrix: np.ndarray) -> None:
         drag = self._gizmo_drag or {}
-        matrix = self._buffer_space_matrix(matrix)
-        made_current = self.context() is not None
-        if made_current:
-            self.makeCurrent()
-        self._apply_gizmo_snapshot(self._regular_set, drag.get("regular_geometry"), matrix, current=made_current)
-        self._apply_gizmo_snapshot(self._solid_set, drag.get("solid_geometry"), matrix, current=made_current)
-        if made_current:
-            self.doneCurrent()
+        self._apply_gizmo_snapshots(matrix, drag.get("regular_geometry"), drag.get("solid_geometry"))
 
     def _commit_deferred_gizmo_geometry(self, matrix: np.ndarray) -> None:
+        self._apply_gizmo_snapshots(matrix, self._capture_gizmo_geometry(self._regular_set), self._capture_gizmo_geometry(self._solid_set))
+
+    def _apply_gizmo_snapshots(self, matrix: np.ndarray, regular_snapshot: dict | None, solid_snapshot: dict | None) -> None:
         matrix = self._buffer_space_matrix(matrix)
         made_current = self.context() is not None
         if made_current:
             self.makeCurrent()
-        self._apply_gizmo_snapshot(self._regular_set, self._capture_gizmo_geometry(self._regular_set), matrix, current=made_current)
-        self._apply_gizmo_snapshot(self._solid_set, self._capture_gizmo_geometry(self._solid_set), matrix, current=made_current)
+        self._apply_gizmo_snapshot(self._regular_set, regular_snapshot, matrix, current=made_current)
+        self._apply_gizmo_snapshot(self._solid_set, solid_snapshot, matrix, current=made_current)
         if made_current:
             self.doneCurrent()
 
@@ -1434,34 +1293,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._regular_data = self._build_buffer_set(force_solid=False)
         self._solid_data = self._build_buffer_set(force_solid=True)
         self._hover_vertex_cache.clear()
-        self._rebuild_pick_entries()
-
-    def _rebuild_pick_entries(self) -> None:
-        self._pick_entries.clear()
-        mins_list, maxs_list, keys = [], [], []
-        for data in (self._regular_data, self._solid_data):
-            if data is None or not len(data.vertices):
-                continue
-            by_key: dict[str, list[np.ndarray]] = {}
-            for key, _material, indices in data.triangle_chunks:
-                if key and len(indices) >= 3:
-                    by_key.setdefault(str(key), []).append(indices)
-            for key, chunks in by_key.items():
-                indices = np.concatenate(chunks)
-                usable = (len(indices) // 3) * 3
-                if usable < 3:
-                    continue
-                triangles = np.asarray(indices[:usable], dtype=np.uint32).reshape(-1, 3)
-                points = data.vertices[np.unique(triangles)]
-                if len(points):
-                    mins, maxs = points.min(axis=0), points.max(axis=0)
-                    self._pick_entries.append((key, mins, maxs, data.vertices, triangles))
-                    keys.append(key)
-                    mins_list.append(mins)
-                    maxs_list.append(maxs)
-        self._pick_bound_keys = keys
-        self._pick_bound_mins = np.asarray(mins_list, dtype=np.float32) if mins_list else np.zeros((0, 3), dtype=np.float32)
-        self._pick_bound_maxs = np.asarray(maxs_list, dtype=np.float32) if maxs_list else np.zeros((0, 3), dtype=np.float32)
 
     @staticmethod
     def _dispose_vbo(handle, *, delete_gl: bool = True) -> None:
@@ -1477,7 +1308,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _delete_buffer_set(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
         if buffer_set is None:
             return
-        for name in ("vertices_vbo", "normals_vbo", "colors_vbo", "uvs_vbo"):
+        for name in ("vertices_vbo", "normals_vbo", "colors_vbo", "uvs_vbo", "span_indices_vbo"):
             self._dispose_vbo(getattr(buffer_set, name), delete_gl=delete_gl)
             setattr(buffer_set, name, None)
         buffer_set.colors = None
@@ -1502,13 +1333,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         buffer_set.lines_ready = False
 
     def _display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        colors = self._base_display_colors(buffer_set)
-        if self._controls != "mesh" and self._hover_key:
-            used = self._hover_vertices(buffer_set, self._hover_key)
-            if len(used):
-                colors = np.ones((len(buffer_set.vertices), 4), dtype=np.float32) if colors is None else colors.copy()
-                self._tint_hover_rows(colors, used)
-        return colors
+        return self._base_display_colors(buffer_set)
 
     def _base_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
         return display_colors(
@@ -1519,55 +1344,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             diffuse=self.diffuse,
         )
 
-    def _refresh_hover_colors(self, old_key: str = "", new_key: str = "", *, current: bool = False) -> None:
-        if self.context() is None:
-            self._colors_dirty = True
-            return
-        if not current:
-            self.makeCurrent()
-        if old_key or new_key:
-            for buffer_set in (self._regular_set, self._solid_set):
-                self._update_hover_colors(buffer_set, old_key, new_key)
-        else:
-            self._refresh_color_vbos()
-        if not current:
-            self.doneCurrent()
-
-    def _update_hover_colors(self, buffer_set: _GlBufferSet | None, old_key: str, new_key: str) -> None:
-        if buffer_set is None or buffer_set.data is None:
-            return
-        old_rows = self._hover_vertices(buffer_set.data, old_key)
-        new_rows = self._hover_vertices(buffer_set.data, new_key)
-        if not len(old_rows) and not len(new_rows):
-            return
-        if not new_key and not self._needs_base_color_buffer(buffer_set.data):
-            self._dispose_vbo(buffer_set.colors_vbo)
-            buffer_set.colors_vbo = buffer_set.colors = None
-            return
-        self._ensure_color_buffer(buffer_set)
-        if buffer_set.colors is None or buffer_set.colors_vbo is None:
-            return
-        changed = np.unique(np.concatenate([old_rows, new_rows]))
-        buffer_set.colors[changed] = self._display_color_rows(buffer_set.data, changed)
-        if len(new_rows):
-            self._tint_hover_rows(buffer_set.colors, new_rows)
-        self._upload_changed_colors(buffer_set, changed)
-
-    def _ensure_color_buffer(self, buffer_set: _GlBufferSet) -> None:
-        if buffer_set.colors is not None and buffer_set.colors_vbo is not None:
-            return
-        colors = self._base_display_colors(buffer_set.data)
-        if colors is None:
-            colors = np.ones((len(buffer_set.data.vertices), 4), dtype=np.float32)
-            for _key, material_name, indices in buffer_set.data.triangle_chunks:
-                if tint := self._material_tints.get(material_name):
-                    colors[indices] = tint
-        buffer_set.colors = colors
-        buffer_set.colors_vbo = self._array_vbo(buffer_set.colors)
-
-    def _needs_base_color_buffer(self, buffer_set: SceneBufferSet) -> bool:
-        return self.lighting_mode == "software" or (self.color_source == "vertex" and buffer_set.base_colors is not None)
-
     def _hover_vertices(self, buffer_set: SceneBufferSet, key: str) -> np.ndarray:
         if not key:
             return np.zeros((0,), dtype=np.uint32)
@@ -1576,28 +1352,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             chunks = [idx for chunk_key, _material, idx in buffer_set.triangle_chunks if chunk_key == key]
             by_key[key] = np.unique(np.concatenate(chunks)).astype(np.uint32, copy=False) if chunks else np.zeros((0,), dtype=np.uint32)
         return by_key[key]
-
-    def _display_color_rows(self, buffer_set: SceneBufferSet, rows: np.ndarray) -> np.ndarray:
-        if self.color_source == "vertex" and buffer_set.base_colors is not None:
-            base = buffer_set.base_colors[rows].copy()
-        else:
-            base = np.ones((len(rows), 4), dtype=np.float32)
-            for _key, material_name, indices in buffer_set.triangle_chunks:
-                if tint := self._material_tints.get(material_name):
-                    base[np.isin(rows, indices)] = tint
-        if self.lighting_mode != "software":
-            return base
-        normals = buffer_set.normals[rows] if buffer_set.normals is not None else np.tile(np.array((0.0, 0.0, 1.0), dtype=np.float32), (len(rows), 1))
-        light_dir = np.array((0.4, 0.8, 0.4), dtype=np.float32)
-        light_dir /= np.linalg.norm(light_dir) or 1.0
-        base[:, :3] *= np.clip((normals @ light_dir) * float(self.diffuse) + float(self.ambient), 0.0, 1.0)[:, np.newaxis]
-        base[:, 3] = 1.0
-        return base
-
-    @staticmethod
-    def _tint_hover_rows(colors: np.ndarray, rows: np.ndarray) -> None:
-        colors[rows, :3] = colors[rows, :3] * 0.65 + np.array((0.05, 1.0, 0.25), dtype=np.float32) * 0.35
-        colors[rows, 3] = 1.0
 
     def _upload_buffer_set(self, data: SceneBufferSet | None) -> _GlBufferSet | None:
         if data is None:
@@ -1648,7 +1402,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         self._upload_index_vbos(self._regular_set)
         self._upload_index_vbos(self._solid_set)
-        self._refresh_hover_colors(current=True)
         if not current:
             self.doneCurrent()
 
@@ -1728,9 +1481,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         for handle, data in ((buffer_set.vertices_vbo, buffer_set.data.vertices), (buffer_set.normals_vbo, buffer_set.data.normals)):
             self._upload_changed_array(handle, data, vertices)
-
-    def _upload_changed_colors(self, buffer_set: _GlBufferSet, rows: np.ndarray) -> None:
-        self._upload_changed_array(buffer_set.colors_vbo, buffer_set.colors, rows)
 
     def _upload_changed_array(self, handle, data: np.ndarray | None, rows: np.ndarray) -> None:
         if handle is None or data is None or not len(rows):
@@ -1844,15 +1594,40 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._needs_gl_upload = self._regular_data is not None or self._solid_data is not None
 
     def cleanup(self):
+        self._timer.stop()
         self._leave_view_fullscreen()
         self._cleanup_gl()
+        self._clear_scene_memory()
+
+    def _clear_scene_memory(self):
+        with suppress(Exception):
+            self._unlock_scene_cursor()
+        self.freecam.clear_input()
+        self._meshes.clear()
+        self._highlighted_keys.clear()
+        self._selection_keys.clear()
+        self._hidden_keys.clear()
+        self._material_tints.clear()
+        self._two_sided_materials.clear()
+        self._pending_material_images.clear()
+        self._texture_ids.clear()
+        self._texture_sources.clear()
+        self._texture_source_ids.clear()
+        self._hover_vertex_cache.clear()
+        self._hover_key = self._hover_block_key = ""
+        self._hover_detect_down = False
+        self._pending_scene_pick = self._last_hover_pick_pos = None
+        self._selection_center = self._gizmo_drag = self._gizmo_projection = None
+        self._regular_data = self._solid_data = None
+        self._scene_matrix = IDENTITY4.copy()
+        self._needs_gl_upload = self._colors_dirty = False
 
     def closeEvent(self, event):
         if self._fullscreen_restore is not None:
             self._leave_view_fullscreen()
             event.ignore()
             return
-        self._cleanup_gl()
+        self.cleanup()
         super().closeEvent(event)
 
     def _cleanup_extra_gl(self):
@@ -1885,8 +1660,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._gl_cleanup_context = context
         if self._regular_data is None and self._solid_data is None:
             self._rebuild_buffer_data()
-        elif not self._pick_entries:
-            self._rebuild_pick_entries()
         self._regular_set = self._upload_buffer_set(self._regular_data)
         self._solid_set = self._upload_buffer_set(self._solid_data)
         self._refresh_selection_buffer_sets(current=True)
@@ -2100,18 +1873,35 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return True
 
     def _draw_selection_glow(self):
-        if not self._selection_keys or (self._selection_regular_set is None and self._selection_solid_set is None):
+        keys = self._selection_keys - self._hidden_keys
+        if not keys:
             return
-        if sum(buffer_set.index_count for buffer_set in (self._selection_regular_set, self._selection_solid_set) if buffer_set) > 700_000:
+        if len(keys) > 256 or self._span_index_count(keys) > 700_000:
             return
         alpha = 0.12 + 0.10 * (0.5 + 0.5 * np.sin(time.perf_counter() * 3.5))
-        self._draw_overlay_sets((self._selection_regular_set, self._selection_solid_set), (1.0, 0.86, 0.18, float(alpha)))
+        self._draw_overlay_sets((self._regular_set, self._solid_set), (1.0, 0.86, 0.18, float(alpha)), keys)
 
-    def _draw_overlay_sets(self, buffer_sets, color):
+    def _draw_hover_glow(self):
+        if self._hover_key:
+            self._draw_overlay_sets((self._regular_set, self._solid_set), (0.05, 1.0, 0.25, 0.38), {self._hover_key}, through=False)
+
+    def _span_index_count(self, keys: set[str]) -> int:
+        return sum(
+            count
+            for buffer_set in (self._regular_set, self._solid_set)
+            if buffer_set is not None
+            for key in keys
+            for _offset, count in buffer_set.data.key_spans.get(key, ())
+        )
+
+    def _draw_overlay_sets(self, buffer_sets, color, keys: set[str] | None = None, *, through: bool = True):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDepthMask(False)
-        glDisable(GL_DEPTH_TEST)
+        if through:
+            glDisable(GL_DEPTH_TEST)
+        else:
+            glDepthFunc(GL_LEQUAL)
         glDisable(GL_TEXTURE_2D)
         glDisable(GL_LIGHTING)
         glDisableClientState(GL_NORMAL_ARRAY)
@@ -2119,21 +1909,112 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glDisableClientState(GL_TEXTURE_COORD_ARRAY)
         glColor4f(*color)
         for buffer_set in buffer_sets:
-            if buffer_set is None or buffer_set.vertices_vbo is None or buffer_set.indices_vbo is None:
+            if buffer_set is None or buffer_set.vertices_vbo is None:
+                continue
+            index_vbo = self._span_index_vbo(buffer_set) if keys else buffer_set.indices_vbo
+            if index_vbo is None:
                 continue
             buffer_set.vertices_vbo.bind()
             glEnableClientState(GL_VERTEX_ARRAY)
             glVertexPointer(3, GL_FLOAT, 0, None)
-            buffer_set.indices_vbo.bind()
-            glDrawElements(GL_TRIANGLES, buffer_set.index_count, GL_UNSIGNED_INT, None)
+            index_vbo.bind()
+            spans = (span for key in keys for span in buffer_set.data.key_spans.get(key, ())) if keys else ((0, buffer_set.index_count),)
+            for offset, count in spans:
+                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, c_void_p(offset * 4) if keys else None)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
             glDisableClientState(GL_VERTEX_ARRAY)
             glBindBuffer(GL_ARRAY_BUFFER, 0)
         glDepthMask(True)
         glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
+        if through:
+            glEnable(GL_DEPTH_TEST)
+        else:
+            glDepthFunc(GL_LESS)
         if self.lighting_mode == "fixed":
             glEnable(GL_LIGHTING)
+
+    def _span_index_vbo(self, buffer_set: _GlBufferSet):
+        if not self._active_hidden_keys():
+            return buffer_set.indices_vbo
+        if buffer_set.span_indices_vbo is None and len(buffer_set.data.indices):
+            buffer_set.span_indices_vbo = self._element_vbo(buffer_set.data.indices)
+        return buffer_set.span_indices_vbo
+
+    def _draw_scene_pick(self, pos: np.ndarray, scene_matrix: np.ndarray | None, dpr: float) -> str:
+        key_ids, id_keys = self._pick_color_ids()
+        if not key_ids:
+            return ""
+        width, height = max(1, int(self.width() * dpr)), max(1, int(self.height() * dpr))
+        x = max(0, min(width - 1, int(pos[0] * dpr)))
+        y = max(0, min(height - 1, height - 1 - int(pos[1] * dpr)))
+        glDisable(GL_DITHER)
+        glDisable(GL_MULTISAMPLE)
+        glDisable(GL_BLEND)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_CULL_FACE)
+        glDisableClientState(GL_NORMAL_ARRAY)
+        glDisableClientState(GL_COLOR_ARRAY)
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+        glDepthFunc(GL_LESS)
+        glDepthMask(True)
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(x, y, 1, 1)
+        if scene_matrix is not None:
+            glPushMatrix()
+            glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
+        for buffer_set in (self._regular_set, self._solid_set):
+            self._draw_pick_buffer(buffer_set, key_ids)
+        if scene_matrix is not None:
+            glPopMatrix()
+        rgba = np.frombuffer(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE), dtype=np.uint8, count=4)
+        glDisable(GL_SCISSOR_TEST)
+        glEnable(GL_DITHER)
+        glEnable(GL_MULTISAMPLE)
+        pick_id = int(rgba[0]) | (int(rgba[1]) << 8) | (int(rgba[2]) << 16)
+        return id_keys.get(pick_id, "")
+
+    def _pick_color_ids(self) -> tuple[dict[str, int], dict[int, str]]:
+        hidden = self._active_hidden_keys()
+        key_ids: dict[str, int] = {}
+        for buffer_set in (self._regular_set, self._solid_set):
+            if buffer_set is None:
+                continue
+            for key in buffer_set.data.key_spans:
+                if key not in hidden and key not in key_ids:
+                    key_ids[key] = len(key_ids) + 1
+        return key_ids, {index: key for key, index in key_ids.items()}
+
+    def _draw_pick_buffer(self, buffer_set: _GlBufferSet | None, key_ids: dict[str, int]) -> None:
+        if buffer_set is None or buffer_set.vertices_vbo is None or not key_ids:
+            return
+        index_vbo = self._span_index_vbo(buffer_set)
+        if index_vbo is None:
+            return
+        buffer_set.vertices_vbo.bind()
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glVertexPointer(3, GL_FLOAT, 0, None)
+        index_vbo.bind()
+        for key, spans in buffer_set.data.key_spans.items():
+            if not (pick_id := key_ids.get(key)):
+                continue
+            glColor4f((pick_id & 255) / 255.0, ((pick_id >> 8) & 255) / 255.0, ((pick_id >> 16) & 255) / 255.0, 1.0)
+            for offset, count in spans:
+                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, c_void_p(offset * 4))
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        glDisableClientState(GL_VERTEX_ARRAY)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+    def _finish_scene_pick(self, kind: str, key: str) -> None:
+        if kind == "hover":
+            self._set_hover_key(key if self._hover_detect_down else "")
+            return
+        if key:
+            self.object_clicked.emit(key)
+            self._hover_block_key = key
+            self._set_hover_key("")
+        else:
+            self.object_clicked.emit("")
 
     def _active_scene_matrix(self) -> np.ndarray | None:
         matrix = self._scene_matrix
@@ -2141,6 +2022,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if drag and drag.get("whole_scene") and drag.get("matrix") is not None:
             matrix = drag["matrix"] @ matrix
         return None if np.allclose(matrix, IDENTITY4) else matrix
+
+    def _prepare_scene_view(self) -> None:
+        self._apply_render_state()
+        glLoadIdentity()
+        glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
+        self._apply_camera_transform()
+        self._cache_gizmo_projection()
 
     def _restore_gl_content(self) -> None:
         missing_regular = self._regular_set is None and self._regular_data is not None
@@ -2155,13 +2043,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._restore_gl_content()
         glColorMask(True, True, True, True)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        self._apply_render_state()
-        glLoadIdentity()
-        glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
-        self._apply_camera_transform()
-        self._cache_gizmo_projection()
-
+        self._prepare_scene_view()
         scene_matrix = self._active_scene_matrix()
+        if self._pending_scene_pick is not None:
+            kind, pos = self._pending_scene_pick
+            self._pending_scene_pick = None
+            key = self._draw_scene_pick(pos, scene_matrix, dpr)
+            QTimer.singleShot(0, self, lambda kind=kind, key=key: self._finish_scene_pick(kind, key))
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            self._prepare_scene_view()
         if scene_matrix is not None:
             glPushMatrix()
             glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
@@ -2169,6 +2059,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._draw_triangles(self._solid_set, use_textures=False)
         if not self._draw_deferred_selection():
             self._draw_selection_glow()
+        self._draw_hover_glow()
         if scene_matrix is not None:
             glPopMatrix()
         self._draw_gizmo()

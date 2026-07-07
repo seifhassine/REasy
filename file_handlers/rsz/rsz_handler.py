@@ -398,25 +398,18 @@ class RszViewer(QWidget):
             return
         menu = self.scene_button.menu()
         menu.clear()
+        self.scene_button.setText("Add to Scene")
+        self.scene_button.setToolTip("Add this SCN to a scene")
         app = getattr(self.handler, "app", None)
         if app is None:
             self.scene_button.setEnabled(False)
-            self.scene_button.setText("Add to Scene")
             return
         from ui.scene.scn_scene_workspace import scn_source_from_tab
 
         tab = app._resolve_tab_from_widget(self) if hasattr(app, "_resolve_tab_from_widget") else None
         source = scn_source_from_tab(tab)
-        owner, can_add = app.scenes.source_add_state(source)
-        if owner is not None:
-            self.scene_button.setText(f"In {owner.title}")
-            self.scene_button.setToolTip(f"Already in {owner.title}")
-            self.scene_button.setEnabled(False)
-        else:
-            self.scene_button.setText("Add to Scene")
-            self.scene_button.setToolTip("Add this SCN to a scene")
-            self.scene_button.setEnabled(can_add)
-            app.scenes.populate_add_to_scene_menu(menu, source)
+        self.scene_button.setEnabled(app.scenes.can_add_source(source))
+        app.scenes.populate_add_to_scene_menu(menu, source)
 
     def _find_model_item_by_prefix(self, label_prefix: str):
         model = self.tree.model()

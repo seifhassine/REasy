@@ -96,7 +96,7 @@ class ProjectSessionManager:
     def _restore_session(self, session: ProjectSession) -> None:
         detached = {window.file_tab for window in self.windows_for(session.tabs)}
         for tab in session.tabs:
-            if tab in detached:
+            if tab in detached or getattr(tab, "_workspace_hidden", False):
                 continue
             widget = tab.notebook_widget
             index = self.notebook.indexOf(widget)
@@ -126,6 +126,32 @@ class ProjectSessionManager:
             if getattr(window, "file_tab", None) in tabs
         ]
 
+    def set_tab_hidden(self, tab: Any, hidden: bool) -> None:
+        if bool(getattr(tab, "_workspace_hidden", False)) == hidden:
+            return
+        tab._workspace_hidden = hidden
+        (self._hide_tab if hidden else self._show_tab)(tab)
+
+    def _hide_tab(self, tab: Any) -> None:
+        widget = tab.notebook_widget
+        if (index := self.notebook.indexOf(widget)) != -1:
+            self.notebook.removeTab(index)
+            widget.hide()
+        if (session := self.session_for_tab(tab)) and session.current_widget is widget:
+            session.current_widget = None
+        for window in self.windows_for([tab]):
+            window.setVisible(False)
+
+    def _show_tab(self, tab: Any) -> None:
+        session = self.session_for_tab(tab)
+        active = session is self.get(self.active_key)
+        windows = self.windows_for([tab])
+        if active and not windows and self.notebook.indexOf(tab.notebook_widget) == -1:
+            self.notebook.addTab(tab.notebook_widget, "")
+            tab.update_tab_title()
+        for window in windows:
+            window.setVisible(active)
+
     def _show_windows(self, session: ProjectSession, visible: bool) -> None:
         for window in self.windows_for(session.tabs):
-            window.setVisible(visible)
+            window.setVisible(visible and not getattr(window.file_tab, "_workspace_hidden", False))

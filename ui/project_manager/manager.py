@@ -785,7 +785,7 @@ class ProjectManager(QDockWidget):
                 return
             self._set_loading_overlay(True, self.tr("Loading project..."))
             self._project_load_started_at = monotonic()
-            QTimer.singleShot(120, lambda: self._finish_project_load(ticket, proj_dir, on_loaded))
+            QTimer.singleShot(120, self, lambda: self._finish_project_load(ticket, proj_dir, on_loaded))
         else:
             self.project_label.setText(self.tr("<i>No project open</i>"))
             self.tree_proj .setRootIndex(QModelIndex())
@@ -856,7 +856,7 @@ class ProjectManager(QDockWidget):
         elapsed_ms = int((monotonic() - self._project_load_started_at) * 1000)
         remaining_ms = max(0, self._project_load_min_visible_ms - elapsed_ms)
         if remaining_ms:
-            QTimer.singleShot(remaining_ms, lambda: self._hide_loading_overlay(ticket))
+            QTimer.singleShot(remaining_ms, self, lambda: self._hide_loading_overlay(ticket))
             return
         self._set_loading_overlay(False)
 
@@ -1587,9 +1587,9 @@ class ProjectManager(QDockWidget):
                     QMessageBox.critical(self, self.tr("Error"),
                                          self.tr("PAK packer returned an error."))
             else:
-                QTimer.singleShot(150, _poll)
+                QTimer.singleShot(150, self, _poll)
 
-        QTimer.singleShot(100, _poll)
+        QTimer.singleShot(100, self, _poll)
         
 def quitely_get_pak_name(project_dir: Path) -> str | None:
     return load_project_config(project_dir).get("pak_name")

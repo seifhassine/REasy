@@ -1504,19 +1504,6 @@ class REasyEditorApp(QMainWindow):
         self.project_workspace.close()
 
     def _confirm_tabs_close(self, tabs, *, apply_discards=True) -> bool:
-        closing = set(tabs)
-        for tab in tabs:
-            scene = self.scenes.scene_owning_tab(tab)
-            if scene is not None and scene not in closing:
-                path = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None) or "This SCN"
-                name = os.path.basename(str(path).replace("\\", "/"))
-                QMessageBox.information(
-                    self,
-                    self.tr("SCN is open in a scene"),
-                    self.tr(f'{name} is open in "{scene.title}". Remove it from the scene or delete the scene before closing its raw tab.'),
-                )
-                return False
-
         discard_tabs = []
         for tab in tabs:
             if not tab or not tab.modified:
@@ -2200,6 +2187,8 @@ class REasyEditorApp(QMainWindow):
                 pass
 
     def add_tab(self, filename=None, data=None, pak_source_path=None, pak_project_dir=None):
+        if self.scenes.route_owned_open(filename, pak_source_path, pak_project_dir):
+            return None
         if filename:
             abs_fn = os.path.abspath(filename)
             for tab in self.project_workspace.sessions.active_tabs():

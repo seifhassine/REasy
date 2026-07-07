@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -9,7 +8,7 @@ from typing import Callable
 
 import numpy as np
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QLabel, QStyle, QTextEdit, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from file_handlers.mesh.material_resolver import MdfSurfaceProfile, MeshMaterialBinding, MeshMaterialResolver
 from file_handlers.mesh.mesh_handler import MeshHandler
@@ -75,6 +74,7 @@ class ScnScenePreviewWidget(QWidget):
         self._material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
         self._material_profiles: dict[str, MdfSurfaceProfile] = {}
         self._queued_material_assets: set[str] = set()
+        self._shown_diagnostics: set[tuple] = set()
         self._pending_renderables: deque[_RenderableQueueItem] = deque()
         self._pending_material_renderables: deque[ScnRenderableMesh] = deque()
         self._draw_meshes: list[SceneDrawMesh] = []
@@ -103,25 +103,14 @@ class ScnScenePreviewWidget(QWidget):
 
         self.status_label = QLabel("Scene preview has not been built.", self)
         self.status_label.setWordWrap(True)
-        self.refresh_button = QToolButton(self)
-        self.refresh_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
-        self.refresh_button.setToolTip("Refresh scene preview")
-        self.refresh_button.clicked.connect(self.request_refresh)
 
         self.preview = ScenePreviewWidget(self, settings=settings)
         self.preview.gizmo_transform_committed.connect(self._commit_gizmo_transforms)
         self.preview.setMinimumHeight(320)
         layout.addWidget(self.preview, 1)
 
-        self.diagnostics = QTextEdit(self)
-        self.diagnostics.setReadOnly(True)
-        self.diagnostics.setFixedHeight(72)
-        self.diagnostics.setPlaceholderText("No diagnostics.")
-        self.diagnostics.setStyleSheet("background:#0b0f14; color:#dce3ea; border:1px solid #2d3640;")
-        self.diagnostics.hide()
-
     def ensure_loaded(self) -> None:
-        if not self._loaded or self._stale:
+        if not self._loaded:
             self.request_refresh()
 
     def request_refresh(self) -> None:
@@ -134,12 +123,12 @@ class ScnScenePreviewWidget(QWidget):
         self._loading = False
         self._refresh_queued = True
         self.status_label.setText("Preparing scene preview...")
-        QTimer.singleShot(0, self.refresh)
+        QTimer.singleShot(0, self, self.refresh)
 
     def set_stale(self) -> None:
         self._stale = True
         if self._loaded:
-            self.status_label.setText("Scene preview is stale. Refresh to rebuild from the edited SCN.")
+            self.status_label.setText("Scene preview is stale. Reload the scene to rebuild from the edited SCN.")
 
     def sync_raw_transform_field(self, document_ids: set[str], changed_field: object) -> TransformEditResult:
         result = RawTransformFieldCommand(self.graphs, self.loader.document_store, document_ids, changed_field).execute()
@@ -154,7 +143,33 @@ class ScnScenePreviewWidget(QWidget):
 
     def cleanup(self) -> None:
         self._stop_timers()
+        self._clear_runtime_state()
         self.preview.cleanup()
+        self._sources_getter = self._graphs_changed_callback = self._edits_changed_callback = None
+        self.viewer = self.handler = None
+
+    def _clear_runtime_state(self, *, keep_hidden: bool = False) -> None:
+        self._pending_renderables.clear()
+        self._pending_material_renderables.clear()
+        self._draw_meshes.clear()
+        if not keep_hidden:
+            self._hidden_renderables.clear()
+        self._retired_renderables.clear()
+        self._material_queue.clear()
+        self._material_images.clear()
+        self._material_profiles.clear()
+        self._queued_material_assets.clear()
+        self._mesh_cache.clear()
+        self._batch_cache.clear()
+        self._resolved_texture_cache.clear()
+        self._texture_cache.clear()
+        self._parsed_tex_cache.clear()
+        self._shown_diagnostics.clear()
+        self._loaded = self._loading = self._refresh_queued = self._stale = False
+        self._camera_initialized = False
+        self._last_asset_counts = (0, 0, 0)
+        self.graph = None
+        self.graphs.clear()
 
     def scene_sources(self) -> list[ScnSceneSource]:
         if self._sources_getter is not None:
@@ -245,25 +260,8 @@ class ScnScenePreviewWidget(QWidget):
 
     def refresh(self) -> None:
         self._refresh_queued = False
-        self._loading = False
-        self._loaded = False
-        self._stale = False
         self._stop_timers()
-        self._pending_renderables.clear()
-        self._pending_material_renderables.clear()
-        self._draw_meshes.clear()
-        self._retired_renderables.clear()
-        self._material_queue.clear()
-        self._material_images.clear()
-        self._material_profiles.clear()
-        self._queued_material_assets.clear()
-        self._mesh_cache.clear()
-        self._batch_cache.clear()
-        self._resolved_texture_cache.clear()
-        self._texture_cache.clear()
-        self._parsed_tex_cache.clear()
-        self.graph = None
-        self.graphs.clear()
+        self._clear_runtime_state(keep_hidden=True)
 
         self.status_label.setText("Building source-aware SCN scene graph...")
         self.graphs = self.loader.build_graphs(self.scene_sources(), max_depth=8)
@@ -565,23 +563,21 @@ class ScnScenePreviewWidget(QWidget):
         )
 
     def _update_diagnostics(self) -> None:
-        diagnostics = [diagnostic for graph in self.graphs for diagnostic in graph.diagnostics]
-        if not diagnostics:
-            self.diagnostics.clear()
-            self.diagnostics.hide()
-            return
-        self.diagnostics.show()
-        lines = []
-        for diagnostic in diagnostics[:100]:
-            source = diagnostic.document_instance_id or diagnostic.document_id
-            if diagnostic.path:
-                source = f"{source} :: {diagnostic.path}" if source else diagnostic.path
-            text = f"[{diagnostic.severity}] {diagnostic.code}: {diagnostic.message} {source}".strip()
-            color = "#e6c84f" if diagnostic.severity == "warning" else "#f0f0f0"
-            lines.append(f'<span style="color:{color}">{html.escape(text)}</span>')
-        if len(diagnostics) > 100:
-            lines.append(html.escape(f"... {len(diagnostics) - 100} more diagnostics"))
-        self.diagnostics.setHtml("<br>".join(lines))
+        new = []
+        for diagnostic in (item for graph in self.graphs for item in graph.diagnostics):
+            key = (diagnostic.severity, diagnostic.code, diagnostic.message, diagnostic.document_id, diagnostic.document_instance_id, diagnostic.path)
+            if key not in self._shown_diagnostics:
+                self._shown_diagnostics.add(key)
+                new.append(diagnostic)
+        for diagnostic in new:
+            print(f"Scene {self._diagnostic_text(diagnostic)}")
+
+    @staticmethod
+    def _diagnostic_text(diagnostic: ScnSceneDiagnostic) -> str:
+        source = diagnostic.document_instance_id or diagnostic.document_id
+        if diagnostic.path:
+            source = f"{source} :: {diagnostic.path}" if source else diagnostic.path
+        return f"[{diagnostic.severity}] {diagnostic.code}: {diagnostic.message} {source}".strip()
 
     @staticmethod
     def _diagnostic(severity: str, code: str, message: str, renderable: ScnRenderableMesh):

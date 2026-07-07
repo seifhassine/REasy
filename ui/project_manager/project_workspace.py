@@ -60,7 +60,7 @@ class ProjectWorkspaceController:
         button.setText("×")
         button.setToolTip(self.host.tr(tip))
         button.setFixedSize(20, 20)
-        button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, callback))
+        button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, self.toolbar, callback))
         return button
 
     @staticmethod

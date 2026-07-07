@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLay
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QPushButton)
 from PySide6.QtGui import QCursor, QPalette
-from PySide6.QtCore import Qt, QEvent, QSignalBlocker
+from PySide6.QtCore import Qt, QEvent, QModelIndex, QSignalBlocker
 from shiboken6 import isValid
 
 

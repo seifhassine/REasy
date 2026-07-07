@@ -23,7 +23,8 @@ class ViewportOverlayManager:
         grip.setObjectName("overlayResizeGrip")
         grip.setAlignment(Qt.AlignRight)
         grip.setCursor(Qt.SizeFDiagCursor)
-        grip.setFixedHeight(10)
+        grip.setFixedHeight(20)
+        grip.setToolTip("Resize panel")
         grip._viewport_resize_overlay = widget
         if widget.layout() is not None:
             widget.layout().addWidget(grip)
