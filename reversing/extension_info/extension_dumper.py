@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse, json, os, struct, pefile
+from bisect import bisect_right
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 from capstone.x86_const import *
 
@@ -30,12 +31,23 @@ class PEReader:
         self.pe = pe
         self.base = base
         self.secs = secs
+        self._lookup_secs = sorted(secs, key=lambda s: s["va"])
+        self._section_starts = [s["va"] for s in self._lookup_secs]
+        self._last_sec = None
         self.cache = {}  # Cache sections as they're read
+        self.utf16_cache = {}
     
     def get_section_for_va(self, va):
         """Find which section contains this VA."""
-        for s in self.secs:
+        last = self._last_sec
+        if last is not None and last["va"] <= va < last["end"]:
+            return last
+
+        idx = bisect_right(self._section_starts, va) - 1
+        if idx >= 0:
+            s = self._lookup_secs[idx]
             if s["va"] <= va < s["end"]:
+                self._last_sec = s
                 return s
         return None
     
@@ -79,21 +91,25 @@ def rd(reader, base, va, n):
 def u32(pe, base, va): b = rd(pe, base, va, 4); return None if b is None else struct.unpack_from("<I", b)[0]
 def u64(pe, base, va): b = rd(pe, base, va, 8); return None if b is None else struct.unpack_from("<Q", b)[0]
 
-def in_data(secs, va):
-    for s in secs:
-        if s["va"] <= va < s["end"]:
-            return not s["exec"]
-    return False
-
 # --- UTF-16 anchors (extension names) ------------------------------------------------------------
 
 def utf16_at(reader, base, secs, va, maxlen=1024):
     """Return the UTF-16 string at VA if it looks valid; else None."""
-    if va & 1: return None
+    cache = getattr(reader, "utf16_cache", None)
+    cache_key = (va, maxlen)
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
+
+    def done(value):
+        if cache is not None:
+            cache[cache_key] = value
+        return value
+
+    if va & 1: return done(None)
     
     # Read up to maxlen UTF-16 chars (2 bytes each)
     data = rd(reader, base, va, 2 * maxlen)
-    if not data or len(data) < 2: return None
+    if not data or len(data) < 2: return done(None)
     
     # Find null terminator
     out = bytearray()
@@ -102,67 +118,79 @@ def utf16_at(reader, base, secs, va, maxlen=1024):
         if lo == 0 and hi == 0: break
         out += data[i:i+2]
     
-    if not out: return None
+    if not out: return done(None)
     
     try: s = out.decode("utf-16le")
-    except: return None
+    except: return done(None)
     
-    if len(s) > MAXS: return None
+    if len(s) > MAXS: return done(None)
     
     # mostly printable ASCII?
-    if sum(1 for ch in s if 32 <= ord(ch) < 127 or ord(ch) in (9,10,13)) / max(1, len(s)) < 0.80: return None
+    if sum(1 for ch in s if 32 <= ord(ch) < 127 or ord(ch) in (9,10,13)) / max(1, len(s)) < 0.80: return done(None)
     
     # has a terminator nearby?
-    check_data = rd(reader, base, va, 1024)
-    if not check_data or check_data.find(b"\x00\x00") < 0: return None
+    if data[:1024].find(b"\x00\x00") < 0: return done(None)
     
-    return s
+    return done(s)
 
-def find_anchors(img, base, secs, text):
-    """Find UTF-16 byte hits for 'text' in data sections and keep only valid ones."""
-    needle = text.encode("utf-16le", "ignore"); hits = set()
+def find_anchor_set(img, base, secs, texts):
+    """Find UTF-16 byte hits for all provided anchor strings in one section pass."""
+    needles = tuple(dict.fromkeys(
+        text.encode("utf-16le", "ignore") for text in texts if text
+    ))
+    hits = set()
+    if not needles:
+        return hits
+
     for s in secs:
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""
-        i = 0
-        while True:
-            j = b.find(needle, i)
-            if j < 0: break
-            va = s["va"] + j
-            if utf16_at(img, base, secs, va): hits.add(va)
-            i = j + 2
+        for needle in needles:
+            i = 0
+            while True:
+                j = b.find(needle, i)
+                if j < 0:
+                    break
+                va = s["va"] + j
+                if utf16_at(img, base, secs, va):
+                    hits.add(va)
+                i = j + 2
     return hits
 
-# --- call indexing (byte patterns only) ---------------------------------------
+# --- callsite scanning ---------------------------------------------------------
 
-def index_calls(img, base, secs):
-    """near[target] / ind[slot] -> list of (section, offset to call byte)."""
-    near, ind = {}, {}
+def collect_call_sites(img, base, secs, aliases):
+    """Collect only callsites that target the resolved callee aliases."""
+    near_targets = {tgt for kind, tgt in aliases if kind == "near"}
+    ind_slots = {tgt for kind, tgt in aliases if kind == "ind"}
+    sites = {}
+
     for s in secs:
         if not s["exec"]: continue
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""; L = len(b)
-        # E8 rel32
-        i = 0
-        while True:
-            i = b.find(b"\xE8", i)
-            if i < 0 or i + 5 > L: break
-            tgt = (s["va"] + i + 5 + s32(b, i+1)) & 0xFFFFFFFFFFFFFFFF
-            near.setdefault(tgt, []).append((s, i)); i += 1
-        # FF 15 disp32
-        i = 0
-        while True:
-            i = b.find(b"\xFF\x15", i)
-            if i < 0 or i + 6 > L: break
-            slot = (s["va"] + i + 6 + s32(b, i+2)) & 0xFFFFFFFFFFFFFFFF
-            ind.setdefault(slot, []).append((s, i)); i += 1
-        # REX + FF 15 disp32
-        for rx in range(0x40, 0x50):
-            pat = bytes([rx, 0xFF, 0x15]); j = 0
+
+        if near_targets:
+            i = 0
             while True:
-                j = b.find(pat, j)
-                if j < 0 or j + 7 > L: break
-                slot = (s["va"] + j + 7 + s32(b, j+3)) & 0xFFFFFFFFFFFFFFFF
-                ind.setdefault(slot, []).append((s, j)); j += 1
-    return near, ind
+                i = b.find(b"\xE8", i)
+                if i < 0 or i + 5 > L: break
+                tgt = (s["va"] + i + 5 + s32(b, i+1)) & 0xFFFFFFFFFFFFFFFF
+                if tgt in near_targets:
+                    sites[(s["va"], i)] = s
+                i += 1
+
+        if ind_slots:
+            i = 0
+            while True:
+                i = b.find(b"\xFF\x15", i)
+                if i < 0 or i + 6 > L: break
+                slot = (s["va"] + i + 6 + s32(b, i+2)) & 0xFFFFFFFFFFFFFFFF
+                if slot in ind_slots:
+                    sites[(s["va"], i)] = s
+                    if i > 0 and 0x40 <= b[i-1] <= 0x4F:
+                        sites[(s["va"], i-1)] = s
+                i += 1
+
+    return sites
 
 # --- next CALL after RCX <- anchor --------------------------------------------
 
@@ -214,72 +242,40 @@ def _next_call(img, base, s, off):
 def discover_callee(img, base, secs, anchors):
     """Find RCX<-anchor or RDX<-anchor (LEA/MOV), then take the next CALL as the callee."""
     callees = []
+    seen = set()
+    load_patterns = (
+        (b"\x48\x8D\x0D", 7, "rip"),  # lea rcx,[rip+disp]
+        (b"\x48\xB9", 10, "imm"),     # mov rcx,imm64
+        (b"\x48\x8B\x0D", 7, "mem"),  # mov rcx,[rip+disp]
+        (b"\x48\x8D\x15", 7, "rip"),  # lea rdx,[rip+disp]
+        (b"\x48\xBA", 10, "imm"),     # mov rdx,imm64
+        (b"\x48\x8B\x15", 7, "mem"),  # mov rdx,[rip+disp]
+    )
+
+    def add_callee(value):
+        if value and value not in seen:
+            seen.add(value)
+            callees.append(value)
+
     for s in secs:
         if not s["exec"]: continue
         b = rd(img, base, s["va"], s["end"] - s["va"]) or b""; L = len(b)
 
-        # ---- RCX patterns ----
-        # LEA RCX, [RIP+disp] -> 48 8D 0D disp32
-        i = 0
-        while True:
-            i = b.find(b"\x48\x8D\x0D", i)
-            if i < 0 or i + 7 > L: break
-            ptr = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-            if ptr in anchors:
-                r = _next_call(img, base, s, i + 7)
-                if r and r not in callees: callees.append(r)
-            i += 1
-        # MOV RCX, imm64 -> 48 B9 imm64
-        i = 0
-        while True:
-            i = b.find(b"\x48\xB9", i)
-            if i < 0 or i + 10 > L: break
-            if struct.unpack_from("<Q", b, i+2)[0] in anchors:
-                r = _next_call(img, base, s, i + 10)
-                if r and r not in callees: callees.append(r)
-            i += 1
-        # MOV RCX, [RIP+disp] -> 48 8B 0D disp32
-        i = 0
-        while True:
-            i = b.find(b"\x48\x8B\x0D", i)
-            if i < 0 or i + 7 > L: break
-            slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-            v = u64(img, base, slot)
-            if v in anchors:
-                r = _next_call(img, base, s, i + 7)
-                if r and r not in callees: callees.append(r)
-            i += 1
-
-        # ---- RDX patterns (older builds use RDX for the string) ----
-        i = 0  # LEA RDX, [RIP+disp] -> 48 8D 15 disp32
-        while True:
-            i = b.find(b"\x48\x8D\x15", i)
-            if i < 0 or i + 7 > L: break
-            ptr = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-            if ptr in anchors:
-                r = _next_call(img, base, s, i + 7)
-                if r and r not in callees: callees.append(r)
-            i += 1
-
-        i = 0  # MOV RDX, imm64 -> 48 BA imm64
-        while True:
-            i = b.find(b"\x48\xBA", i)
-            if i < 0 or i + 10 > L: break
-            if struct.unpack_from("<Q", b, i+2)[0] in anchors:
-                r = _next_call(img, base, s, i + 10)
-                if r and r not in callees: callees.append(r)
-            i += 1
-
-        i = 0  # MOV RDX, [RIP+disp] -> 48 8B 15 disp32
-        while True:
-            i = b.find(b"\x48\x8B\x15", i)
-            if i < 0 or i + 7 > L: break
-            slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-            v = u64(img, base, slot)
-            if v in anchors:
-                r = _next_call(img, base, s, i + 7)
-                if r and r not in callees: callees.append(r)
-            i += 1
+        for pat, size, mode in load_patterns:
+            i = 0
+            while True:
+                i = b.find(pat, i)
+                if i < 0 or i + size > L: break
+                if mode == "rip":
+                    value = (s["va"] + i + size + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+                elif mode == "imm":
+                    value = struct.unpack_from("<Q", b, i+2)[0]
+                else:
+                    slot = (s["va"] + i + size + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
+                    value = u64(img, base, slot)
+                if value in anchors:
+                    add_callee(_next_call(img, base, s, i + size))
+                i += 1
 
     return callees
 
@@ -433,21 +429,23 @@ def tail_scan_edx(img, base, s, call_off, span=32):
         i -= 1
     return None
 
-def tail_scan_rcx(img, base, s, call_off, span=48):
-    """Quick scan of the last bytes for RCX forms i've seen: lea/mov imm/mov [rip+disp]."""
+def tail_scan_strptr(img, base, s, call_off, lea_pat, imm_pat, mem_pat, span=48):
     b = rd(img, base, s["va"], s["end"] - s["va"]) or b""; lo = max(0, call_off - span); hi = call_off
     i = hi - 1
     while i >= lo:
-        if i + 7 <= hi and b[i:i+3] == b"\x48\x8D\x0D":  # lea rcx,[rip+disp]
+        if i + 7 <= hi and b[i:i+3] == lea_pat:
             return (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-        if i + 10 <= hi and b[i:i+2] == b"\x48\xB9":     # mov rcx,imm64
+        if i + 10 <= hi and b[i:i+2] == imm_pat:
             return int(struct.unpack_from("<Q", b, i+2)[0])
-        if i + 7 <= hi and b[i:i+3] == b"\x48\x8B\x0D":  # mov rcx,[rip+disp]
+        if i + 7 <= hi and b[i:i+3] == mem_pat:
             slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
             v = u64(img, base, slot)
             if v is not None: return int(v)
         i -= 1
     return None
+
+def tail_scan_rcx(img, base, s, call_off, span=48):
+    return tail_scan_strptr(img, base, s, call_off, b"\x48\x8D\x0D", b"\x48\xB9", b"\x48\x8B\x0D", span)
 
 def tail_scan_r8d(img, base, s, call_off, span=32):
     """Scan just-before-call for r8d imm/zero patterns."""
@@ -464,23 +462,7 @@ def tail_scan_r8d(img, base, s, call_off, span=32):
     return None
 
 def tail_scan_rdx(img, base, s, call_off, span=48):
-    """Scan just-before-call for rdx set from utf16 string (lea/mov forms)."""
-    b = rd(img, base, s["va"], s["end"] - s["va"]) or b""
-    lo = max(0, call_off - span); hi = call_off; i = hi - 1
-    while i >= lo:
-        # lea rdx, [rip+disp] -> 48 8D 15 disp32
-        if i + 7 <= hi and b[i:i+3] == b"\x48\x8D\x15":
-            return (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-        # mov rdx, imm64 -> 48 BA imm64
-        if i + 10 <= hi and b[i:i+2] == b"\x48\xBA":
-            return int(struct.unpack_from("<Q", b, i+2)[0])
-        # mov rdx, [rip+disp] -> 48 8B 15 disp32
-        if i + 7 <= hi and b[i:i+3] == b"\x48\x8B\x15":
-            slot = (s["va"] + i + 7 + s32(b, i+3)) & 0xFFFFFFFFFFFFFFFF
-            v = u64(img, base, slot)
-            if v is not None: return int(v)
-        i -= 1
-    return None
+    return tail_scan_strptr(img, base, s, call_off, b"\x48\x8D\x15", b"\x48\xBA", b"\x48\x8B\x15", span)
 
 def eval_block(img, base, secs, s, start_va, call_off, m):
     """Emulate the short block [start_va, call) to recover RCX/EDX."""
@@ -609,14 +591,11 @@ def extract_extensions(pe_path, exts):
         return {"error": "no -ext provided"}
 
     base, img, secs = map_pe(pe_path)
-    near_map, ind_map = index_calls(img, base, secs)
 
     aliases = set()
-    for ext in exts:
-        anchors = find_anchors(img, base, secs, ext)
-        if not anchors: continue
-        callees = discover_callee(img, base, secs, anchors)
-        if not callees: continue
+    anchors = find_anchor_set(img, base, secs, exts)
+    callees = discover_callee(img, base, secs, anchors) if anchors else []
+    if callees:
         for cal in callees:
             cal, chain = resolve_thunk(img, base, cal)
             if not validate_callee(img, base, cal, allow_4_args=False):
@@ -624,11 +603,7 @@ def extract_extensions(pe_path, exts):
             aliases.update(chain)
     
     if not aliases:
-        for ext in exts:
-            anchors = find_anchors(img, base, secs, ext)
-            if not anchors: continue
-            callees = discover_callee(img, base, secs, anchors)
-            if not callees: continue
+        if callees:
             for cal in callees:
                 cal, chain = resolve_thunk(img, base, cal)
                 if not validate_callee(img, base, cal, allow_4_args=True):
@@ -638,10 +613,7 @@ def extract_extensions(pe_path, exts):
     if not aliases:
         return {"error": "no callees resolved from provided -ext strings"}
 
-    sites = {}
-    for kind, tgt in aliases:
-        for s, off in (near_map.get(tgt, []) if kind == "near" else ind_map.get(tgt, [])):
-            sites[(s["va"], off)] = s
+    sites = collect_call_sites(img, base, secs, aliases)
 
     m = cap(); out = {}
     for (_, off), s in sorted(sites.items()):
