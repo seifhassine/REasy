@@ -1,9 +1,12 @@
 from __future__ import annotations
+
+import struct
 from dataclasses import dataclass
 from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
 from .dxgi import get_bits_per_pixel, is_block_compressed, get_block_size_bytes
+from .gdeflate import decompress_gdeflate, gdeflate_uncompressed_size, is_gdeflate_payload
 
 SERIALIZER_RE7 = 1
 SERIALIZER_MHRISE = 2
@@ -64,9 +67,7 @@ def get_serializer_version(version: int, file_version: int = 0) -> int:
         return mapped
     return SERIALIZER_MHWILDS
 
-
-TEX_MAGIC = 0x00584554 
-GDEFLATE_MAGIC = 0xFB04
+TEX_MAGIC = 0x00584554
 @dataclass
 class TexHeader:
     magic: int = TEX_MAGIC
@@ -146,90 +147,89 @@ class TexFile:
     def read(self, data: bytes, file_version: int = 0) -> bool:
         self._data = data
         self._file_version_hint = int(file_version or 0)
-        h = BinaryHandler(bytearray(data))
-        magic = h.read_uint32()
+        unpack_from = struct.unpack_from
+        (
+            magic,
+            version,
+            width,
+            height,
+            depth,
+            count_a,
+            count_b,
+            tex_format,
+            swizzle_control,
+            cubemap_marker,
+            flags,
+        ) = unpack_from("<IihhhBBiiIi", data, 0)
         if magic != TEX_MAGIC:
             return False
-        self.header.magic = magic
-        self.header.version = h.read_int32()
-        self.header.width = h.read_int16()
-        self.header.height = h.read_int16()
-        self.header.depth = h.read_int16()
+
+        header = self.header
+        header.magic = magic
+        header.version = version
+        header.width = width
+        header.height = height
+        header.depth = depth
+        header.format = tex_format
+        header.swizzle_control = swizzle_control
+        header.cubemap_marker = cubemap_marker
+        header.flags = flags
         serializer_version = get_serializer_version(self.header.version, self._file_version_hint)
         if serializer_version >= SERIALIZER_MHRISE:
-            self.header.image_count = h.read_uint8()
-            self.header.mip_header_size = h.read_uint8()
-            self.header.mip_count = self.header.mip_header_size // 16
-            if self.header.image_count == 0 and self.header.mip_count > 0:
-                self.header.image_count = 1
+            header.image_count = count_a
+            header.mip_header_size = count_b
+            header.mip_count = header.mip_header_size // 16
+            if header.image_count == 0 and header.mip_count > 0:
+                header.image_count = 1
+            (
+                header.swizzle_height_depth,
+                header.swizzle_width,
+                header.null1,
+                header.seven,
+                header.one,
+            ) = unpack_from("<BBHHH", data, 32)
+            pos = 40
         else:
-            self.header.mip_count = h.read_uint8()
-            self.header.image_count = h.read_uint8()
-        self.header.format = h.read_int32()
-        self.header.swizzle_control = h.read_int32()
-        self.header.cubemap_marker = h.read_uint32()
-        self.header.flags = h.read_int32()
-        if serializer_version >= SERIALIZER_MHRISE:
-            self.header.swizzle_height_depth = h.read_uint8()
-            self.header.swizzle_width = h.read_uint8()
-            self.header.null1 = h.read_uint16()
-            self.header.seven = h.read_uint16()
-            self.header.one = h.read_uint16()
+            header.mip_count = count_a
+            header.image_count = count_b
+            pos = 32
 
-        total = self.header.mip_count * self.header.image_count
-        self.mips.clear()
+        total = header.mip_count * header.image_count
+        self.mips = [MipHeader(*unpack_from("<qii", data, pos + index * 16)) for index in range(total)]
         self.packed_mips.clear()
-        for _ in range(total):
-            offset = h.read_int64()
-            pitch = h.read_int32()
-            size = h.read_int32()
-            self.mips.append(MipHeader(offset, pitch, size))
 
         if self.uses_packed_mips and self.mips:
-            if self._read_packed_mip_headers(h, total):
-                self._ensure_packed_mips_are_uncompressed()
+            self._read_packed_mip_headers(total)
 
         return True
 
-    def _read_packed_mip_headers(self, h: BinaryHandler, total: int) -> bool:
-        h.seek(self.mips[0].offset)
-        candidate: List[PackedMipHeader] = []
-        for _ in range(total):
-            candidate.append(PackedMipHeader(size=h.read_int32(), offset=h.read_int32()))
+    def _read_packed_mip_headers(self, total: int) -> bool:
+        table_offset = self.mips[0].offset
+        table_size = total * 8
+        if table_offset < 0 or table_offset + table_size > len(self._data):
+            return False
 
-        packed_payload_offset = self.mips[0].offset + (total * 8)
+        unpack_from = struct.unpack_from
+        candidate = [PackedMipHeader(*unpack_from("<ii", self._data, table_offset + index * 8)) for index in range(total)]
+        packed_payload_offset = table_offset + table_size
         max_payload = len(self._data) - packed_payload_offset
         if max_payload < 0:
             return False
 
         prev_offset = -1
-        for i, cmip in enumerate(candidate):
-            if cmip.size < 0 or cmip.offset < 0:
-                return False
-            if i == 0 and cmip.offset != 0:
-                return False
-            if cmip.offset < prev_offset:
-                return False
-            if cmip.offset + cmip.size > max_payload:
+        for index, cmip in enumerate(candidate):
+            if (
+                cmip.size < 0
+                or cmip.offset < 0
+                or (index == 0 and cmip.offset != 0)
+                or cmip.offset < prev_offset
+                or cmip.offset + cmip.size > max_payload
+            ):
                 return False
             prev_offset = cmip.offset
 
         self.packed_mips = candidate
         return True
-
-    def _ensure_packed_mips_are_uncompressed(self) -> None:
-        if not self.packed_mips:
-            return
-
-        for i, (mip, cmip) in enumerate(zip(self.mips, self.packed_mips)):
-            src_start = self._packed_payload_offset + cmip.offset
-            src_end = src_start + cmip.size
-            chunk = self._data[src_start:src_end]
-
-            if len(chunk) >= 2 and int.from_bytes(chunk[:2], "little") == GDEFLATE_MAGIC:
-                raise RuntimeError(
-                    f"TEX file contains gdeflate-compressed mip data (mip {i}); external helper required"
-                )
 
     def _read_mip_bytes(self, idx: int, mh: MipHeader) -> bytes:
         if not self.packed_mips:
@@ -240,7 +240,11 @@ class TexFile:
         cmip = self.packed_mips[idx]
         start = self._packed_payload_offset + cmip.offset
         end = start + cmip.size
-        return self._data[start:end]
+        chunk = self._data[start:end]
+        if is_gdeflate_payload(chunk):
+            expected_size = gdeflate_uncompressed_size(chunk, mh.size)
+            return decompress_gdeflate(chunk, expected_size)[: mh.size]
+        return chunk[: mh.size]
 
     def export_header_dict(self) -> dict:
         h = self.header
