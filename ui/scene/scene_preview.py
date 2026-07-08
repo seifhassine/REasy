@@ -107,6 +107,7 @@ from OpenGL.GL import (
     glTexCoordPointer,
     glTexEnvi,
     glCompressedTexImage2D,
+    glTexImage2D,
     glTexParameteri,
     glTranslatef,
     glVertex3f,
@@ -115,7 +116,7 @@ from OpenGL.GL import (
 )
 from OpenGL.GLU import gluPerspective, gluProject
 from PySide6.QtCore import QEvent, QTimer, Qt, Signal
-from PySide6.QtGui import QCursor, QSurfaceFormat
+from PySide6.QtGui import QCursor, QImage, QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel, QSpinBox, QToolButton, QVBoxLayout, QWidget
 
@@ -1569,6 +1570,21 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glCompressedTexImage2D(GL_TEXTURE_2D, 0, texture.gl_format, texture.width, texture.height, 0, texture.data)
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+    @staticmethod
+    def _upload_qimage_texture(texture_id: int, image):
+        if image is None or image.isNull():
+            return
+        rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
+        bits = rgba.constBits()
+        if hasattr(bits, "setsize"):
+            bits.setsize(rgba.sizeInBytes())
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgba.width(), rgba.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes(bits))
         glBindTexture(GL_TEXTURE_2D, 0)
 
     def _cleanup_gl(self, context=None):
