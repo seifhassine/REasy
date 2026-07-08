@@ -295,6 +295,7 @@ def _read_entry_raw(
     out_stream: BinaryIO,
     *,
     chunk_table: Sequence[PakChunkEntry] = (),
+    zstd_decompressor=None,
 ) -> None:
     if _is_chunked_entry(entry, chunk_table):
         remaining = int(entry.compressed_size)
@@ -350,45 +351,63 @@ def _read_entry_raw(
         size = sr[0]
     
     comp_view = memoryview(data)[:size]
-    if entry.compression == 1:  # Deflate
-        import zlib
+    try:
+        if entry.compression == 1:
+            import zlib
 
-        d = zlib.decompressobj() 
-        try:
-            # Feed in moderate chunks to limit peak memory
-            mv = comp_view
-            step = 256 * 1024
-            pos = 0
-            while pos < len(mv):
-                out = d.decompress(mv[pos : pos + step])
-                if out:
-                    out_stream.write(out)
-                pos += step
-            tail = d.flush()
-            if tail:
-                out_stream.write(tail)
-        except zlib.error:
-            # Fallback to raw DEFLATE stream
-            d = zlib.decompressobj(-zlib.MAX_WBITS)
-            mv = comp_view
-            step = 256 * 1024
-            pos = 0
-            while pos < len(mv):
-                out = d.decompress(mv[pos : pos + step])
-                if out:
-                    out_stream.write(out)
-                pos += step
-            tail = d.flush()
-            if tail:
-                out_stream.write(tail)
-    elif entry.compression == 2:  # Zstd
-        dctx = _ZSTD_CTX or zstd.ZstdDecompressor()
-        bio = io.BytesIO(bytes(comp_view))
-        dctx.copy_stream(bio, out_stream)
-    else:
-        out_stream.write(comp_view.tobytes())
+            pos = out_stream.tell()
+            d = zlib.decompressobj()
+            try:
+                mv = comp_view
+                step = 256 * 1024
+                p = 0
+                while p < len(mv):
+                    out = d.decompress(mv[p : p + step])
+                    if out:
+                        out_stream.write(out)
+                    p += step
+                tail = d.flush()
+                if tail:
+                    out_stream.write(tail)
+            except zlib.error:
+                out_stream.seek(pos)
+                out_stream.truncate(pos)
+                d = zlib.decompressobj(-zlib.MAX_WBITS)
+                try:
+                    mv = comp_view
+                    step = 256 * 1024
+                    p = 0
+                    while p < len(mv):
+                        out = d.decompress(mv[p : p + step])
+                        if out:
+                            out_stream.write(out)
+                        p += step
+                    tail = d.flush()
+                    if tail:
+                        out_stream.write(tail)
+                except zlib.error:
+                    out_stream.seek(pos)
+                    out_stream.truncate(pos)
+                    dctx = zstd_decompressor or _ZSTD_CTX or zstd.ZstdDecompressor()
+                    dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
+        elif entry.compression == 2:
+            pos = out_stream.tell()
+            dctx = zstd_decompressor or _ZSTD_CTX or zstd.ZstdDecompressor()
+            try:
+                dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
+            except Exception:
+                out_stream.seek(pos)
+                out_stream.truncate(pos)
+                import zlib
 
-    comp_view.release()
+                try:
+                    out_stream.write(zlib.decompress(bytes(comp_view)))
+                except zlib.error:
+                    out_stream.write(zlib.decompress(bytes(comp_view), -zlib.MAX_WBITS))
+        else:
+            out_stream.write(comp_view.tobytes())
+    finally:
+        comp_view.release()
 
 try:
     import zstandard as _zstd_mod

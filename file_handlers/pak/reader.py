@@ -18,14 +18,33 @@ from .pakfile import (
     PakFile,
     PakEntry,
     _read_entry_raw,
-    _decrypt_pak_entry_data,
     _decrypt_resource,
+    _decrypt_pak_entry_data,
     _read_chunk_table,
     PAK_FLAG_ENTRY_TABLE_KEY,
     PAK_FLAG_CHUNK_TABLE,
     _is_chunked_entry,
     _skip_optional_header_sections,
 )
+
+_ZSTD_MAGIC = b"\x28\xb5\x2f\xfd"
+
+
+def _decompress_with_alternate_codec(e: PakEntry, data: bytes, zstd_decompressor=None) -> bytes:
+    if e.compression == 1:
+        dctx = zstd_decompressor or zstd.ZstdDecompressor()
+        return dctx.decompress(data)
+    if e.compression == 2:
+        try:
+            return zlib.decompress(data)
+        except zlib.error:
+            try:
+                return zlib.decompress(data, -zlib.MAX_WBITS)
+            except zlib.error:
+                dctx = zstd_decompressor or zstd.ZstdDecompressor()
+                return dctx.decompress(data)
+    return data
+
 
 def _normalize_for_hash(path: str) -> str:
     s = path.strip().replace("\\", "/").lower()
@@ -590,28 +609,35 @@ class CachedPakReader(PakReader):
                         else:
                             comp_size = int(e.compressed_size) if e.compressed_size else int(e.decompressed_size)
                             data = pak_file.read(comp_size)
-                            
+
                             if e.encryption != 0:
                                 sr = [len(data)]
                                 data = _decrypt_resource(data, sr)
+
                             if e.compression == 1:
                                 try:
                                     data = zlib.decompress(data)
                                 except zlib.error:
-                                    data = zlib.decompress(data, -zlib.MAX_WBITS)
-                            elif e.compression == 2 and resources.zstd_decompressor:
-                                data = resources.zstd_decompressor.decompress(data)
-                            
+                                    try:
+                                        data = zlib.decompress(data, -zlib.MAX_WBITS)
+                                    except zlib.error:
+                                        data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
+                            elif e.compression == 2:
+                                if data.startswith(_ZSTD_MAGIC):
+                                    data = (resources.zstd_decompressor or zstd.ZstdDecompressor()).decompress(data)
+                                else:
+                                    data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
+
                             if is_unknown and data:
                                 ext = guess_extension_from_header(data[:64])
                                 if ext and not target_outp.suffix:
                                     target_outp = target_outp.with_suffix("." + ext)
-                            
+
                             parent = target_outp.parent
                             if parent not in resources.created_dirs:
                                 parent.mkdir(parents=True, exist_ok=True)
                                 resources.created_dirs.add(parent)
-                            
+
                             with open(target_outp, "wb") as out_file:
                                 out_file.write(data)
                         
