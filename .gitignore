@@ -45,3 +45,13 @@ Thumbs.db
 resources/i18n/REasy_zh-CN.qm
 secrets
 tests/test_scn_scene_editing.py
+extracted_mesh_samples/**
+MESH.bt
+Murmur3.1sc
+tools/audit_extracted_mesh_samples.py
+tools/audit_mesh_blendshape_remaps.py
+tools/audit_mesh_external_buffers.py
+tools/check_pak_codec_metadata.py
+tools/dump_mesh_blendshape_remap_case.py
+tools/extract_all_mesh_samples.py
+tools/validate_mesh_bt_python.py
