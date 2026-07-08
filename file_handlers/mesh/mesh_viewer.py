@@ -508,7 +508,10 @@ class _MeshGLWidget(ScenePreviewWidget):
         return centers, offsets, texcoords
 
     def _after_gl_initialized(self):
-        self._sync_bone_label_gl_resources()
+        try:
+            self._sync_bone_label_gl_resources()
+        except Exception as exc:
+            print(f"Bone label GL setup failed: {exc}")
 
     def _after_scene_draw(self):
         self._draw_bone_labels_gl()
@@ -550,6 +553,9 @@ class _MeshGLWidget(ScenePreviewWidget):
             or self._bone_label_shader is None
             or self._bone_label_offset_attr < 0
             or self._bone_label_vertex_count <= 0
+            or self._bone_label_centers_vbo is None
+            or self._bone_label_offsets_vbo is None
+            or self._bone_label_texcoords_vbo is None
         ):
             return
         w = max(1, self.width())

@@ -55,6 +55,7 @@ def get_mesh_version(internal_version: int, file_version: int = 0) -> MeshMainVe
         (230403828, 230110883): MeshMainVersion.SF6,
         (230517984, 231011879): MeshMainVersion.DD2_OLD,
         (230517984, 240423143): MeshMainVersion.DD2,
+        (230727984, 240306278): MeshMainVersion.KUNITSUGAMI,
         (240704828, 240827123): MeshMainVersion.ONIMUSHA,
         (240704828, 241111606): MeshMainVersion.MHWILDS,
         (250707828, 250925211): MeshMainVersion.PRAGMATA,
@@ -74,6 +75,7 @@ def get_mesh_version(internal_version: int, file_version: int = 0) -> MeshMainVe
         220705151: MeshMainVersion.SF6,
         230403828: MeshMainVersion.SF6,
         230517984: MeshMainVersion.DD2,
+        230727984: MeshMainVersion.KUNITSUGAMI,
         240704828: MeshMainVersion.MHWILDS,
         250707828: MeshMainVersion.PRAGMATA,
         250904410: MeshMainVersion.RE9,
@@ -287,7 +289,11 @@ class Header:
 @dataclass
 class StreamingMeshEntry:
     start: int
-    end: int
+    size: int
+
+    @property
+    def end(self) -> int:
+        return self.start + self.size
 
 
 @dataclass
@@ -315,7 +321,7 @@ class MeshStreamingInfo:
         h.seek(self.entry_offset)
         for e in self.entries:
             h.write_uint32(e.start)
-            h.write_uint32(e.end)
+            h.write_uint32(e.size)
         h.seek(cur)
 
 
@@ -461,8 +467,11 @@ class MeshBuffer:
         if self.version < MeshMainVersion.SF6:
             return
         header_size = 80 if self.version >= MeshMainVersion.PRAGMATA else 64
-        for stream_idx, _stream_entry in enumerate(streaming_info.entries, start=1):
-            h.seek(header_base + (stream_idx * header_size))
+        header_pos = header_base + header_size
+        for _stream_entry in streaming_info.entries:
+            if self.version >= MeshMainVersion.MHWILDS and _stream_entry.size <= 0:
+                continue
+            h.seek(header_pos)
             element_headers_offset = h.read_int64()
             vertex_buffer_offset = h.read_int64()
             h.read_int64()
@@ -486,8 +495,8 @@ class MeshBuffer:
             else:
                 h.read_int32()
                 h.read_int32()
-                h.read_int64()
                 buffer_index = h.read_int32()
+                h.read_int64()
             vertex_elements: List[MeshBufferItemHeader] = []
             with h.seek_temp(element_headers_offset):
                 for _ in range(main_vertex_element_count):
@@ -508,6 +517,7 @@ class MeshBuffer:
                 buffer_index=buffer_index,
                 vertex_elements=vertex_elements,
             )
+            header_pos += header_size
 
     def finalize_payloads(self) -> None:
         for buffer_index, payload in self.buffer_payloads.items():
@@ -568,8 +578,8 @@ class MeshBuffer:
             else:
                 self.blend_shape_offset = h.read_int32()
                 self.shapekey_weight_buffer_size = h.read_int32()
-                h.read_int64()
                 self.buffer_index = h.read_int32()
+                h.read_int64()
         else:
             self.blend_shape_offset = h.read_int32()
 
@@ -1215,7 +1225,7 @@ class MPLYParser:
         self.h.seek(self.header.meshlet_bvh_offset + 32)
         counts = []
         for _ in range(8):
-            if self.header.format_version >= MeshMainVersion.MHWILDS:
+            if self.header.format_version == MeshMainVersion.KUNITSUGAMI or self.header.format_version >= MeshMainVersion.MHWILDS:
                 counts.append(self.h.read_uint16())
                 self.h.skip(2)
             else:
