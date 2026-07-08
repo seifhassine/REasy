@@ -104,6 +104,7 @@ void main()
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
     STREAMING_SETTINGS_KEY = "mesh_viewer_prefer_streaming_tex"
+    VERTEX_COLORS_SETTINGS_KEY = "mesh_viewer_use_vertex_colors"
 
     def __init__(self, handler):
         super().__init__()
@@ -128,7 +129,11 @@ class MeshViewer(QWidget):
         mesh = getattr(self.handler, "mesh", None)
         if mesh and getattr(mesh, "mesh_buffer", None) and mesh.mesh_buffer.positions:
             try:
-                self.gl_widget = _MeshGLWidget(mesh, self._settings_store())
+                self.gl_widget = _MeshGLWidget(
+                    mesh,
+                    self._settings_store(),
+                    use_vertex_colors=self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY),
+                )
                 self.preview_splitter.insertWidget(0, self.gl_widget)
                 self.preview_splitter.setStretchFactor(0, 4)
                 self.preview_splitter.setStretchFactor(1, 2)
@@ -144,9 +149,14 @@ class MeshViewer(QWidget):
         self.mdf_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         top.addWidget(self.mdf_label, 1)
         self.streaming_check = QCheckBox("Prefer streaming TEX")
-        self.streaming_check.setChecked(self._streaming_preference())
+        self.streaming_check.setChecked(self._setting_bool(self.STREAMING_SETTINGS_KEY))
         self.streaming_check.toggled.connect(self._on_streaming_toggled)
         top.addWidget(self.streaming_check)
+        self.vertex_colors_check = QCheckBox("Vertex colors")
+        self.vertex_colors_check.setToolTip("Multiply textured preview by mesh vertex colors")
+        self.vertex_colors_check.setChecked(self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY))
+        self.vertex_colors_check.toggled.connect(self._on_vertex_colors_toggled)
+        top.addWidget(self.vertex_colors_check)
         self.panel_toggle_btn = QPushButton("Show texture panel")
         self.panel_toggle_btn.clicked.connect(self._toggle_material_panel)
         top.addWidget(self.panel_toggle_btn)
@@ -186,16 +196,24 @@ class MeshViewer(QWidget):
         settings = getattr(app, "settings", None) if app is not None else None
         return settings if isinstance(settings, dict) else None
 
-    def _streaming_preference(self) -> bool:
+    def _setting_bool(self, key: str) -> bool:
         settings = self._settings_store()
-        return bool(settings.get(self.STREAMING_SETTINGS_KEY, False)) if settings is not None else False
+        return bool(settings.get(key, False)) if settings is not None else False
 
-    def _on_streaming_toggled(self, checked: bool):
+    def _save_bool_setting(self, key: str, value: bool):
         settings = self._settings_store()
         if settings is not None:
-            settings[self.STREAMING_SETTINGS_KEY] = bool(checked)
+            settings[key] = bool(value)
             save_settings(settings)
+
+    def _on_streaming_toggled(self, checked: bool):
+        self._save_bool_setting(self.STREAMING_SETTINGS_KEY, checked)
         self._reload_materials()
+
+    def _on_vertex_colors_toggled(self, checked: bool):
+        self._save_bool_setting(self.VERTEX_COLORS_SETTINGS_KEY, checked)
+        if self.gl_widget:
+            self.gl_widget.set_vertex_colors_enabled(checked)
 
     def _reload_materials(self):
         self._resolved_mdf, self._material_bindings = MeshMaterialResolver.resolve_for_handler(
@@ -401,7 +419,7 @@ class MeshViewer(QWidget):
 
 
 class _MeshGLWidget(ScenePreviewWidget):
-    def __init__(self, mesh, settings: dict | None = None):
+    def __init__(self, mesh, settings: dict | None = None, *, use_vertex_colors: bool = False):
         self.mesh = mesh
         self._bone_label_texture_id = None
         self._bone_label_centers_vbo = None
@@ -418,6 +436,7 @@ class _MeshGLWidget(ScenePreviewWidget):
             initial_distance=3.0,
             background=(0.1, 0.1, 0.1, 1.0),
         )
+        self.set_vertex_colors_enabled(use_vertex_colors, refresh=False)
         self.set_scene(build_mesh_scene(mesh, key="mesh"))
         self._bone_labels, self._bone_points = self._build_bone_label_points()
         self._bone_label_atlas, bone_label_rects = self._build_bone_label_atlas()
@@ -427,6 +446,15 @@ class _MeshGLWidget(ScenePreviewWidget):
             self._bone_label_texcoords,
         ) = self._build_bone_label_quad_arrays(bone_label_rects)
         self._bone_label_vertex_count = len(self._bone_label_centers)
+
+    def set_vertex_colors_enabled(self, enabled: bool, *, refresh: bool = True):
+        color_source = "vertex" if enabled else ""
+        if self.color_source == color_source:
+            return
+        self.color_source = color_source
+        self._colors_dirty = True
+        if refresh:
+            self.update()
 
     def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
         joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
