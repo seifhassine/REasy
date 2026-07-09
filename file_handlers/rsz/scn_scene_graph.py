@@ -11,6 +11,7 @@ from file_handlers.fol.fol_file import FolFile, FolTransform
 from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     BoolData,
+    OBBData,
     ObjectData,
     PositionData,
     ResourceData,
@@ -26,7 +27,9 @@ VIA_RENDER_MESH = "via.render.Mesh"
 VIA_RENDER_COMPOSITE_MESH = "via.render.CompositeMesh"
 VIA_RENDER_COMPOSITE_MESH_INSTANCE_GROUP = "via.render.CompositeMeshInstanceGroup"
 VIA_RENDER_COMPOSITE_MESH_TRANSFORM_CONTROLLER = "via.render.CompositeMeshTransformController"
+VIA_RENDER_LIGHT_PROBES = "via.render.LightProbes"
 VIA_LANDSCAPE_FOLIAGE = "via.landscape.Foliage"
+PRB9_LPRB6_LIGHT_PROBE_GAMES = frozenset({"DD2", "MHRise", "RE2RT", "RE3RT", "RE4", "RE7RT", "RE8", "SF6"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +145,90 @@ class ScnRenderableMesh:
         )
 
 
+@dataclass(eq=False, slots=True)
+class ScnOrientedBox:
+    field_data: OBBData
+    axes: tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]
+    center: tuple[float, float, float]
+    extent: tuple[float, float, float]
+
+    def corners(self) -> np.ndarray:
+        center = np.asarray(self.center, dtype=np.float32)
+        axes = np.asarray(self.axes, dtype=np.float32).reshape(3, 3)
+        extent = np.asarray(self.extent, dtype=np.float32)
+        x, y, z = axes * extent[:, np.newaxis]
+        return np.asarray(
+            (
+                center + x + y + z,
+                center + x + y - z,
+                center + x - y - z,
+                center + x - y + z,
+                center - x + y + z,
+                center - x + y - z,
+                center - x - y - z,
+                center - x - y + z,
+            ),
+            dtype=np.float32,
+        )
+
+    def is_default_unit_box(self) -> bool:
+        return (
+            np.allclose(np.asarray(self.axes, dtype=np.float32), np.identity(3, dtype=np.float32))
+            and np.allclose(np.asarray(self.center, dtype=np.float32), np.zeros(3, dtype=np.float32))
+            and np.allclose(np.asarray(self.extent, dtype=np.float32), np.ones(3, dtype=np.float32))
+        )
+
+    def matrix(self) -> np.ndarray:
+        matrix = np.identity(4, dtype=np.float32)
+        axes = np.asarray(self.axes, dtype=np.float32).reshape(3, 3)
+        extent = np.asarray(self.extent, dtype=np.float32).reshape(3)
+        matrix[:3, :3] = (axes * extent[:, np.newaxis]).T
+        matrix[:3, 3] = np.asarray(self.center, dtype=np.float32)
+        return matrix
+
+    def set_from_matrix(self, matrix: np.ndarray) -> None:
+        matrix = np.asarray(matrix, dtype=np.float32).reshape(4, 4)
+        columns = matrix[:3, :3].T
+        lengths = np.linalg.norm(columns, axis=1)
+        axes = np.zeros((3, 3), dtype=np.float32)
+        np.divide(columns, lengths[:, np.newaxis], out=axes, where=lengths[:, np.newaxis] > 1e-6)
+        fallback_axes = np.asarray(self.axes, dtype=np.float32).reshape(3, 3)
+        fallback_extent = np.asarray(self.extent, dtype=np.float32).reshape(3)
+        invalid = ~np.isfinite(axes).all(axis=1) | (lengths <= 1e-6)
+        if np.any(invalid):
+            axes[invalid] = fallback_axes[invalid]
+            lengths[invalid] = fallback_extent[invalid]
+        self.axes = tuple(tuple(float(component) for component in row) for row in axes)
+        self.center = tuple(float(component) for component in matrix[:3, 3])
+        self.extent = tuple(float(max(0.0, component)) for component in lengths)
+
+    def write_field(self) -> None:
+        raw = np.asarray(self.field_data.values, dtype=np.float32).reshape(5, 4)
+        raw[:3, :3] = np.asarray(self.axes, dtype=np.float32).reshape(3, 3)
+        raw[3, :3] = np.asarray(self.center, dtype=np.float32).reshape(3)
+        raw[4, :3] = np.asarray(self.extent, dtype=np.float32).reshape(3)
+        self.field_data.values = [float(value) for value in raw.reshape(-1)]
+
+
+@dataclass(eq=False, slots=True)
+class ScnLightProbeBinding:
+    document_instance_id: str
+    source_object_id: ScnObjectId
+    source_component_id: ScnComponentId
+    lprb_path: str
+    prb_path: str
+    obbs: list[ScnOrientedBox] = field(default_factory=list)
+
+    @property
+    def key(self) -> str:
+        return (
+            f"{self.document_instance_id}:"
+            f"{self.source_object_id.document_id}:"
+            f"{self.source_object_id.local_object_id}:"
+            f"{self.source_component_id.instance_id}:light_probes"
+        )
+
+
 @dataclass(slots=True)
 class ScnSceneDiagnostic:
     severity: str
@@ -169,6 +256,7 @@ class ScnSceneGraph:
     document_instances: OrderedDict[str, ScnDocumentInstance] = field(default_factory=OrderedDict)
     links: list[ScnSceneLink] = field(default_factory=list)
     renderables: list[ScnRenderableMesh] = field(default_factory=list)
+    light_probes: list[ScnLightProbeBinding] = field(default_factory=list)
     diagnostics: list[ScnSceneDiagnostic] = field(default_factory=list)
 
     @property
@@ -275,6 +363,28 @@ def _resource_string_fields(fields: Mapping[str, object]) -> list[tuple[str, str
         for name, value in fields.items()
         if isinstance(value, (ResourceData, StringData))
     ]
+
+
+def _obb_fields(fields: Mapping[str, object]) -> list[ScnOrientedBox]:
+    boxes: list[ScnOrientedBox] = []
+    for value in fields.values():
+        if not isinstance(value, OBBData):
+            continue
+        raw = np.asarray(value.values, dtype=np.float32).reshape(5, 4)
+        axes = raw[:3, :3]
+        center = raw[3, :3]
+        extent = raw[4, :3]
+        if not np.isfinite(raw).all():
+            continue
+        boxes.append(
+            ScnOrientedBox(
+                field_data=value,
+                axes=tuple(tuple(float(component) for component in row) for row in axes),
+                center=tuple(float(component) for component in center),
+                extent=tuple(float(max(0.0, component)) for component in extent),
+            )
+        )
+    return boxes
 
 
 def _object_ref_id(value) -> int:
@@ -577,6 +687,34 @@ class ScnSceneGraphBuilder:
                     document_instance_id,
                     base_world_matrix,
                 )
+            elif component.type_name == VIA_RENDER_LIGHT_PROBES:
+                self._append_light_probe_binding(graph, document, source_object, component, document_instance_id)
+
+    def _append_light_probe_binding(self, graph, document, source_object, component, document_instance_id) -> None:
+        if self.game_version not in PRB9_LPRB6_LIGHT_PROBE_GAMES:
+            return
+        values = [value for _name, value in _resource_string_fields(component.fields) if value]
+        if len(values) < 2:
+            self._warn_component(
+                graph,
+                "missing_light_probe_paths",
+                f"via.render.LightProbes component {component.id.instance_id} has fewer than two resource/string paths.",
+                document,
+                document_instance_id,
+                source_object,
+                component,
+            )
+            return
+        graph.light_probes.append(
+            ScnLightProbeBinding(
+                document_instance_id=document_instance_id,
+                source_object_id=source_object.id,
+                source_component_id=component.id,
+                lprb_path=normalize_scene_path(values[0]),
+                prb_path=normalize_scene_path(values[1]),
+                obbs=_obb_fields(component.fields),
+            )
+        )
 
     def _append_mesh_renderable(self, graph, document, source_object, component, document_instance_id) -> None:
         mesh_path, mdf_path = self._mesh_paths_from_fields(component.fields)

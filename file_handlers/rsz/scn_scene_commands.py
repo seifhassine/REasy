@@ -6,7 +6,7 @@ import numpy as np
 
 from .scn_document_store import ScnDocumentStore
 from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
-from .scn_scene_graph import ScnObjectId, ScnRenderableMesh, ScnSceneGraph, ScnTransform
+from .scn_scene_graph import ScnLightProbeBinding, ScnObjectId, ScnRenderableMesh, ScnSceneGraph, ScnTransform
 
 
 def _identity() -> np.ndarray:
@@ -44,13 +44,19 @@ class TransformSelectionCommand:
         result = TransformEditResult()
         for graph in self.graphs:
             by_key = {renderable.key: renderable for renderable in graph.renderables}
+            probes_by_key = {binding.key: binding for binding in graph.light_probes}
             changed_objects: set[ScnObjectId] = set()
             dirty_documents: set[str] = set()
             object_targets: dict[ScnObjectId, tuple[ScnRenderableMesh, np.ndarray]] = {}
             composite_targets: list[tuple[ScnRenderableMesh, np.ndarray]] = []
+            light_probe_targets: list[tuple[ScnLightProbeBinding, np.ndarray]] = []
             for key, matrix in self.matrices.items():
                 renderable = by_key.get(key)
                 if renderable is None:
+                    binding = probes_by_key.get(key)
+                    if binding is not None:
+                        result.handled = True
+                        light_probe_targets.append((binding, matrix))
                     continue
                 result.handled = True
                 if renderable.source_kind == "foliage":
@@ -83,6 +89,14 @@ class TransformSelectionCommand:
                     dirty_documents.add(renderable.source_object_id.document_id)
                 except Exception as exc:
                     result.skipped[renderable.key] = str(exc)
+            for binding, _matrix in light_probe_targets:
+                try:
+                    changed = self._write_light_probe_obb(binding)
+                    if changed:
+                        result.changed_fields.extend(changed)
+                        dirty_documents.add(binding.source_object_id.document_id)
+                except Exception as exc:
+                    result.skipped[binding.key] = str(exc)
             if changed_objects:
                 result.matrices.update(sync_graph_transforms(graph, object_ids=changed_objects))
             result.dirty_documents.update(dirty_documents)
@@ -128,6 +142,16 @@ class TransformSelectionCommand:
         renderable.document_world_matrix = (owner_matrix @ new_transform.local_matrix).astype(np.float32)
         renderable.world_matrix = (instance.base_world_matrix @ renderable.document_world_matrix).astype(np.float32)
         return TransformEditRecord(graph, renderable.key, renderable.source_object_id, renderable.source_transform_instance_id, adapter.transform_fields(), old_transform, new_transform)
+
+    @staticmethod
+    def _write_light_probe_obb(binding: ScnLightProbeBinding) -> tuple[object, ...]:
+        changed = []
+        for box in binding.obbs:
+            if box.is_default_unit_box():
+                continue
+            box.write_field()
+            changed.append(box.field_data)
+        return tuple(changed)
 
     def _apply_records(self, records: list[TransformEditRecord], *, old: bool) -> TransformEditResult:
         result = TransformEditResult()

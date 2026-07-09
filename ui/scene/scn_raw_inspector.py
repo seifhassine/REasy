@@ -38,7 +38,7 @@ class ScnRawInspector(QFrame):
         self.body_layout.setContentsMargins(0, 0, 0, 0)
         self.body_layout.setSpacing(0)
         layout.addWidget(self.body, 1)
-        self.clear("Select a mesh or foliage object to edit its raw SCN node here.")
+        self.clear("Select a mesh, foliage, or light probe object to edit its raw SCN node here.")
 
     def set_record(self, document, scene_object, renderable) -> None:
         instance_id = scene_object.instance_id if scene_object else renderable.source_component_id.instance_id
@@ -48,7 +48,7 @@ class ScnRawInspector(QFrame):
         self.title.setText(f"Raw SCN | {raw_name} | ID {instance_id}")
         QTimer.singleShot(0, self, lambda iid=instance_id: select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes))
 
-    def clear(self, text: str = "Select a mesh or foliage object to edit its raw SCN node here.") -> None:
+    def clear(self, text: str = "Select a mesh, foliage, or light probe object to edit its raw SCN node here.") -> None:
         self._reset()
         self.title.setText("Raw SCN")
         hint = QLabel(text, self.body)

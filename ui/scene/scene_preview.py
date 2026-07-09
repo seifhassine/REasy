@@ -45,6 +45,7 @@ from OpenGL.GL import (
     GL_NORMALIZE,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_POSITION,
+    GL_POINTS,
     GL_PROJECTION,
     GL_PROJECTION_MATRIX,
     GL_QUADS,
@@ -96,6 +97,7 @@ from OpenGL.GL import (
     glMultMatrixf,
     glNormalPointer,
     glPixelStorei,
+    glPointSize,
     glPolygonMode,
     glPopMatrix,
     glPushMatrix,
@@ -132,6 +134,7 @@ from .scene_buffers import (
     scene_index_buffers,
     scene_key_index_buffers,
 )
+from .lightprobe_preview import SceneLightProbeSet
 from .scene_model import SceneDrawMesh
 from .viewport_overlay import ViewportOverlayManager
 
@@ -153,9 +156,19 @@ class _GlBufferSet:
     lines_ready: bool = False
 
 
+@dataclass(slots=True)
+class _EditorLight:
+    position: np.ndarray
+    radius: float
+    intensity: float
+    color: tuple[float, float, float] = (1.0, 0.9, 0.72)
+    enabled: bool = True
+
+
 GIZMO_AXES = np.identity(3, dtype=np.float32)
 GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))
 GIZMO_BOX_FACES = ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0))
+BOX_EDGES = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
 GIZMO_PLANES = ((0, 1, (1.0, 0.85, 0.12, 0.24)), (0, 2, (0.9, 0.15, 1.0, 0.22)), (1, 2, (0.15, 0.8, 1.0, 0.22)))
 IDENTITY4 = np.identity(4, dtype=np.float32)
 HOVER_PICK_INTERVAL = 1.0 / 15.0
@@ -174,6 +187,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         "mesh_viewer_line_width": 1.5,
         "mesh_viewer_ambient": 0.35,
         "mesh_viewer_diffuse": 0.65,
+        "scene_probe_exposure": 0.12,
+        "scene_probe_viz_mode": "all",
+        "scene_probe_viz_points": 12000,
         "mesh_viewer_show_bones": False,
         "scene_render_mode": "solid",
         "scene_gizmo_mode": "position",
@@ -185,7 +201,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         "scene_camera_slow": 0.25,
     }
     WIREFRAME_MODES = ("off", "polygon", "lines_depth", "lines_overlay")
-    LIGHTING_MODES = ("off", "fixed", "software")
+    LIGHTING_MODES = ("off", "fixed", "software", "probes")
+    PROBE_VIZ_MODES = ("off", "volumes", "points", "all")
+    PROBE_AUTO_ENABLE_VERTEX_LIMIT = 120000
+
     def __init__(
         self,
         parent=None,
@@ -249,6 +268,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._material_tints: dict[str, tuple[float, float, float, float]] = {}
         self._two_sided_materials: set[str] = set()
         self._hidden_keys: set[str] = set()
+        self._editor_lights: list[_EditorLight] = []
+        self._active_editor_light = -1
         self._gl_cleanup_context = None
         self._needs_gl_upload = False
 
@@ -258,10 +279,23 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 60, 0, 240)
         self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", "off", self.WIREFRAME_MODES)
         self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", "fixed", self.LIGHTING_MODES)
+        self._light_probe_set: SceneLightProbeSet | None = None
+        self._light_probe_status = ""
+        self._light_probe_key = ""
+        self._light_probe_obbs: list[object] = []
+        self._probe_viz_candidate_indices_cache_key = None
+        self._probe_viz_candidate_indices_cache: np.ndarray | None = None
+        self._probe_viz_point_cache_key = None
+        self._probe_viz_point_cache: tuple[np.ndarray, np.ndarray] | None = None
         self.line_width = self._setting_float("mesh_viewer_line_width", 1.5, 0.5, 8.0)
         self.color_source = "vertex"
         self.ambient = self._setting_float("mesh_viewer_ambient", 0.35, 0.0, 1.0)
         self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.65, 0.0, 1.0)
+        self.probe_exposure = self._setting_float("scene_probe_exposure", 0.12, 0.01, 2.0)
+        self.probe_viz_mode = self._setting_choice("scene_probe_viz_mode", "all", self.PROBE_VIZ_MODES)
+        self.probe_viz_points = self._setting_int("scene_probe_viz_points", 12000, 100, 50000)
+        self.editor_light_intensity = 1.35
+        self.editor_light_radius_factor = 0.18
         self.show_bone_labels = self._setting_bool("mesh_viewer_show_bones", False)
         self.camera_speed = self._setting_float("scene_camera_speed", 1.0, 0.01, 50.0)
         self.camera_look = self._setting_float("scene_camera_look", 0.18, 0.01, 2.0)
@@ -326,7 +360,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         button = QToolButton(self.overlay)
         button.setText(text)
         button.setToolTip(tip)
-        button.setFixedSize(18, 18)
+        button.setFixedSize(max(18, 8 * len(str(text)) + 12), 18)
         if slot:
             button.clicked.connect(slot)
         button.setFocusPolicy(Qt.NoFocus)
@@ -412,6 +446,34 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             "Fast", self._camera_spin("camera_boost", 1.0, 20.0, 0.25),
             "Slow", self._camera_spin("camera_slow", 0.01, 1.0, 0.05),
         )
+        self.scene_light_combo = self._text_combo(["fixed", "software", "probes", "off"], self.lighting_mode, self._set_lighting_mode)
+        self._add_control_row(layout, "Light", self.scene_light_combo)
+        self.probe_exposure_spin = self._float_spin(0.01, 2.0, 0.01, self.probe_exposure, self._set_probe_exposure)
+        self._add_control_row(layout, "Probe Exp", self.probe_exposure_spin)
+        self.probe_viz_combo = self._text_combo(list(self.PROBE_VIZ_MODES), self.probe_viz_mode, self._set_probe_viz_mode)
+        self.probe_viz_points_spin = QSpinBox(self.overlay)
+        self.probe_viz_points_spin.setRange(100, 50000)
+        self.probe_viz_points_spin.setSingleStep(500)
+        self.probe_viz_points_spin.setFixedWidth(62)
+        self.probe_viz_points_spin.setValue(self.probe_viz_points)
+        self.probe_viz_points_spin.valueChanged.connect(self._set_probe_viz_points)
+        self._add_control_row(layout, "Viz", self.probe_viz_combo, "Pts", self.probe_viz_points_spin)
+        self.probe_status_label = QLabel("", self.overlay)
+        self.probe_status_label.setWordWrap(True)
+        self.probe_status_label.setStyleSheet("color:#7fced6; background-color:transparent; font-size:10px;")
+        layout.addWidget(self.probe_status_label)
+        self._refresh_probe_status_label()
+        self.editor_light_intensity_spin = self._float_spin(0.0, 8.0, 0.05, self.editor_light_intensity, self._set_editor_light_intensity)
+        self.editor_light_radius_spin = self._float_spin(0.01, 2.0, 0.01, self.editor_light_radius_factor, self._set_editor_light_radius_factor)
+        self._add_control_row(
+            layout,
+            "Editor",
+            self._overlay_button("+Cam", "Add editor light at camera", self._add_editor_light_at_camera),
+            self._overlay_button("ToCam", "Move latest editor light to camera", self._move_editor_light_to_camera),
+            self._overlay_button("+Sel", "Add editor light at selection", self._add_editor_light_at_selection),
+            self._overlay_button("Clear", "Remove editor lights", self._clear_editor_lights),
+        )
+        self._add_control_row(layout, "I", self.editor_light_intensity_spin, "R", self.editor_light_radius_spin)
         self.gizmo_mode_combo = self._data_combo((("Position", "position"), ("Rotation", "rotation"), ("Scale", "scale")), self.set_gizmo_mode, self._gizmo_mode)
         self._add_control_row(layout, "Gizmo", self.gizmo_mode_combo)
         self.highlight_only_check = QCheckBox("View only highlighted", self.overlay)
@@ -535,6 +597,162 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._upload_buffers()
         self.update()
 
+    def set_light_probe_set(self, probe_set: SceneLightProbeSet | None, status: str = "", obbs: list[object] | None = None, key: str = "") -> None:
+        self._light_probe_set = probe_set
+        self._light_probe_status = str(status or "")
+        self._light_probe_key = str(key or "")
+        self._light_probe_obbs = list(obbs or [])
+        self._invalidate_probe_viz_points()
+        if probe_set is not None and self._controls != "mesh":
+            vertex_count = self._buffer_vertex_count()
+            target_mode = None
+            if 0 < vertex_count <= self.PROBE_AUTO_ENABLE_VERTEX_LIMIT:
+                target_mode = "probes"
+            elif self.lighting_mode == "probes":
+                target_mode = "fixed"
+            if target_mode is not None:
+                self.lighting_mode = target_mode
+                combo = getattr(self, "scene_light_combo", None)
+                if combo is not None:
+                    combo.blockSignals(True)
+                    combo.setCurrentText(target_mode)
+                    combo.blockSignals(False)
+        self._colors_dirty = True
+        self._refresh_probe_status_label()
+        self.update()
+
+    def _buffer_vertex_count(self) -> int:
+        total = 0
+        for data in (self._regular_data, self._solid_data):
+            if data is not None:
+                total += len(data.vertices)
+        return total
+
+    def _editor_light_radius(self) -> float:
+        return max(float(self.extent) * float(self.editor_light_radius_factor), 1.0)
+
+    def _refresh_probe_status_label(self) -> None:
+        label = getattr(self, "probe_status_label", None)
+        if label is None:
+            return
+        if self._light_probe_set is None:
+            label.setText("Probe: none" if not self._light_probe_status else f"Probe: {self._light_probe_status}")
+            return
+        boxes = self._light_probe_boxes()
+        mode = "active" if self.lighting_mode == "probes" else f"mode {self.lighting_mode}"
+        candidate_indices = self._probe_viz_candidate_indices()
+        probe_count = 0 if candidate_indices is None else len(candidate_indices)
+        label.setText(f"Probe: {mode} | OBB {len(boxes)} | probes {probe_count}")
+
+    def _light_probe_boxes(self) -> list[object]:
+        return [box for box in self._light_probe_obbs if not getattr(box, "is_default_unit_box", lambda: False)()]
+
+    def _set_probe_exposure(self, value: float) -> None:
+        self.probe_exposure = float(value)
+        self._save_view_setting("scene_probe_exposure", self.probe_exposure)
+        self._invalidate_probe_viz_points()
+        self._colors_dirty = True
+        self._refresh_probe_status_label()
+        self.update()
+
+    def _set_probe_viz_mode(self, mode: str) -> None:
+        if mode not in self.PROBE_VIZ_MODES:
+            return
+        self.probe_viz_mode = mode
+        self._save_view_setting("scene_probe_viz_mode", mode)
+        self._refresh_probe_status_label()
+        self.update()
+
+    def _set_probe_viz_points(self, value: int) -> None:
+        self.probe_viz_points = max(100, min(50000, int(value)))
+        self._save_view_setting("scene_probe_viz_points", self.probe_viz_points)
+        self._invalidate_probe_viz_points()
+        self.update()
+
+    def _invalidate_probe_viz_points(self) -> None:
+        self._probe_viz_candidate_indices_cache_key = None
+        self._probe_viz_candidate_indices_cache = None
+        self._probe_viz_point_cache_key = None
+        self._probe_viz_point_cache = None
+
+    def _set_editor_light_intensity(self, value: float) -> None:
+        self.editor_light_intensity = float(value)
+        light = self._current_editor_light()
+        if light is not None:
+            light.intensity = self.editor_light_intensity
+            self._editor_lights_changed()
+
+    def _set_editor_light_radius_factor(self, value: float) -> None:
+        self.editor_light_radius_factor = float(value)
+        light = self._current_editor_light()
+        if light is not None:
+            light.radius = self._editor_light_radius()
+            self._editor_lights_changed()
+
+    def _current_editor_light(self) -> _EditorLight | None:
+        if 0 <= self._active_editor_light < len(self._editor_lights):
+            return self._editor_lights[self._active_editor_light]
+        return self._editor_lights[-1] if self._editor_lights else None
+
+    def _camera_light_position(self) -> np.ndarray:
+        return np.asarray(self.freecam.pos if self._controls != "mesh" else self.center, dtype=np.float32).copy()
+
+    def _selection_light_position(self) -> np.ndarray:
+        return np.asarray(self._selection_center if self._selection_center is not None else self._camera_light_position(), dtype=np.float32).copy()
+
+    def _add_editor_light(self, position: np.ndarray) -> None:
+        self._editor_lights.append(
+            _EditorLight(
+                position=np.asarray(position, dtype=np.float32).reshape(3).copy(),
+                radius=self._editor_light_radius(),
+                intensity=float(self.editor_light_intensity),
+            )
+        )
+        self._active_editor_light = len(self._editor_lights) - 1
+        self._ensure_editor_light_mode()
+        self._editor_lights_changed()
+
+    def _add_editor_light_at_camera(self) -> None:
+        self._add_editor_light(self._camera_light_position())
+
+    def _add_editor_light_at_selection(self) -> None:
+        self._add_editor_light(self._selection_light_position())
+
+    def _move_editor_light_to_camera(self) -> None:
+        light = self._current_editor_light()
+        if light is None:
+            self._add_editor_light_at_camera()
+            return
+        light.position = self._camera_light_position()
+        light.radius = self._editor_light_radius()
+        light.intensity = float(self.editor_light_intensity)
+        self._ensure_editor_light_mode()
+        self._editor_lights_changed()
+
+    def _clear_editor_lights(self) -> None:
+        if not self._editor_lights:
+            return
+        self._editor_lights.clear()
+        self._active_editor_light = -1
+        self._editor_lights_changed()
+
+    def _ensure_editor_light_mode(self) -> None:
+        if self.lighting_mode in {"software", "probes"}:
+            return
+        self.lighting_mode = "software"
+        combo = getattr(self, "scene_light_combo", None)
+        if combo is not None:
+            combo.blockSignals(True)
+            combo.setCurrentText("software")
+            combo.blockSignals(False)
+
+    def _editor_lights_changed(self) -> None:
+        self._colors_dirty = True
+        self.update()
+
+    def _mesh_transform_affects_display_colors(self) -> bool:
+        return self.lighting_mode in {"software", "probes"}
+
     def set_selected_keys(self, keys: set[str], *, focus: bool = False) -> None:
         keys = set(keys)
         if keys == self._selection_keys and not focus:
@@ -564,6 +782,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._recompute_bounds()
         self._refresh_selection_bounds()
         if deltas:
+            if self._mesh_transform_affects_display_colors():
+                self._colors_dirty = True
             if not self._scene_matrix_is_identity():
                 self._upload_buffers()
             elif not self._apply_transform_deltas(deltas):
@@ -819,7 +1039,59 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _refresh_selection_bounds(self) -> None:
         meshes = [mesh for mesh in self._meshes if mesh.key in self._selection_keys and mesh.key not in self._hidden_keys]
-        self._selection_center, self._selection_extent = scene_bounds(meshes) if meshes else (None, 1.0)
+        chunks = []
+        mesh_points = self._mesh_bounds_points(meshes)
+        if len(mesh_points):
+            chunks.append(mesh_points)
+        probe_points = self._selected_light_probe_points()
+        if len(probe_points):
+            chunks.append(probe_points)
+        if not chunks:
+            self._selection_center, self._selection_extent = None, 1.0
+            return
+        self._selection_center, self._selection_extent = self._point_bounds(np.concatenate(chunks, axis=0))
+
+    def _mesh_bounds_points(self, meshes: list[SceneDrawMesh]) -> np.ndarray:
+        chunks = []
+        for mesh in meshes:
+            if not len(mesh.vertices):
+                continue
+            vertices = np.asarray(mesh.vertices, dtype=np.float32).reshape(-1, 3)
+            mins = vertices.min(axis=0)
+            maxs = vertices.max(axis=0)
+            points = np.array(
+                [(x, y, z) for x in (mins[0], maxs[0]) for y in (mins[1], maxs[1]) for z in (mins[2], maxs[2])],
+                dtype=np.float32,
+            )
+            if mesh.transform_matrix is not None:
+                points = self._transform_points(points, mesh.transform_matrix)
+            chunks.append(points)
+        return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
+
+    @staticmethod
+    def _point_bounds(points: np.ndarray) -> tuple[np.ndarray, float]:
+        points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+        if not len(points):
+            return np.zeros(3, dtype=np.float32), 1.0
+        mins = points.min(axis=0)
+        maxs = points.max(axis=0)
+        return (mins + maxs) / 2.0, max(float(np.max(maxs - mins)), 1.0)
+
+    def _selected_light_probe_points(self) -> np.ndarray:
+        chunks = []
+        for box in self._selected_light_probe_boxes():
+            try:
+                corners = np.asarray(box.corners(), dtype=np.float32).reshape(8, 3)
+            except Exception:
+                continue
+            if np.isfinite(corners).all():
+                chunks.append(corners)
+        return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
+
+    def _selected_light_probe_boxes(self) -> list[object]:
+        if not self._light_probe_key or self._light_probe_key not in self._selection_keys or self._light_probe_key in self._hidden_keys:
+            return []
+        return self._light_probe_boxes()
 
     def _selection_is_whole_scene(self) -> bool:
         visible = {mesh.key for mesh in self._meshes if mesh.key not in self._hidden_keys}
@@ -960,16 +1232,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             "extent": max(float(self._selection_extent), 1e-3),
             "screen_axis": None if screen_axis is None else screen_axis / np.linalg.norm(screen_axis),
             "matrices": {mesh.key: np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else np.identity(4), dtype=np.float32) for mesh in self._meshes if mesh.key in self._selection_keys},
+            "probe_matrices": [(box, box.matrix()) for box in self._selected_light_probe_boxes() if hasattr(box, "matrix")],
         }
         if isinstance(handle, tuple):
             self._gizmo_drag["plane_axes"] = handle
             self._gizmo_drag["screen_basis_inv"] = np.linalg.inv(basis)
-        if not self._gizmo_drag["matrices"]:
+        if not self._gizmo_drag["matrices"] and not self._gizmo_drag["probe_matrices"]:
             self._gizmo_drag = None
             return False
         self._set_hover_key("")
         self._gizmo_drag["whole_scene"] = self._selection_is_whole_scene()
-        if not self._gizmo_drag["whole_scene"] and len(self._gizmo_drag["matrices"]) == 1:
+        if not self._gizmo_drag["whole_scene"] and len(self._gizmo_drag["matrices"]) == 1 and not self._gizmo_drag["probe_matrices"]:
             self._gizmo_drag["regular_geometry"] = self._capture_gizmo_geometry(self._regular_set)
             self._gizmo_drag["solid_geometry"] = self._capture_gizmo_geometry(self._solid_set)
             if not (self._gizmo_drag["regular_geometry"] or self._gizmo_drag["solid_geometry"]):
@@ -1008,6 +1281,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         drag["matrix"] = matrix
         if not drag.get("whole_scene") and not drag.get("deferred_geometry"):
             self._apply_gizmo_drag_matrix(matrix)
+        self._apply_light_probe_drag_matrix(matrix)
         self.update()
 
     def _finish_gizmo_drag(self, *, commit: bool) -> None:
@@ -1016,6 +1290,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         matrix = drag.get("matrix")
         committed = {}
+        rebuild_after_drag = False
         if commit and matrix is not None:
             for mesh in self._meshes:
                 start = drag["matrices"].get(mesh.key)
@@ -1026,16 +1301,59 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self._scene_matrix = (matrix @ self._scene_matrix).astype(np.float32, copy=False)
             elif drag.get("deferred_geometry"):
                 self._commit_deferred_gizmo_geometry(matrix)
+            if drag.get("matrices") and self._mesh_transform_affects_display_colors():
+                self._colors_dirty = True
+                rebuild_after_drag = bool(drag.get("whole_scene"))
+            if drag.get("probe_matrices") and self._light_probe_key:
+                self._apply_light_probe_drag_matrix(matrix)
+                committed[self._light_probe_key] = np.asarray(drag["probe_matrices"][0][0].matrix(), dtype=np.float32).copy()
+                self._colors_dirty = True
         elif not commit and not drag.get("whole_scene") and not drag.get("deferred_geometry"):
             self._apply_gizmo_drag_matrix(IDENTITY4)
+        if not commit and drag.get("probe_matrices"):
+            self._restore_light_probe_drag_matrices()
         deferred = bool(drag.get("deferred_geometry"))
         self._gizmo_drag = None
+        if rebuild_after_drag:
+            self._scene_matrix = IDENTITY4.copy()
+            self._upload_buffers()
         if committed:
             self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
         if deferred:
             self._refresh_main_index_sets()
+        if committed or drag.get("probe_matrices"):
+            self._invalidate_probe_viz_points()
+            self._refresh_probe_status_label()
         self._refresh_selection_bounds()
         self.update()
+
+    def _apply_light_probe_drag_matrix(self, matrix: np.ndarray) -> None:
+        drag = self._gizmo_drag
+        if not drag:
+            return
+        changed = False
+        for box, start in drag.get("probe_matrices", ()):
+            try:
+                box.set_from_matrix(np.asarray(matrix, dtype=np.float32) @ np.asarray(start, dtype=np.float32))
+                changed = True
+            except Exception:
+                continue
+        if changed:
+            self._invalidate_probe_viz_points()
+
+    def _restore_light_probe_drag_matrices(self) -> None:
+        drag = self._gizmo_drag
+        if not drag:
+            return
+        changed = False
+        for box, start in drag.get("probe_matrices", ()):
+            try:
+                box.set_from_matrix(start)
+                changed = True
+            except Exception:
+                continue
+        if changed:
+            self._invalidate_probe_viz_points()
 
     @staticmethod
     def _transform_point(point: np.ndarray, matrix: np.ndarray) -> np.ndarray:
@@ -1208,6 +1526,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 glVertex3f(float(point[0]), float(point[1]), float(point[2]))
         glEnd()
 
+    def _draw_wire_box(self, corners) -> None:
+        glBegin(GL_LINES)
+        for a, b in BOX_EDGES:
+            for index in (a, b):
+                point = corners[index]
+                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
+        glEnd()
+
     def _draw_scale_axis(self, center: np.ndarray, axis_index: int, size: float) -> None:
         self._draw_axis_arrow(center, axis_index, size * 0.82)
         axis = GIZMO_AXES[axis_index]
@@ -1282,6 +1608,170 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self.lighting_mode == "fixed":
             glEnable(GL_LIGHTING)
 
+    def _draw_light_probe_overlay(self) -> None:
+        if self._controls == "mesh" or self.probe_viz_mode == "off":
+            return
+        draw_volumes = self.probe_viz_mode in {"volumes", "all"}
+        draw_points = self.probe_viz_mode in {"points", "all"}
+        if not draw_volumes and not draw_points:
+            return
+        glDisable(GL_LIGHTING)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthMask(False)
+        if draw_volumes:
+            self._draw_light_probe_obb_boxes()
+        if draw_points:
+            glEnable(GL_DEPTH_TEST)
+            glDepthMask(False)
+            self._draw_light_probe_points()
+        glPointSize(1.0)
+        glLineWidth(1.0)
+        glDepthMask(True)
+        glDisable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        if self.lighting_mode == "fixed":
+            glEnable(GL_LIGHTING)
+
+    def _draw_light_probe_obb_boxes(self) -> None:
+        boxes = self._light_probe_boxes()
+        if not boxes:
+            return
+        glLineWidth(2.0)
+        for index, box in enumerate(boxes):
+            try:
+                corners = np.asarray(box.corners(), dtype=np.float32).reshape(8, 3)
+            except Exception:
+                continue
+            if not np.isfinite(corners).all():
+                continue
+            alpha = 0.9 if index == 0 else 0.55
+            glColor4f(0.1, 0.9, 1.0, alpha)
+            self._draw_wire_box(corners)
+            center = np.asarray(getattr(box, "center", ()), dtype=np.float32).reshape(3)
+            axes = np.asarray(getattr(box, "axes", ()), dtype=np.float32).reshape(3, 3)
+            extent = np.asarray(getattr(box, "extent", ()), dtype=np.float32).reshape(3)
+            if not np.isfinite(center).all() or not np.isfinite(axes).all() or not np.isfinite(extent).all():
+                continue
+            glLineWidth(1.5)
+            glBegin(GL_LINES)
+            for axis_index, color in enumerate(((1.0, 0.25, 0.2), (0.25, 1.0, 0.35), (0.35, 0.55, 1.0))):
+                endpoint = center + axes[axis_index] * max(float(extent[axis_index]), 0.0)
+                glColor4f(color[0], color[1], color[2], alpha)
+                glVertex3f(float(center[0]), float(center[1]), float(center[2]))
+                glVertex3f(float(endpoint[0]), float(endpoint[1]), float(endpoint[2]))
+            glEnd()
+
+    def _probe_viz_candidate_indices(self) -> np.ndarray | None:
+        probe_set = self._light_probe_set
+        if probe_set is None or not len(probe_set.probe_positions):
+            return None
+        boxes = self._light_probe_boxes()
+        key = (id(probe_set), tuple(id(box) for box in boxes))
+        if self._probe_viz_candidate_indices_cache_key == key:
+            return self._probe_viz_candidate_indices_cache
+        if not boxes:
+            indices = np.arange(probe_set.probe_count, dtype=np.int64)
+        else:
+            points = np.asarray(probe_set.probe_positions, dtype=np.float32).reshape(-1, 3)
+            inside = np.zeros(len(points), dtype=bool)
+            for box in boxes:
+                inside |= self._points_inside_light_probe_box(points, box)
+            indices = np.flatnonzero(inside).astype(np.int64, copy=False)
+        self._probe_viz_candidate_indices_cache_key = key
+        self._probe_viz_candidate_indices_cache = indices
+        return indices
+
+    def _probe_viz_points(self) -> tuple[np.ndarray, np.ndarray]:
+        probe_set = self._light_probe_set
+        if probe_set is None:
+            return np.zeros((0, 3), dtype=np.float32), np.zeros((0, 4), dtype=np.float32)
+        candidate_indices = self._probe_viz_candidate_indices()
+        candidate_key = None if candidate_indices is None else (len(candidate_indices), int(candidate_indices[0]) if len(candidate_indices) else -1, int(candidate_indices[-1]) if len(candidate_indices) else -1)
+        key = (id(probe_set), int(self.probe_viz_points), round(float(self.probe_exposure), 4), candidate_key)
+        if self._probe_viz_point_cache_key != key or self._probe_viz_point_cache is None:
+            self._probe_viz_point_cache = probe_set.probe_point_cloud(
+                max_points=self.probe_viz_points,
+                normal=(0.0, 1.0, 0.0),
+                exposure=self.probe_exposure,
+                candidate_indices=candidate_indices,
+                normalize_display=True,
+            )
+            self._probe_viz_point_cache_key = key
+        return self._probe_viz_point_cache
+
+    def _draw_light_probe_points(self) -> None:
+        points, colors = self._probe_viz_points()
+        if not len(points):
+            return
+        glPointSize(4.0)
+        glBegin(GL_POINTS)
+        for point, color in zip(points, colors):
+            rgb = np.maximum(np.asarray(color[:3], dtype=np.float32), 0.08)
+            glColor4f(float(rgb[0]), float(rgb[1]), float(rgb[2]), 0.88)
+            glVertex3f(float(point[0]), float(point[1]), float(point[2]))
+        glEnd()
+
+    @staticmethod
+    def _points_inside_light_probe_box(points: np.ndarray, box) -> np.ndarray:
+        try:
+            axes = np.asarray(getattr(box, "axes"), dtype=np.float32).reshape(3, 3)
+            center = np.asarray(getattr(box, "center"), dtype=np.float32).reshape(3)
+            extent = np.asarray(getattr(box, "extent"), dtype=np.float32).reshape(3)
+        except Exception:
+            return np.zeros(len(points), dtype=bool)
+        if not np.isfinite(axes).all() or not np.isfinite(center).all() or not np.isfinite(extent).all():
+            return np.zeros(len(points), dtype=bool)
+        local = (np.asarray(points, dtype=np.float32).reshape(-1, 3) - center) @ axes.T
+        return np.all(np.abs(local) <= (extent + 1e-4), axis=1)
+
+    def _draw_editor_lights(self) -> None:
+        if self._controls == "mesh" or not self._editor_lights:
+            return
+        glDisable(GL_LIGHTING)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthMask(False)
+        base_size = max(float(self.extent) * 0.012, 0.25)
+        for index, light in enumerate(self._editor_lights):
+            if not light.enabled:
+                continue
+            position = np.asarray(light.position, dtype=np.float32)
+            color = tuple(float(v) for v in light.color)
+            size = max(base_size, float(light.radius) * 0.035)
+            alpha = 1.0 if index == self._active_editor_light else 0.72
+            glLineWidth(3.0 if index == self._active_editor_light else 2.0)
+            glColor4f(color[0], color[1], color[2], alpha)
+            glBegin(GL_LINES)
+            for axis in GIZMO_AXES:
+                a = position - axis * size
+                b = position + axis * size
+                glVertex3f(float(a[0]), float(a[1]), float(a[2]))
+                glVertex3f(float(b[0]), float(b[1]), float(b[2]))
+            glEnd()
+            radius = max(float(light.radius), size)
+            glLineWidth(1.0)
+            glColor4f(color[0], color[1], color[2], 0.22)
+            glBegin(GL_LINE_STRIP)
+            for angle in np.linspace(0.0, np.pi * 2.0, 49, dtype=np.float32):
+                point = position + np.array((np.cos(angle) * radius, 0.0, np.sin(angle) * radius), dtype=np.float32)
+                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
+            glEnd()
+        glLineWidth(1.0)
+        glDepthMask(True)
+        glDisable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        if self.lighting_mode == "fixed":
+            glEnable(GL_LIGHTING)
+
     def _build_buffer_set(self, *, force_solid: bool) -> SceneBufferSet | None:
         return build_scene_buffer_set(
             self._meshes,
@@ -1334,7 +1824,96 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         buffer_set.lines_ready = False
 
     def _display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        return self._base_display_colors(buffer_set)
+        if self.lighting_mode == "probes":
+            return self._apply_editor_lights(buffer_set, self._light_probe_display_colors(buffer_set))
+        return self._apply_editor_lights(buffer_set, self._base_display_colors(buffer_set))
+
+    def _light_probe_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
+        if self._light_probe_set is None:
+            return self._base_display_colors(buffer_set)
+        colors = self._light_probe_set.shade_vertices(
+            buffer_set.vertices,
+            buffer_set.normals,
+            exposure=self.probe_exposure,
+        )
+        mask = self._light_probe_vertex_mask(buffer_set.vertices)
+        if mask is not None and len(mask) == len(colors):
+            colors[~mask, :3] = 0.0
+        if buffer_set.base_colors is not None:
+            colors[:, :3] *= np.clip(buffer_set.base_colors[:, :3], 0.0, 1.0)
+        return colors.astype(np.float32, copy=False)
+
+    def _light_probe_vertex_mask(self, vertices: np.ndarray) -> np.ndarray | None:
+        boxes = self._light_probe_boxes()
+        if not boxes:
+            return None
+        points = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
+        inside = np.zeros(len(points), dtype=bool)
+        for box in boxes:
+            inside |= self._points_inside_light_probe_box(points, box)
+        return inside
+
+    def _apply_editor_lights(self, buffer_set: SceneBufferSet, colors: np.ndarray | None) -> np.ndarray | None:
+        if not self._editor_lights or self.lighting_mode not in {"software", "probes"}:
+            return colors
+        if colors is None:
+            colors = np.ones((len(buffer_set.vertices), 4), dtype=np.float32)
+        else:
+            colors = np.asarray(colors, dtype=np.float32).copy()
+        contribution = self._editor_light_contribution(buffer_set.vertices, buffer_set.normals)
+        if not np.any(contribution):
+            return colors
+        albedo = np.ones_like(contribution, dtype=np.float32)
+        if buffer_set.base_colors is not None:
+            albedo = np.maximum(np.clip(buffer_set.base_colors[:, :3], 0.0, 1.0), 0.18)
+        colors[:, :3] = np.clip(colors[:, :3] + contribution * albedo, 0.0, 1.0)
+        colors[:, 3] = 1.0
+        return colors.astype(np.float32, copy=False)
+
+    def _editor_light_contribution(self, vertices: np.ndarray, normals: np.ndarray | None, *, chunk_size: int = 65536) -> np.ndarray:
+        points = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
+        if not len(points):
+            return np.zeros((0, 3), dtype=np.float32)
+        normal_rows = self._display_normal_rows(points, normals)
+        result = np.zeros((len(points), 3), dtype=np.float32)
+        active_lights = [light for light in self._editor_lights if light.enabled and light.radius > 1e-5 and light.intensity > 0.0]
+        for start in range(0, len(points), chunk_size):
+            end = min(start + chunk_size, len(points))
+            chunk_points = points[start:end]
+            chunk_normals = normal_rows[start:end]
+            chunk = np.zeros((end - start, 3), dtype=np.float32)
+            for light in active_lights:
+                delta = light.position[np.newaxis, :] - chunk_points
+                distance = np.linalg.norm(delta, axis=1)
+                direction = np.divide(
+                    delta,
+                    distance[:, np.newaxis],
+                    out=np.zeros_like(delta, dtype=np.float32),
+                    where=distance[:, np.newaxis] > 1e-5,
+                )
+                attenuation = np.clip(1.0 - (distance / float(light.radius)), 0.0, 1.0) ** 2
+                normal_factor = np.clip((chunk_normals * direction).sum(axis=1), 0.0, 1.0)
+                wrap = 0.18 + (0.82 * normal_factor)
+                rgb = np.asarray(light.color, dtype=np.float32)
+                chunk += rgb[np.newaxis, :] * (float(light.intensity) * attenuation * wrap)[:, np.newaxis]
+            result[start:end] = chunk
+        return np.clip(result, 0.0, 4.0).astype(np.float32, copy=False)
+
+    @staticmethod
+    def _display_normal_rows(vertices: np.ndarray, normals: np.ndarray | None) -> np.ndarray:
+        fallback = np.array((0.0, 1.0, 0.0), dtype=np.float32)
+        if normals is None:
+            return np.tile(fallback, (len(vertices), 1))
+        rows = np.asarray(normals, dtype=np.float32).reshape(-1, 3)
+        if len(rows) != len(vertices):
+            return np.tile(fallback, (len(vertices), 1))
+        lengths = np.linalg.norm(rows, axis=1)
+        normalized = np.zeros_like(rows, dtype=np.float32)
+        np.divide(rows, lengths[:, np.newaxis], out=normalized, where=lengths[:, np.newaxis] > 1e-6)
+        invalid = ~np.isfinite(normalized).all(axis=1) | (lengths <= 1e-6)
+        if np.any(invalid):
+            normalized[invalid] = fallback
+        return normalized.astype(np.float32, copy=False)
 
     def _base_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
         return display_colors(
@@ -1630,6 +2209,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._texture_sources.clear()
         self._texture_source_ids.clear()
         self._hover_vertex_cache.clear()
+        self._light_probe_set = None
+        self._light_probe_status = self._light_probe_key = ""
+        self._light_probe_obbs.clear()
+        self._invalidate_probe_viz_points()
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
         self._pending_scene_pick = self._last_hover_pick_pos = None
@@ -2078,6 +2661,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._draw_hover_glow()
         if scene_matrix is not None:
             glPopMatrix()
+        self._draw_light_probe_overlay()
+        self._draw_editor_lights()
         self._draw_gizmo()
         glColorMask(True, True, True, True)
         self._after_scene_draw()
@@ -2128,6 +2713,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.lighting_mode = mode
         self._save_view_setting("mesh_viewer_lighting_mode", mode)
         self._colors_dirty = True
+        self._refresh_probe_status_label()
         self.update()
 
     def _set_line_width(self, value: float):

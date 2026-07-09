@@ -526,7 +526,12 @@ class ScnSceneTab:
         def make_item(row: int) -> QTreeWidgetItem:
             item = self._scn_item(_source_name(self.sources[row]), row)
             if graphs:
-                self._populate_graph_item(item, graphs[row], linked_item, root_document_ids)
+                self._populate_graph_item(
+                    item,
+                    graphs[row],
+                    linked_item,
+                    root_document_ids,
+                )
                 self._set_visibility_keys(item, item_keys(item))
             return item
 
@@ -636,6 +641,11 @@ class ScnSceneTab:
                     document = graph.documents.get(renderable.source_object_id.document_id)
                     scene_object = document.objects.get(renderable.source_object_id) if document else None
                     return document, scene_object, renderable
+            for light_probe in graph.light_probes:
+                if light_probe.key in self._selected_renderables:
+                    document = graph.documents.get(light_probe.source_object_id.document_id)
+                    scene_object = document.objects.get(light_probe.source_object_id) if document else None
+                    return document, scene_object, light_probe
         return None
 
     def _embedded_raw_modified(self, document_id: str) -> None:
@@ -789,7 +799,26 @@ class ScnSceneTab:
         self._set_visibility_keys(item, (renderable.key,))
         return item
 
-    def _populate_graph_item(self, root_item: QTreeWidgetItem, graph, linked_item_factory=None, linked_document_ids=()) -> None:
+    def _light_probe_item(self, light_probe) -> QTreeWidgetItem:
+        component = light_probe.source_component_id.instance_id
+        lprb = Path(light_probe.lprb_path.replace("\\", "/")).name or "lprb"
+        prb = Path(light_probe.prb_path.replace("\\", "/")).name or "prb"
+        obb_count = len(getattr(light_probe, "obbs", ()) or ())
+        suffix = f" | OBBs {obb_count}" if obb_count else ""
+        item = QTreeWidgetItem([f"LightProbes {component} - {lprb} + {prb}{suffix}", ""])
+        item.setIcon(0, self._gameobject_icon)
+        item.setData(0, Qt.UserRole + 1, "light_probe")
+        item.setData(0, Qt.UserRole + 2, (light_probe.key,))
+        self._set_visibility_keys(item, (light_probe.key,))
+        return item
+
+    def _populate_graph_item(
+        self,
+        root_item: QTreeWidgetItem,
+        graph,
+        linked_item_factory=None,
+        linked_document_ids=(),
+    ) -> None:
         instance_children = defaultdict(list)
         linked_by_folder = defaultdict(list)
         for instance in graph.document_instances.values():
@@ -801,12 +830,17 @@ class ScnSceneTab:
         by_instance = defaultdict(set)
         by_object = defaultdict(set)
         composite_by_object = defaultdict(list)
+        light_probes_by_object = defaultdict(list)
         object_children = defaultdict(lambda: defaultdict(list))
         for renderable in graph.renderables:
             by_instance[renderable.document_instance_id].add(renderable.key)
             by_object[(renderable.document_instance_id, renderable.source_object_id)].add(renderable.key)
             if renderable.source_kind == "composite_mesh":
                 composite_by_object[(renderable.document_instance_id, renderable.source_object_id)].append(renderable)
+        for light_probe in graph.light_probes:
+            by_instance[light_probe.document_instance_id].add(light_probe.key)
+            by_object[(light_probe.document_instance_id, light_probe.source_object_id)].add(light_probe.key)
+            light_probes_by_object[(light_probe.document_instance_id, light_probe.source_object_id)].append(light_probe)
         for document in graph.documents.values():
             for scene_object in document.objects.values():
                 parent = document.object_by_local_id.get(scene_object.parent_id)
@@ -843,6 +877,8 @@ class ScnSceneTab:
                 return
             direct = by_object.get(cache_key, ())
             object_item = self._gameobject_item(scene_object, keys, direct)
+            for light_probe in sorted(light_probes_by_object.get(cache_key, ()), key=lambda probe: (probe.source_component_id.instance_id, probe.key)):
+                object_item.addChild(self._light_probe_item(light_probe))
             for renderable in sorted(composite_by_object.get(cache_key, ()), key=lambda r: (r.source_group_instance_id or 0, r.source_transform_instance_id or 0, r.key)):
                 object_item.addChild(self._renderable_item(renderable))
             for child in object_children.get(scene_object.id.document_id, {}).get(scene_object.id, ()):

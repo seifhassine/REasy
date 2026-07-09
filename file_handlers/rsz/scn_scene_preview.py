@@ -10,9 +10,11 @@ import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from file_handlers.lightprobe.loader import parse_prb9_lprb6_light_probe_data
 from file_handlers.mesh.material_resolver import MdfSurfaceProfile, MeshMaterialBinding, MeshMaterialResolver
 from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.tex.qt_image_utils import TexPreviewUpload, build_tex_preview_upload, parse_tex_bytes
+from ui.scene.lightprobe_preview import SceneLightProbeSet
 from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
 from ui.scene.scene_preview import ScenePreviewWidget
@@ -22,6 +24,7 @@ from .scn_document_store import ScnDocumentStore
 from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
 from .scn_scene_graph import (
     ScnSceneDiagnostic,
+    ScnLightProbeBinding,
     ScnRenderableMesh,
     ScnSceneGraph,
     normalize_scene_path,
@@ -70,6 +73,7 @@ class ScnScenePreviewWidget(QWidget):
         self._resolved_texture_cache: dict[tuple[bool, str], tuple[str, bytes] | None] = {}
         self._texture_cache: dict[str, TexPreviewUpload | None] = {}
         self._parsed_tex_cache: dict[str, object | None] = {}
+        self._light_probe_cache: dict[str, SceneLightProbeSet | None] = {}
         self._material_queue: deque[_MaterialQueueItem] = deque()
         self._material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
         self._material_profiles: dict[str, MdfSurfaceProfile] = {}
@@ -164,6 +168,7 @@ class ScnScenePreviewWidget(QWidget):
         self._resolved_texture_cache.clear()
         self._texture_cache.clear()
         self._parsed_tex_cache.clear()
+        self._light_probe_cache.clear()
         self._shown_diagnostics.clear()
         self._loaded = self._loading = self._refresh_queued = self._stale = False
         self._camera_initialized = False
@@ -188,6 +193,7 @@ class ScnScenePreviewWidget(QWidget):
             return
         self.graphs.extend(graphs)
         self.graph = self.graph or self.graphs[0]
+        self._load_light_probe_set()
         self._queue_renderables(graphs)
         self._update_status()
         self._update_diagnostics()
@@ -225,6 +231,7 @@ class ScnScenePreviewWidget(QWidget):
         self._draw_meshes = [mesh for mesh in self._draw_meshes if mesh.key not in removed_keys]
         self._hidden_renderables.difference_update(removed_keys)
         self._retired_renderables.update(removed_keys)
+        self._load_light_probe_set()
         remaining_assets = {self._material_asset_key(renderable) for graph in self.graphs for renderable in graph.renderables}
         unused_prefixes = tuple(f"{asset}:" for asset in removed_assets - remaining_assets)
         if unused_prefixes:
@@ -277,6 +284,7 @@ class ScnScenePreviewWidget(QWidget):
             return
 
         self._last_asset_counts = (0, 0, 0)
+        self._load_light_probe_set()
         self._queue_renderables(self.graphs)
         self._loaded = True
         self._stale = False
@@ -312,6 +320,80 @@ class ScnScenePreviewWidget(QWidget):
     @staticmethod
     def _needs_transform_upload(result: dict[str, object], source: dict[str, object], whole_scene: bool) -> bool:
         return whole_scene or set(result) != set(source) or any(not np.allclose(result[key], source[key]) for key in result)
+
+    def _load_light_probe_set(self) -> None:
+        binding = self._first_light_probe_binding()
+        if binding is None:
+            self.preview.set_light_probe_set(None, "", [], "")
+            return
+
+        cache_key = (
+            f"{binding.source_object_id.document_id}|"
+            f"{normalize_scene_path(binding.lprb_path).lower()}|"
+            f"{normalize_scene_path(binding.prb_path).lower()}"
+        )
+        if cache_key in self._light_probe_cache:
+            probe_set = self._light_probe_cache[cache_key]
+            self.preview.set_light_probe_set(
+                probe_set,
+                self._light_probe_status(binding, probe_set is not None),
+                binding.obbs,
+                binding.key,
+            )
+            return
+
+        try:
+            lprb = self.loader.resolve_resource(binding.lprb_path, binding.source_object_id.document_id)
+            prb = self.loader.resolve_resource(binding.prb_path, binding.source_object_id.document_id)
+            if lprb is None or lprb.data is None:
+                raise FileNotFoundError(f"Unable to resolve LPRB resource: {binding.lprb_path}")
+            if prb is None or prb.data is None:
+                raise FileNotFoundError(f"Unable to resolve PRB resource: {binding.prb_path}")
+            probe_data = parse_prb9_lprb6_light_probe_data(
+                prb_data=prb.data,
+                lprb_data=lprb.data,
+            )
+            probe_set = SceneLightProbeSet.from_data(probe_data)
+        except Exception as exc:
+            probe_set = None
+            self._diagnose_light_probe(binding, str(exc))
+        self._light_probe_cache[cache_key] = probe_set
+        self.preview.set_light_probe_set(
+            probe_set,
+            self._light_probe_status(binding, probe_set is not None),
+            binding.obbs,
+            binding.key,
+        )
+
+    def _first_light_probe_binding(self) -> ScnLightProbeBinding | None:
+        for graph in self.graphs:
+            if graph.light_probes:
+                return graph.light_probes[0]
+        return None
+
+    @staticmethod
+    def _light_probe_status(binding: ScnLightProbeBinding, loaded: bool) -> str:
+        state = "loaded" if loaded else "missing"
+        obb_count = len(getattr(binding, "obbs", ()) or ())
+        suffix = f" | OBBs: {obb_count}" if obb_count else ""
+        return f"Light probes {state}: {Path(binding.lprb_path).name} + {Path(binding.prb_path).name}{suffix}"
+
+    def _diagnose_light_probe(self, binding: ScnLightProbeBinding, message: str) -> None:
+        for graph in self.graphs:
+            if binding in graph.light_probes:
+                graph.diagnostics.append(
+                    ScnSceneDiagnostic(
+                        severity="warning",
+                        code="light_probe_preview_error",
+                        message=f"Unable to load scene light probes: {message}",
+                        document_id=binding.source_object_id.document_id,
+                        document_instance_id=binding.document_instance_id,
+                        object_id=binding.source_object_id,
+                        component_id=binding.source_component_id,
+                        path=f"{binding.lprb_path} | {binding.prb_path}",
+                    )
+                )
+                return
 
     def _queue_renderables(self, graphs: list[ScnSceneGraph]) -> None:
         self._pending_renderables.extend(
@@ -544,6 +626,10 @@ class ScnScenePreviewWidget(QWidget):
         links = sum(len(graph.links) for graph in self.graphs)
         renderables = sum(len(graph.renderables) for graph in self.graphs)
         diagnostics = sum(len(graph.diagnostics) for graph in self.graphs)
+        light_probe_count = sum(len(graph.light_probes) for graph in self.graphs)
+        light_probe_status = getattr(self.preview, "_light_probe_status", "") or (
+            f"LightProbes: {light_probe_count}" if light_probe_count else "LightProbes: none"
+        )
         self.status_label.setText(
             " | ".join(
                 [
@@ -557,6 +643,7 @@ class ScnScenePreviewWidget(QWidget):
                     f"Missing: {missing}",
                     f"Failed: {failed}",
                     f"Textures: {len(self._material_images)}",
+                    light_probe_status,
                     f"Diagnostics: {diagnostics}",
                 ]
             )
