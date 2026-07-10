@@ -5,6 +5,25 @@ import numpy as np
 from .scene_model import SceneDrawBatch, SceneDrawMesh
 
 
+def _merge_attribute(records, name: str, width: int, dtype) -> np.ndarray | None:
+    chunks = []
+    missing = []
+    for buffer_index, payload, vertex_count in records:
+        values = getattr(payload, name)
+        if not values:
+            missing.append(buffer_index)
+            continue
+        data = np.asarray(values, dtype=dtype).reshape(-1)
+        if data.size != vertex_count * width:
+            raise ValueError(f"Malformed {name} in mesh buffer {buffer_index}")
+        chunks.append(data.reshape(-1, width))
+    if not chunks:
+        return None
+    if missing:
+        raise ValueError(f"Missing {name} in mesh buffers {missing}")
+    return np.concatenate(chunks)
+
+
 def build_mesh_scene(
     mesh,
     *,
@@ -18,110 +37,81 @@ def build_mesh_scene(
     if mesh_buffer is None:
         return []
 
-    payloads = getattr(mesh_buffer, "buffer_payloads", {}) or {0: mesh_buffer}
+    payloads = mesh_buffer.buffer_payloads
+    submeshes = [
+        submesh
+        for mesh_data in mesh.meshes
+        if mesh_data.lods
+        for group in mesh_data.lods[0].mesh_groups
+        for submesh in group.submeshes
+    ]
+    if not payloads or not submeshes:
+        return []
     vertex_chunks: list[np.ndarray] = []
-    normal_chunks: list[np.ndarray] = []
-    color_chunks: list[np.ndarray] = []
-    uv_chunks: list[np.ndarray] = []
+    records = []
     payload_base: dict[int, int] = {}
     running_base = 0
 
-    for buffer_index in sorted(payloads.keys()):
+    for buffer_index in sorted({submesh.buffer_index for submesh in submeshes}):
         payload = payloads[buffer_index]
-        if not getattr(payload, "positions", None):
+        if not payload.positions:
             continue
-        verts = np.asarray(payload.positions, dtype=np.float32).reshape(-1, 3)
-        if len(verts) == 0:
-            continue
-
-        payload_base[int(buffer_index)] = running_base
+        positions = np.asarray(payload.positions, dtype=np.float32).reshape(-1)
+        if positions.size % 3:
+            raise ValueError(f"Malformed positions in mesh buffer {buffer_index}")
+        verts = positions.reshape(-1, 3)
+        payload_base[buffer_index] = running_base
         running_base += len(verts)
         vertex_chunks.append(verts)
-
-        normals = getattr(payload, "normals", None)
-        if normals is not None and len(normals):
-            raw_normals = np.asarray(normals, dtype=np.float32).reshape(-1)
-            if raw_normals.size == len(verts) * 3:
-                normal_chunks.append(raw_normals.reshape(-1, 3))
-            else:
-                normal_chunks.append(np.zeros((len(verts), 3), dtype=np.float32))
-        else:
-            normal_chunks.append(np.zeros((len(verts), 3), dtype=np.float32))
-
-        colors = getattr(payload, "colors", None) if include_vertex_colors else None
-        if colors is not None and len(colors):
-            raw_colors = np.asarray(colors, dtype=np.uint8).reshape(-1)
-            color_chunks.append(
-                raw_colors.reshape(-1, 4).astype(np.float32) / 255.0
-                if raw_colors.size == len(verts) * 4
-                else np.ones((len(verts), 4), dtype=np.float32)
-            )
-        elif include_vertex_colors:
-            color_chunks.append(np.ones((len(verts), 4), dtype=np.float32))
-
-        uv0 = getattr(payload, "uv0", None)
-        if uv0 is not None and len(uv0):
-            raw_uvs = np.asarray(uv0, dtype=np.float32).reshape(-1)
-            if raw_uvs.size == len(verts) * 2:
-                uv_chunks.append(1.0 - raw_uvs.reshape(-1, 2))
-            else:
-                uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
-        else:
-            uv_chunks.append(np.zeros((len(verts), 2), dtype=np.float32))
+        records.append((buffer_index, payload, len(verts)))
 
     if not vertex_chunks:
         return []
 
-    vertices = np.concatenate(vertex_chunks, axis=0)
-    normals = np.concatenate(normal_chunks, axis=0) if normal_chunks else None
-    colors = np.concatenate(color_chunks, axis=0) if color_chunks and len(color_chunks) == len(vertex_chunks) else None
-    uvs = np.concatenate(uv_chunks, axis=0) if uv_chunks else None
+    vertices = np.concatenate(vertex_chunks)
+    normals = _merge_attribute(records, "normals", 3, np.float32)
+    colors = _merge_attribute(records, "colors", 4, np.uint8) if include_vertex_colors else None
+    if colors is not None:
+        colors = colors.astype(np.float32) / 255.0
+    uvs = _merge_attribute(records, "uv0", 2, np.float32)
+    if uvs is not None:
+        uvs = 1.0 - uvs
 
     index_chunks: list[np.ndarray] = []
     batches: list[SceneDrawBatch] = []
-    material_names = list(getattr(mesh, "material_names", []) or [])
+    material_names = mesh.material_names
 
-    if getattr(mesh, "meshes", None):
-        for mesh_data in mesh.meshes:
-            if not getattr(mesh_data, "lods", None):
-                continue
-            lod0 = mesh_data.lods[0]
-            for mesh_group in getattr(lod0, "parts", []) or getattr(lod0, "mesh_groups", []):
-                for submesh in getattr(mesh_group, "submeshes", []):
-                    buffer_index = int(getattr(submesh, "buffer_index", 0))
-                    payload = payloads.get(buffer_index, payloads.get(0))
-                    if payload is None:
-                        continue
-                    face_array = payload.integer_faces if getattr(payload, "integer_faces", None) is not None else payload.faces
-                    start = int(getattr(submesh, "faces_index_offset", 0))
-                    end = start + int(getattr(submesh, "indices_count", 0))
-                    if end <= start:
-                        continue
-                    base = payload_base.get(buffer_index, 0) + int(getattr(submesh, "verts_index_offset", 0))
-                    batch_indices = np.asarray(face_array[start:end], dtype=np.uint32) + np.uint32(base)
-                    usable = (batch_indices.size // 3) * 3
-                    if usable < 3:
-                        continue
-                    triangles = batch_indices[:usable].reshape(-1, 3)
-                    valid = (triangles < running_base).all(axis=1)
-                    if not np.any(valid):
-                        continue
-                    batch_indices = triangles[valid].reshape(-1)
-                    index_chunks.append(batch_indices)
-                    material_name = ""
-                    material_index = int(getattr(submesh, "material_index", -1))
-                    if 0 <= material_index < len(material_names):
-                        material_name = material_names[material_index]
-                    batches.append(SceneDrawBatch(indices=batch_indices, material_name=material_name))
-
-    if not index_chunks:
-        payload0 = payloads.get(0)
-        if payload0 is not None:
-            face_array = payload0.integer_faces if getattr(payload0, "integer_faces", None) is not None else payload0.faces
-            all_indices = np.asarray(face_array, dtype=np.uint32)
-            if all_indices.size:
-                index_chunks.append(all_indices)
-                batches.append(SceneDrawBatch(indices=all_indices))
+    for submesh in submeshes:
+        buffer_index = submesh.buffer_index
+        payload = payloads[buffer_index]
+        if buffer_index not in payload_base:
+            raise ValueError(f"No positions in mesh buffer {buffer_index}")
+        face_array = (
+            payload.integer_faces
+            if payload.integer_faces is not None
+            else payload.faces
+        )
+        start, count = submesh.faces_index_offset, submesh.indices_count
+        if not count:
+            continue
+        end = start + count
+        if start < 0 or end > len(face_array) or count % 3:
+            raise ValueError(f"Invalid index span [{start}, {end})")
+        vertex_offset = submesh.verts_index_offset
+        if vertex_offset < 0:
+            raise ValueError(f"Negative vertex offset {vertex_offset}")
+        local_indices = np.asarray(face_array[start:end], dtype=np.uint64) + vertex_offset
+        if np.any(local_indices >= len(payload.positions) // 3):
+            raise ValueError(f"Vertex outside mesh buffer {buffer_index}")
+        batch_indices = (local_indices + payload_base[buffer_index]).astype(np.uint32)
+        index_chunks.append(batch_indices)
+        material_index = submesh.material_index
+        material_name = (
+            material_names[material_index]
+            if 0 <= material_index < len(material_names)
+            else ""
+        )
+        batches.append(SceneDrawBatch(indices=batch_indices, material_name=material_name))
 
     if not index_chunks:
         return []
@@ -130,7 +120,7 @@ def build_mesh_scene(
         SceneDrawMesh(
             key=key,
             vertices=vertices,
-            indices=np.concatenate(index_chunks).astype(np.uint32, copy=False),
+            indices=np.concatenate(index_chunks),
             color=color,
             force_solid=force_solid,
             ignore_highlight_filter=ignore_highlight_filter,
