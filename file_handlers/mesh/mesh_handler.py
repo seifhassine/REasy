@@ -11,7 +11,6 @@ class MeshHandler(BaseFileHandler):
     def __init__(self):
         super().__init__()
         self.mesh: Optional[MeshFile] = None
-        self.raw_data: bytes | bytearray = b""
         self.filepath: str = ""
         self._streaming_data_cache: dict[str, bytes | None] = {}
 
@@ -24,6 +23,13 @@ class MeshHandler(BaseFileHandler):
 
     def supports_editing(self) -> bool:
         return False
+
+    @staticmethod
+    def _file_version_from_path(filepath: str) -> int:
+        version = Path(filepath).suffix[1:]
+        if not version.isdecimal():
+            raise ValueError(f"Mesh filename needs a numeric version suffix: {filepath}")
+        return int(version)
 
     def _find_streaming_mesh_path(self) -> Optional[Path]:
         if not self.filepath:
@@ -94,15 +100,7 @@ class MeshHandler(BaseFileHandler):
         return None
 
     def read(self, data: bytes):
-        self.raw_data = data
-
-        file_version = 0
-        if self.filepath and ".mesh." in self.filepath:
-            try:
-                _, _, version = self.filepath.rpartition(".mesh.")
-                file_version = int(version)
-            except (ValueError, IndexError):
-                pass
+        file_version = self._file_version_from_path(self.filepath)
 
         mf = MeshFile()
         stream_data = self._load_streaming_mesh_data()

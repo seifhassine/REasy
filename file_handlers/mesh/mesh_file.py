@@ -1,6 +1,7 @@
 import math
 import struct
 from array import array
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Dict, List, Tuple, Optional
@@ -10,11 +11,8 @@ from utils.native_build import ensure_fastmesh
 ensure_fastmesh()
 from fastmesh import (
     unpack_normals_tangents,
-    pack_normals_tangents,
     unpack_uvs,
-    pack_uvs,
     unpack_colors,
-    pack_colors,
 )
 
 MESH_MAGIC = 0x4853454D
@@ -38,49 +36,47 @@ class MeshMainVersion(IntEnum):
     RE9 = 14
 
 
-def get_mesh_version(internal_version: int, file_version: int = 0) -> MeshMainVersion:
-    explicit_mapping = {
-        (352921600, 32): MeshMainVersion.RE7,
-        (386270720, 1808282334): MeshMainVersion.DMC5,
-        (386270720, 1808312334): MeshMainVersion.DMC5,
-        (386270720, 1902042334): MeshMainVersion.DMC5,
-        (21041600, 2109108288): MeshMainVersion.RE_RT,
-        (21041600, 220128762): MeshMainVersion.RE_RT,
-        (21041600, 2109148288): MeshMainVersion.RE_RT,
-        (21061800, 2109148288): MeshMainVersion.RE_RT,
-        (21091000, 2109148288): MeshMainVersion.RE_RT,
-        (2020091500, 2101050001): MeshMainVersion.RE8,
-        (220822879, 221108797): MeshMainVersion.RE4,
-        (220705151, 230110883): MeshMainVersion.SF6,
-        (230403828, 230110883): MeshMainVersion.SF6,
-        (230517984, 231011879): MeshMainVersion.DD2_OLD,
-        (230517984, 240423143): MeshMainVersion.DD2,
-        (230727984, 240306278): MeshMainVersion.KUNITSUGAMI,
-        (240704828, 240827123): MeshMainVersion.ONIMUSHA,
-        (240704828, 241111606): MeshMainVersion.MHWILDS,
-        (250707828, 250925211): MeshMainVersion.PRAGMATA,
-        (250904410, 250925211): MeshMainVersion.RE9,
-    }
-    if (internal_version, file_version) in explicit_mapping:
-        return explicit_mapping[(internal_version, file_version)]
+MESH_VERSION_PAIRS = {
+    (352921600, 32): MeshMainVersion.RE7,
+    (386270720, 1808282334): MeshMainVersion.DMC5,
+    (386270720, 1808312334): MeshMainVersion.DMC5,
+    (386270720, 1902042334): MeshMainVersion.DMC5,
+    (21011200, 1902042334): MeshMainVersion.DMC5,
+    (21041600, 2109108288): MeshMainVersion.RE_RT,
+    (21041600, 220128762): MeshMainVersion.RE_RT,
+    (21041600, 2109148288): MeshMainVersion.RE_RT,
+    (21061800, 2109148288): MeshMainVersion.RE_RT,
+    (21091000, 2109148288): MeshMainVersion.RE_RT,
+    (2020091500, 2101050001): MeshMainVersion.RE8,
+    (220822879, 221108797): MeshMainVersion.RE4,
+    (220705151, 230110883): MeshMainVersion.SF6,
+    (230403828, 230110883): MeshMainVersion.SF6,
+    (230517984, 231011879): MeshMainVersion.DD2_OLD,
+    (230517984, 240423143): MeshMainVersion.DD2,
+    (230727984, 240306278): MeshMainVersion.KUNITSUGAMI,
+    (240704828, 240827123): MeshMainVersion.ONIMUSHA,
+    (240827123, 240827123): MeshMainVersion.ONIMUSHA,
+    (240704828, 241111606): MeshMainVersion.MHWILDS,
+    (250203152, 250604100): MeshMainVersion.PRAGMATA,
+    (250203152, 251215606): MeshMainVersion.PRAGMATA,
+    (250707828, 250925211): MeshMainVersion.PRAGMATA,
+    (250707828, 251121828): MeshMainVersion.PRAGMATA,
+    (250904410, 250925211): MeshMainVersion.RE9,
+}
 
-    fallback_mapping = {
-        352921600: MeshMainVersion.RE7,
-        386270720: MeshMainVersion.DMC5,
-        21041600: MeshMainVersion.RE_RT,
-        21061800: MeshMainVersion.RE_RT,
-        21091000: MeshMainVersion.RE_RT,
-        2020091500: MeshMainVersion.RE8,
-        220822879: MeshMainVersion.RE4,
-        220705151: MeshMainVersion.SF6,
-        230403828: MeshMainVersion.SF6,
-        230517984: MeshMainVersion.DD2,
-        230727984: MeshMainVersion.KUNITSUGAMI,
-        240704828: MeshMainVersion.MHWILDS,
-        250707828: MeshMainVersion.PRAGMATA,
-        250904410: MeshMainVersion.RE9,
-    }
-    return fallback_mapping.get(internal_version, MeshMainVersion.RE9)
+
+def get_mesh_version(internal_version: int, file_version: int) -> MeshMainVersion:
+    pair = internal_version, file_version
+    if pair not in MESH_VERSION_PAIRS:
+        raise ValueError(f"Unsupported MESH version pair: {pair}")
+    return MESH_VERSION_PAIRS[pair]
+
+
+def _checked_slice(data: bytes | bytearray, start: int, size: int, label: str) -> bytes:
+    end = start + size
+    if start < 0 or size < 0 or end > len(data):
+        raise ValueError(f"{label} range [{start}, {end}) exceeds {len(data)} bytes")
+    return bytes(memoryview(data)[start:end])
 
 
 @dataclass
@@ -155,24 +151,7 @@ class Header:
         self.bone_indices_offset = h.read_int64()
         self.blend_shape_indices_offset = h.read_int64()
 
-    def _write_standard_lod_offsets(self, h: BinaryHandler):
-        h.write_int64(self.lods_offset)
-        h.write_int64(self.shadow_lods_offset)
-        h.write_int64(self.occluder_mesh_offset)
-        h.write_int64(self.normal_recalc_offset)
-        h.write_int64(self.blend_shapes_offset)
-        h.write_int64(self.mesh_offset)
-        h.write_int64(self.mesh_group_offset)
-
-    def _write_common_mesh_offsets(self, h: BinaryHandler):
-        h.write_int64(self.floats_offset)
-        h.write_int64(self.bounds_offset)
-        h.write_int64(self.bones_offset)
-        h.write_int64(self.material_indices_offset)
-        h.write_int64(self.bone_indices_offset)
-        h.write_int64(self.blend_shape_indices_offset)
-
-    def read(self, h: BinaryHandler, *, file_version: int = 0) -> bool:
+    def read(self, h: BinaryHandler, *, file_version: int) -> bool:
         self.magic = h.read_uint32()
         if self.magic not in (MESH_MAGIC, MPLY_MAGIC):
             return False
@@ -231,99 +210,26 @@ class Header:
             self.sdf_path_offset = h.read_int64()
         return True
 
-    def write(self, h: BinaryHandler):
-        h.write_uint32(self.magic)
-        h.write_uint32(self.version)
-        h.write_uint32(self.file_size)
-        h.write_uint32(self.lod_hash)
-        if self.format_version < MeshMainVersion.RE4:
-            h.write_int16(self.flags)
-            h.write_int16(self.name_count)
-            h.write_int32(self.ukn)
-            h.write_int64(self.lods_offset)
-            h.write_int64(self.shadow_lods_offset)
-            h.write_int64(self.occluder_mesh_offset)
-            h.write_int64(self.bones_offset)
-            h.write_int64(self.normal_recalc_offset)
-            h.write_int64(self.blend_shapes_offset)
-            h.write_int64(self.bounds_offset)
-            h.write_int64(self.mesh_offset)
-            h.write_int64(self.floats_offset)
-            h.write_int64(self.material_indices_offset)
-            h.write_int64(self.bone_indices_offset)
-            h.write_int64(self.blend_shape_indices_offset)
-            h.write_int64(self.name_offsets_offset)
-            h.write_int64(self.streaming_info_offset)
-        elif self.format_version < MeshMainVersion.ONIMUSHA:
-            h.write_uint32(self.content_flags & 0x00FFFFFF)
-            h.write_int16(self.name_count)
-            h.write_int16(self.header_pad)
-            h.write_int64(self.buffer_headers_offset)
-            self._write_standard_lod_offsets(h)
-            self._write_common_mesh_offsets(h)
-            if self.format_version < MeshMainVersion.DD2_OLD:
-                h.write_int64(self.streaming_info_offset)
-                h.write_int64(self.name_offsets_offset)
-            else:
-                h.write_int64(self.name_offsets_offset)
-                h.write_int64(self.parts_name_hash_offset)
-                h.write_int64(self.streaming_info_offset)
-            h.write_int64(self.vertices_offset)
-            h.write_int64(self.sdf_path_offset)
-        else:
-            h.write_int32(self.wilds_unkn1)
-            h.write_int16(self.name_count)
-            h.write_uint32(self.content_flags & 0x00FFFFFF)
-            h.write_int16(self.header_pad)
-            h.write_int32(self.wilds_unkn2)
-            h.write_int32(self.wilds_unkn3)
-            h.write_int32(self.wilds_unkn4)
-            h.write_int64(self.vertices_offset)
-            self._write_standard_lod_offsets(h)
-            self._write_common_mesh_offsets(h)
-            h.write_int64(self.name_offsets_offset)
-            h.write_int64(self.streaming_info_offset)
-            h.write_int64(self.sdf_path_offset)
-
-
 @dataclass
 class StreamingMeshEntry:
     start: int
     size: int
 
-    @property
-    def end(self) -> int:
-        return self.start + self.size
-
 
 @dataclass
 class MeshStreamingInfo:
-    unkn1: int = 0
     entries: List[StreamingMeshEntry] = field(default_factory=list)
-    entry_offset: int = 0
 
     def read(self, h: BinaryHandler) -> bool:
         entry_count = h.read_int32()
-        self.unkn1 = h.read_int32()
-        self.entry_offset = h.read_int64()
-        with h.seek_temp(self.entry_offset):
+        h.read_int32()
+        entry_offset = h.read_int64()
+        with h.seek_temp(entry_offset):
             self.entries = [
                 StreamingMeshEntry(h.read_uint32(), h.read_uint32())
                 for _ in range(entry_count)
             ]
         return True
-
-    def write(self, h: BinaryHandler):
-        h.write_int32(len(self.entries))
-        h.write_int32(self.unkn1)
-        h.write_int64(self.entry_offset)
-        cur = h.tell
-        h.seek(self.entry_offset)
-        for e in self.entries:
-            h.write_uint32(e.start)
-            h.write_uint32(e.size)
-        h.seek(cur)
-
 
 class VertexBufferType(IntEnum):
     Position = 0
@@ -379,14 +285,13 @@ class MeshBuffer:
         self.face_buffer_offset = 0
         self.total_buffer_size = 0
         self.vertex_buffer_size = 0
-        self.face_vert_buffer_header_size = 0
         self.element_count = 0
-        self.element_count2 = 0
         self.ukn1 = 0
         self.ukn2 = 0
         self.blend_shape_offset = 0
         self.shapekey_weight_buffer_offset = 0
         self.shapekey_weight_buffer_size = 0
+        self.buffer_index_unkn = 0
         self.shadow_mesh_index_buffer_offset = 0
         self.occluder_mesh_index_buffer_offset = 0
         self.blend_shape_index_remap_offset = 0
@@ -394,7 +299,9 @@ class MeshBuffer:
         self.buffer_index = 0
         self.buffer_headers: List[MeshBufferItemHeader] = []
         self.streaming_buffer_headers: Dict[int, StreamingBufferHeader] = {}
+        self.streaming_buffer_count = 0
         self.buffer_payloads: Dict[int, MeshBufferPayload] = {}
+        self.index_counts_by_buffer: Dict[int, int] = {}
 
         self.positions: array = array("f")
         self.normals: array = array("f")
@@ -403,8 +310,6 @@ class MeshBuffer:
         self.tangent_ws: array = array("B")
         self.uv0: array = array("d")
         self.uv1: array = array("d")
-        self.uv0_special: Dict[int, int] = {}
-        self.uv1_special: Dict[int, int] = {}
         self.colors: array = array("B")
         self.faces: array = array("H")
         self.integer_faces: Optional[array] = None
@@ -545,6 +450,9 @@ class MeshBuffer:
         streaming_data: Optional[bytes] = None,
     ) -> bool:
         header_base = h.tell
+        self.streaming_buffer_count = (
+            len(streaming_info.entries) if streaming_info is not None else 0
+        )
         self.element_headers_offset = h.read_int64()
         self.vertex_buffer_offset = h.read_int64()
         if self.version >= MeshMainVersion.RE4:
@@ -557,10 +465,10 @@ class MeshBuffer:
             if self.version == MeshMainVersion.RE_RT:
                 h.read_int64()  # rtPadding
             self.total_buffer_size = h.read_int32()
-            self.face_vert_buffer_header_size = h.read_int32()
+            h.read_int32()
             self.vertex_buffer_size = self.face_buffer_offset - self.vertex_buffer_offset
         self.element_count = h.read_int16()
-        self.element_count2 = h.read_int16()
+        h.read_int16()
         if self.version >= MeshMainVersion.PRAGMATA:
             self.shapekey_weight_buffer_size = h.read_int32()
             self.ukn1 = h.read_int32()
@@ -577,10 +485,12 @@ class MeshBuffer:
                 self.buffer_index = h.read_int32()
             else:
                 self.blend_shape_offset = h.read_int32()
-                self.shapekey_weight_buffer_size = h.read_int32()
+                self.buffer_index_unkn = h.read_int32()
                 self.buffer_index = h.read_int32()
                 h.read_int64()
         else:
+            self.shadow_mesh_index_buffer_offset = h.read_int32()
+            self.occluder_mesh_index_buffer_offset = h.read_int32()
             self.blend_shape_offset = h.read_int32()
 
         with h.seek_temp(self.element_headers_offset):
@@ -594,7 +504,7 @@ class MeshBuffer:
                 sz = h.read_int16()
                 off = h.read_int32()
                 self.buffer_headers.append(MeshBufferItemHeader(t, sz, off))
-        if streaming_info and streaming_data:
+        if streaming_info is not None and streaming_data is not None:
             self._read_streaming_buffer_headers(h, streaming_info, header_base)
 
         base = h.data
@@ -603,84 +513,29 @@ class MeshBuffer:
             face_bytes=b"",
             buffer_headers=list(self.buffer_headers),
         )
-        if streaming_info and streaming_data:
+        if streaming_info is not None and streaming_data is not None:
             for buffer_idx, header in self.streaming_buffer_headers.items():
                 if buffer_idx <= 0 or buffer_idx - 1 >= len(streaming_info.entries):
-                    continue
+                    raise ValueError(
+                        f"Streaming buffer index {buffer_idx} has no matching entry"
+                    )
                 stream_entry = streaming_info.entries[buffer_idx - 1]
-                start = stream_entry.start
-                payload = streaming_data[start:start + header.unpadded_buffer_size]
+                if not 0 <= header.vertex_buffer_length <= header.unpadded_buffer_size:
+                    raise ValueError(
+                        f"Invalid streaming vertex length for buffer {buffer_idx}"
+                    )
+                payload = _checked_slice(
+                    streaming_data,
+                    stream_entry.start,
+                    header.unpadded_buffer_size,
+                    f"Streaming buffer {buffer_idx}",
+                )
                 self.buffer_payloads[buffer_idx] = MeshBufferPayload(
                     vertex_bytes=payload[:header.vertex_buffer_length],
-                    face_bytes=payload[header.vertex_buffer_length:header.unpadded_buffer_size],
+                    face_bytes=payload[header.vertex_buffer_length:],
                     buffer_headers=list(header.vertex_elements),
                 )
         return True
-
-    def write(self, h: BinaryHandler, *, preserve_signs: bool = False):
-        h.write_int64(self.element_headers_offset)
-        h.write_int64(self.vertex_buffer_offset)
-        if self.version >= MeshMainVersion.SF6:
-            h.write_int64(0)
-            h.write_int32(self.vertex_buffer_size)
-            h.write_int32(self.face_buffer_offset - self.vertex_buffer_offset)
-        else:
-            h.write_int64(self.face_buffer_offset)
-            if self.version == MeshMainVersion.RE_RT:
-                h.write_int32(self.ukn1)
-                h.write_int32(self.ukn2)
-            h.write_int32(self.vertex_buffer_size)
-            h.write_int32(self.face_vert_buffer_header_size)
-        h.write_int16(self.element_count)
-        h.write_int16(self.element_count2)
-
-        cur = h.tell
-        h.seek(self.element_headers_offset)
-        for bh in self.buffer_headers:
-            h.write_int16(bh.type)
-            h.write_int16(bh.size)
-            h.write_int32(bh.offset)
-
-        for bh in self.buffer_headers:
-            start = self.vertex_buffer_offset + bh.offset
-            h.seek(start)
-            if bh.type == VertexBufferType.Position:
-                h.write_bytes(self.positions.tobytes())
-            elif bh.type == VertexBufferType.NormalsTangents:
-                h.write_bytes(
-                    pack_normals_tangents(
-                        self.normals, self.normal_ws, self.tangents, self.tangent_ws
-                    )
-                )
-            elif bh.type == VertexBufferType.UV0:
-                buf = bytearray(pack_uvs(self.uv0))
-                if preserve_signs and self.uv0_special:
-                    shorts = array("H")
-                    shorts.frombytes(buf)
-                    for i, raw in self.uv0_special.items():
-                        shorts[i] = raw
-                    buf = bytearray(shorts.tobytes())
-                h.write_bytes(buf)
-            elif bh.type == VertexBufferType.UV1:
-                buf = bytearray(pack_uvs(self.uv1))
-                if preserve_signs and self.uv1_special:
-                    shorts = array("H")
-                    shorts.frombytes(buf)
-                    for i, raw in self.uv1_special.items():
-                        shorts[i] = raw
-                    buf = bytearray(shorts.tobytes())
-                h.write_bytes(buf)
-            elif bh.type == VertexBufferType.Colors:
-                h.write_bytes(pack_colors(self.colors))
-
-        h.seek(self.face_buffer_offset)
-        if self.integer_faces is not None:
-            h.write_bytes(self.integer_faces.tobytes())
-        else:
-            h.write_bytes(self.faces.tobytes())
-
-        h.seek(cur)
-
 
 class Submesh:
     def __init__(self, buffer: MeshBuffer, version: MeshMainVersion):
@@ -706,10 +561,7 @@ class Submesh:
         else:
             self.material_index = h.read_uint8()
             self.is_quad = h.read_uint8()
-            if self.version >= MeshMainVersion.ONIMUSHA:
-                self.buffer_index = h.read_uint8()
-                self.reserve = h.read_uint8()
-            elif self.version >= MeshMainVersion.SF6:
+            if self.version >= MeshMainVersion.SF6:
                 self.buffer_index = h.read_uint8()
                 self.reserve = h.read_uint8()
             else:
@@ -724,77 +576,54 @@ class Submesh:
             self.streaming_offset2 = h.read_int32()
         if self.version >= MeshMainVersion.DD2:
             self.ukn2 = h.read_int32()
-
-    def write(self, h: BinaryHandler):
-        if self.version < MeshMainVersion.RE4:
-            h.write_uint16(self.material_index)
-            h.write_uint16(self.reserve)
-        else:
-            h.write_uint8(self.material_index)
-            h.write_uint8(self.is_quad)
-            if self.version >= MeshMainVersion.ONIMUSHA:
-                h.write_uint8(self.buffer_index)
-                h.write_uint8(self.reserve)
-            elif self.version >= MeshMainVersion.SF6:
-                h.write_uint8(self.buffer_index)
-                h.write_uint8(self.reserve)
-            else:
-                h.write_uint16(self.reserve)
-            if self.version >= MeshMainVersion.ONIMUSHA:
-                h.write_int32(self.ukn1)
-        h.write_int32(self.indices_count)
-        h.write_int32(self.faces_index_offset)
-        h.write_int32(self.verts_index_offset)
-        if self.version >= MeshMainVersion.RE8:
-            h.write_int32(self.streaming_offset)
-            h.write_int32(self.streaming_offset2)
-        if self.version >= MeshMainVersion.DD2:
-            h.write_int32(self.ukn2)
-
+        if min(self.indices_count, self.faces_index_offset, self.verts_index_offset) < 0:
+            raise ValueError("Negative submesh count or offset")
 
 class MeshGroup:
     def __init__(self, buffer: MeshBuffer, version: MeshMainVersion):
         self.buffer = buffer
         self.version = version
         self.group_id = 0
-        self.submesh_count = 0
         self.vertex_count = 0
         self.face_count = 0
         self.submeshes: List[Submesh] = []
-        self.mesh_vertex_offset = 0
-        self.offset = 0
-        self.unk_bytes = b""
 
-    def read(self, h: BinaryHandler):
-        self.offset = h.tell
+    def read(
+        self,
+        h: BinaryHandler,
+        *,
+        buffer_vertex_offsets: Dict[int, int],
+    ):
         self.group_id = h.read_uint8()
-        self.submesh_count = h.read_uint8()
-        self.unk_bytes = h.read_bytes(6)
+        submesh_count = h.read_uint8()
+        h.skip(6)
         self.vertex_count = h.read_int32()
         self.face_count = h.read_int32()
-        for _ in range(self.submesh_count):
+        if min(self.vertex_count, self.face_count) < 0:
+            raise ValueError("Negative mesh-group count")
+        for _ in range(submesh_count):
             sm = Submesh(self.buffer, self.version)
             sm.read(h)
             self.submeshes.append(sm)
-        for i, sm in enumerate(self.submeshes):
-            if i < self.submesh_count - 1:
-                sm.vert_count = self.submeshes[i + 1].verts_index_offset - sm.verts_index_offset
-            else:
-                sm.vert_count = self.vertex_count - (sm.verts_index_offset - self.mesh_vertex_offset)
 
-    def write(self, h: BinaryHandler):
-        h.seek(self.offset)
-        h.write_uint8(self.group_id)
-        h.write_uint8(self.submesh_count)
-        if self.unk_bytes:
-            h.write_bytes(self.unk_bytes)
-        else:
-            h.write_bytes(b"\x00" * 6)
-        h.write_int32(self.vertex_count)
-        h.write_int32(self.face_count)
-        for sm in self.submeshes:
-            sm.write(h)
+        next_offsets_by_buffer: Dict[int, int] = {}
+        for sm in reversed(self.submeshes):
+            buffer_index = sm.buffer_index
+            vertex_end = next_offsets_by_buffer.get(
+                buffer_index,
+                buffer_vertex_offsets.get(buffer_index, 0) + self.vertex_count,
+            )
+            sm.vert_count = vertex_end - sm.verts_index_offset
+            if sm.vert_count < 0:
+                raise ValueError(
+                    f"Invalid submesh vertex span [{sm.verts_index_offset}, {vertex_end})"
+                )
+            next_offsets_by_buffer[buffer_index] = sm.verts_index_offset
 
+        for buffer_index in next_offsets_by_buffer:
+            buffer_vertex_offsets[buffer_index] = (
+                buffer_vertex_offsets.get(buffer_index, 0) + self.vertex_count
+            )
 
 class MeshLOD:
     def __init__(self, buffer: MeshBuffer, version: MeshMainVersion):
@@ -805,12 +634,13 @@ class MeshLOD:
         self.vertex_format = 0
         self.lod_level = 0
         self.reserve = 0
-        self.header_offset = 0
-        self.mesh_offsets: List[int] = []
-        self.parts = self.mesh_groups
 
-    def read(self, h: BinaryHandler):
-        base = h.data
+    def read(
+        self,
+        h: BinaryHandler,
+        *,
+        buffer_vertex_offsets: Dict[int, int],
+    ):
         mesh_count = h.read_uint8()
         self.vertex_format = h.read_uint8()
         if self.version >= MeshMainVersion.SF6:
@@ -819,49 +649,28 @@ class MeshLOD:
         else:
             self.reserve = h.read_uint16()
         self.lod_factor = h.read_float()
-        self.header_offset = h.read_int64()
-        with h.seek_temp(self.header_offset):
-            self.mesh_offsets = [h.read_int64() for _ in range(mesh_count)]
-        vert_offset = 0
-        total_indices = 0
-        for off in self.mesh_offsets:
+        header_offset = h.read_int64()
+        with h.seek_temp(header_offset):
+            mesh_offsets = [h.read_int64() for _ in range(mesh_count)]
+        for off in mesh_offsets:
+            if off <= 0:
+                continue
             h.seek(off)
             mg = MeshGroup(self.buffer, self.version)
-            mg.mesh_vertex_offset = vert_offset
-            mg.read(h)
+            mg.read(h, buffer_vertex_offsets=buffer_vertex_offsets)
             self.mesh_groups.append(mg)
-            vert_offset += mg.vertex_count
-            total_indices += mg.face_count
-        start = self.buffer.face_buffer_offset
-        index_size = 4 if self.buffer.has_32bit_indices else 2
-        size = total_indices * index_size
-        self.buffer.buffer_payloads[0].face_bytes = bytes(memoryview(base)[start:start + size])
-
-    def write(self, h: BinaryHandler):
-        h.write_uint8(len(self.mesh_groups))
-        h.write_uint8(self.vertex_format)
-        if self.version >= MeshMainVersion.SF6:
-            h.write_uint8(self.lod_level)
-            h.write_uint8(self.reserve)
-        else:
-            h.write_uint16(self.reserve)
-        h.write_float(self.lod_factor)
-        h.write_int64(self.header_offset)
-        cur = h.tell
-        h.seek(self.header_offset)
-        for off in self.mesh_offsets:
-            h.write_int64(off)
-        h.seek(cur)
-        for mg in self.mesh_groups:
-            mg.write(h)
-
+            for sm in mg.submeshes:
+                index_end = sm.faces_index_offset + sm.indices_count
+                self.buffer.index_counts_by_buffer[sm.buffer_index] = max(
+                    self.buffer.index_counts_by_buffer.get(sm.buffer_index, 0),
+                    index_end,
+                )
 
 class MeshData:
     def __init__(self, buffer: MeshBuffer, version: MeshMainVersion):
         self.buffer = buffer
         self.version = version
         self.lods: List[MeshLOD] = []
-        self.lod_count = 0
         self.material_count = 0
         self.uv_count = 0
         self.skin_weight_count = 0
@@ -874,113 +683,79 @@ class MeshData:
             (0.0, 0.0, 0.0, 0.0),
             (0.0, 0.0, 0.0, 0.0),
         )
-        self.lod_offsets_start = 0
-        self.lod_offsets: List[int] = []
-        self._read_all_lods = False
 
     def read(self, h: BinaryHandler, *, read_all_lods: bool = False):
-        self.lod_count = h.read_uint8()
+        lod_count = h.read_uint8()
         self.material_count = h.read_uint8()
         self.uv_count = h.read_uint8()
         self.skin_weight_count = h.read_uint8()
-        if self.version >= MeshMainVersion.RE4:
-            self.total_mesh_count = h.read_int16()
-            self.integer_faces = h.read_uint8()
-            self.shared_lod_bits = h.read_uint8()
-            self.buffer.has_32bit_indices = bool(self.integer_faces)
-        else:
-            self.total_mesh_count = h.read_int32()
-            self.buffer.has_32bit_indices = False
+        self.total_mesh_count = h.read_int16()
+        self.integer_faces = h.read_uint8()
+        self.shared_lod_bits = h.read_uint8()
+        self.buffer.has_32bit_indices = bool(self.integer_faces)
         if self.version <= MeshMainVersion.DMC5:
             self.ukn1 = h.read_int64()
-        self.bounding_sphere = (
-            h.read_float(),
-            h.read_float(),
-            h.read_float(),
-            h.read_float(),
-        )
+        self.bounding_sphere = h.read_vec4()
         if self.version >= MeshMainVersion.RE4:
-            self.bounding_box = (
-                (
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                    float(h.read_uint32()),
-                ),
-                (
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                    float(h.read_uint32()),
-                ),
+            self.bounding_box = tuple(
+                (*h.read_vec3(), float(h.read_uint32())) for _ in range(2)
             )
         else:
-            self.bounding_box = (
-                (
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                ),
-                (
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                    h.read_float(),
-                ),
-            )
-        self.lod_offsets_start = h.read_int64()
-        with h.seek_temp(self.lod_offsets_start):
-            self.lod_offsets = [h.read_int64() for _ in range(self.lod_count)]
+            self.bounding_box = (h.read_vec4(), h.read_vec4())
+        lod_offsets_start = h.read_int64()
+        with h.seek_temp(lod_offsets_start):
+            lod_offsets = [h.read_int64() for _ in range(lod_count)]
 
-        lod_targets = self.lod_offsets if read_all_lods else self.lod_offsets[:1]
-        for off in lod_targets:
-            h.seek(off)
-            lod = MeshLOD(self.buffer, self.version)
-            lod.read(h)
-            self.lods.append(lod)
+        parse_all_lods = read_all_lods or self.buffer.streaming_buffer_count > 0
+        lod_targets = lod_offsets if parse_all_lods else lod_offsets[:1]
+        self.buffer.index_counts_by_buffer = {}
+        buffer_vertex_offsets: Dict[int, int] = {}
+        lods_by_offset: Dict[int, MeshLOD] = {}
+        for lod_index, off in enumerate(lod_targets):
+            if off <= 0:
+                continue
+            lod = lods_by_offset.get(off)
+            if lod is None:
+                h.seek(off)
+                lod = MeshLOD(self.buffer, self.version)
+                lod.read(h, buffer_vertex_offsets=buffer_vertex_offsets)
+                lods_by_offset[off] = lod
+            if read_all_lods or lod_index == 0:
+                self.lods.append(lod)
+
+        missing_buffers = (
+            {0, *self.buffer.index_counts_by_buffer}
+            - self.buffer.buffer_payloads.keys()
+        )
+        if missing_buffers:
+            raise ValueError(f"Missing mesh buffers: {sorted(missing_buffers)}")
+
+        index_size = 4 if self.buffer.has_32bit_indices else 2
+        resident_index_count = (
+            self.buffer.index_counts_by_buffer.get(0, 0)
+            if self.buffer.streaming_buffer_count
+            else sum(self.buffer.index_counts_by_buffer.values())
+        )
+        resident_start = self.buffer.face_buffer_offset
+        self.buffer.buffer_payloads[0].face_bytes = _checked_slice(
+            h.data,
+            resident_start,
+            resident_index_count * index_size,
+            "Resident indices",
+        )
+
+        for buffer_index, index_count in self.buffer.index_counts_by_buffer.items():
+            if buffer_index == 0:
+                continue
+            payload = self.buffer.buffer_payloads[buffer_index]
+            required_size = index_count * index_size
+            if len(payload.face_bytes) < required_size:
+                raise ValueError(
+                    f"Mesh buffer {buffer_index} needs {required_size} index bytes"
+                )
+            payload.face_bytes = payload.face_bytes[:required_size]
 
         self.buffer.finalize_payloads()
-
-        self._read_all_lods = read_all_lods
-
-    def write(self, h: BinaryHandler):
-        h.write_uint8(self.lod_count)
-        h.write_uint8(self.material_count)
-        h.write_uint8(self.uv_count)
-        h.write_uint8(self.skin_weight_count)
-        if self.version >= MeshMainVersion.RE4:
-            h.write_int16(self.total_mesh_count)
-            h.write_uint8(self.integer_faces)
-            h.write_uint8(self.shared_lod_bits)
-        else:
-            h.write_int32(self.total_mesh_count)
-        if self.version <= MeshMainVersion.DMC5:
-            h.write_int64(self.ukn1)
-        for v in self.bounding_sphere:
-            h.write_float(v)
-        if self.version >= MeshMainVersion.RE4:
-            for v in self.bounding_box[0][:3]:
-                h.write_float(v)
-            h.write_uint32(int(self.bounding_box[0][3]))
-            for v in self.bounding_box[1][:3]:
-                h.write_float(v)
-            h.write_uint32(int(self.bounding_box[1][3]))
-        else:
-            for v in self.bounding_box[0]:
-                h.write_float(v)
-            for v in self.bounding_box[1]:
-                h.write_float(v)
-        h.write_int64(self.lod_offsets_start)
-        cur = h.tell
-        h.seek(self.lod_offsets_start)
-        for off in self.lod_offsets:
-            h.write_int64(off)
-        h.seek(cur)
-        for lod, off in zip(self.lods, self.lod_offsets):
-            h.seek(off)
-            lod.write(h)
-
 
 @dataclass
 class MPLYChunkFlags:
@@ -1002,6 +777,17 @@ class MPLYChunkFlags:
 
     @classmethod
     def read(cls, raw: int, version: MeshMainVersion) -> "MPLYChunkFlags":
+        # DD2-family flags leave bit 15 unused.  The same bit denotes an
+        # inline per-vertex tangent mask in the later/alternate layouts.
+        has_tangent_bits_block = (
+            version
+            not in (
+                MeshMainVersion.DD2_OLD,
+                MeshMainVersion.KUNITSUGAMI,
+                MeshMainVersion.DD2,
+            )
+            and bool(raw & (1 << 15))
+        )
         return cls(
             raw=raw,
             is_meshlet_compressed_normal=bool(raw & (1 << 0)),
@@ -1015,7 +801,7 @@ class MPLYChunkFlags:
             is_meshlet_use_vertex_color=bool(raw & (1 << 8)),
             is_meshlet_use_texcoord2=bool(raw & (1 << 9)),
             is_meshlet_use_texcoord3=bool(raw & (1 << 10)),
-            has_tangent_bits_block=bool(raw & (1 << 15)),
+            has_tangent_bits_block=has_tangent_bits_block,
             use_32bit_pos=bool(raw & (1 << 12)),
             use_24bit_pos=bool(raw & (1 << 13)),
         )
@@ -1024,9 +810,6 @@ class MPLYChunkFlags:
 @dataclass
 class MPLYChunk:
     vert_count: int
-    face_count: int
-    material_id: int
-    part_id: int
     positions: List[Tuple[float, float, float]]
     faces: List[int]
     normals: List[Tuple[float, float, float]]
@@ -1037,10 +820,7 @@ class MPLYChunk:
 class MPLYClusterHeader:
     vertex_count: int
     index_count: int
-    position_compress_level: int
     material_id: int
-    part_id: int
-    vertex_offset_bytes: int
     index_offset_bytes: int
 
 
@@ -1095,7 +875,6 @@ class MPLYParser:
         center: Tuple[float, float, float],
         relative_aabb: Tuple[float, float, float, float, float, float],
         version: MeshMainVersion,
-        position_compress_level: int = 0,
     ) -> List[Tuple[float, float, float]]:
         if flags.use_24bit_pos:
             raw_positions = [struct.unpack_from("<3B", data, i * 3) for i in range(len(data) // 3)]
@@ -1116,8 +895,7 @@ class MPLYParser:
 
         if version < MeshMainVersion.MHWILDS:
             scale_byte = (flags.raw >> 16) & 0xFF
-            div_shift = scale_byte - 127
-            scale = (1 << div_shift) if div_shift >= 0 else (1.0 / (1 << -div_shift))
+            scale = math.ldexp(1.0, scale_byte - 127)
             return [
                 (
                     (x - 0.5) * scale + center[0],
@@ -1130,9 +908,8 @@ class MPLYParser:
         # Credit: shadowcookie for the compressed position decode.
         div_byte = (flags.raw >> 24) & 0xFF
         mult_byte = (flags.raw >> 16) & 0xFF
-        div_shift = div_byte - 127
-        scale = (1 << div_shift) if div_shift >= 0 else (1.0 / (1 << -div_shift))
-        offset = 1 << (mult_byte - div_byte)
+        scale = math.ldexp(1.0, div_byte - 127)
+        offset = math.ldexp(1.0, mult_byte - div_byte)
 
         offset_terms = (
             ((relative_aabb[0] / 65535.0) - 0.5) * offset,
@@ -1170,15 +947,18 @@ class MPLYParser:
             self.h.skip(64)
         blob_size = self.h.read_uint32()
         self.h.read_uint32()
+        if lod_num > 8 or blob_base < 0 or blob_base + blob_size > len(self.data):
+            raise ValueError("Invalid MPLY meshlet layout")
         return blob_base, blob_size, lod_offsets[:lod_num]
 
-    def _parse_chunk(self, start: int, end: int, position_compress_level: int = 0) -> MPLYChunk:
+    def _parse_chunk(self, start: int, end: int) -> MPLYChunk:
+        if not 0 <= start < end <= len(self.data):
+            raise ValueError(f"Invalid MPLY chunk range [{start}, {end})")
         self.h.seek(start)
         center = tuple(self.h.read_vec3())
         vert_count = self.h.read_uint8()
         face_count = self.h.read_uint8()
-        material_id = self.h.read_uint8()
-        part_id = self.h.read_uint8()
+        self.h.skip(2)
         relative_aabb = [self.h.read_uint16() for _ in range(6)]
         flags = MPLYChunkFlags.read(self.h.read_uint32(), self.header.format_version)
 
@@ -1191,7 +971,6 @@ class MPLYParser:
             center,
             tuple(relative_aabb),
             self.header.format_version,
-            position_compress_level=position_compress_level,
         )
         self.h.seek(self._aligned(self.h.tell))
 
@@ -1216,12 +995,14 @@ class MPLYParser:
         if flags.is_meshlet_use_skinned:
             self.h.skip(self._shared_count(flags.is_meshlet_compressed_skinned, vert_count) * 16)
 
+        if self.h.tell > end:
+            raise ValueError(f"MPLY chunk data exceeds its boundary at {end}")
         self.h.seek(end)
-        return MPLYChunk(vert_count, face_count, material_id, part_id, positions, faces, normals, colors)
+        return MPLYChunk(vert_count, positions, faces, normals, colors)
 
     def _read_cluster_headers(self) -> List[List[MPLYClusterHeader]]:
         if not self.header.meshlet_bvh_offset:
-            return []
+            raise ValueError("MPLY has no cluster headers")
         self.h.seek(self.header.meshlet_bvh_offset + 32)
         counts = []
         for _ in range(8):
@@ -1240,24 +1021,37 @@ class MPLYParser:
                 self.h.seek(gpu_cluster_headers + cluster_offsets[lod_index])
                 for _ in range(count):
                     word0 = self.h.read_uint32()
-                    word1 = self.h.read_uint32()
+                    self.h.read_uint32()
+                    self.h.read_uint32()
+                    index_offset = self.h.read_uint32()
                     headers.append(MPLYClusterHeader(
                         vertex_count=word0 & 0xFF,
                         index_count=(word0 >> 8) & 0x1FF,
-                        position_compress_level=(word0 >> 20) & 0x3,
                         material_id=(word0 >> 24) & 0xFF,
-                        part_id=word1 & 0xFF,
-                        vertex_offset_bytes=self.h.read_uint32(),
-                        index_offset_bytes=self.h.read_uint32(),
+                        index_offset_bytes=index_offset,
                     ))
             lod_headers.append(headers)
         return lod_headers
+
+    def _read_streaming_faces(
+        self,
+        cluster_header: MPLYClusterHeader,
+    ) -> Optional[List[int]]:
+        if self.streaming_data is None or cluster_header.index_count == 0:
+            return None
+        start = cluster_header.index_offset_bytes
+        data = _checked_slice(
+            self.streaming_data,
+            start,
+            cluster_header.index_count * 2,
+            "MPLY streaming indices",
+        )
+        return list(struct.unpack(f"<{cluster_header.index_count}H", data))
 
     def parse(self) -> Tuple[MeshBuffer, List[MeshData]]:
         blob_base, blob_size, lod_offsets = self._read_meshlet_layout()
         cluster_headers = self._read_cluster_headers()
         mesh_buffer = MeshBuffer(self.header.format_version)
-        mesh_buffer.buffer_payloads[0] = MeshBufferPayload()
         lods: List[MeshLOD] = []
         all_positions = array("f")
         all_normals = array("f")
@@ -1265,63 +1059,62 @@ class MPLYParser:
         all_faces = array("I")
         vertex_base = 0
 
+        lod_chunk_offsets: List[Optional[List[int]]] = []
         all_chunk_offsets: List[int] = []
         for lod_offset in lod_offsets:
             if lod_offset == 0:
+                lod_chunk_offsets.append(None)
                 continue
             self.h.seek(blob_base + lod_offset)
-            chunk_count = self.h.read_uint32()
-            offsets = [self.h.read_uint32() for _ in range(chunk_count)]
+            offsets = [self.h.read_uint32() for _ in range(self.h.read_uint32())]
+            lod_chunk_offsets.append(offsets)
             all_chunk_offsets.extend(offsets)
 
         sorted_boundaries = sorted({off for off in all_chunk_offsets if off} | {off for off in lod_offsets if off} | {blob_size})
-        for lod_index, lod_offset in enumerate(lod_offsets):
-            if lod_offset == 0:
+        for lod_index, chunk_offsets in enumerate(lod_chunk_offsets):
+            if chunk_offsets is None:
                 continue
-            self.h.seek(blob_base + lod_offset)
-            chunk_count = self.h.read_uint32()
-            chunk_offsets = [self.h.read_uint32() for _ in range(chunk_count)]
             lod = MeshLOD(mesh_buffer, self.header.format_version)
             lod.lod_level = lod_index
             group = MeshGroup(mesh_buffer, self.header.format_version)
-            group.group_id = 0
-            lod_cluster_headers = cluster_headers[lod_index] if lod_index < len(cluster_headers) else []
-            for chunk_index, chunk_offset in enumerate(chunk_offsets):
+            lod_cluster_headers = cluster_headers[lod_index]
+            if len(lod_cluster_headers) != len(chunk_offsets):
+                raise ValueError(
+                    f"MPLY LOD {lod_index}: {len(chunk_offsets)} chunks, "
+                    f"{len(lod_cluster_headers)} cluster headers"
+                )
+            for chunk_index, (chunk_offset, cluster_header) in enumerate(
+                zip(chunk_offsets, lod_cluster_headers)
+            ):
                 start = blob_base + chunk_offset
-                next_offsets = [v for v in sorted_boundaries if v > chunk_offset]
-                end = blob_base + next_offsets[0]
-                cluster_header = lod_cluster_headers[chunk_index] if chunk_index < len(lod_cluster_headers) else None
-                chunk = self._parse_chunk(start, end, position_compress_level=cluster_header.position_compress_level if cluster_header else 0)
-                if self.streaming_data and cluster_header and cluster_header.index_count:
-                    face_bytes = self.streaming_data[
-                        cluster_header.index_offset_bytes:cluster_header.index_offset_bytes + (cluster_header.index_count * 2)
-                    ]
-                    streaming_faces = list(array("H", face_bytes))
-                    if streaming_faces and any(streaming_faces):
-                        chunk.faces = streaming_faces
-                if cluster_header:
-                    chunk.material_id = cluster_header.material_id
-                    chunk.part_id = cluster_header.part_id
+                end = blob_base + sorted_boundaries[
+                    bisect_right(sorted_boundaries, chunk_offset)
+                ]
+                chunk = self._parse_chunk(start, end)
+                if chunk.vert_count != cluster_header.vertex_count:
+                    raise ValueError(
+                        f"MPLY LOD {lod_index} chunk {chunk_index}: "
+                        f"{chunk.vert_count}/{cluster_header.vertex_count} vertices"
+                    )
+                streaming_faces = self._read_streaming_faces(cluster_header)
+                if streaming_faces is not None:
+                    chunk.faces = streaming_faces
                 all_positions.extend(v for pos in chunk.positions for v in pos)
                 all_normals.extend(v for normal in chunk.normals for v in normal)
-                if chunk.colors:
-                    all_colors.extend(chunk.colors)
-                else:
-                    all_colors.extend([255, 255, 255, 255] * chunk.vert_count)
+                all_colors.extend(chunk.colors or [255] * (4 * chunk.vert_count))
+                face_offset = len(all_faces)
                 all_faces.extend(chunk.faces)
                 sm = Submesh(mesh_buffer, self.header.format_version)
-                sm.material_index = chunk.material_id
+                sm.material_index = cluster_header.material_id
                 sm.indices_count = len(chunk.faces)
-                sm.faces_index_offset = len(all_faces) - len(chunk.faces)
+                sm.faces_index_offset = face_offset
                 sm.verts_index_offset = vertex_base
                 sm.vert_count = chunk.vert_count
                 group.submeshes.append(sm)
-                group.submesh_count += 1
                 group.vertex_count += chunk.vert_count
                 group.face_count += len(chunk.faces)
                 vertex_base += chunk.vert_count
             lod.mesh_groups.append(group)
-            lod.parts = lod.mesh_groups
             lods.append(lod)
 
         mesh_buffer.positions = all_positions
@@ -1339,7 +1132,6 @@ class MPLYParser:
         )
         mesh_data = MeshData(mesh_buffer, self.header.format_version)
         mesh_data.lods = lods
-        mesh_data.parts = mesh_data.lods[0].mesh_groups if mesh_data.lods else []
         mesh_data.material_count = self.header.name_count
         return mesh_buffer, [mesh_data]
 
@@ -1382,8 +1174,6 @@ class MeshFile:
         self.blend_shape_indices: List[int] = []
         self.streaming_data_loaded = False
         self.streaming_buffer_count = 0
-
-        self._raw: bytes = b""
         
     def _section_size(self, start: int, sorted_offsets: List[int]) -> int:
         for offset in sorted_offsets:
@@ -1463,22 +1253,22 @@ class MeshFile:
 
     def _parse_bone_indices(self, data: bytes, sorted_offsets: List[int]):
         self.bone_indices = []
-        if not self.header.bone_indices_offset:
+        if not self.header.bone_indices_offset or self.joint_count <= 0:
             return
-        size = self._section_size(self.header.bone_indices_offset, sorted_offsets)
-        count = self.joint_count if self.joint_count > 0 else (size // 2)
-        fmt = f'<{count}H'
-        self.bone_indices = list(struct.unpack_from(fmt, data, self.header.bone_indices_offset))
+        size = self.joint_count * 2
+        if self._section_size(self.header.bone_indices_offset, sorted_offsets) < size:
+            raise ValueError("Bone-index section is too small")
+        raw = _checked_slice(data, self.header.bone_indices_offset, size, "Bone indices")
+        self.bone_indices = list(struct.unpack(f'<{self.joint_count}H', raw))
 
     def read(
         self,
         data: bytes,
         *,
+        file_version: int,
         read_extras: bool = False,
-        file_version: int = 0,
         streaming_data: Optional[bytes] = None,
     ) -> bool:
-        self._raw = data        
         self.joint_count = 0
         self.bone_remap_count = 0
         h = BinaryHandler(data, file_version=file_version)
@@ -1543,7 +1333,7 @@ class MeshFile:
                 h.seek(self.header.floats_offset)
                 self.float_bytes = h.read_bytes(size)
             if self.header.blend_shape_indices_offset:
-                size = size = self._section_size(self.header.blend_shape_indices_offset, sorted_offsets)
+                size = self._section_size(self.header.blend_shape_indices_offset, sorted_offsets)
                 start = self.header.blend_shape_indices_offset
                 fmt = '<{}H'.format(size // 2)
                 self.blend_shape_indices = list(struct.unpack_from(fmt, data, start))
@@ -1564,6 +1354,3 @@ class MeshFile:
                         self.material_names.append(self.names[idx])
 
         return True
-
-    def build(self) -> bytes:
-        return bytes(self._raw)
