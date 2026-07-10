@@ -48,21 +48,10 @@ class TransformAdapter:
     fields: Mapping[str, object]
 
     def read(self) -> ScnTransform:
-        values = _values(self.fields)
-        if len(values) < 3:
-            raise ValueError("Transform field set has fewer than three values")
-        position = _vec3(values[0])
-        rotation = _quat(values[1])
-        scale = _vec3(values[2])
-        return ScnTransform(position, rotation, scale, make_trs_matrix(position, rotation, scale))
+        return _read_transform(self.transform_fields())
 
     def write(self, transform: ScnTransform) -> None:
-        values = _values(self.fields)
-        if len(values) < 3:
-            raise ValueError("Transform field set has fewer than three values")
-        _set_vec3(values[0], transform.position)
-        _set_quat(values[1], transform.rotation)
-        _set_vec3(values[2], transform.scale)
+        _write_transform(self.transform_fields(), transform)
 
     def transform_fields(self) -> tuple[object, object, object]:
         values = _values(self.fields)
@@ -99,30 +88,32 @@ class CompositeMeshAdapter:
     fields: Mapping[str, object]
 
     def read_transform(self) -> ScnTransform:
-        values, index = _values(self.fields), self._trs_index()
-        position, rotation, scale = _vec3(values[index]), _quat(values[index + 1]), _vec3(values[index + 2])
-        return ScnTransform(position, rotation, scale, make_trs_matrix(position, rotation, scale))
+        return _read_transform(self.transform_fields())
 
     def write_transform(self, transform: ScnTransform) -> None:
-        values, index = _values(self.fields), self._trs_index()
-        _set_vec3(values[index], transform.position)
-        _set_quat(values[index + 1], transform.rotation)
-        _set_vec3(values[index + 2], transform.scale)
+        _write_transform(self.transform_fields(), transform)
 
     def transform_fields(self) -> tuple[object, object, object]:
-        values, index = _values(self.fields), self._trs_index()
-        return tuple(values[index:index + 3])
+        values = _values(self.fields)
+        for index in range(len(values) - 2):
+            fields = tuple(values[index:index + 3])
+            if _is_vec3(fields[0]) and _is_quat(fields[1]) and _is_vec3(fields[2]):
+                return fields
+        raise ValueError("Composite transform controller has no editable TRS fields")
 
     def owns_transform_field(self, value: object) -> bool:
-        values, index = _values(self.fields), self._trs_index()
-        return any(field is value for field in values[index:index + 3])
+        return any(field is value for field in self.transform_fields())
 
-    def _trs_index(self) -> int:
-        values = _values(self.fields)
-        for index in range(max(0, len(values) - 2)):
-            if _is_vec3(values[index]) and _is_quat(values[index + 1]) and _is_vec3(values[index + 2]):
-                return index
-        raise ValueError("Composite transform controller has no editable TRS fields")
+
+def _read_transform(fields: tuple[object, object, object]) -> ScnTransform:
+    position, rotation, scale = _vec3(fields[0]), _quat(fields[1]), _vec3(fields[2])
+    return ScnTransform(position, rotation, scale, make_trs_matrix(position, rotation, scale))
+
+
+def _write_transform(fields: tuple[object, object, object], transform: ScnTransform) -> None:
+    _set_vec3(fields[0], transform.position)
+    _set_quat(fields[1], transform.rotation)
+    _set_vec3(fields[2], transform.scale)
 
 
 def _vec3(value) -> tuple[float, float, float]:

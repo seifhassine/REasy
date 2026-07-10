@@ -6,7 +6,7 @@ import numpy as np
 
 from .scn_document_store import ScnDocumentStore
 from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
-from .scn_scene_graph import ScnLightProbeBinding, ScnObjectId, ScnRenderableMesh, ScnSceneGraph, ScnTransform
+from .scn_scene_graph import VIA_TRANSFORM, ScnLightProbeBinding, ScnObjectId, ScnRenderableMesh, ScnSceneGraph, ScnTransform
 
 
 def _identity() -> np.ndarray:
@@ -49,14 +49,14 @@ class TransformSelectionCommand:
             dirty_documents: set[str] = set()
             object_targets: dict[ScnObjectId, tuple[ScnRenderableMesh, np.ndarray]] = {}
             composite_targets: list[tuple[ScnRenderableMesh, np.ndarray]] = []
-            light_probe_targets: list[tuple[ScnLightProbeBinding, np.ndarray]] = []
+            light_probe_targets: list[ScnLightProbeBinding] = []
             for key, matrix in self.matrices.items():
                 renderable = by_key.get(key)
                 if renderable is None:
                     binding = probes_by_key.get(key)
                     if binding is not None:
                         result.handled = True
-                        light_probe_targets.append((binding, matrix))
+                        light_probe_targets.append(binding)
                     continue
                 result.handled = True
                 if renderable.source_kind == "foliage":
@@ -89,7 +89,7 @@ class TransformSelectionCommand:
                     dirty_documents.add(renderable.source_object_id.document_id)
                 except Exception as exc:
                     result.skipped[renderable.key] = str(exc)
-            for binding, _matrix in light_probe_targets:
+            for binding in light_probe_targets:
                 try:
                     changed = self._write_light_probe_obb(binding)
                     if changed:
@@ -126,7 +126,7 @@ class TransformSelectionCommand:
         written_worlds[renderable.source_object_id] = document_world.astype(np.float32)
         return TransformEditRecord(graph, renderable.key, renderable.source_object_id, None, adapter.transform_fields(), old_transform, new_transform)
 
-    def _write_composite(self, graph: ScnSceneGraph, renderable: ScnRenderableMesh, document_world: np.ndarray, written_worlds: dict[ScnObjectId, np.ndarray] | None = None) -> TransformEditRecord:
+    def _write_composite(self, graph: ScnSceneGraph, renderable: ScnRenderableMesh, document_world: np.ndarray, written_worlds: dict[ScnObjectId, np.ndarray]) -> TransformEditRecord:
         if not renderable.source_transform_instance_id:
             raise ValueError("Composite transform is embedded and has no editable instance id")
         document = graph.documents[renderable.source_object_id.document_id]
@@ -136,7 +136,7 @@ class TransformSelectionCommand:
         adapter = CompositeMeshAdapter(fields)
         old_transform = adapter.read_transform()
         instance = graph.document_instances[renderable.document_instance_id]
-        owner_matrix = (written_worlds or {}).get(renderable.source_object_id, document.objects[renderable.source_object_id].document_world_matrix)
+        owner_matrix = written_worlds.get(renderable.source_object_id, document.objects[renderable.source_object_id].document_world_matrix)
         new_transform = decompose_trs(self._inverse(owner_matrix) @ document_world, old_transform)
         adapter.write_transform(new_transform)
         renderable.document_world_matrix = (owner_matrix @ new_transform.local_matrix).astype(np.float32)
@@ -235,7 +235,7 @@ class RawTransformFieldCommand:
             if document is None:
                 continue
             for component in document.components.values():
-                if component.type_name != "via.Transform":
+                if component.type_name != VIA_TRANSFORM:
                     continue
                 try:
                     adapter = TransformAdapter(component.fields)

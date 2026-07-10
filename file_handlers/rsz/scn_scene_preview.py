@@ -58,12 +58,10 @@ class ScnScenePreviewWidget(QWidget):
         settings: dict | None = None,
     ):
         super().__init__(owner)
-        self.viewer = owner if sources_getter is None else None
         self.handler = getattr(owner, "handler", None)
         self._sources_getter = sources_getter
         self._graphs_changed_callback = graphs_changed_callback
         self._edits_changed_callback = edits_changed_callback
-        self.graph: ScnSceneGraph | None = None
         self.graphs: list[ScnSceneGraph] = []
         self.loader = ScnSceneLoader(document_store)
         self._loaded = False
@@ -72,7 +70,6 @@ class ScnScenePreviewWidget(QWidget):
         self._batch_cache: dict[str, tuple[str, list[SceneDrawBatch]]] = {}
         self._resolved_texture_cache: dict[tuple[bool, str], tuple[str, bytes] | None] = {}
         self._texture_cache: dict[str, TexPreviewUpload | None] = {}
-        self._parsed_tex_cache: dict[str, object | None] = {}
         self._light_probe_cache: dict[str, SceneLightProbeSet | None] = {}
         self._material_queue: deque[_MaterialQueueItem] = deque()
         self._material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
@@ -150,7 +147,7 @@ class ScnScenePreviewWidget(QWidget):
         self._clear_runtime_state()
         self.preview.cleanup()
         self._sources_getter = self._graphs_changed_callback = self._edits_changed_callback = None
-        self.viewer = self.handler = None
+        self.handler = None
 
     def _clear_runtime_state(self, *, keep_hidden: bool = False) -> None:
         self._pending_renderables.clear()
@@ -167,13 +164,11 @@ class ScnScenePreviewWidget(QWidget):
         self._batch_cache.clear()
         self._resolved_texture_cache.clear()
         self._texture_cache.clear()
-        self._parsed_tex_cache.clear()
         self._light_probe_cache.clear()
         self._shown_diagnostics.clear()
         self._loaded = self._loading = self._refresh_queued = self._stale = False
         self._camera_initialized = False
         self._last_asset_counts = (0, 0, 0)
-        self.graph = None
         self.graphs.clear()
 
     def scene_sources(self) -> list[ScnSceneSource]:
@@ -192,7 +187,6 @@ class ScnScenePreviewWidget(QWidget):
         if not graphs:
             return
         self.graphs.extend(graphs)
-        self.graph = self.graph or self.graphs[0]
         self._load_light_probe_set()
         self._queue_renderables(graphs)
         self._update_status()
@@ -225,7 +219,6 @@ class ScnScenePreviewWidget(QWidget):
         removed_keys = {renderable.key for renderable in removed}
         removed_assets = {self._material_asset_key(renderable) for renderable in removed}
         self.graphs = [graph for index, graph in enumerate(self.graphs) if index not in rows]
-        self.graph = self.graphs[0] if self.graphs else None
         self._pending_renderables = deque(item for item in self._pending_renderables if item.renderable.key not in removed_keys)
         self._pending_material_renderables = deque(renderable for renderable in self._pending_material_renderables if renderable.key not in removed_keys)
         self._draw_meshes = [mesh for mesh in self._draw_meshes if mesh.key not in removed_keys]
@@ -272,10 +265,7 @@ class ScnScenePreviewWidget(QWidget):
 
         self.status_label.setText("Building source-aware SCN scene graph...")
         self.graphs = self.loader.build_graphs(self.scene_sources(), max_depth=8)
-        self.graph = self.graphs[0] if self.graphs else None
         if not self.graphs:
-            self._last_asset_counts = (0, 0, 0)
-            self._camera_initialized = False
             self.status_label.setText("No SCN is loaded.")
             self.preview.set_scene([])
             self._sync_preview_materials()
@@ -283,12 +273,9 @@ class ScnScenePreviewWidget(QWidget):
             self._notify_graphs_changed()
             return
 
-        self._last_asset_counts = (0, 0, 0)
         self._load_light_probe_set()
         self._queue_renderables(self.graphs)
         self._loaded = True
-        self._stale = False
-        self._camera_initialized = False
         self.preview.set_scene([])
         self._sync_preview_materials()
         self._update_status()
@@ -592,12 +579,12 @@ class ScnScenePreviewWidget(QWidget):
                 return None
             binding.resolved_texture_path, binding.resolved_texture_data = resolved
             binding.status = "Resolved"
-        cached = self._texture_cache.get(binding.resolved_texture_path)
-        if binding.resolved_texture_path in self._texture_cache:
-            return cached
-        tex = self._parse_texture(binding.resolved_texture_path, binding.resolved_texture_data) if binding.resolved_texture_data else None
-        self._texture_cache[binding.resolved_texture_path] = build_tex_preview_upload(tex, mip_selector=self._choose_preview_mip) if tex is not None else None
-        return self._texture_cache[binding.resolved_texture_path]
+        path = binding.resolved_texture_path
+        if path in self._texture_cache:
+            return self._texture_cache[path]
+        tex = parse_tex_bytes(binding.resolved_texture_data) if binding.resolved_texture_data else None
+        self._texture_cache[path] = build_tex_preview_upload(tex, mip_selector=self._choose_preview_mip) if tex is not None else None
+        return self._texture_cache[path]
 
     @staticmethod
     def _choose_preview_mip(tex) -> int:
@@ -610,11 +597,6 @@ class ScnScenePreviewWidget(QWidget):
             height = max(1, height // 2)
             mip_index += 1
         return mip_index
-
-    def _parse_texture(self, resolved_texture_path: str, tex_bytes: bytes):
-        if resolved_texture_path not in self._parsed_tex_cache:
-            self._parsed_tex_cache[resolved_texture_path] = parse_tex_bytes(tex_bytes)
-        return self._parsed_tex_cache[resolved_texture_path]
 
     def _update_status(self) -> None:
         if not self.graphs:

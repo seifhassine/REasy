@@ -165,7 +165,6 @@ class SceneLightProbeSet:
             colors[invalid, :3] = (0.05, 0.05, 0.06)
         valid_indices = np.flatnonzero(~invalid)
         probe_indices_by_tetra = self.tetra_probe_indices.reshape(-1, 4)
-        transforms = self.tetra_transforms.reshape(-1, 12)
         for start in range(0, len(valid_indices), chunk_size):
             rows = valid_indices[start:start + chunk_size]
             chunk_points = points[rows]

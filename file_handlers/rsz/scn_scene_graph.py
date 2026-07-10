@@ -308,14 +308,6 @@ def _translation_matrix(position: tuple[float, float, float]) -> np.ndarray:
     return matrix
 
 
-def _scale_matrix(scale: tuple[float, float, float]) -> np.ndarray:
-    matrix = _identity()
-    matrix[0, 0] = float(scale[0])
-    matrix[1, 1] = float(scale[1])
-    matrix[2, 2] = float(scale[2])
-    return matrix
-
-
 def _quaternion_matrix(rotation: tuple[float, float, float, float]) -> np.ndarray:
     x, y, z, w = rotation
     return np.array(

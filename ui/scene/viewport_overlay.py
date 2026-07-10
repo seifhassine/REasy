@@ -13,7 +13,6 @@ class ViewportOverlayManager:
         self.drag_overlay = self.drag_offset = self.resize_overlay = None
 
     def setup(self, widget: QWidget, body: QWidget | None = None, fold_button=None) -> None:
-        widget._viewport_drag_overlay = widget
         if body is not None:
             widget._viewport_body = body
         if fold_button is not None:

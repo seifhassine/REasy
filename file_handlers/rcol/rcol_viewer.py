@@ -48,7 +48,8 @@ from .rcol_scene import SceneAttachment, build_scene_meshes
 from file_handlers.mesh.mesh_file import MeshFile
 from file_handlers.mesh.mesh_handler import MeshHandler
 from ui.scene.mesh_scene import build_mesh_scene
-from ui.scene.scene_preview import SceneDrawMesh, ScenePreviewWidget
+from ui.scene.scene_model import SceneDrawMesh
+from ui.scene.scene_preview import ScenePreviewWidget
 from utils.number_format import format_display_value
 from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
 

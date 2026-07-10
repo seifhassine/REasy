@@ -119,8 +119,6 @@ class ScnSceneTab:
         self._selected_renderables: set[str] = set()
         self._scene_popup = self._scene_popup_body = None
         self._fullscreen_restore = None
-        self._scn_icon = self._gameobject_icon = self._remove_icon = QIcon()
-        self._eye_icon = self._eye_off_icon = QIcon()
 
         self.notebook_widget = QWidget()
         self.notebook_widget.parent_tab = self
@@ -472,10 +470,11 @@ class ScnSceneTab:
         return True
 
     def remove_selected_sources(self) -> None:
-        rows = sorted({row for row in (item.data(0, Qt.UserRole) for item in self.source_tree.selectedItems()) if isinstance(row, int)}, reverse=True)
+        selected = self.source_tree.selectedItems()
+        rows = sorted({row for row in (item.data(0, Qt.UserRole) for item in selected) if isinstance(row, int)}, reverse=True)
         if not rows:
             return
-        removed_keys = {key for item in self.source_tree.selectedItems() for key in (item.data(1, Qt.UserRole) or ())}
+        removed_keys = {key for item in selected for key in (item.data(1, Qt.UserRole) or ())}
         self._hidden_renderables.difference_update(removed_keys)
         for row in rows:
             del self.sources[row]
@@ -563,13 +562,12 @@ class ScnSceneTab:
             self.parent_notebook.tabBar().setTabVisible(index, not self.hide_notebook_tab)
 
     def _on_graphs_changed(self) -> None:
-        if self.app is not None:
-            self.rebuild_owned_scn_paths(self.preview.graphs)
-            self.app.scenes.document_store.claim_graphs(self, self.preview.graphs)
-            self.update_source_summary()
-            self.app.scenes.sync_hidden_raw_tabs()
-            self.app.scenes.refresh_actions()
-            self.app.scenes.refresh_buttons()
+        self.rebuild_owned_scn_paths(self.preview.graphs)
+        self.app.scenes.document_store.claim_graphs(self, self.preview.graphs)
+        self.update_source_summary()
+        self.app.scenes.sync_hidden_raw_tabs()
+        self.app.scenes.refresh_actions()
+        self.app.scenes.refresh_buttons()
 
     def _on_scene_edited(self, document_ids=None, changed_fields=None) -> None:
         if document_ids:
@@ -636,16 +634,12 @@ class ScnSceneTab:
 
     def _selected_raw_record(self):
         for graph in self.preview.graphs:
-            for renderable in graph.renderables:
-                if renderable.key in self._selected_renderables:
-                    document = graph.documents.get(renderable.source_object_id.document_id)
-                    scene_object = document.objects.get(renderable.source_object_id) if document else None
-                    return document, scene_object, renderable
-            for light_probe in graph.light_probes:
-                if light_probe.key in self._selected_renderables:
-                    document = graph.documents.get(light_probe.source_object_id.document_id)
-                    scene_object = document.objects.get(light_probe.source_object_id) if document else None
-                    return document, scene_object, light_probe
+            for records in (graph.renderables, graph.light_probes):
+                for record in records:
+                    if record.key in self._selected_renderables:
+                        document = graph.documents.get(record.source_object_id.document_id)
+                        scene_object = document.objects.get(record.source_object_id) if document else None
+                        return document, scene_object, record
         return None
 
     def _embedded_raw_modified(self, document_id: str) -> None:
@@ -1105,8 +1099,7 @@ class ScnSceneController:
             if matched:
                 scene.update_source_summary()
                 scene.rebuild_owned_scn_paths()
-                scene.preview.request_refresh() if reloaded else scene.preview.set_stale()
-            elif nested_owner is scene:
+            if matched or nested_owner is scene:
                 scene.preview.request_refresh() if reloaded else scene.preview.set_stale()
         self.refresh_actions()
         self.refresh_buttons()

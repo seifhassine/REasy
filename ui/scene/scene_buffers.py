@@ -21,6 +21,10 @@ class SceneBufferSet:
 
 
 def scene_bounds(meshes: Iterable[SceneDrawMesh]) -> tuple[np.ndarray, float]:
+    return point_bounds(mesh_bounds_points(meshes))
+
+
+def mesh_bounds_points(meshes: Iterable[SceneDrawMesh]) -> np.ndarray:
     chunks = []
     for mesh in meshes:
         if not len(mesh.vertices):
@@ -28,17 +32,18 @@ def scene_bounds(meshes: Iterable[SceneDrawMesh]) -> tuple[np.ndarray, float]:
         vertices = np.asarray(mesh.vertices, dtype=np.float32).reshape(-1, 3)
         mins = vertices.min(axis=0)
         maxs = vertices.max(axis=0)
-        if mesh.transform_matrix is None:
-            chunks.append(np.stack((mins, maxs)).astype(np.float32, copy=False))
-            continue
         corners = np.array(
             [(x, y, z) for x in (mins[0], maxs[0]) for y in (mins[1], maxs[1]) for z in (mins[2], maxs[2])],
             dtype=np.float32,
         )
-        chunks.append(transform_points(corners, mesh.transform_matrix))
-    if not chunks:
+        chunks.append(transform_points(corners, mesh.transform_matrix) if mesh.transform_matrix is not None else corners)
+    return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
+
+
+def point_bounds(points: np.ndarray) -> tuple[np.ndarray, float]:
+    points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    if not len(points):
         return np.zeros(3, dtype=np.float32), 1.0
-    points = np.concatenate(chunks, axis=0)
     mins = points.min(axis=0)
     maxs = points.max(axis=0)
     return (mins + maxs) / 2.0, max(float(np.max(maxs - mins)), 1.0)
@@ -164,7 +169,7 @@ def triangle_line_indices(indices: np.ndarray) -> np.ndarray:
     return np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]], axis=0).astype(np.uint32).reshape(-1)
 
 
-def _transform_normals(normals: np.ndarray, matrix: np.ndarray) -> np.ndarray:
+def transform_normals(normals: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     try:
         normal_matrix = np.linalg.inv(np.asarray(matrix, dtype=np.float32)[:3, :3]).T
     except np.linalg.LinAlgError:
@@ -280,7 +285,7 @@ class _SceneBufferBuilder:
             vertices = transform_points(vertices, matrix)
         normals = self._source_normals(mesh, len(vertices))
         if normals is not None:
-            normals = _normalized_normals(_transform_normals(normals, matrix)) if matrix is not None else _normalized_normals(normals)
+            normals = _normalized_normals(transform_normals(normals, matrix)) if matrix is not None else _normalized_normals(normals)
         else:
             normals = _computed_normals(vertices, np.concatenate([indices for _, indices in batches]))
         self._append(vertices, normals, self._source_colors(mesh, len(vertices)), self._source_uvs(mesh, len(vertices)), batches, mesh.key)
@@ -293,7 +298,7 @@ class _SceneBufferBuilder:
         if not vertex_count or not batches:
             return
         matrices = np.stack(
-            [np.asarray(item.transform_matrix if item.transform_matrix is not None else np.identity(4), dtype=np.float32) for item in group],
+            [np.asarray(item.transform_matrix, dtype=np.float32) for item in group],
             axis=0,
         )
         hom = np.concatenate([source_vertices, np.ones((vertex_count, 1), dtype=np.float32)], axis=1)

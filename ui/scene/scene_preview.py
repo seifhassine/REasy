@@ -130,9 +130,13 @@ from .scene_buffers import (
     SceneBufferSet,
     build_scene_buffer_set,
     display_colors,
+    mesh_bounds_points,
+    point_bounds,
     scene_bounds,
     scene_index_buffers,
     scene_key_index_buffers,
+    transform_normals,
+    transform_points,
 )
 from .lightprobe_preview import SceneLightProbeSet
 from .scene_model import SceneDrawMesh
@@ -161,8 +165,6 @@ class _EditorLight:
     position: np.ndarray
     radius: float
     intensity: float
-    color: tuple[float, float, float] = (1.0, 0.9, 0.72)
-    enabled: bool = True
 
 
 GIZMO_AXES = np.identity(3, dtype=np.float32)
@@ -170,6 +172,7 @@ GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))
 GIZMO_BOX_FACES = ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0))
 BOX_EDGES = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
 GIZMO_PLANES = ((0, 1, (1.0, 0.85, 0.12, 0.24)), (0, 2, (0.9, 0.15, 1.0, 0.22)), (1, 2, (0.15, 0.8, 1.0, 0.22)))
+EDITOR_LIGHT_COLOR = (1.0, 0.9, 0.72)
 IDENTITY4 = np.identity(4, dtype=np.float32)
 HOVER_PICK_INTERVAL = 1.0 / 15.0
 HOVER_PICK_MIN_PIXELS = 4.0
@@ -269,16 +272,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._two_sided_materials: set[str] = set()
         self._hidden_keys: set[str] = set()
         self._editor_lights: list[_EditorLight] = []
-        self._active_editor_light = -1
         self._gl_cleanup_context = None
         self._needs_gl_upload = False
 
-        self.render_mode = "wire" if self._controls == "mesh" else self._setting_choice("scene_render_mode", "solid", ("wire", "hybrid", "solid"))
-        self._gizmo_mode = self._setting_choice("scene_gizmo_mode", "position", ("position", "rotation", "scale"))
-        self.show_only_highlighted = self._setting_bool("scene_show_only_highlighted", False)
-        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 60, 0, 240)
-        self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", "off", self.WIREFRAME_MODES)
-        self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", "fixed", self.LIGHTING_MODES)
+        self.render_mode = "wire" if self._controls == "mesh" else self._setting_choice("scene_render_mode", ("wire", "hybrid", "solid"))
+        self._gizmo_mode = self._setting_choice("scene_gizmo_mode", ("position", "rotation", "scale"))
+        self.show_only_highlighted = self._setting_bool("scene_show_only_highlighted")
+        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 0, 240)
+        self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", self.WIREFRAME_MODES)
+        self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", self.LIGHTING_MODES)
         self._light_probe_set: SceneLightProbeSet | None = None
         self._light_probe_status = ""
         self._light_probe_key = ""
@@ -287,21 +289,21 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._probe_viz_candidate_indices_cache: np.ndarray | None = None
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache: tuple[np.ndarray, np.ndarray] | None = None
-        self.line_width = self._setting_float("mesh_viewer_line_width", 1.5, 0.5, 8.0)
+        self.line_width = self._setting_float("mesh_viewer_line_width", 0.5, 8.0)
         self.color_source = "vertex"
-        self.ambient = self._setting_float("mesh_viewer_ambient", 0.35, 0.0, 1.0)
-        self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.65, 0.0, 1.0)
-        self.probe_exposure = self._setting_float("scene_probe_exposure", 0.12, 0.01, 2.0)
-        self.probe_viz_mode = self._setting_choice("scene_probe_viz_mode", "all", self.PROBE_VIZ_MODES)
-        self.probe_viz_points = self._setting_int("scene_probe_viz_points", 12000, 100, 50000)
+        self.ambient = self._setting_float("mesh_viewer_ambient", 0.0, 1.0)
+        self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.0, 1.0)
+        self.probe_exposure = self._setting_float("scene_probe_exposure", 0.01, 2.0)
+        self.probe_viz_mode = self._setting_choice("scene_probe_viz_mode", self.PROBE_VIZ_MODES)
+        self.probe_viz_points = self._setting_int("scene_probe_viz_points", 100, 50000)
         self.editor_light_intensity = 1.35
         self.editor_light_radius_factor = 0.18
-        self.show_bone_labels = self._setting_bool("mesh_viewer_show_bones", False)
-        self.camera_speed = self._setting_float("scene_camera_speed", 1.0, 0.01, 50.0)
-        self.camera_look = self._setting_float("scene_camera_look", 0.18, 0.01, 2.0)
-        self.camera_wheel = self._setting_float("scene_camera_wheel", 0.08, 0.001, 2.0)
-        self.camera_boost = self._setting_float("scene_camera_boost", 3.0, 1.0, 20.0)
-        self.camera_slow = self._setting_float("scene_camera_slow", 0.25, 0.01, 1.0)
+        self.show_bone_labels = self._setting_bool("mesh_viewer_show_bones")
+        self.camera_speed = self._setting_float("scene_camera_speed", 0.01, 50.0)
+        self.camera_look = self._setting_float("scene_camera_look", 0.01, 2.0)
+        self.camera_wheel = self._setting_float("scene_camera_wheel", 0.001, 2.0)
+        self.camera_boost = self._setting_float("scene_camera_boost", 1.0, 20.0)
+        self.camera_slow = self._setting_float("scene_camera_slow", 0.01, 1.0)
         self._colors_dirty = True
 
         self._timer = QTimer(self)
@@ -559,26 +561,26 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return self.SETTINGS_DEFAULTS[key]
         return self._settings.get(key, self.SETTINGS_DEFAULTS[key])
 
-    def _setting_bool(self, key: str, default: bool) -> bool:
-        return bool(self._setting_value(key)) if key in self.SETTINGS_DEFAULTS else default
+    def _setting_bool(self, key: str) -> bool:
+        return bool(self._setting_value(key))
 
-    def _setting_int(self, key: str, default: int, minimum: int, maximum: int) -> int:
+    def _setting_int(self, key: str, minimum: int, maximum: int) -> int:
         try:
             value = int(self._setting_value(key))
         except (TypeError, ValueError):
-            value = default
+            value = int(self.SETTINGS_DEFAULTS[key])
         return max(minimum, min(maximum, value))
 
-    def _setting_float(self, key: str, default: float, minimum: float, maximum: float) -> float:
+    def _setting_float(self, key: str, minimum: float, maximum: float) -> float:
         try:
             value = float(self._setting_value(key))
         except (TypeError, ValueError):
-            value = default
+            value = float(self.SETTINGS_DEFAULTS[key])
         return max(minimum, min(maximum, value))
 
-    def _setting_choice(self, key: str, default: str, choices: tuple[str, ...]) -> str:
+    def _setting_choice(self, key: str, choices: tuple[str, ...]) -> str:
         value = str(self._setting_value(key))
-        return value if value in choices else default
+        return value if value in choices else str(self.SETTINGS_DEFAULTS[key])
 
     def _save_view_setting(self, key: str, value):
         if self._settings is None:
@@ -690,8 +692,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._editor_lights_changed()
 
     def _current_editor_light(self) -> _EditorLight | None:
-        if 0 <= self._active_editor_light < len(self._editor_lights):
-            return self._editor_lights[self._active_editor_light]
         return self._editor_lights[-1] if self._editor_lights else None
 
     def _camera_light_position(self) -> np.ndarray:
@@ -708,7 +708,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 intensity=float(self.editor_light_intensity),
             )
         )
-        self._active_editor_light = len(self._editor_lights) - 1
         self._ensure_editor_light_mode()
         self._editor_lights_changed()
 
@@ -733,7 +732,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not self._editor_lights:
             return
         self._editor_lights.clear()
-        self._active_editor_light = -1
         self._editor_lights_changed()
 
     def _ensure_editor_light_mode(self) -> None:
@@ -1040,7 +1038,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _refresh_selection_bounds(self) -> None:
         meshes = [mesh for mesh in self._meshes if mesh.key in self._selection_keys and mesh.key not in self._hidden_keys]
         chunks = []
-        mesh_points = self._mesh_bounds_points(meshes)
+        mesh_points = mesh_bounds_points(meshes)
         if len(mesh_points):
             chunks.append(mesh_points)
         probe_points = self._selected_light_probe_points()
@@ -1049,33 +1047,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not chunks:
             self._selection_center, self._selection_extent = None, 1.0
             return
-        self._selection_center, self._selection_extent = self._point_bounds(np.concatenate(chunks, axis=0))
-
-    def _mesh_bounds_points(self, meshes: list[SceneDrawMesh]) -> np.ndarray:
-        chunks = []
-        for mesh in meshes:
-            if not len(mesh.vertices):
-                continue
-            vertices = np.asarray(mesh.vertices, dtype=np.float32).reshape(-1, 3)
-            mins = vertices.min(axis=0)
-            maxs = vertices.max(axis=0)
-            points = np.array(
-                [(x, y, z) for x in (mins[0], maxs[0]) for y in (mins[1], maxs[1]) for z in (mins[2], maxs[2])],
-                dtype=np.float32,
-            )
-            if mesh.transform_matrix is not None:
-                points = self._transform_points(points, mesh.transform_matrix)
-            chunks.append(points)
-        return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
-
-    @staticmethod
-    def _point_bounds(points: np.ndarray) -> tuple[np.ndarray, float]:
-        points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
-        if not len(points):
-            return np.zeros(3, dtype=np.float32), 1.0
-        mins = points.min(axis=0)
-        maxs = points.max(axis=0)
-        return (mins + maxs) / 2.0, max(float(np.max(maxs - mins)), 1.0)
+        self._selection_center, self._selection_extent = point_bounds(np.concatenate(chunks, axis=0))
 
     def _selected_light_probe_points(self) -> np.ndarray:
         chunks = []
@@ -1276,7 +1248,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             else:
                 matrix = self._around_pivot(drag["center"], self._rotation_matrix(axis, np.deg2rad(float(delta @ drag["screen_axis"]) * 0.8)))
         matrix = matrix.astype(np.float32, copy=False)
-        self._selection_center = self._transform_point(drag["center"], matrix)
+        self._selection_center = transform_points(np.asarray(drag["center"]).reshape(1, 3), matrix)[0]
         self._selection_extent = drag["extent"] if drag["mode"] != "scale" else max(drag["extent"] * np.linalg.norm(matrix[:3, :3], axis=0).max(), 1.0)
         drag["matrix"] = matrix
         if not drag.get("whole_scene") and not drag.get("deferred_geometry"):
@@ -1355,18 +1327,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if changed:
             self._invalidate_probe_viz_points()
 
-    @staticmethod
-    def _transform_point(point: np.ndarray, matrix: np.ndarray) -> np.ndarray:
-        hom = np.append(np.asarray(point, dtype=np.float32)[:3], np.float32(1.0))
-        return (np.asarray(matrix, dtype=np.float32) @ hom)[:3].astype(np.float32)
-
-    @staticmethod
-    def _transform_points(points: np.ndarray, matrix: np.ndarray) -> np.ndarray:
-        hom = np.concatenate([np.asarray(points, dtype=np.float32), np.ones((len(points), 1), dtype=np.float32)], axis=1)
-        return (hom @ np.asarray(matrix, dtype=np.float32).T)[:, :3].astype(np.float32, copy=False)
-
     def _capture_gizmo_geometry(self, buffer_set: _GlBufferSet | None) -> dict | None:
-        if buffer_set is None or buffer_set.data is None:
+        if buffer_set is None:
             return None
         indices, _batches, _lines = scene_key_index_buffers(buffer_set.data, self._selection_keys, include_lines=False)
         if not len(indices):
@@ -1407,13 +1369,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if buffer_set is None or snapshot is None:
             return
         indices = snapshot["indices"]
-        buffer_set.data.vertices[indices] = self._transform_points(snapshot["vertices"], matrix)
+        buffer_set.data.vertices[indices] = transform_points(snapshot["vertices"], matrix)
         if snapshot["normals"] is not None and buffer_set.data.normals is not None:
-            try:
-                normal_matrix = np.linalg.inv(np.asarray(matrix, dtype=np.float32)[:3, :3]).T.astype(np.float32)
-            except np.linalg.LinAlgError:
-                normal_matrix = np.identity(3, dtype=np.float32)
-            buffer_set.data.normals[indices] = (snapshot["normals"] @ normal_matrix.T).astype(np.float32, copy=False)
+            buffer_set.data.normals[indices] = transform_normals(snapshot["normals"], matrix)
         if self.context() is not None:
             if not current:
                 self.makeCurrent()
@@ -1435,7 +1393,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 return False
         data_seen = False
         for buffer_set in (self._regular_set, self._solid_set):
-            if buffer_set is None or buffer_set.data is None:
+            if buffer_set is None:
                 continue
             data_seen = True
             for key, matrix in deltas.items():
@@ -1740,15 +1698,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDepthMask(False)
         base_size = max(float(self.extent) * 0.012, 0.25)
+        last_index = len(self._editor_lights) - 1
         for index, light in enumerate(self._editor_lights):
-            if not light.enabled:
-                continue
             position = np.asarray(light.position, dtype=np.float32)
-            color = tuple(float(v) for v in light.color)
             size = max(base_size, float(light.radius) * 0.035)
-            alpha = 1.0 if index == self._active_editor_light else 0.72
-            glLineWidth(3.0 if index == self._active_editor_light else 2.0)
-            glColor4f(color[0], color[1], color[2], alpha)
+            active = index == last_index
+            alpha = 1.0 if active else 0.72
+            glLineWidth(3.0 if active else 2.0)
+            glColor4f(*EDITOR_LIGHT_COLOR, alpha)
             glBegin(GL_LINES)
             for axis in GIZMO_AXES:
                 a = position - axis * size
@@ -1758,7 +1715,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glEnd()
             radius = max(float(light.radius), size)
             glLineWidth(1.0)
-            glColor4f(color[0], color[1], color[2], 0.22)
+            glColor4f(*EDITOR_LIGHT_COLOR, 0.22)
             glBegin(GL_LINE_STRIP)
             for angle in np.linspace(0.0, np.pi * 2.0, 49, dtype=np.float32):
                 point = position + np.array((np.cos(angle) * radius, 0.0, np.sin(angle) * radius), dtype=np.float32)
@@ -1876,7 +1833,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return np.zeros((0, 3), dtype=np.float32)
         normal_rows = self._display_normal_rows(points, normals)
         result = np.zeros((len(points), 3), dtype=np.float32)
-        active_lights = [light for light in self._editor_lights if light.enabled and light.radius > 1e-5 and light.intensity > 0.0]
+        active_lights = [light for light in self._editor_lights if light.radius > 1e-5 and light.intensity > 0.0]
         for start in range(0, len(points), chunk_size):
             end = min(start + chunk_size, len(points))
             chunk_points = points[start:end]
@@ -1894,7 +1851,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 attenuation = np.clip(1.0 - (distance / float(light.radius)), 0.0, 1.0) ** 2
                 normal_factor = np.clip((chunk_normals * direction).sum(axis=1), 0.0, 1.0)
                 wrap = 0.18 + (0.82 * normal_factor)
-                rgb = np.asarray(light.color, dtype=np.float32)
+                rgb = np.asarray(EDITOR_LIGHT_COLOR, dtype=np.float32)
                 chunk += rgb[np.newaxis, :] * (float(light.intensity) * attenuation * wrap)[:, np.newaxis]
             result[start:end] = chunk
         return np.clip(result, 0.0, 4.0).astype(np.float32, copy=False)
@@ -1947,7 +1904,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return buffer_set
 
     def _upload_index_view(self, source: _GlBufferSet | None, keys: set[str]) -> _GlBufferSet | None:
-        if source is None or source.data is None or not keys:
+        if source is None or not keys:
             return None
         view = _GlBufferSet(
             data=source.data,
@@ -1957,8 +1914,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             colors_vbo=source.colors_vbo,
             uvs_vbo=source.uvs_vbo,
         )
-        indices, batches, line_indices = scene_key_index_buffers(source.data, keys, include_lines=self._needs_line_indices())
-        self._set_index_buffers(view, indices, batches, line_indices, self._needs_line_indices())
+        need_lines = self._needs_line_indices()
+        indices, batches, line_indices = scene_key_index_buffers(source.data, keys, include_lines=need_lines)
+        self._set_index_buffers(view, indices, batches, line_indices, need_lines)
         return view
 
     def _refresh_selection_buffer_sets(self, *, current: bool = False) -> None:
@@ -2182,7 +2140,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if made_current:
             with suppress(Exception):
                 self._cleanup_extra_gl()
-        if made_current:
             with suppress(Exception):
                 self.doneCurrent()
         self._regular_set = self._solid_set = self._gl_cleanup_context = None

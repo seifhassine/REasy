@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ui.scene.scene_preview import SceneDrawMesh
+from ui.scene.scene_model import SceneDrawMesh
 from .shape_types import AABB, Area, Capsule, Cylinder, OBB, Sphere, Triangle
 
 
