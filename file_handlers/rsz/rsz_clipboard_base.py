@@ -29,12 +29,7 @@ class RszClipboardBase(ABC):
         return RszClipboardUtils.get_type_clipboard_directory(self.get_clipboard_type())
     
     def get_json_name(self, viewer):
-        if hasattr(viewer, 'parent') and callable(viewer.parent):
-            return RszClipboardUtils.get_json_name(viewer)
-        elif hasattr(viewer, 'handler') and hasattr(viewer.handler, 'type_registry') and hasattr(viewer.handler.type_registry, 'json_path'):
-            import os
-            return os.path.basename(viewer.handler.type_registry.json_path).split(".")[0]
-        return None
+        return RszClipboardUtils.get_json_name(viewer)
     
     def get_clipboard_file(self, viewer):
         """Get the clipboard file path for this clipboard type"""

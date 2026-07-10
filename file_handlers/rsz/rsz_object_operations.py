@@ -11,7 +11,7 @@ This file contains utility methods for:
 from PySide6.QtWidgets import QMessageBox
 from .rsz_data_types import (
     ObjectData, ArrayData,
-    UserDataData, S32Data
+    UserDataData
 )
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from file_handlers.rsz.utils.rsz_embedded_utils import (
@@ -19,7 +19,7 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     initialize_scn19_userdata_runtime,
     shift_embedded_instances_for_insertion,
 )
-from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values, create_field_from_definition
+from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values
 from file_handlers.rsz.utils.rsz_gameobject_utils import (
     add_guid_to_settings,
     create_gameobject_entry,
@@ -353,99 +353,6 @@ class RszObjectOperations:
             if instance_id not in self.scn.instance_hierarchy[parent_instance_id]["children"]:
                 self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
 
-    def _analyze_instance_fields_for_nested_objects(self, temp_elements, type_info, nested_objects, parent_id, visited_types=None, userdata_fields=None):
-        if visited_types is None:
-            visited_types = set()
-        
-        if not type_info or "fields" not in type_info:
-            return {}
-            
-        type_name = type_info.get("name", "")
-        if not type_name:
-            return {}
-            
-        visited_types.add(type_name)
-        
-        fields_dict = {}
-        for field_def in type_info.get("fields", []):
-            field_data = create_field_from_definition(self.viewer, field_def)
-            if field_data is None:
-                continue
-            field_name, field_obj, field_orig_type, field_array, field_class = field_data
-            
-            if field_obj:
-                temp_elements[field_name] = field_obj
-                fields_dict[field_name] = field_obj
-                
-                if userdata_fields is not None and isinstance(field_obj, UserDataData) and field_orig_type:
-                    userdata_fields.append((field_name, field_orig_type, field_array))
-                elif field_array and field_class == UserDataData and field_orig_type and userdata_fields is not None:
-                    userdata_fields.append((field_name, field_orig_type, field_array))
-                
-                if not field_array and isinstance(field_obj, ObjectData) and field_orig_type:
-                    if field_orig_type in visited_types:
-                        continue
-                        
-                    nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
-                    
-                    if not nested_type_info or not nested_type_id or nested_type_id == 0:
-                        continue
-                        
-                    nested_objects.append((nested_type_info, nested_type_id))
-                    
-                    nested_temp = {}
-                    self._analyze_instance_fields_for_nested_objects(
-                        nested_temp,
-                        nested_type_info,
-                        nested_objects,
-                        parent_id,
-                        visited_types.copy(),
-                        userdata_fields
-                    )
-        
-        return fields_dict
-
-    def _update_object_references(self, target_fields, temp_fields, main_instance_index, nested_objects):
-        offset_start = main_instance_index - len(nested_objects)
-        
-        if offset_start < 0:
-            return
-        
-        type_to_indices = {}
-        for i, (nested_type_info, _) in enumerate(nested_objects):
-            type_name = nested_type_info.get("name", "")
-            if type_name not in type_to_indices:
-                type_to_indices[type_name] = []
-            type_to_indices[type_name].append(i)
-        
-        for field_name, field_data in temp_fields.items():
-            if field_name not in target_fields:
-                continue
-                
-            if isinstance(field_data, ObjectData) and field_data.value == 0:
-                type_name = field_data.orig_type
-                if type_name in type_to_indices and type_to_indices[type_name]:
-                    # Pop the first available index for this type
-                    nested_index = type_to_indices[type_name].pop(0)
-                    target_fields[field_name].value = offset_start + nested_index
-                    
-            elif isinstance(field_data, ArrayData) and field_data.element_class == ObjectData:
-                array_data = target_fields[field_name]
-                array_data.values = []
-                
-                for element in field_data.values:
-                    if isinstance(element, ObjectData):
-                        new_obj = ObjectData(element.value, element.orig_type)
-                        
-                        if element.value == 0 and element.orig_type:
-                            type_name = element.orig_type
-                            if type_name in type_to_indices and type_to_indices[type_name]:
-                                nested_index = type_to_indices[type_name].pop(0)
-                                new_obj.value = offset_start + nested_index
-                        array_data.values.append(new_obj)
-                    else:
-                        array_data.values.append(element)
-
     def _calculate_component_insertion_index(self, gameobject):
         """Calculate the best insertion index for a new component"""
         existing_component_instance_ids = []
@@ -755,10 +662,6 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         return True
 
-    def _find_userdata_parent_info(self, userdata_field):
-        """Locate parent instance/field and array context for a given UserDataData field object."""
-        return self._find_reference_parent_info(userdata_field)
-
     def _compute_userdata_insertion_index(self, parent_instance_id, parent_field_name, is_array):
         """Compute insertion index for creating a new userdata instance based on its parent position."""
         from .rsz_array_operations import RszArrayOperations
@@ -833,7 +736,9 @@ class RszObjectOperations:
             return False
 
         current_instance_id = getattr(userdata_field, 'value', 0) or 0
-        parent_instance_id, parent_field_name, is_array, array_data, element_index = self._find_userdata_parent_info(userdata_field)
+        parent_instance_id, parent_field_name, is_array, array_data, element_index = (
+            self._find_reference_parent_info(userdata_field)
+        )
         insertion_index = self._compute_userdata_insertion_index(parent_instance_id, parent_field_name, is_array)
 
         instance_is_shared = False
@@ -1190,28 +1095,6 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         return True
 
-    def _process_userdata_fields_in_component(self, component_fields, type_info):
-        """
-        Process UserDataData fields in a newly created component for SCN.18/19 files.
-        Creates RSZUserDataInfo entries for each UserDataData field.
-        """
-        for field_name, field_data in component_fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value == 0:
-                field_type = None
-                for field_def in type_info.get("fields", []):
-                    if field_def.get("name") == field_name:
-                        field_type = field_def.get("original_type", "")
-                        break
-                
-                if field_type:
-                    self._create_userdata_info_for_field(field_data, field_type)
-                    
-            elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
-                element_type = getattr(field_data, 'orig_type', '')
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and element.value == 0 and element_type:
-                        self._create_userdata_info_for_field(element, element_type)
-    
     def _create_userdata_instance_for_field(self, field_type, current_insertion_index, userdata_string=None):
         """
         Create a UserDataData instance for a field.
@@ -1290,78 +1173,6 @@ class RszObjectOperations:
         
         return current_insertion_index
 
-    def _create_userdata_info_for_field(self, userdata_field, field_type):
-        """
-        Create an RSZUserDataInfo entry for a UserDataData field.
-        This is used for SCN.18/19 files where UserDataData contains embedded RSZ data.
-        """
-        next_id = len(self.scn.instance_infos) if hasattr(self.scn, 'instance_infos') else 0
-
-        type_info, type_id = self.type_registry.find_type_by_name(field_type)
-        if not type_info:
-            print(f"Warning: Type not found for UserDataData field: {field_type}")
-            return
-        
-        instance_info = self._create_instance_info(type_id, 
-                                                    int(type_info.get("crc", "0"), 16))
-        
-        if hasattr(self.scn, 'instance_infos'):
-            self.scn.instance_infos.append(instance_info)
-        else:
-            self.scn.instance_infos = [instance_info]
-        
-        self.scn.parsed_elements[next_id] = {}
-        
-        if not hasattr(self.scn, 'instance_hierarchy'):
-            self.scn.instance_hierarchy = {}
-        self.scn.instance_hierarchy[next_id] = {"children": [], "parent": None}
-        
-        self.viewer.handler.id_manager.register_instance(next_id)
-        
-        userdata_info = create_scn19_userdata_info(
-            next_id,
-            type_id,
-            field_type,
-            crc=int(type_info.get("crc", "0"), 16),
-        )
-        initialize_scn19_userdata_runtime(
-            userdata_info,
-            self.scn.rsz_header,
-            next_id,
-            include_parsed_elements=True,
-            include_maps=True,
-            include_array_counters=True,
-            modified=False,
-        )
-        
-        def mark_modified_func():
-            userdata_info.modified = True
-            self.viewer.mark_modified()
-        
-        userdata_info.mark_modified = mark_modified_func
-        
-        if type_info:
-            self._create_embedded_instance_with_nested_objects(
-                userdata_info, type_info, type_id, field_type
-            )
-        
-        if not hasattr(self.scn, 'rsz_userdata_infos'):
-            self.scn.rsz_userdata_infos = []
-        self.scn.rsz_userdata_infos.append(userdata_info)
-        
-        if hasattr(self.scn, '_rsz_userdata_dict'):
-            self.scn._rsz_userdata_dict[next_id] = userdata_info
-        if hasattr(self.scn, '_rsz_userdata_set'):
-            self.scn._rsz_userdata_set.add(next_id)
-        if hasattr(self.scn, '_rsz_userdata_str_map'):
-            self.scn._rsz_userdata_str_map[userdata_info] = field_type
-        
-        userdata_field.value = next_id
-        userdata_field.string = field_type
-        
-        self.scn.rsz_header.userdata_count = len(self.scn.rsz_userdata_infos)
-        self.scn.rsz_header.instance_count = len(self.scn.instance_infos)
-        
     def _create_embedded_instance_with_nested_objects(self, userdata_info, type_info, type_id, type_name):
         """
         Create an embedded instance with all its nested objects properly instantiated.

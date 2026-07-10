@@ -32,6 +32,7 @@ from ..pyside.tree_core import DeferredChildBuilder
 from ..pyside.tree_widgets import AdvancedTreeView
 from utils.id_manager import IdManager, EmbeddedIdManager
 from .rsz_array_operations import RszArrayOperations
+from .rsz_instance_operations import RszInstanceOperations
 from .utils.rsz_name_helper import RszViewerNameHelper
 from .rsz_object_operations import RszObjectOperations
 from .rsz_array_clipboard import RszArrayClipboard
@@ -184,10 +185,7 @@ class RszHandler(BaseFileHandler):
 
         colors = get_color_scheme(self.dark_mode)
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
-        viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
-        viewer.array_operations = RszArrayOperations(viewer)
-        viewer.object_operations = RszObjectOperations(viewer)
-        viewer.lazy_builder = RszLazyNodeBuilder(viewer)
+        viewer._initialize_editor_services()
         viewer.populate_tree()
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
@@ -227,6 +225,12 @@ class RszHandler(BaseFileHandler):
         if not self.gameobject_clipboard:
             self.gameobject_clipboard = RszGameObjectClipboard()
         return self.gameobject_clipboard
+
+    def get_component_clipboard(self):
+        """Get the component clipboard instance."""
+        if not self.component_clipboard:
+            self.component_clipboard = RszComponentClipboard()
+        return self.component_clipboard
         
     def copy_array_element_to_clipboard(self, widget, element, array_type, embedded_context=None):
         """Copy an array element to clipboard through the handler"""
@@ -266,27 +270,21 @@ class RszHandler(BaseFileHandler):
     
     def copy_component_to_clipboard(self, widget, component_instance_id):
         """Copy a component to clipboard through the handler"""
-        if not self.component_clipboard:
-            self.component_clipboard = RszComponentClipboard()
-        return self.component_clipboard.copy_component_to_clipboard(widget, component_instance_id)
+        return self.get_component_clipboard().copy_component_to_clipboard(widget, component_instance_id)
         
     def paste_component_from_clipboard(self, widget, go_instance_id, clipboard_data=None):
         """Paste a component from clipboard to a GameObject through the handler"""
-        if not self.component_clipboard:
-            self.component_clipboard = RszComponentClipboard()
-        return self.component_clipboard.paste_component_from_clipboard(widget, go_instance_id, clipboard_data)
+        return self.get_component_clipboard().paste_component_from_clipboard(
+            widget, go_instance_id, clipboard_data
+        )
         
     def get_component_clipboard_data(self, widget):
         """Get component clipboard data through the handler"""
-        if not self.component_clipboard:
-            self.component_clipboard = RszComponentClipboard()
-        return self.component_clipboard.get_clipboard_data(widget)
+        return self.get_component_clipboard().get_clipboard_data(widget)
         
     def has_component_clipboard_data(self, widget):
         """Check if component clipboard data exists without loading it"""
-        if not self.component_clipboard:
-            self.component_clipboard = RszComponentClipboard()
-        return self.component_clipboard.has_clipboard_data(widget)
+        return self.get_component_clipboard().has_clipboard_data(widget)
 
 class RszViewer(QWidget):
     modified_changed = Signal(bool)
@@ -310,6 +308,14 @@ class RszViewer(QWidget):
         self.array_operations = None
         self.name_helper = None
         self.object_operations = None
+        self.lazy_builder = None
+
+    def _initialize_editor_services(self):
+        """Initialize helpers shared by handler-created and directly loaded viewers."""
+        self.name_helper = RszViewerNameHelper(self.scn, self.type_registry)
+        self.array_operations = RszArrayOperations(self)
+        self.object_operations = RszObjectOperations(self)
+        self.lazy_builder = RszLazyNodeBuilder(self)
 
     def mark_modified(self, changed_obj=None):
         """Mark the viewer as modified and emit signal"""
@@ -359,10 +365,7 @@ class RszViewer(QWidget):
         self.scn.type_registry = type_registry
         self.scn.debug = False
         self.scn.read(data)
-        self.array_operations = RszArrayOperations(self)
-        self.name_helper = RszViewerNameHelper(self.scn, type_registry)
-        self.object_operations = RszObjectOperations(self)
-        self.lazy_builder = RszLazyNodeBuilder(self)
+        self._initialize_editor_services()
         self.populate_tree()
 
     def supports_editing(self) -> bool:
@@ -797,21 +800,11 @@ class RszViewer(QWidget):
     
     def _create_id_adjustment_map(self, deleted_instance_ids):
         """Create a mapping of old instance IDs to new instance IDs after deletion"""
-        deleted_sorted = sorted(deleted_instance_ids)
-        id_adjustment_map = {}
-        
-        for old_id in range(len(self.scn.instance_infos) + len(deleted_instance_ids)):
-            if old_id not in deleted_instance_ids:
-                new_id = old_id
-                for deleted_id in deleted_sorted:
-                    if deleted_id < old_id:
-                        new_id -= 1
-                    else:
-                        break
-                if new_id != old_id:
-                    id_adjustment_map[old_id] = new_id
-        
-        return id_adjustment_map
+        original_instance_count = len(self.scn.instance_infos) + len(deleted_instance_ids)
+        return RszInstanceOperations.build_deletion_id_adjustments(
+            original_instance_count,
+            deleted_instance_ids,
+        )
     
     def _add_data_block(self, parent_dict):
         if getattr(self.scn, "is_headless", False):            
@@ -1745,17 +1738,7 @@ class RszViewer(QWidget):
         if deleted_nested_ids is None:
             deleted_nested_ids = set()
         deleted_nested_ids.add(deleted_id)
-        deleted_ids_sorted = sorted(deleted_nested_ids)
-        
-        id_mapping = {}
-        for old_id in range(len(self.scn.instance_infos) + len(deleted_ids_sorted)):
-            if old_id not in deleted_nested_ids:
-                new_id = old_id
-                for deleted_id in deleted_ids_sorted:
-                    if old_id > deleted_id:
-                        new_id -= 1
-                if old_id != new_id:
-                    id_mapping[old_id] = new_id
+        id_mapping = self._create_id_adjustment_map(deleted_nested_ids)
 
         new_parsed_elements = {}
         for instance_id, fields in self.scn.parsed_elements.items():
@@ -1880,12 +1863,14 @@ class RszViewer(QWidget):
                 field_obj._container_context = rui
                 field_obj._container_parent_id = instance_id
                 field_obj._container_field = field_name
-                
+
+    def _ensure_manual_resource_management(self):
+        if self.handler.auto_resource_management:
+            raise ValueError(RES_MGMT_MESSAGE)
+
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""
-
-        if(self.handler.auto_resource_management):
-            raise ValueError(RES_MGMT_MESSAGE)
+        self._ensure_manual_resource_management()
         
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
             return False
@@ -1913,9 +1898,7 @@ class RszViewer(QWidget):
 
     def add_resource(self, path):
         """Add a new resource path"""
-
-        if(self.handler.auto_resource_management):
-            raise ValueError(RES_MGMT_MESSAGE)
+        self._ensure_manual_resource_management()
         
         if not path or not hasattr(self.scn, '_resource_str_map'):
             return -1
@@ -1939,11 +1922,8 @@ class RszViewer(QWidget):
         return resource_index
 
     def delete_resource(self, resource_index):
-        
-        if(self.handler.auto_resource_management):
-            raise ValueError(RES_MGMT_MESSAGE)
-        
         """Delete a resource path"""
+        self._ensure_manual_resource_management()
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):
             return False
             

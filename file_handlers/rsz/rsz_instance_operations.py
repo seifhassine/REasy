@@ -16,6 +16,41 @@ class RszInstanceOperations:
     - Finding instances referenced by other instances
     - Managing instance references during deletion
     """
+
+    @staticmethod
+    def build_deletion_id_adjustments(instance_count, deleted_ids, include_deleted=False):
+        """Build the sparse ID mapping produced by deleting instances.
+
+        Args:
+            instance_count: Instance count before the deletions are applied.
+            deleted_ids: Collection of instance IDs being deleted.
+            include_deleted: Include deleted IDs in the result with a value of -1.
+
+        Returns:
+            dict: Old instance IDs mapped to their compacted IDs. Unchanged IDs are
+            omitted from the sparse mapping.
+        """
+        deleted_ids = set(deleted_ids)
+        deleted_sorted = sorted(deleted_ids)
+        id_adjustments = {}
+
+        for old_id in range(instance_count):
+            if old_id in deleted_ids:
+                if include_deleted:
+                    id_adjustments[old_id] = -1
+                continue
+
+            new_id = old_id
+            for deleted_id in deleted_sorted:
+                if deleted_id < old_id:
+                    new_id -= 1
+                else:
+                    break
+
+            if new_id != old_id:
+                id_adjustments[old_id] = new_id
+
+        return id_adjustments
     
     @staticmethod
     def find_nested_objects(parsed_elements, instance_id, object_table=None, is_component_deletion = False):

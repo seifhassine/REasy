@@ -621,16 +621,11 @@ class RszArrayOperations:
         return False
 
     def _build_deletion_id_adjustments(self, deleted_ids):
-        id_adjustments = {}
-        max_instance_id = len(self.scn.instance_infos)
-        for i in range(max_instance_id):
-            if i in deleted_ids:
-                id_adjustments[i] = -1
-            else:
-                offset = sum(1 for deleted_id in deleted_ids if deleted_id < i)
-                if offset > 0:
-                    id_adjustments[i] = i - offset
-        return id_adjustments
+        return RszInstanceOperations.build_deletion_id_adjustments(
+            len(self.scn.instance_infos),
+            deleted_ids,
+            include_deleted=True,
+        )
 
     def _remove_deleted_instance_infos(self, deleted_ids):
         self.scn.instance_infos = [

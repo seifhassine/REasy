@@ -792,6 +792,27 @@ class RszFile:
             self.userdata_infos.append(ui)
         self._current_offset = _align(self._current_offset, 16)
 
+    def _load_offset_strings(self, items, setter, *, base_offset=0):
+        """Load strings addressed by each item's ``string_offset``.
+
+        The returned offset is the end of the final item's string, or ``None``
+        when the final item has no string. This preserves the standard RSZ
+        userdata alignment behavior, which is based on the final table entry.
+        """
+        final_string_end = None
+        for item in items:
+            if item.string_offset == 0:
+                final_string_end = None
+                continue
+
+            value, final_string_end = read_wstring(
+                self.full_data,
+                base_offset + item.string_offset,
+                1000,
+            )
+            setter(item, sys.intern(value))
+        return final_string_end
+
     def _parse_blocks(self):
 
         self._prefab_str_map.clear()
@@ -801,23 +822,10 @@ class RszFile:
         # Batch process all strings instead of one-by-one
         if not (self._is_18 and self.is_scn):
             self._resource_str_map.clear()
-            for ri in self.resource_infos:
-                if (ri.string_offset != 0):
-                    s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
-                    s = sys.intern(s)
-                    self.set_resource_string(ri, s)
-                
-        for pi in self.prefab_infos:
-            if (pi.string_offset != 0):
-                s, _ = read_wstring(self.full_data, pi.string_offset, 1000)
-                s = sys.intern(s)
-                self.set_prefab_string(pi, s)
-                
-        for ui in self.userdata_infos:
-            if (ui.string_offset != 0):
-                s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
-                s = sys.intern(s)
-                self.set_userdata_string(ui, s)
+            self._load_offset_strings(self.resource_infos, self.set_resource_string)
+
+        self._load_offset_strings(self.prefab_infos, self.set_prefab_string)
+        self._load_offset_strings(self.userdata_infos, self.set_userdata_string)
 
     def _parse_rsz_section_core(self, data: bytes, rsz_base_offset: int, skip_data: bool = False):
         """Parse an RSZ section located at a given base offset."""
@@ -905,19 +913,14 @@ class RszFile:
         for _ in range(self.rsz_header.userdata_count):
             rui = RSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
-            if rui.string_offset != 0:
-                abs_offset = base_offset + rui.string_offset
-                s, _ = read_wstring(self.full_data, abs_offset, 1000)
-                s = sys.intern(s)
-                self.set_rsz_userdata_string(rui, s)
             self.rsz_userdata_infos.append(rui)
-            
-        last_str_offset = self.rsz_userdata_infos[-1].string_offset if self.rsz_userdata_infos else 0
-        if last_str_offset:
-            abs_offset = base_offset + last_str_offset
-            s, new_offset = read_wstring(self.full_data, abs_offset, 1000)
-            _ = sys.intern(s)
-        else:
+
+        new_offset = self._load_offset_strings(
+            self.rsz_userdata_infos,
+            self.set_rsz_userdata_string,
+            base_offset=base_offset,
+        )
+        if new_offset is None:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 

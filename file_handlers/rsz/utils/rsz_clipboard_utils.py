@@ -29,11 +29,19 @@ class RszClipboardUtils:
     
     @staticmethod
     def get_json_name(widget):
-        parent = widget.parent()
-        if hasattr(parent, 'handler') and hasattr(parent.handler, 'type_registry') and hasattr(parent.handler.type_registry, 'json_path'):
-            return os.path.basename(parent.handler.type_registry.json_path).split(".")[0]
-        elif hasattr(widget, 'handler') and hasattr(widget.handler, 'type_registry') and hasattr(widget.handler.type_registry, 'json_path'):
-            return os.path.basename(widget.handler.type_registry.json_path).split(".")[0]
+        parent_getter = getattr(widget, 'parent', None)
+        parent = parent_getter() if callable(parent_getter) else None
+
+        for candidate in (parent, widget):
+            handler = getattr(candidate, 'handler', None)
+            type_registry = getattr(handler, 'type_registry', None)
+            if type_registry is None or not hasattr(type_registry, 'json_path'):
+                continue
+
+            json_path = type_registry.json_path
+            if json_path is not None:
+                return os.path.basename(json_path).split(".")[0]
+
         return None
 
     @staticmethod
@@ -92,6 +100,5 @@ class RszClipboardUtils:
                     userdata_info["userdata_string"] = viewer.scn._rsz_userdata_str_map[rui]
                 
                 return userdata_info
-        
+
         return None
-    

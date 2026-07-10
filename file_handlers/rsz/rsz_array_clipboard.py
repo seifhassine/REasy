@@ -98,8 +98,6 @@ class RszArrayClipboard:
             else:
                 print(f"Failed to create object graph for UserData instance {element.value}")
         elif element.value < len(viewer.scn.instance_infos):
-            from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-            
             instance_info = viewer.scn.instance_infos[element.value]
             
             instance_data = {
@@ -110,10 +108,9 @@ class RszArrayClipboard:
                 "is_userdata": True
             }
             
-            if hasattr(viewer, "type_registry") and viewer.type_registry:
-                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-                if type_info and "name" in type_info:
-                    instance_data["type_name"] = type_info["name"]
+            type_name = RszClipboardUtils.get_type_info_name(viewer, instance_info.type_id)
+            if type_name is not None:
+                instance_data["type_name"] = type_name
             
             userdata_dict = RszClipboardUtils.check_userdata_info(viewer, element.value)
             if userdata_dict:
@@ -384,10 +381,9 @@ class RszArrayClipboard:
                     "fields": {}
                 }
                 
-                if hasattr(viewer, "type_registry") and viewer.type_registry:
-                    type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-                    if type_info and "name" in type_info:
-                        instance_data["type_name"] = type_info["name"]
+                type_name = RszClipboardUtils.get_type_info_name(viewer, instance_info.type_id)
+                if type_name is not None:
+                    instance_data["type_name"] = type_name
                 
                 if hasattr(viewer.scn, '_rsz_userdata_set') and orig_id in viewer.scn._rsz_userdata_set:
                     instance_data["is_userdata"] = True

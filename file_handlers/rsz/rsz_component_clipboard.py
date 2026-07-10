@@ -2,6 +2,7 @@ import traceback
 from file_handlers.rsz.rsz_data_types import ObjectData
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
 
 class RszComponentClipboard(RszClipboardBase):
@@ -29,11 +30,11 @@ class RszComponentClipboard(RszClipboardBase):
             instance_info = viewer.scn.instance_infos[component_instance_id]
             print(f"Copying component with instance ID: {component_instance_id}")
             
-            component_type_name = ""
-            if hasattr(viewer, "type_registry") and viewer.type_registry:
-                type_info = viewer.type_registry.get_type_info(instance_info.type_id)
-                if type_info and "name" in type_info:
-                    component_type_name = type_info["name"]
+            component_type_name = RszClipboardUtils.get_type_info_name(
+                viewer, instance_info.type_id
+            )
+            if component_type_name is None:
+                component_type_name = ""
             
             nested_instances, userdata_refs = self.collect_all_references(viewer, component_instance_id)
             
