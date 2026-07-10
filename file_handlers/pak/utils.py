@@ -4,9 +4,7 @@ from pathlib import Path
 from typing import List
 import struct
 from .pakfile import _decrypt_pak_entry_data
-import fast_pakresolve
-
-murmur3_hash = fast_pakresolve.murmur3_hash
+from utils.hash_util import murmur3_hash
 
 
 def _normalize_path_for_hash(path: str) -> str:

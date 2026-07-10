@@ -1,5 +1,6 @@
 import os
 import json
+from copy import deepcopy
 
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
 DEFAULT_SETTINGS = {
@@ -45,22 +46,29 @@ DEFAULT_SETTINGS = {
 }
 
 
+def normalize_settings(settings=None):
+    """Return an independent settings dictionary with all defaults applied."""
+    normalized = deepcopy(DEFAULT_SETTINGS)
+    if not isinstance(settings, dict):
+        return normalized
+
+    for key, value in settings.items():
+        if key == "keyboard_shortcuts" and isinstance(value, dict):
+            normalized[key].update(value)
+        else:
+            normalized[key] = value
+    return normalized
+
+
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, "r") as f:
                 settings = json.load(f)
-            # Ensure all default keys are present
-            for key, value in DEFAULT_SETTINGS.items():
-                if key == "keyboard_shortcuts" and key in settings:
-                    for shortcut_key, shortcut_value in DEFAULT_SETTINGS["keyboard_shortcuts"].items():
-                        settings["keyboard_shortcuts"].setdefault(shortcut_key, shortcut_value)
-                else:
-                    settings.setdefault(key, value)
-            return settings
+            return normalize_settings(settings)
         except (IOError, json.JSONDecodeError) as e:
             print("Error loading settings:", e)
-    return DEFAULT_SETTINGS.copy()
+    return normalize_settings()
 
 
 def save_settings(settings):

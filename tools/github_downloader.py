@@ -4,7 +4,6 @@ import io
 import json
 import os
 import shutil
-import sys
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -12,11 +11,10 @@ from typing import Callable, Optional, Tuple
 
 import requests
 
+from utils.app_paths import application_root
 
-def _get_base_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(sys.argv[0]).resolve().parent
-    return Path(__file__).resolve().parent.parent
+# Kept as a compatibility alias for tools.pak_exporter and third-party callers.
+_get_base_dir = application_root
 
 
 def _http_json(url: str, timeout: int = 20) -> dict:
@@ -63,7 +61,7 @@ class GitHubToolDownloader:
         self.owner_repo = owner_repo
         self.display_name = display_name or exe_name
         self._api_latest = f"https://api.github.com/repos/{owner_repo}/releases/latest"
-        self.cache_dir = _get_base_dir() / "downloads" / cache_subdir
+        self.cache_dir = application_root() / "downloads" / cache_subdir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.exe_path = self.cache_dir / exe_name
         self._version_file = self.cache_dir / "VERSION"
@@ -120,7 +118,7 @@ class StaticToolDownloader:
     def __init__(self, *, asset_url: str, cache_subdir: str, exe_name: str, display_name: str = ""):
         self.asset_url = asset_url
         self.display_name = display_name or exe_name
-        self.cache_dir = _get_base_dir() / "downloads" / cache_subdir
+        self.cache_dir = application_root() / "downloads" / cache_subdir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.exe_name = exe_name
 

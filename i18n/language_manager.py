@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-import sys
-from pathlib import Path
 
 from PySide6.QtCore import QObject, QLocale, QLibraryInfo, QEvent, Signal, Qt
 from PySide6.QtCore import QCoreApplication
@@ -12,16 +10,11 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 
+from utils.app_paths import resource_path
+
 
 def _resource_path(relative_path: str) -> str:
-    if getattr(sys, "frozen", False):
-        base_dir = Path(sys.argv[0]).resolve().parent
-    else:
-        base_dir = Path(__file__).resolve().parents[1]
-    full_path = base_dir / relative_path
-    if full_path.exists():
-        return str(full_path)
-    return os.path.join(os.getcwd(), relative_path)
+    return str(resource_path(relative_path))
 
 
 @dataclass(frozen=True)

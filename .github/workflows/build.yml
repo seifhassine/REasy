@@ -189,10 +189,10 @@ jobs:
         $versionString = "$major.$minor.$patch.$build"
         echo "product_version=$versionString" >> $env:GITHUB_ENV
         
-        $reasyContent = Get-Content -Path "REasy.py" -Raw
+        $reasyContent = Get-Content -Path "app_config.py" -Raw
         $pythonVersion = "$major.$minor.$patch"
         $reasyContent = $reasyContent -replace 'CURRENT_VERSION\s*=\s*"[^"]+"', "CURRENT_VERSION = `"$pythonVersion`""
-        Set-Content -Path "REasy.py" -Value $reasyContent
+        Set-Content -Path "app_config.py" -Value $reasyContent
         
         $versionFile = Get-Content -Path "version.txt" -Raw
         

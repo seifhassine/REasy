@@ -3,16 +3,9 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QDesktopServices
 from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, 
                                QScrollArea, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect)
-import sys
-from pathlib import Path
 from ui.styles import get_color_scheme
+from utils.app_paths import application_root
 
-def _get_base_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(sys.argv[0]).resolve().parent
-    else:
-        return Path(__file__).resolve().parent.parent
-    
 class _IllustrationPanel(QFrame):
     def __init__(self, dark_mode: bool, image_path: str, parent: QWidget | None = None):
         super().__init__(parent)
@@ -120,7 +113,7 @@ class ChangelogDialog(QDialog):
         colors = get_color_scheme(dark_mode)
         self._apply_stylesheet(colors)
 
-        base_dir = _get_base_dir()
+        base_dir = application_root()
         print(base_dir)
         image_path_candidates = [
             base_dir / "resources" / "images" / "reasy_guy.png",

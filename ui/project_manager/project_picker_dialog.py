@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from .project_config import load_project_config, project_config_path
+from ui.styles import get_color_scheme
 
 
 @dataclass(frozen=True)
@@ -654,25 +655,7 @@ class ProjectPickerDialog(QDialog):
                 pass
 
         dark = self.palette().color(self.backgroundRole()).lightness() < 128
-        if dark:
-            return {
-                "bg": "#2b2b2b",
-                "tree_bg": "#2b2b2b",
-                "fg": "white",
-                "highlight": "rgba(255, 133, 51, 0.5)",
-                "input_bg": "#3b3b3b",
-                "disabled_bg": "#404040",
-                "border": "#555555",
-            }
-        return {
-            "bg": "#ffffff",
-            "tree_bg": "#ffffff",
-            "fg": "#000000",
-            "highlight": "#ff851b",
-            "input_bg": "#ffffff",
-            "disabled_bg": "#f0f0f0",
-            "border": "#cccccc",
-        }
+        return get_color_scheme(dark)
 
     def _muted_text(self, text: str, bg: str) -> str:
         fg = QColor(text)

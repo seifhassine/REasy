@@ -9,6 +9,7 @@ class BaseFileHandler(QObject):
     def __init__(self):
         super().__init__()
         self.app = None
+        self.filepath = ""
         self.refresh_tree_callback = None
         self.type_registry = None
         self.dark_mode = False

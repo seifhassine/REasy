@@ -2,7 +2,6 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-import sys
 from time import monotonic
 from urllib.parse import quote, unquote
 from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
@@ -29,6 +28,8 @@ from .rsz_jsons import resolve_rsz_json_path
 
 from ui.project_manager.project_settings_dialog import ProjectSettingsDialog
 from tools.fluffy_exporter import create_fluffy_zip
+from app_config import GAMES
+from utils.app_paths import application_root
 
 from PySide6.QtCore import qInstallMessageHandler
 
@@ -46,9 +47,6 @@ def _custom_message_handler(mode, ctx, msg):
 
 _prev_handler = qInstallMessageHandler(_custom_message_handler)
 ADD_TO_PROJECT_TITLE = "Add to project"
-
-def _get_base_dir() -> Path:
-    return Path(sys.argv[0]).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent.parent
 
 def _safe_path(path, root=None):
     try:
@@ -405,11 +403,6 @@ class ProjectManager(QDockWidget):
         """Return the associated game for *project_path* if it can be inferred."""
         path = Path(project_path).resolve()
 
-        try:
-            from REasy import GAMES  # Local import to avoid circular dependency
-        except Exception:
-            GAMES = []
-            
         game_names = {game.upper(): game for game in GAMES}
 
         parent_name = path.parent.name.upper()
@@ -461,7 +454,7 @@ class ProjectManager(QDockWidget):
         resolved_path = resolve_rsz_json_path(
             project_dir,
             game,
-            _get_base_dir(),
+            application_root(),
             config.get("rsz_json_path"),
         )
         if not resolved_path:
@@ -545,7 +538,7 @@ class ProjectManager(QDockWidget):
         if self._pak_list_path or self._pak_base_paths:
             return
 
-        default_list = find_default_pak_list_path(self.current_game, _get_base_dir())
+        default_list = find_default_pak_list_path(self.current_game, application_root())
         if not default_list:
             return
 
@@ -1434,7 +1427,6 @@ class ProjectManager(QDockWidget):
         lay.addWidget(info_lbl)
 
         combo = QComboBox()
-        from REasy import GAMES
         combo.addItems(GAMES)
         lay.addWidget(combo)
 
@@ -1496,7 +1488,7 @@ class ProjectManager(QDockWidget):
             if not cfg_path.exists():
                 return
 
-        base_dir    = _get_base_dir()
+        base_dir    = application_root()
         mods_folder = base_dir / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
         cfg = load_project_config(proj)
@@ -1543,7 +1535,7 @@ class ProjectManager(QDockWidget):
                 QMessageBox.critical(self, self.tr("Download failed"), str(e))
                 return
 
-        base_dir    = _get_base_dir()
+        base_dir    = application_root()
         mods_folder = base_dir  / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
 

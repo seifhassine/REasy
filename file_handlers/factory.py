@@ -8,7 +8,7 @@ from file_handlers.tex.tex_handler import TexHandler
 from file_handlers.tex.dds_handler import DdsHandler
 from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.mdf.mdf_handler import MdfHandler
-from file_handlers.base_handler import FileHandler
+from file_handlers.base_handler import BaseFileHandler
 from file_handlers.sound.sound_handler import SoundHandler
 from file_handlers.uvs.uvs_handler import UvsHandler
 from file_handlers.rcol.rcol_handler import RcolHandler
@@ -18,7 +18,7 @@ from file_handlers.wcc.wcc_handler import WccHandler
 from file_handlers.fol.fol_handler import FolHandler
 
 
-def get_handler_for_data(data: bytes, filename: str = "") -> FileHandler:
+def get_handler_for_data(data: bytes, filename: str = "") -> BaseFileHandler:
     fn = filename.lower()
     if fn.endswith(".wel.11"):
         return WelHandler()

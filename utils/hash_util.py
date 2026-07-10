@@ -1,5 +1,9 @@
-# RE hashing
-# Credits: https://github.com/TrikzMe/RE-Engine-Hash-tool/
+"""RE Engine hashing with optional native acceleration."""
+
+try:
+    from fast_pakresolve import murmur3_hash as _native_murmur3_hash
+except (ImportError, OSError):
+    _native_murmur3_hash = None
 
 def rotl32(x: int, r: int) -> int:
     return ((x << r) | (x >> (32 - r))) & 0xffffffff
@@ -12,7 +16,7 @@ def fmix(h: int) -> int:
     h ^= h >> 16
     return h
 
-def murmur3_hash(data: bytes) -> int:
+def _python_murmur3_hash(data: bytes) -> int:
     c1 = 0xcc9e2d51
     c2 = 0x1b873593
     seed = 0xffffffff
@@ -54,6 +58,12 @@ def murmur3_hash(data: bytes) -> int:
     h1 ^= stream_length
     h1 = fmix(h1)
     return h1
+
+
+def murmur3_hash(data: bytes) -> int:
+    if _native_murmur3_hash is not None:
+        return _native_murmur3_hash(data)
+    return _python_murmur3_hash(data)
 
 def murmur3_hash_ascii(text: str) -> int:
     return murmur3_hash(text.encode('ascii', 'ignore'))

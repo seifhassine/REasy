@@ -2,7 +2,6 @@ import os
 import queue
 import threading
 import mmap
-import re
 from typing import Callable
 
 from PySide6.QtCore import (
@@ -27,9 +26,12 @@ from PySide6.QtWidgets import (
     QApplication,
     QLineEdit,
     QCheckBox,
+    QComboBox,
     QDialogButtonBox,
     QPushButton,
 )
+
+from utils.binary_search import create_binary_matcher, create_search_patterns
 
 PAK_SEARCH_TITLE = "PAK Search"
 
@@ -47,34 +49,6 @@ def ask_max_size_bytes(parent):
     if not ok:
         return False
     return val * 1024 * 1024 if val > 0 else None
-
-def validate_hex_string(hex_str):
-    """Validate and normalize a hexadecimal string"""
-    hex_str = re.sub(r'\s+', '', hex_str)
-    
-    if not re.match(r'^[0-9a-fA-F]+$', hex_str):
-        raise ValueError("Invalid hexadecimal string. Use only 0-9, A-F characters.")
-    
-    if len(hex_str) % 2 != 0:
-        raise ValueError("Hexadecimal string must contain an even number of characters.")
-    
-    return hex_str
-
-def hex_string_to_bytes(hex_str, reverse_bytes=False):
-    """Convert a validated hexadecimal string to bytes
-    
-    Args:
-        hex_str: Validated hex string without spaces
-        reverse_bytes: If True, reverse the byte order
-    """
-    byte_data = bytes.fromhex(hex_str)
-    
-    if reverse_bytes and len(byte_data) > 1:
-        byte_data = byte_data[::-1]
-        print(f"Original hex: {hex_str}")
-        print(f"Reversed bytes: {byte_data.hex().upper()}")
-    
-    return byte_data
 
 def create_hex_search_dialog(parent):
     """Custom dialog for hex search with byte order option"""
@@ -106,6 +80,71 @@ def create_hex_search_dialog(parent):
     return None, False
 
 
+def create_integer_search_dialog(parent):
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(QObject.tr("Integer Search"))
+    layout = QVBoxLayout(dialog)
+
+    integer_types = (
+        ("int32", -(2**31), 2**31 - 1),
+        ("uint32", 0, 2**32 - 1),
+        ("int64", -(2**63), 2**63 - 1),
+        ("uint64", 0, 2**64 - 1),
+    )
+    layout.addWidget(QLabel(QObject.tr("Select integer type:")))
+    type_combo = QComboBox()
+    type_combo.addItems(
+        (
+            "int32 (signed 32-bit)",
+            "uint32 (unsigned 32-bit)",
+            "int64 (signed 64-bit)",
+            "uint64 (unsigned 64-bit)",
+        )
+    )
+    layout.addWidget(type_combo)
+
+    value_label = QLabel()
+    value_input = QLineEdit()
+    layout.addWidget(value_label)
+    layout.addWidget(value_input)
+
+    def update_limits():
+        _, minimum, maximum = integer_types[type_combo.currentIndex()]
+        value_label.setText(QObject.tr("Enter value ({} to {}):").format(minimum, maximum))
+
+    type_combo.currentIndexChanged.connect(update_limits)
+    update_limits()
+
+    buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout.addWidget(buttons)
+    if dialog.exec() != QDialog.Accepted:
+        return None, False
+
+    integer_type, minimum, maximum = integer_types[type_combo.currentIndex()]
+    try:
+        value = int(value_input.text())
+        if not minimum <= value <= maximum:
+            raise ValueError(f"Value out of range for {integer_type}")
+    except ValueError as exc:
+        QMessageBox.critical(parent, QObject.tr("Invalid Input"), str(exc))
+        return None, False
+    return (integer_type, value), True
+
+
+def create_search_dialog(parent, search_type):
+    if search_type == "number":
+        return create_integer_search_dialog(parent)
+    prompts = {
+        "text": (QObject.tr("Text Search"), QObject.tr("Enter text to search (UTF-16LE):")),
+        "guid": (QObject.tr("GUID Search"), QObject.tr("Enter GUID (standard format):")),
+    }
+    title, prompt = prompts[search_type]
+    value, accepted = QInputDialog.getText(parent, title, prompt)
+    return (value, accepted) if accepted else (None, False)
+
+
 def choose_search_source(parent, search_type):
     options = ["Directory Files", "PAK Files in Directory"]
     selected, ok = QInputDialog.getItem(
@@ -134,37 +173,6 @@ def ask_ignore_mod_paks(parent):
     if not ok:
         return None
     return selected == "Ignore mod PAKs"
-
-
-def create_binary_matcher(patterns, case_insensitive=False):
-    if case_insensitive:
-        folded_patterns = [p.lower() for p in patterns]
-        
-        def contains_case_insensitive(data: bytes, folded_pattern: bytes, chunk_size=4 * 1024 * 1024) -> bool:
-            plen = len(folded_pattern)
-            if plen == 0:
-                return True
-
-            overlap = max(0, plen - 1)
-            pos = 0
-            total = len(data)
-            while pos < total:
-                end = min(total, pos + chunk_size + overlap)
-                chunk = data[pos:end]
-                if chunk.lower().find(folded_pattern) != -1:
-                    return True
-                pos += chunk_size
-            return False
-
-        def matcher(data: bytes) -> bool:
-            return any(contains_case_insensitive(data, p) for p in folded_patterns)
-
-        return matcher
-
-    def matcher(data: bytes) -> bool:
-        return any(data.find(p) != -1 for p in patterns)
-
-    return matcher
 
 
 def search_items_with_progress(
@@ -383,7 +391,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
     )
 
 
-def search_directory_for_type(parent, search_type, create_search_dialog_fn, create_search_patterns_fn, source_mode=None):
+def search_directory_for_type(parent, search_type, source_mode=None):
     """Unified directory search method"""
     source = source_mode or choose_search_source(parent, search_type)
     if not source:
@@ -396,7 +404,7 @@ def search_directory_for_type(parent, search_type, create_search_dialog_fn, crea
     if search_type == 'hex':
         value, ok = create_hex_search_dialog(parent)
     else:
-        value, ok = create_search_dialog_fn(parent, search_type)
+        value, ok = create_search_dialog(parent, search_type)
         
     if not ok or value is None:
         return
@@ -408,7 +416,7 @@ def search_directory_for_type(parent, search_type, create_search_dialog_fn, crea
             return
 
     try:
-        patterns = create_search_patterns_fn(search_type, value)
+        patterns = create_search_patterns(search_type, value)
         
         if search_type == 'hex':
             hex_text, reverse_bytes = value
