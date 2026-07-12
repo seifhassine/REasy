@@ -178,14 +178,13 @@ class RszHandler(BaseFileHandler):
         viewer.scn = self.rsz_file
         viewer.handler = self
         viewer.type_registry = self.type_registry
-        viewer.dark_mode = self.dark_mode
         viewer.game_version = self.game_version
         viewer.show_advanced = self.show_advanced
         
         if hasattr(self, 'highlight_manager') and self.highlight_manager:
             viewer.tree.highlight_manager = self.highlight_manager
 
-        colors = get_color_scheme(self.dark_mode)
+        colors = get_color_scheme()
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer._initialize_editor_services()
         viewer.populate_tree()
@@ -297,7 +296,6 @@ class RszViewer(QWidget):
         self.scn = RszFile()
         self.handler = None
         self.type_registry = None
-        self.dark_mode = False
         self.show_advanced = False
         self.confirmation_prompt = False
         self._cleanup_pending = False

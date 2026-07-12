@@ -12,7 +12,6 @@ class BaseFileHandler(QObject):
         self.filepath = ""
         self.refresh_tree_callback = None
         self.type_registry = None
-        self.dark_mode = False
         self.show_advanced = False
         self._modified = False
         

@@ -659,18 +659,16 @@ class ProjectPickerDialog(QDialog):
         build_colors = getattr(parent, "_build_theme_colors", None)
         if callable(build_colors):
             try:
-                return build_colors(bool(getattr(parent, "dark_mode", False)))
+                return build_colors()
             except Exception:
                 pass
-
-        dark = self.palette().color(self.backgroundRole()).lightness() < 128
-        return get_color_scheme(dark)
+        return get_color_scheme()
 
     def _muted_text(self, text: str, bg: str) -> str:
         fg = QColor(text)
         background = QColor(bg)
         if not fg.isValid() or not background.isValid():
-            return "#b0b0b0" if self.palette().color(self.backgroundRole()).lightness() < 128 else "#666666"
+            return "#b0b0b0"
         return self._mix_color(fg, background, 0.42)
 
     def _soft_surface(self, base: str, text: str, amount: float) -> str:

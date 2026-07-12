@@ -82,20 +82,6 @@ class FileTab:
 
         if data is not None:
             self.initial_load_complete = self.load_file(filename, data, handler=handler)
-            if not self.app.dark_mode:
-                self.tree.setStyleSheet(
-                    """
-                    QTreeView {
-                        background-color: white;
-                        color: black;
-                    }
-                    QTreeView::item {
-                        background-color: white;
-                        color: black;
-                        padding: 2px;
-                    }
-                """
-                )
 
     @staticmethod
     def tr(text: str) -> str:
@@ -560,8 +546,6 @@ class FileTab:
                 except RuntimeError:
                     pass
             self._find_dialog = BetterFindDialog(self, parent=parent_window, shared_mode=False)
-            if self.app and hasattr(self.app, 'dark_mode'):
-                self._find_dialog.set_dark_mode(self.app.dark_mode)
             self._find_dialog.show()
         else:
             if self.app:

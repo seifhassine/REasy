@@ -186,7 +186,6 @@ class CustomNotebook(QTabWidget):
 		self.setTabsClosable(True)
 		self.setMovable(True)
 		self.tabCloseRequested.connect(self.on_tab_close_requested)
-		self.dark_mode = False
 		self.app_instance = None
 		self._floating_windows = []
 		self._set_icon_callback = None
@@ -209,13 +208,6 @@ class CustomNotebook(QTabWidget):
 	def removeTab(self, index: int) -> None:
 		super().removeTab(index)
 		self._refresh_detach_buttons()
-
-	def set_dark_mode(self, is_dark):
-		self.dark_mode = is_dark
-		if is_dark:
-			self.setStyleSheet("QTabWidget { background-color: #2b2b2b; }")
-		else:
-			self.setStyleSheet("QTabWidget { background-color: white; }")
 
 	def on_tab_close_requested(self, index):
 		if self.app_instance:

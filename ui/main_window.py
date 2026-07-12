@@ -100,8 +100,6 @@ class REasyEditorApp(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.proj_dock)
         self.proj_dock.hide()
 
-        self.dark_mode = self.settings.get("dark_mode", False)
-
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
@@ -165,7 +163,7 @@ class REasyEditorApp(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage(self.tr("Ready"))
 
-        self.set_dark_mode(self.dark_mode)
+        self._apply_style(self._build_theme_colors())
 
         self.console_widget = ConsoleWidget()
         self.console_widget.setMaximumHeight(100)
@@ -204,7 +202,7 @@ class REasyEditorApp(QMainWindow):
     def _show_changelog_if_needed(self):
         last_seen = self.settings.get("last_seen_version", "")
         if last_seen != CURRENT_VERSION:
-            dlg = ChangelogDialog(self, CURRENT_VERSION, self.dark_mode)
+            dlg = ChangelogDialog(self, CURRENT_VERSION)
             dlg.exec()
             self.settings["last_seen_version"] = CURRENT_VERSION
             save_settings(self.settings)
@@ -364,12 +362,6 @@ class REasyEditorApp(QMainWindow):
         find_menu.addAction(rsz_field_act)
 
         view_menu = menubar.addMenu(self.tr("View"))
-
-        dark_act = QAction(self.tr("Toggle Dark Mode"), self)
-        dark_act.setObjectName("view_dark_mode")
-        dark_act.setShortcut(shortcut("view_dark_mode"))
-        dark_act.triggered.connect(self.toggle_dark_mode)
-        view_menu.addAction(dark_act)
 
         prev_tab_act = QAction(self.tr("Previous Tab"), self)
         prev_tab_act.setObjectName("view_prev_tab")
@@ -614,22 +606,6 @@ class REasyEditorApp(QMainWindow):
         dialog = RszCsvExtractorDialog(self, self.settings)
         dialog.exec()
 
-    def set_dark_mode(self, state):
-        self.dark_mode = state
-        self.settings["dark_mode"] = state
-        self.save_settings()
-
-        colors = self._build_theme_colors(state)
-        self._apply_style(colors)
-
-        self.notebook.set_dark_mode(state)
-        self._update_tab_viewers(state)
-        if hasattr(self, "project_workspace"):
-            self.project_workspace.set_dark_mode(state)
-
-        if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
-            self._shared_find_dialog.set_dark_mode(state)
-
     def _theme_accent_color(self) -> QColor:
         default_color = DEFAULT_SETTINGS["tree_highlight_color"]
         color_value = self.settings.get("tree_highlight_color", default_color)
@@ -638,38 +614,12 @@ class REasyEditorApp(QMainWindow):
             color = QColor(default_color)
         return color
 
-    def _build_theme_colors(self, dark_mode: bool) -> dict:
-        return get_color_scheme(dark_mode, self._theme_accent_color().name())
+    def _build_theme_colors(self) -> dict:
+        return get_color_scheme(self._theme_accent_color().name())
 
     def _apply_style(self, colors):
         self.setStyleSheet(get_main_stylesheet(colors))
         self.home_widget.set_theme(colors, self._theme_accent_color().name())
-
-    def _update_tab_viewers(self, dark_mode):
-        for tab in self.tabs.values():
-            if hasattr(tab, '_find_dialog') and tab._find_dialog:
-                try:
-                    tab._find_dialog.set_dark_mode(dark_mode)
-                except RuntimeError:
-                    pass
-
-            if tab.handler:
-                tab.handler.dark_mode = dark_mode
-
-                try:
-                    if hasattr(tab.handler, "create_viewer"):
-                        new_viewer = tab.handler.create_viewer()
-                        if new_viewer:
-                            tab.replace_viewer(new_viewer)
-                            if hasattr(tab, "_find_dialog") and tab._find_dialog and tab._find_dialog.isVisible():
-                                tab._find_dialog.close()
-                                tab._find_dialog = None
-                                QTimer.singleShot(100, tab.open_find_dialog)
-                except Exception as e:
-                    print(f"Error updating viewer: {e}")
-
-    def toggle_dark_mode(self):
-        self.set_dark_mode(not self.dark_mode)
 
     def toggle_debug_console(self, show: bool):
         if hasattr(self, "console_widget"):
@@ -804,7 +754,6 @@ class REasyEditorApp(QMainWindow):
                 return
         if not self._shared_find_dialog or not isinstance(self._shared_find_dialog, BetterFindDialog):
             self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=self, shared_mode=True)
-            self._shared_find_dialog.set_dark_mode(self.dark_mode)
             self.notebook.currentChanged.connect(self._on_tab_changed_for_find)
         else:
             self._shared_find_dialog.set_file_tab(active)

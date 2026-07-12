@@ -95,8 +95,6 @@ REasy GUI is currently available in English and Chinese (limited)
   
 -  **Backup System for Files**
 
--  **Dark Mode**  
-
 
 
 ## Guides:

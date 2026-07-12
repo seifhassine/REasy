@@ -1808,7 +1808,6 @@ class RcolViewer(QWidget):
         try:
             rsz_handler = RszHandler()
             rsz_handler.app = getattr(self.handler, "app", None)
-            rsz_handler.dark_mode = getattr(self.handler, "dark_mode", False)
             rsz_handler.show_advanced = True
             rsz_handler.filepath = (getattr(self.handler, "filepath", "") or "") + ".wcc"
             rsz_handler.type_registry = self.rcol.type_registry

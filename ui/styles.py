@@ -3,36 +3,21 @@ from PySide6.QtGui import QColor
 from settings import DEFAULT_SETTINGS
 
 
-def get_color_scheme(dark_mode: bool, accent_color: str | None = None) -> dict:
-    """Return the shared color scheme for the requested mode and accent."""
+def get_color_scheme(accent_color: str | None = None) -> dict:
+    """Return the shared dark color scheme with the requested accent."""
     accent = QColor(accent_color or DEFAULT_SETTINGS["tree_highlight_color"])
     if not accent.isValid():
         accent = QColor(DEFAULT_SETTINGS["tree_highlight_color"])
-    highlight = (
-        f"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.5)"
-        if dark_mode
-        else accent.name()
-    )
-    if dark_mode:
-        return {
-            'bg': '#2b2b2b',
-            'tree_bg': '#2b2b2b',
-            'fg': 'white',
-            'highlight': highlight,
-            'input_bg': '#3b3b3b',
-            'disabled_bg': '#404040',
-            'border': '#555555'
-        }
-    else:
-        return {
-            'bg': '#ffffff',
-            'tree_bg': '#ffffff',
-            'fg': '#000000',
-            'highlight': highlight,
-            'input_bg': '#ffffff',
-            'disabled_bg': '#f0f0f0',
-            'border': '#cccccc'
-        }
+    highlight = f"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.5)"
+    return {
+        'bg': '#2b2b2b',
+        'tree_bg': '#2b2b2b',
+        'fg': 'white',
+        'highlight': highlight,
+        'input_bg': '#3b3b3b',
+        'disabled_bg': '#404040',
+        'border': '#555555'
+    }
 
 def get_main_stylesheet(colors: dict) -> str:
     """Generate the main application stylesheet."""

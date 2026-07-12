@@ -169,8 +169,6 @@ class BetterFindDialog(QDockWidget):
         self.shared_mode = shared_mode
         self.file_tab = file_tab
         self.app = file_tab.app if file_tab else None
-        self.dark_mode = self.app.dark_mode if self.app and hasattr(self.app, 'dark_mode') else False
-        
         self._tree_for_tab = None
 
         self.results = []
@@ -567,35 +565,18 @@ class BetterFindDialog(QDockWidget):
         except RuntimeError:
             pass
     
-    def set_dark_mode(self, dark_mode):
-        self.dark_mode = dark_mode
-        self._apply_theme()
-    
     def _apply_theme(self):
-        if self.dark_mode:
-            colors = {
-                "bg": "#2b2b2b",
-                "fg": "#ffffff",
-                "input_bg": "#3b3b3b",
-                "list_bg": "#353535",
-                "border": "#555555",
-                "highlight": "#ff851b",
-                "button_bg": "#404040",
-                "button_hover": "#4a4a4a",
-                "selection": "rgba(255, 133, 27, 0.3)"
-            }
-        else:
-            colors = {
-                "bg": "#f5f5f5",
-                "fg": "#000000",
-                "input_bg": "#ffffff",
-                "list_bg": "#ffffff",
-                "border": "#cccccc",
-                "highlight": "#ff851b",
-                "button_bg": "#e0e0e0",
-                "button_hover": "#d0d0d0",
-                "selection": "rgba(255, 133, 27, 0.2)"
-            }
+        colors = {
+            "bg": "#2b2b2b",
+            "fg": "#ffffff",
+            "input_bg": "#3b3b3b",
+            "list_bg": "#353535",
+            "border": "#555555",
+            "highlight": "#ff851b",
+            "button_bg": "#404040",
+            "button_hover": "#4a4a4a",
+            "selection": "rgba(255, 133, 27, 0.3)"
+        }
         
         self.setStyleSheet(f"""
             QDockWidget#better_find_dialog {{

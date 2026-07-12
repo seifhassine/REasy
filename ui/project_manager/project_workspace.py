@@ -32,14 +32,12 @@ class ProjectWorkspaceController:
         self.toolbar.addWidget(self.tab_bar)
         self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
         notebook.currentChanged.connect(lambda _index: self._sync_tabs())
-        self.set_dark_mode(getattr(host, "dark_mode", False))
+        self.apply_style()
 
-    def set_dark_mode(self, dark_mode: bool):
+    def apply_style(self):
         accent = self.host._theme_accent_color().name()
-        bar_bg, tab_bg, hover_bg, foreground, muted, border = (
-            ("#242424", "#343434", "#3f3f3f", "#f2f2f2", "#c4c4c4", "#505050")
-            if dark_mode else ("#f3f4f6", "#fff", "#e7e9ed", "#1d1d1f", "#555b65", "#c9cdd3")
-        )
+        bar_bg, tab_bg, hover_bg = "#242424", "#343434", "#3f3f3f"
+        foreground, muted, border = "#f2f2f2", "#c4c4c4", "#505050"
         self.toolbar.setStyleSheet(f"""
             QToolBar#projectWorkspaceBar {{ background: {bar_bg}; border: none;
                 border-bottom: 1px solid {border}; padding: 0; spacing: 0; }}

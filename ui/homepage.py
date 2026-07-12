@@ -110,18 +110,17 @@ class HomePageWidget(QWidget):
         return button
 
     def set_theme(self, colors: dict, accent_color: str):
-        dark = QColor(colors["bg"]).lightness() < 128
         accent = QColor(accent_color)
         if not accent.isValid():
             accent = QColor("#ff851b")
         accent_text = "#111111" if accent.lightness() > 155 else "#ffffff"
-        accent_hover = (accent.lighter(112) if dark else accent.darker(108)).name()
+        accent_hover = accent.lighter(112).name()
         accent_pressed = accent.darker(116).name()
-        muted = "#a8b0b8" if dark else "#476582"
-        subtle = "#7f8992" if dark else "#6b7280"
-        surface = "#34383c" if dark else "#f1f3f5"
-        hover = "#3d4247" if dark else "#e7ebee"
-        border = "#464c52" if dark else "#d9dee3"
+        muted = "#a8b0b8"
+        subtle = "#7f8992"
+        surface = "#34383c"
+        hover = "#3d4247"
+        border = "#464c52"
 
         self.setStyleSheet(f"""
             QWidget#homePage {{ background: {colors['bg']}; }}

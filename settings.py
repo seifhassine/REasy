@@ -4,7 +4,6 @@ from copy import deepcopy
 
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
 DEFAULT_SETTINGS = {
-    "dark_mode": True, 
     "rcol_json_path": "", 
     "show_debug_console": True,
     "show_rsz_advanced": True,
@@ -25,7 +24,6 @@ DEFAULT_SETTINGS = {
         "find_search_guid": "Ctrl+G",
         "find_search_text": "Ctrl+T",
         "find_search_number": "Ctrl+N",
-        "view_dark_mode": "Ctrl+D",
         "view_prev_tab": "PgDown",
         "view_next_tab": "PgUp",
         "view_debug_console": "Ctrl+Shift+D"
@@ -56,8 +54,14 @@ def normalize_settings(settings=None):
         normalized["renderer_texture_quality"] = "high"
 
     for key, value in settings.items():
+        if key == "dark_mode":
+            continue
         if key == "keyboard_shortcuts" and isinstance(value, dict):
-            normalized[key].update(value)
+            normalized[key].update(
+                (name, shortcut)
+                for name, shortcut in value.items()
+                if name != "view_dark_mode"
+            )
         else:
             normalized[key] = value
     return normalized

@@ -30,7 +30,6 @@ def create_shortcuts_tab():
         "find_search_guid": QCoreApplication.translate("KeyboardShortcuts", "Search for GUID"),
         "find_search_text": QCoreApplication.translate("KeyboardShortcuts", "Search for Text"),
         "find_search_number": QCoreApplication.translate("KeyboardShortcuts", "Search for Number"),
-        "view_dark_mode": QCoreApplication.translate("KeyboardShortcuts", "Toggle Dark Mode"),
         "view_prev_tab": QCoreApplication.translate("KeyboardShortcuts", "Previous Tab"),
         "view_next_tab": QCoreApplication.translate("KeyboardShortcuts", "Next Tab"),
         "view_debug_console": QCoreApplication.translate("KeyboardShortcuts", "Toggle Debug Console"),

@@ -4038,11 +4038,6 @@ Save before reloading?</source>
         <translation>搜索数字</translation>
     </message>
     <message>
-        <location filename="../../ui/keyboard_shortcuts.py" line="33"/>
-        <source>Toggle Dark Mode</source>
-        <translation>切换深色模式</translation>
-    </message>
-    <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="34"/>
         <source>Previous Tab</source>
         <translation>上一个标签页</translation>
@@ -6607,11 +6602,6 @@ This will permanently remove:
         <location filename="../../ui/main_window.py" line="366"/>
         <source>View</source>
         <translation>视图</translation>
-    </message>
-    <message>
-        <location filename="../../ui/main_window.py" line="368"/>
-        <source>Toggle Dark Mode</source>
-        <translation>切换深色模式</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="374"/>
@@ -9337,11 +9327,6 @@ Do you want to continue parsing this file?</source>
         <location filename="../../ui/settings_dialog.py" line="128"/>
         <source>Theme Color:</source>
         <translation>主题颜色：</translation>
-    </message>
-    <message>
-        <location filename="../../ui/settings_dialog.py" line="136"/>
-        <source>Dark Mode</source>
-        <translation>深色模式</translation>
     </message>
     <message>
         <location filename="../../ui/settings_dialog.py" line="140"/>

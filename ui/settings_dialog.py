@@ -133,10 +133,6 @@ class SettingsDialog(QDialog):
         theme_color_layout.addStretch()
         general_layout.addLayout(theme_color_layout)
 
-        self.dark_box = QCheckBox(self.tr("Dark Mode"))
-        self.dark_box.setChecked(self.app_window.dark_mode)
-        general_layout.addWidget(self.dark_box)
-
         self.debug_box = QCheckBox(self.tr("Show Debug Console"))
         self.debug_box.setChecked(self.settings.get("show_debug_console", True))
         general_layout.addWidget(self.debug_box)
@@ -306,7 +302,6 @@ class SettingsDialog(QDialog):
         app = self.app_window
         app.set_rsz_json_path(new_json_path, save=False)
         self.settings["vgmstream_cli_path"] = self.vgmstream_entry.text().strip()
-        self.settings["dark_mode"] = self.dark_box.isChecked()
         self.settings["show_debug_console"] = self.debug_box.isChecked()
         self.settings["show_rsz_advanced"] = self.rsz_advanced_box.isChecked()
         self.settings["backup_on_save"] = self.backup_box.isChecked()
@@ -322,10 +317,10 @@ class SettingsDialog(QDialog):
                 translation_index
             )
 
-        if app.dark_mode != self.dark_box.isChecked():
-            app.set_dark_mode(self.dark_box.isChecked())
         app.toggle_debug_console(self.debug_box.isChecked())
-        app._apply_style(app._build_theme_colors(app.dark_mode))
+        app._apply_style(app._build_theme_colors())
+        if hasattr(app, "project_workspace"):
+            app.project_workspace.apply_style()
         app.update_from_app_settings()
         app.apply_keyboard_shortcuts()
 

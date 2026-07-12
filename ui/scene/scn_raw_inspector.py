@@ -75,10 +75,9 @@ class ScnRawInspector(QFrame):
         viewer.scn = document.rsz_file
         viewer.handler = handler
         viewer.type_registry = getattr(document.rsz_file, "type_registry", None) or getattr(handler, "type_registry", None)
-        viewer.dark_mode = getattr(self.app, "dark_mode", False)
         viewer.game_version = getattr(document.rsz_file, "game_version", "") or getattr(handler, "game_version", "")
         viewer.show_advanced = False
-        viewer.tree.setStyleSheet(get_tree_stylesheet(get_color_scheme(viewer.dark_mode)))
+        viewer.tree.setStyleSheet(get_tree_stylesheet(get_color_scheme()))
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
         viewer.array_operations = RszArrayOperations(viewer)
         viewer.object_operations = RszObjectOperations(viewer)

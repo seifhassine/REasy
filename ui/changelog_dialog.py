@@ -7,7 +7,7 @@ from ui.styles import get_color_scheme
 from utils.app_paths import application_root
 
 class _IllustrationPanel(QFrame):
-    def __init__(self, dark_mode: bool, image_path: str, parent: QWidget | None = None):
+    def __init__(self, image_path: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("IllustrationPanel")
         self.setMinimumWidth(200)
@@ -31,10 +31,10 @@ class _IllustrationPanel(QFrame):
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(40)
         shadow.setOffset(0, 0)
-        shadow.setColor(Qt.black if dark_mode else Qt.gray)
+        shadow.setColor(Qt.black)
         self.image_label.setGraphicsEffect(shadow)
 
-        colors = get_color_scheme(dark_mode)
+        colors = get_color_scheme()
 
         self._bg_start = QColor(colors['bg'])
         highlight = colors.get('highlight', '#ff851b')
@@ -103,14 +103,14 @@ class _IllustrationPanel(QFrame):
 
 
 class ChangelogDialog(QDialog):
-    def __init__(self, parent: QWidget | None, version: str, dark_mode: bool):
+    def __init__(self, parent: QWidget | None, version: str):
         super().__init__(parent)
         self.setWindowTitle(self.tr("What’s new in REasy v{version}").format(version=version))
         self.setModal(True)
         self.resize(820, 520)
         self.setMinimumSize(720, 480)
 
-        colors = get_color_scheme(dark_mode)
+        colors = get_color_scheme()
         self._apply_stylesheet(colors)
 
         base_dir = application_root()
@@ -126,7 +126,7 @@ class ChangelogDialog(QDialog):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        left = _IllustrationPanel(dark_mode, image_path)
+        left = _IllustrationPanel(image_path)
         root.addWidget(left)
 
         right_container = QWidget()
