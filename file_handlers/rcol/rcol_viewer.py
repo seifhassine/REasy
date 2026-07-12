@@ -233,7 +233,11 @@ class RcolViewer(QWidget):
         self._attached_mesh_list.itemChanged.connect(self._on_attached_mesh_item_changed)
         self._attached_mesh_list.setMaximumHeight(110)
         preview_layout.addWidget(self._attached_mesh_list)
-        self._scene_preview = ScenePreviewWidget(preview_tab, settings=getattr(getattr(self.handler, "app", None), "settings", None))
+        self._scene_preview = ScenePreviewWidget(
+            preview_tab,
+            controls="rcol",
+            settings=getattr(getattr(self.handler, "app", None), "settings", None),
+        )
         self._scene_preview.setMinimumHeight(300)
         preview_layout.addWidget(self._scene_preview, 1)
         self._preview_tabs.addTab(preview_tab, "3D")
@@ -297,6 +301,9 @@ class RcolViewer(QWidget):
         self._on_preview_dock_top_level_changed(dock.isFloating())
 
     def cleanup(self):
+        preview, self._scene_preview = self._scene_preview, None
+        if preview is not None:
+            preview.cleanup()
         if self._preview_dock is not None:
             self._preview_dock.deleteLater()
             self._preview_dock = None
