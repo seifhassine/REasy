@@ -13,3 +13,5 @@ PyOpenGL_accelerate
 numpy
 capstone
 pefile
+meson==1.4.0
+ninja==1.13.0

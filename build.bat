@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 set "PY=.venv\Scripts\python.exe"
-set "HELPER_OUT=tools\reasy_tex_gdeflate_helper\bin\Release\net9.0\win-x64\publish"
+set "GDEFLATE_DLL=.cache\gdeflate\libGDeflate.dll"
 set "PYTHONNOUSERSITE=1"
 
 if exist build rmdir /S /Q build || exit /b 1
@@ -22,7 +22,7 @@ if /I "%GITHUB_ACTIONS%"=="true" (
   --hidden-import fast_string_scan --collect-binaries fast_string_scan ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
   --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
-  --add-data "%HELPER_OUT%;tools" ^
+  --add-binary "%GDEFLATE_DLL%;tools\runtimes\win-x64\native" ^
   REasy.py || exit /b 1
 
 xcopy /E /I /Y resources dist\resources || exit /b 1

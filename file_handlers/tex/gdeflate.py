@@ -24,8 +24,9 @@ def is_gdeflate_payload(data: bytes | bytearray | memoryview) -> bool:
 def _candidate_paths() -> list[Path]:
     root = Path(__file__).resolve().parents[2]
     return [
+        root / "tools" / "runtimes" / "win-x64" / "native" / "libGDeflate.dll",
+        root / ".cache" / "gdeflate" / "libGDeflate.dll",
         root / "GDeflateNet" / "GDeflateNet" / "runtimes" / "win-x64" / "native" / "libGDeflate.dll",
-        root / "tools" / "reasy_tex_gdeflate_helper" / "bin" / "Release" / "net9.0" / "win-x64" / "libGDeflate.dll",
     ]
 
 

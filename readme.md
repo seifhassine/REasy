@@ -129,6 +129,8 @@ REasy GUI is currently available in English and Chinese (limited)
 
 - Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
+- The first build requires Git and network access to initialize GDeflateNet and fetch the pinned GDeflateCore sources. Later builds reuse the cached native build.
+
 - Python 3.12+ is required.
 
 - If build.bat complains about not having 3.12+, then run python --version to check which version is being used by default.
