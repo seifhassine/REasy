@@ -7,7 +7,7 @@ import wave
 
 import numpy as np
 
-from PySide6.QtCore import QPoint, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QPoint, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
@@ -25,12 +25,19 @@ from .bnk_parser import (
 )
 
 _MISSING_TOOL = "VGMStream CLI was not found. Set its path in Settings or add it to PATH."
-_COLUMNS = ["Subsong", "ID", "Duration", "Codec", "Channels", "Sample Rate"]
+_COLUMNS = [
+    QT_TRANSLATE_NOOP("SoundViewer", "Subsong"),
+    QT_TRANSLATE_NOOP("SoundViewer", "ID"),
+    QT_TRANSLATE_NOOP("SoundViewer", "Duration"),
+    QT_TRANSLATE_NOOP("SoundViewer", "Codec"),
+    QT_TRANSLATE_NOOP("SoundViewer", "Channels"),
+    QT_TRANSLATE_NOOP("SoundViewer", "Sample Rate"),
+]
 _COL_WEIGHTS = [10, 20, 16, 16, 12, 26]
-EXPORT_ALL_TRACKS_TITLE = "Export All Tracks"
-EXPORT_ERROR_TITLE = "Export Error"
-REPLACE_ERROR_TITLE = "Replace Error"
-BULK_REPLACE_TITLE = "Bulk Replace"
+EXPORT_ALL_TRACKS_TITLE = QT_TRANSLATE_NOOP("SoundViewer", "Export All Tracks")
+EXPORT_ERROR_TITLE = QT_TRANSLATE_NOOP("SoundViewer", "Export Error")
+REPLACE_ERROR_TITLE = QT_TRANSLATE_NOOP("SoundViewer", "Replace Error")
+BULK_REPLACE_TITLE = QT_TRANSLATE_NOOP("SoundViewer", "Bulk Replace")
 
 _vgmstream_dl = None
 
@@ -107,7 +114,11 @@ class WaveformWidget(QWidget):
         p.drawRect(r)
         if not self._peaks:
             p.setPen(QPen(QColor("#8a8a8a")))
-            p.drawText(r, Qt.AlignCenter, "Waveform preview will appear after decode")
+            p.drawText(
+                r,
+                Qt.AlignCenter,
+                self.tr("Waveform preview will appear after decode"),
+            )
             return
         w, h, mid = max(1, r.width()), r.height(), r.center().y()
         p.setPen(QPen(QColor("#4a6f95"), 1))
@@ -178,12 +189,12 @@ class SoundViewer(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 16, 16, 16)
         lay.setSpacing(12)
-        hdr = QLabel("Sound Preview")
+        hdr = QLabel(self.tr("Sound Preview"))
         hdr.setStyleSheet("font-weight: 600; font-size: 16px;")
         lay.addWidget(hdr)
         lay.addWidget(self._build_controls())
 
-        hint = QLabel("Double-click a subsong to play")
+        hint = QLabel(self.tr("Double-click a subsong to play"))
         hint.setStyleSheet("color: #6a6a6a;")
         lay.addWidget(hint)
         lay.addWidget(self._build_table())
@@ -195,22 +206,22 @@ class SoundViewer(QWidget):
         self._setup_player()
 
     def _build_controls(self) -> QGroupBox:
-        g = QGroupBox("Playback")
+        g = QGroupBox(self.tr("Playback"))
         vl = QVBoxLayout(g)
         vl.setContentsMargins(12, 12, 12, 12)
         vl.setSpacing(10)
         row = QHBoxLayout()
         mk = self._make_btn
-        self.play_btn = mk("Play", QStyle.SP_MediaPlay, self._on_play)
-        self.analyze_btn = mk("Refresh", QStyle.SP_BrowserReload, self._on_analyze)
-        self.stop_btn = mk("Stop", QStyle.SP_MediaStop, self._on_stop, enabled=False)
-        self.skip_btn = mk("Skip Silence", QStyle.SP_MediaSkipForward, self._on_skip, enabled=False)
-        self.exp_wav = mk("Export WAV", QStyle.SP_DialogSaveButton, self._on_export_wav)
-        self.exp_wem = mk("Export WEM", QStyle.SP_DialogSaveButton, self._on_export_wem)
-        self.exp_all = mk("Export All WAV/WEM", QStyle.SP_DialogSaveButton, self._on_export_all)
-        self.exp_pck = mk("Export Non-Streaming PCK", QStyle.SP_DialogSaveButton, self._on_export_pck)
-        self.rep_wem = mk("Replace Track", QStyle.SP_BrowserReload, self._on_replace)
-        self.rep_bulk = mk("Bulk Replace from Folder", QStyle.SP_DirOpenIcon, self._on_bulk_replace)
+        self.play_btn = mk(self.tr("Play"), QStyle.SP_MediaPlay, self._on_play)
+        self.analyze_btn = mk(self.tr("Refresh"), QStyle.SP_BrowserReload, self._on_analyze)
+        self.stop_btn = mk(self.tr("Stop"), QStyle.SP_MediaStop, self._on_stop, enabled=False)
+        self.skip_btn = mk(self.tr("Skip Silence"), QStyle.SP_MediaSkipForward, self._on_skip, enabled=False)
+        self.exp_wav = mk(self.tr("Export WAV"), QStyle.SP_DialogSaveButton, self._on_export_wav)
+        self.exp_wem = mk(self.tr("Export WEM"), QStyle.SP_DialogSaveButton, self._on_export_wem)
+        self.exp_all = mk(self.tr("Export All WAV/WEM"), QStyle.SP_DialogSaveButton, self._on_export_all)
+        self.exp_pck = mk(self.tr("Export Non-Streaming PCK"), QStyle.SP_DialogSaveButton, self._on_export_pck)
+        self.rep_wem = mk(self.tr("Replace Track"), QStyle.SP_BrowserReload, self._on_replace)
+        self.rep_bulk = mk(self.tr("Bulk Replace from Folder"), QStyle.SP_DirOpenIcon, self._on_bulk_replace)
         for b in (self.play_btn, self.analyze_btn, self.stop_btn, self.skip_btn,
                   self.exp_wav, self.exp_wem, self.exp_all, self.exp_pck, self.rep_wem, self.rep_bulk):
             row.addWidget(b)
@@ -223,11 +234,11 @@ class SoundViewer(QWidget):
         self.vol_slider = QSlider(Qt.Horizontal)
         self.vol_slider.setRange(0, 100)
         self.vol_slider.setValue(70)
-        form.addRow("Volume", self.vol_slider)
+        form.addRow(self.tr("Volume"), self.vol_slider)
         self.stream_spin = QSpinBox()
         self.stream_spin.setRange(1, 9999)
         self.stream_spin.setValue(1)
-        form.addRow("Subsong", self.stream_spin)
+        form.addRow(self.tr("Subsong"), self.stream_spin)
 
         self.pos_slider = QSlider(Qt.Horizontal)
         self.pos_slider.setRange(0, 0)
@@ -240,13 +251,13 @@ class SoundViewer(QWidget):
         pr.addWidget(self.pos_cur)
         pr.addWidget(self.pos_slider, 1)
         pr.addWidget(self.pos_tot)
-        form.addRow("Position", pr)
+        form.addRow(self.tr("Position"), pr)
 
         self.speed_combo = QComboBox()
         for s in (0.50, 0.75, 1.00, 1.25, 1.50, 2.00):
             self.speed_combo.addItem(f"{s:.2f}\u00d7", s)
         self.speed_combo.setCurrentIndex(2)
-        form.addRow("Speed", self.speed_combo)
+        form.addRow(self.tr("Speed"), self.speed_combo)
         vl.addLayout(form)
 
         self.waveform = WaveformWidget()
@@ -255,7 +266,7 @@ class SoundViewer(QWidget):
 
     def _build_table(self) -> QTableWidget:
         self.table = QTableWidget(0, len(_COLUMNS))
-        self.table.setHorizontalHeaderLabels(_COLUMNS)
+        self.table.setHorizontalHeaderLabels([self.tr(text) for text in _COLUMNS])
         h = self.table.horizontalHeader()
         h.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         for i in range(len(_COLUMNS)):
@@ -329,9 +340,15 @@ class SoundViewer(QWidget):
         for s, _ in self._active_ms:
             if s > cur + 250:
                 self.player.setPosition(s)
-                self.status.setText(f"Skipped silence. Jumped to {self._fmt_ms(s)}.")
+                self.status.setText(
+                    self.tr("Skipped silence. Jumped to {time}.").format(
+                        time=self._fmt_ms(s)
+                    )
+                )
                 return
-        self.status.setText("No more voiced/loud segments found after current position.")
+        self.status.setText(
+            self.tr("No more voiced/loud segments found after current position.")
+        )
 
     def _on_state(self, state):
         self.stop_btn.setEnabled(state == QMediaPlayer.PlaybackState.PlayingState)
@@ -347,7 +364,11 @@ class SoundViewer(QWidget):
     def _require_track(self, action):
         s, t = self._selected()
         if not t:
-            QMessageBox.warning(self, f"{action} Error", "Selected subsong was not found.")
+            QMessageBox.warning(
+                self,
+                self.tr("{action} Error").format(action=action),
+                self.tr("Selected subsong was not found."),
+            )
         return (s, t) if t else None
 
     def _on_sel(self):
@@ -384,24 +405,35 @@ class SoundViewer(QWidget):
 
         tag_txt = latest or "latest"
         msg = (
-            f"VGMStream CLI is required for sound playback but was not found.\n\n"
-            f"Would you like to download it now ({tag_txt})?\n"
-            f"It will be saved to REasy's downloads folder and configured automatically."
+            self.tr(
+                "VGMStream CLI is required for sound playback but was not found.\n\n"
+                "Would you like to download it now ({tag})?\n"
+                "It will be saved to REasy's downloads folder and configured automatically."
+            ).format(tag=tag_txt)
         ) if not dl.exe_path.exists() else (
-            f"A newer vgmstream-cli release ({tag_txt}) is available.\n"
-            f"Would you like to update it now?"
+            self.tr(
+                "A newer vgmstream-cli release ({tag}) is available.\n"
+                "Would you like to update it now?"
+            ).format(tag=tag_txt)
         )
-        if QMessageBox.question(self, "Download VGMStream CLI?", msg,
+        if QMessageBox.question(self, self.tr("Download VGMStream CLI?"), msg,
                                 QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
             return None
         try:
             exe = dl.ensure(auto_download=True, parent_window=self)
         except Exception as e:
-            QMessageBox.critical(self, "Download Failed", f"Failed to download vgmstream-cli:\n{e}")
+            QMessageBox.critical(
+                self,
+                self.tr("Download Failed"),
+                self.tr("Failed to download vgmstream-cli:\n{}").format(e),
+            )
             return None
         if not exe.exists():
-            QMessageBox.critical(self, "Download Failed",
-                                 "Download completed but the executable was not found.")
+            QMessageBox.critical(
+                self,
+                self.tr("Download Failed"),
+                self.tr("Download completed but the executable was not found."),
+            )
             return None
 
         exe_str = str(exe)
@@ -470,8 +502,14 @@ class SoundViewer(QWidget):
         r = self._run_vgmstream([vgs, "-o", wav, wem_path])
         if r.returncode != 0 or not os.path.exists(wav) or os.path.getsize(wav) == 0:
             self._rm(wav)
-            err = (r.stderr or r.stdout or "").strip() or "Unknown vgmstream error."
-            QMessageBox.warning(self, "Decode Error", f"Failed to decode embedded WEM:\n{err}")
+            err = (r.stderr or r.stdout or "").strip() or self.tr(
+                "Unknown vgmstream error."
+            )
+            QMessageBox.warning(
+                self,
+                self.tr("Decode Error"),
+                self.tr("Failed to decode embedded WEM:\n{}").format(err),
+            )
             return None
         return wav
 
@@ -501,65 +539,91 @@ class SoundViewer(QWidget):
             with open(path, "wb") as f:
                 f.write(data)
         except OSError as e:
-            QMessageBox.warning(self, EXPORT_ERROR_TITLE, f"Failed to export {label}:\n{e}")
-            self.status.setText(f"{label} export failed.")
+            QMessageBox.warning(
+                self,
+                self.tr(EXPORT_ERROR_TITLE),
+                self.tr("Failed to export {label}:\n{error}").format(
+                    label=label, error=e
+                ),
+            )
+            self.status.setText(
+                self.tr("{label} export failed.").format(label=label)
+            )
             return False
-        self.status.setText(f"{label} exported to: {path}")
+        self.status.setText(
+            self.tr("{label} exported to: {path}").format(label=label, path=path)
+        )
         return True
 
     def _on_export_wem(self):
-        r = self._require_track("Export")
+        r = self._require_track(self.tr("Export"))
         if not r:
             return
         s, t = r
-        p = self._pick_path(self, title="Export WEM", name=f"subsong_{s:04d}.wem", ext=".wem", filt="WEM Files (*.wem)")
+        p = self._pick_path(self, title=self.tr("Export WEM"), name=f"subsong_{s:04d}.wem", ext=".wem", filt="WEM Files (*.wem)")
         if not p:
             return
         d = extract_embedded_wem(self.handler.raw_data, t)
         if not d:
-            QMessageBox.warning(self, EXPORT_ERROR_TITLE, "Failed to extract embedded WEM.")
+            QMessageBox.warning(
+                self,
+                self.tr(EXPORT_ERROR_TITLE),
+                self.tr("Failed to extract embedded WEM."),
+            )
             return
         self._write_export(p, d, "WEM")
 
     def _on_export_wav(self):
-        r = self._require_track("Export")
+        r = self._require_track(self.tr("Export"))
         if not r:
             return
         s, t = r
-        p = self._pick_path(self, title="Export WAV", name=f"subsong_{s:04d}.wav", ext=".wav", filt="WAV Files (*.wav)")
+        p = self._pick_path(self, title=self.tr("Export WAV"), name=f"subsong_{s:04d}.wav", ext=".wav", filt="WAV Files (*.wav)")
         if not p:
             return
-        self.status.setText("Decoding embedded track for export...")
+        self.status.setText(self.tr("Decoding embedded track for export..."))
         tw, twv = self._decode_track(t)
         if not twv:
-            QMessageBox.warning(self, EXPORT_ERROR_TITLE, "Failed to decode embedded track for export.")
-            self.status.setText("WAV export failed.")
+            QMessageBox.warning(
+                self,
+                self.tr(EXPORT_ERROR_TITLE),
+                self.tr("Failed to decode embedded track for export."),
+            )
+            self.status.setText(self.tr("WAV export failed."))
             return
         try:
             shutil.copyfile(twv, p)
-            self.status.setText(f"WAV exported to: {p} (vgmstream decode)")
+            self.status.setText(
+                self.tr("WAV exported to: {path} (vgmstream decode)").format(path=p)
+            )
         except OSError as e:
-            QMessageBox.warning(self, EXPORT_ERROR_TITLE, f"Failed to export WAV:\n{e}")
-            self.status.setText("WAV export failed.")
+            QMessageBox.warning(
+                self,
+                self.tr(EXPORT_ERROR_TITLE),
+                self.tr("Failed to export WAV:\n{}").format(e),
+            )
+            self.status.setText(self.tr("WAV export failed."))
         finally:
             self._rm(tw)
             self._rm(twv)
 
     def _on_export_pck(self):
-        p = self._pick_path(self, title="Export Non-Streaming PCK", name="sound_non_streaming.pck",
+        p = self._pick_path(self, title=self.tr("Export Non-Streaming PCK"), name="sound_non_streaming.pck",
                             ext=".pck", filt="PCK Files (*.pck)")
         if p:
             self._write_export(p, export_non_streaming_pck(self.handler.raw_data), "Non-streaming PCK")
 
     def _on_export_all(self):
         if not self._parsed_tracks:
-            QMessageBox.information(self, "Export All", "No tracks available to export.")
+            QMessageBox.information(
+                self, self.tr("Export All"), self.tr("No tracks available to export.")
+            )
             return
 
         mode, ok = QInputDialog.getItem(
             self,
-            EXPORT_ALL_TRACKS_TITLE,
-            "Export format:",
+            self.tr(EXPORT_ALL_TRACKS_TITLE),
+            self.tr("Export format:"),
             ["WEM", "WAV", "WEM + WAV"],
             2,
             False,
@@ -572,21 +636,31 @@ class SoundViewer(QWidget):
             "WEM + WAV": (True, True),
         }[mode]
 
-        out_dir = QFileDialog.getExistingDirectory(self, EXPORT_ALL_TRACKS_TITLE, "")
+        out_dir = QFileDialog.getExistingDirectory(
+            self, self.tr(EXPORT_ALL_TRACKS_TITLE), ""
+        )
         if not out_dir:
             return
 
         total = len(self._parsed_tracks)
         ok_wem = ok_wav = 0
         failed: list[str] = []
-        progress = QProgressDialog("Exporting tracks...", "Cancel", 0, total, self)
-        progress.setWindowTitle(EXPORT_ALL_TRACKS_TITLE)
+        progress = QProgressDialog(
+            self.tr("Exporting tracks..."), self.tr("Cancel"), 0, total, self
+        )
+        progress.setWindowTitle(self.tr(EXPORT_ALL_TRACKS_TITLE))
         progress.setMinimumDuration(0)
         progress.setWindowModality(Qt.WindowModal)
-        self.status.setText(f"Exporting {total} track(s)...")
+        self.status.setText(
+            self.tr("Exporting {count} track(s)...").format(count=total)
+        )
 
         for i, track in enumerate(self._parsed_tracks, 1):
-            progress.setLabelText(f"Exporting track ID {track.source_id} ({i}/{total})")
+            progress.setLabelText(
+                self.tr("Exporting track ID {id} ({current}/{total})").format(
+                    id=track.source_id, current=i, total=total
+                )
+            )
             progress.setValue(i - 1)
             QApplication.processEvents()
             if progress.wasCanceled():
@@ -622,20 +696,34 @@ class SoundViewer(QWidget):
 
         progress.setValue(total)
         parts = ([f"WEM: {ok_wem}/{total}"] if export_wem else []) + ([f"WAV: {ok_wav}/{total}"] if export_wav else [])
-        fail_note = f" | Failed: {len(failed)}" if failed else ""
-        cancel_note = " (cancelled)" if progress.wasCanceled() else ""
-        self.status.setText(f"Export complete{cancel_note}. {' | '.join(parts)}{fail_note}.")
+        fail_note = (
+            self.tr(" | Failed: {count}").format(count=len(failed)) if failed else ""
+        )
+        cancel_note = self.tr(" (cancelled)") if progress.wasCanceled() else ""
+        self.status.setText(
+            self.tr("Export complete{cancelled}. {summary}{failed}.").format(
+                cancelled=cancel_note, summary=" | ".join(parts), failed=fail_note
+            )
+        )
         if failed:
             preview = "\n".join(failed[:12])
-            more = "" if len(failed) <= 12 else f"\n...and {len(failed) - 12} more"
-            QMessageBox.warning(self, "Export All Complete", f"Some tracks failed to export:\n{preview}{more}")
+            more = "" if len(failed) <= 12 else self.tr(
+                "\n...and {count} more"
+            ).format(count=len(failed) - 12)
+            QMessageBox.warning(
+                self,
+                self.tr("Export All Complete"),
+                self.tr("Some tracks failed to export:\n{tracks}{more}").format(
+                    tracks=preview, more=more
+                ),
+            )
 
     def _choose_wav_codec_tag(self) -> int | None:
         items = [f"{name} (0x{tag:04X})" for name, tag in POPULAR_WEM_CODECS]
         choice, ok = QInputDialog.getItem(
             self,
-            "WAV Import Codec",
-            "Choose target codec (name + hex):",
+            self.tr("WAV Import Codec"),
+            self.tr("Choose target codec (name + hex):"),
             items,
             0,
             False,
@@ -655,13 +743,13 @@ class SoundViewer(QWidget):
         self._populate(self._parsed_tracks)
 
     def _on_replace(self):
-        r = self._require_track("Replace")
+        r = self._require_track(self.tr("Replace"))
         if not r:
             return
         s, t = r
         src, _ = QFileDialog.getOpenFileName(
             self,
-            "Select Replacement Audio",
+            self.tr("Select Replacement Audio"),
             f"subsong_{s:04d}.wem",
             "Audio Files (*.wem *.wav *.mp3 *.ogg *.flac *.m4a *.aac *.wma *.aiff *.aif *.opus);;WEM Files (*.wem);;All Files (*)",
         )
@@ -670,18 +758,38 @@ class SoundViewer(QWidget):
         try:
             data, codec_tag = self._read_replacement_audio(src)
         except OSError as e:
-            QMessageBox.warning(self, REPLACE_ERROR_TITLE, f"Failed to read replacement file\n{e}")
+            QMessageBox.warning(
+                self,
+                self.tr(REPLACE_ERROR_TITLE),
+                self.tr("Failed to read replacement file\n{}").format(e),
+            )
             return
         except Exception as e:
-            QMessageBox.warning(self, REPLACE_ERROR_TITLE, f"Failed to convert replacement file\n{e}")
+            QMessageBox.warning(
+                self,
+                self.tr(REPLACE_ERROR_TITLE),
+                self.tr("Failed to convert replacement file\n{}").format(e),
+            )
             return
         if not data:
-            QMessageBox.warning(self, REPLACE_ERROR_TITLE, "Replacement file is empty.")
+            QMessageBox.warning(
+                self,
+                self.tr(REPLACE_ERROR_TITLE),
+                self.tr("Replacement file is empty."),
+            )
             return
         self.handler.replace_track_data(t.source_id, data)
         self._refresh_tracks()
-        codec_note = f" (codec 0x{codec_tag:04X})" if codec_tag is not None else ""
-        self.status.setText(f"Replaced source ID {t.source_id} using {os.path.basename(src)}{codec_note}.")
+        codec_note = (
+            self.tr(" (codec {codec})").format(codec=f"0x{codec_tag:04X}")
+            if codec_tag is not None
+            else ""
+        )
+        self.status.setText(
+            self.tr("Replaced source ID {id} using {file}{codec}.").format(
+                id=t.source_id, file=os.path.basename(src), codec=codec_note
+            )
+        )
 
     def _read_replacement_audio(self, src_path: str, *, codec_tag: int | None = None) -> tuple[bytes, int | None]:
         if src_path.lower().endswith(".wem"):
@@ -694,9 +802,15 @@ class SoundViewer(QWidget):
 
     def _on_bulk_replace(self):
         if not self._parsed_tracks:
-            QMessageBox.information(self, BULK_REPLACE_TITLE, "No tracks available to replace.")
+            QMessageBox.information(
+                self,
+                self.tr(BULK_REPLACE_TITLE),
+                self.tr("No tracks available to replace."),
+            )
             return
-        source_dir = QFileDialog.getExistingDirectory(self, "Select Folder with Replacement Audio", "")
+        source_dir = QFileDialog.getExistingDirectory(
+            self, self.tr("Select Folder with Replacement Audio"), ""
+        )
         if not source_dir:
             return
 
@@ -711,7 +825,14 @@ class SoundViewer(QWidget):
             if stem in track_by_id and stem not in file_map:
                 file_map[stem] = path
         if not file_map:
-            QMessageBox.information(self, BULK_REPLACE_TITLE, "No matching file names were found.\n\nFile name (without extension) must match a track source ID.")
+            QMessageBox.information(
+                self,
+                self.tr(BULK_REPLACE_TITLE),
+                self.tr(
+                    "No matching file names were found.\n\nFile name (without extension) "
+                    "must match a track source ID."
+                ),
+            )
             return
 
         need_codec = any(not p.lower().endswith(".wem") for p in file_map.values())
@@ -720,15 +841,21 @@ class SoundViewer(QWidget):
             return
 
         ids = sorted(file_map, key=int)
-        progress = QProgressDialog("Replacing tracks...", "Cancel", 0, len(ids), self)
-        progress.setWindowTitle(BULK_REPLACE_TITLE)
+        progress = QProgressDialog(
+            self.tr("Replacing tracks..."), self.tr("Cancel"), 0, len(ids), self
+        )
+        progress.setWindowTitle(self.tr(BULK_REPLACE_TITLE))
         progress.setMinimumDuration(0)
         progress.setWindowModality(Qt.WindowModal)
 
         replaced, failures = 0, []
         for i, source_id_txt in enumerate(ids, 1):
             progress.setValue(i - 1)
-            progress.setLabelText(f"Replacing source ID {source_id_txt} ({i}/{len(ids)})")
+            progress.setLabelText(
+                self.tr("Replacing source ID {id} ({current}/{total})").format(
+                    id=source_id_txt, current=i, total=len(ids)
+                )
+            )
             QApplication.processEvents()
             if progress.wasCanceled():
                 break
@@ -746,32 +873,64 @@ class SoundViewer(QWidget):
         if replaced:
             self._refresh_tracks()
 
-        cancelled = " (cancelled)" if progress.wasCanceled() else ""
-        failed = f" | Failed: {len(failures)}" if failures else ""
-        codec = f" | Codec: 0x{codec_tag:04X}" if codec_tag is not None else ""
-        self.status.setText(f"Bulk replace complete{cancelled}. Replaced: {replaced}/{len(ids)}{failed}{codec}.")
+        cancelled = self.tr(" (cancelled)") if progress.wasCanceled() else ""
+        failed = (
+            self.tr(" | Failed: {count}").format(count=len(failures))
+            if failures
+            else ""
+        )
+        codec = (
+            self.tr(" | Codec: {codec}").format(codec=f"0x{codec_tag:04X}")
+            if codec_tag is not None
+            else ""
+        )
+        self.status.setText(
+            self.tr(
+                "Bulk replace complete{cancelled}. Replaced: {replaced}/{total}{failed}{codec}."
+            ).format(
+                cancelled=cancelled,
+                replaced=replaced,
+                total=len(ids),
+                failed=failed,
+                codec=codec,
+            )
+        )
         if failures:
             preview = "\n".join(failures[:12])
-            more = "" if len(failures) <= 12 else f"\n...and {len(failures) - 12} more"
-            QMessageBox.warning(self, "Bulk Replace Complete", f"Some files failed to replace:\n{preview}{more}")
+            more = "" if len(failures) <= 12 else self.tr(
+                "\n...and {count} more"
+            ).format(count=len(failures) - 12)
+            QMessageBox.warning(
+                self,
+                self.tr("Bulk Replace Complete"),
+                self.tr("Some files failed to replace:\n{files}{more}").format(
+                    files=preview, more=more
+                ),
+            )
 
     def _on_play(self):
         self._stop()
-        r = self._require_track("Playback")
+        r = self._require_track(self.tr("Playback"))
         if not r:
             return
         _, t = r
-        self.status.setText("Decoding embedded track...")
+        self.status.setText(self.tr("Decoding embedded track..."))
         wem, wav = self._decode_track(t)
         if not wem or not wav:
-            self.status.setText("Decode failed.")
-            QMessageBox.warning(self, "Playback Error", "Failed to decode embedded audio data.")
+            self.status.setText(self.tr("Decode failed."))
+            QMessageBox.warning(
+                self,
+                self.tr("Playback Error"),
+                self.tr("Failed to decode embedded audio data."),
+            )
             return
         self._current_wem, self._current_wav = wem, wav
         self.player.setSource(QUrl.fromLocalFile(wav))
         self.player.play()
         self._queue_waveform_build(wav)
-        self.status.setText("Playing embedded track. Building waveform preview in background...")
+        self.status.setText(
+            self.tr("Playing embedded track. Building waveform preview in background...")
+        )
 
     def _queue_waveform_build(self, wav_path: str):
         self._cancel_waveform_job()
@@ -792,31 +951,52 @@ class SoundViewer(QWidget):
         if payload is None:
             self._active_ms = []
             self.skip_btn.setEnabled(False)
-            self.status.setText("Playing embedded track (waveform unavailable for this format).")
+            self.status.setText(
+                self.tr("Playing embedded track (waveform unavailable for this format).")
+            )
             return
         self._active_ms = payload["active_ms"]
         self.skip_btn.setEnabled(bool(self._active_ms))
         self.waveform.set_waveform(payload["peaks"], payload["ranges"])
         n = len(self._active_ms)
         if n:
-            self.status.setText(f"Playing embedded track. {n} activity segment(s) detected. Click waveform or Skip Silence to jump.")
+            self.status.setText(
+                self.tr(
+                    "Playing embedded track. {count} activity segment(s) detected. "
+                    "Click waveform or Skip Silence to jump."
+                ).format(count=n)
+            )
         else:
-            self.status.setText("Playing embedded track. No voice/activity detected in this track.")
+            self.status.setText(
+                self.tr("Playing embedded track. No voice/activity detected in this track.")
+            )
 
     def _on_analyze(self):
-        self.status.setText("Analyzing sound container...")
+        self.status.setText(self.tr("Analyzing sound container..."))
         try:
             res = parse_soundbank(self.handler.raw_data)
         except Exception as e:
-            self.status.setText("Analyze failed.")
-            QMessageBox.warning(self, "Analyze Error", f"Failed to parse sound container: {e}")
+            self.status.setText(self.tr("Analyze failed."))
+            QMessageBox.warning(
+                self,
+                self.tr("Analyze Error"),
+                self.tr("Failed to parse sound container: {}").format(e),
+            )
             return
         self._parsed_tracks = res.tracks
         self._has_embedded_data = res.has_embedded_data
         self._populate(res.tracks)
         self.exp_pck.setVisible((res.container_type or "").lower() == "pck")
-        ver = f" version: {res.bank_version}." if res.bank_version is not None else ""
-        self.status.setText(f"Analyze complete. {res.container_type.upper()}{ver} Tracks: {len(res.tracks)}")
+        ver = (
+            self.tr(" version: {version}.").format(version=res.bank_version)
+            if res.bank_version is not None
+            else ""
+        )
+        self.status.setText(
+            self.tr("Analyze complete. {type}{version} Tracks: {count}").format(
+                type=res.container_type.upper(), version=ver, count=len(res.tracks)
+            )
+        )
 
     def _stop(self):
         self.player.stop()

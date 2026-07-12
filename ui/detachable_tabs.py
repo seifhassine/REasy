@@ -25,8 +25,8 @@ class FloatingTabWindow(QMainWindow):
 			self.setStyleSheet(main_window.styleSheet())
 			self.setPalette(main_window.palette())
 			self.setFont(main_window.font())
-		menu = self.menuBar().addMenu("Tab")
-		act = QAction("Reattach", self)
+		menu = self.menuBar().addMenu(self.tr("Tab"))
+		act = QAction(self.tr("Reattach"), self)
 		act.triggered.connect(self._reattach_now)
 		menu.addAction(act)
 		main_window = self._get_main_window()
@@ -78,9 +78,7 @@ class FloatingTabWindow(QMainWindow):
 			src_menu = top_action.menu()
 			if not src_menu:
 				continue
-			if src_menu.title() == "Tab":
-				continue
-			if src_menu.title() == "Find":
+			if any(action.objectName() == "find_search" for action in src_menu.actions()):
 				new_menu = dst_mb.addMenu(src_menu.title())
 				if hasattr(self, '_find_action'):
 					new_menu.addAction(self._find_action)
@@ -107,7 +105,7 @@ class FloatingTabWindow(QMainWindow):
 						new_menu.addAction(act)
 
 	def _create_find_action(self, main_window):
-		find_act = QAction("Find", self)
+		find_act = QAction(self.tr("Find"), self)
 		find_act.setObjectName("find_search_detached")
 		
 		if hasattr(main_window, 'settings'):
@@ -144,7 +142,11 @@ class FloatingTabWindow(QMainWindow):
 							self.file_tab = tab
 							tab.open_find_dialog()
 							return
-			QMessageBox.warning(self, "Warning", "Cannot open find dialog for this tab")
+			QMessageBox.warning(
+				self,
+				self.tr("Warning"),
+				self.tr("Cannot open find dialog for this tab"),
+			)
 	
 	def keyPressEvent(self, event):
 		if not getattr(self.file_tab, "suppress_general_shortcuts", False) and event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_F:
@@ -167,7 +169,7 @@ class DetachTabBar(QTabBar):
 		button = QToolButton(self)
 		button.setAutoRaise(True)
 		button.setText('↗')
-		button.setToolTip('Detach')
+		button.setToolTip(self.tr("Detach"))
 		button._is_detach_button = True
 		button.clicked.connect(lambda: self._on_detach_clicked(button))
 		self.setTabButton(index, QTabBar.LeftSide, button)

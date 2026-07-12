@@ -26,6 +26,7 @@ from OpenGL.GL import (
     GL_DITHER,
     GL_ARRAY_BUFFER,
     GL_ELEMENT_ARRAY_BUFFER,
+    GL_EXTENSIONS,
     GL_FILL,
     GL_FLOAT,
     GL_FRONT_AND_BACK,
@@ -34,6 +35,7 @@ from OpenGL.GL import (
     GL_LINE,
     GL_LINES,
     GL_LINEAR,
+    GL_LINEAR_MIPMAP_LINEAR,
     GL_LEQUAL,
     GL_LESS,
     GL_LINE_STRIP,
@@ -41,6 +43,7 @@ from OpenGL.GL import (
     GL_MODELVIEW_MATRIX,
     GL_MODULATE,
     GL_MULTISAMPLE,
+    GL_NO_ERROR,
     GL_NORMAL_ARRAY,
     GL_NORMALIZE,
     GL_ONE_MINUS_SRC_ALPHA,
@@ -58,6 +61,7 @@ from OpenGL.GL import (
     GL_TEXTURE_ENV,
     GL_TEXTURE_ENV_MODE,
     GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_MAX_LEVEL,
     GL_TEXTURE_MIN_FILTER,
     GL_TRIANGLES,
     GL_UNPACK_ALIGNMENT,
@@ -89,7 +93,10 @@ from OpenGL.GL import (
     glFrontFace,
     glGenTextures,
     glGetDoublev,
+    glGetError,
+    glGetFloatv,
     glGetIntegerv,
+    glGetString,
     glLightfv,
     glLineWidth,
     glLoadIdentity,
@@ -110,6 +117,7 @@ from OpenGL.GL import (
     glTexEnvi,
     glCompressedTexImage2D,
     glTexImage2D,
+    glTexParameterf,
     glTexParameteri,
     glTranslatef,
     glVertex3f,
@@ -123,6 +131,12 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel, QSpinBox, QToolButton, QVBoxLayout, QWidget
 
 from file_handlers.tex.qt_image_utils import TexPreviewUpload
+from file_handlers.tex.texture_quality import (
+    DEFAULT_TEXTURE_QUALITY,
+    TEXTURE_QUALITY_PROFILES,
+    normalize_texture_quality,
+    texture_quality_profile,
+)
 from settings import save_settings
 from ui.opengl_camera import OrbitCameraMixin
 from .freecam_controller import FreecamController
@@ -169,11 +183,15 @@ IDENTITY4 = np.identity(4, dtype=np.float32)
 HOVER_PICK_INTERVAL = 1.0 / 15.0
 HOVER_PICK_MIN_PIXELS = 4.0
 HOVER_DETECT_KEY = Qt.Key_H
+GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE
+GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
 
 
 class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     object_clicked = Signal(str)
     gizmo_transform_committed = Signal(object)
+    texture_quality_changed = Signal(str)
+    texture_upload_status_changed = Signal()
 
     SETTINGS_DEFAULTS = {
         "mesh_viewer_fps_limit": 60,
@@ -186,6 +204,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         "scene_probe_viz_mode": "all",
         "scene_probe_viz_points": 12000,
         "mesh_viewer_show_bones": False,
+        "renderer_texture_quality": DEFAULT_TEXTURE_QUALITY,
         "scene_render_mode": "solid",
         "scene_gizmo_mode": "position",
         "scene_show_only_highlighted": False,
@@ -259,6 +278,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._texture_ids: dict[str, int] = {}
         self._texture_sources: dict[str, str] = {}
         self._texture_source_ids: dict[str, int] = {}
+        self._texture_upload_failures: set[str] = set()
+        self._max_texture_anisotropy = 1.0
+        self._anisotropy_limit_logs: set[tuple[str, float]] = set()
         self._pending_material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
         self._material_tints: dict[str, tuple[float, float, float, float]] = {}
         self._two_sided_materials: set[str] = set()
@@ -270,6 +292,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._gizmo_mode = self._setting_choice("scene_gizmo_mode", ("position", "rotation", "scale"))
         self.show_only_highlighted = self._setting_bool("scene_show_only_highlighted")
         self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 0, 240)
+        self.texture_quality = self._setting_choice("renderer_texture_quality", tuple(TEXTURE_QUALITY_PROFILES))
         self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", self.WIREFRAME_MODES)
         self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", self.LIGHTING_MODES)
         self._light_probe_set: SceneLightProbeSet | None = None
@@ -323,9 +346,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         layout.setContentsMargins(8, 6, 8, 6)
         layout.setSpacing(4)
         header = QHBoxLayout()
-        self.fps_label = QLabel("0 FPS", self.overlay)
-        self.overlay_fold_button = self._overlay_button("v", "Fold panel")
-        self.fullscreen_button = self._overlay_button("⛶", "Fullscreen viewport", self._toggle_view_fullscreen)
+        self.fps_label = QLabel(self.tr("0 FPS"), self.overlay)
+        self.overlay_fold_button = self._overlay_button("v", self.tr("Fold panel"))
+        self.fullscreen_button = self._overlay_button(
+            "⛶", self.tr("Fullscreen viewport"), self._toggle_view_fullscreen
+        )
         header.addWidget(self.fps_label, 1)
         header.addWidget(self.fullscreen_button)
         header.addWidget(self.overlay_fold_button)
@@ -383,7 +408,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._fullscreen_restore = (parent, layout, index)
         self.setParent(None)
         self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-        self.setWindowTitle("Scene Preview")
+        self.setWindowTitle(self.tr("Scene Preview"))
         self.fullscreen_button.setText("x")
         self.showFullScreen()
         QTimer.singleShot(0, self, self._after_fullscreen_change)
@@ -426,42 +451,77 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _build_scene_controls(self, layout: QVBoxLayout):
         self._add_scene_mode_control(layout)
+        self._add_texture_quality_control(layout)
         self._add_fps_limit_control(layout)
         self._add_control_row(
             layout,
-            "Speed", self._camera_spin("camera_speed", 0.01, 50.0, 0.1),
-            "Look", self._camera_spin("camera_look", 0.01, 2.0, 0.01),
+            self.tr("Speed"), self._camera_spin("camera_speed", 0.01, 50.0, 0.1),
+            self.tr("Look"), self._camera_spin("camera_look", 0.01, 2.0, 0.01),
         )
         self._add_control_row(
             layout,
-            "Wheel", self._camera_spin("camera_wheel", 0.001, 2.0, 0.01),
-            "Fast", self._camera_spin("camera_boost", 1.0, 20.0, 0.25),
-            "Slow", self._camera_spin("camera_slow", 0.01, 1.0, 0.05),
+            self.tr("Wheel"), self._camera_spin("camera_wheel", 0.001, 2.0, 0.01),
+            self.tr("Fast"), self._camera_spin("camera_boost", 1.0, 20.0, 0.25),
+            self.tr("Slow"), self._camera_spin("camera_slow", 0.01, 1.0, 0.05),
         )
-        self.scene_light_combo = self._text_combo(["fixed", "software", "probes", "off"], self.lighting_mode, self._set_lighting_mode)
-        self._add_control_row(layout, "Light", self.scene_light_combo)
+        self.scene_light_combo = self._data_combo(
+            (
+                (self.tr("Fixed"), "fixed"),
+                (self.tr("Software"), "software"),
+                (self.tr("Probes"), "probes"),
+                (self.tr("Off"), "off"),
+            ),
+            self._set_lighting_mode,
+            self.lighting_mode,
+        )
+        self._add_control_row(layout, self.tr("Light"), self.scene_light_combo)
         self.probe_exposure_spin = self._float_spin(0.01, 2.0, 0.01, self.probe_exposure, self._set_probe_exposure)
-        self._add_control_row(layout, "Probe Exp", self.probe_exposure_spin)
-        self.probe_viz_combo = self._text_combo(list(self.PROBE_VIZ_MODES), self.probe_viz_mode, self._set_probe_viz_mode)
+        self._add_control_row(layout, self.tr("Probe Exp"), self.probe_exposure_spin)
+        self.probe_viz_combo = self._data_combo(
+            (
+                (self.tr("Off"), "off"),
+                (self.tr("Volumes"), "volumes"),
+                (self.tr("Points"), "points"),
+                (self.tr("All"), "all"),
+            ),
+            self._set_probe_viz_mode,
+            self.probe_viz_mode,
+        )
         self.probe_viz_points_spin = QSpinBox(self.overlay)
         self.probe_viz_points_spin.setRange(100, 50000)
         self.probe_viz_points_spin.setSingleStep(500)
         self.probe_viz_points_spin.setFixedWidth(62)
         self.probe_viz_points_spin.setValue(self.probe_viz_points)
         self.probe_viz_points_spin.valueChanged.connect(self._set_probe_viz_points)
-        self._add_control_row(layout, "Viz", self.probe_viz_combo, "Pts", self.probe_viz_points_spin)
+        self._add_control_row(
+            layout,
+            self.tr("Viz"),
+            self.probe_viz_combo,
+            self.tr("Pts"),
+            self.probe_viz_points_spin,
+        )
         self.probe_status_label = QLabel("", self.overlay)
         self.probe_status_label.setWordWrap(True)
         self.probe_status_label.setStyleSheet("color:#7fced6; background-color:transparent; font-size:10px;")
         layout.addWidget(self.probe_status_label)
         self._refresh_probe_status_label()
-        self.gizmo_mode_combo = self._data_combo((("Position", "position"), ("Rotation", "rotation"), ("Scale", "scale")), self.set_gizmo_mode, self._gizmo_mode)
-        self._add_control_row(layout, "Gizmo", self.gizmo_mode_combo)
+        self.gizmo_mode_combo = self._data_combo(
+            (
+                (self.tr("Position"), "position"),
+                (self.tr("Rotation"), "rotation"),
+                (self.tr("Scale"), "scale"),
+            ),
+            self.set_gizmo_mode,
+            self._gizmo_mode,
+        )
+        self._add_control_row(layout, self.tr("Gizmo"), self.gizmo_mode_combo)
         self._add_highlight_filter_control(layout)
-        note = QLabel("Hold H to hover/select viewport objects.", self.overlay)
+        note = QLabel(self.tr("Hold H to hover/select viewport objects."), self.overlay)
         note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
         layout.addWidget(note)
-        shortcut_note = QLabel("Main REasy shortcuts are disabled in Scene tabs.", self.overlay)
+        shortcut_note = QLabel(
+            self.tr("Main REasy shortcuts are disabled in Scene tabs."), self.overlay
+        )
         shortcut_note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
         layout.addWidget(shortcut_note)
 
@@ -470,12 +530,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._add_highlight_filter_control(layout)
 
     def _add_scene_mode_control(self, layout: QVBoxLayout):
-        modes = (("Wireframe", "wire"), ("Solid + Wire", "hybrid"), ("Solid", "solid"))
+        modes = (
+            (self.tr("Wireframe"), "wire"),
+            (self.tr("Solid + Wire"), "hybrid"),
+            (self.tr("Solid"), "solid"),
+        )
         self.scene_mode_combo = self._data_combo(modes, self._set_render_mode, self.render_mode)
-        self._add_control_row(layout, "Mode", self.scene_mode_combo)
+        self._add_control_row(layout, self.tr("Mode"), self.scene_mode_combo)
 
     def _add_highlight_filter_control(self, layout: QVBoxLayout):
-        self.highlight_only_check = QCheckBox("View only highlighted", self.overlay)
+        self.highlight_only_check = QCheckBox(
+            self.tr("View only highlighted"), self.overlay
+        )
         self.highlight_only_check.setChecked(self.show_only_highlighted)
         self.highlight_only_check.toggled.connect(self._set_show_only_highlighted)
         layout.addWidget(self.highlight_only_check)
@@ -486,7 +552,33 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         fps_spin.setFixedWidth(50)
         fps_spin.setValue(self._fps_limit)
         fps_spin.valueChanged.connect(self._change_fps_limit)
-        self._add_control_row(layout, "Limit", fps_spin)
+        self._add_control_row(layout, self.tr("Limit"), fps_spin)
+
+    def _add_texture_quality_control(self, layout: QVBoxLayout):
+        labels = {
+            "low": self.tr("Low"),
+            "balanced": self.tr("Balanced"),
+            "high": self.tr("High"),
+        }
+        descriptions = {
+            "low": self.tr("Resident TEX up to 256 px; 1x sampling"),
+            "balanced": self.tr("Resident TEX up to 512 px; up to 4x sampling"),
+            "high": self.tr(
+                "Full resolution, prefers streaming TEX; up to 16x sampling"
+            ),
+        }
+        options = tuple(
+            (labels.get(name, profile.label), name)
+            for name, profile in TEXTURE_QUALITY_PROFILES.items()
+        )
+        combo = self._data_combo(options, self._set_texture_quality, self.texture_quality)
+        combo.setToolTip(
+            "\n".join(
+                descriptions.get(name, profile.description)
+                for name, profile in TEXTURE_QUALITY_PROFILES.items()
+            )
+        )
+        self._add_control_row(layout, self.tr("Quality"), combo)
 
     def _add_control_row(self, layout: QVBoxLayout, *items):
         row = QHBoxLayout()
@@ -525,24 +617,57 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return self._float_spin(minimum, maximum, step, getattr(self, attr), lambda value: self._set_camera_setting(attr, f"scene_{attr}", value))
 
     def _build_mesh_controls(self, layout: QVBoxLayout):
+        self._add_texture_quality_control(layout)
         self._add_fps_limit_control(layout)
 
-        self.wf_combo = self._text_combo(["off", "polygon", "lines_depth", "lines_overlay"], self.wireframe_mode, self._set_wireframe_mode)
+        self.wf_combo = self._data_combo(
+            (
+                (self.tr("Off"), "off"),
+                (self.tr("Polygon"), "polygon"),
+                (self.tr("Depth Lines"), "lines_depth"),
+                (self.tr("Overlay Lines"), "lines_overlay"),
+            ),
+            self._set_wireframe_mode,
+            self.wireframe_mode,
+        )
         self.line_spin = self._float_spin(0.5, 8.0, 0.1, self.line_width, self._set_line_width)
-        self._add_control_row(layout, "WF Mode", self.wf_combo, "Line", self.line_spin)
+        self._add_control_row(
+            layout,
+            self.tr("WF Mode"),
+            self.wf_combo,
+            self.tr("Line"),
+            self.line_spin,
+        )
 
-        self.light_combo = self._text_combo(["off", "fixed", "software"], self.lighting_mode, self._set_lighting_mode)
-        row2 = self._add_control_row(layout, "Light", self.light_combo)
+        self.light_combo = self._data_combo(
+            (
+                (self.tr("Off"), "off"),
+                (self.tr("Fixed"), "fixed"),
+                (self.tr("Software"), "software"),
+            ),
+            self._set_lighting_mode,
+            self.lighting_mode,
+        )
+        row2 = self._add_control_row(layout, self.tr("Light"), self.light_combo)
         mesh = getattr(self, "mesh", None)
         if getattr(mesh, "streaming_buffer_count", 0):
-            stream_status = "Loaded" if getattr(mesh, "streaming_data_loaded", False) else "Missing"
-            row2.addWidget(QLabel(f"Stream {stream_status}", self.overlay))
+            stream_status = (
+                self.tr("Loaded")
+                if getattr(mesh, "streaming_data_loaded", False)
+                else self.tr("Missing")
+            )
+            row2.addWidget(
+                QLabel(
+                    self.tr("Stream {status}").format(status=stream_status),
+                    self.overlay,
+                )
+            )
         self.amb_spin = self._float_spin(0.0, 1.0, 0.05, self.ambient, self._set_ambient)
         self.diff_spin = self._float_spin(0.0, 1.0, 0.05, self.diffuse, self._set_diffuse)
-        for item in ("Amb", self.amb_spin, "Diff", self.diff_spin):
+        for item in (self.tr("Amb"), self.amb_spin, self.tr("Diff"), self.diff_spin):
             row2.addWidget(QLabel(item, self.overlay) if isinstance(item, str) else item)
 
-        self.bone_labels_check = QCheckBox("Bones", self.overlay)
+        self.bone_labels_check = QCheckBox(self.tr("Bones"), self.overlay)
         self.bone_labels_check.setChecked(self.show_bone_labels)
         self.bone_labels_check.toggled.connect(self._set_show_bone_labels)
         self._add_control_row(layout, self.bone_labels_check)
@@ -608,7 +733,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 combo = getattr(self, "scene_light_combo", None)
                 if combo is not None:
                     combo.blockSignals(True)
-                    combo.setCurrentText(target_mode)
+                    target_index = combo.findData(target_mode)
+                    if target_index >= 0:
+                        combo.setCurrentIndex(target_index)
                     combo.blockSignals(False)
         self._colors_dirty = True
         self._refresh_probe_status_label()
@@ -626,13 +753,25 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if label is None:
             return
         if self._light_probe_set is None:
-            label.setText("Probe: none" if not self._light_probe_status else f"Probe: {self._light_probe_status}")
+            label.setText(
+                self.tr("Probe: none")
+                if not self._light_probe_status
+                else self.tr("Probe: {status}").format(status=self._light_probe_status)
+            )
             return
         boxes = self._light_probe_boxes()
-        mode = "active" if self.lighting_mode == "probes" else f"mode {self.lighting_mode}"
+        mode = (
+            self.tr("active")
+            if self.lighting_mode == "probes"
+            else self.tr("mode {mode}").format(mode=self.lighting_mode)
+        )
         candidate_indices = self._probe_viz_candidate_indices()
         probe_count = 0 if candidate_indices is None else len(candidate_indices)
-        label.setText(f"Probe: {mode} | OBB {len(boxes)} | probes {probe_count}")
+        label.setText(
+            self.tr("Probe: {mode} | OBB {boxes} | probes {probes}").format(
+                mode=mode, boxes=len(boxes), probes=probe_count
+            )
+        )
 
     def _light_probe_boxes(self) -> list[object]:
         return [box for box in self._light_probe_obbs if not getattr(box, "is_default_unit_box", lambda: False)()]
@@ -742,11 +881,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def set_material_images(self, images: dict[str, tuple[str, TexPreviewUpload]]):
         self._pending_material_images = dict(images)
+        self._texture_upload_failures.intersection_update(images)
         self._sync_material_images()
+        self.texture_upload_status_changed.emit()
 
     def update_material_images(self, images: dict[str, tuple[str, TexPreviewUpload]]):
         self._pending_material_images.update(images)
         self._sync_material_images(images)
+        self.texture_upload_status_changed.emit()
+
+    def texture_upload_counts(self) -> tuple[int, int, int]:
+        return len(self._pending_material_images), len(self._texture_ids), len(self._texture_upload_failures)
 
     def set_material_profiles(self, profiles: dict[str, object]):
         self._material_tints, self._two_sided_materials = {}, set()
@@ -773,6 +918,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self._controls != "mesh":
             self._save_view_setting("scene_render_mode", self.render_mode)
         self.update()
+
+    def _set_texture_quality(self, quality: str):
+        quality = normalize_texture_quality(quality)
+        if quality == self.texture_quality:
+            return
+        self.texture_quality = quality
+        self._save_view_setting("renderer_texture_quality", quality)
+        self.texture_quality_changed.emit(quality)
 
     def mousePressEvent(self, event):
         self.setFocus(Qt.MouseFocusReason)
@@ -1882,6 +2035,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _sync_gl_textures(self, names=None):
         if names is None:
+            self._texture_upload_failures.intersection_update(self._pending_material_images)
             for name in set(self._texture_sources) - set(self._pending_material_images):
                 self._texture_ids.pop(name, None)
                 self._texture_sources.pop(name, None)
@@ -1891,6 +2045,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             source_path, texture = self._pending_material_images[name]
             if self._texture_sources.get(name) == source_path and source_path in self._texture_source_ids:
                 self._texture_ids[name] = self._texture_source_ids[source_path]
+                self._texture_upload_failures.discard(name)
                 continue
             old_source = self._texture_sources.pop(name, None)
             self._texture_ids.pop(name, None)
@@ -1901,10 +2056,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             texture_id = self._texture_source_ids.get(source_path)
             if texture_id is None:
                 texture_id = glGenTextures(1)
+                try:
+                    self._upload_texture(texture_id, texture, self._texture_anisotropy())
+                except Exception as exc:
+                    with suppress(Exception):
+                        glDeleteTextures([texture_id])
+                    print(f"Texture upload failed: material={name!r}, path={source_path!r}: {exc}")
+                    self._texture_upload_failures.add(name)
+                    continue
                 self._texture_source_ids[source_path] = texture_id
-                self._upload_texture(texture_id, texture)
             self._texture_ids[name] = texture_id
             self._texture_sources[name] = source_path
+            self._texture_upload_failures.discard(name)
 
     def _delete_unused_source_textures(self):
         active_sources = set(self._texture_sources.values())
@@ -1914,13 +2077,62 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self._texture_source_ids.pop(source_path, None)
 
     @staticmethod
-    def _upload_texture(texture_id: int, texture: TexPreviewUpload):
+    def _upload_texture(texture_id: int, texture: TexPreviewUpload, anisotropy: float = 1.0):
+        for _ in range(16):
+            if glGetError() == GL_NO_ERROR:
+                break
         glBindTexture(GL_TEXTURE_2D, texture_id)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, texture.gl_format, texture.width, texture.height, 0, texture.data)
-        glBindTexture(GL_TEXTURE_2D, 0)
+        try:
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, len(texture.levels) - 1)
+            if anisotropy > 1.0:
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy)
+            error = glGetError()
+            if error != GL_NO_ERROR:
+                raise RuntimeError(f"texture setup GL error 0x{error:04X}")
+            for mip, level in enumerate(texture.levels):
+                glCompressedTexImage2D(
+                    GL_TEXTURE_2D,
+                    mip,
+                    texture.gl_format,
+                    level.width,
+                    level.height,
+                    0,
+                    level.data,
+                )
+                error = glGetError()
+                if error != GL_NO_ERROR:
+                    raise RuntimeError(
+                        f"mip {mip} ({level.width}x{level.height}) GL error 0x{error:04X}"
+                    )
+        finally:
+            glBindTexture(GL_TEXTURE_2D, 0)
+
+    @staticmethod
+    def _query_max_texture_anisotropy() -> float:
+        extensions = glGetString(GL_EXTENSIONS) or b""
+        if isinstance(extensions, str):
+            extensions = extensions.encode()
+        supported = (b"GL_EXT_texture_filter_anisotropic", b"GL_ARB_texture_filter_anisotropic")
+        if not any(name in extensions for name in supported):
+            return 1.0
+        value = np.asarray(glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)).reshape(-1)
+        return max(1.0, float(value[0])) if len(value) else 1.0
+
+    def _texture_anisotropy(self) -> float:
+        profile = texture_quality_profile(self.texture_quality)
+        available = min(profile.anisotropy, self._max_texture_anisotropy)
+        if available < profile.anisotropy:
+            key = self.texture_quality, self._max_texture_anisotropy
+            if key not in self._anisotropy_limit_logs:
+                self._anisotropy_limit_logs.add(key)
+                print(
+                    f"Texture anisotropy limited: quality={profile.label}, "
+                    f"requested={profile.anisotropy:g}x, available={self._max_texture_anisotropy:g}x"
+                )
+        return available
 
     @staticmethod
     def _upload_qimage_texture(texture_id: int, image):
@@ -1979,6 +2191,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._material_tints.clear()
         self._two_sided_materials.clear()
         self._pending_material_images.clear()
+        self._texture_upload_failures.clear()
         self._texture_ids.clear()
         self._texture_sources.clear()
         self._texture_source_ids.clear()
@@ -2027,6 +2240,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glShadeModel(GL_SMOOTH)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.8, 0.8, 0.8, 1.0))
         glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1.0))
+        try:
+            self._max_texture_anisotropy = self._query_max_texture_anisotropy()
+        except Exception as exc:
+            self._max_texture_anisotropy = 1.0
+            print(f"Texture anisotropy query failed: {exc}")
         context = self.context()
         if context is not None and context is not self._gl_cleanup_context:
             context.aboutToBeDestroyed.connect(self._on_gl_context_about_to_be_destroyed)
@@ -2037,6 +2255,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._solid_set = self._upload_buffer_set(self._solid_data)
         self._refresh_selection_buffer_sets(current=True)
         self._sync_gl_textures()
+        self.texture_upload_status_changed.emit()
         self._needs_gl_upload = False
         self._after_gl_initialized()
 
@@ -2401,7 +2620,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glLoadIdentity()
         glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
         self._apply_camera_transform()
-        self._cache_gizmo_projection()
+        self._gizmo_projection = None
+        if self._controls != "mesh" and self._selection_center is not None:
+            self._cache_gizmo_projection()
 
     def _restore_gl_content(self) -> None:
         missing_regular = self._regular_set is None and self._regular_data is not None

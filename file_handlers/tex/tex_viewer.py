@@ -10,8 +10,6 @@ from PySide6.QtWidgets import (
 
 from .texture_decoder import decode_dds_mip, decode_tex_mip
 
-EXPORT_TEX_TITLE = "Export TEX"
-
 class DraggableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -94,23 +92,23 @@ class TexViewer(QWidget):
         layout = QVBoxLayout(self)
 
         top = QHBoxLayout()
-        top.addWidget(QLabel("Image:"))
+        top.addWidget(QLabel(self.tr("Image:")))
         self.image_index = QSpinBox()
         self.image_index.setMinimum(0)
         self.image_index.valueChanged.connect(self._refresh)
         top.addWidget(self.image_index)
 
-        top.addWidget(QLabel("Mip:"))
+        top.addWidget(QLabel(self.tr("Mip:")))
         self.mip_index = QSpinBox()
         self.mip_index.setMinimum(0)
         self.mip_index.valueChanged.connect(self._refresh)
         top.addWidget(self.mip_index)
 
-        self.reload_btn = QPushButton("Reload")
+        self.reload_btn = QPushButton(self.tr("Reload"))
         self.reload_btn.clicked.connect(self._refresh)
         top.addWidget(self.reload_btn)
 
-        top.addWidget(QLabel("Channel:"))
+        top.addWidget(QLabel(self.tr("Channel:")))
         self.channel_box = QComboBox()
         self.channel_box.addItems(["RGBA", "R", "G", "B", "A", "RGB"])
         self.channel_box.currentIndexChanged.connect(self._apply_channel_filter)
@@ -119,7 +117,7 @@ class TexViewer(QWidget):
         layout.addLayout(top)
 
         zoom_layout = QHBoxLayout()
-        zoom_layout.addWidget(QLabel("Zoom:"))
+        zoom_layout.addWidget(QLabel(self.tr("Zoom:")))
         self.zoom_slider = QSlider(Qt.Horizontal)
         self.zoom_slider.setMinimum(10)
         self.zoom_slider.setMaximum(500)
@@ -131,7 +129,7 @@ class TexViewer(QWidget):
         self.zoom_label = QLabel("100%")
         self.zoom_label.setMinimumWidth(50)
         zoom_layout.addWidget(self.zoom_label)
-        self.fit_btn = QPushButton("Fit to Window")
+        self.fit_btn = QPushButton(self.tr("Fit to Window"))
         self.fit_btn.clicked.connect(self._fit_to_window)
         zoom_layout.addWidget(self.fit_btn)
         self.reset_zoom_btn = QPushButton("100%")
@@ -155,7 +153,7 @@ class TexViewer(QWidget):
         layout.addWidget(self.scroll)
 
         exp = QHBoxLayout()
-        self.export_dds_btn = QPushButton("Export DDS")
+        self.export_dds_btn = QPushButton(self.tr("Export DDS"))
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
 
@@ -208,7 +206,7 @@ class TexViewer(QWidget):
                 self.source_height = decoded.height
                 self._apply_channel_filter()
             except Exception as e:
-                self.info_label.setText(f"Failed to decode TEX mip: {e}")
+                self.info_label.setText(self.tr("Failed to decode TEX mip: {error}").format(error=e))
                 self.source_rgba = b""
                 self.source_width = 0
                 self.source_height = 0
@@ -233,7 +231,7 @@ class TexViewer(QWidget):
             self.export_dds_btn.setVisible(bool(t))
             #self.export_tex_btn.setVisible(getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ')
         except Exception as e:
-            self.info_label.setText(f"Failed to decode: {e}")
+            self.info_label.setText(self.tr("Failed to decode: {error}").format(error=e))
             self.source_rgba = b""
             self.source_width = 0
             self.source_height = 0
@@ -335,10 +333,10 @@ class TexViewer(QWidget):
 
         dds = self.handler.build_dds_bytes(self.image_index.value())
         if not dds:
-            QMessageBox.warning(self, "Export DDS", "No TEX data loaded.")
+            QMessageBox.warning(self, self.tr("Export DDS"), self.tr("No TEX data loaded."))
             return
 
-        path, _ = QFileDialog.getSaveFileName(self, "Save DDS", "", "DDS files (*.dds)")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save DDS"), "", "DDS files (*.dds)")
         if not path:
             return
 
@@ -355,7 +353,7 @@ class TexViewer(QWidget):
                 from .tex_file import TexFile
                 dds_bytes = getattr(self.handler, 'raw_data', b"")
                 if not dds_bytes:
-                    QMessageBox.warning(self, EXPORT_TEX_TITLE, "No DDS data loaded.")
+                    QMessageBox.warning(self, self.tr("Export TEX"), self.tr("No DDS data loaded."))
                     return
                 import struct as _st
                 height = _st.unpack_from('<I', dds_bytes, 12)[0]
@@ -389,7 +387,15 @@ class TexViewer(QWidget):
                         pitches.append(w * (get_bits_per_pixel(fmt) // 8))
                     w = max(1, w >> 1)
 
-                version, ok = QInputDialog.getInt(self, "TEX Version", "Enter TEX version (e.g., 190820018 for RE3):", 28, 1, 2000000000, 1)
+                version, ok = QInputDialog.getInt(
+                    self,
+                    self.tr("TEX Version"),
+                    self.tr("Enter TEX version (e.g., 190820018 for RE3):"),
+                    28,
+                    1,
+                    2000000000,
+                    1,
+                )
                 if not ok:
                     return
                 tex_bytes = TexFile.build_tex_bytes_from_dds(
@@ -400,13 +406,13 @@ class TexViewer(QWidget):
                     pitches_override=pitches,
                     version_override=version,
                 )
-                path, _ = QFileDialog.getSaveFileName(self, "Save TEX", "", "TEX files (*.tex)")
+                path, _ = QFileDialog.getSaveFileName(self, self.tr("Save TEX"), "", "TEX files (*.tex)")
                 if path:
                     with open(path, 'wb') as f:
                         f.write(tex_bytes)
                 else:
-                    QMessageBox.information(self, EXPORT_TEX_TITLE, "Save cancelled.")
+                    QMessageBox.information(self, self.tr("Export TEX"), self.tr("Save cancelled."))
             else:
-                QMessageBox.warning(self, EXPORT_TEX_TITLE, "Open a DDS file first.")
+                QMessageBox.warning(self, self.tr("Export TEX"), self.tr("Open a DDS file first."))
         except Exception as e:
-            QMessageBox.critical(self, "Export TEX failed", str(e))
+            QMessageBox.critical(self, self.tr("Export TEX failed"), str(e))

@@ -27,7 +27,7 @@ class MdfTemplateManagerDialog(QDialog):
 
     def __init__(self, parent=None, viewer=None):
         super().__init__(parent)
-        self.setWindowTitle("MDF Template Manager")
+        self.setWindowTitle(self.tr("MDF Template Manager"))
         self.resize(820, 540)
 
         self.viewer = viewer
@@ -59,12 +59,12 @@ class MdfTemplateManagerDialog(QDialog):
 
         filter_layout = QHBoxLayout()
         self.tag_combo = QComboBox()
-        self.tag_combo.addItem("All Tags", None)
-        filter_layout.addWidget(QLabel("Tag:"))
+        self.tag_combo.addItem(self.tr("All Tags"), None)
+        filter_layout.addWidget(QLabel(self.tr("Tag:")))
         filter_layout.addWidget(self.tag_combo, 1)
 
         self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("Search templates...")
+        self.search_edit.setPlaceholderText(self.tr("Search templates..."))
         filter_layout.addWidget(self.search_edit, 2)
 
         left_layout.addLayout(filter_layout)
@@ -80,41 +80,41 @@ class MdfTemplateManagerDialog(QDialog):
         right_layout.setContentsMargins(0, 0, 0, 0)
 
         name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Name:"))
+        name_layout.addWidget(QLabel(self.tr("Name:")))
         self.name_edit = QLineEdit()
         name_layout.addWidget(self.name_edit, 1)
         right_layout.addLayout(name_layout)
 
         tags_layout = QHBoxLayout()
-        tags_layout.addWidget(QLabel("Tags:"))
+        tags_layout.addWidget(QLabel(self.tr("Tags:")))
         self.tags_edit = QLineEdit()
-        self.tags_edit.setPlaceholderText("Comma separated tags")
+        self.tags_edit.setPlaceholderText(self.tr("Comma separated tags"))
         tags_layout.addWidget(self.tags_edit, 1)
         right_layout.addLayout(tags_layout)
 
-        right_layout.addWidget(QLabel("Description:"))
+        right_layout.addWidget(QLabel(self.tr("Description:")))
         self.description_edit = QTextEdit()
         right_layout.addWidget(self.description_edit, 1)
 
-        right_layout.addWidget(QLabel("Preview:"))
-        self.preview_label = QLabel("Select a template to preview its details.")
+        right_layout.addWidget(QLabel(self.tr("Preview:")))
+        self.preview_label = QLabel(self.tr("Select a template to preview its details."))
         self.preview_label.setWordWrap(True)
         self.preview_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         right_layout.addWidget(self.preview_label)
 
-        self.source_label = QLabel("Source File: -")
+        self.source_label = QLabel(self.tr("Source File: -"))
         right_layout.addWidget(self.source_label)
-        self.version_label = QLabel("Source Version: -")
+        self.version_label = QLabel(self.tr("Source Version: -"))
         right_layout.addWidget(self.version_label)
-        self.created_label = QLabel("Created: -")
+        self.created_label = QLabel(self.tr("Created: -"))
         right_layout.addWidget(self.created_label)
-        self.modified_label = QLabel("Modified: -")
+        self.modified_label = QLabel(self.tr("Modified: -"))
         right_layout.addWidget(self.modified_label)
 
         actions_row = QHBoxLayout()
-        self.import_button = QPushButton("Import Template")
+        self.import_button = QPushButton(self.tr("Import Template"))
         actions_row.addWidget(self.import_button)
-        self.delete_button = QPushButton("Delete Template")
+        self.delete_button = QPushButton(self.tr("Delete Template"))
         actions_row.addWidget(self.delete_button)
         right_layout.addLayout(actions_row)
 
@@ -122,7 +122,7 @@ class MdfTemplateManagerDialog(QDialog):
 
         close_row = QHBoxLayout()
         close_row.addStretch(1)
-        self.close_button = QPushButton("Close")
+        self.close_button = QPushButton(self.tr("Close"))
         close_row.addWidget(self.close_button)
         right_layout.addLayout(close_row)
 
@@ -174,17 +174,23 @@ class MdfTemplateManagerDialog(QDialog):
                 ]).lower()
                 if search_text not in haystack:
                     continue
-            item = QListWidgetItem(tpl.get("name", "Unnamed"))
+            item = QListWidgetItem(tpl.get("name", self.tr("Unnamed")))
             item.setData(Qt.UserRole, tpl.get("id"))
             tooltip_lines = []
             if tpl.get("description"):
                 tooltip_lines.append(tpl["description"])
             if tpl.get("tags"):
-                tooltip_lines.append("Tags: " + ", ".join(tpl["tags"]))
+                tooltip_lines.append(
+                    self.tr("Tags: {tags}").format(tags=", ".join(tpl["tags"]))
+                )
             if tpl.get("source_file_name"):
-                tooltip_lines.append(f"Source: {tpl['source_file_name']}")
+                tooltip_lines.append(self.tr("Source: {source}").format(
+                    source=tpl["source_file_name"]
+                ))
             if tpl.get("source_version"):
-                tooltip_lines.append(f"Version: {tpl['source_version']}")
+                tooltip_lines.append(self.tr("Version: {version}").format(
+                    version=tpl["source_version"]
+                ))
             if tooltip_lines:
                 item.setToolTip("\n".join(tooltip_lines))
             row = self.template_list.count()
@@ -207,7 +213,7 @@ class MdfTemplateManagerDialog(QDialog):
 
         self.tag_combo.blockSignals(True)
         self.tag_combo.clear()
-        self.tag_combo.addItem("All Tags", None)
+        self.tag_combo.addItem(self.tr("All Tags"), None)
         selected_index = 0
         for tag in tags:
             idx = self.tag_combo.count()
@@ -236,22 +242,26 @@ class MdfTemplateManagerDialog(QDialog):
             self.tags_edit.setText(", ".join(info.get("tags", [])))
             self.description_edit.setPlainText(info.get("description", ""))
             source_file = info.get("source_file_name") or "-"
-            self.source_label.setText(f"Source File: {source_file}")
+            self.source_label.setText(self.tr("Source File: {source_file}").format(
+                source_file=source_file
+            ))
             source_version = info.get("source_version")
             version_str = str(source_version) if source_version else "-"
-            self.version_label.setText(f"Source Version: {version_str}")
+            self.version_label.setText(self.tr("Source Version: {version}").format(
+                version=version_str
+            ))
             created = info.get("created") or "-"
             modified = info.get("modified") or "-"
-            self.created_label.setText(f"Created: {created}")
-            self.modified_label.setText(f"Modified: {modified}")
+            self.created_label.setText(self.tr("Created: {date}").format(date=created))
+            self.modified_label.setText(self.tr("Modified: {date}").format(date=modified))
         else:
             self.name_edit.clear()
             self.tags_edit.clear()
             self.description_edit.clear()
-            self.source_label.setText("Source File: -")
-            self.version_label.setText("Source Version: -")
-            self.created_label.setText("Created: -")
-            self.modified_label.setText("Modified: -")
+            self.source_label.setText(self.tr("Source File: -"))
+            self.version_label.setText(self.tr("Source Version: -"))
+            self.created_label.setText(self.tr("Created: -"))
+            self.modified_label.setText(self.tr("Modified: -"))
             self._prefill_from_selection()
         self._updating_fields = False
         template_id = info.get("id") if info else self._current_template_id()
@@ -275,16 +285,23 @@ class MdfTemplateManagerDialog(QDialog):
 
     def _import_selected_template(self) -> None:
         if not self.viewer:
-            QMessageBox.warning(self, "Import Template", "The MDF viewer is unavailable.")
+            QMessageBox.warning(
+                self, self.tr("Import Template"), self.tr("The MDF viewer is unavailable.")
+            )
             return
         template_id = self._current_template_id()
         if not template_id:
-            QMessageBox.warning(self, "Import Template", "Select a template to import.")
+            QMessageBox.warning(
+                self, self.tr("Import Template"), self.tr("Select a template to import.")
+            )
             return
         target_version = self.viewer.get_target_version()
         result = MdfTemplateManager.import_template(template_id, target_version)
         if not result.get("success"):
-            QMessageBox.warning(self, "Import Template", result.get("message", "Failed to import template."))
+            QMessageBox.warning(
+                self, self.tr("Import Template"),
+                result.get("message", self.tr("Failed to import template.")),
+            )
             return
 
         self.template_imported.emit(result.get("material"), result.get("metadata", {}))
@@ -292,17 +309,21 @@ class MdfTemplateManagerDialog(QDialog):
     def _delete_selected_template(self) -> None:
         template_id = self._current_template_id()
         if not template_id:
-            QMessageBox.warning(self, "Delete Template", "Select a template to delete.")
+            QMessageBox.warning(
+                self, self.tr("Delete Template"), self.tr("Select a template to delete."),
+            )
             return
         confirm = QMessageBox.question(
             self,
-            "Delete Template",
-            "Are you sure you want to delete this template?",
+            self.tr("Delete Template"),
+            self.tr("Are you sure you want to delete this template?"),
         )
         if confirm != QMessageBox.Yes:
             return
         if not MdfTemplateManager.delete_template(template_id):
-            QMessageBox.warning(self, "Delete Template", "Failed to delete template.")
+            QMessageBox.warning(
+                self, self.tr("Delete Template"), self.tr("Failed to delete template."),
+            )
             return
         self._load_tags()
         self._refresh_templates()
@@ -339,8 +360,8 @@ class MdfTemplateManagerDialog(QDialog):
         if not result.get("success"):
             QMessageBox.warning(
                 self,
-                "Update Template",
-                result.get("message", "Failed to update template."),
+                self.tr("Update Template"),
+                result.get("message", self.tr("Failed to update template.")),
             )
             self._show_template_details(self._templates.get(template_id))
             return
@@ -363,31 +384,41 @@ class MdfTemplateManagerDialog(QDialog):
 
     def _update_preview(self, template_id: Optional[str]) -> None:
         if not template_id:
-            self.preview_label.setText("Select a template to preview its details.")
+            self.preview_label.setText(self.tr("Select a template to preview its details."))
             return
         preview = MdfTemplateManager.get_template_preview(template_id)
         if not preview:
-            self.preview_label.setText("Preview unavailable for this template.")
+            self.preview_label.setText(self.tr("Preview unavailable for this template."))
             return
         lines = []
         if preview.get("material_name"):
-            lines.append(f"Material: {preview['material_name']}")
+            lines.append(self.tr("Material: {material}").format(
+                material=preview["material_name"]
+            ))
         if preview.get("mmtr_path"):
-            lines.append(f"mmtrPath: {preview['mmtr_path']}")
+            lines.append(self.tr("mmtrPath: {path}").format(path=preview["mmtr_path"]))
         shader = preview.get("shader_type")
         textures = preview.get("texture_count", 0)
         params = preview.get("parameter_count", 0)
-        lines.append(f"Shader: {shader if shader is not None else '-'} | Parameters: {params} | Textures: {textures}")
+        lines.append(self.tr(
+            "Shader: {shader} | Parameters: {parameters} | Textures: {textures}"
+        ).format(
+            shader=shader if shader is not None else "-",
+            parameters=params,
+            textures=textures,
+        ))
         tex_types = preview.get("texture_types", [])
         if tex_types:
-            lines.append("Texture Types: " + ", ".join(tex_types))
+            lines.append(self.tr("Texture Types: {types}").format(types=", ".join(tex_types)))
         gpu_buffers = preview.get("gpu_buffer_count", 0)
         shader_lod_redirects = preview.get("tex_id_count", 0)
         extra_bits = []
         if gpu_buffers:
-            extra_bits.append(f"GPU Buffers: {gpu_buffers}")
+            extra_bits.append(self.tr("GPU Buffers: {count}").format(count=gpu_buffers))
         if shader_lod_redirects:
-            extra_bits.append(f"Shader LOD Redirects: {shader_lod_redirects}")
+            extra_bits.append(self.tr("Shader LOD Redirects: {count}").format(
+                count=shader_lod_redirects
+            ))
         if extra_bits:
             lines.append(" | ".join(extra_bits))
         self.preview_label.setText("\n".join(lines))

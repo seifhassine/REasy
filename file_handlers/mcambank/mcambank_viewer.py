@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 
-from PySide6.QtCore import Qt, Signal, QModelIndex, QAbstractTableModel
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QModelIndex, QAbstractTableModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -137,9 +137,15 @@ class McambankViewer(QWidget):
     modified_changed = Signal(bool)
 
     FLAG_ORDER: Iterable[tuple[ErrFlags, str]] = (
-        (ErrFlags.EMPTY, "Empty"),
-        (ErrFlags.NOT_FOUND_REF_ASSET, "Missing Ref Asset"),
-        (ErrFlags.NOT_FOUND_INCLUDE_ASSET, "Missing Include Asset"),
+        (ErrFlags.EMPTY, QT_TRANSLATE_NOOP("McambankViewer", "Empty")),
+        (
+            ErrFlags.NOT_FOUND_REF_ASSET,
+            QT_TRANSLATE_NOOP("McambankViewer", "Missing Ref Asset"),
+        ),
+        (
+            ErrFlags.NOT_FOUND_INCLUDE_ASSET,
+            QT_TRANSLATE_NOOP("McambankViewer", "Missing Include Asset"),
+        ),
     )
 
     def __init__(self, handler):
@@ -164,7 +170,7 @@ class McambankViewer(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
-        header_group = QGroupBox("Header")
+        header_group = QGroupBox(self.tr("Header"))
         header_layout = QGridLayout(header_group)
 
         header_layout.addWidget(QLabel("Version:"), 0, 0)
@@ -185,7 +191,7 @@ class McambankViewer(QWidget):
         flags_layout = QHBoxLayout(flags_widget)
         flags_layout.setContentsMargins(0, 0, 0, 0)
         for flag, label in self.FLAG_ORDER:
-            cb = QCheckBox(label)
+            cb = QCheckBox(self.tr(label))
             cb.stateChanged.connect(self._on_err_flag_changed)
             flags_layout.addWidget(cb)
             self.flag_checkboxes[flag] = cb
@@ -194,7 +200,7 @@ class McambankViewer(QWidget):
 
         layout.addWidget(header_group)
 
-        path_group = QGroupBox("External Resources")
+        path_group = QGroupBox(self.tr("External Resources"))
         path_layout = QGridLayout(path_group)
 
         path_layout.addWidget(QLabel("User Variables:"), 0, 0)
@@ -227,11 +233,11 @@ class McambankViewer(QWidget):
         layout.addWidget(self.table)
 
         btn_row = QHBoxLayout()
-        self.add_btn = QPushButton("Add")
+        self.add_btn = QPushButton(self.tr("Add"))
         self.add_btn.clicked.connect(self._on_add)
         btn_row.addWidget(self.add_btn)
 
-        self.del_btn = QPushButton("Delete")
+        self.del_btn = QPushButton(self.tr("Delete"))
         self.del_btn.clicked.connect(self._on_delete)
         btn_row.addWidget(self.del_btn)
         btn_row.addStretch()

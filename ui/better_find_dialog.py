@@ -1,6 +1,6 @@
 import os
 from shiboken6 import isValid
-from PySide6.QtCore import Qt, QModelIndex, QTimer
+from PySide6.QtCore import QCoreApplication, Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
@@ -147,7 +147,7 @@ class BetterFindDialog(QDockWidget):
     # GUI
     # ------------------------------------------------------------------ #
     def __init__(self, file_tab=None, parent=None, shared_mode=False):
-        super().__init__("Find in Tree", parent)
+        super().__init__(QCoreApplication.translate("BetterFindDialog", "Find in Tree"), parent)
 
         self.setObjectName("better_find_dialog")
         self.setAllowedAreas(Qt.AllDockWidgetAreas)
@@ -201,7 +201,7 @@ class BetterFindDialog(QDockWidget):
         opts.addWidget(self.opt_both)
         self.case_box = QCheckBox(self.tr("Case sensitive"))
         opts.addWidget(self.case_box)
-        self.include_advanced_box = QCheckBox("Include Advanced Information")
+        self.include_advanced_box = QCheckBox(self.tr("Include Advanced Information"))
         self.include_advanced_box.setChecked(True)
         opts.addWidget(self.include_advanced_box)
         opts.addStretch()
@@ -485,7 +485,9 @@ class BetterFindDialog(QDockWidget):
                 walk(QModelIndex(), "")
 
         if self.results:
-            self.status.setText(f"Found {len(self.results)} matches")
+            self.status.setText(
+                self.tr("Found {count} matches").format(count=len(self.results))
+            )
             self._select(0)
         else:
             self.status.setText(self.tr("No matches found"))
@@ -496,9 +498,9 @@ class BetterFindDialog(QDockWidget):
         
         self.current_index = i
         res = self.results[i]
-        self.preview.setPlainText(
-            f"Path:  {res['path']}\nName:  {res['name']}\nValue: {res['value']}"
-        )
+        self.preview.setPlainText(self.tr(
+            "Path:  {path}\nName:  {name}\nValue: {value}"
+        ).format(path=res["path"], name=res["name"], value=res["value"]))
         self.result_list.setCurrentRow(i)
 
         idx = self._index_from_rows(res["rows"])
@@ -511,7 +513,9 @@ class BetterFindDialog(QDockWidget):
                 except RuntimeError:
                     self.invalidate_cached_tree()
 
-        self.status.setText(f"Result {i+1} of {len(self.results)}")
+        self.status.setText(self.tr("Result {current} of {total}").format(
+            current=i + 1, total=len(self.results)
+        ))
 
     def find_next(self):
         if not self.results: 
@@ -539,11 +543,13 @@ class BetterFindDialog(QDockWidget):
             self.result_list.clear()
             self.current_index = -1
             self.preview.clear()
-            self.status.setText("Tab switched - search cleared")
+            self.status.setText(self.tr("Tab switched - search cleared"))
             # Update window title to show current tab
             if file_tab and hasattr(file_tab, 'filename'):
-                tab_name = os.path.basename(file_tab.filename) if file_tab.filename else "Untitled"
-                self.setWindowTitle(f"Find in Tree - {tab_name}")
+                tab_name = os.path.basename(file_tab.filename) if file_tab.filename else self.tr("Untitled")
+                self.setWindowTitle(
+                    self.tr("Find in Tree - {tab_name}").format(tab_name=tab_name)
+                )
             else:
                 self.setWindowTitle(self.tr("Find in Tree"))
 

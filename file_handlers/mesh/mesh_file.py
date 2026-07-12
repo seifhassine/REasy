@@ -6,12 +6,13 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Dict, List, Tuple, Optional
 
+import numpy as np
+
 from utils.binary_handler import BinaryHandler
 from utils.native_build import ensure_fastmesh
 ensure_fastmesh()
 from fastmesh import (
     unpack_normals_tangents,
-    unpack_uvs,
     unpack_colors,
 )
 
@@ -77,6 +78,13 @@ def _checked_slice(data: bytes | bytearray, start: int, size: int, label: str) -
     if start < 0 or size < 0 or end > len(data):
         raise ValueError(f"{label} range [{start}, {end}) exceeds {len(data)} bytes")
     return bytes(memoryview(data)[start:end])
+
+
+def _unpack_raw_uvs(data) -> array:
+    values = np.frombuffer(data, dtype="<f2").astype(np.float64)
+    result = array("d")
+    result.frombytes(values.tobytes())
+    return result
 
 
 @dataclass
@@ -238,7 +246,7 @@ class VertexBufferType(IntEnum):
     UV1 = 3
     BoneWeights = 4
     Colors = 5
-    UnknownType6 = 6
+    UV2 = 6
     ExtraWeights = 7
 
 
@@ -261,6 +269,7 @@ class MeshBufferPayload:
     tangent_ws: array = field(default_factory=lambda: array("B"))
     uv0: array = field(default_factory=lambda: array("d"))
     uv1: array = field(default_factory=lambda: array("d"))
+    uv2: array = field(default_factory=lambda: array("d"))
     colors: array = field(default_factory=lambda: array("B"))
     faces: array = field(default_factory=lambda: array("H"))
     integer_faces: Optional[array] = None
@@ -310,6 +319,7 @@ class MeshBuffer:
         self.tangent_ws: array = array("B")
         self.uv0: array = array("d")
         self.uv1: array = array("d")
+        self.uv2: array = array("d")
         self.colors: array = array("B")
         self.faces: array = array("H")
         self.integer_faces: Optional[array] = None
@@ -348,9 +358,11 @@ class MeshBuffer:
             if bh.type == VertexBufferType.NormalsTangents:
                 payload.normals, payload.normal_ws, payload.tangents, payload.tangent_ws = unpack_normals_tangents(data)
             elif bh.type == VertexBufferType.UV0:
-                payload.uv0 = unpack_uvs(data)
+                payload.uv0 = _unpack_raw_uvs(data)
             elif bh.type == VertexBufferType.UV1:
-                payload.uv1 = unpack_uvs(data)
+                payload.uv1 = _unpack_raw_uvs(data)
+            elif bh.type == VertexBufferType.UV2:
+                payload.uv2 = _unpack_raw_uvs(data)
             elif bh.type == VertexBufferType.Colors:
                 payload.colors = unpack_colors(data)
 
@@ -438,6 +450,7 @@ class MeshBuffer:
                 self.tangent_ws = payload.tangent_ws
                 self.uv0 = payload.uv0
                 self.uv1 = payload.uv1
+                self.uv2 = payload.uv2
                 self.colors = payload.colors
                 self.faces = payload.faces
                 self.integer_faces = payload.integer_faces
@@ -813,6 +826,9 @@ class MPLYChunk:
     positions: List[Tuple[float, float, float]]
     faces: List[int]
     normals: List[Tuple[float, float, float]]
+    uv0: List[Tuple[float, float]]
+    uv1: List[Tuple[float, float]]
+    uv2: List[Tuple[float, float]]
     colors: List[int]
 
 
@@ -867,6 +883,21 @@ class MPLYParser:
         if count == 1 and vert_count > 1:
             colors *= vert_count
         return colors
+
+    @staticmethod
+    def _decode_uv_block(data: bytes, is_compressed: bool, vert_count: int) -> List[Tuple[float, float]]:
+        count = 1 if is_compressed else vert_count
+        uvs = [
+            (float(u), float(v))
+            for u, v in struct.iter_unpack("<ee", data[:count * 4])
+        ]
+        if count == 1 and vert_count > 1:
+            uvs *= vert_count
+        return uvs
+
+    def _read_uv_block(self, is_compressed: bool, vert_count: int) -> List[Tuple[float, float]]:
+        count = self._shared_count(is_compressed, vert_count)
+        return self._decode_uv_block(self.h.read_bytes(count * 4), is_compressed, vert_count)
 
     @staticmethod
     def _decode_positions(
@@ -981,12 +1012,15 @@ class MPLYParser:
         if flags.has_tangent_bits_block and (self.header.format_version < MeshMainVersion.PRAGMATA or flags.is_meshlet_no_tangent):
             self.h.skip(((vert_count + 31) // 32) * 4)
 
-        uv0_count = self._shared_count(flags.is_meshlet_compressed_texcoord1, vert_count)
-        self.h.skip(uv0_count * 4)
-        if flags.is_meshlet_use_texcoord2:
-            self.h.skip(self._shared_count(flags.is_meshlet_compressed_texcoord2, vert_count) * 4)
-        if flags.is_meshlet_use_texcoord3:
-            self.h.skip(self._shared_count(flags.is_meshlet_compressed_texcoord3, vert_count) * 4)
+        uv0 = self._read_uv_block(flags.is_meshlet_compressed_texcoord1, vert_count)
+        uv1 = (
+            self._read_uv_block(flags.is_meshlet_compressed_texcoord2, vert_count)
+            if flags.is_meshlet_use_texcoord2 else []
+        )
+        uv2 = (
+            self._read_uv_block(flags.is_meshlet_compressed_texcoord3, vert_count)
+            if flags.is_meshlet_use_texcoord3 else []
+        )
 
         colors: List[int] = []
         if flags.is_meshlet_use_vertex_color:
@@ -998,7 +1032,7 @@ class MPLYParser:
         if self.h.tell > end:
             raise ValueError(f"MPLY chunk data exceeds its boundary at {end}")
         self.h.seek(end)
-        return MPLYChunk(vert_count, positions, faces, normals, colors)
+        return MPLYChunk(vert_count, positions, faces, normals, uv0, uv1, uv2, colors)
 
     def _read_cluster_headers(self) -> List[List[MPLYClusterHeader]]:
         if not self.header.meshlet_bvh_offset:
@@ -1055,8 +1089,13 @@ class MPLYParser:
         lods: List[MeshLOD] = []
         all_positions = array("f")
         all_normals = array("f")
+        all_uv0 = array("d")
+        all_uv1 = array("d")
+        all_uv2 = array("d")
         all_colors = array("B")
         all_faces = array("I")
+        uv1_complete = True
+        uv2_complete = True
         vertex_base = 0
 
         lod_chunk_offsets: List[Optional[List[int]]] = []
@@ -1101,6 +1140,15 @@ class MPLYParser:
                     chunk.faces = streaming_faces
                 all_positions.extend(v for pos in chunk.positions for v in pos)
                 all_normals.extend(v for normal in chunk.normals for v in normal)
+                all_uv0.extend(v for uv in chunk.uv0 for v in uv)
+                if chunk.uv1:
+                    all_uv1.extend(v for uv in chunk.uv1 for v in uv)
+                else:
+                    uv1_complete = False
+                if chunk.uv2:
+                    all_uv2.extend(v for uv in chunk.uv2 for v in uv)
+                else:
+                    uv2_complete = False
                 all_colors.extend(chunk.colors or [255] * (4 * chunk.vert_count))
                 face_offset = len(all_faces)
                 all_faces.extend(chunk.faces)
@@ -1119,6 +1167,9 @@ class MPLYParser:
 
         mesh_buffer.positions = all_positions
         mesh_buffer.normals = all_normals
+        mesh_buffer.uv0 = all_uv0
+        mesh_buffer.uv1 = all_uv1 if uv1_complete else array("d")
+        mesh_buffer.uv2 = all_uv2 if uv2_complete else array("d")
         mesh_buffer.colors = all_colors
         mesh_buffer.faces = array("H")
         mesh_buffer.integer_faces = all_faces
@@ -1126,6 +1177,9 @@ class MPLYParser:
         mesh_buffer.buffer_payloads[0] = MeshBufferPayload(
             positions=all_positions,
             normals=all_normals,
+            uv0=mesh_buffer.uv0,
+            uv1=mesh_buffer.uv1,
+            uv2=mesh_buffer.uv2,
             colors=all_colors,
             faces=array("H"),
             integer_faces=all_faces,

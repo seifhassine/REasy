@@ -1,5 +1,6 @@
 
 import uuid
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -13,20 +14,20 @@ from PySide6.QtWidgets import (
 def create_guid_converter_dialog(parent):
     """Creates and shows a GUID converter dialog"""
     dialog = QDialog(parent)
-    dialog.setWindowTitle("GUID Converter")
+    dialog.setWindowTitle(QCoreApplication.translate("GuidConverter", "GUID Converter"))
     dialog.resize(400, 200)
     layout = QVBoxLayout(dialog)
     layout.setSpacing(10)
 
     # Input fields section
-    mem_label = QLabel("GUID Memory (in memory order)")
+    mem_label = QLabel(QCoreApplication.translate("GuidConverter", "GUID Memory (in memory order)"))
     layout.addWidget(mem_label)
     mem_entry = QLineEdit()
     layout.addWidget(mem_entry)
 
     layout.addSpacing(20)
 
-    std_label = QLabel("GUID Standard (hyphenated)")
+    std_label = QLabel(QCoreApplication.translate("GuidConverter", "GUID Standard (hyphenated)"))
     layout.addWidget(std_label)
     std_entry = QLineEdit()
     layout.addWidget(std_entry)
@@ -35,8 +36,8 @@ def create_guid_converter_dialog(parent):
 
     # Buttons section
     btn_layout = QHBoxLayout()
-    mem_to_std_btn = QPushButton("Memory -> Standard")
-    std_to_mem_btn = QPushButton("Standard -> Memory")
+    mem_to_std_btn = QPushButton(QCoreApplication.translate("GuidConverter", "Memory -> Standard"))
+    std_to_mem_btn = QPushButton(QCoreApplication.translate("GuidConverter", "Standard -> Memory"))
     btn_layout.addWidget(mem_to_std_btn)
     btn_layout.addWidget(std_to_mem_btn)
     layout.addLayout(btn_layout)
@@ -54,12 +55,16 @@ def create_guid_converter_dialog(parent):
         )
         try:
             if len(ms) != 32:
-                raise ValueError("Must be 32 hex digits.")
+                raise ValueError(QCoreApplication.translate("GuidConverter", "Must be 32 hex digits."))
             mb = bytes.fromhex(ms)
             std = str(uuid.UUID(bytes_le=mb))
             std_entry.setText(std)
         except Exception as e:
-            QMessageBox.critical(dialog, "Error", f"Conversion error: {e}")
+            QMessageBox.critical(
+                dialog,
+                QCoreApplication.translate("GuidConverter", "Error"),
+                QCoreApplication.translate("GuidConverter", "Conversion error: {error}").format(error=e),
+            )
 
     def std_to_mem():
         try:
@@ -69,7 +74,11 @@ def create_guid_converter_dialog(parent):
             dashed = f"{hex_mem[0:8]}-{hex_mem[8:12]}-{hex_mem[12:16]}-{hex_mem[16:20]}-{hex_mem[20:32]}"
             mem_entry.setText(dashed)
         except Exception as e:
-            QMessageBox.critical(dialog, "Error", f"Conversion error: {e}")
+            QMessageBox.critical(
+                dialog,
+                QCoreApplication.translate("GuidConverter", "Error"),
+                QCoreApplication.translate("GuidConverter", "Conversion error: {error}").format(error=e),
+            )
 
     mem_to_std_btn.clicked.connect(mem_to_std)
     std_to_mem_btn.clicked.connect(std_to_mem)

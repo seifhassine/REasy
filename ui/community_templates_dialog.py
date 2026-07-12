@@ -80,11 +80,12 @@ class QStarWidget(QWidget):
 class CommunityTemplatesDialog(QDialog):
     """Dialog for browsing, downloading, rating, and commenting on community templates"""
     template_downloaded = Signal(str) 
+    _SENTINEL_ROLE = Qt.UserRole + 1
     
     def __init__(self, parent=None):
         super().__init__(parent)
         RszCommunityTemplateManager.restore_session()
-        self.setWindowTitle("Community Template Browser")
+        self.setWindowTitle(self.tr("Community Template Browser"))
         self.resize(900, 700)
         self.setMinimumSize(700, 500)
         
@@ -125,7 +126,7 @@ class CommunityTemplatesDialog(QDialog):
         login_layout = QVBoxLayout(self.login_page)
         
         header_layout = QHBoxLayout()
-        header_label = QLabel("REasy Community Templates")
+        header_label = QLabel(self.tr("REasy Community Templates"))
         header_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         header_layout.addWidget(header_label, 0, Qt.AlignCenter)
         login_layout.addLayout(header_layout)
@@ -140,18 +141,18 @@ class CommunityTemplatesDialog(QDialog):
         login_tab_layout = QFormLayout(login_tab)
         
         self.login_email = QLineEdit()
-        self.login_email.setPlaceholderText("Email address")
-        login_tab_layout.addRow("Email:", self.login_email)
+        self.login_email.setPlaceholderText(self.tr("Email address"))
+        login_tab_layout.addRow(self.tr("Email:"), self.login_email)
         
         self.login_password = QLineEdit()
-        self.login_password.setPlaceholderText("Password")
+        self.login_password.setPlaceholderText(self.tr("Password"))
         self.login_password.setEchoMode(QLineEdit.Password)
-        login_tab_layout.addRow("Password:", self.login_password)
+        login_tab_layout.addRow(self.tr("Password:"), self.login_password)
         
-        self.remember_me = QCheckBox("Remember me")
+        self.remember_me = QCheckBox(self.tr("Remember me"))
         login_tab_layout.addRow("", self.remember_me)
         
-        self.login_button = QPushButton("Login")
+        self.login_button = QPushButton(self.tr("Login"))
         login_tab_layout.addRow("", self.login_button)
         
         self.login_status = QLabel("")
@@ -159,30 +160,30 @@ class CommunityTemplatesDialog(QDialog):
         self.login_status.setStyleSheet("color: red;")
         login_tab_layout.addRow("", self.login_status)
         
-        self.auth_tabs.addTab(login_tab, "Login")
+        self.auth_tabs.addTab(login_tab, self.tr("Login"))
         
         register_tab = QWidget()
         register_tab_layout = QFormLayout(register_tab)
         
         self.register_email = QLineEdit()
-        self.register_email.setPlaceholderText("Email address")
-        register_tab_layout.addRow("Email:", self.register_email)
+        self.register_email.setPlaceholderText(self.tr("Email address"))
+        register_tab_layout.addRow(self.tr("Email:"), self.register_email)
         
         self.register_username = QLineEdit()
-        self.register_username.setPlaceholderText("Display name")
-        register_tab_layout.addRow("Display Name:", self.register_username)
+        self.register_username.setPlaceholderText(self.tr("Display name"))
+        register_tab_layout.addRow(self.tr("Display Name:"), self.register_username)
         
         self.register_password = QLineEdit()
-        self.register_password.setPlaceholderText("Password")
+        self.register_password.setPlaceholderText(self.tr("Password"))
         self.register_password.setEchoMode(QLineEdit.Password)
-        register_tab_layout.addRow("Password:", self.register_password)
+        register_tab_layout.addRow(self.tr("Password:"), self.register_password)
         
         self.register_password_confirm = QLineEdit()
-        self.register_password_confirm.setPlaceholderText("Confirm password")
+        self.register_password_confirm.setPlaceholderText(self.tr("Confirm password"))
         self.register_password_confirm.setEchoMode(QLineEdit.Password)
-        register_tab_layout.addRow("Confirm:", self.register_password_confirm)
+        register_tab_layout.addRow(self.tr("Confirm:"), self.register_password_confirm)
         
-        self.register_button = QPushButton("Register")
+        self.register_button = QPushButton(self.tr("Register"))
         register_tab_layout.addRow("", self.register_button)
         
         self.register_status = QLabel("")
@@ -190,7 +191,7 @@ class CommunityTemplatesDialog(QDialog):
         self.register_status.setStyleSheet("color: red;")
         register_tab_layout.addRow("", self.register_status)
         
-        self.auth_tabs.addTab(register_tab, "Register")
+        self.auth_tabs.addTab(register_tab, self.tr("Register"))
         
         form_layout.addWidget(self.auth_tabs)
         
@@ -205,30 +206,30 @@ class CommunityTemplatesDialog(QDialog):
         self.user_status_label = QLabel()
         user_bar.addWidget(self.user_status_label)
         user_bar.addStretch()
-        self.logout_button = QPushButton("Logout")
+        self.logout_button = QPushButton(self.tr("Logout"))
         user_bar.addWidget(self.logout_button)
         main_layout.addLayout(user_bar)
 
         header = QHBoxLayout()
 
-        header.addWidget(QLabel("Game:"))
+        header.addWidget(QLabel(self.tr("Game:")))
         self.game_combo = QComboBox()
         self.game_combo.addItems(self.GAMES)
         header.addWidget(self.game_combo)
 
         header.addSpacing(15)
-        header.addWidget(QLabel("Sort:"))
+        header.addWidget(QLabel(self.tr("Sort:")))
         self.sort_combo = QComboBox()
-        self.sort_combo.addItem("Rating",    "rating")
-        self.sort_combo.addItem("Date",      "date")
-        self.sort_combo.addItem("Downloads", "downloads")
+        self.sort_combo.addItem(self.tr("Rating"),    "rating")
+        self.sort_combo.addItem(self.tr("Date"),      "date")
+        self.sort_combo.addItem(self.tr("Downloads"), "downloads")
         header.addWidget(self.sort_combo)
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search community templates…")
+        self.search_input.setPlaceholderText(self.tr("Search community templates…"))
         header.addWidget(self.search_input, 1)
 
-        self.upload_button = QPushButton("Upload Template")
+        self.upload_button = QPushButton(self.tr("Upload Template"))
         header.addWidget(self.upload_button)
         main_layout.addLayout(header)
         
@@ -258,18 +259,18 @@ class CommunityTemplatesDialog(QDialog):
         rating_layout = QHBoxLayout(rating_frame)
         rating_layout.setContentsMargins(0, 10, 0, 10)
         
-        self.rating_label = QLabel("Rating:")
+        self.rating_label = QLabel(self.tr("Rating:"))
         rating_layout.addWidget(self.rating_label)
         
         self.star_widget = QStarWidget(5, 0)
         rating_layout.addWidget(self.star_widget)
         
-        self.rating_count = QLabel("(0 ratings)")
+        self.rating_count = QLabel(self.tr("(0 ratings)"))
         rating_layout.addWidget(self.rating_count)
         
         rating_layout.addStretch()
         
-        self.download_button = QPushButton("Download")
+        self.download_button = QPushButton(self.tr("Download"))
         rating_layout.addWidget(self.download_button)
         
         info_layout.addWidget(rating_frame)
@@ -289,42 +290,42 @@ class CommunityTemplatesDialog(QDialog):
         
         comment_input_layout = QHBoxLayout()
         self.comment_input = QTextEdit()
-        self.comment_input.setPlaceholderText("Add your comment...")
+        self.comment_input.setPlaceholderText(self.tr("Add your comment..."))
         self.comment_input.setMaximumHeight(80)
         comment_input_layout.addWidget(self.comment_input)
         
-        self.submit_comment_button = QPushButton("Submit")
+        self.submit_comment_button = QPushButton(self.tr("Submit"))
         self.submit_comment_button.setFixedWidth(80)
         comment_input_layout.addWidget(self.submit_comment_button, alignment=Qt.AlignBottom)
         
         comments_layout.addLayout(comment_input_layout)
         
-        tabs.addTab(comments_widget, "Comments")
+        tabs.addTab(comments_widget, self.tr("Comments"))
         
         metadata_widget = QWidget()
         metadata_layout = QGridLayout(metadata_widget)
         
-        metadata_layout.addWidget(QLabel("Registry:"), 0, 0)
+        metadata_layout.addWidget(QLabel(self.tr("Registry:")), 0, 0)
         self.registry_label = QLabel()
         metadata_layout.addWidget(self.registry_label, 0, 1)
         
-        metadata_layout.addWidget(QLabel("Tags:"), 1, 0)
+        metadata_layout.addWidget(QLabel(self.tr("Tags:")), 1, 0)
         self.tags_label = QLabel()
         metadata_layout.addWidget(self.tags_label, 1, 1)
         
-        metadata_layout.addWidget(QLabel("Uploaded by:"), 2, 0)
+        metadata_layout.addWidget(QLabel(self.tr("Uploaded by:")), 2, 0)
         self.uploader_label = QLabel()
         metadata_layout.addWidget(self.uploader_label, 2, 1)
         
-        metadata_layout.addWidget(QLabel("Upload date:"), 3, 0)
+        metadata_layout.addWidget(QLabel(self.tr("Upload date:")), 3, 0)
         self.date_label = QLabel()
         metadata_layout.addWidget(self.date_label, 3, 1)
         
-        metadata_layout.addWidget(QLabel("Downloads:"), 4, 0)
+        metadata_layout.addWidget(QLabel(self.tr("Downloads:")), 4, 0)
         self.downloads_label = QLabel()
         metadata_layout.addWidget(self.downloads_label, 4, 1)
         
-        tabs.addTab(metadata_widget, "Details")
+        tabs.addTab(metadata_widget, self.tr("Details"))
         
         info_layout.addWidget(tabs)
         details_layout.addWidget(self.template_info)
@@ -340,7 +341,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.template_info.setVisible(False)
         
-        self.no_template_label = QLabel("Select a template from the list to view details")
+        self.no_template_label = QLabel(self.tr("Select a template from the list to view details"))
         self.no_template_label.setAlignment(Qt.AlignCenter)
         self.no_template_label.setStyleSheet("color: #888; font-size: 14px;")
         details_layout.addWidget(self.no_template_label)
@@ -376,14 +377,14 @@ class CommunityTemplatesDialog(QDialog):
         password = self.login_password.text()
         
         if not email:
-            self.login_status.setText("Please enter your email address")
+            self.login_status.setText(self.tr("Please enter your email address"))
             return
             
         if not password:
-            self.login_status.setText("Please enter your password")
+            self.login_status.setText(self.tr("Please enter your password"))
             return
         
-        self.login_status.setText("Logging in...")
+        self.login_status.setText(self.tr("Logging in..."))
         self.login_status.setStyleSheet("color: blue;")
         self.login_button.setEnabled(False)
         
@@ -425,22 +426,22 @@ class CommunityTemplatesDialog(QDialog):
         display_name = self.register_username.text().strip()
         
         if not email:
-            self.register_status.setText("Please enter your email address")
+            self.register_status.setText(self.tr("Please enter your email address"))
             return
             
         if not password:
-            self.register_status.setText("Please enter a password")
+            self.register_status.setText(self.tr("Please enter a password"))
             return
             
         if password != password_confirm:
-            self.register_status.setText("Passwords do not match")
+            self.register_status.setText(self.tr("Passwords do not match"))
             return
             
         if len(password) < 6:
-            self.register_status.setText("Password must be at least 6 characters")
+            self.register_status.setText(self.tr("Password must be at least 6 characters"))
             return
         
-        self.register_status.setText("Registering...")
+        self.register_status.setText(self.tr("Registering..."))
         self.register_status.setStyleSheet("color: blue;")
         self.register_button.setEnabled(False)
         
@@ -465,7 +466,7 @@ class CommunityTemplatesDialog(QDialog):
             self.register_button.setEnabled(True)
             
             if result["success"]:
-                self.register_status.setText("Registration successful! You can now log in.")
+                self.register_status.setText(self.tr("Registration successful! You can now log in."))
                 self.register_status.setStyleSheet("color: green;")
                 self.auth_tabs.setCurrentIndex(0)  
                 
@@ -493,8 +494,10 @@ class CommunityTemplatesDialog(QDialog):
         user = RszCommunityTemplateManager.get_current_user()
         
         if is_logged_in and user:
-            display_name = user.get("displayName", user.get("email", "User"))
-            self.user_status_label.setText(f"Logged in as: {display_name}")
+            display_name = user.get("displayName", user.get("email", self.tr("User")))
+            self.user_status_label.setText(
+                self.tr("Logged in as: {name}").format(name=display_name)
+            )
             self.upload_button.setEnabled(True)
             self.star_widget.readonly = False
             self.comment_input.setEnabled(True)
@@ -516,7 +519,9 @@ class CommunityTemplatesDialog(QDialog):
             self._loader = None
 
         self.template_list.clear()
-        self.template_list.addItem("Loading…")
+        loading_item = QListWidgetItem(self.tr("Loading…"))
+        loading_item.setData(self._SENTINEL_ROLE, True)
+        self.template_list.addItem(loading_item)
 
         class Loader(QThread):
             done = Signal(list)
@@ -541,13 +546,17 @@ class CommunityTemplatesDialog(QDialog):
         def show_list(templates):
             self.template_list.clear()
             if not templates:
-                self.template_list.addItem("No templates found")
+                empty_item = QListWidgetItem(self.tr("No templates found"))
+                empty_item.setData(self._SENTINEL_ROLE, True)
+                self.template_list.addItem(empty_item)
                 return
             for t in templates:
-                it = QListWidgetItem(t.get("name", "Untitled"))
+                it = QListWidgetItem(t.get("name", self.tr("Untitled")))
                 it.setData(Qt.UserRole, t.get("id"))
                 avg = t.get("avgRating") or 0
-                it.setToolTip(f"Rating: {avg:.1f}/5\nDownloads: {t.get('downloadCnt', 0)}")
+                it.setToolTip(self.tr(
+                    "Rating: {rating:.1f}/5\nDownloads: {downloads}"
+                ).format(rating=avg, downloads=t.get("downloadCnt", 0)))
                 self.template_list.addItem(it)
 
         self._loader = Loader(
@@ -564,7 +573,10 @@ class CommunityTemplatesDialog(QDialog):
     def _on_template_selected(self):
         """Handle template selection from list"""
         selected_items = self.template_list.selectedItems()
-        if not selected_items or selected_items[0].text() == "No templates found" or selected_items[0].text() == "Loading templates...":
+        if (
+            not selected_items
+            or selected_items[0].data(self._SENTINEL_ROLE)
+        ):
             self.template_info.setVisible(False)
             self.no_template_label.setVisible(True)
             self.current_community_id = None
@@ -606,18 +618,20 @@ class CommunityTemplatesDialog(QDialog):
                     print(f"Error loading template details: {e}")
         
         def on_template_details_loaded(template_data):
-            self.template_name.setText(template_data.get("name", "Unnamed Template"))
+            self.template_name.setText(template_data.get("name", self.tr("Unnamed Template")))
             
             registry = template_data.get("registry", "default")
             tags = ", ".join(template_data.get("tags", []))
-            meta_text = f"Registry: {registry}"
+            meta_text = self.tr("Registry: {registry}").format(registry=registry)
             if tags:
-                meta_text += f" | Tags: {tags}"
+                meta_text += self.tr(" | Tags: {tags}").format(tags=tags)
             downloads = template_data.get("downloadCnt", 0)
-            meta_text += f" | Downloads: {downloads}"
+            meta_text += self.tr(" | Downloads: {downloads}").format(downloads=downloads)
 
 
-            self.template_description.setText(template_data.get("description", "No description provided"))
+            self.template_description.setText(
+                template_data.get("description", self.tr("No description provided"))
+            )
             
             avg_rating = template_data.get("avgRating", 0)
             if avg_rating is None:
@@ -625,24 +639,26 @@ class CommunityTemplatesDialog(QDialog):
                 avg_rating = sum(ratings_arr) / len(ratings_arr) if ratings_arr else 0
             rating_count = len(template_data.get("ratings", []))
             self.star_widget.setRating(avg_rating)
-            self.rating_count.setText(f"({rating_count} ratings)")
+            self.rating_count.setText(
+                self.tr("({count} ratings)").format(count=rating_count)
+            )
             
             self.registry_label.setText(registry)
-            self.tags_label.setText(tags if tags else "None")
+            self.tags_label.setText(tags if tags else self.tr("None"))
 
-            uploader = (template_data.get("uploaderName")       
-                        or "Unknown")
+            uploader = (template_data.get("uploaderName")
+                        or self.tr("Unknown"))
             self.uploader_label.setText(uploader)
 
             created_at = template_data.get("createdAt")  
             
-            created_at_str = "Unknown date"
+            created_at_str = self.tr("Unknown date")
             
             timestamp = datetime.fromtimestamp(created_at["_seconds"])
             created_at_str = timestamp.strftime("%Y-%m-%d %H:%M")
             
-            meta_text += f" | Uploaded by: {uploader}"
-            meta_text += f" on {created_at_str}"
+            meta_text += self.tr(" | Uploaded by: {uploader}").format(uploader=uploader)
+            meta_text += self.tr(" on {date}").format(date=created_at_str)
             self.template_meta.setText(meta_text)
 
             self.date_label.setText(created_at_str)
@@ -682,7 +698,7 @@ class CommunityTemplatesDialog(QDialog):
                 item.widget().deleteLater()
         
         if not comments:
-            no_comments = QLabel("No comments yet. Be the first to comment!")
+            no_comments = QLabel(self.tr("No comments yet. Be the first to comment!"))
             self.comments_layout.addWidget(no_comments)
             return
         
@@ -701,7 +717,7 @@ class CommunityTemplatesDialog(QDialog):
             comment_layout = QVBoxLayout(comment_frame)
             
             header_layout = QHBoxLayout()
-            username = QLabel(comment.get("username", "Anonymous"))
+            username = QLabel(comment.get("username", self.tr("Anonymous")))
             username.setStyleSheet("font-weight: bold;")
             header_layout.addWidget(username)
             
@@ -765,39 +781,43 @@ class CommunityTemplatesDialog(QDialog):
     def _upload_template(self):
         """Select a local template, choose a game, confirm, then upload."""
         if not RszCommunityTemplateManager.is_authenticated():
-            QMessageBox.warning(self, "Login Required",
-                                "You must be logged in to upload templates.")
+            QMessageBox.warning(
+                self, self.tr("Login Required"),
+                self.tr("You must be logged in to upload templates."),
+            )
             return
 
         local_templates = RszTemplateManager.get_template_list()
         if not local_templates:
-            QMessageBox.warning(self, "No Templates",
-                                "You don't have any local templates to upload.")
+            QMessageBox.warning(
+                self, self.tr("No Templates"),
+                self.tr("You don't have any local templates to upload."),
+            )
             return
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("Upload Template")
+        dlg.setWindowTitle(self.tr("Upload Template"))
         dlg.setMinimumWidth(450)
 
         lay = QVBoxLayout(dlg)
-        lay.addWidget(QLabel("<b>Pick the local template</b>:"))
+        lay.addWidget(QLabel(self.tr("<b>Pick the local template</b>:")))
 
         tpl_list = QListWidget()
         for tpl in local_templates:
-            it = QListWidgetItem(tpl.get("name", "Unnamed"))
+            it = QListWidgetItem(tpl.get("name", self.tr("Unnamed")))
             it.setData(Qt.UserRole, tpl.get("id"))
             tpl_list.addItem(it)
         lay.addWidget(tpl_list)
 
-        lay.addWidget(QLabel("<b>Select the game this template belongs to</b>:"))
+        lay.addWidget(QLabel(self.tr("<b>Select the game this template belongs to</b>:")))
         game_combo = QComboBox()
         game_combo.addItems(self.GAMES)
         lay.addWidget(game_combo)
 
         btn_box = QHBoxLayout()
         btn_box.addStretch()
-        cancel_btn = QPushButton("Cancel")
-        upload_btn = QPushButton("Upload")
+        cancel_btn = QPushButton(self.tr("Cancel"))
+        upload_btn = QPushButton(self.tr("Upload"))
         upload_btn.setEnabled(False)
         btn_box.addWidget(cancel_btn)
         btn_box.addWidget(upload_btn)
@@ -820,17 +840,18 @@ class CommunityTemplatesDialog(QDialog):
         game_id = game_combo.currentText()
 
         if QMessageBox.question(
-                self, "Confirm Game",
-                (f"Upload <b>{template_name}</b> for game "
-                f"<b>{game_id}</b>?"),
+                self, self.tr("Confirm Game"),
+                self.tr("Upload <b>{template_name}</b> for game <b>{game_id}</b>?").format(
+                    template_name=template_name, game_id=game_id
+                ),
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No) != QMessageBox.Yes:
             return
 
         busy = QDialog(self, Qt.WindowTitleHint | Qt.WindowSystemMenuHint)
         busy.setModal(True)
-        busy.setWindowTitle("Uploading")
-        QVBoxLayout(busy).addWidget(QLabel("Uploading template, please wait…"))
+        busy.setWindowTitle(self.tr("Uploading"))
+        QVBoxLayout(busy).addWidget(QLabel(self.tr("Uploading template, please wait…")))
         busy.show()
 
         from PySide6.QtCore import QThread, Signal as ThreadSignal
@@ -851,12 +872,16 @@ class CommunityTemplatesDialog(QDialog):
         def _on_done(result: dict):
             busy.close()
             if result.get("success"):
-                QMessageBox.information(self, "Upload Complete",
-                                        result.get("message", "Upload succeeded"))
+                QMessageBox.information(
+                    self, self.tr("Upload Complete"),
+                    result.get("message", self.tr("Upload succeeded")),
+                )
                 self._load_templates()     
             else:
-                QMessageBox.warning(self, "Upload Failed",
-                                    result.get("message", "Unknown error"))
+                QMessageBox.warning(
+                    self, self.tr("Upload Failed"),
+                    result.get("message", self.tr("Unknown error")),
+                )
 
         self.upload_thread = UploadThread(template_id, game_id)
         self.upload_thread.upload_complete.connect(_on_done)
@@ -867,10 +892,10 @@ class CommunityTemplatesDialog(QDialog):
             return
             
         loading_dialog = QDialog(self)
-        loading_dialog.setWindowTitle("Downloading")
+        loading_dialog.setWindowTitle(self.tr("Downloading"))
         loading_dialog.setModal(True)
         loading_layout = QVBoxLayout(loading_dialog)
-        loading_layout.addWidget(QLabel("Downloading template from community..."))
+        loading_layout.addWidget(QLabel(self.tr("Downloading template from community...")))
         loading_dialog.show()
         
         from PySide6.QtCore import QThread, Signal as ThreadSignal
@@ -890,10 +915,10 @@ class CommunityTemplatesDialog(QDialog):
             loading_dialog.close()
             
             if result["success"]:
-                QMessageBox.information(self, "Download Complete", result["message"])
+                QMessageBox.information(self, self.tr("Download Complete"), result["message"])
                 self.template_downloaded.emit(result["template_id"])
             else:
-                QMessageBox.warning(self, "Download Failed", result["message"])
+                QMessageBox.warning(self, self.tr("Download Failed"), result["message"])
         
         self.download_thread = DownloadThread(self.current_community_id)
         self.download_thread.download_complete.connect(on_download_complete)
@@ -902,7 +927,9 @@ class CommunityTemplatesDialog(QDialog):
     def _submit_comment(self):
         """Submit a comment on the selected template"""
         if not RszCommunityTemplateManager.is_authenticated():
-            QMessageBox.warning(self, "Login Required", "You must be logged in to comment.")
+            QMessageBox.warning(
+                self, self.tr("Login Required"), self.tr("You must be logged in to comment.")
+            )
             return
             
         if not self.current_community_id:
@@ -910,11 +937,14 @@ class CommunityTemplatesDialog(QDialog):
             
         comment_text = self.comment_input.toPlainText().strip()
         if not comment_text:
-            QMessageBox.warning(self, "Empty Comment", "Please enter a comment before submitting.")
+            QMessageBox.warning(
+                self, self.tr("Empty Comment"),
+                self.tr("Please enter a comment before submitting."),
+            )
             return
         
         self.submit_comment_button.setEnabled(False)
-        self.submit_comment_button.setText("Sending...")
+        self.submit_comment_button.setText(self.tr("Sending..."))
         
         from PySide6.QtCore import QThread, Signal as ThreadSignal
         
@@ -932,13 +962,13 @@ class CommunityTemplatesDialog(QDialog):
         
         def on_comment_complete(result):
             self.submit_comment_button.setEnabled(True)
-            self.submit_comment_button.setText("Submit")
+            self.submit_comment_button.setText(self.tr("Submit"))
             
             if result["success"]:
                 self.comment_input.clear()
                 self._on_template_selected()  
             else:
-                QMessageBox.warning(self, "Comment Failed", result["message"])
+                QMessageBox.warning(self, self.tr("Comment Failed"), result["message"])
         
         self.comment_thread = CommentThread(self.current_community_id, comment_text)
         self.comment_thread.comment_complete.connect(on_comment_complete)
@@ -947,7 +977,10 @@ class CommunityTemplatesDialog(QDialog):
     def _submit_rating(self, rating):
         """Submit a rating for the selected template"""
         if not RszCommunityTemplateManager.is_authenticated():
-            QMessageBox.warning(self, "Login Required", "You must be logged in to rate templates.")
+            QMessageBox.warning(
+                self, self.tr("Login Required"),
+                self.tr("You must be logged in to rate templates."),
+            )
             return
             
         if not self.current_community_id:
@@ -971,7 +1004,7 @@ class CommunityTemplatesDialog(QDialog):
             if result["success"]:
                 self._on_template_selected()
             else:
-                QMessageBox.warning(self, "Rating Failed", result["message"])
+                QMessageBox.warning(self, self.tr("Rating Failed"), result["message"])
         
         old_thread = getattr(self, "rating_thread", None)
         if isinstance(old_thread, QThread) and old_thread.isRunning():

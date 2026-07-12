@@ -8,7 +8,7 @@ import os
 class UpdateProgressDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Updating REasy…")
+        self.setWindowTitle(self.tr("Updating REasy…"))
         self.resize(720, 420)
 
         self._process = QProcess(self)
@@ -29,10 +29,10 @@ class UpdateProgressDialog(QDialog):
         self._progress.setRange(0, 0)
         self._progress.setValue(0)
 
-        self._cancel_button = QPushButton("Cancel", self)
+        self._cancel_button = QPushButton(self.tr("Cancel"), self)
         self._cancel_button.clicked.connect(self._on_cancel)
 
-        self._close_button = QPushButton("Close", self)
+        self._close_button = QPushButton(self.tr("Close"), self)
         self._close_button.setEnabled(False)
         self._close_button.clicked.connect(self.accept)
 
@@ -99,9 +99,13 @@ class UpdateProgressDialog(QDialog):
         self._cancel_button.setEnabled(False)
         self._close_button.setEnabled(True)
         if exit_code == 0:
-            self._log.append("\nStaging completed.")
+            self._log.append("\n" + self.tr("Staging completed."))
         else:
-            self._log.append(f"\nUpdate failed with code {exit_code}. See log above for details.")
+            self._log.append(
+                "\n" + self.tr("Update failed with code {exit_code}. See log above for details.").format(
+                    exit_code=exit_code
+                )
+            )
 
     def _on_cancel(self):
         if self._process and self._process.state() == QProcess.Running:

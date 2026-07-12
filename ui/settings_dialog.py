@@ -3,7 +3,7 @@
 import json
 import os
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -33,18 +33,18 @@ class SettingsDialog(QDialog):
     """Edit application settings and apply their runtime side effects."""
 
     _TRANSLATION_LANGUAGES = (
-        ("en", "English"),
-        ("ar", "Arabic"),
-        ("es", "Spanish"),
-        ("fr", "French"),
-        ("de", "German"),
-        ("it", "Italian"),
-        ("ja", "Japanese"),
-        ("ko", "Korean"),
-        ("pt", "Portuguese"),
-        ("ru", "Russian"),
-        ("zh-CN", "Chinese (Simplified)"),
-        ("zh-TW", "Chinese (Traditional)"),
+        ("en", QT_TRANSLATE_NOOP("SettingsDialog", "English")),
+        ("ar", QT_TRANSLATE_NOOP("SettingsDialog", "Arabic")),
+        ("es", QT_TRANSLATE_NOOP("SettingsDialog", "Spanish")),
+        ("fr", QT_TRANSLATE_NOOP("SettingsDialog", "French")),
+        ("de", QT_TRANSLATE_NOOP("SettingsDialog", "German")),
+        ("it", QT_TRANSLATE_NOOP("SettingsDialog", "Italian")),
+        ("ja", QT_TRANSLATE_NOOP("SettingsDialog", "Japanese")),
+        ("ko", QT_TRANSLATE_NOOP("SettingsDialog", "Korean")),
+        ("pt", QT_TRANSLATE_NOOP("SettingsDialog", "Portuguese")),
+        ("ru", QT_TRANSLATE_NOOP("SettingsDialog", "Russian")),
+        ("zh-CN", QT_TRANSLATE_NOOP("SettingsDialog", "Chinese (Simplified)")),
+        ("zh-TW", QT_TRANSLATE_NOOP("SettingsDialog", "Chinese (Traditional)")),
     )
 
     def __init__(self, app_window):
@@ -57,53 +57,52 @@ class SettingsDialog(QDialog):
         )
         self.shortcuts = self.settings.get("keyboard_shortcuts", {}).copy()
 
-        self.setWindowTitle(app_window.tr("Settings"))
+        self.setWindowTitle(self.tr("Settings"))
         self.resize(500, 400)
         self._build_ui()
 
     def _build_ui(self):
-        tr = self.app_window.tr
         main_layout = QVBoxLayout(self)
 
         tab_widget = QTabWidget()
         main_layout.addWidget(tab_widget)
 
         general_tab = QWidget()
-        tab_widget.addTab(general_tab, tr("General"))
+        tab_widget.addTab(general_tab, self.tr("General"))
         general_layout = QVBoxLayout(general_tab)
         general_layout.setSpacing(15)
 
-        general_layout.addWidget(QLabel(tr("RSZ JSON Path:")), 0, Qt.AlignBottom)
+        general_layout.addWidget(QLabel(self.tr("RSZ JSON Path:")), 0, Qt.AlignBottom)
         json_path_layout = QHBoxLayout()
         json_path_layout.setContentsMargins(0, 0, 0, 0)
         self.json_entry = QLineEdit(self.settings.get("rcol_json_path", ""))
-        self.json_browse_button = QPushButton(tr("Browse..."))
+        self.json_browse_button = QPushButton(self.tr("Browse..."))
         json_path_layout.addWidget(self.json_entry)
         json_path_layout.addWidget(self.json_browse_button)
         general_layout.addLayout(json_path_layout)
 
-        general_layout.addWidget(QLabel("VGMStream CLI Path:"), 0, Qt.AlignBottom)
+        general_layout.addWidget(QLabel(self.tr("VGMStream CLI Path:")), 0, Qt.AlignBottom)
         vgmstream_layout = QHBoxLayout()
         vgmstream_layout.setContentsMargins(0, 0, 0, 0)
         self.vgmstream_entry = QLineEdit(self.settings.get("vgmstream_cli_path", ""))
-        self.vgmstream_browse_button = QPushButton("Browse...")
+        self.vgmstream_browse_button = QPushButton(self.tr("Browse..."))
         vgmstream_layout.addWidget(self.vgmstream_entry)
         vgmstream_layout.addWidget(self.vgmstream_browse_button)
         general_layout.addLayout(vgmstream_layout)
 
         ffmpeg_layout = QHBoxLayout()
         ffmpeg_layout.setContentsMargins(0, 0, 0, 0)
-        ffmpeg_layout.addWidget(QLabel("FFmpeg (Auto-download):"))
+        ffmpeg_layout.addWidget(QLabel(self.tr("FFmpeg (Auto-download):")))
         self.ffmpeg_status_label = QLabel("")
         ffmpeg_layout.addWidget(self.ffmpeg_status_label)
         ffmpeg_layout.addStretch()
-        self.ffmpeg_download_button = QPushButton("Download")
+        self.ffmpeg_download_button = QPushButton(self.tr("Download"))
         ffmpeg_layout.addWidget(self.ffmpeg_download_button)
         general_layout.addLayout(ffmpeg_layout)
 
         game_version_layout = QHBoxLayout()
         game_version_layout.setContentsMargins(0, 0, 0, 0)
-        game_version_layout.addWidget(QLabel(tr("Game Version (Reload Required):")))
+        game_version_layout.addWidget(QLabel(self.tr("Game Version (Reload Required):")))
         self.game_version_combo = QComboBox()
         self.game_version_combo.addItems(GAMES)
         self.game_version_combo.setCurrentText(self.settings.get("game_version", "RE4"))
@@ -112,12 +111,10 @@ class SettingsDialog(QDialog):
 
         translation_layout = QHBoxLayout()
         translation_layout.setContentsMargins(0, 0, 0, 0)
-        translation_layout.addWidget(QLabel(tr("Translation Target Language:")))
+        translation_layout.addWidget(QLabel(self.tr("Translation Target Language:")))
         self.translation_combo = QComboBox()
         for code, name in self._TRANSLATION_LANGUAGES:
-            if code in {"zh-CN", "zh-TW"}:
-                name = tr(name)
-            self.translation_combo.addItem(name, code)
+            self.translation_combo.addItem(self.tr(name), code)
         translation_index = self.translation_combo.findData(
             self.settings.get("translation_target_language", "en")
         )
@@ -128,7 +125,7 @@ class SettingsDialog(QDialog):
 
         theme_color_layout = QHBoxLayout()
         theme_color_layout.setContentsMargins(0, 0, 0, 0)
-        theme_color_layout.addWidget(QLabel(tr("Theme Color:")))
+        theme_color_layout.addWidget(QLabel(self.tr("Theme Color:")))
         self.theme_color_button = QPushButton()
         self.theme_color_button.setFixedWidth(140)
         self._update_theme_color_button()
@@ -136,26 +133,26 @@ class SettingsDialog(QDialog):
         theme_color_layout.addStretch()
         general_layout.addLayout(theme_color_layout)
 
-        self.dark_box = QCheckBox(tr("Dark Mode"))
+        self.dark_box = QCheckBox(self.tr("Dark Mode"))
         self.dark_box.setChecked(self.app_window.dark_mode)
         general_layout.addWidget(self.dark_box)
 
-        self.debug_box = QCheckBox(tr("Show Debug Console"))
+        self.debug_box = QCheckBox(self.tr("Show Debug Console"))
         self.debug_box.setChecked(self.settings.get("show_debug_console", True))
         general_layout.addWidget(self.debug_box)
 
         self.rsz_advanced_box = QCheckBox(
-            tr("Show advanced settings for RSZ files (Reload Required)")
+            self.tr("Show advanced settings for RSZ files (Reload Required)")
         )
         self.rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
         general_layout.addWidget(self.rsz_advanced_box)
 
-        self.backup_box = QCheckBox(tr("Create backup on save"))
+        self.backup_box = QCheckBox(self.tr("Create backup on save"))
         self.backup_box.setChecked(self.settings.get("backup_on_save", True))
         general_layout.addWidget(self.backup_box)
 
         self.confirmation_prompt_box = QCheckBox(
-            tr("Show confirmation prompts for RSZ actions")
+            self.tr("Show confirmation prompts for RSZ actions")
         )
         self.confirmation_prompt_box.setChecked(
             self.settings.get("confirmation_prompt", True)
@@ -163,7 +160,7 @@ class SettingsDialog(QDialog):
         general_layout.addWidget(self.confirmation_prompt_box)
 
         self.verify_rsz_crc_on_open_box = QCheckBox(
-            "Verify RSZ CRCs against registry when opening files"
+            self.tr("Verify RSZ CRCs against registry when opening files")
         )
         self.verify_rsz_crc_on_open_box.setChecked(
             self.settings.get("verify_rsz_crc_on_open", True)
@@ -172,9 +169,9 @@ class SettingsDialog(QDialog):
 
         ui_language_layout = QHBoxLayout()
         ui_language_layout.setContentsMargins(0, 0, 0, 0)
-        ui_language_layout.addWidget(QLabel(tr("UI Language (Restart Recommended):")))
+        ui_language_layout.addWidget(QLabel(self.tr("UI Language (Restart Recommended):")))
         self.ui_language_combo = QComboBox()
-        self.ui_language_combo.addItem("System", "system")
+        self.ui_language_combo.addItem(self.tr("System"), "system")
         for info in LanguageManager.instance().available_languages():
             self.ui_language_combo.addItem(info.name, info.code)
         ui_language_index = self.ui_language_combo.findData(
@@ -187,7 +184,7 @@ class SettingsDialog(QDialog):
         general_layout.addStretch()
 
         shortcuts_tab = create_shortcuts_tab()
-        tab_widget.addTab(shortcuts_tab, tr("Keyboard Shortcuts"))
+        tab_widget.addTab(shortcuts_tab, self.tr("Keyboard Shortcuts"))
         for key in shortcuts_tab.shortcut_names:
             self.shortcuts.setdefault(
                 key,
@@ -232,7 +229,7 @@ class SettingsDialog(QDialog):
         color = QColorDialog.getColor(
             QColor(self.selected_theme_color),
             self,
-            self.app_window.tr("Select Theme Color"),
+            self.tr("Select Theme Color"),
         )
         if color.isValid():
             self.selected_theme_color = color.name()
@@ -241,9 +238,9 @@ class SettingsDialog(QDialog):
     def _browse_json(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            self.app_window.tr("Select JSON file"),
+            self.tr("Select JSON file"),
             os.path.dirname(self.json_entry.text()) if self.json_entry.text() else "",
-            "JSON Files (*.json)",
+            self.tr("JSON Files (*.json)"),
         )
         if file_path:
             self.json_entry.setText(file_path)
@@ -251,24 +248,30 @@ class SettingsDialog(QDialog):
     def _browse_vgmstream(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select VGMStream CLI",
+            self.tr("Select VGMStream CLI"),
             os.path.dirname(self.vgmstream_entry.text()) if self.vgmstream_entry.text() else "",
-            "Executable Files (*)",
+            self.tr("Executable Files (*)"),
         )
         if file_path:
             self.vgmstream_entry.setText(file_path)
 
     def _refresh_ffmpeg_status(self):
         need_download, _ = ffmpeg_status()
-        self.ffmpeg_status_label.setText("Not downloaded" if need_download else "Installed")
+        self.ffmpeg_status_label.setText(
+            self.tr("Not downloaded") if need_download else self.tr("Installed")
+        )
 
     def _download_ffmpeg(self):
         try:
             ensure_ffmpeg(auto_download=True, parent_window=self)
             self._refresh_ffmpeg_status()
-            QMessageBox.information(self, "FFmpeg", "FFmpeg download complete.")
+            QMessageBox.information(self, "FFmpeg", self.tr("FFmpeg download complete."))
         except Exception as exc:
-            QMessageBox.critical(self, "FFmpeg", f"Failed to download FFmpeg\n{exc}")
+            QMessageBox.critical(
+                self,
+                "FFmpeg",
+                self.tr("Failed to download FFmpeg\n{}").format(exc),
+            )
 
     def _apply_and_accept(self):
         new_json_path = self.json_entry.text().strip()
@@ -283,18 +286,20 @@ class SettingsDialog(QDialog):
                 ):
                     QMessageBox.critical(
                         self,
-                        "Error",
-                        "Invalid RSZ type registry JSON file.",
+                        self.tr("Error"),
+                        self.tr("Invalid RSZ type registry JSON file."),
                     )
                     return
             except Exception:
-                QMessageBox.critical(self, "Error", "Invalid JSON file.")
+                QMessageBox.critical(
+                    self, self.tr("Error"), self.tr("Invalid JSON file.")
+                )
                 return
         elif new_json_path:
             QMessageBox.critical(
                 self,
-                self.app_window.tr("Error"),
-                self.app_window.tr("The specified JSON file does not exist."),
+                self.tr("Error"),
+                self.tr("The specified JSON file does not exist."),
             )
             return
 
@@ -332,7 +337,7 @@ class SettingsDialog(QDialog):
         if language_changed:
             QMessageBox.information(
                 self,
-                app.tr("Language Changed"),
-                app.tr("UI language will be applied after restart."),
+                self.tr("Language Changed"),
+                self.tr("UI language will be applied after restart."),
             )
         self.accept()

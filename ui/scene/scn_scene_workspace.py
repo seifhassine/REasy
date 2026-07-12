@@ -5,10 +5,11 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QDockWidget,
     QFrame,
     QHeaderView,
@@ -88,7 +89,9 @@ def scn_source_exact_key(source: ScnSceneSource) -> str:
 
 
 def _source_project_name(source: ScnSceneSource) -> str:
-    return Path(source.project_dir).name if source.project_dir else "No Project"
+    return Path(source.project_dir).name if source.project_dir else QCoreApplication.translate(
+        "ScnSceneWorkspace", "No Project"
+    )
 
 
 def _source_name(source: ScnSceneSource) -> str:
@@ -171,14 +174,16 @@ class ScnSceneTab:
         side.setSpacing(6)
 
         header = QHBoxLayout()
-        self.source_fold_button = self._tool_button("v", "Fold panel")
+        self.source_fold_button = self._tool_button(
+            "v", QCoreApplication.translate("ScnSceneWorkspace", "Fold panel")
+        )
         self.source_label = QLabel(panel)
-        self.menu_button = self._tool_button("≡", "Scene menu", lambda: self._show_scene_popup(self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())))
-        self.add_button = self._tool_button(QStyle.SP_FileDialogNewFolder, "Add open SCN", self._show_add_source_popup)
-        self.save_button = self._tool_button(QStyle.SP_DialogSaveButton, "Save scene", self.direct_save)
-        self.remove_button = self._tool_button(self._remove_icon, "Remove selected from scene", self.remove_selected_sources)
-        self.rename_button = self._tool_button(QStyle.SP_FileDialogDetailedView, "Rename scene", lambda: self.app.scenes.rename_scene(self))
-        self.close_button = self._tool_button(QStyle.SP_DialogCloseButton, "Close scene", lambda: self.app.scenes.close_scene(self))
+        self.menu_button = self._tool_button("≡", QCoreApplication.translate("ScnSceneWorkspace", "Scene menu"), lambda: self._show_scene_popup(self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())))
+        self.add_button = self._tool_button(QStyle.SP_FileDialogNewFolder, QCoreApplication.translate("ScnSceneWorkspace", "Add open SCN"), self._show_add_source_popup)
+        self.save_button = self._tool_button(QStyle.SP_DialogSaveButton, QCoreApplication.translate("ScnSceneWorkspace", "Save scene"), self.direct_save)
+        self.remove_button = self._tool_button(self._remove_icon, QCoreApplication.translate("ScnSceneWorkspace", "Remove selected from scene"), self.remove_selected_sources)
+        self.rename_button = self._tool_button(QStyle.SP_FileDialogDetailedView, QCoreApplication.translate("ScnSceneWorkspace", "Rename scene"), lambda: self.app.scenes.rename_scene(self))
+        self.close_button = self._tool_button(QStyle.SP_DialogCloseButton, QCoreApplication.translate("ScnSceneWorkspace", "Close scene"), lambda: self.app.scenes.close_scene(self))
         header.addWidget(self.source_fold_button)
         header.addWidget(self.source_label, 1)
         for button in (self.menu_button, self.add_button, self.save_button, self.remove_button, self.rename_button, self.close_button):
@@ -373,12 +378,16 @@ class ScnSceneTab:
 
     def _show_add_source_popup(self) -> None:
         sources = self.app.scenes.open_scn_sources()
-        panel, body = self._ensure_scene_popup("Add SCN")
+        panel, body = self._ensure_scene_popup(
+            QCoreApplication.translate("ScnSceneWorkspace", "Add SCN")
+        )
         if not sources:
-            body.addWidget(QLabel("Open an SCN from a PAK first.", panel))
+            body.addWidget(QLabel(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Open an SCN from a PAK first."
+            ), panel))
         for source in sources:
             actions = [(
-                "Add",
+                QCoreApplication.translate("ScnSceneWorkspace", "Add"),
                 lambda src=source: self.app.scenes.add_to_scene(self, src),
                 self.app.scenes.can_add_source(source),
             )]
@@ -386,13 +395,20 @@ class ScnSceneTab:
         self._show_popup_at(self.add_button.mapToGlobal(self.add_button.rect().bottomLeft()))
 
     def show_rename_prompt(self) -> None:
-        panel, body = self._ensure_scene_popup("Rename Scene")
+        panel, body = self._ensure_scene_popup(
+            QCoreApplication.translate("ScnSceneWorkspace", "Rename Scene")
+        )
         edit = QLineEdit(self.title, panel)
         body.addWidget(edit)
         row = QHBoxLayout()
         row.addStretch(1)
-        row.addWidget(self._popup_button("Cancel", panel.hide))
-        row.addWidget(self._popup_button("Apply", lambda _checked=False: self._apply_scene_title(edit.text())))
+        row.addWidget(self._popup_button(
+            QCoreApplication.translate("ScnSceneWorkspace", "Cancel"), panel.hide
+        ))
+        row.addWidget(self._popup_button(
+            QCoreApplication.translate("ScnSceneWorkspace", "Apply"),
+            lambda _checked=False: self._apply_scene_title(edit.text()),
+        ))
         body.addLayout(row)
         self._show_popup_at(self.rename_button.mapToGlobal(self.rename_button.rect().bottomLeft()))
         edit.selectAll()
@@ -488,10 +504,17 @@ class ScnSceneTab:
 
     def update_source_summary(self) -> None:
         count = len(self.sources)
-        self.source_label.setText(f"{self.title} | {count} SCN source{'s' if count != 1 else ''}")
+        summary = (
+            QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} SCN source")
+            if count == 1
+            else QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} SCN sources")
+        )
+        self.source_label.setText(summary.format(title=self.title, count=count))
         self.source_tree.clear()
         if not self.sources:
-            self.source_tree.addTopLevelItem(QTreeWidgetItem(["Empty scene", ""]))
+            self.source_tree.addTopLevelItem(QTreeWidgetItem([
+                QCoreApplication.translate("ScnSceneWorkspace", "Empty scene"), ""
+            ]))
             self._refresh_controls()
             return
         graphs = self.preview.graphs if len(self.preview.graphs) == len(self.sources) else []
@@ -506,8 +529,8 @@ class ScnSceneTab:
         if len(nested_rows) == len(self.sources):
             nested_rows.discard(0)
         used_rows: set[int] = set()
-        project_items: dict[str, QTreeWidgetItem] = {}
-        project_keys: dict[str, set[str]] = {}
+        project_items: dict[str | None, QTreeWidgetItem] = {}
+        project_keys: dict[str | None, set[str]] = {}
 
         def item_keys(item: QTreeWidgetItem) -> set[str]:
             keys = set(item.data(1, Qt.UserRole) or ())
@@ -538,10 +561,14 @@ class ScnSceneTab:
             if row in nested_rows or row in used_rows:
                 continue
             used_rows.add(row)
-            project = _source_project_name(source)
+            project = (
+                os.path.normcase(os.path.abspath(source.project_dir))
+                if source.project_dir
+                else None
+            )
             project_item = project_items.get(project)
             if project_item is None:
-                project_item = self._scn_item(project)
+                project_item = self._scn_item(_source_project_name(source))
                 project_items[project] = project_item
                 project_keys[project] = set()
                 self.source_tree.addTopLevelItem(project_item)
@@ -608,11 +635,18 @@ class ScnSceneTab:
         try:
             count = self.app.scenes.document_store.save_graphs(self.preview.graphs)
         except Exception as exc:
-            self.app.status_bar.showMessage(f"Scene save failed: {exc}", 5000)
+            self.app.status_bar.showMessage(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Scene save failed: {error}"
+            ).format(error=exc), 5000)
             return False
         self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
         self.update_tab_title()
-        self.app.status_bar.showMessage(f"Saved {count} SCN file{'s' if count != 1 else ''}.", 3000)
+        saved_message = (
+            QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} SCN file.")
+            if count == 1
+            else QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} SCN files.")
+        )
+        self.app.status_bar.showMessage(saved_message.format(count=count), 3000)
         return True
 
     def reload_file(self) -> None:
@@ -669,28 +703,40 @@ class ScnSceneTab:
         return next((item for item in matches if key in (item.data(0, Qt.UserRole + 2) or ())), None) or next((item for item in matches if item.data(0, Qt.UserRole + 1) != "scn"), None)
 
     def _show_scene_popup(self, global_pos, include_source_actions: bool = False) -> None:
-        panel, body = self._ensure_scene_popup("Scene Manager")
+        panel, body = self._ensure_scene_popup(
+            QCoreApplication.translate("ScnSceneWorkspace", "Scene Manager")
+        )
         if include_source_actions:
-            self._add_popup_row("Selection", [("Remove SCN", self.remove_selected_sources, self.remove_button.isEnabled())])
+            self._add_popup_row(
+                QCoreApplication.translate("ScnSceneWorkspace", "Selection"),
+                [(QCoreApplication.translate("ScnSceneWorkspace", "Remove SCN"), self.remove_selected_sources, self.remove_button.isEnabled())],
+            )
         active_source = scn_source_from_tab(self.app.get_active_tab())
         can_add_source = self.app.scenes.can_add_source(active_source)
         scenes = self.app.scenes.tabs()
         if not scenes:
-            body.addWidget(QLabel("No scenes.", panel))
+            body.addWidget(QLabel(
+                QCoreApplication.translate("ScnSceneWorkspace", "No scenes."), panel
+            ))
         for scene in scenes:
             actions = []
             if active_source is not None:
                 actions.append((
-                    f"Add {_source_display_name(active_source)}",
+                    QCoreApplication.translate("ScnSceneWorkspace", "Add {source}").format(
+                        source=_source_display_name(active_source)
+                    ),
                     lambda tab=scene, src=active_source: self._add_active_source_to_scene(tab, src),
                     can_add_source,
                 ))
             actions += [
-                ("Go To", lambda tab=scene: self._go_to_scene(tab), True),
-                ("Delete", lambda tab=scene: self.app.scenes.close_scene(tab), True),
+                (QCoreApplication.translate("ScnSceneWorkspace", "Go To"), lambda tab=scene: self._go_to_scene(tab), True),
+                (QCoreApplication.translate("ScnSceneWorkspace", "Delete"), lambda tab=scene: self.app.scenes.close_scene(tab), True),
             ]
             self._add_popup_row(scene.title, actions)
-        body.addWidget(self._popup_button("Create Scene", self._popup_run(self._create_scene)))
+        body.addWidget(self._popup_button(
+            QCoreApplication.translate("ScnSceneWorkspace", "Create Scene"),
+            self._popup_run(self._create_scene),
+        ))
         self._show_popup_at(global_pos)
 
     def _release_fullscreen(self):
@@ -773,7 +819,9 @@ class ScnSceneTab:
         return item
 
     def _gameobject_item(self, scene_object, keys=(), direct_keys=()) -> QTreeWidgetItem:
-        label = scene_object.name or scene_object.type_name or f"GameObject {scene_object.id.local_object_id}"
+        label = scene_object.name or scene_object.type_name or QCoreApplication.translate(
+            "ScnSceneWorkspace", "GameObject {id}"
+        ).format(id=scene_object.id.local_object_id)
         item = QTreeWidgetItem([label, ""])
         item.setIcon(0, self._scn_icon if scene_object.kind == "folder" else self._gameobject_icon)
         item.setData(0, Qt.UserRole + 1, "object")
@@ -785,7 +833,12 @@ class ScnSceneTab:
         group = renderable.source_group_instance_id or 0
         transform = renderable.source_transform_instance_id or 0
         component = renderable.source_component_id.instance_id
-        label = f"Composite {component}:{group}:{transform} - {Path(renderable.mesh_path.replace('\\', '/')).name or 'mesh'}"
+        label = QCoreApplication.translate(
+            "ScnSceneWorkspace", "Composite {component}:{group}:{transform} - {mesh}"
+        ).format(
+            component=component, group=group, transform=transform,
+            mesh=Path(renderable.mesh_path.replace("\\", "/")).name or "mesh",
+        )
         item = QTreeWidgetItem([label, ""])
         item.setIcon(0, self._gameobject_icon)
         item.setData(0, Qt.UserRole + 1, "renderable")
@@ -798,8 +851,14 @@ class ScnSceneTab:
         lprb = Path(light_probe.lprb_path.replace("\\", "/")).name or "lprb"
         prb = Path(light_probe.prb_path.replace("\\", "/")).name or "prb"
         obb_count = len(getattr(light_probe, "obbs", ()) or ())
-        suffix = f" | OBBs {obb_count}" if obb_count else ""
-        item = QTreeWidgetItem([f"LightProbes {component} - {lprb} + {prb}{suffix}", ""])
+        suffix = QCoreApplication.translate(
+            "ScnSceneWorkspace", " | OBBs {count}"
+        ).format(count=obb_count) if obb_count else ""
+        item = QTreeWidgetItem([
+            QCoreApplication.translate(
+                "ScnSceneWorkspace", "LightProbes {component} - {lprb} + {prb}{suffix}"
+            ).format(component=component, lprb=lprb, prb=prb, suffix=suffix), ""
+        ])
         item.setIcon(0, self._gameobject_icon)
         item.setData(0, Qt.UserRole + 1, "light_probe")
         item.setData(0, Qt.UserRole + 2, (light_probe.key,))
@@ -954,7 +1013,9 @@ class ScnSceneController:
         if owner is None:
             return False
         self.focus(owner)
-        self._notice(f"{_source_display_name(source)} is already open in {owner.title}.")
+        self._notice(QCoreApplication.translate(
+            "ScnSceneWorkspace", "{source} is already open in {scene}."
+        ).format(source=_source_display_name(source), scene=owner.title))
         return True
 
     def sync_hidden_raw_tabs(self) -> None:
@@ -965,7 +1026,9 @@ class ScnSceneController:
 
     def create_tab(self) -> ScnSceneTab:
         self.counter += 1
-        tab = ScnSceneTab(self.app, f"Scene {self.counter}")
+        tab = ScnSceneTab(self.app, QCoreApplication.translate(
+            "ScnSceneWorkspace", "Scene {number}"
+        ).format(number=self.counter))
         tab.parent_notebook = self.app.notebook
         index = self.app.notebook.addTab(tab.notebook_widget, tab.title)
         self.app.notebook.tabBar().setTabVisible(index, False)
@@ -979,12 +1042,16 @@ class ScnSceneController:
     def add_to_scene(self, scene_tab: ScnSceneTab | None = None, source: ScnSceneSource | None = None) -> None:
         source = source or scn_source_from_tab(self.app.get_active_tab())
         if source is None:
-            self._notice("Open an SCN from a PAK first.")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Open an SCN from a PAK first."
+            ))
             return
         owner = self.owner_for_source(source)
         if owner is not None:
             self.focus(owner)
-            self._notice(f"{_source_display_name(source)} is already open in {owner.title}.")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "{source} is already open in {scene}."
+            ).format(source=_source_display_name(source), scene=owner.title))
             return
         owned_keys = self._checked_source_identity_keys(source)
         if owned_keys is None:
@@ -995,14 +1062,20 @@ class ScnSceneController:
         conflict = self.owner_for(owned_keys, exclude=scene_tab)
         if conflict is not None:
             self.focus(conflict)
-            self._notice(f"{_source_display_name(source)} is already open in {conflict.title}.")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "{source} is already open in {scene}."
+            ).format(source=_source_display_name(source), scene=conflict.title))
             return
         if scene_tab.add_source(source, owned_keys):
             self.sync_hidden_raw_tabs()
             self.focus(scene_tab)
-            self.app.status_bar.showMessage(f"Added {_source_display_name(source)} to {scene_tab.title}", 3000)
+            self.app.status_bar.showMessage(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Added {source} to {scene}"
+            ).format(source=_source_display_name(source), scene=scene_tab.title), 3000)
         else:
-            self._notice(f"{_source_display_name(source)} is already in {scene_tab.title}.")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "{source} is already in {scene}."
+            ).format(source=_source_display_name(source), scene=scene_tab.title))
         self.refresh_actions()
         self.refresh_buttons()
 
@@ -1040,21 +1113,28 @@ class ScnSceneController:
             for scene in scenes:
                 scene_menu = menu.addMenu(scene.title)
                 if active_source is not None:
-                    add_act = scene_menu.addAction(f"Add {_source_display_name(active_source)}", lambda _checked=False, tab=scene, source=active_source: self.add_to_scene(tab, source))
+                    add_act = scene_menu.addAction(
+                        QCoreApplication.translate("ScnSceneWorkspace", "Add {source}").format(
+                            source=_source_display_name(active_source)
+                        ),
+                        lambda _checked=False, tab=scene, source=active_source: self.add_to_scene(tab, source),
+                    )
                     add_act.setEnabled(can_add_source)
                     scene_menu.addSeparator()
-                scene_menu.addAction("Go To", lambda _checked=False, tab=scene: self.focus(tab))
-                scene_menu.addAction("Delete", lambda _checked=False, tab=scene: self.close_scene(tab))
+                scene_menu.addAction(QCoreApplication.translate("ScnSceneWorkspace", "Go To"), lambda _checked=False, tab=scene: self.focus(tab))
+                scene_menu.addAction(QCoreApplication.translate("ScnSceneWorkspace", "Delete"), lambda _checked=False, tab=scene: self.close_scene(tab))
         else:
-            empty = menu.addAction("No Scenes")
+            empty = menu.addAction(QCoreApplication.translate("ScnSceneWorkspace", "No Scenes"))
             empty.setEnabled(False)
         menu.addSeparator()
-        menu.addAction("Create Scene", lambda _checked=False: self.create_tab())
+        menu.addAction(QCoreApplication.translate("ScnSceneWorkspace", "Create Scene"), lambda _checked=False: self.create_tab())
 
     def populate_add_to_scene_menu(self, menu: QMenu, source: ScnSceneSource | None) -> None:
         menu.clear()
         if source is None:
-            action = menu.addAction("Open an SCN from a PAK first")
+            action = menu.addAction(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Open an SCN from a PAK first"
+            ))
             action.setEnabled(False)
             return
         scenes = self.tabs()
@@ -1064,7 +1144,9 @@ class ScnSceneController:
             action.setEnabled(can_add)
         if scenes:
             menu.addSeparator()
-        action = menu.addAction("Add to New Scene", lambda _checked=False, src=source: self.add_to_new_scene(src))
+        action = menu.addAction(QCoreApplication.translate(
+            "ScnSceneWorkspace", "Add to New Scene"
+        ), lambda _checked=False, src=source: self.add_to_new_scene(src))
         action.setEnabled(can_add)
 
     def add_to_new_scene(self, source: ScnSceneSource) -> ScnSceneTab | None:
@@ -1076,7 +1158,9 @@ class ScnSceneController:
             return None
         if conflict := self.owner_for(owned_keys):
             self.focus(conflict)
-            self._notice(f"{_source_display_name(source)} is already open in {conflict.title}.")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "{source} is already open in {scene}."
+            ).format(source=_source_display_name(source), scene=conflict.title))
             return conflict
         scene = self.create_tab()
         self.add_to_scene(scene, source)
@@ -1147,7 +1231,9 @@ class ScnSceneController:
         try:
             return self.source_identity_keys(source)
         except Exception as exc:
-            self._notice(f"Failed to inspect {_source_display_name(source)}: {exc}")
+            self._notice(QCoreApplication.translate(
+                "ScnSceneWorkspace", "Failed to inspect {source}: {error}"
+            ).format(source=_source_display_name(source), error=exc))
             return None
 
     def sources_identity_keys(self, sources: list[ScnSceneSource], graphs=None) -> set[str]:
@@ -1260,8 +1346,16 @@ class ScnSceneController:
         scenes = self.tabs()
         if not scenes:
             return self.create_tab()
-        titles = [scene.title for scene in scenes] + ["New Scene"]
-        title, ok = QInputDialog.getItem(self.app, "Add SCN to Scene", "Scene:", titles, 0, False)
-        if not ok:
+        new_scene_label = QCoreApplication.translate("ScnSceneWorkspace", "New Scene")
+        titles = [scene.title for scene in scenes] + [new_scene_label]
+        dialog = QInputDialog(self.app)
+        dialog.setWindowTitle(QCoreApplication.translate("ScnSceneWorkspace", "Add SCN to Scene"))
+        dialog.setLabelText(QCoreApplication.translate("ScnSceneWorkspace", "Scene:"))
+        dialog.setComboBoxItems(titles)
+        dialog.setComboBoxEditable(False)
+        if not dialog.exec():
             return None
-        return self.create_tab() if title == "New Scene" else scenes[titles.index(title)]
+        combo = dialog.findChild(QComboBox)
+        if combo is None or (index := combo.currentIndex()) < 0:
+            return None
+        return self.create_tab() if index == len(scenes) else scenes[index]

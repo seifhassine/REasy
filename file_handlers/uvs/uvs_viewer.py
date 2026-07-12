@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import Qt, Signal, QTimer, QPointF, QRectF
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QTimer, QPointF, QRectF
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -422,8 +422,8 @@ class UvsViewer(QWidget):
 
         textures_panel = QWidget()
         textures_layout = QVBoxLayout(textures_panel)
-        textures_layout.addWidget(QLabel("Textures"))
-        textures_layout.addLayout(self._toolbar(self._add_texture, self._remove_texture, extra=[("Custom Texture", self._load_custom_texture_for_selected), ("Clear Custom Texture", self._clear_custom_texture_for_selected)]))
+        textures_layout.addWidget(QLabel(self.tr("Textures")))
+        textures_layout.addLayout(self._toolbar(self._add_texture, self._remove_texture, extra=[(self.tr("Custom Texture"), self._load_custom_texture_for_selected), (self.tr("Clear Custom Texture"), self._clear_custom_texture_for_selected)]))
         self.textures_table = self._table(["Index", "Albedo Path", "State"])
         self.textures_table.itemChanged.connect(self._on_texture_changed)
         self.textures_table.itemSelectionChanged.connect(self._on_texture_selected)
@@ -438,8 +438,8 @@ class UvsViewer(QWidget):
 
         sequences_panel = QWidget()
         sequences_layout = QVBoxLayout(sequences_panel)
-        sequences_layout.addWidget(QLabel("Sequences"))
-        sequences_layout.addLayout(self._toolbar(self._add_sequence, self._remove_sequence, extra=[("✨ Animation Creator", self._open_animation_creator)]))
+        sequences_layout.addWidget(QLabel(self.tr("Sequences")))
+        sequences_layout.addLayout(self._toolbar(self._add_sequence, self._remove_sequence, extra=[(self.tr("✨ Animation Creator"), self._open_animation_creator)]))
         self.sequences_table = self._table(["Index", "Pattern Count"])
         self.sequences_table.itemSelectionChanged.connect(self._on_sequence_selected)
         sequences_layout.addWidget(self.sequences_table)
@@ -451,33 +451,33 @@ class UvsViewer(QWidget):
 
         right = QWidget()
         right_layout = QVBoxLayout(right)
-        right_layout.addWidget(QLabel("Patterns"))
+        right_layout.addWidget(QLabel(self.tr("Patterns")))
         right_layout.addLayout(self._toolbar(self._add_pattern, self._remove_pattern))
         self.patterns_table = self._table(["Index", "Flags", "Left", "Top", "Right", "Bottom", "Texture", "Cutouts"])
         self.patterns_table.itemChanged.connect(self._on_pattern_changed)
         self.patterns_table.itemSelectionChanged.connect(self._on_pattern_selected)
         right_layout.addWidget(self.patterns_table)
 
-        cutouts_label = QLabel("Cutout UVs")
+        cutouts_label = QLabel(self.tr("Cutout UVs"))
         right_layout.addWidget(cutouts_label)
         right_layout.addLayout(self._toolbar(self._add_cutout, self._remove_cutout))
         self.cutouts_table = self._table(["Index", "U", "V"])
         self.cutouts_table.itemChanged.connect(self._on_cutout_changed)
         right_layout.addWidget(self.cutouts_table)
 
-        preview_group = QGroupBox("Playback")
+        preview_group = QGroupBox(self.tr("Playback"))
         pv_layout = QVBoxLayout(preview_group)
         ctl = QHBoxLayout()
-        self.play_btn = QPushButton("▶ Play")
+        self.play_btn = QPushButton(self.tr("▶ Play"))
         self.play_btn.clicked.connect(self._toggle_play)
         self.frame_slider = QSlider(Qt.Orientation.Horizontal)
         self.frame_slider.valueChanged.connect(self._on_frame_slider)
         self.fps_spin = QSpinBox()
         self.fps_spin.setRange(1, 120)
         self.fps_spin.setValue(60)
-        self.loop_chk = QCheckBox("Loop")
+        self.loop_chk = QCheckBox(self.tr("Loop"))
         self.loop_chk.setChecked(True)
-        self.focused_cutout_chk = QCheckBox("Show Cutouts in Focused View")
+        self.focused_cutout_chk = QCheckBox(self.tr("Show Cutouts in Focused View"))
         self.focused_cutout_chk.toggled.connect(self._on_focused_cutout_toggled)
         self.preview_source_combo = QComboBox()
         self.preview_source_combo.addItems(["Albedo", "Normal", "Specular", "Alpha"])
@@ -486,14 +486,14 @@ class UvsViewer(QWidget):
         self.preview_channel_combo.addItems(["RGBA", "R", "G", "B", "A"])
         self.preview_channel_combo.currentIndexChanged.connect(self._on_preview_source_changed)
         ctl.addWidget(self.play_btn)
-        ctl.addWidget(QLabel("Frame"))
+        ctl.addWidget(QLabel(self.tr("Frame")))
         ctl.addWidget(self.frame_slider, 1)
-        ctl.addWidget(QLabel("FPS"))
+        ctl.addWidget(QLabel(self.tr("FPS")))
         ctl.addWidget(self.fps_spin)
         ctl.addWidget(self.loop_chk)
-        ctl.addWidget(QLabel("Source"))
+        ctl.addWidget(QLabel(self.tr("Source")))
         ctl.addWidget(self.preview_source_combo)
-        ctl.addWidget(QLabel("Channel"))
+        ctl.addWidget(QLabel(self.tr("Channel")))
         ctl.addWidget(self.preview_channel_combo)
         ctl.addWidget(self.focused_cutout_chk)
         pv_layout.addLayout(ctl)
@@ -538,25 +538,33 @@ class UvsViewer(QWidget):
         cutout_vertices: int = 0,
     ) -> list[UvsPattern]:
         if rows <= 0 or cols <= 0:
-            raise ValueError("Rows and columns must be greater than zero.")
+            raise ValueError(self.tr("Rows and columns must be greater than zero."))
         if frame_count <= 0:
-            raise ValueError("Frame count must be greater than zero.")
+            raise ValueError(self.tr("Frame count must be greater than zero."))
         if texture_width <= 0 or texture_height <= 0:
-            raise ValueError("Texture dimensions must be greater than zero.")
+            raise ValueError(self.tr("Texture dimensions must be greater than zero."))
 
         ordered_slots = self._ordered_sheet_slots(rows, cols, direction)
         total_slots = len(ordered_slots)
         if start_index < 0 or start_index >= total_slots:
-            raise ValueError("Start frame is outside the sprite sheet bounds.")
+            raise ValueError(self.tr("Start frame is outside the sprite sheet bounds."))
 
         available = total_slots - start_index
         if frame_count > available:
-            raise ValueError(f"Requested {frame_count} frames but only {available} are available from start frame {start_index}.")
+            raise ValueError(
+                self.tr(
+                    "Requested {requested} frames but only {available} are available from start frame {start}."
+                ).format(requested=frame_count, available=available, start=start_index)
+            )
 
         usable_w = texture_width - (margin_x_px * 2) - (spacing_x_px * (cols - 1))
         usable_h = texture_height - (margin_y_px * 2) - (spacing_y_px * (rows - 1))
         if usable_w <= 0 or usable_h <= 0:
-            raise ValueError("Margins and spacing are too large for the selected texture dimensions.")
+            raise ValueError(
+                self.tr(
+                    "Margins and spacing are too large for the selected texture dimensions."
+                )
+            )
 
         frame_w = usable_w / cols
         frame_h = usable_h / rows
@@ -593,7 +601,7 @@ class UvsViewer(QWidget):
             "Column: Bottom → Top, Right → Left": (range(rows - 1, -1, -1), range(cols - 1, -1, -1), "col"),
         }
         if not (spec := layout.get(direction)):
-            raise ValueError("Unsupported frame direction.")
+            raise ValueError(self.tr("Unsupported frame direction."))
 
         row_range, col_range, major = spec
         if major == "row":
@@ -627,7 +635,11 @@ class UvsViewer(QWidget):
 
     def _build_patterns_from_creator_data(self, data: dict, flags: int = 0) -> tuple[list[UvsPattern], tuple[int, int]]:
         if not (dims := self._get_texture_dimensions(data["texture_index"])):
-            raise ValueError("Could not resolve texture dimensions. Ensure the TEX is available in loaded PAKs or as custom texture.")
+            raise ValueError(
+                self.tr(
+                    "Could not resolve texture dimensions. Ensure the TEX is available in loaded PAKs or as custom texture."
+                )
+            )
         source_pm = self._get_texture_preview_pixmap(data["texture_index"])
         patterns = self._create_sprite_sheet_patterns(
             rows=data["rows"],
@@ -735,7 +747,7 @@ class UvsViewer(QWidget):
         base = self._get_texture_preview_pixmap(data["texture_index"])
         canvas = base.copy() if base and not base.isNull() else QPixmap(dims[0], dims[1])
         if canvas.isNull():
-            preview_label.setText("Preview unavailable")
+            preview_label.setText(self.tr("Preview unavailable"))
             preview_label.setPixmap(QPixmap())
             return
         if not base or base.isNull():
@@ -768,19 +780,19 @@ class UvsViewer(QWidget):
 
         class AnimationCreatorDialog(QDialog):
             DIRECTIONS = [
-                "Row: Left → Right, Top → Bottom",
-                "Row: Right → Left, Top → Bottom",
-                "Row: Left → Right, Bottom → Top",
-                "Row: Right → Left, Bottom → Top",
-                "Column: Top → Bottom, Left → Right",
-                "Column: Bottom → Top, Left → Right",
-                "Column: Top → Bottom, Right → Left",
-                "Column: Bottom → Top, Right → Left",
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Row: Left → Right, Top → Bottom"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Row: Right → Left, Top → Bottom"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Row: Left → Right, Bottom → Top"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Row: Right → Left, Bottom → Top"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Column: Top → Bottom, Left → Right"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Column: Bottom → Top, Left → Right"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Column: Top → Bottom, Right → Left"),
+                QT_TRANSLATE_NOOP("AnimationCreatorDialog", "Column: Bottom → Top, Right → Left"),
             ]
 
             def __init__(self, parent, tex_count: int, tex_dims: tuple[int, int] | None):
                 super().__init__(parent)
-                self.setWindowTitle("UVS Animation Creator")
+                self.setWindowTitle(self.tr("UVS Animation Creator"))
                 self.setMinimumWidth(620)
 
                 def spin(min_v: int, max_v: int, val: int | None = None) -> QSpinBox:
@@ -800,7 +812,7 @@ class UvsViewer(QWidget):
  
                 form = QFormLayout()
                 self.texture_idx = spin(0, max(0, tex_count - 1))
-                self.texture_dims_label = QLabel("Unknown")
+                self.texture_dims_label = QLabel(self.tr("Unknown"))
                 if tex_dims:
                     self.texture_dims_label.setText(f"{tex_dims[0]} × {tex_dims[1]} px")
 
@@ -816,8 +828,10 @@ class UvsViewer(QWidget):
                 ]:
                     setattr(self, name, spin(lo, hi, val))
 
-                self.direction = QComboBox(); self.direction.addItems(self.DIRECTIONS)
-                self.auto_cutouts = QCheckBox("Auto-generate cutout UVs")
+                self.direction = QComboBox()
+                for direction in self.DIRECTIONS:
+                    self.direction.addItem(self.tr(direction), direction)
+                self.auto_cutouts = QCheckBox(self.tr("Auto-generate cutout UVs"))
                 self.cutout_vertices = spin(3, 64, 4)
                 self.alpha_threshold = spin(0, 255, 1)
                 self.cutout_vertices.setEnabled(False)
@@ -825,33 +839,33 @@ class UvsViewer(QWidget):
                 self.auto_cutouts.toggled.connect(self.cutout_vertices.setEnabled)
                 self.auto_cutouts.toggled.connect(self.alpha_threshold.setEnabled)
                 self.flags = QLineEdit("0")
-                self.new_sequence = QCheckBox("Create a new sequence")
+                self.new_sequence = QCheckBox(self.tr("Create a new sequence"))
                 self.new_sequence.setChecked(True)
 
                 sheet_grid = QGridLayout()
-                add_grid_row(sheet_grid, 0, "Rows", self.rows, "Columns", self.cols)
-                add_grid_row(sheet_grid, 1, "Start Frame", self.start, "Frame Count", self.count)
+                add_grid_row(sheet_grid, 0, self.tr("Rows"), self.rows, self.tr("Columns"), self.cols)
+                add_grid_row(sheet_grid, 1, self.tr("Start Frame"), self.start, self.tr("Frame Count"), self.count)
 
                 pad_grid = QGridLayout()
-                add_grid_row(pad_grid, 0, "Margin X (px)", self.margin_x, "Margin Y (px)", self.margin_y)
-                add_grid_row(pad_grid, 1, "Spacing X (px)", self.spacing_x, "Spacing Y (px)", self.spacing_y)
+                add_grid_row(pad_grid, 0, self.tr("Margin X (px)"), self.margin_x, self.tr("Margin Y (px)"), self.margin_y)
+                add_grid_row(pad_grid, 1, self.tr("Spacing X (px)"), self.spacing_x, self.tr("Spacing Y (px)"), self.spacing_y)
 
                 for label, widget in [
-                    ("Texture Index", self.texture_idx),
-                    ("Texture Dimensions", self.texture_dims_label),
+                    (self.tr("Texture Index"), self.texture_idx),
+                    (self.tr("Texture Dimensions"), self.texture_dims_label),
                     (None, sheet_grid),
                     (None, pad_grid),
-                    ("Frame Direction", self.direction),
+                    (self.tr("Frame Direction"), self.direction),
                 ]:
                     form.addRow(widget) if label is None else form.addRow(label, widget)
                 form.addRow(self.auto_cutouts)
-                form.addRow("Cutout Vertices", self.cutout_vertices)
-                form.addRow("Alpha Threshold", self.alpha_threshold)
-                form.addRow("Pattern Flags", self.flags)
+                form.addRow(self.tr("Cutout Vertices"), self.cutout_vertices)
+                form.addRow(self.tr("Alpha Threshold"), self.alpha_threshold)
+                form.addRow(self.tr("Pattern Flags"), self.flags)
                 form.addRow(self.new_sequence)
                 root.addLayout(form)
 
-                self.preview_label = QLabel("Preview unavailable")
+                self.preview_label = QLabel(self.tr("Preview unavailable"))
                 self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.preview_label.setMinimumHeight(220)
                 self.preview_label.setStyleSheet("QLabel { background-color: #222; border: 1px solid #444; }")
@@ -863,13 +877,15 @@ class UvsViewer(QWidget):
                 root.addWidget(buttons)
 
             def set_texture_dims(self, dims: tuple[int, int] | None):
-                self.texture_dims_label.setText(f"{dims[0]} × {dims[1]} px" if dims else "Unknown")
+                self.texture_dims_label.setText(
+                    f"{dims[0]} × {dims[1]} px" if dims else self.tr("Unknown")
+                )
 
             def payload(self):
                 data = {k: getattr(self, k).value() for k in ("texture_idx", "rows", "cols", "start", "count", "margin_x", "margin_y", "spacing_x", "spacing_y")}
                 data["texture_index"] = data.pop("texture_idx")
                 data.update({
-                    "direction": self.direction.currentText(),
+                    "direction": self.direction.currentData(),
                     "cutout_vertices": self.cutout_vertices.value() if self.auto_cutouts.isChecked() else 0,
                     "alpha_threshold": self.alpha_threshold.value(),
                     "new_sequence": self.new_sequence.isChecked(),
@@ -878,7 +894,11 @@ class UvsViewer(QWidget):
                 return data
 
         if len(uvs.textures) == 0:
-            QMessageBox.information(self, "No texture available", "Add at least one texture before creating an animation.")
+            QMessageBox.information(
+                self,
+                self.tr("No texture available"),
+                self.tr("Add at least one texture before creating an animation."),
+            )
             return
 
         initial_tex = self.textures_table.currentRow() if self.textures_table and self.textures_table.currentRow() >= 0 else 0
@@ -918,7 +938,7 @@ class UvsViewer(QWidget):
             data = dlg.payload()
             generated, _ = self._build_patterns_from_creator_data(data, flags=self._read_int(data["flags"] or "0"))
         except Exception as ex:
-            QMessageBox.warning(self, "Animation creator", str(ex))
+            QMessageBox.warning(self, self.tr("Animation creator"), str(ex))
             return
 
         if data["new_sequence"] or self._selected_sequence < 0 or self._selected_sequence >= len(uvs.sequences):
@@ -1250,7 +1270,7 @@ class UvsViewer(QWidget):
             self._mark_modified()
             self._sync_preview()
         except Exception as ex:
-            QMessageBox.warning(self, "Invalid value", str(ex))
+            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
             self._set_loading(True)
             self._reload_textures()
             self._set_loading(False)
@@ -1277,7 +1297,7 @@ class UvsViewer(QWidget):
             self._mark_modified()
             self._sync_preview()
         except Exception as ex:
-            QMessageBox.warning(self, "Invalid value", str(ex))
+            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
             self._set_loading(True)
             self._reload_patterns()
             self._set_loading(False)
@@ -1299,7 +1319,7 @@ class UvsViewer(QWidget):
                 self.preview_focused.update()
             self._mark_modified()
         except Exception as ex:
-            QMessageBox.warning(self, "Invalid value", str(ex))
+            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
             self._set_loading(True)
             self._reload_cutouts()
             self._set_loading(False)
@@ -1338,20 +1358,20 @@ class UvsViewer(QWidget):
     def _toggle_play(self):
         if self.play_timer.isActive():
             self.play_timer.stop()
-            self.play_btn.setText("▶ Play")
+            self.play_btn.setText(self.tr("▶ Play"))
             return
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
             return
         ms = int(1000 / max(1, self.fps_spin.value()))
         self.play_timer.start(ms)
-        self.play_btn.setText("⏸ Pause")
+        self.play_btn.setText(self.tr("⏸ Pause"))
 
     def _advance_frame(self):
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
             self.play_timer.stop()
-            self.play_btn.setText("▶ Play")
+            self.play_btn.setText(self.tr("▶ Play"))
             return
         nxt = self._selected_pattern + 1
         if nxt >= len(seq.patterns):
@@ -1359,7 +1379,7 @@ class UvsViewer(QWidget):
                 nxt = 0
             else:
                 self.play_timer.stop()
-                self.play_btn.setText("▶ Play")
+                self.play_btn.setText(self.tr("▶ Play"))
                 return
         self.frame_slider.setValue(nxt)
 
@@ -1378,10 +1398,14 @@ class UvsViewer(QWidget):
     def _load_custom_texture_for_selected(self):
         if (row := self.textures_table.currentRow()) < 0:
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Select custom texture", "", "Textures/Images (*.tex.* *.png *.jpg *.jpeg *.bmp *.tga *.tif *.tiff *.webp);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Select custom texture"), "", "Textures/Images (*.tex.* *.png *.jpg *.jpeg *.bmp *.tga *.tif *.tiff *.webp);;All Files (*)")
         if not path or not (pm := self._load_custom_texture_pixmap(path)):
             if path:
-                QMessageBox.warning(self, "Invalid Texture", "Failed to load the selected texture/image file.")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Invalid Texture"),
+                    self.tr("Failed to load the selected texture/image file."),
+                )
             return
         self._custom_tex_file[row] = path
         self._custom_tex_pixmap[row] = pm

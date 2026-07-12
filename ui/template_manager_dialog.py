@@ -14,7 +14,7 @@ class TemplateManagerDialog(QDialog):
     
     def __init__(self, parent=None, viewer=None):
         super().__init__(parent)
-        self.setWindowTitle("GameObject Template Manager")
+        self.setWindowTitle(self.tr("GameObject Template Manager"))
         self.resize(800, 600)
         self.setMinimumSize(600, 400)
         
@@ -40,17 +40,17 @@ class TemplateManagerDialog(QDialog):
         filter_layout = QHBoxLayout()
         
         self.registry_combo = QComboBox()
-        self.registry_combo.addItem("All Registries", None)
-        filter_layout.addWidget(QLabel("Registry:"))
+        self.registry_combo.addItem(self.tr("All Registries"), None)
+        filter_layout.addWidget(QLabel(self.tr("Registry:")))
         filter_layout.addWidget(self.registry_combo)
         
         self.tag_combo = QComboBox()
-        self.tag_combo.addItem("All Tags", None)
-        filter_layout.addWidget(QLabel("Tag:"))
+        self.tag_combo.addItem(self.tr("All Tags"), None)
+        filter_layout.addWidget(QLabel(self.tr("Tag:")))
         filter_layout.addWidget(self.tag_combo)
         
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search templates...")
+        self.search_input.setPlaceholderText(self.tr("Search templates..."))
         filter_layout.addWidget(self.search_input)
         
         left_layout.addLayout(filter_layout)
@@ -59,7 +59,7 @@ class TemplateManagerDialog(QDialog):
         self.template_list.setContextMenuPolicy(Qt.CustomContextMenu)
         left_layout.addWidget(self.template_list, 1)
         
-        self.community_button = QPushButton("Browse Community Templates")
+        self.community_button = QPushButton(self.tr("Browse Community Templates"))
         self.community_button.clicked.connect(self._open_community_templates)
         left_layout.addWidget(self.community_button)
         
@@ -71,25 +71,25 @@ class TemplateManagerDialog(QDialog):
         details_layout = QVBoxLayout(self.template_details)
         
         name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Name:"))
+        name_layout.addWidget(QLabel(self.tr("Name:")))
         self.name_edit = QLineEdit()
         name_layout.addWidget(self.name_edit, 1)
         details_layout.addLayout(name_layout)
         
         registry_layout = QHBoxLayout()
-        registry_layout.addWidget(QLabel("Registry:"))
+        registry_layout.addWidget(QLabel(self.tr("Registry:")))
         self.registry_label = QLabel()
         registry_layout.addWidget(self.registry_label, 1)
         details_layout.addLayout(registry_layout)
         
         tags_layout = QHBoxLayout()
-        tags_layout.addWidget(QLabel("Tags:"))
+        tags_layout.addWidget(QLabel(self.tr("Tags:")))
         self.tags_edit = QLineEdit()
-        self.tags_edit.setPlaceholderText("Enter tags separated by commas")
+        self.tags_edit.setPlaceholderText(self.tr("Enter tags separated by commas"))
         tags_layout.addWidget(self.tags_edit, 1)
         details_layout.addLayout(tags_layout)
         
-        details_layout.addWidget(QLabel("Description:"))
+        details_layout.addWidget(QLabel(self.tr("Description:")))
         self.description_edit = QTextEdit()
         details_layout.addWidget(self.description_edit)
         
@@ -101,10 +101,10 @@ class TemplateManagerDialog(QDialog):
         
         details_button_layout = QHBoxLayout()
         
-        self.update_button = QPushButton("Update Template")
+        self.update_button = QPushButton(self.tr("Update Template"))
         details_button_layout.addWidget(self.update_button)
         
-        self.delete_button = QPushButton("Delete Template")
+        self.delete_button = QPushButton(self.tr("Delete Template"))
         details_button_layout.addWidget(self.delete_button)
         
         details_layout.addLayout(details_button_layout)
@@ -114,16 +114,16 @@ class TemplateManagerDialog(QDialog):
         import_layout = QHBoxLayout()
         
         self.parent_combo = QComboBox()
-        self.parent_combo.addItem("Create at Root", -1)
-        import_layout.addWidget(QLabel("Parent:"))
+        self.parent_combo.addItem(self.tr("Create at Root"), -1)
+        import_layout.addWidget(QLabel(self.tr("Parent:")))
         import_layout.addWidget(self.parent_combo, 1)
         
         self.import_name_edit = QLineEdit()
-        self.import_name_edit.setPlaceholderText("Use template name")
-        import_layout.addWidget(QLabel("Name:"))
+        self.import_name_edit.setPlaceholderText(self.tr("Use template name"))
+        import_layout.addWidget(QLabel(self.tr("Name:")))
         import_layout.addWidget(self.import_name_edit, 1)
         
-        self.import_button = QPushButton("Import Template")
+        self.import_button = QPushButton(self.tr("Import Template"))
         import_layout.addWidget(self.import_button)
         
         right_layout.addLayout(import_layout)
@@ -172,14 +172,14 @@ class TemplateManagerDialog(QDialog):
                     search_text not in tags):
                     continue
             
-            item = QListWidgetItem(template.get("name", "Unknown"))
+            item = QListWidgetItem(template.get("name", self.tr("Unknown")))
             item.setData(Qt.UserRole, template.get("id"))
             
             registry = template.get("registry", "default")
             tags = ", ".join(template.get("tags", []))
-            tooltip = f"Registry: {registry}"
+            tooltip = self.tr("Registry: {registry}").format(registry=registry)
             if tags:
-                tooltip += f"\nTags: {tags}"
+                tooltip += "\n" + self.tr("Tags: {tags}").format(tags=tags)
             if template.get("description"):
                 tooltip += f"\n{template.get('description')}"
             
@@ -192,7 +192,7 @@ class TemplateManagerDialog(QDialog):
         current_tag = self.tag_combo.currentData()
         
         self.registry_combo.clear()
-        self.registry_combo.addItem("All Registries", None)
+        self.registry_combo.addItem(self.tr("All Registries"), None)
         
         for registry in RszTemplateManager.get_all_registries():
             self.registry_combo.addItem(registry, registry)
@@ -203,7 +203,7 @@ class TemplateManagerDialog(QDialog):
                 self.registry_combo.setCurrentIndex(index)
         
         self.tag_combo.clear()
-        self.tag_combo.addItem("All Tags", None)
+        self.tag_combo.addItem(self.tr("All Tags"), None)
         
         for tag in RszTemplateManager.get_all_tags():
             self.tag_combo.addItem(tag, tag)
@@ -219,7 +219,7 @@ class TemplateManagerDialog(QDialog):
     def _populate_parent_combo(self):
         """Populate the parent selection combo with available GameObjects and folders"""
         self.parent_combo.clear()
-        self.parent_combo.addItem("Create at Root", -1)
+        self.parent_combo.addItem(self.tr("Create at Root"), -1)
         
         if not self.viewer or not hasattr(self.viewer, "scn"):
             return
@@ -234,7 +234,7 @@ class TemplateManagerDialog(QDialog):
                     child_instance_id = self.viewer.scn.object_table[child_go.id]
                     child_name = self.viewer.name_helper.get_instance_first_field_name(child_instance_id)
                     if not child_name:
-                        child_name = f"GameObject {child_go.id}"
+                        child_name = self.tr("GameObject {id}").format(id=child_go.id)
                     add_gameobject(child_go.id, child_name, level + 1)
         
         for go in self.viewer.scn.gameobjects:
@@ -242,7 +242,7 @@ class TemplateManagerDialog(QDialog):
                 go_instance_id = self.viewer.scn.object_table[go.id]
                 name = self.viewer.name_helper.get_instance_first_field_name(go_instance_id)
                 if not name:
-                    name = f"GameObject {go.id}"
+                    name = self.tr("GameObject {id}").format(id=go.id)
                 add_gameobject(go.id, name)
                 
         for folder in self.viewer.scn.folder_infos:
@@ -250,8 +250,10 @@ class TemplateManagerDialog(QDialog):
                 folder_instance_id = self.viewer.scn.object_table[folder.id]
                 folder_name = self.viewer.name_helper.get_instance_first_field_name(folder_instance_id)
                 if not folder_name:
-                    folder_name = f"Folder {folder.id}"
-                self.parent_combo.addItem(f"Folder: {folder_name}", folder.id)
+                    folder_name = self.tr("Folder {id}").format(id=folder.id)
+                self.parent_combo.addItem(
+                    self.tr("Folder: {folder_name}").format(folder_name=folder_name), folder.id
+                )
     
     def _on_template_selected(self):
         """Handle template selection"""
@@ -288,8 +290,8 @@ class TemplateManagerDialog(QDialog):
             except Exception as e:
                 print(f"Error formatting timestamp: {e}")
 
-            self.created_label.setText(f"Created: {created}")
-            self.modified_label.setText(f"Modified: {modified}")
+            self.created_label.setText(self.tr("Created: {date}").format(date=created))
+            self.modified_label.setText(self.tr("Modified: {date}").format(date=modified))
             
             if not self.import_name_edit.text():
                 self.import_name_edit.setText(template_info.get("name", ""))
@@ -315,7 +317,9 @@ class TemplateManagerDialog(QDialog):
             
         name = self.name_edit.text()
         if not name:
-            QMessageBox.warning(self, "Error", "Template name cannot be empty")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Template name cannot be empty")
+            )
             return
             
         tags_text = self.tags_edit.text()
@@ -331,11 +335,15 @@ class TemplateManagerDialog(QDialog):
         )
         
         if success:
-            QMessageBox.information(self, "Success", "Template updated successfully")
+            QMessageBox.information(
+                self, self.tr("Success"), self.tr("Template updated successfully")
+            )
             self._load_templates()
             self._load_filters()
         else:
-            QMessageBox.warning(self, "Error", "Failed to update template")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to update template")
+            )
     
     def _delete_template(self):
         """Delete the selected template"""
@@ -344,8 +352,10 @@ class TemplateManagerDialog(QDialog):
             
         confirm = QMessageBox.question(
             self,
-            "Confirm Deletion",
-            f"Are you sure you want to delete the template '{self.name_edit.text()}'?",
+            self.tr("Confirm Deletion"),
+            self.tr("Are you sure you want to delete the template '{name}'?").format(
+                name=self.name_edit.text()
+            ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -356,13 +366,17 @@ class TemplateManagerDialog(QDialog):
         success = RszTemplateManager.delete_template(self.current_template_id)
         
         if success:
-            QMessageBox.information(self, "Success", "Template deleted successfully")
+            QMessageBox.information(
+                self, self.tr("Success"), self.tr("Template deleted successfully")
+            )
             self.current_template_id = None
             self.template_details.setVisible(False)
             self._load_templates()
             self._load_filters()
         else:
-            QMessageBox.warning(self, "Error", "Failed to delete template")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to delete template")
+            )
     
     def _import_template(self):
         """Import the selected template"""
@@ -391,11 +405,11 @@ class TemplateManagerDialog(QDialog):
         )
         
         if result["success"]:
-            QMessageBox.information(self, "Success", result["message"])
+            QMessageBox.information(self, self.tr("Success"), result["message"])
             self.template_imported.emit(result["gameobject_data"])
             self.accept() 
         else:
-            QMessageBox.warning(self, "Error", result["message"])
+            QMessageBox.warning(self, self.tr("Error"), result["message"])
     
     def _show_template_context_menu(self, position):
         """Show context menu for template list items"""
@@ -408,13 +422,13 @@ class TemplateManagerDialog(QDialog):
         
         menu = QMenu(self)
         
-        import_action = menu.addAction("Import Template")
+        import_action = menu.addAction(self.tr("Import Template"))
         import_action.triggered.connect(self._import_template)
         
-        rename_action = menu.addAction("Rename Template")
+        rename_action = menu.addAction(self.tr("Rename Template"))
         rename_action.triggered.connect(lambda: self._rename_template(template_id))
         
-        delete_action = menu.addAction("Delete Template")
+        delete_action = menu.addAction(self.tr("Delete Template"))
         delete_action.triggered.connect(lambda: self._delete_template_from_context_menu(template_id))
         
         menu.exec_(self.template_list.mapToGlobal(position))
@@ -430,8 +444,8 @@ class TemplateManagerDialog(QDialog):
         
         new_name, ok = QInputDialog.getText(
             self, 
-            "Rename Template", 
-            "Enter new name:", 
+            self.tr("Rename Template"),
+            self.tr("Enter new name:"),
             text=current_name
         )
         
@@ -442,14 +456,18 @@ class TemplateManagerDialog(QDialog):
             )
             
             if success:
-                QMessageBox.information(self, "Success", "Template renamed successfully")
+                QMessageBox.information(
+                    self, self.tr("Success"), self.tr("Template renamed successfully")
+                )
                 self._load_templates()
                 self._load_filters()
                 
                 if template_id == self.current_template_id:
                     self.name_edit.setText(new_name)
             else:
-                QMessageBox.warning(self, "Error", "Failed to rename template")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to rename template")
+                )
     
     def _delete_template_from_context_menu(self, template_id):
         """Delete template from context menu"""
@@ -458,12 +476,12 @@ class TemplateManagerDialog(QDialog):
             return
             
         template_info = metadata["templates"][template_id]
-        name = template_info.get("name", "Unknown")
+        name = template_info.get("name", self.tr("Unknown"))
         
         confirm = QMessageBox.question(
             self,
-            "Confirm Deletion",
-            f"Are you sure you want to delete the template '{name}'?",
+            self.tr("Confirm Deletion"),
+            self.tr("Are you sure you want to delete the template '{name}'?").format(name=name),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -474,7 +492,9 @@ class TemplateManagerDialog(QDialog):
         success = RszTemplateManager.delete_template(template_id)
         
         if success:
-            QMessageBox.information(self, "Success", "Template deleted successfully")
+            QMessageBox.information(
+                self, self.tr("Success"), self.tr("Template deleted successfully")
+            )
             
             if template_id == self.current_template_id:
                 self.current_template_id = None
@@ -483,7 +503,9 @@ class TemplateManagerDialog(QDialog):
             self._load_templates()
             self._load_filters()
         else:
-            QMessageBox.warning(self, "Error", "Failed to delete template")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to delete template")
+            )
     
     def _open_community_templates(self):
         """Open the community templates browser dialog"""

@@ -12,11 +12,12 @@ from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
 class OutdatedFilesDialog(QDialog):
     def __init__(self, parent=None, registry_path=None):
         super().__init__(parent)
-        self.setWindowTitle("Outdated Files Detector")
+        self.setWindowTitle(self.tr("Outdated Files Detector"))
         self.resize(900, 700)
         
         self.detector = OutdatedFilesDetector(registry_path)
         self.scan_results = []
+        self.selected_directory = ""
         
         self._create_ui()
         
@@ -26,10 +27,10 @@ class OutdatedFilesDialog(QDialog):
         info_frame = QFrame()
         info_frame.setStyleSheet("border-radius: 5px; padding: 10px;")
         info_layout = QVBoxLayout(info_frame)
-        info_label = QLabel(
+        info_label = QLabel(self.tr(
             "<b>Note:</b> This tool detects files that are incompatible with your selected RSZ template "
             "(.json file). Make sure to use the latest .json if you want to check for outdated mods."
-        )
+        ))
         info_label.setWordWrap(True)
         info_font = info_label.font()
         info_font.setPointSize(info_font.pointSize() + 1)
@@ -37,20 +38,20 @@ class OutdatedFilesDialog(QDialog):
         info_layout.addWidget(info_label)
         layout.addWidget(info_frame)
         
-        config_group = QGroupBox("Configuration")
+        config_group = QGroupBox(self.tr("Configuration"))
         config_layout = QVBoxLayout(config_group)
         
         registry_layout = QHBoxLayout()
-        self.registry_label = QLabel("RSZ JSON Path: Not set")
-        self.browse_registry_btn = QPushButton("Browse...")
+        self.registry_label = QLabel(self.tr("RSZ JSON Path: Not set"))
+        self.browse_registry_btn = QPushButton(self.tr("Browse..."))
         self.browse_registry_btn.clicked.connect(self._browse_registry)
         registry_layout.addWidget(self.registry_label, 1)
         registry_layout.addWidget(self.browse_registry_btn)
         config_layout.addLayout(registry_layout)
         
         dir_layout = QHBoxLayout()
-        self.dir_label = QLabel("Directory: Not selected")
-        self.browse_dir_btn = QPushButton("Browse...")
+        self.dir_label = QLabel(self.tr("Directory: Not selected"))
+        self.browse_dir_btn = QPushButton(self.tr("Browse..."))
         self.browse_dir_btn.clicked.connect(self._browse_directory)
         dir_layout.addWidget(self.dir_label, 1)
         dir_layout.addWidget(self.browse_dir_btn)
@@ -58,7 +59,7 @@ class OutdatedFilesDialog(QDialog):
         
         layout.addWidget(config_group)
         
-        self.scan_btn = QPushButton("Scan for Outdated Files")
+        self.scan_btn = QPushButton(self.tr("Scan for Outdated Files"))
         self.scan_btn.setMinimumHeight(40)
         font = self.scan_btn.font()
         font.setBold(True)
@@ -67,11 +68,13 @@ class OutdatedFilesDialog(QDialog):
         self.scan_btn.setEnabled(False)
         layout.addWidget(self.scan_btn)
         
-        results_group = QGroupBox("Results")
+        results_group = QGroupBox(self.tr("Results"))
         results_layout = QVBoxLayout(results_group)
         
         self.results_tree = QTreeWidget()
-        self.results_tree.setHeaderLabels(["File Path", "Mismatching Types Count"])
+        self.results_tree.setHeaderLabels([
+            self.tr("File Path"), self.tr("Mismatching Types Count")
+        ])
         self.results_tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.results_tree.header().setSectionsMovable(True)
         self.results_tree.header().setSectionsClickable(True)
@@ -81,16 +84,16 @@ class OutdatedFilesDialog(QDialog):
         results_layout.addWidget(self.results_tree)
         
         action_layout = QHBoxLayout()
-        self.select_all_btn = QPushButton("Select All")
+        self.select_all_btn = QPushButton(self.tr("Select All"))
         self.select_all_btn.clicked.connect(self._select_all)
-        self.deselect_all_btn = QPushButton("Deselect All")
+        self.deselect_all_btn = QPushButton(self.tr("Deselect All"))
         self.deselect_all_btn.clicked.connect(self._deselect_all)
         
-        self.move_btn = QPushButton("Move Selected to 'outdated' Folder")
+        self.move_btn = QPushButton(self.tr("Move Selected to 'outdated' Folder"))
         self.move_btn.clicked.connect(self._move_selected)
         self.move_btn.setEnabled(False)
         
-        self.delete_btn = QPushButton("Delete Selected Files")
+        self.delete_btn = QPushButton(self.tr("Delete Selected Files"))
         self.delete_btn.clicked.connect(self._delete_selected)
         self.delete_btn.setEnabled(False)
         
@@ -105,49 +108,51 @@ class OutdatedFilesDialog(QDialog):
         
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch()
-        self.close_btn = QPushButton("Close")
+        self.close_btn = QPushButton(self.tr("Close"))
         self.close_btn.clicked.connect(self.close)
         self.close_btn.setMinimumWidth(120)
         bottom_layout.addWidget(self.close_btn)
         layout.addLayout(bottom_layout)
         
         if self.detector.type_registry:
-            self.registry_label.setText(f"RSZ JSON Path: {self.detector.type_registry_path}")
+            self.registry_label.setText(
+                self.tr("RSZ JSON Path: {path}").format(path=self.detector.type_registry_path)
+            )
         
     def _browse_registry(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Type Registry JSON", "", "JSON Files (*.json)"
+            self, self.tr("Select Type Registry JSON"), "", "JSON Files (*.json)"
         )
         
         if file_path:
             self.detector.set_type_registry_path(file_path)
             if self.detector.type_registry:
-                self.registry_label.setText(f"RSZ JSON Path: {file_path}")
-                if self.dir_label.text() != "Directory: Not selected":
-                    self.scan_btn.setEnabled(True)
+                self.registry_label.setText(self.tr("RSZ JSON Path: {path}").format(path=file_path))
+                self.scan_btn.setEnabled(bool(self.selected_directory))
             else:
                 QMessageBox.warning(
-                    self, "Registry Load Error", 
-                    "Failed to load the selected type registry file."
+                    self, self.tr("Registry Load Error"),
+                    self.tr("Failed to load the selected type registry file.")
                 )
     
     def _browse_directory(self):
         directory = QFileDialog.getExistingDirectory(
-            self, "Select Directory to Scan", ""
+            self, self.tr("Select Directory to Scan"), ""
         )
         
         if directory:
-            self.dir_label.setText(f"Directory: {directory}")
+            self.selected_directory = directory
+            self.dir_label.setText(self.tr("Directory: {path}").format(path=directory))
             if self.detector.type_registry:
                 self.scan_btn.setEnabled(True)
     
     def _scan_directory(self):
-        directory = self.dir_label.text().replace("Directory: ", "")
+        directory = self.selected_directory
         
         if not os.path.isdir(directory):
             QMessageBox.warning(
-                self, "Invalid Directory", 
-                "The selected directory does not exist."
+                self, self.tr("Invalid Directory"),
+                self.tr("The selected directory does not exist.")
             )
             return
         
@@ -158,8 +163,10 @@ class OutdatedFilesDialog(QDialog):
         
         rsz_files = []
         
-        count_progress = QProgressDialog("Finding RSZ files...", "Cancel", 0, 0, self)
-        count_progress.setWindowTitle("Finding Files")
+        count_progress = QProgressDialog(
+            self.tr("Finding RSZ files..."), self.tr("Cancel"), 0, 0, self
+        )
+        count_progress.setWindowTitle(self.tr("Finding Files"))
         count_progress.setWindowModality(Qt.WindowModal)
         count_progress.setMinimumDuration(0)
         count_progress.setValue(0)
@@ -179,11 +186,17 @@ class OutdatedFilesDialog(QDialog):
         total_files = len(rsz_files)
         if total_files == 0:
             count_progress.close()
-            QMessageBox.information(self, "No Files Found", "No RSZ files found in the selected directory.")
+            QMessageBox.information(
+                self,
+                self.tr("No Files Found"),
+                self.tr("No RSZ files found in the selected directory."),
+            )
             return
             
-        progress = QProgressDialog("Scanning for outdated files...", "Cancel", 0, total_files, self)
-        progress.setWindowTitle("Scanning Files")
+        progress = QProgressDialog(
+            self.tr("Scanning for outdated files..."), self.tr("Cancel"), 0, total_files, self
+        )
+        progress.setWindowTitle(self.tr("Scanning Files"))
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(0)
         count_progress.close()
@@ -194,7 +207,9 @@ class OutdatedFilesDialog(QDialog):
                 break
                 
             progress.setValue(i)
-            progress.setLabelText(f"Scanning file {i+1} of {total_files}:\n{os.path.basename(file_path)}")
+            progress.setLabelText(self.tr(
+                "Scanning file {current} of {total}:\n{file_name}"
+            ).format(current=i + 1, total=total_files, file_name=os.path.basename(file_path)))
             QApplication.processEvents()
             
             try:
@@ -216,8 +231,10 @@ class OutdatedFilesDialog(QDialog):
         
         QMessageBox.information(
             self, 
-            "Scan Complete",
-            f"Found {len(results)} outdated files with mismatching type CRCs."
+            self.tr("Scan Complete"),
+            self.tr("Found {count} outdated files with mismatching type CRCs.").format(
+                count=len(results)
+            )
         )
     
     def _populate_tree(self, results):
@@ -230,15 +247,18 @@ class OutdatedFilesDialog(QDialog):
             
             for mismatch in mismatches:
                 child = QTreeWidgetItem(item)
-                type_name = mismatch.get("name", "Unknown")
+                type_name = mismatch.get("name", self.tr("Unknown"))
                 file_crc = mismatch.get("file_crc", 0)
                 registry_crc = mismatch.get("registry_crc", None)
                 
-                crc_text = f"File CRC: 0x{file_crc:08X}"
                 if registry_crc is not None:
-                    crc_text += f", Registry CRC: 0x{registry_crc:08X}"
+                    crc_text = self.tr(
+                        "File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}"
+                    ).format(file_crc=file_crc, registry_crc=registry_crc)
                 else:
-                    crc_text += ", Not found in registry"
+                    crc_text = self.tr(
+                        "File CRC: 0x{file_crc:08X}, Not found in registry"
+                    ).format(file_crc=file_crc)
                 
                 child.setText(0, f"{type_name} - {crc_text}")
             
@@ -252,8 +272,10 @@ class OutdatedFilesDialog(QDialog):
         self.results_tree.setSortingEnabled(False)
         self.results_tree.setUpdatesEnabled(False)
         
-        progress = QProgressDialog("Populating results...", "Cancel", 0, total_items, self)
-        progress.setWindowTitle("Loading Results")
+        progress = QProgressDialog(
+            self.tr("Populating results..."), self.tr("Cancel"), 0, total_items, self
+        )
+        progress.setWindowTitle(self.tr("Loading Results"))
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(0)
         progress.setValue(0)
@@ -272,21 +294,26 @@ class OutdatedFilesDialog(QDialog):
                 
                 for mismatch in mismatches[:20]:
                     child = QTreeWidgetItem(item)
-                    type_name = mismatch.get("name", "Unknown")
+                    type_name = mismatch.get("name", self.tr("Unknown"))
                     file_crc = mismatch.get("file_crc", 0)
                     registry_crc = mismatch.get("registry_crc", None)
                     
-                    crc_text = f"File CRC: 0x{file_crc:08X}"
                     if registry_crc is not None:
-                        crc_text += f", Registry CRC: 0x{registry_crc:08X}"
+                        crc_text = self.tr(
+                            "File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}"
+                        ).format(file_crc=file_crc, registry_crc=registry_crc)
                     else:
-                        crc_text += ", Not found in registry"
+                        crc_text = self.tr(
+                            "File CRC: 0x{file_crc:08X}, Not found in registry"
+                        ).format(file_crc=file_crc)
                     
                     child.setText(0, f"{type_name} - {crc_text}")
                 
                 if len(mismatches) > 20:
                     more_item = QTreeWidgetItem(item)
-                    more_item.setText(0, f"... and {len(mismatches) - 20} more mismatches (double-click to load)")
+                    more_item.setText(0, self.tr(
+                        "... and {count} more mismatches (double-click to load)"
+                    ).format(count=len(mismatches) - 20))
                     more_item.setData(0, Qt.UserRole, mismatches[20:])
             
             progress.setValue(min(i + batch_size, total_items))
@@ -340,14 +367,18 @@ class OutdatedFilesDialog(QDialog):
                 os.makedirs(outdated_dir)
             except Exception as e:
                 QMessageBox.warning(
-                    self, "Error Creating Directory",
-                    f"Could not create 'outdated' directory:\n{str(e)}"
+                    self, self.tr("Error Creating Directory"),
+                    self.tr("Could not create '{folder}' directory:\n{error}").format(
+                        folder="outdated", error=e
+                    )
                 )
                 return
         
         confirm = QMessageBox.question(
-            self, "Confirm Move",
-            f"Are you sure you want to move {len(files_to_move)} files to the 'outdated' folder?",
+            self, self.tr("Confirm Move"),
+            self.tr("Are you sure you want to move {count} files to the '{folder}' folder?").format(
+                count=len(files_to_move), folder="outdated"
+            ),
             QMessageBox.Yes | QMessageBox.No
         )
         
@@ -381,14 +412,21 @@ class OutdatedFilesDialog(QDialog):
             if errors:
                 error_msg = "\n".join([f"{file_path}: {error}" for file_path, error in errors])
                 QMessageBox.warning(
-                    self, "Move Errors",
-                    f"Moved {len(success)} files successfully to '{outdated_dir}'.\n\n"
-                    f"Failed to move {len(errors)} files:\n{error_msg}"
+                    self, self.tr("Move Errors"),
+                    self.tr(
+                        "Moved {success_count} files successfully to '{directory}'.\n\n"
+                        "Failed to move {error_count} files:\n{errors}"
+                    ).format(
+                        success_count=len(success), directory=outdated_dir,
+                        error_count=len(errors), errors=error_msg,
+                    )
                 )
             else:
                 QMessageBox.information(
-                    self, "Move Complete",
-                    f"Successfully moved {len(success)} files to '{outdated_dir}'."
+                    self, self.tr("Move Complete"),
+                    self.tr("Successfully moved {count} files to '{directory}'.").format(
+                        count=len(success), directory=outdated_dir
+                    )
                 )
     
     def _delete_selected(self):
@@ -398,8 +436,10 @@ class OutdatedFilesDialog(QDialog):
             return
         
         confirm = QMessageBox.question(
-            self, "Confirm Deletion",
-            f"Are you sure you want to delete {len(files_to_delete)} files?",
+            self, self.tr("Confirm Deletion"),
+            self.tr("Are you sure you want to delete {count} files?").format(
+                count=len(files_to_delete)
+            ),
             QMessageBox.Yes | QMessageBox.No
         )
         
@@ -416,18 +456,24 @@ class OutdatedFilesDialog(QDialog):
             if errors:
                 error_msg = "\n".join([f"{file_path}: {error}" for file_path, error in errors])
                 QMessageBox.warning(
-                    self, "Deletion Errors",
-                    f"Deleted {len(success)} files successfully.\n\n"
-                    f"Failed to delete {len(errors)} files:\n{error_msg}"
+                    self, self.tr("Deletion Errors"),
+                    self.tr(
+                        "Deleted {success_count} files successfully.\n\n"
+                        "Failed to delete {error_count} files:\n{errors}"
+                    ).format(
+                        success_count=len(success), error_count=len(errors), errors=error_msg
+                    )
                 )
             else:
                 QMessageBox.information(
-                    self, "Deletion Complete",
-                    f"Successfully deleted {len(success)} files."
+                    self, self.tr("Deletion Complete"),
+                    self.tr("Successfully deleted {count} files.").format(count=len(success))
                 )
         confirm = QMessageBox.question(
-            self, "Confirm Deletion",
-            f"Are you sure you want to delete {len(files_to_delete)} files?",
+            self, self.tr("Confirm Deletion"),
+            self.tr("Are you sure you want to delete {count} files?").format(
+                count=len(files_to_delete)
+            ),
             QMessageBox.Yes | QMessageBox.No
         )
         

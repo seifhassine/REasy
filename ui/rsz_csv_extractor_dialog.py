@@ -156,7 +156,7 @@ class RszCsvExtractorDialog(QDialog):
         self._export_after_scan = False
         self._scanning = False
 
-        self.setWindowTitle("CSV Extractor (RSZ Data Matcher)")
+        self.setWindowTitle(self.tr("CSV Extractor (RSZ Data Matcher)"))
         self.setMinimumSize(980, 760)
         self._build_ui()
         jp = self.json_path_edit.text().strip()
@@ -166,12 +166,12 @@ class RszCsvExtractorDialog(QDialog):
     def _build_ui(self):
         layout = QVBoxLayout(self)
 
-        types_group = QGroupBox("Type Data Source")
+        types_group = QGroupBox(self.tr("Type Data Source"))
         tlay = QHBoxLayout()
         self.json_path_edit = QLineEdit(self.settings.get("rcol_json_path", ""))
-        tlay.addWidget(QLabel("JSON Path:"))
+        tlay.addWidget(QLabel(self.tr("JSON Path:")))
         tlay.addWidget(self.json_path_edit)
-        browse = QPushButton("Browse...")
+        browse = QPushButton(self.tr("Browse..."))
         tlay.addWidget(browse)
         types_group.setLayout(tlay)
         layout.addWidget(types_group)
@@ -179,14 +179,14 @@ class RszCsvExtractorDialog(QDialog):
         browse.clicked.connect(self._browse_json)
         self.json_path_edit.editingFinished.connect(lambda: self._start_async_load_types(self.json_path_edit.text().strip()))
 
-        root_group = QGroupBox("Search Root")
+        root_group = QGroupBox(self.tr("Search Root"))
         rlay = QHBoxLayout()
         self.root_dir_edit = QLineEdit(self.settings.get("unpacked_path", ""))
-        rlay.addWidget(QLabel("Directory:"))
+        rlay.addWidget(QLabel(self.tr("Directory:")))
         rlay.addWidget(self.root_dir_edit)
-        root_browse = QPushButton("Browse...")
+        root_browse = QPushButton(self.tr("Browse..."))
         rlay.addWidget(root_browse)
-        self.recursive_check = QCheckBox("Recursive")
+        self.recursive_check = QCheckBox(self.tr("Recursive"))
         self.recursive_check.setChecked(True)
         rlay.addWidget(self.recursive_check)
         
@@ -200,57 +200,43 @@ class RszCsvExtractorDialog(QDialog):
         splitter.setSizes([480, 480])
         layout.addWidget(splitter)
 
-        rules_group = QGroupBox("Match Rules & Field Constraints")
+        rules_group = QGroupBox(self.tr("Match Rules & Field Constraints"))
         rg_lay = QVBoxLayout()
         
         add_lay = QHBoxLayout()
         
-        add_lay.addWidget(QLabel("A Field:"))
+        add_lay.addWidget(QLabel(self.tr("A Field:")))
         self.a_field_combo = QComboBox()
         self.a_field_combo.setEditable(False)
         add_lay.addWidget(self.a_field_combo)
         
         self.a_constraint_type_combo = QComboBox()
-        self.a_constraint_type_combo.addItems([
-            "Any value",
-            "Not empty (strings)",
-            "Is empty (strings)", 
-            "Greater than",
-            "Less than",
-            "Equal to",
-            "Not equal to"
-        ])
+        for text, value in self._constraint_type_options():
+            self.a_constraint_type_combo.addItem(text, value)
         add_lay.addWidget(self.a_constraint_type_combo)
         
         self.a_constraint_value_edit = QLineEdit()
-        self.a_constraint_value_edit.setPlaceholderText("Value (if needed)")
+        self.a_constraint_value_edit.setPlaceholderText(self.tr("Value (if needed)"))
         add_lay.addWidget(self.a_constraint_value_edit)
         
         add_lay.addWidget(QLabel("↔"))
         
-        add_lay.addWidget(QLabel("B Field:"))
+        add_lay.addWidget(QLabel(self.tr("B Field:")))
         self.b_field_combo = QComboBox()
         self.b_field_combo.setEditable(False)
         add_lay.addWidget(self.b_field_combo)
         
         self.b_constraint_type_combo = QComboBox()
-        self.b_constraint_type_combo.addItems([
-            "Any value",
-            "Not empty (strings)",
-            "Is empty (strings)",
-            "Greater than", 
-            "Less than",
-            "Equal to",
-            "Not equal to"
-        ])
+        for text, value in self._constraint_type_options():
+            self.b_constraint_type_combo.addItem(text, value)
         add_lay.addWidget(self.b_constraint_type_combo)
         
         self.b_constraint_value_edit = QLineEdit()
-        self.b_constraint_value_edit.setPlaceholderText("Value (if needed)")
+        self.b_constraint_value_edit.setPlaceholderText(self.tr("Value (if needed)"))
         add_lay.addWidget(self.b_constraint_value_edit)
         
-        add_btn = QPushButton("Add Rule")
-        remove_btn = QPushButton("Remove Selected")
+        add_btn = QPushButton(self.tr("Add Rule"))
+        remove_btn = QPushButton(self.tr("Remove Selected"))
         add_lay.addWidget(add_btn)
         add_lay.addWidget(remove_btn)
         
@@ -264,22 +250,26 @@ class RszCsvExtractorDialog(QDialog):
         layout.addWidget(rules_group)
 
         run_lay = QHBoxLayout()
-        self.preview_btn = QPushButton("Preview Matches")
-        self.export_btn = QPushButton("Export CSV…")
+        self.preview_btn = QPushButton(self.tr("Preview Matches"))
+        self.export_btn = QPushButton(self.tr("Export CSV…"))
         self.export_btn.setEnabled(False)
         run_lay.addWidget(self.preview_btn)
         run_lay.addWidget(self.export_btn)
         layout.addLayout(run_lay)
         
         export_options_lay = QHBoxLayout()
-        self.include_filenames_check = QCheckBox("Include file names in CSV")
+        self.include_filenames_check = QCheckBox(self.tr("Include file names in CSV"))
         self.include_filenames_check.setChecked(True)
-        self.include_filenames_check.setToolTip("Include file paths and instance IDs in CSV columns")
+        self.include_filenames_check.setToolTip(
+            self.tr("Include file paths and instance IDs in CSV columns")
+        )
         export_options_lay.addWidget(self.include_filenames_check)
         
-        self.allow_same_file_check = QCheckBox("Allow matches within same file")
+        self.allow_same_file_check = QCheckBox(self.tr("Allow matches within same file"))
         self.allow_same_file_check.setChecked(False)
-        self.allow_same_file_check.setToolTip("Allow A and B entries from the same file to match")
+        self.allow_same_file_check.setToolTip(
+            self.tr("Allow A and B entries from the same file to match")
+        )
         export_options_lay.addWidget(self.allow_same_file_check)
         self.allow_same_file_check.stateChanged.connect(self._on_allow_same_file_changed)
         
@@ -287,10 +277,12 @@ class RszCsvExtractorDialog(QDialog):
         layout.addLayout(export_options_lay)
 
         self.results_tree = QTreeWidget()
-        self.results_tree.setHeaderLabels(["Key", "A Count", "B Count"])
+        self.results_tree.setHeaderLabels([
+            self.tr("Key"), self.tr("A Count"), self.tr("B Count")
+        ])
         layout.addWidget(self.results_tree)
 
-        self.status_label = QLabel("Ready")
+        self.status_label = QLabel(self.tr("Ready"))
         self.status_label.setStyleSheet("QLabel { color: gray; }")
         layout.addWidget(self.status_label)
 
@@ -309,13 +301,24 @@ class RszCsvExtractorDialog(QDialog):
         add_btn.clicked.connect(self._add_rule)
         remove_btn.clicked.connect(self._remove_rule)
 
+    def _constraint_type_options(self):
+        return [
+            (self.tr("Any value"), "Any value"),
+            (self.tr("Not empty (strings)"), "Not empty (strings)"),
+            (self.tr("Is empty (strings)"), "Is empty (strings)"),
+            (self.tr("Greater than"), "Greater than"),
+            (self.tr("Less than"), "Less than"),
+            (self.tr("Equal to"), "Equal to"),
+            (self.tr("Not equal to"), "Not equal to"),
+        ]
+
     def _build_side(self, label: str):
-        box = QGroupBox(f"Set {label}")
+        box = QGroupBox(self.tr("Set {label}").format(label=label))
         lay = QVBoxLayout()
 
         pat_lay = QHBoxLayout()
         self.__dict__[f"pattern_{label}"] = QLineEdit("*")
-        pat_lay.addWidget(QLabel("Filename Pattern:"))
+        pat_lay.addWidget(QLabel(self.tr("Filename Pattern:")))
         pat_lay.addWidget(self.__dict__[f"pattern_{label}"])
         lay.addLayout(pat_lay)
 
@@ -326,7 +329,7 @@ class RszCsvExtractorDialog(QDialog):
         self.__dict__[f"scn_{label}"].setChecked(True)
         self.__dict__[f"pfb_{label}"].setChecked(True)
         self.__dict__[f"user_{label}"].setChecked(True)
-        typelay.addWidget(QLabel("Types:"))
+        typelay.addWidget(QLabel(self.tr("Types:")))
         typelay.addWidget(self.__dict__[f"scn_{label}"])
         typelay.addWidget(self.__dict__[f"pfb_{label}"])
         typelay.addWidget(self.__dict__[f"user_{label}"])
@@ -334,17 +337,17 @@ class RszCsvExtractorDialog(QDialog):
 
         type_lay = QHBoxLayout()
         self.__dict__[f"type_edit_{label}"] = QLineEdit()
-        self.__dict__[f"type_id_label_{label}"] = QLabel("ID: -")
-        type_lay.addWidget(QLabel("RSZ Type:"))
+        self.__dict__[f"type_id_label_{label}"] = QLabel(self.tr("ID: -"))
+        type_lay.addWidget(QLabel(self.tr("RSZ Type:")))
         type_lay.addWidget(self.__dict__[f"type_edit_{label}"], 1)
         type_lay.addWidget(self.__dict__[f"type_id_label_{label}"])
         lay.addLayout(type_lay)
 
-        fields_group = QGroupBox(f"Fields to Output (from {label})")
+        fields_group = QGroupBox(self.tr("Fields to Output (from {label})").format(label=label))
         fields_v = QVBoxLayout()
         self.__dict__[f"fields_list_{label}"] = QListWidget()
         self.__dict__[f"fields_list_{label}"].setSelectionMode(QListWidget.MultiSelection)
-        fields_v.addWidget(QLabel("Choose fields to include as CSV columns"))
+        fields_v.addWidget(QLabel(self.tr("Choose fields to include as CSV columns")))
         fields_v.addWidget(self.__dict__[f"fields_list_{label}"])
         fields_group.setLayout(fields_v)
         lay.addWidget(fields_group)
@@ -359,14 +362,19 @@ class RszCsvExtractorDialog(QDialog):
 
     def _browse_json(self):
         cur = self.json_path_edit.text()
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select JSON Type Data", os.path.dirname(cur) if cur else "", "JSON Files (*.json)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, self.tr("Select JSON Type Data"),
+            os.path.dirname(cur) if cur else "", "JSON Files (*.json)"
+        )
         if file_path:
             self.json_path_edit.setText(file_path)
             self._load_types()
             return
 
     def _browse_root(self):
-        path = QFileDialog.getExistingDirectory(self, "Select Root Directory", self.root_dir_edit.text())
+        path = QFileDialog.getExistingDirectory(
+            self, self.tr("Select Root Directory"), self.root_dir_edit.text()
+        )
         if path:
             self.root_dir_edit.setText(path)
 
@@ -383,16 +391,24 @@ class RszCsvExtractorDialog(QDialog):
     def _load_types(self):
         json_path = self.json_path_edit.text().strip()
         if not json_path:
-            QMessageBox.warning(self, "Warning", "Please specify a JSON path")
+            QMessageBox.warning(
+                self, self.tr("Warning"), self.tr("Please specify a JSON path")
+            )
             return
         if not os.path.isfile(json_path):
-            QMessageBox.warning(self, "Warning", "Please select a valid JSON file (not a directory)")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("Please select a valid JSON file (not a directory)"),
+            )
             return
 
         try:
             self._start_async_load_types(json_path)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to start type loading: {e}")
+            QMessageBox.critical(
+                self, self.tr("Error"),
+                self.tr("Failed to start type loading: {error}").format(error=e),
+            )
             return
 
     def _start_async_load_types(self, json_path: str):
@@ -411,7 +427,10 @@ class RszCsvExtractorDialog(QDialog):
             self._type_name_to_id_lower = self._type_loader.result_name_to_id_lower
             
         def on_error(msg: str):
-            QMessageBox.critical(self, "Error", f"Failed to load type registry: {msg}")
+            QMessageBox.critical(
+                self, self.tr("Error"),
+                self.tr("Failed to load type registry: {error}").format(error=msg),
+            )
         self._type_loader.loaded_ok.connect(on_loaded)
         self._type_loader.error_occurred.connect(on_error)
         self._type_loader.start()
@@ -457,9 +476,9 @@ class RszCsvExtractorDialog(QDialog):
         id_label: QLabel = self.__dict__[f"type_id_label_{side_label}"]
         tid = self._resolve_type_id_from_text(edit.text())
         if tid is not None:
-            id_label.setText(f"ID: 0x{tid:08X}")
+            id_label.setText(self.tr("ID: 0x{type_id:08X}").format(type_id=tid))
         else:
-            id_label.setText("ID: -")
+            id_label.setText(self.tr("ID: -"))
             return
 
         tinfo = self.type_registry.get_type_info(tid)
@@ -483,8 +502,9 @@ class RszCsvExtractorDialog(QDialog):
             lst.addItem(QListWidgetItem(fname))
         combo: QComboBox = getattr(self, f"{side_label.lower()}_field_combo")
         combo.clear() 
-        combo.addItem("(none)")
-        combo.addItems(fields)
+        combo.addItem(self.tr("(none)"), "")
+        for field in fields:
+            combo.addItem(field, field)
 
     def _setup_type_autocomplete(self, edit: QLineEdit):
         popup = QListWidget(self)
@@ -586,17 +606,12 @@ class RszCsvExtractorDialog(QDialog):
         edit.textEdited.connect(on_text_changed)
 
     def _add_rule(self):
-        a_field = self.a_field_combo.currentText().strip()
-        b_field = self.b_field_combo.currentText().strip()
-        a_constraint_type = self.a_constraint_type_combo.currentText()
-        b_constraint_type = self.b_constraint_type_combo.currentText()
+        a_field = self.a_field_combo.currentData() or ""
+        b_field = self.b_field_combo.currentData() or ""
+        a_constraint_type = self.a_constraint_type_combo.currentData() or "Any value"
+        b_constraint_type = self.b_constraint_type_combo.currentData() or "Any value"
         a_constraint_value = self.a_constraint_value_edit.text().strip()
         b_constraint_value = self.b_constraint_value_edit.text().strip()
-        
-        if a_field == "(none)":
-            a_field = ""
-        if b_field == "(none)":
-            b_field = ""
         
         has_a_field = bool(a_field)
         has_b_field = bool(b_field)
@@ -604,47 +619,73 @@ class RszCsvExtractorDialog(QDialog):
         has_b_constraint = b_constraint_type != "Any value"
         
         if not has_a_field and not has_b_field and not has_a_constraint and not has_b_constraint:
-            QMessageBox.warning(self, "Warning", "Must specify at least one field or constraint.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("Must specify at least one field or constraint."),
+            )
             return
         
         if (has_a_constraint and not has_a_field) or (has_b_constraint and not has_b_field):
-            QMessageBox.warning(self, "Warning", "Cannot have constraint without specifying the field.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("Cannot have constraint without specifying the field."),
+            )
             return
             
         def needs_value(constraint_type):
             return constraint_type in ["Greater than", "Less than", "Equal to", "Not equal to"]
         
         if needs_value(a_constraint_type) and not a_constraint_value:
-            QMessageBox.warning(self, "Warning", f"A side '{a_constraint_type}' requires a value.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("A side '{constraint}' requires a value.").format(
+                    constraint=self.a_constraint_type_combo.currentText()
+                ),
+            )
             return
             
         if needs_value(b_constraint_type) and not b_constraint_value:
-            QMessageBox.warning(self, "Warning", f"B side '{b_constraint_type}' requires a value.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("B side '{constraint}' requires a value.").format(
+                    constraint=self.b_constraint_type_combo.currentText()
+                ),
+            )
             return
         
         if has_a_field:
             ta = self.field_types_A.get(a_field)
             if not ta:
-                QMessageBox.warning(self, "Warning", "Load types and fields for A before adding rules.")
+                QMessageBox.warning(
+                    self, self.tr("Warning"),
+                    self.tr("Load types and fields for A before adding rules."),
+                )
                 return
         
         if has_b_field:
             tb = self.field_types_B.get(b_field)
             if not tb:
-                QMessageBox.warning(self, "Warning", "Load types and fields for B before adding rules.")
+                QMessageBox.warning(
+                    self, self.tr("Warning"),
+                    self.tr("Load types and fields for B before adding rules."),
+                )
                 return
         
         def format_constraint(constraint_type, value):
+            labels = {value: text for text, value in self._constraint_type_options()}
+            label = labels.get(constraint_type, constraint_type)
             if constraint_type == "Any value":
-                return "any"
+                return self.tr("any")
             elif needs_value(constraint_type):
-                return f"{constraint_type.lower()} '{value}'"
+                return self.tr("{constraint} '{value}'").format(
+                    constraint=label, value=value
+                )
             else:
-                return constraint_type.lower()
+                return label
         
         def format_side(field, constraint_type, constraint_value):
             if not field:
-                return "(none)"
+                return self.tr("(none)")
             constraint_str = format_constraint(constraint_type, constraint_value)
             return f"{field} ({constraint_str})"
         
@@ -681,7 +722,7 @@ class RszCsvExtractorDialog(QDialog):
     def _collect_side_cfg(self, label: str) -> dict:
         tid = self._resolve_type_id_from_text(self.__dict__[f"type_edit_{label}"].text())
         if tid is None:
-            raise ValueError(f"Set {label}: Invalid RSZ Type")
+            raise ValueError(self.tr("Set {label}: Invalid RSZ Type").format(label=label))
         cap_fields = [i.text() for i in self.__dict__[f"cap_fields_{label}"].selectedItems()]
         constraint_key = f"{label.lower()}_constraint_type"
         value_key = f"{label.lower()}_constraint_value"
@@ -718,21 +759,25 @@ class RszCsvExtractorDialog(QDialog):
     def _mark_dirty(self):
         self._last_signature = None
         self.export_btn.setEnabled(False)
-        self.status_label.setText("Ready")
+        self.status_label.setText(self.tr("Ready"))
 
     def _start_preview(self):
         if not self.type_registry:
-            QMessageBox.warning(self, "Warning", "Load a type registry first")
+            QMessageBox.warning(
+                self, self.tr("Warning"), self.tr("Load a type registry first")
+            )
             return
         root_dir = self.root_dir_edit.text().strip()
         if not root_dir or not os.path.isdir(root_dir):
-            QMessageBox.warning(self, "Warning", "Select a valid root directory")
+            QMessageBox.warning(
+                self, self.tr("Warning"), self.tr("Select a valid root directory")
+            )
             return
         try:
             a_cfg = self._collect_side_cfg("A")
             b_cfg = self._collect_side_cfg("B")
         except ValueError as e:
-            QMessageBox.warning(self, "Warning", str(e))
+            QMessageBox.warning(self, self.tr("Warning"), str(e))
             return
         key_pairs: List[Tuple[str, str]] = []
         for i in range(self.rules_list.count()):
@@ -742,35 +787,48 @@ class RszCsvExtractorDialog(QDialog):
                 key_pairs.append((rule_data['a_field'], rule_data['b_field']))
         
         if self.rules_list.count() == 0:
-            QMessageBox.warning(self, "Warning", "Add at least one rule")
+            QMessageBox.warning(
+                self, self.tr("Warning"), self.tr("Add at least one rule")
+            )
             return
         
         if not key_pairs:
-            QMessageBox.warning(self, "Warning", "Need at least one matching rule (A field ↔ B field) to find matches.\nConstraint-only rules can only filter, not match.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr(
+                    "Need at least one matching rule (A field ↔ B field) to find matches.\n"
+                    "Constraint-only rules can only filter, not match."
+                ),
+            )
             return
         if not self.field_types_A or not self.field_types_B:
-            QMessageBox.warning(self, "Warning", "Load fields for both A and B types before running.")
+            QMessageBox.warning(
+                self, self.tr("Warning"),
+                self.tr("Load fields for both A and B types before running."),
+            )
             return
         sig = self._signature(a_cfg, b_cfg, key_pairs)
         if self._last_signature == sig and self.a_map and self.b_map:
             self._populate_results_tree()
             self.export_btn.setEnabled(True)
-            self.status_label.setText("Ready. Results are up-to-date.")
+            self.status_label.setText(self.tr("Ready. Results are up-to-date."))
             return
         if self._scanning:
             return
 
         self.results_tree.clear()
         self.export_btn.setEnabled(False)
-        self.status_label.setText("Scanning…")
+        self.status_label.setText(self.tr("Scanning…"))
         self.worker = MatcherWorker(root_dir, self.type_registry, a_cfg, b_cfg, key_pairs)
         self.worker.progress_update.connect(self._on_progress)
         self.worker.preview_ready.connect(self._on_preview_ready)
         self.worker.error_occurred.connect(self._on_error)
         self.worker.finished_ok.connect(self._on_finished)
         if not hasattr(self, "_progress") or self._progress is None or not self._progress.isVisible():
-            self._progress = QProgressDialog("Scanning files…", "Cancel", 0, 100, self)
-            self._progress.setWindowTitle("Scan Progress")
+            self._progress = QProgressDialog(
+                self.tr("Scanning files…"), self.tr("Cancel"), 0, 100, self
+            )
+            self._progress.setWindowTitle(self.tr("Scan Progress"))
             self._progress.setWindowModality(Qt.WindowModal)
             self._progress.canceled.connect(self._cancel_worker)
             self._progress.show()
@@ -782,7 +840,9 @@ class RszCsvExtractorDialog(QDialog):
         if getattr(self, "_progress", None):
             self._progress.setMaximum(max(1, total))
             self._progress.setValue(cur)
-            self._progress.setLabelText(f"Scanning files… ({cur}/{total})")
+            self._progress.setLabelText(self.tr(
+                "Scanning files… ({current}/{total})"
+            ).format(current=cur, total=total))
 
     def _cancel_worker(self):
         if self.worker:
@@ -793,13 +853,13 @@ class RszCsvExtractorDialog(QDialog):
             self._progress.close()
             self._progress = None
         self._scanning = False
-        self.status_label.setText("Scan canceled.")
+        self.status_label.setText(self.tr("Scan canceled."))
 
     def _on_error(self, msg: str):
         if hasattr(self, "_progress") and self._progress:
             self._progress.close()
             self._progress = None
-        QMessageBox.critical(self, "Error", msg)
+        QMessageBox.critical(self, self.tr("Error"), msg)
         self._scanning = False
 
     def _on_preview_ready(self):
@@ -808,7 +868,9 @@ class RszCsvExtractorDialog(QDialog):
             self.b_map = self.worker.result_b_map
         a_count, b_count, common = self._populate_results_tree()
         self.status_label.setText(
-            f"A: {a_count} instances, B: {b_count} instances, Common keys: {common}"
+            self.tr(
+                "A: {a_count} instances, B: {b_count} instances, Common keys: {common}"
+            ).format(a_count=a_count, b_count=b_count, common=common)
         )
 
     def _on_finished(self):
@@ -823,7 +885,9 @@ class RszCsvExtractorDialog(QDialog):
         self.export_btn.setEnabled(True)
         self._scanning = False
         _, _, common = self._populate_results_tree()
-        self.status_label.setText(f"Ready. {common} matching key(s).")
+        self.status_label.setText(
+            self.tr("Ready. {count} matching key(s).").format(count=common)
+        )
         if self._export_after_scan:
             self._export_after_scan = False
             self._export_csv(force_use_current=True)
@@ -832,7 +896,9 @@ class RszCsvExtractorDialog(QDialog):
         if self.a_map and self.b_map:
             a_count, b_count, common = self._populate_results_tree()
             self.status_label.setText(
-                f"A: {a_count} instances, B: {b_count} instances, Common keys: {common}"
+                self.tr(
+                    "A: {a_count} instances, B: {b_count} instances, Common keys: {common}"
+                ).format(a_count=a_count, b_count=b_count, common=common)
             )
 
     def _populate_results_tree(self):
@@ -881,7 +947,10 @@ class RszCsvExtractorDialog(QDialog):
                     item.setText(2, str(len(b_used)))
             return total_a, total_b, total_keys
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to populate results: {e}")
+            QMessageBox.critical(
+                self, self.tr("Error"),
+                self.tr("Failed to populate results: {error}").format(error=e),
+            )
             return 0, 0, 0
 
     def _export_csv(self, force_use_current: bool = False):
@@ -890,7 +959,9 @@ class RszCsvExtractorDialog(QDialog):
             if not self._scanning:
                 self._start_preview()
             return
-        out_path, _ = QFileDialog.getSaveFileName(self, "Save CSV", "", "CSV Files (*.csv)")
+        out_path, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Save CSV"), "", "CSV Files (*.csv)"
+        )
         if not out_path:
             return
 
@@ -930,9 +1001,12 @@ class RszCsvExtractorDialog(QDialog):
                         row += [ _escape_csv(format_value(b_fields.get(f))) if b_fields.get(f) is not None else "" for f in b_cap ]
                         lines.append(",".join(row))
             Path(out_path).write_text("\n".join(lines), encoding="utf-8")
-            QMessageBox.information(self, "Export", f"CSV written to {out_path}")
+            QMessageBox.information(
+                self, self.tr("Export"),
+                self.tr("CSV written to {path}").format(path=out_path),
+            )
         except Exception as e:
-            QMessageBox.critical(self, "Export Error", str(e))
+            QMessageBox.critical(self, self.tr("Export Error"), str(e))
 
 def _escape_csv(s: Any) -> str:
     if s is None:

@@ -6,7 +6,7 @@ from typing import Callable
 
 from PySide6.QtCore import (
     Qt,
-    QObject
+    QCoreApplication,
 )
 from PySide6.QtGui import (
     QKeyEvent,
@@ -33,14 +33,22 @@ from PySide6.QtWidgets import (
 
 from utils.binary_search import create_binary_matcher, create_search_patterns
 
-PAK_SEARCH_TITLE = "PAK Search"
+def _search_type_label(search_type: str) -> str:
+    return {
+        "text": QCoreApplication.translate("DirectorySearch", "Text"),
+        "guid": QCoreApplication.translate("DirectorySearch", "GUID"),
+        "number": QCoreApplication.translate("DirectorySearch", "Number"),
+        "hex": QCoreApplication.translate("DirectorySearch", "Hex"),
+    }.get(search_type, search_type)
 
 def ask_max_size_bytes(parent):
     """Get maximum file size from user"""
     val, ok = QInputDialog.getDouble(
         parent,
-        QObject.tr("Max File Size"),
-        QObject.tr("Enter maximum file size in MB (0 for no limit):"),
+        QCoreApplication.translate("DirectorySearch", "Max File Size"),
+        QCoreApplication.translate(
+            "DirectorySearch", "Enter maximum file size in MB (0 for no limit):"
+        ),
         0.0,
         0.0,
         10000.0,
@@ -53,16 +61,21 @@ def ask_max_size_bytes(parent):
 def create_hex_search_dialog(parent):
     """Custom dialog for hex search with byte order option"""
     dialog = QDialog(parent)
-    dialog.setWindowTitle(QObject.tr("Hex Search"))
+    dialog.setWindowTitle(QCoreApplication.translate("DirectorySearch", "Hex Search"))
     layout = QVBoxLayout(dialog)
 
-    label = QLabel(QObject.tr("Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):"))
+    label = QLabel(QCoreApplication.translate(
+        "DirectorySearch",
+        "Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):",
+    ))
     layout.addWidget(label)
     
     hex_input = QLineEdit()
     layout.addWidget(hex_input)
 
-    byte_order_check = QCheckBox(QObject.tr("Reverse Byte Order"))
+    byte_order_check = QCheckBox(
+        QCoreApplication.translate("DirectorySearch", "Reverse Byte Order")
+    )
     layout.addWidget(byte_order_check)
     
     button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -82,7 +95,7 @@ def create_hex_search_dialog(parent):
 
 def create_integer_search_dialog(parent):
     dialog = QDialog(parent)
-    dialog.setWindowTitle(QObject.tr("Integer Search"))
+    dialog.setWindowTitle(QCoreApplication.translate("DirectorySearch", "Integer Search"))
     layout = QVBoxLayout(dialog)
 
     integer_types = (
@@ -91,14 +104,16 @@ def create_integer_search_dialog(parent):
         ("int64", -(2**63), 2**63 - 1),
         ("uint64", 0, 2**64 - 1),
     )
-    layout.addWidget(QLabel(QObject.tr("Select integer type:")))
+    layout.addWidget(QLabel(
+        QCoreApplication.translate("DirectorySearch", "Select integer type:")
+    ))
     type_combo = QComboBox()
     type_combo.addItems(
         (
-            "int32 (signed 32-bit)",
-            "uint32 (unsigned 32-bit)",
-            "int64 (signed 64-bit)",
-            "uint64 (unsigned 64-bit)",
+            QCoreApplication.translate("DirectorySearch", "int32 (signed 32-bit)"),
+            QCoreApplication.translate("DirectorySearch", "uint32 (unsigned 32-bit)"),
+            QCoreApplication.translate("DirectorySearch", "int64 (signed 64-bit)"),
+            QCoreApplication.translate("DirectorySearch", "uint64 (unsigned 64-bit)"),
         )
     )
     layout.addWidget(type_combo)
@@ -110,7 +125,9 @@ def create_integer_search_dialog(parent):
 
     def update_limits():
         _, minimum, maximum = integer_types[type_combo.currentIndex()]
-        value_label.setText(QObject.tr("Enter value ({} to {}):").format(minimum, maximum))
+        value_label.setText(QCoreApplication.translate(
+            "DirectorySearch", "Enter value ({minimum} to {maximum}):"
+        ).format(minimum=minimum, maximum=maximum))
 
     type_combo.currentIndexChanged.connect(update_limits)
     update_limits()
@@ -126,9 +143,15 @@ def create_integer_search_dialog(parent):
     try:
         value = int(value_input.text())
         if not minimum <= value <= maximum:
-            raise ValueError(f"Value out of range for {integer_type}")
+            raise ValueError(QCoreApplication.translate(
+                "DirectorySearch", "Value out of range for {type}"
+            ).format(type=integer_type))
     except ValueError as exc:
-        QMessageBox.critical(parent, QObject.tr("Invalid Input"), str(exc))
+        QMessageBox.critical(
+            parent,
+            QCoreApplication.translate("DirectorySearch", "Invalid Input"),
+            str(exc),
+        )
         return None, False
     return (integer_type, value), True
 
@@ -137,8 +160,14 @@ def create_search_dialog(parent, search_type):
     if search_type == "number":
         return create_integer_search_dialog(parent)
     prompts = {
-        "text": (QObject.tr("Text Search"), QObject.tr("Enter text to search (UTF-16LE):")),
-        "guid": (QObject.tr("GUID Search"), QObject.tr("Enter GUID (standard format):")),
+        "text": (
+            QCoreApplication.translate("DirectorySearch", "Text Search"),
+            QCoreApplication.translate("DirectorySearch", "Enter text to search (UTF-16LE):"),
+        ),
+        "guid": (
+            QCoreApplication.translate("DirectorySearch", "GUID Search"),
+            QCoreApplication.translate("DirectorySearch", "Enter GUID (standard format):"),
+        ),
     }
     title, prompt = prompts[search_type]
     value, accepted = QInputDialog.getText(parent, title, prompt)
@@ -146,11 +175,16 @@ def create_search_dialog(parent, search_type):
 
 
 def choose_search_source(parent, search_type):
-    options = ["Directory Files", "PAK Files in Directory"]
+    options = [
+        QCoreApplication.translate("DirectorySearch", "Directory Files"),
+        QCoreApplication.translate("DirectorySearch", "PAK Files in Directory"),
+    ]
     selected, ok = QInputDialog.getItem(
         parent,
-        f"{search_type.title()} Search Scope",
-        "Search in:",
+        QCoreApplication.translate(
+            "DirectorySearch", "{search_type} Search Scope"
+        ).format(search_type=_search_type_label(search_type)),
+        QCoreApplication.translate("DirectorySearch", "Search in:"),
         options,
         0,
         False,
@@ -161,18 +195,21 @@ def choose_search_source(parent, search_type):
 
 
 def ask_ignore_mod_paks(parent):
-    choices = ["Include mod PAKs", "Ignore mod PAKs"]
+    choices = [
+        QCoreApplication.translate("DirectorySearch", "Include mod PAKs"),
+        QCoreApplication.translate("DirectorySearch", "Ignore mod PAKs"),
+    ]
     selected, ok = QInputDialog.getItem(
         parent,
-        "PAK Search Options",
-        "PAK scan mode:",
+        QCoreApplication.translate("DirectorySearch", "PAK Search Options"),
+        QCoreApplication.translate("DirectorySearch", "PAK scan mode:"),
         choices,
         0,
         False,
     )
     if not ok:
         return None
-    return selected == "Ignore mod PAKs"
+    return selected == choices[1]
 
 
 def search_items_with_progress(
@@ -187,17 +224,29 @@ def search_items_with_progress(
     """Shared progress/results UI for any binary search source."""
     total = len(items)
     if total == 0:
-        QMessageBox.information(parent, "Search", "No files found.")
+        QMessageBox.information(
+            parent,
+            QCoreApplication.translate("DirectorySearch", "Search"),
+            QCoreApplication.translate("DirectorySearch", "No files found."),
+        )
         return
 
-    progress = QProgressDialog(rtext, "Cancel", 0, total, parent)
+    progress = QProgressDialog(
+        rtext,
+        QCoreApplication.translate("DirectorySearch", "Cancel"),
+        0,
+        total,
+        parent,
+    )
     progress.setWindowTitle(ptitle)
     progress.setMinimumDuration(0)
     progress.setWindowModality(Qt.WindowModal)
     progress.show()
 
     results_dialog = QDialog(parent, Qt.Window)
-    results_dialog.setWindowTitle(QObject.tr("Search Results"))
+    results_dialog.setWindowTitle(
+        QCoreApplication.translate("DirectorySearch", "Search Results")
+    )
     results_dialog.resize(600, 400)
     layout = QVBoxLayout(results_dialog)
     layout.addWidget(QLabel(rtext))
@@ -314,7 +363,11 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
 
     paks = scan_pak_files(directory, ignore_mod_paks=ignore_mod_paks)
     if not paks:
-        QMessageBox.information(parent, PAK_SEARCH_TITLE, "No .pak files found.")
+        QMessageBox.information(
+            parent,
+            QCoreApplication.translate("DirectorySearch", "PAK Search"),
+            QCoreApplication.translate("DirectorySearch", "No .pak files found."),
+        )
         return
 
     reader = CachedPakReader()
@@ -363,7 +416,11 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         return display, buf.getvalue()
 
     def load_list_action(result_list):
-        list_path, _ = QFileDialog.getOpenFileName(parent, "Load Path List", filter="List/Text files (*.list *.txt);;All files (*)")
+        list_path, _ = QFileDialog.getOpenFileName(
+            parent,
+            QCoreApplication.translate("DirectorySearch", "Load Path List"),
+            filter="List/Text files (*.list *.txt);;All files (*)",
+        )
         if not list_path:
             return
         try:
@@ -375,9 +432,19 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
                 entry_data = item.data(Qt.UserRole)
                 item.setText(resolved_label(entry_data))
                 item.setData(Qt.UserRole, entry_data)
-            QMessageBox.information(parent, PAK_SEARCH_TITLE, f"Loaded list and resolved {updated} cached entries.")
+            QMessageBox.information(
+                parent,
+                QCoreApplication.translate("DirectorySearch", "PAK Search"),
+                QCoreApplication.translate(
+                    "DirectorySearch", "Loaded list and resolved {count} cached entries."
+                ).format(count=updated),
+            )
         except Exception as e:
-            QMessageBox.critical(parent, PAK_SEARCH_TITLE, str(e))
+            QMessageBox.critical(
+                parent,
+                QCoreApplication.translate("DirectorySearch", "PAK Search"),
+                str(e),
+            )
 
     items = [(path, entry_data_for(path)) for path in entry_paths]
     search_items_with_progress(
@@ -387,7 +454,10 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         rtext,
         search_fn,
         open_fn,
-        result_actions=[("Load List", load_list_action)],
+        result_actions=[(
+            QCoreApplication.translate("DirectorySearch", "Load List"),
+            load_list_action,
+        )],
     )
 
 
@@ -397,7 +467,12 @@ def search_directory_for_type(parent, search_type, source_mode=None):
     if not source:
         return
 
-    directory = QFileDialog.getExistingDirectory(parent, QObject.tr("Select Directory for {search_type} Search").format(search_type=search_type.title()))
+    directory = QFileDialog.getExistingDirectory(
+        parent,
+        QCoreApplication.translate(
+            "DirectorySearch", "Select Directory for {search_type} Search"
+        ).format(search_type=_search_type_label(search_type)),
+    )
     if not directory:
         return
 
@@ -420,23 +495,35 @@ def search_directory_for_type(parent, search_type, source_mode=None):
         
         if search_type == 'hex':
             hex_text, reverse_bytes = value
-            byte_order_text = "reversed byte order" if reverse_bytes else "normal byte order"
-            rtext = QObject.tr("Files containing hex {} ({}):").format(hex_text, byte_order_text)
+            byte_order_text = (
+                QCoreApplication.translate("DirectorySearch", "reversed byte order")
+                if reverse_bytes
+                else QCoreApplication.translate("DirectorySearch", "normal byte order")
+            )
+            rtext = QCoreApplication.translate(
+                "DirectorySearch", "Files containing hex {hex} ({byte_order}):"
+            ).format(hex=hex_text, byte_order=byte_order_text)
             
             for i, pattern in enumerate(patterns):
                 print(f"Search pattern {i+1}: {pattern.hex().upper()}")
         elif search_type == 'number' and isinstance(value, tuple):
             int_type, actual_value = value
-            rtext = QObject.tr("Files containing {} value {}:").format(int_type, actual_value)
+            rtext = QCoreApplication.translate(
+                "DirectorySearch", "Files containing {type} value {value}:"
+            ).format(type=int_type, value=actual_value)
             
             for pattern in patterns:
                 print(f"Search pattern: {pattern.hex().upper()}")
         else:
-            rtext = QObject.tr("Files containing {} {}:").format(search_type, value)
+            rtext = QCoreApplication.translate(
+                "DirectorySearch", "Files containing {search_type} {value}:"
+            ).format(search_type=_search_type_label(search_type), value=value)
 
         matcher = create_binary_matcher(patterns, case_insensitive=(search_type == "text"))
-        title_prefix = "PAK " if source == "pak" else ""
         if source == "pak":
+            progress_title = QCoreApplication.translate(
+                "DirectorySearch", "PAK {search_type} Search Progress"
+            ).format(search_type=_search_type_label(search_type))
             ignore_mod_paks = ask_ignore_mod_paks(parent)
             if ignore_mod_paks is None:
                 return
@@ -444,11 +531,20 @@ def search_directory_for_type(parent, search_type, source_mode=None):
                 parent,
                 directory,
                 matcher,
-                f"{title_prefix}{search_type.title()} Search Progress",
+                progress_title,
                 rtext,
                 ignore_mod_paks=ignore_mod_paks,
             )
         else:
-            search_directory_common(parent, directory, matcher, f"{title_prefix}{search_type.title()} Search Progress", rtext, max_bytes)
+            progress_title = QCoreApplication.translate(
+                "DirectorySearch", "{search_type} Search Progress"
+            ).format(search_type=_search_type_label(search_type))
+            search_directory_common(
+                parent, directory, matcher, progress_title, rtext, max_bytes
+            )
     except Exception as e:
-        QMessageBox.critical(parent, "Error", str(e))
+        QMessageBox.critical(
+            parent,
+            QCoreApplication.translate("DirectorySearch", "Error"),
+            str(e),
+        )

@@ -2,7 +2,7 @@
 
 import os
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -24,8 +24,8 @@ from ui.highlight_delegate import HighlightDelegate
 from ui.highlight_manager import HighlightManager
 
 
-NO_FILE_LOADED_STR = "No file loaded"
-UNSAVED_CHANGES_STR = "Unsaved changes"
+NO_FILE_LOADED_STR = QT_TRANSLATE_NOOP("FileTab", "No file loaded")
+UNSAVED_CHANGES_STR = QT_TRANSLATE_NOOP("FileTab", "Unsaved changes")
 
 
 class FileTab:
@@ -97,8 +97,9 @@ class FileTab:
                 """
                 )
 
-    def tr(self, text: str) -> str:
-        return QObject.tr(text)
+    @staticmethod
+    def tr(text: str) -> str:
+        return QCoreApplication.translate("FileTab", text)
 
     def _invalidate_search_dialog_tree(self):
         dialogs = []
@@ -228,7 +229,9 @@ class FileTab:
                     self.refresh_tree()
 
             if self.app and getattr(self.app, "status_bar", None):
-                self.app.status_bar.showMessage(f"Loaded: {filename}", 4000)
+                self.app.status_bar.showMessage(
+                    self.tr("Loaded: {filename}").format(filename=filename), 4000
+                )
 
             self.initial_load_complete = True
             return True
@@ -243,7 +246,11 @@ class FileTab:
                 self._dispose_handler(failed_handler)
 
             if not suppress_error_dialog:
-                QMessageBox.critical(None, "Error", f"Failed to load file: {e}")
+                QMessageBox.critical(
+                    None,
+                    self.tr("Error"),
+                    self.tr("Failed to load file: {error}").format(error=e),
+                )
             return False
 
     def refresh_tree(self):
@@ -336,7 +343,7 @@ class FileTab:
             return
 
         new_val, ok = QInputDialog.getText(
-            self.tree, "Edit Value", "Value:", text=str(old_val)
+            self.tree, self.tr("Edit Value"), self.tr("Value:"), text=str(old_val)
         )
 
         if ok and new_val != old_val:
@@ -346,7 +353,11 @@ class FileTab:
                     self.modified = True
                     self.update_tab_title()
             except Exception as e:
-                QMessageBox.critical(None, "Error", f"Failed to update value: {e}")
+                QMessageBox.critical(
+                    None,
+                    self.tr("Error"),
+                    self.tr("Failed to update value: {error}").format(error=e),
+                )
 
     def on_tree_edit(self, top_left, bottom_right, roles):
         if not self.handler or not self.handler.supports_tree_editing():
@@ -369,7 +380,11 @@ class FileTab:
             else:
                 item.setData(str(meta.get("original_value", "")), Qt.UserRole)
         except Exception as e:
-            QMessageBox.critical(None, "Error", f"Invalid value: {e}")
+            QMessageBox.critical(
+                None,
+                self.tr("Error"),
+                self.tr("Invalid value: {error}").format(error=e),
+            )
             item.setData(str(meta.get("original_value", "")), Qt.UserRole)
 
     def handle_file_save(self, file_path):
@@ -381,7 +396,7 @@ class FileTab:
                 data = self.viewer.rebuild()
 
             if not data:
-                raise ValueError("No rebuild method available")
+                raise ValueError(self.tr("No rebuild method available"))
 
             if self.app and self.app.settings.get("backup_on_save", True):
                 self.create_backup(file_path, data)
@@ -399,12 +414,14 @@ class FileTab:
                 self.app.scenes.refresh_dirty_flags()
 
             if self.app and hasattr(self.app, "status_bar"):
-                self.app.status_bar.showMessage(f"Saved: {file_path}", 3000)
+                self.app.status_bar.showMessage(
+                    self.tr("Saved: {path}").format(path=file_path), 3000
+                )
 
             return True
 
         except Exception as e:
-            QMessageBox.critical(None, "Save Error", str(e))
+            QMessageBox.critical(None, self.tr("Save Error"), str(e))
             return False
 
     def discard_changes(self):
@@ -419,7 +436,9 @@ class FileTab:
         try:
             backup_path = create_backup(file_path, data)
             if hasattr(self.app, "status_bar"):
-                self.app.status_bar.showMessage(f"Backup created: {backup_path}", 2000)
+                self.app.status_bar.showMessage(
+                    self.tr("Backup created: {path}").format(path=backup_path), 2000
+                )
 
         except Exception as e:
             print(f"Backup creation failed: {e}")
@@ -427,7 +446,7 @@ class FileTab:
     def direct_save(self):
         """Save directly to the current file without prompting"""
         if not self.handler:
-            QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
+            QMessageBox.critical(None, self.tr("Error"), self.tr(NO_FILE_LOADED_STR))
             return False
         session = self.app.project_workspace.sessions.session_for_tab(self)
         if self.pak_source_path and not self.app.proj_dock.prepare_pak_tab_direct_save(
@@ -440,12 +459,12 @@ class FileTab:
 
     def on_save(self):
         if not self.handler:
-            QMessageBox.critical(None, self.tr("Error"), NO_FILE_LOADED_STR)
+            QMessageBox.critical(None, self.tr("Error"), self.tr(NO_FILE_LOADED_STR))
             return False
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.notebook_widget,
-            "Save File As",
+            self.tr("Save File As"),
             self.filename or "",
             "All Files (*.*)",
         )
@@ -462,8 +481,10 @@ class FileTab:
         if self.modified:
             ans = QMessageBox.question(
                 None,
-                UNSAVED_CHANGES_STR,
-                f"File {os.path.basename(self.filename)} has unsaved changes.\nSave before reloading?",
+                self.tr(UNSAVED_CHANGES_STR),
+                self.tr("File {} has unsaved changes.\nSave before reloading?").format(
+                    os.path.basename(self.filename)
+                ),
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
             )
             if ans == QMessageBox.Cancel:
@@ -474,11 +495,15 @@ class FileTab:
         try:
             data = self._read_reload_data()
             if data is None:
-                raise FileNotFoundError(f"Unable to read source data for: {self.filename}")
+                raise FileNotFoundError(self.tr(
+                    "Unable to read source data for: {path}"
+                ).format(path=self.filename))
 
             success = self.load_file(self.filename, data, replace_scene_document=True)
             if success and self.app and hasattr(self.app, "status_bar"):
-                self.app.status_bar.showMessage(f"Reloaded: {self.filename}", 2000)
+                self.app.status_bar.showMessage(
+                    self.tr("Reloaded: {path}").format(path=self.filename), 2000
+                )
 
             self.modified = False
             if self.viewer and hasattr(self.viewer, "modified"):
@@ -489,7 +514,9 @@ class FileTab:
 
 
         except Exception as e:
-            QMessageBox.critical(None, self.tr("Error"), f"Failed to reload file: {e}")
+            QMessageBox.critical(
+                None, self.tr("Error"), self.tr("Failed to reload file: {}").format(e)
+            )
             import traceback
 
             traceback.print_exc()
@@ -553,12 +580,18 @@ class FileTab:
             success = self.load_file(self.filename, data, replace_scene_document=True)
 
             if success and self.app and hasattr(self.app, "status_bar"):
-                self.app.status_bar.showMessage("Backup restored successfully")
+                self.app.status_bar.showMessage(
+                    self.tr("Backup restored successfully")
+                )
 
             return success
 
         except Exception as e:
-            QMessageBox.critical(None, self.tr("Error"), f"Failed to restore backup: {e}")
+            QMessageBox.critical(
+                None,
+                self.tr("Error"),
+                self.tr("Failed to restore backup: {}").format(e),
+            )
             return False
 
     def replace_viewer(self, viewer):

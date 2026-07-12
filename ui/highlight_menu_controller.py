@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QColorDialog
 from PySide6.QtGui import QAction, QColor
-from PySide6.QtCore import QModelIndex
+from PySide6.QtCore import QCoreApplication, QModelIndex
 
 
 class HighlightMenuController:
@@ -10,26 +10,36 @@ class HighlightMenuController:
         self.highlight_toggle_action = None
         
     def create_menu(self, menubar):
-        self.highlight_menu = menubar.addMenu("🖌️ Highlight")
+        self.highlight_menu = menubar.addMenu(
+            QCoreApplication.translate("HighlightMenuController", "🖌️ Highlight")
+        )
         
-        self.highlight_toggle_action = QAction("Enable Highlight Mode", self.main_window)
+        self.highlight_toggle_action = QAction(
+            QCoreApplication.translate("HighlightMenuController", "Enable Highlight Mode"),
+            self.main_window,
+        )
         self.highlight_toggle_action.setCheckable(True)
-        self.highlight_toggle_action.setToolTip("Toggle tree node text highlighting (click nodes to highlight)")
+        self.highlight_toggle_action.setToolTip(QCoreApplication.translate(
+            "HighlightMenuController",
+            "Toggle tree node text highlighting (click nodes to highlight)",
+        ))
         self.highlight_toggle_action.triggered.connect(self._on_highlight_toggle)
         self.highlight_menu.addAction(self.highlight_toggle_action)
         
         self.highlight_menu.addSeparator()
         
-        color_menu = self.highlight_menu.addMenu("Select Color")
+        color_menu = self.highlight_menu.addMenu(
+            QCoreApplication.translate("HighlightMenuController", "Select Color")
+        )
         
         colors = [
-            ("Orange", QColor(255, 165, 0)),
-            ("Red", QColor(255, 0, 0)),
-            ("Green", QColor(0, 255, 0)),
-            ("Blue", QColor(0, 150, 255)),
-            ("Yellow", QColor(255, 255, 0)),
-            ("Magenta", QColor(255, 0, 255)),
-            ("Cyan", QColor(0, 255, 255)),
+            (QCoreApplication.translate("HighlightMenuController", "Orange"), QColor(255, 165, 0)),
+            (QCoreApplication.translate("HighlightMenuController", "Red"), QColor(255, 0, 0)),
+            (QCoreApplication.translate("HighlightMenuController", "Green"), QColor(0, 255, 0)),
+            (QCoreApplication.translate("HighlightMenuController", "Blue"), QColor(0, 150, 255)),
+            (QCoreApplication.translate("HighlightMenuController", "Yellow"), QColor(255, 255, 0)),
+            (QCoreApplication.translate("HighlightMenuController", "Magenta"), QColor(255, 0, 255)),
+            (QCoreApplication.translate("HighlightMenuController", "Cyan"), QColor(0, 255, 255)),
         ]
         
         for color_name, color in colors:
@@ -39,7 +49,10 @@ class HighlightMenuController:
         
         color_menu.addSeparator()
         
-        custom_color_action = QAction("Custom Color...", self.main_window)
+        custom_color_action = QAction(
+            QCoreApplication.translate("HighlightMenuController", "Custom Color..."),
+            self.main_window,
+        )
         custom_color_action.triggered.connect(self._choose_custom_highlight_color)
         color_menu.addAction(custom_color_action)
         
@@ -73,7 +86,11 @@ class HighlightMenuController:
             return
             
         current_color = current_tab.highlight_manager.highlight_color
-        color = QColorDialog.getColor(current_color, self.main_window, "Choose Highlight Color")
+        color = QColorDialog.getColor(
+            current_color,
+            self.main_window,
+            QCoreApplication.translate("HighlightMenuController", "Choose Highlight Color"),
+        )
         if color.isValid():
             self._set_highlight_color(color)
     

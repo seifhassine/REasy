@@ -30,7 +30,7 @@ class ScnRawInspector(QFrame):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(4)
-        self.title = QLabel("Raw SCN", self)
+        self.title = QLabel(self.tr("Raw SCN"), self)
         layout.addWidget(self.title)
 
         self.body = QWidget(self)
@@ -38,19 +38,25 @@ class ScnRawInspector(QFrame):
         self.body_layout.setContentsMargins(0, 0, 0, 0)
         self.body_layout.setSpacing(0)
         layout.addWidget(self.body, 1)
-        self.clear("Select a mesh, foliage, or light probe object to edit its raw SCN node here.")
+        self.clear()
 
     def set_record(self, document, scene_object, renderable) -> None:
         instance_id = scene_object.instance_id if scene_object else renderable.source_component_id.instance_id
         if (self.viewer is None or self.document_id != document.document_id) and not self._mount(document):
             return
         raw_name = Path((document.source_path or document.document_id).replace("\\", "/")).name
-        self.title.setText(f"Raw SCN | {raw_name} | ID {instance_id}")
+        self.title.setText(self.tr("Raw SCN | {name} | ID {instance_id}").format(
+            name=raw_name, instance_id=instance_id
+        ))
         QTimer.singleShot(0, self, lambda iid=instance_id: select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes))
 
-    def clear(self, text: str = "Select a mesh, foliage, or light probe object to edit its raw SCN node here.") -> None:
+    def clear(self, text: str | None = None) -> None:
+        if text is None:
+            text = self.tr(
+                "Select a mesh, foliage, or light probe object to edit its raw SCN node here."
+            )
         self._reset()
-        self.title.setText("Raw SCN")
+        self.title.setText(self.tr("Raw SCN"))
         hint = QLabel(text, self.body)
         hint.setWordWrap(True)
         self.body_layout.addWidget(hint)
@@ -63,7 +69,7 @@ class ScnRawInspector(QFrame):
         store_doc = self.document_store.get(document.document_id)
         handler = getattr(store_doc, "handler", None)
         if handler is None:
-            self.clear("Raw SCN document is not loaded in the scene document store.")
+            self.clear(self.tr("Raw SCN document is not loaded in the scene document store."))
             return False
         viewer = RszViewer(self.body)
         viewer.scn = document.rsz_file

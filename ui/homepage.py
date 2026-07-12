@@ -20,12 +20,12 @@ class HomePageWidget(QWidget):
         card_layout.setContentsMargins(28, 28, 28, 28)
         card_layout.setSpacing(12)
 
-        title = QLabel("Welcome to REasy")
+        title = QLabel(self.tr("Welcome to REasy"))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 30px; font-weight: 700; border: 0; background: transparent;")
         card_layout.addWidget(title)
 
-        subtitle = QLabel("Start by opening a file or project.")
+        subtitle = QLabel(self.tr("Start by opening a file or project."))
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet("font-size: 14px; color: #b4bdcc; border: 0; background: transparent;")
         card_layout.addWidget(subtitle)
@@ -33,22 +33,22 @@ class HomePageWidget(QWidget):
         actions = QHBoxLayout()
         actions.setSpacing(8)
         for text, callback in (
-            ("Open File…", on_open_file),
-            ("New Project…", on_new_project),
-            ("Project Library...", on_open_project),
-            ("Reopen Last Closed", on_reopen_last),
+            (self.tr("Open File…"), on_open_file),
+            (self.tr("New Project…"), on_new_project),
+            (self.tr("Project Library..."), on_open_project),
+            (self.tr("Reopen Last Closed"), on_reopen_last),
         ):
             btn = QPushButton(text)
             btn.clicked.connect(callback)
             actions.addWidget(btn)
         card_layout.addLayout(actions)
 
-        self.recent_label = QLabel("No recently closed files yet.")
+        self.recent_label = QLabel(self.tr("No recently closed files yet."))
         self.recent_label.setAlignment(Qt.AlignCenter)
         self.recent_label.setStyleSheet("font-size: 12px; color: #8c96a8; border: 0; background: transparent;")
         card_layout.addWidget(self.recent_label)
 
-        tips = QLabel("Tip: you can drag and drop files directly into the window.")
+        tips = QLabel(self.tr("Tip: you can drag and drop files directly into the window."))
         tips.setAlignment(Qt.AlignCenter)
         tips.setStyleSheet("font-size: 12px; color: #8c96a8; border: 0; background: transparent;")
         card_layout.addWidget(tips)

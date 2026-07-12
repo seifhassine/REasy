@@ -297,6 +297,13 @@ class ProjectPickerDialog(QDialog):
         self.entries = discover_projects(self.projects_root, self.games)
         self._populate()
 
+    def _source_label(self, source: str) -> str:
+        return {
+            "Folder": self.tr("Folder"),
+            "PAKs": self.tr("PAKs"),
+            "Unpacked": self.tr("Unpacked"),
+        }.get(source, source)
+
     def _populate(self):
         self.tree.clear()
         self._entry_by_path.clear()
@@ -326,7 +333,9 @@ class ProjectPickerDialog(QDialog):
                 self.tree.addTopLevelItem(group)
                 groups[entry.game] = group
 
-            item = QTreeWidgetItem([entry.name, entry.source, entry.modified_label])
+            item = QTreeWidgetItem([
+                entry.name, self._source_label(entry.source), entry.modified_label
+            ])
             item.setSizeHint(0, QSize(0, 34))
             item.setData(0, Qt.UserRole, str(entry.path))
             item.setToolTip(0, str(entry.path))
@@ -379,7 +388,7 @@ class ProjectPickerDialog(QDialog):
             return
 
         self.name_label.setText(entry.name)
-        details = [entry.game, entry.source]
+        details = [entry.game, self._source_label(entry.source)]
         if entry.version:
             details.append(entry.version)
         if entry.author:

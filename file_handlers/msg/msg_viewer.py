@@ -47,7 +47,7 @@ class MsgViewer(QWidget):
         title_label.setFont(title_font)
         controls_row.addWidget(title_label)
         
-        self.status_label = QLabel("● Ready")
+        self.status_label = QLabel(self.tr("● Ready"))
         controls_row.addWidget(self.status_label)
         
         controls_row.addWidget(self._create_separator())
@@ -69,19 +69,19 @@ class MsgViewer(QWidget):
 
         entry_group = QHBoxLayout()
         self.add_btn = QPushButton("➕")
-        self.add_btn.setToolTip("Add Entry")
+        self.add_btn.setToolTip(self.tr("Add Entry"))
         self.add_btn.setMaximumWidth(35)
         self.add_btn.clicked.connect(self._on_add_entry)
         entry_group.addWidget(self.add_btn)
 
         self.del_btn = QPushButton("🗑️")
-        self.del_btn.setToolTip("Delete Entry")
+        self.del_btn.setToolTip(self.tr("Delete Entry"))
         self.del_btn.setMaximumWidth(35)
         self.del_btn.clicked.connect(self._on_delete_entry)
         entry_group.addWidget(self.del_btn)
 
         self.duplicate_btn = QPushButton("📋")
-        self.duplicate_btn.setToolTip("Duplicate Entry")
+        self.duplicate_btn.setToolTip(self.tr("Duplicate Entry"))
         self.duplicate_btn.setMaximumWidth(35)
         self.duplicate_btn.clicked.connect(self._on_duplicate_entry)
         entry_group.addWidget(self.duplicate_btn)
@@ -90,13 +90,13 @@ class MsgViewer(QWidget):
         controls_row.addWidget(self._create_separator())
 
         io_group = QHBoxLayout()
-        self.import_btn = QPushButton("📥 Import JSON")
-        self.import_btn.setToolTip("Import entries from JSON")
+        self.import_btn = QPushButton(self.tr("📥 Import JSON"))
+        self.import_btn.setToolTip(self.tr("Import entries from JSON"))
         self.import_btn.clicked.connect(self._on_import_json)
         io_group.addWidget(self.import_btn)
 
-        self.export_btn = QPushButton("📤 Export JSON")
-        self.export_btn.setToolTip("Export entries to JSON")
+        self.export_btn = QPushButton(self.tr("📤 Export JSON"))
+        self.export_btn.setToolTip(self.tr("Export entries to JSON"))
         self.export_btn.clicked.connect(self._on_export_json)
         io_group.addWidget(self.export_btn)
         controls_row.addLayout(io_group)
@@ -105,11 +105,11 @@ class MsgViewer(QWidget):
 
         stats_group = QHBoxLayout()
         self.entry_count_label = QLabel(f"📊 {len(self.handler.entries)}")
-        self.entry_count_label.setToolTip("Entry count")
+        self.entry_count_label.setToolTip(self.tr("Entry count"))
         stats_group.addWidget(self.entry_count_label)
         
         self.lang_count_label = QLabel(f"🌍 {len(self.handler.useLanguages)}")
-        self.lang_count_label.setToolTip("Language count")
+        self.lang_count_label.setToolTip(self.tr("Language count"))
         stats_group.addWidget(self.lang_count_label)
         controls_row.addLayout(stats_group)
 
@@ -128,17 +128,17 @@ class MsgViewer(QWidget):
         search_layout.addWidget(search_label)
         
         self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("Search entries by name, content, or UUID...")
+        self.search_edit.setPlaceholderText(self.tr("Search entries by name, content, or UUID..."))
         self.search_edit.textChanged.connect(self._on_search_text_changed)
         search_layout.addWidget(self.search_edit)
 
-        self.case_sensitive_cb = QCheckBox("Case sensitive")
+        self.case_sensitive_cb = QCheckBox(self.tr("Case sensitive"))
         search_layout.addWidget(self.case_sensitive_cb)
         self.case_sensitive_cb.toggled.connect(self._perform_search)
 
         self.clear_search_btn = QPushButton("✖️")
         self.clear_search_btn.setMaximumWidth(30)
-        self.clear_search_btn.setToolTip("Clear search")
+        self.clear_search_btn.setToolTip(self.tr("Clear search"))
         self.clear_search_btn.clicked.connect(self._clear_search)
         search_layout.addWidget(self.clear_search_btn)
 
@@ -155,7 +155,7 @@ class MsgViewer(QWidget):
         tree_layout.setContentsMargins(4, 4, 4, 4)
         tree_layout.setSpacing(2)
         
-        tree_header = QLabel("📋 Message Entries")
+        tree_header = QLabel(self.tr("📋 Message Entries"))
         tree_header_font = QFont()
         tree_header_font.setBold(True)
         tree_header.setFont(tree_header_font)
@@ -175,13 +175,13 @@ class MsgViewer(QWidget):
         details_layout.setContentsMargins(4, 4, 4, 4)
         details_layout.setSpacing(4)
         
-        details_header = QLabel("✏️ Entry Details")
+        details_header = QLabel(self.tr("✏️ Entry Details"))
         details_header_font = QFont()
         details_header_font.setBold(True)
         details_header.setFont(details_header_font)
         details_layout.addWidget(details_header)
 
-        info_group = QGroupBox("📄 Entry Information")
+        info_group = QGroupBox(self.tr("📄 Entry Information"))
         info_layout = QFormLayout(info_group)
         info_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
@@ -193,7 +193,7 @@ class MsgViewer(QWidget):
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Entry name...")
         self.name_edit.textChanged.connect(self._on_name_changed)
-        info_layout.addRow("📛 Name:", self.name_edit)
+        info_layout.addRow(self.tr("📛 Name:"), self.name_edit)
 
         self.soundid_edit = QLineEdit()
         self.soundid_edit.setPlaceholderText("0")
@@ -205,14 +205,14 @@ class MsgViewer(QWidget):
 
         details_layout.addWidget(info_group)
 
-        content_group = QGroupBox("💬 Content")
+        content_group = QGroupBox(self.tr("💬 Content"))
         content_layout = QVBoxLayout(content_group)
         
         content_header = QHBoxLayout()
-        content_header.addWidget(QLabel("Message text:"))
+        content_header.addWidget(QLabel(self.tr("Message text:")))
         content_header.addStretch()
         
-        self.char_count_label = QLabel("0 chars")
+        self.char_count_label = QLabel(self.tr("{count} chars").format(count=0))
         content_header.addWidget(self.char_count_label)
         content_layout.addLayout(content_header)
         
@@ -224,15 +224,15 @@ class MsgViewer(QWidget):
         content_layout.addWidget(self.content_edit)
         details_layout.addWidget(content_group)
 
-        self.attributes_group = QGroupBox("⚙️ Attributes")
+        self.attributes_group = QGroupBox(self.tr("⚙️ Attributes"))
         attributes_main_layout = QVBoxLayout(self.attributes_group)
         
         attr_controls = QHBoxLayout()
-        self.add_attr_btn = QPushButton("➕ Add Attribute")
+        self.add_attr_btn = QPushButton(self.tr("➕ Add Attribute"))
         self.add_attr_btn.clicked.connect(self._on_add_attribute)
         attr_controls.addWidget(self.add_attr_btn)
         
-        self.remove_attr_btn = QPushButton("➖ Remove Attribute")
+        self.remove_attr_btn = QPushButton(self.tr("➖ Remove Attribute"))
         self.remove_attr_btn.clicked.connect(self._on_remove_attribute)
         attr_controls.addWidget(self.remove_attr_btn)
         attr_controls.addStretch()
@@ -280,7 +280,7 @@ class MsgViewer(QWidget):
 
     def _populate_tree(self):
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Name", "Preview", "UUID"])
+        model.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Preview"), "UUID"])
         
         self.original_entries = list(enumerate(self.handler.entries))
         
@@ -299,7 +299,7 @@ class MsgViewer(QWidget):
             uuid_item.setData({"entry_index": i, "field_type": "uuid"}, Qt.UserRole)
             
             if not e.get("name"):
-                name_item.setText("(Unnamed)")
+                name_item.setText(self.tr("(Unnamed)"))
                 name_item.setForeground(QPalette().color(QPalette.Disabled, QPalette.Text))
             
             model.appendRow([name_item, preview_item, uuid_item])
@@ -330,7 +330,7 @@ class MsgViewer(QWidget):
             search_text = search_text.lower()
         
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Name", "Preview", "UUID"])
+        model.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Preview"), "UUID"])
         
         matches = 0
         for original_index, entry in self.original_entries:
@@ -375,18 +375,20 @@ class MsgViewer(QWidget):
             self.search_results_label.setText("")
         else:
             total = len(self.handler.entries)
-            self.search_results_label.setText(f"Found {matches} of {total} entries")
+            self.search_results_label.setText(
+                self.tr("Found {matches} of {total} entries").format(matches=matches, total=total)
+            )
 
     def _update_char_count(self):
         text = self.content_edit.toPlainText()
         char_count = len(text)
-        self.char_count_label.setText(f"{char_count} chars")
+        self.char_count_label.setText(self.tr("{count} chars").format(count=char_count))
 
     def _on_export_json(self):
         default_name = "messages.json"
         path, _ = QFileDialog.getSaveFileName(
             self,
-            "Export MSG to JSON",
+            self.tr("Export MSG to JSON"),
             default_name,
             "JSON Files (*.json);;All Files (*)",
         )
@@ -396,14 +398,18 @@ class MsgViewer(QWidget):
             path += ".json"
         try:
             self.handler.export_json(path)
-            QMessageBox.information(self, "Export JSON", f"Exported to:\n{path}")
+            QMessageBox.information(
+                self,
+                self.tr("Export JSON"),
+                self.tr("Exported to:\n{path}").format(path=path),
+            )
         except Exception as exc:
-            QMessageBox.critical(self, "Export JSON Failed", str(exc))
+            QMessageBox.critical(self, self.tr("Export JSON Failed"), str(exc))
 
     def _on_import_json(self):
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Import JSON to MSG",
+            self.tr("Import JSON to MSG"),
             "",
             "JSON Files (*.json);;All Files (*)",
         )
@@ -413,9 +419,13 @@ class MsgViewer(QWidget):
             self.handler.import_json(path)
             self._refresh_after_import()
             self._set_modified(True)
-            QMessageBox.information(self, "Import JSON", f"Imported from:\n{path}")
+            QMessageBox.information(
+                self,
+                self.tr("Import JSON"),
+                self.tr("Imported from:\n{path}").format(path=path),
+            )
         except Exception as exc:
-            QMessageBox.critical(self, "Import JSON Failed", str(exc))
+            QMessageBox.critical(self, self.tr("Import JSON Failed"), str(exc))
 
     def _refresh_after_import(self):
         self.language_combo.blockSignals(True)
@@ -507,7 +517,7 @@ class MsgViewer(QWidget):
         self.soundid_edit.clear()
         self.content_edit.clear()
         self.index_label.setText("—")
-        self.char_count_label.setText("0 chars")
+        self.char_count_label.setText(self.tr("{count} chars").format(count=0))
         while self.attributes_layout.count() > 1:
             c = self.attributes_layout.takeAt(0)
             if w := c.widget():
@@ -520,7 +530,7 @@ class MsgViewer(QWidget):
                 w.deleteLater()
         
         if not self.handler.userParamNames:
-            no_attrs_label = QLabel("No attributes defined")
+            no_attrs_label = QLabel(self.tr("No attributes defined"))
             no_attrs_label.setObjectName("readOnlyInfo")
             self.attributes_layout.insertWidget(0, no_attrs_label)
             return
@@ -561,7 +571,7 @@ class MsgViewer(QWidget):
             
             delete_btn = QPushButton("🗑️")
             delete_btn.setMaximumWidth(30)
-            delete_btn.setToolTip(f"Delete attribute '{name}'")
+            delete_btn.setToolTip(self.tr("Delete attribute '{name}'").format(name=name))
             delete_btn.clicked.connect(lambda checked, i=idx, n=name: self._on_delete_single_attribute(i, n))
             attr_layout.addWidget(delete_btn)
             
@@ -621,9 +631,13 @@ class MsgViewer(QWidget):
 
     def _update_stats(self):
         self.entry_count_label.setText(f"📊 {len(self.handler.entries)}")
-        self.entry_count_label.setToolTip(f"Entries: {len(self.handler.entries)}")
+        self.entry_count_label.setToolTip(
+            self.tr("Entries: {count}").format(count=len(self.handler.entries))
+        )
         self.lang_count_label.setText(f"🌍 {len(self.handler.useLanguages)}")
-        self.lang_count_label.setToolTip(f"Languages: {len(self.handler.useLanguages)}")
+        self.lang_count_label.setToolTip(
+            self.tr("Languages: {count}").format(count=len(self.handler.useLanguages))
+        )
 
     def _set_modified(self, m: bool):
         if self.modified != m:
@@ -631,9 +645,9 @@ class MsgViewer(QWidget):
             self.modified_changed.emit(m)
             
             if m:
-                self.status_label.setText("● Modified")
+                self.status_label.setText(self.tr("● Modified"))
             else:
-                self.status_label.setText("● Ready")
+                self.status_label.setText(self.tr("● Ready"))
 
     def _on_uuid_changed(self, text):
         sel = self.tree.selectionModel()
@@ -660,7 +674,11 @@ class MsgViewer(QWidget):
             if uuid_item:
                 uuid_item.setText(text)
         else:
-            QMessageBox.warning(self, "Invalid UUID", "Please enter a valid GUID format:\nxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid UUID"),
+                self.tr("Please enter a valid GUID format:\nxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"),
+            )
 
     def _on_name_changed(self):
         sel = self.tree.selectionModel()
@@ -686,7 +704,7 @@ class MsgViewer(QWidget):
             self._set_modified(True)
             name_item = self.tree.model().item(idx_model.row(), 0)
             if name_item:
-                name_item.setText(txt or "(Unnamed)")
+                name_item.setText(txt or self.tr("(Unnamed)"))
 
     def _on_content_changed(self):
         sel = self.tree.selectionModel()
@@ -777,12 +795,12 @@ class MsgViewer(QWidget):
             return
         
         entry_idx = meta["entry_index"]
-        entry_name = self.handler.entries[entry_idx].get("name", f"Entry {entry_idx}")
+        entry_name = self.handler.entries[entry_idx].get("name") or self.tr("Entry {index}").format(index=entry_idx)
         
         reply = QMessageBox.question(
             self, 
-            "Delete Entry", 
-            f"Are you sure you want to delete:\n\n'{entry_name}'?\n\nThis action cannot be undone.",
+            self.tr("Delete Entry"),
+            self.tr("Are you sure you want to delete:\n\n'{name}'?\n\nThis action cannot be undone.").format(name=entry_name),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -827,7 +845,11 @@ class MsgViewer(QWidget):
             self.handler.handle_edit({"entry_index": entry_idx, "field_type": "SoundID"}, text, "", None, self.tree)
             self._set_modified(True)
         else:
-            QMessageBox.warning(self, "Invalid SoundID", "Please enter a valid integer value.")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid SoundID"),
+                self.tr("Please enter a valid integer value."),
+            )
 
     def _on_attribute_name_changed(self, text, attr_idx):
         if self.handler.validate_edit({"field_type": "attribute_name", "attr_index": attr_idx}, text):
@@ -839,20 +861,20 @@ class MsgViewer(QWidget):
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QDialogButtonBox, QComboBox
         
         dialog = QDialog(self)
-        dialog.setWindowTitle("Add New Attribute")
+        dialog.setWindowTitle(self.tr("Add New Attribute"))
         layout = QVBoxLayout(dialog)
         
         form = QFormLayout()
         
         name_edit = QLineEdit()
         name_edit.setText("NewParam")
-        form.addRow("Name:", name_edit)
+        form.addRow(self.tr("Name:"), name_edit)
         
         type_combo = QComboBox()
-        type_combo.addItem("String", 2)
-        type_combo.addItem("Integer", 0)
-        type_combo.addItem("Float", 1)
-        form.addRow("Type:", type_combo)
+        type_combo.addItem(self.tr("String"), 2)
+        type_combo.addItem(self.tr("Integer"), 0)
+        type_combo.addItem(self.tr("Float"), 1)
+        form.addRow(self.tr("Type:"), type_combo)
         
         layout.addLayout(form)
         
@@ -873,8 +895,8 @@ class MsgViewer(QWidget):
         """Delete a specific attribute by index"""
         reply = QMessageBox.question(
             self,
-            "Remove Attribute",
-            f"Are you sure you want to remove attribute '{name}'?\n\nThis will remove it from all entries.",
+            self.tr("Remove Attribute"),
+            self.tr("Are you sure you want to remove attribute '{name}'?\n\nThis will remove it from all entries.").format(name=name),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -889,13 +911,17 @@ class MsgViewer(QWidget):
         from PySide6.QtWidgets import QInputDialog
         
         if not self.handler.userParamNames:
-            QMessageBox.information(self, "No Attributes", "There are no attributes to remove.")
+            QMessageBox.information(
+                self,
+                self.tr("No Attributes"),
+                self.tr("There are no attributes to remove."),
+            )
             return
         
         attr_name, ok = QInputDialog.getItem(
             self, 
-            "Remove Attribute", 
-            "Select attribute to remove:",
+            self.tr("Remove Attribute"),
+            self.tr("Select attribute to remove:"),
             self.handler.userParamNames,
             0,
             False

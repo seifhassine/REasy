@@ -5,7 +5,7 @@ from typing import List
 import time
 from contextlib import contextmanager
 
-from PySide6.QtCore import Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
 
 
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
@@ -25,7 +25,7 @@ from ui.project_manager.pak_file_lists import find_suggested_pak_list_paths_for_
 from ui.widgets_utils import create_list_file_help_widget
 
 
-DUMP_VALID_PATHS_TITLE = "Dump Valid Paths"
+DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
 
 
 class PakBrowserDialog(QDialog):
@@ -481,7 +481,7 @@ class PakBrowserDialog(QDialog):
 				with open(path, "r", encoding="utf-8") as f:
 					items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
 			except Exception as e:
-				QMessageBox.critical(self, "Read failed", str(e))
+				QMessageBox.critical(self, self.tr("Read failed"), str(e))
 				return
 		_t1 = time.perf_counter()
 		if _profile:
@@ -657,7 +657,9 @@ class PakBrowserDialog(QDialog):
 		if missing:
 			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
 			if len(missing) > 50:
-				msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
+				msg += "\n… " + self.tr("and {count} more").format(
+					count=len(missing) - 50
+				)
 		return msg
 	
 	def _extract(self, targets: List[str]):
@@ -717,5 +719,7 @@ class PakBrowserDialog(QDialog):
 		if count is None:
 			return
 
-		msg = f"{self.tr('Extracted')} {count} {self.tr('file(s) to:')}\n{outdir}"
+		msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(
+			count=count, dest=outdir
+		)
 		QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))

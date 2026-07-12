@@ -22,16 +22,8 @@ from PySide6.QtWidgets import (
 from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
 
 
-SELECT_EVENT_PROMPT = "Select an event to edit"
-
-
 class WelViewer(QWidget):
     modified_changed = Signal(bool)
-
-    MODE_ITEMS = [
-        ("Newest", 0),
-        ("Oldest", 1),
-    ]
 
     def __init__(self, handler):
         super().__init__()
@@ -40,7 +32,7 @@ class WelViewer(QWidget):
 
         root_layout = QVBoxLayout(self)
 
-        header_box = QGroupBox("WEL Header")
+        header_box = QGroupBox(self.tr("WEL Header"))
         header_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         header_box.setMinimumHeight(56)
         header_box.setMaximumHeight(68)
@@ -54,8 +46,8 @@ class WelViewer(QWidget):
         root_layout.addWidget(header_box)
 
         toolbar_layout = QHBoxLayout()
-        self.add_event_btn = QPushButton("Add Event")
-        self.remove_event_btn = QPushButton("Remove Event")
+        self.add_event_btn = QPushButton(self.tr("Add Event"))
+        self.remove_event_btn = QPushButton(self.tr("Remove Event"))
         self.add_event_btn.clicked.connect(self._on_add_event)
         self.remove_event_btn.clicked.connect(self._on_remove_event)
         toolbar_layout.addWidget(self.add_event_btn)
@@ -67,7 +59,7 @@ class WelViewer(QWidget):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel("Events"))
+        left_layout.addWidget(QLabel(self.tr("Events")))
         self.event_list = QListWidget()
         self.event_list.currentRowChanged.connect(self._on_event_selected)
         left_layout.addWidget(self.event_list)
@@ -88,7 +80,7 @@ class WelViewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        self.detail_title = QLabel(SELECT_EVENT_PROMPT)
+        self.detail_title = QLabel(self.tr("Select an event to edit"))
         layout.addWidget(self.detail_title)
 
         scroll = QScrollArea()
@@ -100,7 +92,7 @@ class WelViewer(QWidget):
         content_layout.setContentsMargins(0, 0, 4, 0)
         content_layout.setSpacing(8)
 
-        core_box = QGroupBox("Core")
+        core_box = QGroupBox(self.tr("Core"))
         core_form = QFormLayout(core_box)
         core_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         self.trigger_id = self._create_number_edit()
@@ -113,7 +105,7 @@ class WelViewer(QWidget):
         core_form.addRow("Game Object Hash", self.game_object_hash)
         content_layout.addWidget(core_box)
 
-        flags_box = QGroupBox("Flags")
+        flags_box = QGroupBox(self.tr("Flags"))
         flags_form = QFormLayout(flags_box)
         flags_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         self.tracking = QCheckBox()
@@ -134,7 +126,7 @@ class WelViewer(QWidget):
         flags_form.addRow("Listener Mask (u32)", self.listener_mask)
         content_layout.addWidget(flags_box)
 
-        priority_box = QGroupBox("Priority")
+        priority_box = QGroupBox(self.tr("Priority"))
         priority_form = QFormLayout(priority_box)
         priority_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         self.id1 = self._create_number_edit()
@@ -147,7 +139,7 @@ class WelViewer(QWidget):
         self.priority = self._create_uchar_edit()
         self.mode = QComboBox()
         self.mode.setFixedWidth(170)
-        for label, value in self.MODE_ITEMS:
+        for label, value in ((self.tr("Newest"), 0), (self.tr("Oldest"), 1)):
             self.mode.addItem(label, value)
         self.release_time = self._create_number_edit()
         priority_form.addRow("Id1 (i16)", self.id1)
@@ -162,7 +154,7 @@ class WelViewer(QWidget):
         priority_form.addRow("Release Time (i16)", self.release_time)
         content_layout.addWidget(priority_box)
 
-        free_area_box = QGroupBox("Free Area")
+        free_area_box = QGroupBox(self.tr("Free Area"))
         free_area_form = QFormLayout(free_area_box)
         free_area_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         self.free_0to7 = self._create_number_edit()
@@ -182,7 +174,7 @@ class WelViewer(QWidget):
 
     def _create_number_edit(self) -> QLineEdit:
         edit = QLineEdit()
-        edit.setPlaceholderText("number or hex (e.g. 10, 0xA)")
+        edit.setPlaceholderText(self.tr("number or hex (e.g. 10, 0xA)"))
         edit.setFixedWidth(170)
         edit.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         return edit
@@ -252,14 +244,14 @@ class WelViewer(QWidget):
         wel = self.handler.wel
         if not wel or row < 0 or row >= len(wel.events):
             self._set_detail_enabled(False)
-            self.detail_title.setText(SELECT_EVENT_PROMPT)
+            self.detail_title.setText(self.tr("Select an event to edit"))
             return
 
         self._set_detail_enabled(True)
         self._syncing = True
         try:
             event = wel.events[row]
-            self.detail_title.setText(f"Editing event {row}")
+            self.detail_title.setText(self.tr("Editing event {index}").format(index=row))
             self.trigger_id.setText(str(event.mTriggerId))
             self.event_id.setText(str(event.mEventId))
             self.joint_hash.setText(str(event.mJointHash))
@@ -433,7 +425,7 @@ class WelViewer(QWidget):
             self.event_list.setCurrentRow(min(row, len(wel.events) - 1))
         else:
             self._set_detail_enabled(False)
-            self.detail_title.setText(SELECT_EVENT_PROMPT)
+            self.detail_title.setText(self.tr("Select an event to edit"))
 
         self._set_modified(True)
 

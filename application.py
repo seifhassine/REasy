@@ -7,9 +7,10 @@ import subprocess
 import sys
 
 import PySide6
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import QCoreApplication, QLocale
 from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory
 
+from i18n.catalog import validate_catalog
 from i18n.language_manager import LanguageManager
 from settings import load_settings
 from utils.app_paths import application_root
@@ -40,6 +41,7 @@ def _compile_translation_if_needed(settings: dict) -> None:
     source = translation_dir / f"REasy_{language}.ts"
     compiled = translation_dir / f"REasy_{language}.qm"
     if source.exists() and (not compiled.exists() or compiled.stat().st_mtime < source.stat().st_mtime):
+        validate_catalog(source)
         print(f"i18n: compiling {source.name} -> {compiled.name} using {compiler}")
         subprocess.check_call([compiler, str(source), "-qm", str(compiled)])
 
@@ -63,7 +65,7 @@ def main(argv=None) -> int:
 
     settings = load_settings()
     _compile_translation_if_needed(settings)
-    LanguageManager.instance().initialize(app, settings)
+    LanguageManager.instance().initialize(settings)
 
     window = REasyEditorApp()
     if len(argv) > 1 and not str(argv[1]).startswith("-"):
@@ -71,7 +73,11 @@ def main(argv=None) -> int:
         try:
             window.add_tab(filename, Path(filename).read_bytes())
         except Exception as exc:
-            QMessageBox.critical(None, "Error", str(exc))
+            QMessageBox.critical(
+                None,
+                QCoreApplication.translate("Application", "Error"),
+                str(exc),
+            )
 
     window.show()
     return app.exec()

@@ -83,7 +83,9 @@ class REasyEditorApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.current_game = None
-        self.setWindowTitle(f"REasy Editor v{CURRENT_VERSION}")
+        self.setWindowTitle(
+            self.tr("REasy Editor v{version}").format(version=CURRENT_VERSION)
+        )
         set_app_icon(self)
 
         try:
@@ -161,7 +163,7 @@ class REasyEditorApp(QMainWindow):
             }
         """)
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready")
+        self.status_bar.showMessage(self.tr("Ready"))
 
         self.set_dark_mode(self.dark_mode)
 
@@ -188,10 +190,12 @@ class REasyEditorApp(QMainWindow):
 
     def _refresh_homepage(self):
         show_notebook = self.notebook.count() > 0 or self.proj_dock.isVisible()
-        recent_label = "No recently closed files yet."
+        recent_label = self.tr("No recently closed files yet.")
         if self._closed_file_history:
             _, _, decoded_target = ProjectManager.decode_history_entry(self._closed_file_history[-1])
-            recent_label = f"Last closed: {os.path.basename(decoded_target)}"
+            recent_label = self.tr("Last closed: {filename}").format(
+                filename=os.path.basename(decoded_target)
+            )
         self.home_stack.refresh(show_notebook, recent_label)
 
     def _internal_drag(self, event):
@@ -234,7 +238,11 @@ class REasyEditorApp(QMainWindow):
             return True
         except Exception as e:
             QMessageBox.critical(
-                self, "Error", f"Failed to load {file_path}: {str(e)}"
+                self,
+                self.tr("Error"),
+                self.tr("Failed to load {path}: {error}").format(
+                    path=file_path, error=e
+                ),
             )
             return False
 
@@ -472,7 +480,7 @@ class REasyEditorApp(QMainWindow):
             start_dir = str(self.settings.get("unpacked_path", ""))
             folder = QFileDialog.getExistingDirectory(
                 self,
-                f"Locate unpacked files for {game}",
+                self.tr("Locate unpacked files for {game}").format(game=game),
                 start_dir,
                 QFileDialog.ShowDirsOnly
             )
@@ -485,9 +493,11 @@ class REasyEditorApp(QMainWindow):
                 if not os.path.isdir(test):
                     QMessageBox.warning(
                         self, self.tr("Invalid unpacked folder"),
-                        f"The folder you selected doesn't contain:\n"
-                        f"  {os.path.join(*expected)}\n"
-                        f"Please select the correct unpacked game directory.")
+                        self.tr(
+                            "The folder you selected doesn't contain:\n"
+                            "  {expected}\n"
+                            "Please select the correct unpacked game directory."
+                        ).format(expected=os.path.join(*expected)))
                     return
 
             self.settings["unpacked_path"] = folder
@@ -546,11 +556,15 @@ class REasyEditorApp(QMainWindow):
         for tab in tabs:
             if not tab or not tab.modified:
                 continue
-            filename = os.path.basename(tab.filename) if tab.filename else "Untitled"
+            filename = (
+                os.path.basename(tab.filename) if tab.filename else self.tr("Untitled")
+            )
             answer = QMessageBox.question(
                 self,
-                UNSAVED_CHANGES_STR,
-                f"The file {filename} has unsaved changes.\nSave before closing?",
+                FileTab.tr(UNSAVED_CHANGES_STR),
+                self.tr(
+                    "The file {filename} has unsaved changes.\nSave before closing?"
+                ).format(filename=filename),
                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
             )
             if answer == QMessageBox.Cancel:
@@ -846,8 +860,11 @@ class REasyEditorApp(QMainWindow):
                     if tab.modified:
                         ans = QMessageBox.question(
                             self,
-                            UNSAVED_CHANGES_STR,
-                            f"The file {os.path.basename(filename)} has unsaved changes.\nSave before reopening?",
+                            FileTab.tr(UNSAVED_CHANGES_STR),
+                            self.tr(
+                                "The file {filename} has unsaved changes.\n"
+                                "Save before reopening?"
+                            ).format(filename=os.path.basename(filename)),
                             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
                         )
                         if ans == QMessageBox.Cancel:
@@ -896,7 +913,7 @@ class REasyEditorApp(QMainWindow):
             if isinstance(getattr(tab, "handler", None), RszHandler):
                 RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
             tab.parent_notebook = self.notebook
-            tab_label = os.path.basename(filename) if filename else "Untitled"
+            tab_label = os.path.basename(filename) if filename else self.tr("Untitled")
             _ = self.notebook.addTab(tab.notebook_widget, tab_label)
             self.tabs[tab.notebook_widget] = tab
             self.project_workspace.sessions.add_tab(tab)
@@ -908,7 +925,11 @@ class REasyEditorApp(QMainWindow):
             return tab
 
         except Exception as e:
-            QMessageBox.critical(self, self.tr("Error"), f"Failed to open file: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to open file: {error}").format(error=e),
+            )
             if tab and hasattr(tab, 'notebook_widget') and tab.notebook_widget:
                 try:
                     tab.notebook_widget.deleteLater()
@@ -1082,8 +1103,10 @@ class REasyEditorApp(QMainWindow):
 
             prompt = QMessageBox(self)
             prompt.setIcon(QMessageBox.Critical)
-            prompt.setWindowTitle("Reopen Closed File")
-            prompt.setText(f"Failed to reopen {os.path.basename(decoded_target)}. Remove it from recently closed files?")
+            prompt.setWindowTitle(self.tr("Reopen Closed File"))
+            prompt.setText(self.tr(
+                "Failed to reopen {filename}. Remove it from recently closed files?"
+            ).format(filename=os.path.basename(decoded_target)))
             prompt.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             if prompt.exec_() == QMessageBox.Yes:
                 self._closed_file_history.remove(target)
@@ -1092,7 +1115,11 @@ class REasyEditorApp(QMainWindow):
             break
 
         if not attempted and notify_if_empty and filename is None and not self._closed_file_history:
-            QMessageBox.information(self, "Reopen Closed File", "No recently closed files to reopen.")
+            QMessageBox.information(
+                self,
+                self.tr("Reopen Closed File"),
+                self.tr("No recently closed files to reopen."),
+            )
 
     def _populate_recently_closed_menu(self):
         if not self.recently_closed_menu:
@@ -1201,7 +1228,9 @@ class REasyEditorApp(QMainWindow):
             return
 
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"Available Backups for {os.path.basename(active.filename)}")
+        dialog.setWindowTitle(self.tr("Available Backups for {filename}").format(
+            filename=os.path.basename(active.filename)
+        ))
         dialog.setMinimumWidth(400)
 
         layout = QVBoxLayout(dialog)
@@ -1231,7 +1260,10 @@ class REasyEditorApp(QMainWindow):
             backup_path = selected.data(Qt.UserRole)
             friendly_time = selected.text()
 
-            confirm_msg = f"Are you sure you want to restore the backup from:\n{friendly_time}?\n\nCurrent changes will be lost."
+            confirm_msg = self.tr(
+                "Are you sure you want to restore the backup from:\n"
+                "{time}?\n\nCurrent changes will be lost."
+            ).format(time=friendly_time)
             confirm = QMessageBox.question(
                 self,
                 self.tr("Confirm Restore"),

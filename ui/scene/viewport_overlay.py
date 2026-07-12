@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, Qt
+from PySide6.QtCore import QCoreApplication, QEvent, Qt
 from PySide6.QtWidgets import QLabel, QWidget
 
 
@@ -23,7 +23,7 @@ class ViewportOverlayManager:
         grip.setAlignment(Qt.AlignRight)
         grip.setCursor(Qt.SizeFDiagCursor)
         grip.setFixedHeight(20)
-        grip.setToolTip("Resize panel")
+        grip.setToolTip(QCoreApplication.translate("ViewportOverlay", "Resize panel"))
         grip._viewport_resize_overlay = widget
         if widget.layout() is not None:
             widget.layout().addWidget(grip)

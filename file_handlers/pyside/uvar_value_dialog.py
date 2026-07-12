@@ -23,7 +23,7 @@ class UvarValueEditDialog(QDialog):
         self.var_flags = var_flags
         self.new_value = None
         
-        self.setWindowTitle(f"Edit Value: {var_name}")
+        self.setWindowTitle(self.tr("Edit Value: {name}").format(name=var_name))
         self.setModal(True)
         self.setMinimumWidth(400)
         
@@ -31,7 +31,7 @@ class UvarValueEditDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # Type label
-        type_label = QLabel(f"Type: {var_type.name}")
+        type_label = QLabel(self.tr("Type: {type}").format(type=var_type.name))
         type_label.setStyleSheet("font-weight: bold; color: #4EC9B0;")
         layout.addWidget(type_label)
         
@@ -98,14 +98,14 @@ class UvarValueEditDialog(QDialog):
             
         elif var_type == TypeKind.Boolean:
             # Checkbox for boolean
-            self.input = QCheckBox("Value")
+            self.input = QCheckBox(self.tr("Value"))
             if current_value:
                 self.input.setChecked(bool(current_value))
             layout.addWidget(self.input)
             
         elif var_type in (TypeKind.Int8, TypeKind.Int16, TypeKind.Int32, TypeKind.Int64, TypeKind.Enum):
             # Integer input with appropriate range
-            label = QLabel("Value:")
+            label = QLabel(self.tr("Value:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()
@@ -126,7 +126,7 @@ class UvarValueEditDialog(QDialog):
             
         elif var_type in (TypeKind.Uint8, TypeKind.Uint16, TypeKind.Uint32, TypeKind.Uint64):
             # Unsigned integer input
-            label = QLabel("Value:")
+            label = QLabel(self.tr("Value:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()
@@ -147,7 +147,7 @@ class UvarValueEditDialog(QDialog):
             
         elif var_type in (TypeKind.Single, TypeKind.Double):
             # Float/Double input
-            label = QLabel("Value:")
+            label = QLabel(self.tr("Value:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()
@@ -157,7 +157,7 @@ class UvarValueEditDialog(QDialog):
             
         elif var_type in (TypeKind.C8, TypeKind.C16, TypeKind.String):
             # String input - no validation needed
-            label = QLabel("Value:")
+            label = QLabel(self.tr("Value:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()
@@ -167,7 +167,7 @@ class UvarValueEditDialog(QDialog):
             
         elif var_type == TypeKind.GUID:
             # GUID input with format validation
-            label = QLabel("GUID:")
+            label = QLabel(self.tr("GUID:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()
@@ -217,7 +217,7 @@ class UvarValueEditDialog(QDialog):
             
         else:
             # Default text input for unknown types
-            label = QLabel("Value:")
+            label = QLabel(self.tr("Value:"))
             layout.addWidget(label)
             
             self.input = QLineEdit()

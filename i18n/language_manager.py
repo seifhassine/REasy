@@ -1,20 +1,13 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import ClassVar
 
-from PySide6.QtCore import QObject, QLocale, QLibraryInfo, QEvent, Signal, Qt
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication, QLibraryInfo, QLocale, QTranslator
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QTranslator
 
 from utils.app_paths import resource_path
-
-
-def _resource_path(relative_path: str) -> str:
-    return str(resource_path(relative_path))
 
 
 @dataclass(frozen=True)
@@ -24,22 +17,19 @@ class LanguageInfo:
     qt_locale: str | None = None
 
 
-class LanguageManager(QObject):
-    language_changed = Signal(str)
+class LanguageManager:
+    _instance: ClassVar["LanguageManager | None"] = None
 
-    _instance: Optional["LanguageManager"] = None
-
-    SUPPORTED_LANGUAGES: Dict[str, LanguageInfo] = {
+    SUPPORTED_LANGUAGES: ClassVar[dict[str, LanguageInfo]] = {
         "en": LanguageInfo(code="en", name="English", qt_locale="en"),
         "zh-CN": LanguageInfo(code="zh-CN", name="中文（简体）", qt_locale="zh_CN"),
     }
 
     def __init__(self) -> None:
-        super().__init__()
-        self._app_translator: Optional[QTranslator] = None
-        self._qt_translator: Optional[QTranslator] = None
-        self._current_language: str = "en"
-        self._initialized: bool = False
+        self._app_translator: QTranslator | None = None
+        self._qt_translator: QTranslator | None = None
+        self._current_language = "en"
+        self._initialized = False
 
     @classmethod
     def instance(cls) -> "LanguageManager":
@@ -47,12 +37,10 @@ class LanguageManager(QObject):
             cls._instance = LanguageManager()
         return cls._instance
 
-    def initialize(self, app: QApplication, settings: dict) -> None:
+    def initialize(self, settings: dict) -> None:
         if self._initialized:
             return
-        preferred = settings.get("ui_language", "system")
-        lang = self.detect(preferred)
-        self.set_language(lang, settings=settings, emit_signal=False)
+        self.set_language(self.detect(settings.get("ui_language", "system")))
         self._initialized = True
 
     def detect(self, preferred: str) -> str:
@@ -60,64 +48,55 @@ class LanguageManager(QObject):
             return preferred
         for ui_lang in QLocale.system().uiLanguages():
             norm = ui_lang.replace('_', '-').lower()
-            for code in self.SUPPORTED_LANGUAGES.keys():
+            for code in self.SUPPORTED_LANGUAGES:
                 if code.lower() == norm:
                     return code
             base = norm.split('-')[0]
-            for code in self.SUPPORTED_LANGUAGES.keys():
+            for code in self.SUPPORTED_LANGUAGES:
                 if code.lower().split('-')[0] == base:
                     return code
         return "en"
 
-    def available_languages(self) -> List[LanguageInfo]:
+    def available_languages(self) -> list[LanguageInfo]:
         return list(self.SUPPORTED_LANGUAGES.values())
 
     def current_language(self) -> str:
         return self._current_language
 
-    def set_language(self, code: str, settings: Optional[dict] = None, emit_signal: bool = True) -> bool:
+    @staticmethod
+    def _install(path: Path) -> QTranslator | None:
+        translator = QTranslator()
+        if not path.exists() or not translator.load(str(path)):
+            return None
+        QCoreApplication.installTranslator(translator)
+        return translator
+
+    def set_language(self, code: str) -> bool:
         requested_supported = code in self.SUPPORTED_LANGUAGES
         if not requested_supported:
             code = "en"
-        if code == self._current_language and self._app_translator and self._qt_translator:
+        if self._initialized and code == self._current_language:
             return requested_supported
-        if self._app_translator:
-            QCoreApplication.removeTranslator(self._app_translator)
-            self._app_translator = None
-        if self._qt_translator:
-            QCoreApplication.removeTranslator(self._qt_translator)
-            self._qt_translator = None
+
+        for translator in (self._app_translator, self._qt_translator):
+            if translator:
+                QCoreApplication.removeTranslator(translator)
+        self._app_translator = self._qt_translator = None
+
         qt_locale = self.SUPPORTED_LANGUAGES[code].qt_locale or code
-        qt_translator = QTranslator()
-        qtbase_dir = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
         qtbase_file = f"qtbase_{qt_locale}.qm"
-        qtbase_path = os.path.join(qtbase_dir, qtbase_file)
-        bundled_qtbase_path = _resource_path(os.path.join("resources", "i18n", qtbase_file))
-        if os.path.exists(bundled_qtbase_path):
-            qtbase_path = bundled_qtbase_path
-        if os.path.exists(qtbase_path):
-            if qt_translator.load(qtbase_path):
-                QCoreApplication.installTranslator(qt_translator)
-                self._qt_translator = qt_translator
-        app_translator = QTranslator()
-        app_qm_name = f"REasy_{code}.qm"
-        app_qm_path = _resource_path(os.path.join("resources", "i18n", app_qm_name))
-        if os.path.exists(app_qm_path) and app_translator.load(app_qm_path):
-            QCoreApplication.installTranslator(app_translator)
-            self._app_translator = app_translator
-        else:
-            self._app_translator = None
+        bundled_qtbase = resource_path(Path("resources/i18n") / qtbase_file)
+        system_qtbase = Path(QLibraryInfo.path(QLibraryInfo.TranslationsPath)) / qtbase_file
+        self._qt_translator = self._install(
+            bundled_qtbase if bundled_qtbase.exists() else system_qtbase
+        )
+        self._app_translator = self._install(
+            resource_path(Path("resources/i18n") / f"REasy_{code}.qm")
+        )
         self._current_language = code
-        locale = QLocale(qt_locale)
-        direction = Qt.RightToLeft if locale.textDirection() == Qt.RightToLeft else Qt.LeftToRight
+
         app = QGuiApplication.instance()
-        if app is not None:
-            app.setLayoutDirection(direction)
-        if settings is not None:
-            settings["ui_language"] = code
-        if emit_signal:
-            self.language_changed.emit(code)
-        if app is not None:
-            app.sendEvent(app, QEvent(QEvent.LanguageChange))
+        if isinstance(app, QGuiApplication):
+            app.setLayoutDirection(QLocale(qt_locale).textDirection())
         return requested_supported
 

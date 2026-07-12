@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from math import ceil
 from typing import Any
 
-from PySide6.QtCore import QPoint, QRectF, QSignalBlocker, Qt, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QPoint, QRectF, QSignalBlocker, Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -60,8 +60,6 @@ from utils.number_format import format_display_value, format_float_sequence, for
 
 
 KEY_OBJECT_TYPES = (Key, BoolKey, ActionKey, NoHermiteKey, SpeedPoint)
-ROOT_NODES_LABEL = "Root Nodes"
-USER_DATA_ASSETS_LABEL = "User Data Assets"
 INVALID_FIELD_STYLE = "border: 1px solid #cc3333;"
 
 
@@ -132,7 +130,12 @@ def _parse_guid_text(text: str) -> bytes:
 
 
 def _node_display_name(node: Node) -> str:
-    return node.name or node.node_tag or _guid_text(node.root_node_guid) or "Node"
+    return (
+        node.name
+        or node.node_tag
+        or _guid_text(node.root_node_guid)
+        or QCoreApplication.translate("ClipViewer", "Node")
+    )
 
 
 def _property_path_to(parsed, target: Property) -> tuple[Node, list[Property]] | None:
@@ -293,20 +296,31 @@ class ClipTimelineCanvas(QWidget):
             if not self.parsed.tracks and self.parsed.header.version < 85 else []
         )
         if loose_roots:
-            self.rows.append(self._row("section", None, 0, ROOT_NODES_LABEL, meta=f"{len(loose_roots)} roots"))
+            self.rows.append(self._row(
+                "section",
+                None,
+                0,
+                self.tr("Root Nodes"),
+                meta=self.tr("{count} roots").format(count=len(loose_roots)),
+            ))
             for node in loose_roots:
                 self._add_node_rows(node, 1)
         self._filter_rows()
         self._sync_rows()
 
     def _add_track_rows(self, index: int, track: Track):
-        label = track.group_name or track.type_unicode or track.type_ascii or f"Track {index}"
+        label = (
+            track.group_name
+            or track.type_unicode
+            or track.type_ascii
+            or self.tr("Track {index}").format(index=index)
+        )
         self.rows.append(self._row(
             "track",
             track,
             0,
             label,
-            badge="ON" if track.enable else "OFF",
+            badge=self.tr("ON") if track.enable else self.tr("OFF"),
             badge_color=QColor("#4f8f5b" if track.enable else "#7a4f4f"),
             meta=self._track_meta(track),
         ))
@@ -321,9 +335,9 @@ class ClipTimelineCanvas(QWidget):
             "clip_info",
             clip_info,
             depth,
-            clip_info.unicode_name or "Clip",
+            clip_info.unicode_name or self.tr("Clip"),
             owner_track=track,
-            badge="Clip",
+            badge=self.tr("Clip"),
             badge_color=QColor("#4f83c2"),
             meta=_frame_range_text(clip_info.frame_in, clip_info.frame_out),
         ))
@@ -343,9 +357,9 @@ class ClipTimelineCanvas(QWidget):
         meta = _frame_range_text(node.begin_frame, node.end_frame)
         counts = []
         if node.properties:
-            counts.append(f"{len(node.properties)} props")
+            counts.append(self.tr("{count} props").format(count=len(node.properties)))
         if node.child_nodes:
-            counts.append(f"{len(node.child_nodes)} children")
+            counts.append(self.tr("{count} children").format(count=len(node.child_nodes)))
         if counts:
             meta = f"{meta} | {', '.join(counts)}"
         self.rows.append(self._row(
@@ -355,7 +369,12 @@ class ClipTimelineCanvas(QWidget):
             name,
             badge=_node_type_name(node),
             badge_color=_node_type_color(node),
-            owner_badge="Child Node" if owner_node else "Clip Root" if owner_clip else "Track Root" if owner_track else "Root Node",
+            owner_badge=(
+                self.tr("Child Node") if owner_node
+                else self.tr("Clip Root") if owner_clip
+                else self.tr("Track Root") if owner_track
+                else self.tr("Root Node")
+            ),
             meta=meta,
             owner_track=owner_track,
             owner_clip=owner_clip,
@@ -378,7 +397,11 @@ class ClipTimelineCanvas(QWidget):
             owner_prop=owner_prop,
             badge=_prop_type_name(prop),
             badge_color=QColor("#806dc0"),
-            owner_badge="Child Prop" if owner_prop else "Node Prop" if owner_node else "",
+            owner_badge=(
+                self.tr("Child Prop") if owner_prop
+                else self.tr("Node Prop") if owner_node
+                else ""
+            ),
             meta=self._property_meta(prop),
         ))
         if not self._is_collapsed(prop) and ClipGraphOperations.is_property_container(prop) and self._show_property_children(prop):
@@ -411,25 +434,26 @@ class ClipTimelineCanvas(QWidget):
                         break
         self.rows = [row for index, row in enumerate(self.rows) if index in keep]
         if not self.rows:
-            self.rows = [self._row("section", None, 0, "No matches")]
+            self.rows = [self._row("section", None, 0, self.tr("No matches"))]
 
     def _property_label(self, prop: Property):
-        return prop.name or "Property"
+        return prop.name or self.tr("Property")
 
     def _property_meta(self, prop: Property):
         count = len(prop.child_properties) if ClipGraphOperations.is_property_container(prop) else len(prop.keys)
-        suffix = f"{count} child" if ClipGraphOperations.is_property_container(prop) else f"{count} key"
-        if count != 1:
-            suffix += "s"
+        if ClipGraphOperations.is_property_container(prop):
+            suffix = self.tr("{count} child").format(count=count) if count == 1 else self.tr("{count} children").format(count=count)
+        else:
+            suffix = self.tr("{count} key").format(count=count) if count == 1 else self.tr("{count} keys").format(count=count)
         if prop.speed_points_ref:
-            suffix += f", {len(prop.speed_points_ref)} speed"
+            suffix += self.tr(", {count} speed").format(count=len(prop.speed_points_ref))
         return suffix
 
     def _track_meta(self, track: Track):
         visible_roots = len(_visible_track_child_nodes(track))
-        parts = [f"{len(track.clip_infos)} clips"]
+        parts = [self.tr("{count} clips").format(count=len(track.clip_infos))]
         if visible_roots:
-            parts.append(f"{visible_roots} roots")
+            parts.append(self.tr("{count} roots").format(count=visible_roots))
         return ", ".join(parts)
 
     def _show_clip_nodes(self, clip_info: ClipInfo) -> bool:
@@ -497,7 +521,7 @@ class ClipTimelineCanvas(QWidget):
         y = 0
         painter.fillRect(0, y, self.width(), self.header_h, QColor("#2f343a"))
         painter.setPen(QColor("#f2f2f2"))
-        painter.drawText(10, 0, self.label_w - 16, self.header_h, Qt.AlignVCenter, "Timeline")
+        painter.drawText(10, 0, self.label_w - 16, self.header_h, Qt.AlignVCenter, self.tr("Timeline"))
         painter.setPen(QColor("#525b64"))
         painter.drawLine(self.label_w - 1, 0, self.label_w - 1, self.height())
         duration = self._duration()
@@ -778,17 +802,34 @@ class ClipTimelineCanvas(QWidget):
             return ""
         obj = meta["obj"]
         if isinstance(obj, Track):
-            return f"Track: {obj.group_name or obj.type_unicode or obj.type_ascii or 'Track'}"
+            return self.tr("Track: {name}").format(
+                name=obj.group_name or obj.type_unicode or obj.type_ascii or self.tr("Track")
+            )
         if isinstance(obj, ClipInfo):
-            return f"Clip: {obj.unicode_name or 'Clip'}\nFrames {_frame_range_text(obj.frame_in, obj.frame_out)}"
+            return self.tr("Clip: {name}\nFrames {frames}").format(
+                name=obj.unicode_name or self.tr("Clip"),
+                frames=_frame_range_text(obj.frame_in, obj.frame_out),
+            )
         if isinstance(obj, Node):
-            return f"{_node_type_name(obj)}: {_node_display_name(obj)}\nFrames {_frame_range_text(obj.begin_frame, obj.end_frame)}"
+            return self.tr("{type}: {name}\nFrames {frames}").format(
+                type=_node_type_name(obj),
+                name=_node_display_name(obj),
+                frames=_frame_range_text(obj.begin_frame, obj.end_frame),
+            )
         if isinstance(obj, Property):
-            return f"{_prop_type_name(obj)}: {obj.name or 'Property'}\nFrames {_frame_range_text(obj.begin_frame, obj.end_frame)}"
+            return self.tr("{type}: {name}\nFrames {frames}").format(
+                type=_prop_type_name(obj),
+                name=obj.name or self.tr("Property"),
+                frames=_frame_range_text(obj.begin_frame, obj.end_frame),
+            )
         if isinstance(obj, KEY_OBJECT_TYPES):
             owner = meta.get("owner_prop")
             value = key_payload_text(owner, obj) if isinstance(owner, Property) else ""
-            return f"{meta.get('kind', 'Key')}: frame {_frame_text(getattr(obj, 'frame', 0.0))}\n{value}"
+            return self.tr("{kind}: frame {frame}\n{value}").format(
+                kind=meta.get("kind", self.tr("Key")),
+                frame=_frame_text(getattr(obj, "frame", 0.0)),
+                value=value,
+            )
         return str(obj)
 
     def _item_at(self, pos):
@@ -1009,12 +1050,21 @@ class ClipTimelineCanvas(QWidget):
     def insert_root_node_row(self, node: Node) -> bool:
         if self.row_index_for(node) >= 0:
             return False
-        section_index = next((i for i, row in enumerate(self.rows) if row["kind"] == "section" and row["label"] == ROOT_NODES_LABEL), -1)
+        root_nodes_label = self.tr("Root Nodes")
+        section_index = next((
+            i for i, row in enumerate(self.rows)
+            if row["kind"] == "section" and row["label"] == root_nodes_label
+        ), -1)
         if section_index < 0:
             section_index = len(self.rows)
-            self.rows.append(self._row("section", None, 0, ROOT_NODES_LABEL, meta="1 roots"))
+            self.rows.append(self._row(
+                "section", None, 0, root_nodes_label,
+                meta=self.tr("{count} roots").format(count=1),
+            ))
         elif self.parsed:
-            self.rows[section_index]["meta"] = f"{len(self.parsed.root_nodes)} roots"
+            self.rows[section_index]["meta"] = self.tr("{count} roots").format(
+                count=len(self.parsed.root_nodes)
+            )
         rows = self._captured_rows(lambda: self._add_node_rows(node, self.rows[section_index].get("depth", 0) + 1))
         insert_at = self._subtree_end(section_index)
         self.rows[insert_at:insert_at] = rows
@@ -1057,20 +1107,20 @@ class ClipTimelineCanvas(QWidget):
         row = self.rows[index]
         if isinstance(obj, Track):
             row.update(
-                label=obj.group_name or obj.type_unicode or obj.type_ascii or "Track",
-                badge="ON" if obj.enable else "OFF",
+                label=obj.group_name or obj.type_unicode or obj.type_ascii or self.tr("Track"),
+				badge=self.tr("ON") if obj.enable else self.tr("OFF"),
                 badge_color=QColor("#4f8f5b" if obj.enable else "#7a4f4f"),
                 meta=self._track_meta(obj),
             )
         elif isinstance(obj, ClipInfo):
-            row.update(label=obj.unicode_name or "Clip", meta=_frame_range_text(obj.frame_in, obj.frame_out))
+            row.update(label=obj.unicode_name or self.tr("Clip"), meta=_frame_range_text(obj.frame_in, obj.frame_out))
         elif isinstance(obj, Node):
             meta = _frame_range_text(obj.begin_frame, obj.end_frame)
             counts = []
             if obj.properties:
-                counts.append(f"{len(obj.properties)} props")
+                counts.append(self.tr("{count} props").format(count=len(obj.properties)))
             if obj.child_nodes:
-                counts.append(f"{len(obj.child_nodes)} children")
+                counts.append(self.tr("{count} children").format(count=len(obj.child_nodes)))
             if counts:
                 meta = f"{meta} | {', '.join(counts)}"
             row.update(label=_node_display_name(obj), badge=_node_type_name(obj), badge_color=_node_type_color(obj), meta=meta)
@@ -1285,22 +1335,26 @@ class ClipViewer(QWidget):
         bar = QHBoxLayout()
         self.status = QLabel()
         bar.addWidget(self.status)
-        bar.addWidget(QLabel("Frames"))
+        bar.addWidget(QLabel(self.tr("Frames")))
         self.duration_spin = QDoubleSpinBox()
         self.duration_spin.setRange(0.0, 1_000_000.0)
         self.duration_spin.setDecimals(3)
         self.duration_spin.setSingleStep(1.0)
         bar.addWidget(self.duration_spin)
         self.timeline_filter = QLineEdit()
-        self.timeline_filter.setPlaceholderText("Filter")
+        self.timeline_filter.setPlaceholderText(self.tr("Filter"))
         self.timeline_filter.setMaximumWidth(220)
         bar.addWidget(self.timeline_filter)
         self.timeline_view = QComboBox()
-        for label, mode in (("Focused", "focused"), ("Overview", "overview"), ("Details", "details")):
+        for label, mode in (
+            (self.tr("Focused"), "focused"),
+            (self.tr("Overview"), "overview"),
+            (self.tr("Details"), "details"),
+        ):
             self.timeline_view.addItem(label, mode)
         self.timeline_view.setMaximumWidth(120)
         bar.addWidget(self.timeline_view)
-        bar.addWidget(QLabel("Zoom"))
+        bar.addWidget(QLabel(self.tr("Zoom")))
         self.zoom_slider = QSlider(Qt.Horizontal)
         self.zoom_slider.setRange(25, 2000)
         self.zoom_slider.setSingleStep(5)
@@ -1311,24 +1365,24 @@ class ClipViewer(QWidget):
         self.zoom_label = QLabel("1.00x")
         self.zoom_label.setMinimumWidth(44)
         bar.addWidget(self.zoom_label)
-        self.snap_check = QCheckBox("Snap")
+        self.snap_check = QCheckBox(self.tr("Snap"))
         self.snap_check.setChecked(True)
         bar.addWidget(self.snap_check)
         bar.addStretch(1)
-        self.add_btn = QPushButton("Add")
+        self.add_btn = QPushButton(self.tr("Add"))
         self.add_menu = QMenu(self.add_btn)
         self.add_btn.setMenu(self.add_menu)
         self.add_actions = {
-            "track": self.add_menu.addAction("Track"),
-            "clip": self.add_menu.addAction("Clip"),
-            "node": self.add_menu.addAction("Node"),
-            "property": self.add_menu.addAction("Property"),
-            "child": self.add_menu.addAction("Child Property"),
-            "key": self.add_menu.addAction("Key"),
-            "speed": self.add_menu.addAction("Speed Point"),
+            "track": self.add_menu.addAction(self.tr("Track")),
+            "clip": self.add_menu.addAction(self.tr("Clip")),
+            "node": self.add_menu.addAction(self.tr("Node")),
+            "property": self.add_menu.addAction(self.tr("Property")),
+            "child": self.add_menu.addAction(self.tr("Child Property")),
+            "key": self.add_menu.addAction(self.tr("Key")),
+            "speed": self.add_menu.addAction(self.tr("Speed Point")),
         }
-        self.dup_btn = QPushButton("Duplicate")
-        self.del_btn = QPushButton("Delete")
+        self.dup_btn = QPushButton(self.tr("Duplicate"))
+        self.del_btn = QPushButton(self.tr("Delete"))
         for button in (self.add_btn, self.dup_btn, self.del_btn):
             bar.addWidget(button)
         layout.addLayout(bar)
@@ -1351,10 +1405,10 @@ class ClipViewer(QWidget):
         right.setContentsMargins(4, 0, 0, 0)
         inspector_header = QHBoxLayout()
         inspector_header.setContentsMargins(0, 0, 0, 0)
-        self.title = QLabel("No selection")
+        self.title = QLabel(self.tr("No selection"))
         self.title.setStyleSheet("font-weight: bold;")
         inspector_header.addWidget(self.title, 1)
-        self.advanced = QCheckBox("Advanced")
+        self.advanced = QCheckBox(self.tr("Advanced"))
         inspector_header.addWidget(self.advanced)
         right.addLayout(inspector_header)
         self.path_label = QLabel()
@@ -1373,19 +1427,19 @@ class ClipViewer(QWidget):
         right.addWidget(self.scroll, 1)
         self.related = QListWidget()
         self.related.itemClicked.connect(self._related_clicked)
-        self.contents_label = QLabel("Contents")
+        self.contents_label = QLabel(self.tr("Contents"))
         right.addWidget(self.contents_label)
         right.addWidget(self.related, 1)
         relation_bar = QHBoxLayout()
-        self.move_up_btn = QPushButton("Move Up")
-        self.move_down_btn = QPushButton("Move Down")
+        self.move_up_btn = QPushButton(self.tr("Move Up"))
+        self.move_down_btn = QPushButton(self.tr("Move Down"))
         for button in (self.move_up_btn, self.move_down_btn):
             relation_bar.addWidget(button)
         right.addLayout(relation_bar)
         self.key_header = QWidget()
         key_bar = QHBoxLayout(self.key_header)
         key_bar.setContentsMargins(0, 0, 0, 0)
-        self.key_label = QLabel("Keys / Speed Points")
+        self.key_label = QLabel(self.tr("Keys / Speed Points"))
         key_bar.addWidget(self.key_label)
         key_bar.addStretch(1)
         right.addWidget(self.key_header)
@@ -1432,14 +1486,20 @@ class ClipViewer(QWidget):
 
     def _update_status(self):
         h = self.parsed.header
-        state = "Modified" if self.modified else "Ready"
+        state = self.tr("Modified") if self.modified else self.tr("Ready")
         nodes = list(_iter_graph_nodes(self.parsed))
         properties = list(_iter_graph_properties(self.parsed))
-        self.status.setText(
-            f"{state} | v{h.version} | {_frame_text(h.total_frame)} frames | "
-            f"{len(self.parsed.tracks)} tracks, {len(nodes)} nodes, "
-            f"{len(properties)} properties"
-        )
+        self.status.setText(self.tr(
+            "{state} | v{version} | {frames} frames | {tracks} tracks, "
+            "{nodes} nodes, {properties} properties"
+        ).format(
+            state=state,
+            version=h.version,
+            frames=_frame_text(h.total_frame),
+            tracks=len(self.parsed.tracks),
+            nodes=len(nodes),
+            properties=len(properties),
+        ))
 
     def _select(self, meta: dict):
         self.current = meta if meta and meta.get("obj") is not None else None
@@ -1574,7 +1634,7 @@ class ClipViewer(QWidget):
         if obj is None:
             return ""
         if self.current and self.current.get("kind") == "oword":
-            return "OWords > " + self._title(obj)
+            return self.tr("OWords") + " > " + self._title(obj)
         path = self._object_path(obj)
         return " > ".join(path or [self._title(obj)])
 
@@ -1596,7 +1656,7 @@ class ClipViewer(QWidget):
             owner = self.current.get("owner_prop") if self.current else self._property_for_key(obj)
             return ([*self._object_path(owner)] if owner else []) + [self._title(obj)]
         if isinstance(obj, UserDataAssetInfo):
-            return [USER_DATA_ASSETS_LABEL, self._title(obj)]
+            return [self.tr("User Data Assets"), self._title(obj)]
         return [self._title(obj)]
 
     def _node_path_to(self, target: Node):
@@ -1623,7 +1683,7 @@ class ClipViewer(QWidget):
                 if found:
                     return found
         for node in self.parsed.root_nodes:
-            found = walk(node, [ROOT_NODES_LABEL])
+            found = walk(node, [self.tr("Root Nodes")])
             if found:
                 return found
         return [self._title(target)]
@@ -1636,18 +1696,18 @@ class ClipViewer(QWidget):
     def _validation_messages(self, obj):
         messages = []
         if isinstance(obj, ClipInfo) and obj.frame_out < obj.frame_in:
-            messages.append("End frame is before begin frame")
+            messages.append(self.tr("End frame is before begin frame"))
         elif isinstance(obj, (Node, Property)) and getattr(obj, "end_frame", 0.0) < getattr(obj, "begin_frame", 0.0):
-            messages.append("End frame is before begin frame")
+            messages.append(self.tr("End frame is before begin frame"))
         if isinstance(obj, Property):
             if not _property_path_to(self.parsed, obj):
-                messages.append("Property has no graph owner")
+                messages.append(self.tr("Property has no graph owner"))
         if isinstance(obj, KEY_OBJECT_TYPES):
             owner = self.current.get("owner_prop") if self.current else self._property_for_key(obj)
             if not isinstance(owner, Property):
-                messages.append("Key has no owning property")
+                messages.append(self.tr("Key has no owning property"))
             elif hasattr(obj, "frame") and not (owner.begin_frame <= obj.frame <= owner.end_frame):
-                messages.append("Key frame is outside property range")
+                messages.append(self.tr("Key frame is outside property range"))
         return messages
 
     def _scroll_timeline_to_current(self):
@@ -1774,7 +1834,7 @@ class ClipViewer(QWidget):
             ("Clip Infos", len(clips)),
             ("Nodes", len(nodes)),
             ("Properties", len(properties)),
-            (USER_DATA_ASSETS_LABEL, len(assets)),
+            (self.tr("User Data Assets"), len(assets)),
             ("OWords", len(oword_rows)),
         ))
         self._related_section("Tracks")
@@ -1783,7 +1843,7 @@ class ClipViewer(QWidget):
             self._related_section("Clip Infos")
             self._related(clips, "clip_info")
         if assets:
-            self._related_section(USER_DATA_ASSETS_LABEL)
+            self._related_section(self.tr("User Data Assets"))
             self._related(assets, "user_data_asset")
         if oword_rows:
             self._related_section("OWords")
@@ -2359,7 +2419,7 @@ class ClipViewer(QWidget):
         try:
             result = mutate()
         except Exception as exc:
-            QMessageBox.warning(self, "Invalid CLIP edit", str(exc))
+            QMessageBox.warning(self, self.tr("Invalid CLIP edit"), str(exc))
             return
         if clear_selection:
             self._clear_selection_view()
@@ -2387,7 +2447,7 @@ class ClipViewer(QWidget):
         self._clear_form()
         self.related.clear()
         self._reset_key_table()
-        self.title.setText("CLIP Overview")
+        self.title.setText(self.tr("CLIP Overview"))
         self.path_label.clear()
         self.path_label.hide()
         self.validation_label.clear()
@@ -2579,7 +2639,7 @@ class ClipViewer(QWidget):
             return f"{type(obj).__name__} @ {_frame_text(obj.frame)}"
         if isinstance(obj, UserDataAssetInfo):
             return obj.path_unicode or obj.type_ascii or "UserDataAsset"
-        return "CLIP Overview"
+        return self.tr("CLIP Overview")
     @staticmethod
 
     def _key_raw_text(key):

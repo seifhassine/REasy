@@ -63,11 +63,14 @@ from PySide6.QtWidgets import (
 )
 
 from file_handlers.tex.qt_image_utils import TexPreviewUpload, build_tex_preview_upload, decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
+from file_handlers.tex.texture_quality import (
+    DEFAULT_TEXTURE_QUALITY,
+    choose_texture_mip,
+    texture_quality_profile,
+)
 from settings import save_settings
 from ui.scene.mesh_scene import build_mesh_scene
 from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
-
-MATERIAL_TEXTURE_MAX_DIMENSION = 512
 
 BONE_LABEL_VERTEX_SHADER = """
 #version 120
@@ -103,7 +106,6 @@ void main()
 
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
-    STREAMING_SETTINGS_KEY = "mesh_viewer_prefer_streaming_tex"
     VERTEX_COLORS_SETTINGS_KEY = "mesh_viewer_use_vertex_colors"
 
     def __init__(self, handler):
@@ -134,30 +136,33 @@ class MeshViewer(QWidget):
                     self._settings_store(),
                     use_vertex_colors=self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY),
                 )
+                self.gl_widget.texture_quality_changed.connect(self._on_texture_quality_changed)
                 self.preview_splitter.insertWidget(0, self.gl_widget)
                 self.preview_splitter.setStretchFactor(0, 4)
                 self.preview_splitter.setStretchFactor(1, 2)
             except Exception as e:
-                self.preview_splitter.insertWidget(0, QLabel(f"Failed to create viewer: {e}"))
+                self.preview_splitter.insertWidget(
+                    0, QLabel(self.tr("Failed to create viewer: {}").format(e))
+                )
         else:
-            self.preview_splitter.insertWidget(0, QLabel("No mesh buffer data available to display"))
+            self.preview_splitter.insertWidget(
+                0, QLabel(self.tr("No mesh buffer data available to display"))
+            )
         self._reload_materials()
 
     def _build_ui(self):
         top = QHBoxLayout()
-        self.mdf_label = QLabel("MDF: unresolved")
+        self.mdf_label = QLabel(self.tr("MDF: unresolved"))
         self.mdf_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         top.addWidget(self.mdf_label, 1)
-        self.streaming_check = QCheckBox("Prefer streaming TEX")
-        self.streaming_check.setChecked(self._setting_bool(self.STREAMING_SETTINGS_KEY))
-        self.streaming_check.toggled.connect(self._on_streaming_toggled)
-        top.addWidget(self.streaming_check)
-        self.vertex_colors_check = QCheckBox("Vertex colors")
-        self.vertex_colors_check.setToolTip("Multiply textured preview by mesh vertex colors")
+        self.vertex_colors_check = QCheckBox(self.tr("Vertex colors"))
+        self.vertex_colors_check.setToolTip(
+            self.tr("Multiply textured preview by mesh vertex colors")
+        )
         self.vertex_colors_check.setChecked(self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY))
         self.vertex_colors_check.toggled.connect(self._on_vertex_colors_toggled)
         top.addWidget(self.vertex_colors_check)
-        self.panel_toggle_btn = QPushButton("Show texture panel")
+        self.panel_toggle_btn = QPushButton(self.tr("Show texture panel"))
         self.panel_toggle_btn.clicked.connect(self._toggle_material_panel)
         top.addWidget(self.panel_toggle_btn)
         self._layout.addLayout(top)
@@ -168,9 +173,17 @@ class MeshViewer(QWidget):
         self.material_panel = QWidget(self)
         side_layout = QVBoxLayout(self.material_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)
-        side_layout.addWidget(QLabel("Resolved material textures"))
+        side_layout.addWidget(QLabel(self.tr("Resolved material textures")))
         self.material_table = QTableWidget(0, 5, self.material_panel)
-        self.material_table.setHorizontalHeaderLabels(["Mesh", "MDF", "Type", "Texture", "Status"])
+        self.material_table.setHorizontalHeaderLabels(
+            [
+                self.tr("Mesh"),
+                "MDF",
+                self.tr("Type"),
+                self.tr("Texture"),
+                self.tr("Status"),
+            ]
+        )
         self.material_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.material_table.setSelectionMode(QTableWidget.SingleSelection)
         self.material_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -182,7 +195,9 @@ class MeshViewer(QWidget):
         self.material_table.itemSelectionChanged.connect(self._update_texture_preview)
         side_layout.addWidget(self.material_table, 1)
 
-        self.texture_preview = QLabel("Select a material to preview its texture.")
+        self.texture_preview = QLabel(
+            self.tr("Select a material to preview its texture.")
+        )
         self.texture_preview.setAlignment(Qt.AlignCenter)
         self.texture_preview.setMinimumHeight(220)
         self.texture_preview.setWordWrap(True)
@@ -206,8 +221,14 @@ class MeshViewer(QWidget):
             settings[key] = bool(value)
             save_settings(settings)
 
-    def _on_streaming_toggled(self, checked: bool):
-        self._save_bool_setting(self.STREAMING_SETTINGS_KEY, checked)
+    def _on_texture_quality_changed(self, _quality: str):
+        self._texture_warmup_timer.stop()
+        self._texture_warmup_queue.clear()
+        self._texture_cache.clear()
+        self._texture_preview_cache.clear()
+        self._texture_buffer_refs.clear()
+        if self.gl_widget:
+            self.gl_widget.set_material_images({})
         self._reload_materials()
 
     def _on_vertex_colors_toggled(self, checked: bool):
@@ -218,32 +239,17 @@ class MeshViewer(QWidget):
     def _reload_materials(self):
         self._resolved_mdf, self._material_bindings = MeshMaterialResolver.resolve_for_handler(
             self.handler,
-            prefer_streaming=self.streaming_check.isChecked(),
+            prefer_streaming=self._quality_profile().prefer_streaming,
             resolve_textures=False,
             parse_in_subprocess=True,
             resource_cache=self._resolved_texture_cache,
         )
-        active_paths = {binding.resolved_texture_path for binding in self._material_bindings if binding.resolved_texture_path}
-        self._texture_cache = {
-            path: image
-            for path, image in self._texture_cache.items()
-            if path in active_paths
-        }
-        self._texture_preview_cache = {path: image for path, image in self._texture_preview_cache.items() if path in active_paths}
-        self._texture_buffer_refs = {
-            path: buffer_ref
-            for path, buffer_ref in self._texture_buffer_refs.items()
-            if path in active_paths
-        }
-        self._parsed_tex_cache = {
-            path: tex
-            for path, tex in self._parsed_tex_cache.items()
-            if path in active_paths
-        }
         if self._resolved_mdf:
-            self.mdf_label.setText(f"MDF: {self._resolved_mdf.path}")
+            self.mdf_label.setText(
+                self.tr("MDF: {path}").format(path=self._resolved_mdf.path)
+            )
         else:
-            self.mdf_label.setText("MDF: not found")
+            self.mdf_label.setText(self.tr("MDF: not found"))
         self._material_table_populated = False
         if self._material_panel_visible:
             self._populate_material_table()
@@ -254,12 +260,12 @@ class MeshViewer(QWidget):
         self._material_panel_visible = not self._material_panel_visible
         if self._material_panel_visible:
             self.material_panel.show()
-            self.panel_toggle_btn.setText("Hide texture panel")
+            self.panel_toggle_btn.setText(self.tr("Hide texture panel"))
             if not self._material_table_populated:
                 self._populate_material_table()
         else:
             self.material_panel.hide()
-            self.panel_toggle_btn.setText("Show texture panel")
+            self.panel_toggle_btn.setText(self.tr("Show texture panel"))
 
     def _populate_material_table(self):
         table = self.material_table
@@ -279,14 +285,16 @@ class MeshViewer(QWidget):
         if table.rowCount():
             table.selectRow(0)
         else:
-            self.texture_preview.setText("No material mappings found.")
+            self.texture_preview.setText(self.tr("No material mappings found."))
         self._material_table_populated = True
 
     def _update_texture_preview(self):
         row = self.material_table.currentRow()
         if row < 0 or row >= len(self._material_bindings):
             self.texture_preview.setPixmap(QPixmap())
-            self.texture_preview.setText("Select a material to preview its texture.")
+            self.texture_preview.setText(
+                self.tr("Select a material to preview its texture.")
+            )
             return
 
         binding = self._material_bindings[row]
@@ -356,11 +364,15 @@ class MeshViewer(QWidget):
             resolved = MeshMaterialResolver.resolve_texture_path(
                 self.handler,
                 binding.texture_path,
-                prefer_streaming=self.streaming_check.isChecked(),
+                prefer_streaming=self._quality_profile().prefer_streaming,
                 resource_cache=self._resolved_texture_cache,
             )
             if resolved is None:
                 binding.status = "Texture not found"
+                print(
+                    f"Texture resolution failed: material={binding.mesh_material_name!r}, "
+                    f"path={binding.texture_path!r}, quality={self._quality_profile().label}"
+                )
                 return None
             binding.resolved_texture_path, binding.resolved_texture_data = resolved
             binding.status = "Resolved"
@@ -370,9 +382,18 @@ class MeshViewer(QWidget):
         if binding.resolved_texture_path in self._texture_cache:
             return cached
 
-        tex_bytes = binding.resolved_texture_data
-        tex = self._parse_texture(binding.resolved_texture_path, tex_bytes) if tex_bytes else None
-        self._texture_cache[binding.resolved_texture_path] = build_tex_preview_upload(tex, mip_selector=self._choose_preview_mip) if tex is not None else None
+        try:
+            tex_bytes = binding.resolved_texture_data
+            tex = (
+                self._parse_texture(binding.resolved_texture_path, tex_bytes, raise_errors=True)
+                if tex_bytes
+                else None
+            )
+            upload = build_tex_preview_upload(tex, mip_selector=self._choose_preview_mip)
+        except Exception as exc:
+            print(f"Texture preparation failed: path={binding.resolved_texture_path!r}: {exc}")
+            upload = None
+        self._texture_cache[binding.resolved_texture_path] = upload
         return self._texture_cache[binding.resolved_texture_path]
 
     def _load_texture_preview_image(self, binding: MeshMaterialBinding) -> QImage | None:
@@ -386,17 +407,12 @@ class MeshViewer(QWidget):
         self._texture_preview_cache[path] = image
         return image
 
-    @staticmethod
-    def _choose_preview_mip(tex) -> int:
-        mip_count = max(1, getattr(tex.header, "mip_count", 1))
-        width = max(1, getattr(tex.header, "width", 1))
-        height = max(1, getattr(tex.header, "height", 1))
-        mip_index = 0
-        while mip_index + 1 < mip_count and max(width, height) > MATERIAL_TEXTURE_MAX_DIMENSION:
-            width = max(1, width // 2)
-            height = max(1, height // 2)
-            mip_index += 1
-        return mip_index
+    def _quality_profile(self):
+        quality = getattr(self.gl_widget, "texture_quality", DEFAULT_TEXTURE_QUALITY)
+        return texture_quality_profile(quality)
+
+    def _choose_preview_mip(self, tex) -> int:
+        return choose_texture_mip(tex, self._quality_profile())
 
     def _decode_texture_image(self, resolved_texture_path: str, tex_bytes: bytes) -> QImage | None:
         parsed_tex = self._parse_texture(resolved_texture_path, tex_bytes)
@@ -412,9 +428,9 @@ class MeshViewer(QWidget):
         self._texture_buffer_refs[resolved_texture_path] = backing_buffer
         return image
 
-    def _parse_texture(self, resolved_texture_path: str, tex_bytes: bytes):
+    def _parse_texture(self, resolved_texture_path: str, tex_bytes: bytes, *, raise_errors: bool = False):
         if resolved_texture_path not in self._parsed_tex_cache:
-            self._parsed_tex_cache[resolved_texture_path] = parse_tex_bytes(tex_bytes)
+            self._parsed_tex_cache[resolved_texture_path] = parse_tex_bytes(tex_bytes, raise_errors=raise_errors)
         return self._parsed_tex_cache[resolved_texture_path]
 
 

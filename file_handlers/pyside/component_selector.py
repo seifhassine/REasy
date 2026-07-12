@@ -11,16 +11,18 @@ class ComponentSelectorDialog(QDialog):
         self.required_parent_name = required_parent_name
         self.include_parent = include_parent
         
-        self.setWindowTitle("Add Component")
+        self.setWindowTitle(self.tr("Add Component"))
         self.resize(500, 400)
         
         layout = QVBoxLayout(self)
         
-        self.status_label = QLabel("Loading components...")
+        self.status_label = QLabel(self.tr("Loading components..."))
         layout.addWidget(self.status_label)
         
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Type component name (e.g. 'chainsaw.GmOptionSleep')")
+        self.search_input.setPlaceholderText(
+            self.tr("Type component name (e.g. 'chainsaw.GmOptionSleep')")
+        )
         layout.addWidget(self.search_input)
         
         self.component_list = QListWidget()
@@ -76,7 +78,9 @@ class ComponentSelectorDialog(QDialog):
         
         self.all_component_types.sort()
         
-        self.status_label.setText(f"Found {count} component types")
+        self.status_label.setText(
+            self.tr("Found {count} component types").format(count=count)
+        )
         self.populate_component_list("")
         
     def on_text_changed(self, text):
@@ -102,9 +106,19 @@ class ComponentSelectorDialog(QDialog):
             self.component_list.setCurrentRow(0)
             
         if self.required_parent_name:
-            self.status_label.setText(f"Showing {len(matching_types)} matches out of {len(self.all_component_types)} components")
+            self.status_label.setText(
+                self.tr("Showing {matches} matches out of {total} components").format(
+                    matches=len(matching_types),
+                    total=len(self.all_component_types),
+                )
+            )
         else:
-            self.status_label.setText(f"Showing first {len(matching_types)} matches out of {len(self.all_component_types)} components")
+            self.status_label.setText(
+                self.tr("Showing first {matches} matches out of {total} components").format(
+                    matches=len(matching_types),
+                    total=len(self.all_component_types),
+                )
+            )
         
     def get_selected_component(self):
         """Return the selected component type name"""

@@ -6,7 +6,7 @@ import os
 import uuid
 
 import numpy as np
-from PySide6.QtCore import Qt, Signal, QSignalBlocker
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker
 from PySide6.QtWidgets import (
     QComboBox,
     QDockWidget,
@@ -54,8 +54,8 @@ from utils.number_format import format_display_value
 from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
 
 
-MESH_LOAD_FAILED_TITLE = "Mesh Load Failed"
-NONE_TEXT = "(none)"
+MESH_LOAD_FAILED_TITLE = QT_TRANSLATE_NOOP("RcolViewer", "Mesh Load Failed")
+NONE_TEXT = QT_TRANSLATE_NOOP("RcolViewer", "(none)")
 
 
 @dataclass(frozen=True)
@@ -82,10 +82,10 @@ class RcolViewer(QWidget):
     modified_changed = Signal(bool)
     NODE_ROLE = Qt.UserRole + 1
     TAB_ACTIONS = {
-        "groups": {"add_label": "+ Group", "remove_label": "- Group", "add_fn": "_add_group", "remove_fn": "_remove_selected_group", "kind": "group"},
-        "request_sets": {"add_label": "+ Request", "remove_label": "- Request", "add_fn": "_add_request_set", "remove_fn": "_remove_selected_request_set", "kind": "request_set"},
-        "ignore_tags": {"add_label": "+ Tag", "remove_label": "- Tag", "add_fn": "_add_ignore_tag", "remove_fn": "_remove_selected_ignore_tag", "kind": "ignore_tag"},
-        "auto_joints": {"add_label": "+ Joint", "remove_label": "- Joint", "add_fn": "_add_auto_joint", "remove_fn": "_remove_selected_auto_joint", "kind": "auto_joint"},
+        "groups": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Group"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Group"), "add_fn": "_add_group", "remove_fn": "_remove_selected_group", "kind": "group"},
+        "request_sets": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Request"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Request"), "add_fn": "_add_request_set", "remove_fn": "_remove_selected_request_set", "kind": "request_set"},
+        "ignore_tags": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Tag"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Tag"), "add_fn": "_add_ignore_tag", "remove_fn": "_remove_selected_ignore_tag", "kind": "ignore_tag"},
+        "auto_joints": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Joint"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Joint"), "add_fn": "_add_auto_joint", "remove_fn": "_remove_selected_auto_joint", "kind": "auto_joint"},
     }
 
     def __init__(self, handler):
@@ -160,12 +160,12 @@ class RcolViewer(QWidget):
             "ignore_tags": self._create_nav_tree(),
             "auto_joints": self._create_nav_tree(),
         }
-        self.nav_tabs.addTab(self.nav_trees["groups"], "Groups")
-        self.nav_tabs.addTab(self.nav_trees["request_sets"], "Request Sets")
+        self.nav_tabs.addTab(self.nav_trees["groups"], self.tr("Groups"))
+        self.nav_tabs.addTab(self.nav_trees["request_sets"], self.tr("Request Sets"))
         if self._supports_ignore_tags():
-            self.nav_tabs.addTab(self.nav_trees["ignore_tags"], "Ignore Tags")
+            self.nav_tabs.addTab(self.nav_trees["ignore_tags"], self.tr("Ignore Tags"))
         if self._supports_auto_joints():
-            self.nav_tabs.addTab(self.nav_trees["auto_joints"], "Auto Joints")
+            self.nav_tabs.addTab(self.nav_trees["auto_joints"], self.tr("Auto Joints"))
         self.tab_actions_row = QWidget()
         action_layout = QHBoxLayout(self.tab_actions_row)
         action_layout.setContentsMargins(0, 0, 0, 0)
@@ -185,7 +185,7 @@ class RcolViewer(QWidget):
         right_layout.setContentsMargins(12, 10, 12, 10)
         right_layout.setSpacing(8)
 
-        self.detail_title = QLabel("Select a node")
+        self.detail_title = QLabel(self.tr("Select a node"))
         self.detail_title.setObjectName("rcolDetailTitle")
         self.path_label = QLabel("")
         self.path_label.setObjectName("rcolPath")
@@ -212,14 +212,14 @@ class RcolViewer(QWidget):
         preview_layout = QVBoxLayout(preview_tab)
         preview_layout.setContentsMargins(10, 8, 10, 8)
         preview_layout.setSpacing(4)
-        self._preview_hint = QLabel("Select a shape or request set to highlight it.")
+        self._preview_hint = QLabel(self.tr("Select a shape or request set to highlight it."))
         self._preview_hint.setObjectName("rcolPath")
         preview_layout.addWidget(self._preview_hint)
         mesh_actions_row = QHBoxLayout()
-        self._load_mesh_button = QPushButton("Load Mesh…")
+        self._load_mesh_button = QPushButton(self.tr("Load Mesh…"))
         self._load_mesh_button.clicked.connect(self._on_load_mesh_clicked)
         mesh_actions_row.addWidget(self._load_mesh_button)
-        self._load_mesh_from_pak_button = QPushButton("Load Mesh from PAK")
+        self._load_mesh_from_pak_button = QPushButton(self.tr("Load Mesh from PAK"))
         self._load_mesh_from_pak_button.clicked.connect(self._on_load_mesh_from_pak_clicked)
         mesh_actions_row.addWidget(self._load_mesh_from_pak_button)
         self._mesh_pak_path_input = QLineEdit(preview_tab)
@@ -286,7 +286,7 @@ class RcolViewer(QWidget):
         if self._root_layout is not None:
             self._root_layout.removeWidget(self._preview_tabs)
 
-        dock = QDockWidget("RCOL 3D/RSZ", host_window)
+        dock = QDockWidget(self.tr("RCOL 3D/RSZ"), host_window)
         dock.setObjectName("rcolPreviewDock")
         dock.setAllowedAreas(Qt.AllDockWidgetAreas)
         dock.setFeatures(
@@ -312,7 +312,7 @@ class RcolViewer(QWidget):
         if self._preview_dock is None:
             return
         if is_floating:
-            self._preview_dock.setWindowTitle("RCOL 3D/RSZ")
+            self._preview_dock.setWindowTitle(self.tr("RCOL 3D/RSZ"))
         else:
             self._preview_dock.setWindowTitle("")
 
@@ -347,20 +347,26 @@ class RcolViewer(QWidget):
 
     def _populate_groups_section(self, tree: QTreeWidget):
         supports_mirror_shapes = self._supports_mirror_shapes()
-        groups_root = self._add_item(tree, f"Groups ({len(self.rcol.groups)})", NavPayload(kind="groups"))
+        groups_root = self._add_item(
+            tree,
+            self.tr("Groups ({count})").format(count=len(self.rcol.groups)),
+            NavPayload(kind="groups"),
+        )
         for g_idx, group in enumerate(self.rcol.groups):
-            group_name = group.info.name or f"Group {g_idx + 1}"
+            group_name = group.info.name or self.tr("Group {number}").format(
+                number=g_idx + 1
+            )
             group_item = self._add_item(tree, f"[{g_idx}] {group_name}", NavPayload(kind="group", group_index=g_idx), parent=groups_root)
             regular_root = self._add_item(
                 tree,
-                f"Regular Shapes ({len(group.shapes)})",
+                self.tr("Regular Shapes ({count})").format(count=len(group.shapes)),
                 NavPayload(kind="group_shapes", group_index=g_idx, mirror=False),
                 parent=group_item,
             )
             for s_idx, shape in enumerate(group.shapes):
                 self._add_item(
                     tree,
-                    f"• [{s_idx}] {shape.info.name or f'Shape {s_idx + 1}'}",
+                    f"• [{s_idx}] {shape.info.name or self.tr('Shape {number}').format(number=s_idx + 1)}",
                     NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=False),
                     parent=regular_root,
                 )
@@ -368,37 +374,51 @@ class RcolViewer(QWidget):
                 mirror_shapes = group.extra_shapes or []
                 mirror_root = self._add_item(
                     tree,
-                    f"Mirror Shapes ({len(mirror_shapes)})",
+                    self.tr("Mirror Shapes ({count})").format(count=len(mirror_shapes)),
                     NavPayload(kind="group_shapes", group_index=g_idx, mirror=True),
                     parent=group_item,
                 )
                 for s_idx, shape in enumerate(mirror_shapes):
                     self._add_item(
                         tree,
-                        f"◦ [{s_idx}] {shape.info.name or f'Mirror Shape {s_idx + 1}'}",
+                        f"◦ [{s_idx}] {shape.info.name or self.tr('Mirror Shape {number}').format(number=s_idx + 1)}",
                         NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=True),
                         parent=mirror_root,
                     )
         tree.expandToDepth(2)
 
     def _populate_request_sets_section(self, tree: QTreeWidget):
-        root = self._add_item(tree, f"Request Sets ({len(self.rcol.request_sets)})", NavPayload(kind="request_sets"))
+        root = self._add_item(
+            tree,
+            self.tr("Request Sets ({count})").format(
+                count=len(self.rcol.request_sets)
+            ),
+            NavPayload(kind="request_sets"),
+        )
         for r_idx, req in enumerate(self.rcol.request_sets):
             self._add_item(tree, self._request_set_label(r_idx), NavPayload(kind="request_set", request_index=r_idx), parent=root)
         tree.expandToDepth(0)
 
     def _populate_ignore_tags_section(self, tree: QTreeWidget):
         ignore_tags = self.rcol.ignore_tags or []
-        root = self._add_item(tree, f"Ignore Tags ({len(ignore_tags)})", NavPayload(kind="ignore_tags"))
+        root = self._add_item(
+            tree,
+            self.tr("Ignore Tags ({count})").format(count=len(ignore_tags)),
+            NavPayload(kind="ignore_tags"),
+        )
         for idx, tag in enumerate(ignore_tags):
-            self._add_item(tree, f"[{idx}] {tag.tag or '(empty)'}", NavPayload(kind="ignore_tag", ignore_index=idx), parent=root)
+            self._add_item(tree, f"[{idx}] {tag.tag or self.tr('(empty)')}", NavPayload(kind="ignore_tag", ignore_index=idx), parent=root)
         tree.expandToDepth(0)
 
     def _populate_auto_joints_section(self, tree: QTreeWidget):
         joints = self.rcol.auto_generate_joint_descs or []
-        root = self._add_item(tree, f"Auto Joints ({len(joints)})", NavPayload(kind="auto_joints"))
+        root = self._add_item(
+            tree,
+            self.tr("Auto Joints ({count})").format(count=len(joints)),
+            NavPayload(kind="auto_joints"),
+        )
         for idx, name in enumerate(joints):
-            self._add_item(tree, f"[{idx}] {name or '(empty)'}", NavPayload(kind="auto_joint", auto_joint_index=idx), parent=root)
+            self._add_item(tree, f"[{idx}] {name or self.tr('(empty)')}", NavPayload(kind="auto_joint", auto_joint_index=idx), parent=root)
         tree.expandToDepth(0)
 
     def _add_item(self, tree: QTreeWidget, text: str, payload: NavPayload, parent: QTreeWidgetItem | None = None):
@@ -467,8 +487,8 @@ class RcolViewer(QWidget):
         cfg = self.TAB_ACTIONS.get(tab)
         if not cfg:
             return
-        self.add_tab_btn.setText(cfg["add_label"])
-        self.remove_tab_btn.setText(cfg["remove_label"])
+        self.add_tab_btn.setText(self.tr(cfg["add_label"]))
+        self.remove_tab_btn.setText(self.tr(cfg["remove_label"]))
         self.add_tab_btn.setEnabled(True)
         selected_index = self._selected_index_for_kind(cfg["kind"])
         if tab == "groups":
@@ -490,12 +510,18 @@ class RcolViewer(QWidget):
 
     def _request_set_label(self, request_index: int) -> str:
         req = self.rcol.request_sets[request_index]
-        name = req.info.name or f"Request Set {request_index + 1}"
-        key = req.info.key_name or "(no key)"
-        group_name = "(unassigned)"
+        name = req.info.name or self.tr("Request Set {number}").format(
+            number=request_index + 1
+        )
+        key = req.info.key_name or self.tr("(no key)")
+        group_name = self.tr("(unassigned)")
         if 0 <= req.info.group_index < len(self.rcol.groups):
-            group_name = self.rcol.groups[req.info.group_index].info.name or f"Group {req.info.group_index}"
-        return f"[{request_index}] {name} · Group: {group_name} · key: {key}"
+            group_name = self.rcol.groups[req.info.group_index].info.name or self.tr(
+                "Group {number}"
+            ).format(number=req.info.group_index)
+        return self.tr(
+            "[{index}] {name} · Group: {group} · key: {key}"
+        ).format(index=request_index, name=name, group=group_name, key=key)
 
     def _selected_index_for_kind(self, kind: str) -> int | None:
         tab = self._active_tab_key()
@@ -567,7 +593,9 @@ class RcolViewer(QWidget):
         )
         if self._preview_hint is not None:
             if payload and payload.kind == "request_set":
-                self._preview_hint.setText("Request set selected: all linked group shapes are highlighted.")
+                self._preview_hint.setText(
+                    self.tr("Request set selected: all linked group shapes are highlighted.")
+                )
             elif payload and payload.kind == "shape":
                 occurrence_count = 0
                 if payload.group_index is not None and not payload.mirror:
@@ -578,17 +606,23 @@ class RcolViewer(QWidget):
                     )
                 if occurrence_count > 0:
                     self._preview_hint.setText(
-                        f"Shape selected: highlighted across {occurrence_count} request-set occurrence(s)."
+                        self.tr(
+                            "Shape selected: highlighted across {count} request-set occurrence(s)."
+                        ).format(count=occurrence_count)
                     )
                 else:
-                    self._preview_hint.setText("Shape selected: no request-set occurrences found.")
+                    self._preview_hint.setText(
+                        self.tr("Shape selected: no request-set occurrences found.")
+                    )
             else:
-                self._preview_hint.setText("Select a shape or request set to highlight it.")
+                self._preview_hint.setText(
+                    self.tr("Select a shape or request set to highlight it.")
+                )
 
     def _on_load_mesh_clicked(self):
         filepath, _ = QFileDialog.getOpenFileName(
             self,
-            "Select Mesh",
+            self.tr("Select Mesh"),
             "",
             "Mesh Files (*.mesh.*);;All Files (*)",
         )
@@ -602,7 +636,11 @@ class RcolViewer(QWidget):
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
-            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to load mesh:\n{exc}")
+            QMessageBox.warning(
+                self,
+                self.tr(MESH_LOAD_FAILED_TITLE),
+                self.tr("Unable to load mesh:\n{}").format(exc),
+            )
 
     def _on_load_mesh_from_pak_clicked(self):
         app = getattr(self.handler, "app", None)
@@ -610,14 +648,20 @@ class RcolViewer(QWidget):
         if proj is None or not getattr(proj, "project_dir", None):
             QMessageBox.information(
                 self,
-                "Project Mode Required",
-                'You are not in project mode. Please open a project ("File" > "New Mod/Open Project").',
+                self.tr("Project Mode Required"),
+                self.tr(
+                    'You are not in project mode. Please open a project ("File" > "New Mod/Open Project").'
+                ),
             )
             return
 
         resource_path = (self._mesh_pak_path_input.text() if self._mesh_pak_path_input else "").strip()
         if not resource_path:
-            QMessageBox.information(self, "Load Mesh from PAK", "Please enter a mesh path first.")
+            QMessageBox.information(
+                self,
+                self.tr("Load Mesh from PAK"),
+                self.tr("Please enter a mesh path first."),
+            )
             return
 
         path_prefix = get_path_prefix_for_game(str(getattr(app, "current_game", "") or ""))
@@ -630,7 +674,11 @@ class RcolViewer(QWidget):
             self,
         )
         if not resolved:
-            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to resolve mesh path:\n{resource_path}")
+            QMessageBox.warning(
+                self,
+                self.tr(MESH_LOAD_FAILED_TITLE),
+                self.tr("Unable to resolve mesh path:\n{}").format(resource_path),
+            )
             return
 
         resolved_path, mesh_data = resolved
@@ -641,7 +689,11 @@ class RcolViewer(QWidget):
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
-            QMessageBox.warning(self, MESH_LOAD_FAILED_TITLE, f"Unable to load mesh:\n{exc}")
+            QMessageBox.warning(
+                self,
+                self.tr(MESH_LOAD_FAILED_TITLE),
+                self.tr("Unable to load mesh:\n{}").format(exc),
+            )
 
     def _rebuild_attached_mesh_list(self):
         if self._attached_mesh_list is None:
@@ -729,7 +781,7 @@ class RcolViewer(QWidget):
         handler.read(data)
         mesh = getattr(handler, "mesh", None)
         if mesh is None:
-            raise ValueError("Mesh handler did not produce a parsed mesh.")
+            raise ValueError(self.tr("Mesh handler did not produce a parsed mesh."))
         return mesh
 
     def _build_attachment_scene(self, mesh: MeshFile, attachment_key: str) -> SceneAttachment:
@@ -836,8 +888,8 @@ class RcolViewer(QWidget):
         }
         fn = handlers.get(payload.kind)
         if not fn:
-            self.detail_title.setText("Unsupported node")
-            self._row_text("Info", "No editor is available for this node.")
+            self.detail_title.setText(self.tr("Unsupported node"))
+            self._row_text("Info", self.tr("No editor is available for this node."))
             return
         fn(payload)
         self._refresh_scene_preview(payload)
@@ -850,7 +902,7 @@ class RcolViewer(QWidget):
         self.detail_form.addRow(label, value_label)
 
     def _row_multiline_text(self, label: str, lines: list[str], *, max_lines: int = 10):
-        text = "\n".join(lines) if lines else NONE_TEXT
+        text = "\n".join(lines) if lines else self.tr(NONE_TEXT)
         editor = QTextEdit()
         editor.setReadOnly(True)
         editor.setPlainText(text)
@@ -975,7 +1027,13 @@ class RcolViewer(QWidget):
     def _prompt_request_set_type(self) -> str | None:
         registry = self._resolve_type_registry()
         if not registry:
-            QMessageBox.warning(self, "Missing Registry", "No type registry is loaded. Cannot add request-set userdata.")
+            QMessageBox.warning(
+                self,
+                self.tr("Missing Registry"),
+                self.tr(
+                    "No type registry is loaded. Cannot add request-set userdata."
+                ),
+            )
             return None
 
         dialog = ComponentSelectorDialog(
@@ -984,8 +1042,8 @@ class RcolViewer(QWidget):
             required_parent_name="via.physics.RequestSetColliderUserData",
             include_parent=True,
         )
-        dialog.setWindowTitle("Select Instance Type")
-        dialog.search_input.setPlaceholderText("Type instance type name...")
+        dialog.setWindowTitle(self.tr("Select Instance Type"))
+        dialog.search_input.setPlaceholderText(self.tr("Type instance type name..."))
         if dialog.exec() != QDialog.Accepted:
             return None
         return dialog.get_selected_component()
@@ -993,7 +1051,11 @@ class RcolViewer(QWidget):
     def _prompt_shape_userdata_type(self) -> str | None:
         registry = self._resolve_type_registry()
         if not registry:
-            QMessageBox.warning(self, "Missing Registry", "No type registry is loaded. Cannot add shape userdata.")
+            QMessageBox.warning(
+                self,
+                self.tr("Missing Registry"),
+                self.tr("No type registry is loaded. Cannot add shape userdata."),
+            )
             return None
 
         dialog = ComponentSelectorDialog(
@@ -1001,25 +1063,31 @@ class RcolViewer(QWidget):
             type_registry=registry,
             required_parent_name="via.UserData",
         )
-        dialog.setWindowTitle("Select Shape UserData Type")
+        dialog.setWindowTitle(self.tr("Select Shape UserData Type"))
         if dialog.exec() != QDialog.Accepted:
             return None
         return dialog.get_selected_component()
 
     def _prompt_request_set_group_index(self) -> int | None:
         if not self.rcol.groups:
-            QMessageBox.warning(self, "Add Request Set", "No groups are available. Add a group first.")
+            QMessageBox.warning(
+                self,
+                self.tr("Add Request Set"),
+                self.tr("No groups are available. Add a group first."),
+            )
             return None
 
         group_labels = []
         for group_index, group in enumerate(self.rcol.groups):
-            group_name = (group.info.name or "").strip() or f"Group {group_index + 1}"
+            group_name = (group.info.name or "").strip() or self.tr(
+                "Group {number}"
+            ).format(number=group_index + 1)
             group_labels.append(f"[{group_index}] {group_name}")
 
         selected_label, confirmed = QInputDialog.getItem(
             self,
-            "Select Request Set Group",
-            "Assign this request set to group:",
+            self.tr("Select Request Set Group"),
+            self.tr("Assign this request set to group:"),
             group_labels,
             0,
             False,
@@ -1031,11 +1099,11 @@ class RcolViewer(QWidget):
 
     def _append_headless_request_userdata(self, type_name: str, group_shape_count: int) -> tuple[int, int, int]:
         if not self.rcol.rsz:
-            raise ValueError("This RCOL does not contain a headless RSZ block.")
+            raise ValueError(self.tr("This RCOL does not contain a headless RSZ block."))
 
         embedded_viewer = self._embedded_headless_viewer
         if embedded_viewer is None:
-            raise ValueError("Headless RSZ viewer is unavailable.")
+            raise ValueError(self.tr("Headless RSZ viewer is unavailable."))
 
         request_set_userdata_index, group_userdata_index_start, root_instance_id = embedded_viewer.add_headless_request_userdata(
             type_name,
@@ -1424,20 +1492,27 @@ class RcolViewer(QWidget):
 
         if payload.kind == "group" and payload.group_index is not None:
             group = self.rcol.groups[payload.group_index]
-            item.setText(0, f"[{payload.group_index}] {group.info.name or f'Group {payload.group_index + 1}'}")
+            default_name = self.tr("Group {number}").format(
+                number=payload.group_index + 1
+            )
+            item.setText(0, f"[{payload.group_index}] {group.info.name or default_name}")
         elif payload.kind == "shape" and payload.group_index is not None and payload.shape_index is not None:
             shape = self._get_shape(payload)
             prefix = "◦" if payload.mirror else "•"
-            default_name = f"{'Mirror Shape' if payload.mirror else 'Shape'} {payload.shape_index + 1}"
+            default_name = (
+                self.tr("Mirror Shape {number}")
+                if payload.mirror
+                else self.tr("Shape {number}")
+            ).format(number=payload.shape_index + 1)
             item.setText(0, f"{prefix} [{payload.shape_index}] {shape.info.name or default_name}")
         elif payload.kind == "request_set" and payload.request_index is not None:
             item.setText(0, self._request_set_label(payload.request_index))
         elif payload.kind == "ignore_tag" and payload.ignore_index is not None:
             tag = self.rcol.ignore_tags[payload.ignore_index]
-            item.setText(0, f"[{payload.ignore_index}] {tag.tag or '(empty)'}")
+            item.setText(0, f"[{payload.ignore_index}] {tag.tag or self.tr('(empty)')}")
         elif payload.kind == "auto_joint" and payload.auto_joint_index is not None:
             name = self.rcol.auto_generate_joint_descs[payload.auto_joint_index]
-            item.setText(0, f"[{payload.auto_joint_index}] {name or '(empty)'}")
+            item.setText(0, f"[{payload.auto_joint_index}] {name or self.tr('(empty)')}")
 
     def _invalidate_group_node(self, group_index: int):
         self._rebuild_section("groups")
@@ -1516,18 +1591,22 @@ class RcolViewer(QWidget):
 
     # ---------- Panels ----------
     def _render_groups_overview(self, _payload: NavPayload):
-        self.detail_title.setText("Groups")
+        self.detail_title.setText(self.tr("Groups"))
         self._row_text("Count", str(len(self.rcol.groups)))
 
     def _render_group(self, payload: NavPayload):
         group = self.rcol.groups[payload.group_index]
-        self.detail_title.setText(f"Group [{payload.group_index}]")
+        self.detail_title.setText(
+            self.tr("Group [{index}]").format(index=payload.group_index)
+        )
 
         self._line_edit("Name", group.info.name or "", lambda text: self._set_group_name(payload.group_index, text))
         self._row_text("GUID", self._format_guid(group.info.guid))
         self._row_text("Layer GUID", self._format_guid(group.info.layer_guid))
         mask_guid_lines = [self._format_guid(mask_guid) for mask_guid in (group.info.mask_guids or [])]
-        self._row_multiline_text("Mask GUIDs", mask_guid_lines or [NONE_TEXT], max_lines=12)
+        self._row_multiline_text(
+            "Mask GUIDs", mask_guid_lines or [self.tr(NONE_TEXT)], max_lines=12
+        )
         self._row_text("Regular Shapes", str(len(group.shapes)))
         if self._supports_mirror_shapes():
             self._row_text("Mirror Shapes", str(len(group.extra_shapes or [])))
@@ -1535,30 +1614,42 @@ class RcolViewer(QWidget):
         actions = QWidget()
         row = QHBoxLayout(actions)
         row.setContentsMargins(0, 0, 0, 0)
-        add_shape = QPushButton("Add Shape")
+        add_shape = QPushButton(self.tr("Add Shape"))
         add_shape.clicked.connect(lambda: self._add_shape(payload.group_index, mirror=False))
         row.addWidget(add_shape)
         if self._supports_mirror_shapes():
-            add_mirror = QPushButton("Add Mirror Shape")
+            add_mirror = QPushButton(self.tr("Add Mirror Shape"))
             add_mirror.clicked.connect(lambda: self._add_shape(payload.group_index, mirror=True))
             row.addWidget(add_mirror)
         self.detail_form.addRow("", actions)
 
     def _render_group_shapes(self, payload: NavPayload):
         group = self.rcol.groups[payload.group_index]
-        mirror_text = "Mirror" if payload.mirror else "Regular"
-        self.detail_title.setText(f"{mirror_text} Shapes")
+        mirror_text = self.tr("Mirror") if payload.mirror else self.tr("Regular")
+        self.detail_title.setText(
+            self.tr("{kind} Shapes").format(kind=mirror_text)
+        )
         count = len(self._shape_list(payload.group_index, payload.mirror))
-        self._row_text("Group", group.info.name or f"Group {payload.group_index}")
+        self._row_text(
+            "Group",
+            group.info.name
+            or self.tr("Group {number}").format(number=payload.group_index),
+        )
         self._row_text("Count", str(count))
         self._action_button(
-            f"Add {mirror_text} Shape",
+            self.tr("Add {kind} Shape").format(kind=mirror_text),
             lambda: self._add_shape(payload.group_index, mirror=payload.mirror),
         )
 
     def _render_shape(self, payload: NavPayload):
         shape = self._get_shape(payload)
-        self.detail_title.setText(f"{'Mirror ' if payload.mirror else ''}Shape [{payload.shape_index}]")
+        self.detail_title.setText(
+            (
+                self.tr("Mirror Shape [{index}]")
+                if payload.mirror
+                else self.tr("Shape [{index}]")
+            ).format(index=payload.shape_index)
+        )
 
         self._line_edit("Name", shape.info.name or "", lambda text: self._set_shape_name(payload, text))
         self._row_text("GUID", self._format_guid(shape.info.guid))
@@ -1577,14 +1668,18 @@ class RcolViewer(QWidget):
         self._combo("Shape Type", type_options, int(shape.info.shape_type), lambda value: self._set_shape_type(payload, int(value)))
         self._render_shape_geometry_fields(payload, shape)
         associated_shape_object_ids = self._get_shape_object_id_entries(payload)
-        self._row_multiline_text("Associated RSZ Object ID", associated_shape_object_ids or [NONE_TEXT], max_lines=10)
+        self._row_multiline_text(
+            "Associated RSZ Object ID",
+            associated_shape_object_ids or [self.tr(NONE_TEXT)],
+            max_lines=10,
+        )
 
-        self._action_button("Delete Shape", lambda: self._remove_shape(payload))
+        self._action_button(self.tr("Delete Shape"), lambda: self._remove_shape(payload))
 
     def _render_shape_geometry_fields(self, payload: NavPayload, shape: RcolShape):
         shape_data = shape.shape
         if shape_data is None:
-            self._row_text("Geometry", "Unsupported or missing payload.")
+            self._row_text("Geometry", self.tr("Unsupported or missing payload."))
             return
 
         if hasattr(shape_data, "center") and hasattr(shape_data, "radius"):
@@ -1636,15 +1731,17 @@ class RcolViewer(QWidget):
                 )
             return
 
-        self._row_text("Geometry", "No editor for this shape payload yet.")
+        self._row_text("Geometry", self.tr("No editor for this shape payload yet."))
 
     def _render_request_sets_overview(self, _payload: NavPayload):
-        self.detail_title.setText("Request Sets")
+        self.detail_title.setText(self.tr("Request Sets"))
         self._row_text("Count", str(len(self.rcol.request_sets)))
 
     def _render_request_set(self, payload: NavPayload):
         request_set = self.rcol.request_sets[payload.request_index]
-        self.detail_title.setText(f"Request Set [{payload.request_index}]")
+        self.detail_title.setText(
+            self.tr("Request Set [{index}]").format(index=payload.request_index)
+        )
 
         self._line_edit("Name", request_set.info.name or "", lambda text: self._set_request_name(payload.request_index, text))
         self._line_edit("Key", request_set.info.key_name or "", lambda text: self._set_request_key(payload.request_index, text))
@@ -1656,22 +1753,24 @@ class RcolViewer(QWidget):
 
 
     def _render_ignore_tags_overview(self, _payload: NavPayload):
-        self.detail_title.setText("Ignore Tags")
+        self.detail_title.setText(self.tr("Ignore Tags"))
         self._row_text("Count", str(len(self.rcol.ignore_tags or [])))
 
     def _render_ignore_tag(self, payload: NavPayload):
         tag = self.rcol.ignore_tags[payload.ignore_index]
-        self.detail_title.setText(f"Ignore Tag [{payload.ignore_index}]")
+        self.detail_title.setText(
+            self.tr("Ignore Tag [{index}]").format(index=payload.ignore_index)
+        )
         self._line_edit("Tag", tag.tag or "", lambda text: self._set_ignore_tag(payload.ignore_index, text))
-        self._row_text("Note", "Tag hash is auto-managed on save.")
+        self._row_text("Note", self.tr("Tag hash is auto-managed on save."))
 
     def _render_auto_joints_overview(self, _payload: NavPayload):
-        self.detail_title.setText("Auto Generate Joints")
+        self.detail_title.setText(self.tr("Auto Generate Joints"))
         self._row_text("Count", str(len(self.rcol.auto_generate_joint_descs or [])))
 
     def _render_auto_joint(self, payload: NavPayload):
         idx = payload.auto_joint_index
-        self.detail_title.setText(f"Auto Joint [{idx}]")
+        self.detail_title.setText(self.tr("Auto Joint [{index}]").format(index=idx))
         desc = self.rcol.auto_generate_joint_descs[idx]
         self._line_edit("Descriptor", desc or "", lambda text: self._set_auto_joint_desc(idx, text))
 
@@ -1684,7 +1783,12 @@ class RcolViewer(QWidget):
 
         has_rsz = bool(getattr(self.rcol, "rsz", None) and getattr(self.rcol, "user_data_bytes", b""))
         byte_length = len(getattr(self.rcol, "user_data_bytes", b""))
-        self._headless_status.setText(f"Present: {'Yes' if has_rsz else 'No'} · Byte Length: {byte_length}")
+        self._headless_status.setText(
+            self.tr("Present: {present} · Byte Length: {length}").format(
+                present=self.tr("Yes") if has_rsz else self.tr("No"),
+                length=byte_length,
+            )
+        )
 
         while self._headless_body.count():
             item = self._headless_body.takeAt(0)
@@ -1696,7 +1800,9 @@ class RcolViewer(QWidget):
         self._embedded_headless_handler = None
 
         if not has_rsz:
-            self._headless_body.addWidget(QLabel("No headless RSZ block was found in this RCOL."))
+            self._headless_body.addWidget(
+                QLabel(self.tr("No headless RSZ block was found in this RCOL."))
+            )
             return
 
         try:
@@ -1712,11 +1818,15 @@ class RcolViewer(QWidget):
                 rsz_handler.set_game_version(rsz_handler.app.settings.get("game_version", "RE4"))
             viewer = rsz_handler.create_viewer()
         except Exception as exc:
-            self._headless_body.addWidget(QLabel(f"Failed to build headless RSZ region: {exc}"))
+            self._headless_body.addWidget(
+                QLabel(self.tr("Failed to build headless RSZ region: {}").format(exc))
+            )
             return
 
         if viewer is None:
-            self._headless_body.addWidget(QLabel("Failed to create the embedded headless RSZ viewer."))
+            self._headless_body.addWidget(
+                QLabel(self.tr("Failed to create the embedded headless RSZ viewer."))
+            )
             return
 
         viewer.modified_changed.connect(lambda changed: self._mark_modified() if changed else None)
@@ -1742,21 +1852,33 @@ class RcolViewer(QWidget):
     def _remove_selected_group(self):
         group_index = self._selected_index_for_kind("group")
         if group_index is None:
-            QMessageBox.information(self, "Remove Group", "Select a group entry in the Groups tab first.")
+            QMessageBox.information(
+                self,
+                self.tr("Remove Group"),
+                self.tr("Select a group entry in the Groups tab first."),
+            )
             return
         self._remove_group(group_index)
 
     def _remove_selected_request_set(self):
         index = self._selected_index_for_kind("request_set")
         if index is None:
-            QMessageBox.information(self, "Remove Request Set", "Select a request set entry first.")
+            QMessageBox.information(
+                self,
+                self.tr("Remove Request Set"),
+                self.tr("Select a request set entry first."),
+            )
             return
         self._remove_request_set(index)
 
     def _remove_selected_ignore_tag(self):
         index = self._selected_index_for_kind("ignore_tag")
         if index is None:
-            QMessageBox.information(self, "Remove Ignore Tag", "Select an ignore tag entry first.")
+            QMessageBox.information(
+                self,
+                self.tr("Remove Ignore Tag"),
+                self.tr("Select an ignore tag entry first."),
+            )
             return
         self._remove_ignore_tag(index)
 
@@ -1774,13 +1896,19 @@ class RcolViewer(QWidget):
     def _remove_selected_auto_joint(self):
         index = self._selected_index_for_kind("auto_joint")
         if index is None:
-            QMessageBox.information(self, "Remove Auto Joint", "Select an auto joint entry first.")
+            QMessageBox.information(
+                self,
+                self.tr("Remove Auto Joint"),
+                self.tr("Select an auto joint entry first."),
+            )
             return
         self._remove_auto_joint(index)
 
     def _remove_group(self, group_index: int):
         if len(self.rcol.groups) <= 1:
-            QMessageBox.warning(self, "Cannot Delete", "At least one group must remain.")
+            QMessageBox.warning(
+                self, self.tr("Cannot Delete"), self.tr("At least one group must remain.")
+            )
             return
         assigned_request_count = sum(
             1
@@ -1790,9 +1918,11 @@ class RcolViewer(QWidget):
         if assigned_request_count > 0:
             QMessageBox.warning(
                 self,
-                "Cannot Delete",
-                f"Group [{group_index}] has {assigned_request_count} request set(s) assigned. "
-                "Remove or reassign those request sets before deleting the group.",
+                self.tr("Cannot Delete"),
+                self.tr(
+                    "Group [{group}] has {count} request set(s) assigned. "
+                    "Remove or reassign those request sets before deleting the group."
+                ).format(group=group_index, count=assigned_request_count),
             )
             return
         if self.rcol.rsz and self.handler.file_version < 25:
@@ -1825,8 +1955,8 @@ class RcolViewer(QWidget):
         if mirror and not self._supports_mirror_shapes():
             QMessageBox.information(
                 self,
-                "Unsupported Operation",
-                "Mirror shapes are only supported in RCOL version 25+ files.",
+                self.tr("Unsupported Operation"),
+                self.tr("Mirror shapes are only supported in RCOL version 25+ files."),
             )
             return
         selected_userdata_type = None
@@ -2012,7 +2142,11 @@ class RcolViewer(QWidget):
                 reserved_shape_slots,
             )
         except Exception as exc:
-            QMessageBox.warning(self, "Add Request Set", f"Failed to initialize request-set userdata:\n{exc}")
+            QMessageBox.warning(
+                self,
+                self.tr("Add Request Set"),
+                self.tr("Failed to initialize request-set userdata:\n{}").format(exc),
+            )
             return
 
         if self.handler.file_version < 25:

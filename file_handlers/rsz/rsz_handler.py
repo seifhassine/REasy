@@ -47,8 +47,6 @@ from .utils.rsz_field_utils import (
 from .utils.rsz_guid_utils import create_guid_data
 from .rsz_lazy_loading import RszLazyNodeBuilder
 
-RES_MGMT_MESSAGE = "Auto resource management is enabled for this game, cannot manually manage resources."
-
 ADVANCED_SECTION_TITLE = "Advanced Information"
 DATA_BLOCK_TITLE = "Data Block"
 USERDATA_INFO_TBL_LABEL = "UserData Info Tbl"
@@ -137,34 +135,38 @@ class RszHandler(BaseFileHandler):
         issue_preview = "\n".join(issues[:10])
         more_count = len(issues) - 10
         if more_count > 0:
-            issue_preview += f"\n... and {more_count} more issue(s)."
+            issue_preview += "\n" + self.tr("... and {count} more issue(s).").format(
+                count=more_count
+            )
 
-        file_name = self.filepath or "<unknown file>"
-        registry_name = getattr(self.type_registry, "json_path", None) or "<unknown registry>"
+        file_name = self.filepath or self.tr("<unknown file>")
+        registry_name = getattr(self.type_registry, "json_path", None) or self.tr("<unknown registry>")
         has_missing_type = any("missing from the type registry" in issue for issue in issues)
 
-        message = (
+        message = self.tr(
             "RSZ type validation found inconsistencies with the selected type registry.\n\n"
-            f"File: {file_name}\n"
-            f"Registry: {registry_name}\n\n"
+            "File: {file_name}\n"
+            "Registry: {registry_name}\n\n"
             "Possible reasons:\n"
             "- Outdated file (unused or not latest version)\n"
             "- Outdated RSZ dump\n"
             "- Wrong game for selected RSZ dump\n\n"
             "Details:\n"
-            f"{issue_preview}"
-        )
+            "{issues}"
+        ).format(file_name=file_name, registry_name=registry_name, issues=issue_preview)
 
         parent = self._viewer if self._viewer else None
         if has_missing_type:
             self.suppress_load_error_dialog = True
-            QMessageBox.critical(parent, "Type Registry Validation", message)
+            QMessageBox.critical(parent, self.tr("Type Registry Validation"), message)
             return False
 
         reply = QMessageBox.question(
             parent,
-            "Type Registry Validation",
-            f"{message}\n\nDo you want to continue parsing this file?",
+            self.tr("Type Registry Validation"),
+            self.tr("{message}\n\nDo you want to continue parsing this file?").format(
+                message=message
+            ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -401,8 +403,8 @@ class RszViewer(QWidget):
             return
         menu = self.scene_button.menu()
         menu.clear()
-        self.scene_button.setText("Add to Scene")
-        self.scene_button.setToolTip("Add this SCN to a scene")
+        self.scene_button.setText(self.tr("Add to Scene"))
+        self.scene_button.setToolTip(self.tr("Add this SCN to a scene"))
         app = getattr(self.handler, "app", None)
         if app is None:
             self.scene_button.setEnabled(False)
@@ -1712,7 +1714,9 @@ class RszViewer(QWidget):
 
     def _ensure_manual_resource_management(self):
         if self.handler.auto_resource_management:
-            raise ValueError(RES_MGMT_MESSAGE)
+            raise ValueError(self.tr(
+                "Auto resource management is enabled for this game, cannot manually manage resources."
+            ))
 
     def manage_resource(self, resource_index, new_path):
         """Update an existing resource path"""

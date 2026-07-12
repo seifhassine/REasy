@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
                               QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
-from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import (
     QDoubleValidator,
     QRegularExpressionValidator,
@@ -44,8 +44,8 @@ _COMPONENT_INPUT_STYLE = """
     }
 """
 
-ADD_RESOURCE_TITLE = "Add Resource"
-OPEN_RESOURCE_TITLE = "Open Resource"
+ADD_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Add Resource")
+OPEN_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Open Resource")
 
 
 def _set_invalid_state(widget, invalid):
@@ -995,8 +995,8 @@ class BoundsInput(BaseValueWidget):
                 edits.append(le)
             return edits
 
-        self.min_edits = make_row(1, "Min:")
-        self.max_edits = make_row(2, "Max:")
+        self.min_edits = make_row(1, self.tr("Min:"))
+        self.max_edits = make_row(2, self.tr("Max:"))
 
         self.layout.addStretch()
 
@@ -1222,7 +1222,7 @@ class HexBytesInput(BaseValueWidget):
                 self.text_field.setPalette(self.normal_palette)
         except Exception as e:
             print(f"Error displaying raw bytes data: {e}")
-            self.text_field.setText("[Error displaying data]")
+            self.text_field.setText(self.tr("[Error displaying data]"))
     
     def set_data(self, data):
         if not data or not isinstance(data, RawBytesData):
@@ -1362,7 +1362,7 @@ class StringInput(BaseValueWidget):
         
         if isinstance(self._data, ResourceData):
             if self.resource_indicator is None:
-                self.resource_indicator = QLabel("Resource")
+                self.resource_indicator = QLabel(self.tr("Resource"))
                 self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
                 self.layout.addWidget(self.resource_indicator)
             
@@ -1391,10 +1391,10 @@ class StringInput(BaseValueWidget):
         if self.open_button is None:
             return
         
-        self.open_button.setToolTip("Open resource file")
+        self.open_button.setToolTip(self.tr("Open resource file"))
         
         if self.add_open_button:
-            self.add_open_button.setToolTip("Add resource file to project")
+            self.add_open_button.setToolTip(self.tr("Add resource file to project"))
 
     def _get_app_window(self):
         widget = self
@@ -1488,12 +1488,12 @@ class StringInput(BaseValueWidget):
                 if hasattr(proj_dock, '_refresh_proj'):
                     proj_dock._refresh_proj()
                 QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
-                    f"File added to project:\n{dest_path}")
+                    self.tr("File added to project:\n{}").format(dest_path))
             else:
                 if overwrite_state["asked"] and not overwrite_state["accepted"]:
                     return
                 QMessageBox.critical(self, self.tr(ADD_RESOURCE_TITLE),
-                    f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
+                    self.tr("Error: Resource file not found.\n\nResource: {}\n\nSearched in both PAK files and system files.").format(resource_path))
             return
         
         path_prefix = get_path_prefix_for_game(app_window.current_game)
@@ -1513,7 +1513,7 @@ class StringInput(BaseValueWidget):
                 app_window.attach_pak_source_tab(tab, file_path, proj_dock.project_dir)
         else:
             QMessageBox.critical(self, self.tr(OPEN_RESOURCE_TITLE),
-                f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
+                self.tr("Error: Resource file not found.\n\nResource: {}\n\nSearched in both PAK files and system files.").format(resource_path))
 
     def _on_text_changed(self, text):
         if self._data:
@@ -1697,7 +1697,9 @@ class BaseRangeInput(BaseValueWidget):
         self.layout.setSpacing(4)
         
         self.inputs = []
-        for i, name in enumerate(["Min", "Max"]):
+        for i, (name, property_name) in enumerate(
+            [(self.tr("Min"), "min"), (self.tr("Max"), "max")]
+        ):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -1711,7 +1713,7 @@ class BaseRangeInput(BaseValueWidget):
             line_edit = QLineEdit()
             line_edit.setValidator(self._create_validator())
             line_edit.setFixedWidth(80)
-            line_edit.setProperty("name", name.lower())
+            line_edit.setProperty("name", property_name)
             line_edit.setAlignment(Qt.AlignLeft)
             line_edit.setStyleSheet("margin-left: 2px;")
             container_layout.addWidget(line_edit)
@@ -2264,7 +2266,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         initial_color = QColor(r, g, b)
         
         dialog = QColorDialog(initial_color, self)
-        dialog.setWindowTitle("Select Color")
+        dialog.setWindowTitle(self.tr("Select Color"))
         dialog.setOption(QColorDialog.ShowAlphaChannel, False)  # No alpha channel
         
         if dialog.exec_():
@@ -2327,9 +2329,9 @@ class CapsuleInput(BaseValueWidget):
         grid.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(grid)
         
-        grid.addWidget(QLabel("Start:"), 0, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel("End:"), 1, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel("Radius:"), 2, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("Start:")), 0, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("End:")), 1, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("Radius:")), 2, 0, alignment=Qt.AlignRight)
         
         self.start_inputs = []
         for i, coord in enumerate(['X', 'Y', 'Z']):

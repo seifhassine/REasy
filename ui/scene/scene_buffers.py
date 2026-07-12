@@ -26,16 +26,20 @@ def scene_bounds(meshes: Iterable[SceneDrawMesh]) -> tuple[np.ndarray, float]:
 
 def mesh_bounds_points(meshes: Iterable[SceneDrawMesh]) -> np.ndarray:
     chunks = []
+    local_corners: dict[int, np.ndarray] = {}
     for mesh in meshes:
         if not len(mesh.vertices):
             continue
-        vertices = np.asarray(mesh.vertices, dtype=np.float32).reshape(-1, 3)
-        mins = vertices.min(axis=0)
-        maxs = vertices.max(axis=0)
-        corners = np.array(
-            [(x, y, z) for x in (mins[0], maxs[0]) for y in (mins[1], maxs[1]) for z in (mins[2], maxs[2])],
-            dtype=np.float32,
-        )
+        cache_key = id(mesh.vertices)
+        corners = local_corners.get(cache_key)
+        if corners is None:
+            vertices = np.asarray(mesh.vertices, dtype=np.float32).reshape(-1, 3)
+            mins, maxs = vertices.min(axis=0), vertices.max(axis=0)
+            corners = np.array(
+                [(x, y, z) for x in (mins[0], maxs[0]) for y in (mins[1], maxs[1]) for z in (mins[2], maxs[2])],
+                dtype=np.float32,
+            )
+            local_corners[cache_key] = corners
         chunks.append(transform_points(corners, mesh.transform_matrix) if mesh.transform_matrix is not None else corners)
     return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
 
@@ -228,6 +232,7 @@ class _SceneBufferBuilder:
             return False
         return not (
             self.show_only_highlighted
+            and self.highlighted_keys
             and mesh.key not in self.highlighted_keys
             and not mesh.ignore_highlight_filter
         )

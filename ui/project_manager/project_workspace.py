@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from PySide6.QtCore import QSignalBlocker, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
@@ -15,7 +15,7 @@ class ProjectWorkspaceController:
         self.sessions = ProjectSessionManager(notebook, tab_lookup)
         self._scene_icon = self._make_scene_icon()
 
-        self.toolbar = QToolBar(host.tr("Projects"), host)
+        self.toolbar = QToolBar(self.tr("Projects"), host)
         self.toolbar.setObjectName("projectWorkspaceBar")
         self.toolbar.setMovable(False)
         self.toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
@@ -58,7 +58,7 @@ class ProjectWorkspaceController:
         button = QToolButton(self.tab_bar)
         button.setObjectName("projectTabClose")
         button.setText("×")
-        button.setToolTip(self.host.tr(tip))
+        button.setToolTip(tip)
         button.setFixedSize(20, 20)
         button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, self.toolbar, callback))
         return button
@@ -78,21 +78,31 @@ class ProjectWorkspaceController:
         painter.end()
         return QIcon(pixmap)
 
+    @staticmethod
+    def tr(text: str) -> str:
+        return QCoreApplication.translate("ProjectWorkspaceController", text)
+
     def is_active(self, project_dir) -> bool:
         return ProjectSessionManager.key_for(project_dir) == self.sessions.active_key
 
     def _warn(self, title, message):
-        QMessageBox.warning(self.host, self.host.tr(title), self.host.tr(message))
+        QMessageBox.warning(self.host, title, message)
 
     def open(self, project_path: Path | str, game: str | None = None) -> bool:
         project_path = Path(project_path).resolve()
         if not project_path.is_dir():
-            self._warn("Project not found", "That project folder no longer exists.")
+            self._warn(
+                self.tr("Project not found"),
+                self.tr("That project folder no longer exists."),
+            )
             return False
 
         game = game or self.host.proj_dock.infer_project_game(project_path)
         if not game:
-            self._warn("Invalid selection", "This folder is not a recognized REasy project.")
+            self._warn(
+                self.tr("Invalid selection"),
+                self.tr("This folder is not a recognized REasy project."),
+            )
             return False
 
         self.activate(project_path, game)
@@ -123,7 +133,9 @@ class ProjectWorkspaceController:
         dock.show()
         self.host._shrink_project_dock()
         dock.set_project(path, on_loaded)
-        self.host.status_bar.showMessage(f"Project: {os.path.basename(path)}", 3000)
+        self.host.status_bar.showMessage(
+            self.tr("Project: {name}").format(name=os.path.basename(path)), 3000
+        )
         return session
 
     def delete_project(self, project_path: Path) -> bool:
@@ -136,7 +148,7 @@ class ProjectWorkspaceController:
         try:
             shutil.rmtree(project_path)
         except Exception as exc:
-            QMessageBox.critical(self.host, self.host.tr("Delete failed"), str(exc))
+            QMessageBox.critical(self.host, self.tr("Delete failed"), str(exc))
             return False
         if session:
             self.close(key, confirm=False, record_history=False)
@@ -166,7 +178,7 @@ class ProjectWorkspaceController:
             self.host.current_project = self.host.current_game = None
             self.host.proj_dock.set_project(None)
             self.host.proj_dock.hide()
-            self.host.status_bar.showMessage("Project closed", 3000)
+            self.host.status_bar.showMessage(self.tr("Project closed"), 3000)
 
         self.host.proj_dock.discard_project_state(session.path)
         self._sync_tabs()
@@ -177,8 +189,10 @@ class ProjectWorkspaceController:
         scene = scenes.scene_using_project(str(project_path)) if scenes and project_path else None
         if scene is None:
             return False
-        message = f'Scene "{scene.title}" contains SCNs from this project. Delete the scene first.'
-        QMessageBox.information(self.host, self.host.tr("Scene uses project"), self.host.tr(message))
+        message = self.tr(
+            'Scene "{}" contains SCNs from this project. Delete the scene first.'
+        ).format(scene.title)
+        QMessageBox.information(self.host, self.tr("Scene uses project"), message)
         return True
 
     def _tab_index(self, data) -> int:
@@ -189,10 +203,10 @@ class ProjectWorkspaceController:
         scene_tabs = scenes.tabs() if scenes else ()
         project_icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
         entries = [
-            (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), "Close project")
+            (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), self.tr("Close project"))
             for session in self.sessions.project_sessions()
         ] + [
-            (("scene", scene), self._scene_icon, scene.title, scene.title, lambda scene=scene: self.host.scenes.close_scene(scene), "Close scene")
+            (("scene", scene), self._scene_icon, scene.title, scene.title, lambda scene=scene: self.host.scenes.close_scene(scene), self.tr("Close scene"))
             for scene in scene_tabs
         ]
         current = self.host.tabs.get(self.sessions.notebook.currentWidget())

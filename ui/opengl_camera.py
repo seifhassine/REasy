@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 
 
 class OrbitCameraMixin:
@@ -23,7 +23,11 @@ class OrbitCameraMixin:
             self.fps = self._frame_count / elapsed
             self._frame_count = 0
             self._last_time = now
-            self.fps_label.setText(f"{self.fps:.1f} FPS")
+            self.fps_label.setText(
+                QCoreApplication.translate("OrbitCameraMixin", "{fps:.1f} FPS").format(
+                    fps=self.fps
+                )
+            )
 
     def _update_after_camera_change(self) -> None:
         self.update()

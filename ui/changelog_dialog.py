@@ -105,7 +105,7 @@ class _IllustrationPanel(QFrame):
 class ChangelogDialog(QDialog):
     def __init__(self, parent: QWidget | None, version: str, dark_mode: bool):
         super().__init__(parent)
-        self.setWindowTitle(f"What’s new in REasy v{version}")
+        self.setWindowTitle(self.tr("What’s new in REasy v{version}").format(version=version))
         self.setModal(True)
         self.resize(820, 520)
         self.setMinimumSize(720, 480)
@@ -134,8 +134,10 @@ class ChangelogDialog(QDialog):
         right_layout.setContentsMargins(24, 16, 24, 16)
         right_layout.setSpacing(10)
 
-        title = QLabel(f"<span style='font-size:18pt; font-weight:700;'>What’s new in REasy v{version}</span>")
-        subtitle = QLabel("Thanks for updating! Here are the highlights:")
+        title = QLabel(self.tr(
+            "<span style='font-size:18pt; font-weight:700;'>What’s new in REasy v{version}</span>"
+        ).format(version=version))
+        subtitle = QLabel(self.tr("Thanks for updating! Here are the highlights:"))
         subtitle.setStyleSheet("opacity: 0.85;")
         right_layout.addWidget(title)
         right_layout.addWidget(subtitle)
@@ -152,21 +154,21 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "CLIP/TML/UCURVE full support."),
-            ("New", "Project library, replacing the old file system picker for browsing projects."),
-            ("New", "Multi-project mode, allowing user to open and edit multiple projects at the same time."),
-            ("New", "Support for Onimusha Way of the Sword Demo and Pragmata full release."),
-            ("Updated", "DD2, RE9 and Onimusha WOTS RSZ dumps and enums (<a href=https://github.com/kagenocookie>shadowcookie</a>))."),
-            ("Updated", "RSZ dumps, file lists and enums of most other games."),
-            ("Improved", "Floats will now no longer use scientific notation."),
-            ("Improved", "RSZ json will now be autodetected when opening projects."),
-            ("Improved", "UI improvements for UVS."),
-            ("Improved", "Better performance and coverage for file list generator, as well as a new tex/mdf/mesh mode."),
-            ("Improved", "Better load speed for new and existing projects."),
-            ("Fixed", "Fixed bad aspect ratio of right-side preview in UVS files."),
-            ("Fixed", "File list was not updating correctly in PAK Browser even when selecting a different list or toggling valid files/unknown files."),
-            ("Fixed", "Fuzzy 3D text for bone names in mesh preview."),
-            ("Fixed", "An issue with floats changing values without edits on systems with different locales (comma vs dot)."),
+            ("New", self.tr("CLIP/TML/UCURVE full support.")),
+            ("New", self.tr("Project library, replacing the old file system picker for browsing projects.")),
+            ("New", self.tr("Multi-project mode, allowing user to open and edit multiple projects at the same time.")),
+            ("New", self.tr("Support for Onimusha Way of the Sword Demo and Pragmata full release.")),
+            ("Updated", self.tr("DD2, RE9 and Onimusha WOTS RSZ dumps and enums (<a href=https://github.com/kagenocookie>shadowcookie</a>)).")),
+            ("Updated", self.tr("RSZ dumps, file lists and enums of most other games.")),
+            ("Improved", self.tr("Floats will now no longer use scientific notation.")),
+            ("Improved", self.tr("RSZ json will now be autodetected when opening projects.")),
+            ("Improved", self.tr("UI improvements for UVS.")),
+            ("Improved", self.tr("Better performance and coverage for file list generator, as well as a new tex/mdf/mesh mode.")),
+            ("Improved", self.tr("Better load speed for new and existing projects.")),
+            ("Fixed", self.tr("Fixed bad aspect ratio of right-side preview in UVS files.")),
+            ("Fixed", self.tr("File list was not updating correctly in PAK Browser even when selecting a different list or toggling valid files/unknown files.")),
+            ("Fixed", self.tr("Fuzzy 3D text for bone names in mesh preview.")),
+            ("Fixed", self.tr("An issue with floats changing values without edits on systems with different locales (comma vs dot).")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -176,16 +178,16 @@ class ChangelogDialog(QDialog):
 
         buttons_row = QHBoxLayout()
 
-        github_btn = QPushButton("⭐ Star on GitHub")
+        github_btn = QPushButton(self.tr("⭐ Star on GitHub"))
         github_btn.setObjectName("GitHubButton")
         github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy")))
         github_btn.setCursor(Qt.PointingHandCursor)
         buttons_row.addWidget(github_btn)
         
         buttons_row.addStretch(1)
-        view_btn = QPushButton("View release notes…")
+        view_btn = QPushButton(self.tr("View release notes…"))
         view_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy/releases")))
-        close_btn = QPushButton("Let’s go!")
+        close_btn = QPushButton(self.tr("Let’s go!"))
         close_btn.clicked.connect(self.accept)
         buttons_row.addWidget(view_btn)
         buttons_row.addWidget(close_btn)
@@ -202,7 +204,14 @@ class ChangelogDialog(QDialog):
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(12)
 
-        pill = QLabel(tag)
+        tag_labels = {
+            "New": self.tr("New"),
+            "Updated": self.tr("Updated"),
+            "Improved": self.tr("Improved"),
+            "Fixed": self.tr("Fixed"),
+            "Planned": self.tr("Planned"),
+        }
+        pill = QLabel(tag_labels.get(tag, tag))
         pill.setObjectName("TagPill")
         pill.setAlignment(Qt.AlignCenter)
         pill.setMinimumWidth(88)

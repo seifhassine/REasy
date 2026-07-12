@@ -11,7 +11,7 @@ from file_handlers.pyside.value_widgets import (
 from utils.enum_manager import EnumManager
 
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -71,6 +71,10 @@ class TreeWidgetFactory:
     }
 
     @staticmethod
+    def tr(text):
+        return QCoreApplication.translate("TreeWidgetFactory", text)
+
+    @staticmethod
     def create_widget(node_type, data_obj, name_text, widget_parent, on_modified=None):
         """Create appropriate widget based on node type"""
         widget = QWidget(widget_parent)
@@ -84,7 +88,11 @@ class TreeWidgetFactory:
         
         if data_obj and hasattr(data_obj, '__class__') and data_obj.__class__.__name__ == 'ArrayData':
             label = QLabel()
-            label.setText(f"{name_text} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
+            label.setText(
+                TreeWidgetFactory.tr(
+                    "{name} <span style='color: #666;'>(Array: {count} items)</span>"
+                ).format(name=name_text, count=len(data_obj.values))
+            )
             label.setTextFormat(Qt.RichText)
             layout.addWidget(label)
             
@@ -95,7 +103,11 @@ class TreeWidgetFactory:
         if data_obj and isinstance(data_obj, StructData):
 
             label = QLabel()
-            label.setText(f"{name_text} <span style='color: #666;'>(Struct: {len(data_obj.values)} items)</span>")
+            label.setText(
+                TreeWidgetFactory.tr(
+                    "{name} <span style='color: #666;'>(Struct: {count} items)</span>"
+                ).format(name=name_text, count=len(data_obj.values))
+            )
             label.setTextFormat(Qt.RichText)
             layout.addWidget(label)
             

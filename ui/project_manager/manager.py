@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from time import monotonic
 from urllib.parse import quote, unquote
-from PySide6.QtCore import Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
@@ -46,7 +46,7 @@ def _custom_message_handler(mode, ctx, msg):
     return None
 
 _prev_handler = qInstallMessageHandler(_custom_message_handler)
-ADD_TO_PROJECT_TITLE = "Add to project"
+ADD_TO_PROJECT_TITLE = QT_TRANSLATE_NOOP("ProjectManager", "Add to project")
 
 def _safe_path(path, root=None):
     try:
@@ -122,8 +122,11 @@ class ProjectManager(QDockWidget):
         if not project_dir:
             QMessageBox.information(
                 tab.notebook_widget,
-                "Save",
-                "This file was opened from PAK files. Open a project to save it directly into project files, or use Save As."
+                self.tr("Save"),
+                self.tr(
+                    "This file was opened from PAK files. Open a project to save it "
+                    "directly into project files, or use Save As."
+                ),
             )
             return tab.on_save()
 
@@ -140,16 +143,19 @@ class ProjectManager(QDockWidget):
         if not target_exists:
             QMessageBox.information(
                 tab.notebook_widget,
-                "Added to project",
-                f"Added file to project:\n{project_target}"
+                self.tr("Added to project"),
+                self.tr("Added file to project:\n{path}").format(path=project_target),
             )
         return True
 
     def _confirm_project_overwrite(self, project_target: str, parent=None) -> bool:
         answer = QMessageBox.question(
             parent or self,
-            "Overwrite project file",
-            f"This file already exists in the project:\n{project_target}\n\nAre you sure you want to overwrite it?",
+            self.tr("Overwrite project file"),
+            self.tr(
+                "This file already exists in the project:\n{path}\n\n"
+                "Are you sure you want to overwrite it?"
+            ).format(path=project_target),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -180,8 +186,11 @@ class ProjectManager(QDockWidget):
         if not self.project_dir:
             QMessageBox.information(
                 self,
-                "Reopen Closed File",
-                "This file was opened from PAK files while in project mode, so it can't be reopened right now. Open a project first."
+                self.tr("Reopen Closed File"),
+                self.tr(
+                    "This file was opened from PAK files while in project mode, so it "
+                    "can't be reopened right now. Open a project first."
+                ),
             )
             return False
         return self._open_pak_path_in_editor(pak_path)
@@ -210,7 +219,7 @@ class ProjectManager(QDockWidget):
         self.path_label = QLabel()
         path_bar.addWidget(self.path_label, 1)
         self.path_label.setMinimumSize(20, 20)
-        path_bar.addWidget(QPushButton("Browse…", clicked=self._browse))
+        path_bar.addWidget(QPushButton(self.tr("Browse…"), clicked=self._browse))
 
         pak_bar = QHBoxLayout()
         lay.addLayout(pak_bar)
@@ -236,7 +245,7 @@ class ProjectManager(QDockWidget):
         lay.addWidget(self.list_help_label)
 
         # Project label
-        self.project_label = QLabel("<i>No project open</i>")
+        self.project_label = QLabel(self.tr("<i>No project open</i>"))
         lay.addWidget(self.project_label)
 
         actions = QHBoxLayout()
@@ -499,7 +508,9 @@ class ProjectManager(QDockWidget):
 
     def _update_path_label(self):
         if self._active_tab == "pak":
-            self.path_label.setText(f"Game folder (PAKs): {self.pak_dir or '<i>not set</i>'}")
+            self.path_label.setText(self.tr("Game folder (PAKs): {path}").format(
+                path=self.pak_dir or self.tr("<i>not set</i>")
+            ))
         else:
             self.path_label.setText(self.tr("Unpacked Game folder: {}").format(self.unpacked_dir or self.tr('<i>not set</i>')))
 
@@ -765,7 +776,9 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
         if proj_dir:
-            self.project_label.setText(f"<b>{self.tr('Project')}: {os.path.basename(proj_dir)}</b>")
+            self.project_label.setText(self.tr("<b>Project: {name}</b>").format(
+                name=os.path.basename(proj_dir)
+            ))
             self.model_proj.setRootPath(proj_dir)
             self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
             if self._restore_project_state(proj_dir):
@@ -1246,7 +1259,11 @@ class ProjectManager(QDockWidget):
             r = self._ensure_project_pak_reader()
             stream = r.get_file(path)
             if not stream:
-                QMessageBox.information(self, self.tr("Open"), f"{self.tr('Path')} not found in {self.tr('PAKs')}: {path}")
+                QMessageBox.information(
+                    self,
+                    self.tr("Open"),
+                    self.tr("Path not found in PAKs: {path}").format(path=path),
+                )
                 return False
             data = stream.read()
             try:
@@ -1292,7 +1309,7 @@ class ProjectManager(QDockWidget):
                 return
             count = r.extract_files_to(self.project_dir, targets, missing_files=missing)
             self._refresh_proj()
-            msg = f"{self.tr('Added')} {count} {self.tr('file(s) to project.')}"
+            msg = self.tr("Added {count} file(s) to project.").format(count=count)
             if missing:
                 msg += "\n\n" + self.tr("Missing paths (not found in PAKs):") + "\n" + "\n".join(missing[:50])
             QMessageBox.information(self, self.tr("Done"), msg)
@@ -1330,7 +1347,7 @@ class ProjectManager(QDockWidget):
         dst = self._project_target(self.project_dir, rel)
 
         if os.path.isdir(src) and QMessageBox.question(
-                self, self.tr("Confirm Add"), self.tr(f"Add entire folder\n\"{os.path.basename(src)}\" and all its contents?"),
+                self, self.tr("Confirm Add"), self.tr("Add entire folder\n\"{}\" and all its contents?").format(os.path.basename(src)),
                 QMessageBox.Yes|QMessageBox.No) != QMessageBox.Yes:
             return
 
@@ -1343,7 +1360,11 @@ class ProjectManager(QDockWidget):
             else:                   
                 (os.makedirs(os.path.dirname(dst), exist_ok=True), shutil.copy2(src, dst))
             self._refresh_proj()
-            QMessageBox.information(self, self.tr("Added"), f"{rel}\n{self.tr('was copied successfully.')}")
+            QMessageBox.information(
+                self,
+                self.tr("Added"),
+                self.tr("{path}\nwas copied successfully.").format(path=rel),
+            )
         except Exception as e:
             QMessageBox.critical(self, self.tr("Copy failed"), str(e))
 
@@ -1438,9 +1459,10 @@ class ProjectManager(QDockWidget):
         def _upd(idx: int):
             g = combo.itemText(idx)
             hint = "/".join(EXPECTED_NATIVE.get(g, ()))
-            info_lbl.setText(f"{self.tr('Expected sub‑folder for')} <b>{g}</b>: "
-                             f"<code>{hint or '‑‑ any ‑‑'}</code>"
-                             f"<br>{self.tr('Note')}: {self.tr('Make sure your directory contains that folder.')}")
+            info_lbl.setText(self.tr(
+                "Expected sub‑folder for <b>{game}</b>: <code>{folder}</code>"
+                "<br>Note: Make sure your directory contains that folder."
+            ).format(game=g, folder=hint or self.tr("‑‑ any ‑‑")))
         _upd(0)
         combo.currentIndexChanged.connect(_upd)
 
@@ -1498,7 +1520,7 @@ class ProjectManager(QDockWidget):
         try:
             create_fluffy_zip(proj, zip_path)
             self._show_export_done_dialog(
-                self.tr(f"Fluffy mod ZIP created.\nSaved to:\n{zip_path}"),
+                self.tr("Fluffy mod ZIP created.\nSaved to:\n{}").format(zip_path),
                 zip_path,
             )
         except Exception as e:
@@ -1522,9 +1544,9 @@ class ProjectManager(QDockWidget):
         if need:
             tag_txt = latest or "latest"
             msg = (
-                self.tr(f"The REE.PAK packer ({tag_txt}) is not downloaded yet\n")
+                self.tr("The REE.PAK packer ({}) is not downloaded yet\n").format(tag_txt)
                 if not _EXE_PATH.exists()
-                else self.tr(f"A newer packer release ({tag_txt}) is available\n")
+                else self.tr("A newer packer release ({}) is available\n").format(tag_txt)
             ) + self.tr("Do you want to download it now?")
             if QMessageBox.question(self, self.tr("Download packer?"), msg,
                                     QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
@@ -1572,7 +1594,7 @@ class ProjectManager(QDockWidget):
                 log.append(out)
                 if code == 0:
                     self._show_export_done_dialog(
-                        self.tr(f"Export completed.\nPAK file saved to:\n{dest_path}"),
+                        self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),
                         dest_path,
                     )
                 else:

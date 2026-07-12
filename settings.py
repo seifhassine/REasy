@@ -35,7 +35,7 @@ DEFAULT_SETTINGS = {
     "recently_closed_files": [],
     "last_seen_version": "",
     "enum_prompt_checked_json_path": "",
-    "mesh_viewer_prefer_streaming_tex": False,
+    "renderer_texture_quality": "balanced",
     "mesh_viewer_fps_limit": 60,
     "mesh_viewer_wireframe_mode": "off",
     "mesh_viewer_lighting_mode": "fixed",
@@ -51,6 +51,9 @@ def normalize_settings(settings=None):
     normalized = deepcopy(DEFAULT_SETTINGS)
     if not isinstance(settings, dict):
         return normalized
+
+    if "renderer_texture_quality" not in settings and settings.get("mesh_viewer_prefer_streaming_tex"):
+        normalized["renderer_texture_quality"] = "high"
 
     for key, value in settings.items():
         if key == "keyboard_shortcuts" and isinstance(value, dict):

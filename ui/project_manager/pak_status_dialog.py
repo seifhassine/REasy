@@ -23,12 +23,12 @@ class DownloadStatusDialog(QDialog):
         self.resize(360, 120)
 
         lay = QVBoxLayout(self)
-        self._lbl  = QLabel("Starting…", self)
+        self._lbl  = QLabel(self.tr("Starting…"), self)
         self._prog = QProgressBar(self)
         self._prog.setRange(0, 100)
         self._prog.setValue(0)
 
-        self._close_btn = QPushButton("Close", self, enabled=False)
+        self._close_btn = QPushButton(self.tr("Close"), self, enabled=False)
         self._close_btn.clicked.connect(self.accept)
 
         lay.addWidget(self._lbl)
@@ -47,7 +47,7 @@ class DownloadStatusDialog(QDialog):
 
     def _on_done(self):
         self._close_btn.setEnabled(True)
-        self._lbl.setText(self._lbl.text() + " – finished.")
+        self._lbl.setText(self._lbl.text() + self.tr(" – finished."))
 
 
 def run_with_progress(parent, title: str,

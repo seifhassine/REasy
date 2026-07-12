@@ -350,7 +350,7 @@ class AdvancedTreeView(QTreeView):
         layout = QHBoxLayout(container)
         layout.setContentsMargins(2, 0, 2, 0)
         layout.setSpacing(5)
-        marker = QLabel("[OUTDATED]", container)
+        marker = QLabel(self.tr("[OUTDATED]"), container)
         marker.setStyleSheet("color: red;")
         layout.addWidget(marker)
         header = QLabel(resources_node.data[0], container)
@@ -644,7 +644,9 @@ class AdvancedTreeView(QTreeView):
             self._refresh_object_reference_node(index, object_data)
             QApplication.beep()
         else:
-            QMessageBox.warning(self, "Error", "Failed to update object reference")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to update object reference")
+            )
 
     def _refresh_object_reference_node(self, index, object_data):
         model = self.model()
@@ -755,7 +757,11 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if go_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
             
         go_name = ""
@@ -781,15 +787,17 @@ class AdvancedTreeView(QTreeView):
         )
         
         if result["success"]:
-            QMessageBox.information(self, "Success", result["message"])
+            QMessageBox.information(self, self.tr("Success"), result["message"])
         else:
-            QMessageBox.warning(self, "Error", result["message"])
+            QMessageBox.warning(self, self.tr("Error"), result["message"])
 
     def open_template_manager(self, index=None):
         """Open the template manager dialog"""
         parent_widget = self.parent()
         if not parent_widget:
-            QMessageBox.warning(self, "Error", "Parent widget not available")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Parent widget not available")
+            )
             return
             
         dialog = TemplateManagerDialog(self, parent_widget)
@@ -977,8 +985,8 @@ class AdvancedTreeView(QTreeView):
                 default_text = element_type or ""
                 text, ok = QInputDialog.getText(
                     self,
-                    "New UserData String",
-                    "Enter UserData string:",
+                    self.tr("New UserData String"),
+                    self.tr("Enter UserData string:"),
                     QLineEdit.Normal,
                     default_text
                 )
@@ -988,7 +996,7 @@ class AdvancedTreeView(QTreeView):
                     return
                 
                 type_dialog = ComponentSelectorDialog(self, parent.type_registry, required_parent_name="via.UserData")
-                type_dialog.setWindowTitle("Select UserData Instance Type")
+                type_dialog.setWindowTitle(self.tr("Select UserData Instance Type"))
                 
                 if element_type:
                     try:
@@ -1031,7 +1039,9 @@ class AdvancedTreeView(QTreeView):
             
         array_data = parent_array_item.raw.get('obj')
 
-        if not self._display_confirmation(f"Delete element {element_index}?"):
+        if not self._display_confirmation(
+            self.tr("Delete element {index}?").format(index=element_index)
+        ):
             return
         
         embedded_context = self._find_embedded_context(parent_array_item)
@@ -1050,7 +1060,11 @@ class AdvancedTreeView(QTreeView):
         if success:
             self._refresh_array_node(parent_array_item)
         else:
-            QMessageBox.warning(self, "Error", "Failed to delete element in embedded context")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to delete element in embedded context"),
+            )
 
     def _find_embedded_context(self, item):
         from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
@@ -1062,7 +1076,7 @@ class AdvancedTreeView(QTreeView):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setText(message)
-        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setInformativeText(self.tr("This action cannot be undone."))
         msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         msg_box.setDefaultButton(QMessageBox.No)
         return msg_box.exec_() == QMessageBox.Yes
@@ -1070,7 +1084,7 @@ class AdvancedTreeView(QTreeView):
     def delete_component(self, index, component_instance_id):
         """Delete a component from its GameObject"""
         if component_instance_id <= 0:
-            QMessageBox.warning(self, "Error", "Invalid component")
+            QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
         
         parent = self.parent()
@@ -1081,7 +1095,7 @@ class AdvancedTreeView(QTreeView):
         if updated_instance_id:
             component_instance_id = updated_instance_id
         
-        if not self._display_confirmation("Delete Component"):
+        if not self._display_confirmation(self.tr("Delete Component")):
             return
         try:
             go_node = None
@@ -1098,11 +1112,23 @@ class AdvancedTreeView(QTreeView):
                     QApplication.beep()
                     #QMessageBox.information(self, "Success", "Component deleted successfully")
                 else:
-                    QMessageBox.information(self, "Success", "Component deleted successfully, but failed to refresh UI. Please save and reload")
+                    QMessageBox.information(
+                        self,
+                        self.tr("Success"),
+                        self.tr(
+                            "Component deleted successfully, but failed to refresh UI. Please save and reload"
+                        ),
+                    )
             else:
-                QMessageBox.warning(self, "Error", "Failed to delete component")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to delete component")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error deleting component: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error deleting component: {}").format(e),
+            )
 
     def create_gameobject_in_folder(self, folder_index):
         """Create a new GameObject in a folder"""
@@ -1113,7 +1139,11 @@ class AdvancedTreeView(QTreeView):
 
         folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not folder_instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine folder instance ID")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not determine folder instance ID"),
+            )
             return
         # Get folder's object table index
         folder_object_id = -1
@@ -1123,11 +1153,19 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if folder_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Could not find folder in object table")
+            )
             return
             
         # Create dialog to get GameObject name
-        name, ok = QInputDialog.getText(self, "New GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        name, ok = QInputDialog.getText(
+            self,
+            self.tr("New GameObject"),
+            self.tr("GameObject Name:"),
+            QLineEdit.Normal,
+            "New GameObject",
+        )
         if not ok or not name:
             return
             
@@ -1140,9 +1178,15 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
-                QMessageBox.warning(self, "Error", "Failed to create GameObject")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to create GameObject")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error creating GameObject: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error creating GameObject: {}").format(e),
+            )
     
     def create_child_gameobject(self, parent_go_index):
         """Create a new GameObject as a child of another GameObject"""
@@ -1158,11 +1202,21 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if parent_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
         
         # Create dialog to get GameObject name
-        name, ok = QInputDialog.getText(self, "New Child GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        name, ok = QInputDialog.getText(
+            self,
+            self.tr("New Child GameObject"),
+            self.tr("GameObject Name:"),
+            QLineEdit.Normal,
+            "New GameObject",
+        )
         if not ok or not name:
             return
             
@@ -1176,9 +1230,17 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
             else:
-                QMessageBox.warning(self, "Error", "Failed to create child GameObject")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr("Failed to create child GameObject"),
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error creating child GameObject: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error creating child GameObject: {}").format(e),
+            )
 
     def create_root_folder(self, _):
         self._create_folder_ui(name_default="New Folder", parent_id=-1, parent_index=None)
@@ -1192,21 +1254,25 @@ class AdvancedTreeView(QTreeView):
         parent_object_id = next((i for i, x in enumerate(parent_widget.scn.object_table)
                                 if x == parent_instance_id), -1)
         if parent_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Could not find folder in object table")
+            )
             return
 
         self._create_folder_ui("New Folder", parent_object_id, parent_folder_index)
 
     def _create_folder_ui(self, name_default: str, parent_id: int, parent_index):
         parent_widget = self.parent()
-        name, ok = QInputDialog.getText(self, "New Folder", "Folder Name:",
+        name, ok = QInputDialog.getText(self, self.tr("New Folder"), self.tr("Folder Name:"),
                                         QLineEdit.Normal, name_default)
         if not ok or not name:
             return
 
         folder_data = parent_widget.object_operations.create_folder(name, parent_id)
         if not (folder_data and folder_data.get("success")):
-            QMessageBox.warning(self, "Error", "Failed to create folder")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to create folder")
+            )
             return
 
         self.add_folder_to_ui_direct(folder_data, parent_index)
@@ -1274,7 +1340,13 @@ class AdvancedTreeView(QTreeView):
         # Get the parent widget/handler for GameObject creation
         parent = self.parent()
         # Create dialog to get GameObject name
-        name, ok = QInputDialog.getText(self, "New Root GameObject", "GameObject Name:", QLineEdit.Normal, "New GameObject")
+        name, ok = QInputDialog.getText(
+            self,
+            self.tr("New Root GameObject"),
+            self.tr("GameObject Name:"),
+            QLineEdit.Normal,
+            "New GameObject",
+        )
         if not ok or not name:
             return
             
@@ -1286,9 +1358,15 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
-                QMessageBox.warning(self, "Error", "Failed to create GameObject")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to create GameObject")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error creating GameObject: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error creating GameObject: {}").format(e),
+            )
 
     def add_component_to_gameobject(self, index):
         """Add a new component to a GameObject with autocomplete"""
@@ -1300,7 +1378,11 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not determine GameObject instance ID"),
+            )
             return
         
         dialog = ComponentSelectorDialog(self, parent.type_registry, required_parent_name="via.Component")
@@ -1316,11 +1398,25 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
             elif result:
-                QMessageBox.information(self, "Success", f"Added {component_type} to GameObject, but failed to refresh UI. Please save and reload")
+                QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr(
+                        "Added {type} to GameObject, but failed to refresh UI. Please save and reload"
+                    ).format(type=component_type),
+                )
             else:
-                QMessageBox.warning(self, "Error", f"Failed to add {component_type}")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr("Failed to add {type}").format(type=component_type),
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to add component: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to add component: {}").format(e),
+            )
 
     def delete_gameobject(self, index):
         """Delete a GameObject and all its children and components"""
@@ -1337,18 +1433,21 @@ class AdvancedTreeView(QTreeView):
                 break
         
         if go_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
         
         
         go_name = item.data[0].split(' (ID:')[0]
         
-        details = f"Delete GameObject \"{go_name}\"?"
-        
-        details += "\nThis will delete the GameObject"
-        
         go = next((g for g in parent.scn.gameobjects if g.id == go_object_id), None)
-        details += f", {go.component_count} component(s) and all child GameObjects"
+        details = self.tr(
+            'Delete GameObject "{name}"?\nThis will delete the GameObject, '
+            "{count} component(s) and all child GameObjects"
+        ).format(name=go_name, count=go.component_count)
 
         if not self._display_confirmation(details):
             return
@@ -1372,9 +1471,17 @@ class AdvancedTreeView(QTreeView):
                 #QMessageBox.information(self, "Success", "GameObject deleted successfully")
                 return
         
-            QMessageBox.information(self, "Success", "GameObject deleted successfully, but failed to refresh UI. Please save and reload")
+            QMessageBox.information(
+                self,
+                self.tr("Success"),
+                self.tr(
+                    "GameObject deleted successfully, but failed to refresh UI. Please save and reload"
+                ),
+            )
         else:
-            QMessageBox.warning(self, "Error", "Failed to delete GameObject")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to delete GameObject")
+            )
 
     def _is_valid_parent_for_go(self, index):
         """Check if index is a valid parent for a GameObject node"""
@@ -1411,8 +1518,10 @@ class AdvancedTreeView(QTreeView):
         folder_name = ""
         folder_name = folder_item.data[0].split(' (ID:')[0]
             
-        details = f"Delete folder \"{folder_name}\"?"
-        details += "\nThis will delete the folder and all sub-folder(s) and GameObject(s) within it"
+        details = self.tr(
+            'Delete folder "{name}"?\nThis will delete the folder and all sub-folder(s) '
+            "and GameObject(s) within it"
+        ).format(name=folder_name)
 
         if not self._display_confirmation(details):
             return
@@ -1429,10 +1538,18 @@ class AdvancedTreeView(QTreeView):
                     #QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
                     return
                 
-            QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully, but failed to refresh UI directly.")
+            QMessageBox.information(
+                self,
+                self.tr("Success"),
+                self.tr(
+                    "Folder '{name}' deleted successfully, but failed to refresh UI directly."
+                ).format(name=folder_name),
+            )
             return
         
-        QMessageBox.warning(self, "Error", "Failed to delete folder")
+        QMessageBox.warning(
+            self, self.tr("Error"), self.tr("Failed to delete folder")
+        )
                 
 
     def manage_gameobject_prefab(self, index, has_prefab, current_path=""):
@@ -1453,7 +1570,11 @@ class AdvancedTreeView(QTreeView):
                 target_go = go
                 break
         if target_go is None:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
         if getattr(target_go, 'prefab_id', -1) >= 0:
             current_path = parent.scn._prefab_str_map[parent.scn.prefab_infos[target_go.prefab_id]]
@@ -1462,13 +1583,13 @@ class AdvancedTreeView(QTreeView):
         
         prefab_actions = {
             True: {
-            "dialog_title": "Modify Prefab Path",
-            "prompt_text": "Enter new prefab path:",
+            "dialog_title": self.tr("Modify Prefab Path"),
+            "prompt_text": self.tr("Enter new prefab path:"),
             "action_type": "modified"
             },
             False: {
-            "dialog_title": "Associate with Prefab",
-            "prompt_text": "Enter prefab path:",
+            "dialog_title": self.tr("Associate with Prefab"),
+            "prompt_text": self.tr("Enter prefab path:"),
             "action_type": "created"
             }
         }
@@ -1489,11 +1610,15 @@ class AdvancedTreeView(QTreeView):
                 return
             if (path.strip() != ""):
                 break
-            QMessageBox.warning(self, "Invalid Input", "Prefab path cannot be empty. Please enter a valid path.")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid Input"),
+                self.tr("Prefab path cannot be empty. Please enter a valid path."),
+            )
 
         if not path.endswith(".pfb") and QMessageBox.question(
-                self, "Add Extension?", 
-                "Prefab paths typically end with .pfb. Do you want to add the .pfb extension?",
+                self, self.tr("Add Extension?"),
+                self.tr("Prefab paths typically end with .pfb. Do you want to add the .pfb extension?"),
                 QMessageBox.Yes | QMessageBox.No
             ) == QMessageBox.Yes:
                     path += ".pfb"
@@ -1503,7 +1628,9 @@ class AdvancedTreeView(QTreeView):
             #QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
             return
 
-        QMessageBox.warning(self, "Error", "Failed to manage prefab")
+        QMessageBox.warning(
+            self, self.tr("Error"), self.tr("Failed to manage prefab")
+        )
 
     def _rebuild_resources_list(self):
         viewer  = self.parent()
@@ -1527,34 +1654,49 @@ class AdvancedTreeView(QTreeView):
 
         QMessageBox.information(
             self,
-            "Rebuilt",
-            f"Refreshed {len(new_section['children'])} resources.\n\nNote that this step is not necessary, as resources are automatically rebuilt on save."
+            self.tr("Rebuilt"),
+            self.tr(
+                "Refreshed {count} resources.\n\nNote that this step is not necessary, "
+                "as resources are automatically rebuilt on save."
+            ).format(count=len(new_section["children"])),
         )
 
     def add_resource(self):
         """Add a new resource path directly in the tree view"""
         parent = self.parent()
         if not parent:
-            QMessageBox.warning(self, "Error", "Resource management not supported")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Resource management not supported")
+            )
             return
             
-        path = self._get_resource_path_from_dialog("Add New Resource", "Enter resource path:", "")
+        path = self._get_resource_path_from_dialog(
+            self.tr("Add New Resource"), self.tr("Enter resource path:"), ""
+        )
         if not path:
             return
             
         try:
             resource_index = parent.add_resource(path)
             if resource_index < 0:
-                QMessageBox.warning(self, "Error", "Failed to add resource")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to add resource")
+                )
                 return
                 
             if self.add_resource_to_ui_direct(path, resource_index):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"Added resource '{path}'")
             else:
-                QMessageBox.information(self, "Success", f"Added resource '{path}', but failed to refresh UI. Please save and reload")
+                QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr(
+                        "Added resource '{path}', but failed to refresh UI. Please save and reload"
+                    ).format(path=path),
+                )
         except Exception as e:
-            self._handle_resource_error("add", e)
+            self._handle_resource_error(self.tr("Failed to add resource: {}"), e)
     
     def add_resource_to_ui_direct(self, path, resource_index):
         """
@@ -1602,23 +1744,35 @@ class AdvancedTreeView(QTreeView):
     def edit_resource(self, index, resource_index):
         """Edit a resource path directly in the tree view"""
         if resource_index < 0:
-            QMessageBox.warning(self, "Error", "Invalid resource index")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Invalid resource index")
+            )
             return
         
         parent = self.parent()
         if resource_index >= len(parent.scn.resource_infos):
-            QMessageBox.warning(self, "Error", "Resource editing not supported or invalid index")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Resource editing not supported or invalid index"),
+            )
             return
         
         current_path = self._get_current_resource_path(resource_index)       
-        path = self._get_resource_path_from_dialog("Edit Resource Path", "Update resource path:", current_path)
+        path = self._get_resource_path_from_dialog(
+            self.tr("Edit Resource Path"),
+            self.tr("Update resource path:"),
+            current_path,
+        )
         if not path:
             return
         
         try:
             success = parent.manage_resource(resource_index, path)
             if not success:
-                QMessageBox.warning(self, "Error", "Failed to update resource")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to update resource")
+                )
                 return
             
             item = index.internalPointer()
@@ -1633,7 +1787,7 @@ class AdvancedTreeView(QTreeView):
             QApplication.beep()
             #QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
         except Exception as e:
-            self._handle_resource_error("edit", e)
+            self._handle_resource_error(self.tr("Failed to edit resource: {}"), e)
             
     def get_selected_resources(self, resources_node):
             """Return sorted list of resource_index values for all selected resource items."""
@@ -1689,13 +1843,19 @@ class AdvancedTreeView(QTreeView):
         """Bulk‐delete resources and reuse the same UI helper for each."""
         if not resource_indices:
             return
-        if not self._display_confirmation(f"Delete {len(resource_indices)} resources?"):
+        if not self._display_confirmation(
+            self.tr("Delete {count} resources?").format(count=len(resource_indices))
+        ):
             return
         try:
             parent = self.parent()
             for ri in sorted(resource_indices, reverse=True):
                 if not parent.delete_resource(ri):
-                    QMessageBox.warning(self, "Error", f"Failed to delete resource #{ri}")
+                    QMessageBox.warning(
+                        self,
+                        self.tr("Error"),
+                        self.tr("Failed to delete resource #{index}").format(index=ri),
+                    )
                     return
 
             for ri in sorted(resource_indices, reverse=True):
@@ -1703,7 +1863,7 @@ class AdvancedTreeView(QTreeView):
             QApplication.beep()
             #QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
         except Exception as e:
-            self._handle_resource_error("delete", e)
+            self._handle_resource_error(self.tr("Failed to delete resource: {}"), e)
 
     def _get_resource_path_from_dialog(self, title, label, default_text=""):
         """Show dialog to get resource path from user"""
@@ -1719,7 +1879,11 @@ class AdvancedTreeView(QTreeView):
         
         path = dialog.textValue()
         if not path or path.strip() == "":
-            QMessageBox.warning(self, "Invalid Input", "Resource path cannot be empty.")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid Input"),
+                self.tr("Resource path cannot be empty."),
+            )
             return None
             
         return path
@@ -1743,15 +1907,17 @@ class AdvancedTreeView(QTreeView):
 
     def _confirm_resource_deletion(self, resource_path):
         """Show confirmation dialog for resource deletion"""
-        return self._display_confirmation(f"Delete resource '{resource_path}'?")
+        return self._display_confirmation(
+            self.tr("Delete resource '{path}'?").format(path=resource_path)
+        )
     
     def _update_resources_ui(self, success_message):
         """Update resources UI with success message"""
-        QMessageBox.information(self, "Success", success_message)
+        QMessageBox.information(self, self.tr("Success"), success_message)
 
-    def _handle_resource_error(self, operation, error):
+    def _handle_resource_error(self, message, error):
         """Handle resource operation error"""
-        QMessageBox.critical(self, "Error", f"Failed to {operation} resource: {str(error)}")
+        QMessageBox.critical(self, self.tr("Error"), message.format(error))
         print(f"Exception details: {traceback.format_exc()}")
         
     def _find_resource_row(self, children, resource_index):
@@ -2110,9 +2276,15 @@ class AdvancedTreeView(QTreeView):
         parent_widget = self.parent()
         ok = RszGameObjectClipboard.copy_datablock_to_clipboard(parent_widget)
         if ok:
-            QMessageBox.information(self, "Success", "Copied Data Block to clipboard folder")
+            QMessageBox.information(
+                self,
+                self.tr("Success"),
+                self.tr("Copied Data Block to clipboard folder"),
+            )
         else:
-            QMessageBox.warning(self, "Error", "Failed to copy Data Block")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to copy Data Block")
+            )
 
     def paste_data_block(self, parent_index):
         from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
@@ -2121,7 +2293,9 @@ class AdvancedTreeView(QTreeView):
         if pasted_nodes:
             QApplication.beep()
         else:
-            QMessageBox.warning(self, "Error", "Failed to paste Data Block")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to paste Data Block")
+            )
 
     def copy_array_elements(self, parent_array_item, element_indices, index):
         """Copy multiple array elements to clipboard"""
@@ -2138,7 +2312,9 @@ class AdvancedTreeView(QTreeView):
                 elements.append(array_data.values[idx])
         
         if not elements:
-            QMessageBox.warning(self, "Error", "No valid elements selected")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("No valid elements selected")
+            )
             return
             
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
@@ -2148,11 +2324,23 @@ class AdvancedTreeView(QTreeView):
             clipboard = parent.handler.get_array_clipboard()
             success = clipboard.copy_multiple_to_clipboard(self, elements, array_type, embedded_context)
             if success:
-                QMessageBox.information(self, "Success", f"{len(elements)} elements copied to clipboard")
+                QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr("{count} elements copied to clipboard").format(
+                        count=len(elements)
+                    ),
+                )
             else:
-                QMessageBox.warning(self, "Error", "Failed to copy elements")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to copy elements")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error copying elements: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error copying elements: {}").format(e),
+            )
             traceback.print_exc()
 
     def paste_array_elements(self, index, array_type, data_obj, array_item):
@@ -2176,15 +2364,29 @@ class AdvancedTreeView(QTreeView):
                 self._scroll_to_array_end(array_item)
                 QApplication.beep()
             else:
-                QMessageBox.warning(self, "Error", "Failed to paste elements. Make sure the clipboard contains compatible elements.")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr(
+                        "Failed to paste elements. Make sure the clipboard contains compatible elements."
+                    ),
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to paste elements: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to paste elements: {}").format(e),
+            )
             traceback.print_exc()
 
     def translate_node_text(self, index):
         """Translate the name of a GameObject or folder using Google Translate API"""
         if self._translation_in_progress:
-            QMessageBox.information(self, "Translation", "A translation is already in progress.")
+            QMessageBox.information(
+                self,
+                self.tr("Translation"),
+                self.tr("A translation is already in progress."),
+            )
             return
 
         item = index.internalPointer()
@@ -2193,7 +2395,7 @@ class AdvancedTreeView(QTreeView):
             name_text = name_text.split(" (ID:")[0]
 
         if not name_text or name_text.strip() == "":
-            show_translation_error(self, "No text to translate")
+            show_translation_error(self, self.tr("No text to translate"))
             return
 
         parent_widget = self.parent()
@@ -2219,7 +2421,7 @@ class AdvancedTreeView(QTreeView):
 
         if not success:
             self.setCursor(Qt.ArrowCursor)
-            show_translation_error(self, "Failed to start translation")
+            show_translation_error(self, self.tr("Failed to start translation"))
             return
 
         self._translation_in_progress = True
@@ -2259,7 +2461,7 @@ class AdvancedTreeView(QTreeView):
 
         if not translated_text:
             self._translation_in_progress = False
-            show_translation_error(self, "Unable to translate text")
+            show_translation_error(self, self.tr("Unable to translate text"))
             return
 
         index = context.get("index")
@@ -2267,12 +2469,12 @@ class AdvancedTreeView(QTreeView):
 
         if not index or not index.isValid():
             self._translation_in_progress = False
-            show_translation_error(self, "Invalid item index")
+            show_translation_error(self, self.tr("Invalid item index"))
             return
 
         if not self._apply_translated_text_to_item(index, translated_text, original_id_part):
             self._translation_in_progress = False
-            show_translation_error(self, "Invalid item")
+            show_translation_error(self, self.tr("Invalid item"))
             return
 
         if context.get("show_result", True):
@@ -2283,7 +2485,11 @@ class AdvancedTreeView(QTreeView):
     def translate_all_gameobject_names(self):
         """Translate all GameObject names under the Data Block."""
         if self._translation_in_progress:
-            QMessageBox.information(self, "Translation", "A translation is already in progress.")
+            QMessageBox.information(
+                self,
+                self.tr("Translation"),
+                self.tr("A translation is already in progress."),
+            )
             return
 
         model = self.model()
@@ -2300,7 +2506,11 @@ class AdvancedTreeView(QTreeView):
 
         game_objects_root = self._find_root_node_child("Data Block", "Game Objects")
         if not game_objects_root:
-            QMessageBox.warning(self, "Translation", "Could not locate the Game Objects node.")
+            QMessageBox.warning(
+                self,
+                self.tr("Translation"),
+                self.tr("Could not locate the Game Objects node."),
+            )
             return
         entries = []
         skipped = 0
@@ -2314,10 +2524,12 @@ class AdvancedTreeView(QTreeView):
             entries.append({"index": index, "original_id_part": original_id_part, "text": cleaned})
 
         if not entries:
-            message = "No GameObject names available for translation."
+            message = self.tr("No GameObject names available for translation.")
             if skipped:
-                message += f"\nSkipped {skipped} entries due to missing, invalid or oversized names."
-            QMessageBox.information(self, "Translation", message)
+                message += self.tr(
+                    "\nSkipped {count} entries due to missing, invalid or oversized names."
+                ).format(count=skipped)
+            QMessageBox.information(self, self.tr("Translation"), message)
             return
 
         def apply_entry(entry, translated_value):
@@ -2328,16 +2540,32 @@ class AdvancedTreeView(QTreeView):
 
         def finish_batch(stats):
             stats = stats or {}
-            summary = [f"Translated {stats.get('success', 0)} of {stats.get('total', 0)} GameObject names."]
+            summary = [
+                self.tr("Translated {success} of {total} GameObject names.").format(
+                    success=stats.get("success", 0), total=stats.get("total", 0)
+                )
+            ]
             if stats.get("failed"):
-                summary.append(f"Failed: {stats['failed']}")
+                summary.append(
+                    self.tr("Failed: {count}").format(count=stats["failed"])
+                )
             skipped_total = stats.get("skipped", 0)
             if skipped_total:
-                summary.append(f"Skipped: {skipped_total} (missing, invalid or oversized names)")
+                summary.append(
+                    self.tr(
+                        "Skipped: {count} (missing, invalid or oversized names)"
+                    ).format(count=skipped_total)
+                )
             if stats.get("requests"):
-                summary.append(f"Requests sent: {stats['requests']}")
+                summary.append(
+                    self.tr("Requests sent: {count}").format(
+                        count=stats["requests"]
+                    )
+                )
 
-            QMessageBox.information(self, "Translation", "\n".join(summary))
+            QMessageBox.information(
+                self, self.tr("Translation"), "\n".join(summary)
+            )
             self._translation_in_progress = False
             self.setCursor(Qt.ArrowCursor)
 
@@ -2351,10 +2579,12 @@ class AdvancedTreeView(QTreeView):
 
         total_skipped = info.get("skipped", skipped)
         if not started:
-            message = info.get("error") or "Unable to start translation."
+            message = info.get("error") or self.tr("Unable to start translation.")
             if total_skipped:
-                message += f"\nSkipped: {total_skipped} (missing, invalid or oversized names)"
-            QMessageBox.warning(self, "Translation", message)
+                message += self.tr(
+                    "\nSkipped: {count} (missing, invalid or oversized names)"
+                ).format(count=total_skipped)
+            QMessageBox.warning(self, self.tr("Translation"), message)
             return
 
         if self._batch_translator.is_running():
@@ -2399,7 +2629,9 @@ class AdvancedTreeView(QTreeView):
 
         array_data = parent_array_item.raw.get('obj')
         
-        if not self._display_confirmation(f"Delete {len(element_indices)} elements?"):
+        if not self._display_confirmation(
+            self.tr("Delete {count} elements?").format(count=len(element_indices))
+        ):
             return
         
         element_indices = sorted(element_indices, reverse=True)
@@ -2427,7 +2659,9 @@ class AdvancedTreeView(QTreeView):
             QApplication.beep()
             #QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
         else:
-            QMessageBox.warning(self, "Error", "Failed to delete all elements")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to delete all elements")
+            )
 
     def _refresh_array_node(self, array_item):
         """Rebuild UI nodes for an array after modifications"""
@@ -2462,7 +2696,11 @@ class AdvancedTreeView(QTreeView):
 
         widget = self.indexWidget(array_index)
         label = widget.findChild(QLabel)
-        label.setText(f"{array_item.data[0]} <span style='color: #666;'>(Array: {len(data_obj.values)} items)</span>")
+        label.setText(
+            TreeWidgetFactory.tr(
+                "{name} <span style='color: #666;'>(Array: {count} items)</span>"
+            ).format(name=array_item.data[0], count=len(data_obj.values))
+        )
 
         model.addChildren(array_item, children_raw)
         self.expand(array_index)
@@ -2541,18 +2779,28 @@ class AdvancedTreeView(QTreeView):
     def copy_component(self, component_instance_id):
         """Copy a component to clipboard for pasting to another GameObject"""
         if component_instance_id <= 0:
-            QMessageBox.warning(self, "Error", "Invalid component")
+            QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
         
         parent = self.parent()
         try:
             success = parent.handler.copy_component_to_clipboard(parent, component_instance_id)
             if success:
-                QMessageBox.information(self, "Success", "Component copied to clipboard")
+                QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr("Component copied to clipboard"),
+                )
             else:
-                QMessageBox.warning(self, "Error", "Failed to copy component")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to copy component")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error copying component: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error copying component: {}").format(e),
+            )
             
     def paste_component(self, index):
         """Paste a component from clipboard to a GameObject"""
@@ -2565,7 +2813,9 @@ class AdvancedTreeView(QTreeView):
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         clipboard_data = parent.handler.get_component_clipboard_data(self)
         if not clipboard_data:
-            QMessageBox.warning(self, "Error", "No component data in clipboard")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("No component data in clipboard")
+            )
             return
             
         type_name = clipboard_data.get("type_name", "Component")
@@ -2578,9 +2828,17 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"Pasted {type_name} to GameObject")
             else:
-                QMessageBox.warning(self, "Error", f"Failed to paste {type_name}")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr("Failed to paste {type}").format(type=type_name),
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error pasting component: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error pasting component: {}").format(e),
+            )
 
     def copy_gameobject(self, index):
         """Copy a GameObject to clipboard"""
@@ -2589,7 +2847,11 @@ class AdvancedTreeView(QTreeView):
         parent = self.parent()
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
-            QMessageBox.warning(self, "Error", "Could not determine GameObject instance ID")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not determine GameObject instance ID"),
+            )
             return
             
         go_object_id = -1
@@ -2599,7 +2861,11 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if go_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
         embedded_context = self._find_embedded_context(item)      
         
@@ -2613,12 +2879,22 @@ class AdvancedTreeView(QTreeView):
                 if hasattr(item, 'data') and item.data:
                     go_name = item.data[0].split(' (ID:')[0]
                     
-                msg = f"GameObject '{go_name}' copied to clipboard"
-                QMessageBox.information(self, "Success", msg)
+                msg = self.tr("GameObject '{name}' copied to clipboard").format(
+                    name=go_name
+                )
+                QMessageBox.information(self, self.tr("Success"), msg)
             else:
-                QMessageBox.warning(self, "Error", "Failed to copy GameObject to clipboard")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr("Failed to copy GameObject to clipboard"),
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error copying GameObject: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error copying GameObject: {}").format(e),
+            )
             traceback.print_exc()
 
     def paste_gameobject_in_folder(self, folder_index):
@@ -2634,7 +2910,9 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if folder_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find folder in object table")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Could not find folder in object table")
+            )
             return
             
         self._paste_gameobject_common(folder_object_id, folder_index)
@@ -2657,7 +2935,11 @@ class AdvancedTreeView(QTreeView):
                 break
                 
         if parent_object_id < 0:
-            QMessageBox.warning(self, "Error", "Could not find GameObject in object table")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Could not find GameObject in object table"),
+            )
             return
             
         self._paste_gameobject_common(parent_object_id, parent_go_index)
@@ -2674,15 +2956,19 @@ class AdvancedTreeView(QTreeView):
         
         clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
         if not clipboard_data:
-            QMessageBox.warning(self, "Error", "Failed to load GameObject data from clipboard")
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to load GameObject data from clipboard"),
+            )
             return
             
         default_name = clipboard_data.get("name", "GameObject")
         if default_name.strip() == "":
             default_name = "GameObject"
             
-        new_name, ok = QInputDialog.getText(self, "Paste GameObject", 
-                                          "Enter name for the pasted GameObject:", 
+        new_name, ok = QInputDialog.getText(self, self.tr("Paste GameObject"),
+                                          self.tr("Enter name for the pasted GameObject:"),
                                           QLineEdit.Normal, default_name)
         if not ok:
             return
@@ -2696,9 +2982,15 @@ class AdvancedTreeView(QTreeView):
                 QApplication.beep()
                 #QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
             else:
-                QMessageBox.warning(self, "Error", "Failed to paste GameObject")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to paste GameObject")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error pasting GameObject: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error pasting GameObject: {}").format(e),
+            )
 
     def copy_array_element(self, element_item):
         """Copy an array element to clipboard"""
@@ -2712,19 +3004,25 @@ class AdvancedTreeView(QTreeView):
             parent_array_item = parent_array_item.parent
 
         if not parent_array_item or parent_array_item.raw.get("type") != "array":
-            QMessageBox.warning(self, "Error", "Invalid array element selection")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Invalid array element selection")
+            )
             return
 
         array_data = parent_array_item.raw.get('obj')
         elem_obj = element_item.raw.get('obj') if isinstance(element_item.raw, dict) else None
         if not array_data:
-            QMessageBox.warning(self, "Error", "Failed to access array element")
+            QMessageBox.warning(
+                self, self.tr("Error"), self.tr("Failed to access array element")
+            )
             return
 
         element_index = element_item.raw.get("element_index")
         if element_index is None:
             if elem_obj is None:
-                QMessageBox.warning(self, "Error", "Failed to access array element")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to access array element")
+                )
                 return
             element_index = getattr(elem_obj, '_container_index', element_item.row())
         embedded_context = self._find_embedded_context(parent_array_item)
@@ -2739,11 +3037,21 @@ class AdvancedTreeView(QTreeView):
             clipboard = parent.handler.get_array_clipboard()
             success = clipboard.copy_to_clipboard(self, element, array_type, embedded_context)
             if success:
-                QMessageBox.information(self, "Success", "Element copied to clipboard")
+                QMessageBox.information(
+                    self,
+                    self.tr("Success"),
+                    self.tr("Element copied to clipboard"),
+                )
             else:
-                QMessageBox.warning(self, "Error", "Failed to copy element")
+                QMessageBox.warning(
+                    self, self.tr("Error"), self.tr("Failed to copy element")
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error copying element: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Error copying element: {}").format(e),
+            )
 
     def paste_array_element(self, index, data_obj, array_item):
         """Paste an element from clipboard to an array"""
@@ -2768,35 +3076,47 @@ class AdvancedTreeView(QTreeView):
             QApplication.beep()
             #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to paste element: {str(e)}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to paste element: {}").format(e),
+            )
 
     def _show_import_randomization_dialog(self, parent_index):
         """Show dialog for import randomization options"""
         
         dialog = QDialog(self)
-        dialog.setWindowTitle("Import Options")
+        dialog.setWindowTitle(self.tr("Import Options"))
         dialog.setModal(True)
         dialog.resize(400, 200)
         
         layout = QVBoxLayout(dialog)
         
-        desc_label = QLabel("Choose whether to randomize IDs during import:")
+        desc_label = QLabel(self.tr("Choose whether to randomize IDs during import:"))
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
         
-        randomize_ids = QCheckBox("Randomize GUIDs, Context IDs..")
+        randomize_ids = QCheckBox(self.tr("Randomize GUIDs, Context IDs.."))
         randomize_ids.setChecked(True)
-        randomize_ids.setToolTip("Generate new IDs for GameObjects, instances, and userdata instead of preserving original ones")
+        randomize_ids.setToolTip(
+            self.tr(
+                "Generate new IDs for GameObjects, instances, and userdata instead of preserving original ones"
+            )
+        )
         layout.addWidget(randomize_ids)
         
-        note_label = QLabel("Note: Internal references and relationships will be preserved regardless of ID randomization.")
+        note_label = QLabel(
+            self.tr(
+                "Note: Internal references and relationships will be preserved regardless of ID randomization."
+            )
+        )
         note_label.setWordWrap(True)
         note_label.setStyleSheet("color: gray; font-size: 10px;")
         layout.addWidget(note_label)
         
         button_layout = QHBoxLayout()
-        cancel_button = QPushButton("Cancel")
-        import_button = QPushButton("Import")
+        cancel_button = QPushButton(self.tr("Cancel"))
+        import_button = QPushButton(self.tr("Import"))
         import_button.setDefault(True)
         
         button_layout.addWidget(cancel_button)
@@ -2819,4 +3139,8 @@ class AdvancedTreeView(QTreeView):
             if result:
                 QApplication.beep()
             else:
-                QMessageBox.warning(self, "Import Failed", "No items were imported or import was cancelled.")
+                QMessageBox.warning(
+                    self,
+                    self.tr("Import Failed"),
+                    self.tr("No items were imported or import was cancelled."),
+                )

@@ -74,8 +74,6 @@ def build_mesh_scene(
     if colors is not None:
         colors = colors.astype(np.float32) / 255.0
     uvs = _merge_attribute(records, "uv0", 2, np.float32)
-    if uvs is not None:
-        uvs = 1.0 - uvs
 
     index_chunks: list[np.ndarray] = []
     batches: list[SceneDrawBatch] = []
