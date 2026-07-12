@@ -82,10 +82,8 @@ class Node:
     node_type: int = 0
     unique_id: int = 0
     extra_property_pass_mask: int = 0
-    route_to_secondary_property_list: int = 0
-    reserved_3bits: int = 0
+    # Unknown v86+ node word; the same slot is required-zero padding before v86.
     dev32_id: int = 0
-    padding_v53: int = 0
     name_hash: int = 0
     unique32_id: int = 0
     unicode_name_hash: int = 0
@@ -104,13 +102,11 @@ class Key:
     interpolation_type: int = 0
     offset_frame_flag: int = 0
     reserved: int = 0
-    reserved2: int = 0
     frame_span: int = 0
     raw0: int = 0
     raw1: int = 0
     interpolation_offset: int = 0
     interpolation_ref: object | None = None
-    legacy_tail_raw: bytes = b"\x00" * 8
     string_value: str = ""
     string_is_wide: int = -1
     string_original_value: str | None = None
@@ -133,7 +129,6 @@ class BoolKey:
 class ActionKey:
     frame: float = 0.0
     interpolation_type: int = 0
-    reserved: int = 0
 
 
 @dataclass(slots=True)
@@ -191,23 +186,22 @@ class Property:
     is_prev_diff_frame_set: int = 0
     is_next_diff_frame_set: int = 0
     is_prev_key_value_set: int = 0
-    is_delayed_execution_or_array_count_set: int = 0
+    is_delayed_execution: int = 0
+    is_array_count_set: int = 0
     has_set_property_delegate: int = 0
     extra_key_flags: int = 0
     aux_key_flags: int = 0
-    legacy_flags_raw: int = 0
+    is_restoration: int = 0
 
     last_key_offset: int = 0
     speed_point_offset: int = 0
     clip_property_offset: int = 0
 
     keys: list[object] = field(default_factory=list)
+    # Ordered extra records immediately following ``keys`` in the selected table.
+    extra_keys: list[object] = field(default_factory=list)
     children: list[int] = field(default_factory=list)
     child_properties: list["Property"] = field(default_factory=list)
     last_key_ref: "Key | None" = None
-    extra_key_last_ref: object | None = None
-    extra_key1_ref: object | None = None
-    extra_key2_ref: object | None = None
-    extra_key3_ref: object | None = None
     speed_points_ref: list["SpeedPoint"] = field(default_factory=list)
     clip_property_ref: "Property | None" = None

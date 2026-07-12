@@ -74,7 +74,10 @@ def property_type_or_unknown(value: int) -> PropertyType:
 
 
 PROPERTY_TYPES_WITH_CHILDREN = {
+    PropertyType.ARRAY,
     PropertyType.NATIVE_ARRAY,
+    PropertyType.CLASS,
+    PropertyType.STRUCT,
     PropertyType.NULLABLE,
     PropertyType.ANIMATION_CURVE,
     PropertyType.KEY_FRAME,
@@ -91,6 +94,7 @@ PROPERTY_TYPES_WITH_CHILDREN = {
     PropertyType.RANGE,
     PropertyType.RANGEI,
     PropertyType.POINT,
+    PropertyType.SIZE,
     PropertyType.UINT2,
     PropertyType.UINT3,
     PropertyType.UINT4,

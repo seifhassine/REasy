@@ -48,6 +48,8 @@ class ClipHandler(BaseFileHandler):
         result = self.clip_file.write()
         reparsed = ClipFile()
         reparsed.read(result)
+        if reparsed.write() != result:
+            raise ClipParserError("CLIP serialization is not stable after reparsing")
         if accept_reparse:
             self.clip_file = reparsed
             self.raw_data = result

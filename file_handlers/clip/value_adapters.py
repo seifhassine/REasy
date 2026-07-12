@@ -14,14 +14,14 @@ def key_payload_text(prop: Property | None, key) -> str:
     if isinstance(key, ActionKey):
         return "Trigger"
     if isinstance(key, SpeedPoint):
-        return _float_text(key.rate)
+        return format_full_float(key.rate)
     if getattr(key, "string_is_wide", -1) != -1:
         return key.string_value
     asset = getattr(key, "user_data_asset_ref", None)
     if asset is not None:
         return asset.path_unicode or asset.type_ascii
     if getattr(key, "oword_ref", None) is not None:
-        return ", ".join(_float_text(value) for value in key.oword_ref)
+        return ", ".join(format_full_float(value) for value in key.oword_ref)
     if isinstance(key, (Key, NoHermiteKey)):
         return _scalar_text(ptype, _payload_bytes(key))
     return ""
@@ -85,9 +85,7 @@ def _scalar_text(ptype: PropertyType, data: bytes) -> str:
         return str(struct.unpack(fmt, data[:struct.calcsize(fmt)])[0])
     if ptype in _FLOAT_SCALAR_FORMATS:
         fmt = _FLOAT_SCALAR_FORMATS[ptype]
-        return _float_text(struct.unpack(fmt, data[:struct.calcsize(fmt)])[0])
-    if ptype == PropertyType.SIZE:
-        return f"{struct.unpack('<i', data[:4])[0]}, {struct.unpack('<i', data[4:])[0]}"
+        return format_full_float(struct.unpack(fmt, data[:struct.calcsize(fmt)])[0])
     if ptype == PropertyType.PATH_POINT3D:
         return f"OWord[{struct.unpack('<I', data[:4])[0]}]"
     return "Unmodeled payload"
@@ -103,9 +101,6 @@ def _encode_scalar(ptype: PropertyType, text: str) -> tuple[int, int]:
         return _set_payload_bytes(struct.pack(fmt, value))
     if ptype in _FLOAT_SCALAR_FORMATS:
         return _set_payload_bytes(struct.pack(_FLOAT_SCALAR_FORMATS[ptype], float(text)).ljust(8, b"\0"))
-    if ptype == PropertyType.SIZE:
-        left, right = [int(part.strip(), 0) for part in text.split(",", 1)]
-        return _set_payload_bytes(struct.pack("<ii", left, right))
     raise ValueError(f"Unsupported editable payload type: {ptype.name}")
 
 
@@ -116,10 +111,6 @@ def _parse_bool(text: str) -> bool:
     if lowered in {"false", "0", "no", "off"}:
         return False
     return bool(int(text, 0))
-
-
-def _float_text(value: float) -> str:
-    return format_full_float(value)
 
 
 _INT_SCALAR_FORMATS = {
@@ -144,5 +135,4 @@ _EDITABLE_SCALARS = {
     PropertyType.BOOL,
     *_INT_SCALAR_FORMATS,
     *_FLOAT_SCALAR_FORMATS,
-    PropertyType.SIZE,
 }

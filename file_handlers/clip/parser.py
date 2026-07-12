@@ -41,8 +41,7 @@ class ParsedClip:
     bezier3d_nodes: list[tuple[float, float, float, float, float, float, float, float]]
     user_data_assets: list[UserDataAssetInfo]
     owords: list[tuple[float, float, float, float]]
-    _deleted_node_ids: set[int] = field(default_factory=set)
-    _deleted_property_ids: set[int] = field(default_factory=set)
+    track_child_nodes: list[Node] = field(default_factory=list)
 
 
 def node_size(version: int) -> int:
@@ -120,32 +119,12 @@ def header_size(version: int) -> int:
     return 8 + sum(_HEADER_FIELD_SIZES[kind] for kind, _ in iter_header_fields(version))
 
 
-EXTRA_KEY_FLAG_LAST_KEY = 0x1
-EXTRA_KEY_FLAG_EXTRA_KEY1 = 0x2
-EXTRA_KEY_FLAG_EXTRA_KEY2 = 0x4
-EXTRA_KEY_FLAG_EXTRA_KEY3 = 0x8
-EXTRA_KEY_FLAGS_MASK = (
-    EXTRA_KEY_FLAG_LAST_KEY
-    | EXTRA_KEY_FLAG_EXTRA_KEY1
-    | EXTRA_KEY_FLAG_EXTRA_KEY2
-    | EXTRA_KEY_FLAG_EXTRA_KEY3
-)
-EXTRA_KEY_REF_ATTRS = (
-    (EXTRA_KEY_FLAG_LAST_KEY, "extra_key_last_ref"),
-    (EXTRA_KEY_FLAG_EXTRA_KEY1, "extra_key1_ref"),
-    (EXTRA_KEY_FLAG_EXTRA_KEY2, "extra_key2_ref"),
-    (EXTRA_KEY_FLAG_EXTRA_KEY3, "extra_key3_ref"),
-)
+EXTRA_KEY_FLAGS_MASK = 0xF
 
 
 def _extra_key_count(flags: int, version: int) -> int:
     if version < 53:
         return 0
-    # Bit layout:
-    #  - bit 0: LastKey
-    #  - bit 1: ExtraKey1
-    #  - bit 2: ExtraKey2
-    #  - bit 3: ExtraKey3
     return (flags & EXTRA_KEY_FLAGS_MASK).bit_count()
 
 
@@ -155,10 +134,11 @@ INTERPOLATION_TYPE_BEZIER3D = 0xC
 
 class ClipParser:
     @staticmethod
-    def _iter_property_payload_keys(prop: Property):
+    def _iter_property_payload_keys(prop: Property, include_last: bool = False):
         yield from prop.keys
-        for _, attr in EXTRA_KEY_REF_ATTRS:
-            extra = getattr(prop, attr)
+        if include_last and isinstance(prop.last_key_ref, Key):
+            yield prop.last_key_ref
+        for extra in prop.extra_keys:
             if isinstance(extra, (Key, NoHermiteKey)):
                 yield extra
 
@@ -245,25 +225,28 @@ class ClipParser:
                     return nodes[idx]
             return None
 
-        def _slice(items: list, start: int, count: int) -> list:
-            if count <= 0 or start >= len(items):
-                return []
-            return items[start:min(start + count, len(items))]
+        def _slice(items: list, start: int, count: int, err: str) -> list:
+            self._assert(start >= 0 and count >= 0, err)
+            self._assert(start + count <= len(items), err)
+            return items[start:start + count]
 
         def _resolve_nodes(raw_offsets: list[int], err: str) -> list[Node]:
             resolved: list[Node] = []
             for raw in raw_offsets:
                 n = _node_from_raw(raw)
-                if n is None:
-                    self._assert(raw == 0, err)
-                    continue
+                self._assert(n is not None, err)
                 resolved.append(n)
             return resolved
 
         # Node -> child nodes / properties
         for n in nodes:
-            n.child_nodes = _slice(nodes, n.child_offset, n.node_num)
-            n.properties = _slice(props, n.property_offset, n.property_num)
+            n.child_nodes = _slice(nodes, n.child_offset, n.node_num, "Node child range out of bounds")
+            n.properties = _slice(
+                props,
+                n.property_offset,
+                n.property_num,
+                "Node property range out of bounds",
+            )
 
         # Root-node table -> concrete node references
         root_nodes = _resolve_nodes(parsed.root_node_offsets, "Invalid root-node pointer entry")
@@ -272,15 +255,34 @@ class ClipParser:
 
         parsed.root_nodes = root_nodes
         parsed.nodes_reorder_nodes = reorder_nodes
+        parsed.track_child_nodes = track_nodes
 
         # ClipInfo -> root nodes
         for ci in parsed.clip_infos:
-            ci.root_nodes = _slice(root_nodes, ci.root_node_offset, ci.root_node_count)
+            ci.root_nodes = _slice(
+                root_nodes,
+                ci.root_node_offset,
+                ci.root_node_count,
+                "ClipInfo root range out of bounds",
+            )
 
         # Track -> clips and child roots
         for tr in parsed.tracks:
-            tr.clip_infos = _slice(parsed.clip_infos, tr.clip_info_offset, tr.clip_num)
-            tr.child_nodes = _slice(track_nodes, tr.child_node_start_index, tr.child_node_num)
+            if parsed.header.version >= 40:
+                tr.clip_infos = _slice(
+                    parsed.clip_infos,
+                    tr.clip_info_offset,
+                    tr.clip_num,
+                    "Track clip range out of bounds",
+                )
+            else:
+                tr.clip_infos = []
+            tr.child_nodes = _slice(
+                track_nodes,
+                tr.child_node_start_index,
+                tr.child_node_num,
+                "Track child range out of bounds",
+            )
 
     def _decode_key_string_payloads(self, parsed: ParsedClip, r: Reader):
         c8_types = {PropertyType.ENUM, PropertyType.STR8}
@@ -288,14 +290,57 @@ class ClipParser:
             PropertyType.STR16, PropertyType.ASSET, PropertyType.USER_DATA_ASSET,
             PropertyType.RESOURCE_PATH, PropertyType.GAME_OBJECT_REF, PropertyType.GUID,
         }
-        last_key_expected_widths: dict[int, set[bool]] = {}
-        if parsed.header.version <= 43:
-            for prop in parsed.properties:
-                ptype = property_type_or_unknown(prop.property_type)
-                if ptype not in c8_types and ptype not in c16_types:
+
+        def walk_unique(roots, child_attr: str):
+            seen: set[int] = set()
+            stack = list(reversed(roots))
+            while stack:
+                item = stack.pop()
+                if id(item) in seen:
                     continue
-                if prop.is_exist_last_key and prop.last_key_offset < len(parsed.last_keys):
-                    last_key_expected_widths.setdefault(prop.last_key_offset, set()).add(ptype in c16_types)
+                seen.add(id(item))
+                yield item
+                stack.extend(reversed(getattr(item, child_attr)))
+
+        node_roots = (
+            [node for track in parsed.tracks for node in track.child_nodes]
+            if parsed.tracks else ([] if parsed.header.version >= 85 else parsed.root_nodes)
+        )
+        live_nodes = list(walk_unique(node_roots, "child_nodes"))
+        live_property_ids = {
+            id(prop) for prop in walk_unique(
+                [prop for node in live_nodes for prop in node.properties],
+                "child_properties",
+            )
+        }
+        keys_by_id: dict[int, object] = {}
+        all_key_widths: dict[int, set[bool]] = {}
+        live_key_widths: dict[int, set[bool]] = {}
+        all_last_widths: dict[int, set[bool]] = {}
+        live_last_widths: dict[int, set[bool]] = {}
+        for prop in parsed.properties:
+            ptype = property_type_or_unknown(prop.property_type)
+            if (
+                ptype == PropertyType.USER_DATA_ASSET
+                and parsed.header.version >= 62
+                and parsed.header.user_data_asset_info_ptr != 0
+            ) or (ptype not in c8_types and ptype not in c16_types):
+                continue
+            wide = ptype in c16_types
+            live = id(prop) in live_property_ids
+            for key in self._iter_property_payload_keys(prop):
+                keys_by_id[id(key)] = key
+                all_key_widths.setdefault(id(key), set()).add(wide)
+                if live:
+                    live_key_widths.setdefault(id(key), set()).add(wide)
+            if (
+                parsed.header.version <= 43
+                and prop.is_exist_last_key
+                and prop.last_key_offset < len(parsed.last_keys)
+            ):
+                all_last_widths.setdefault(prop.last_key_offset, set()).add(wide)
+                if live:
+                    live_last_widths.setdefault(prop.last_key_offset, set()).add(wide)
 
         def assign_key_string(key_obj, wide: bool):
             rel = (key_obj.raw1 << 32) | key_obj.raw0
@@ -304,39 +349,15 @@ class ClipParser:
             key_obj.string_original_value = s
             key_obj.string_is_wide = 1 if wide else 0
 
-        for prop in parsed.properties:
-            ptype = property_type_or_unknown(prop.property_type)
-            if (
-                ptype == PropertyType.USER_DATA_ASSET
-                and parsed.header.version >= 62
-                and parsed.header.user_data_asset_info_ptr != 0
-            ):
-                # v62+ stores UserDataAsset key payloads as indices into the
-                # UserDataAssetInfo table, not as c16 string offsets.
-                continue
-            if ptype not in c8_types and ptype not in c16_types:
-                continue
-            wide = ptype in c16_types
-            # Main / bool / action / no-hermite keys attached by _attach_property_ranges
-            for k in self._iter_property_payload_keys(prop):
-                assign_key_string(k, wide)
+        for key_id, key in keys_by_id.items():
+            expected = live_key_widths.get(key_id) or all_key_widths[key_id]
+            if len(expected) == 1:
+                assign_key_string(key, next(iter(expected)))
 
-            # Legacy last-key table entries (<=43)
-            if parsed.header.version <= 43 and prop.is_exist_last_key and prop.last_key_offset < len(parsed.last_keys):
-                lk = parsed.last_keys[prop.last_key_offset]
-                expected = last_key_expected_widths.get(prop.last_key_offset, set())
-                if len(expected) > 1:
-                    # Ambiguous shared slot (owned by both c8 and c16 properties): keep raw payload untyped.
-                    continue
-                candidate_wide = 1 if wide else 0
-                # Prefer c8 candidates for shared last-key slots; keep first c8 match.
-                if lk.string_is_wide == 0:
-                    continue
-                if lk.string_is_wide == 1 and candidate_wide == 1:
-                    continue
-                assign_key_string(lk, wide)
-
-
+        for index, key in enumerate(parsed.last_keys):
+            expected = live_last_widths.get(index) or all_last_widths.get(index, set())
+            if len(expected) == 1:
+                assign_key_string(key, next(iter(expected)))
 
     def _string(self, r: Reader, h: ClipHeader, rel: int, wide: bool) -> str:
         return r.read_wstr(h.c16_ptr + rel * 2) if wide else r.read_cstr(h.c8_ptr + rel)
@@ -357,6 +378,8 @@ class ClipParser:
         for kind, attr in iter_header_fields(h.version):
             if attr is not None:
                 setattr(h, attr, self._read_header_field(r, kind, o))
+            else:
+                self._assert(r.u32(o) == 0, "Legacy header reserved u32 must be zero")
             o += _HEADER_FIELD_SIZES[kind]
         self._assert(h.c8_ptr <= h.c16_ptr, "Invalid string table pointers (c8_ptr > c16_ptr)")
         return h
@@ -444,15 +467,15 @@ class ClipParser:
                 n.unique_id = (bits >> 8) & 0xFFFF
                 if h.version >= 86:
                     n.extra_property_pass_mask = (bits >> 24) & 0xF
-                    n.route_to_secondary_property_list = (bits >> 28) & 0x1
-                    n.reserved_3bits = (bits >> 29) & 0x7
-                    self._assert(n.route_to_secondary_property_list == 0 and n.reserved_3bits == 0,
-                                 "Unexpected nonzero node route/reserved bits")
+                    self._assert(bits >> 28 == 0, "Unexpected nonzero node route/reserved bits")
                 else:
-                    n.padding_v53 = (bits >> 24) & 0xFF
-                    self._assert(n.padding_v53 == 0, "Unexpected nonzero node padding byte")
+                    self._assert(bits >> 24 == 0, "Unexpected nonzero node padding byte")
+            else:
+                self._assert(bits >> 8 == 0, "Unexpected nonzero legacy node padding bytes")
             p += 4
-            n.dev32_id = r.u32(p); p += 4
+            node_word = r.u32(p); p += 4
+            self._assert(h.version >= 86 or node_word == 0, "Unexpected nonzero node padding word")
+            n.dev32_id = node_word if h.version >= 86 else 0
             if h.version >= 86:
                 n.unique32_id = r.u32(p)
                 n.name_hash = 0
@@ -464,13 +487,8 @@ class ClipParser:
                 n.name = self._string(r, h, r.u64(p + 8), True)
                 n.child_offset = r.u64(p + 16)
                 n.property_offset = r.u64(p + 24)
-            elif h.version == 27:
-                n.name = self._string(r, h, r.u64(p + 8), False)
-                n.node_tag = self._string(r, h, r.u64(p + 16), True)
-                n.child_offset = r.u64(p + 24)
-                n.property_offset = r.u64(p + 32)
             else:
-                n.name = self._string(r, h, r.u64(p + 8), True)
+                n.name = self._string(r, h, r.u64(p + 8), h.version != 27)
                 n.node_tag = self._string(r, h, r.u64(p + 16), True)
                 n.child_offset = r.u64(p + 24)
                 n.property_offset = r.u64(p + 32)
@@ -505,20 +523,22 @@ class ClipParser:
                 p.speed_point_num = r.u8(o + 44) if h.version >= 43 else r.u16(o + 44)
                 p.property_type = r.u8(o + (45 if h.version >= 43 else 46))
                 fb1 = r.u8(o + (46 if h.version >= 43 else 47))
-                p.legacy_flags_raw = fb1
                 p.is_enum_closed = fb1 & 1
                 p.set_after_end_frame = (fb1 >> 1) & 1
                 p.is_exist_last_key = (fb1 >> 2) & 1 if h.version <= 43 else 0
+                p.is_restoration = (fb1 >> 3) & 1 if h.version <= 43 else 0
                 p.is_set_delegate_enable = (fb1 >> 2) & 1 if h.version >= 44 else (fb1 >> 4) & 1
                 p.is_prev_diff_frame_set = (fb1 >> 3) & 1 if h.version >= 44 else (fb1 >> 5) & 1
                 p.is_next_diff_frame_set = (fb1 >> 4) & 1 if h.version >= 44 else (fb1 >> 6) & 1
                 p.is_prev_key_value_set = (fb1 >> 5) & 1 if h.version >= 44 else (fb1 >> 7) & 1
-                p.is_delayed_execution_or_array_count_set = (fb1 >> 6) & 1 if h.version >= 44 else 0
+                p.is_delayed_execution = (fb1 >> 6) & 1 if h.version >= 44 else 0
+                p.is_array_count_set = (fb1 >> 7) & 1 if 44 <= h.version < 85 else 0
 
                 if h.version >= 44:
                     fb2 = r.u8(o + 47)
                     if h.version < 85:
                         p.extra_key_flags = fb2 & 0xF
+                        self._assert(fb2 >> 4 == 0, "Unexpected nonzero property reserved flags")
                     else:
                         # v85+ layout:
                         # - byte 46 bit7: has_set_property_delegate
@@ -550,12 +570,12 @@ class ClipParser:
                 legacy_bits = r.u32(o + 20)
                 p.property_type = legacy_bits & 0xFF
                 fb1 = (legacy_bits >> 8) & 0xFF
-                p.legacy_flags_raw = fb1
                 self._assert((legacy_bits >> 16) == 0, "Legacy property reserved padding must be zero")
 
                 p.is_enum_closed = fb1 & 0x1
                 p.set_after_end_frame = (fb1 >> 1) & 0x1
                 p.is_exist_last_key = (fb1 >> 2) & 0x1
+                p.is_restoration = (fb1 >> 3) & 0x1
                 # legacy bit layout carries old semantics
                 p.is_set_delegate_enable = (fb1 >> 4) & 0x1
                 p.is_prev_diff_frame_set = (fb1 >> 5) & 0x1
@@ -605,16 +625,15 @@ class ClipParser:
             k.offset_frame_flag = (packed >> 8) & 0x1
             k.reserved = (packed >> 9) & 0x7FFFFF
             if version < 53:
-                k.reserved2 = r.u32(o + 12)
+                self._assert(r.u32(o + 12) == 0, "nonzero reserved2 in key")
                 k.frame_span = 0
             else:
-                k.reserved2 = 0
                 k.frame_span = r.u32(o + 12)
             k.raw0 = r.u32(o + 16)
             k.raw1 = r.u32(o + 20)
             k.interpolation_offset = r.u64(o + 24)
             if stride == 40:
-                k.legacy_tail_raw = r.bytes(o + 32, 8)
+                self._assert(r.u64(o + 32) == 0, "v27 key padding must be zero")
             out.append(k)
         return out
 
@@ -648,8 +667,8 @@ class ClipParser:
         for i in range(h.action_key_num):
             o = h.action_keys_offset + i * 8
             packed = r.u32(o + 4)
-            k = ActionKey(frame=r.f32(o), interpolation_type=packed & 0xFF, reserved=(packed >> 8) & 0xFFFFFF)
-            self._assert(k.reserved == 0, "nonzero ActionKey reserved")
+            self._assert(packed >> 8 == 0, "nonzero ActionKey reserved")
+            k = ActionKey(frame=r.f32(o), interpolation_type=packed & 0xFF)
             out.append(k)
         return out
 
@@ -717,8 +736,7 @@ class ClipParser:
     def _read_owords(self, r: Reader, h: ClipHeader) -> list[tuple[float, float, float, float]]:
         if h.oword_ptr == 0:
             return []
-        end = h.data_ptr if h.data_ptr != 0 else r.size
-        return self._read_f32_rows(r, h.oword_ptr, end, 4)
+        return self._read_f32_rows(r, h.oword_ptr, h.data_ptr or r.size, 4)
 
     def _validate_data_table(self, r: Reader, h: ClipHeader):
         if h.data_ptr == 0:
@@ -742,8 +760,7 @@ class ClipParser:
             total = 0
             for tr in parsed.tracks:
                 # Despite the legacy field name, this value is a root-node table start index.
-                child_start_index = tr.child_node_start_index
-                self._assert(child_start_index + tr.child_node_num <= h.root_node_num,
+                self._assert(tr.child_node_start_index + tr.child_node_num <= h.root_node_num,
                              "Track child range exceeds rootNodeNum")
                 total += tr.child_node_num
             self._assert(total == h.root_node_num, "Sum of Track.childNodeNum does not match rootNodeNum")
@@ -755,22 +772,10 @@ class ClipParser:
             "Action key range exceeds table",
             "NoHermite key range exceeds table",
         ]
-        key_owners = [[0] * len(keys) for keys in key_tables]
-
-        def _assign_keys(prop: Property, key_kind: int, total: int):
-            keys = key_tables[key_kind]
-            start = prop.key_or_child_offset
-            self._assert(start + total <= len(keys), key_errors[key_kind])
-            prop.keys = keys[start:start + total]
-            for idx in range(start, start + total):
-                key_owners[key_kind][idx] += 1
-
         for prop in parsed.properties:
+            ptype = property_type_or_unknown(prop.property_type)
             prop.last_key_ref = None
-            prop.extra_key_last_ref = None
-            prop.extra_key1_ref = None
-            prop.extra_key2_ref = None
-            prop.extra_key3_ref = None
+            prop.extra_keys = []
             prop.speed_points_ref = []
             prop.clip_property_ref = None
             if h.version < 40 and prop.speed_point_num > 0:
@@ -778,54 +783,51 @@ class ClipParser:
                     prop.property_type == PropertyType.PATH_POINT3D,
                     "Only PathPoint3D legacy properties are expected to own speed points",
                 )
-                self._assert(
-                    prop.speed_point_offset + prop.speed_point_num <= len(parsed.speed_points),
-                    "Legacy property speed-point range exceeds table",
-                )
-
             extra = _extra_key_count(prop.extra_key_flags, h.version)
             total = prop.key_num_or_element_num + extra
             if prop.speed_point_num > 0:
+                self._assert(
+                    ptype not in PROPERTY_TYPES_WITH_CHILDREN,
+                    "Container property cannot own speed points",
+                )
                 self._assert(
                     prop.speed_point_offset + prop.speed_point_num <= len(parsed.speed_points),
                     "Property speed-point range exceeds table",
                 )
                 end_sp = prop.speed_point_offset + prop.speed_point_num
                 prop.speed_points_ref = parsed.speed_points[prop.speed_point_offset:end_sp]
-            if h.version <= 43 and prop.is_exist_last_key and prop.last_key_offset < len(parsed.last_keys):
-                prop.last_key_ref = parsed.last_keys[prop.last_key_offset]
-            if h.version <= 43 and prop.clip_property_offset > 0 and prop.clip_property_offset < len(parsed.properties):
-                prop.clip_property_ref = parsed.properties[prop.clip_property_offset]
-            if total <= 0:
-                continue
-            ptype = property_type_or_unknown(prop.property_type)
-            if ptype in PROPERTY_TYPES_WITH_CHILDREN:
+            if h.version <= 43 and prop.is_exist_last_key:
                 self._assert(
-                    prop.key_or_child_offset + prop.key_num_or_element_num <= len(parsed.properties),
-                    "Property child range out of bounds",
+                    prop.last_key_offset < len(parsed.last_keys),
+                    "Property last-key offset out of range",
                 )
-                end = prop.key_or_child_offset + prop.key_num_or_element_num
-                prop.children = list(range(prop.key_or_child_offset, end))
-                prop.child_properties = parsed.properties[prop.key_or_child_offset:end]
-                continue
-            key_kind = prop.aux_key_flags if (parsed.header.version >= 85 and prop.aux_key_flags < 4) else 0
-            _assign_keys(prop, key_kind, total)
-            if parsed.header.version >= 53:
-                extra_count = _extra_key_count(prop.extra_key_flags, parsed.header.version)
-                if extra_count > 0:
+                prop.last_key_ref = parsed.last_keys[prop.last_key_offset]
+            if h.version <= 43 and prop.clip_property_offset > 0:
+                self._assert(
+                    prop.clip_property_offset < len(parsed.properties),
+                    "clipPropertyOffset index out of range",
+                )
+                prop.clip_property_ref = parsed.properties[prop.clip_property_offset]
+            if total > 0:
+                if ptype in PROPERTY_TYPES_WITH_CHILDREN:
                     self._assert(
-                        prop.key_num_or_element_num + extra_count <= len(prop.keys),
-                        "Property extra-key range out of bounds",
+                        prop.key_or_child_offset + prop.key_num_or_element_num <= len(parsed.properties),
+                        "Property child range out of bounds",
                     )
-                    ordered_extra_keys = prop.keys[prop.key_num_or_element_num:prop.key_num_or_element_num + extra_count]
+                    end = prop.key_or_child_offset + prop.key_num_or_element_num
+                    prop.children = list(range(prop.key_or_child_offset, end))
+                    prop.child_properties = parsed.properties[prop.key_or_child_offset:end]
+                    continue
+                key_kind = (prop.aux_key_flags & 0x3) if parsed.header.version >= 85 else 0
+                keys = key_tables[key_kind]
+                start = prop.key_or_child_offset
+                self._assert(start + total <= len(keys), key_errors[key_kind])
+                prop.keys = keys[start:start + total]
+                if extra > 0:
+                    prop.extra_keys = prop.keys[prop.key_num_or_element_num:]
                     prop.keys = prop.keys[:prop.key_num_or_element_num]
-                    extra_idx = 0
-                    for bit, attr in EXTRA_KEY_REF_ATTRS:
-                        if prop.extra_key_flags & bit:
-                            setattr(prop, attr, ordered_extra_keys[extra_idx])
-                            extra_idx += 1
 
-            if ptype == PropertyType.USER_DATA_ASSET and parsed.header.version >= 62 and parsed.user_data_assets:
+            if ptype == PropertyType.USER_DATA_ASSET and parsed.header.version >= 62:
                 for key_obj in self._iter_property_payload_keys(prop):
                     idx = (key_obj.raw1 << 32) | key_obj.raw0
                     self._assert(
@@ -836,17 +838,16 @@ class ClipParser:
                     key_obj.user_data_asset_ref = parsed.user_data_assets[idx]
 
             if ptype == PropertyType.PATH_POINT3D:
-                for key_obj in self._iter_property_payload_keys(prop):
+                for key_obj in self._iter_property_payload_keys(prop, include_last=True):
                     key_obj.oword_ref = None
                     oword_idx = key_obj.raw0 & 0xFFFFFFFF
                     self._assert(0 <= oword_idx < len(parsed.owords), "PathPoint3D OWord index out of range")
                     key_obj.oword_ref = parsed.owords[oword_idx]
 
-        for key_kind, owners in enumerate(key_owners):
-            bad = next((idx for idx, count in enumerate(owners) if count != 1), None)
-            if bad is None:
-                continue
-            self._assert(False, f"Key table {key_kind} entry {bad} has owner count {owners[bad]} (expected 1)")
+        # Parsing is intentionally permissive: one known noncanonical fixture
+        # contains aliased ranges plus an unreachable duplicate tail. Preserve
+        # those relationships in memory so they can be inspected; ClipWriter
+        # later serializes only the reachable, singly-owned ranged records.
 
     def _attach_interpolation_references(self, parsed: ParsedClip):
         hermite_nodes = parsed.hermite_nodes
@@ -855,8 +856,16 @@ class ClipParser:
         def _attach(obj):
             obj.interpolation_ref = None
             if obj.interpolation_type == INTERPOLATION_TYPE_HERMITE:
+                self._assert(
+                    0 <= obj.interpolation_offset < len(hermite_nodes),
+                    "Hermite interpolation index out of range",
+                )
                 obj.interpolation_ref = hermite_nodes[obj.interpolation_offset]
             elif obj.interpolation_type == INTERPOLATION_TYPE_BEZIER3D:
+                self._assert(
+                    0 <= obj.interpolation_offset < len(bezier3d_nodes),
+                    "Bezier3D interpolation index out of range",
+                )
                 obj.interpolation_ref = bezier3d_nodes[obj.interpolation_offset]
 
         for group in (parsed.main_keys, parsed.last_keys, parsed.speed_points):
