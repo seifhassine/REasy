@@ -15,13 +15,8 @@ REasy GUI is currently available in English and Chinese (limited)
 
 <br>
 <br>
-
 <p align="center">
-   <img src="https://github.com/user-attachments/assets/64a84918-ad58-47ee-8186-e0e7a5a1ace0" alt="REasy Editor Logo" width=70%">
-</p>
-
-<p align="center">
-<img alt="image" src="https://github.com/user-attachments/assets/19ca472b-8578-495a-852e-a8ddc924b06c"  width=70%/>
+<img alt="image" src="https://github.com/user-attachments/assets/1ec4648a-a10d-4b5f-aed5-a654995a5d32"  width=70%/>
 </p>
 
 <br>
