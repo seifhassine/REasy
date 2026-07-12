@@ -390,6 +390,8 @@ class FileTab:
                 f.write(data)
 
             self.filename = file_path
+            self.pak_source_path = None
+            self.pak_data_loader = None
             self.modified = False
             self.update_tab_title()
             if self.app and hasattr(self.app, "scenes"):
@@ -493,13 +495,13 @@ class FileTab:
             traceback.print_exc()
 
     def _read_reload_data(self) -> bytes | None:
+        if self.filename and os.path.isfile(self.filename):
+            with open(self.filename, "rb") as f:
+                return f.read()
         if self.pak_source_path and callable(self.pak_data_loader):
             data = self.pak_data_loader(self.pak_source_path)
             if data is not None:
                 return data
-        if self.filename and os.path.isfile(self.filename):
-            with open(self.filename, "rb") as f:
-                return f.read()
         if not self.app or not self.filename:
             return None
         from utils.resource_file_utils import resolve_app_resource_data
