@@ -37,8 +37,8 @@ class _IllustrationPanel(QFrame):
         colors = get_color_scheme()
 
         self._bg_start = QColor(colors['bg'])
-        highlight = colors.get('highlight', '#ff851b')
-        self._bg_end = QColor(highlight) if isinstance(highlight, str) else QColor(255, 133, 27)
+        highlight = colors.get('highlight', '#00aaff')
+        self._bg_end = QColor(highlight) if isinstance(highlight, str) else QColor(0, 170, 255)
 
         self.setStyleSheet("QFrame#IllustrationPanel { border: none; }")
 
@@ -230,7 +230,7 @@ class ChangelogDialog(QDialog):
         bg = colors['bg']
         fg = colors['fg']
         border = colors['border']
-        highlight = colors['highlight'] if isinstance(colors['highlight'], str) else '#ff851b'
+        highlight = colors['highlight'] if isinstance(colors['highlight'], str) else '#00aaff'
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg}; color: {fg}; }}
             QLabel {{ color: {fg}; }}
@@ -274,7 +274,7 @@ class ChangelogDialog(QDialog):
             }}
             QPushButton#GitHubButton {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 {highlight}, stop:1 rgba(255, 133, 27, 0.8));
+                    stop:0 {highlight}, stop:1 rgba(0, 170, 255, 0.8));
                 color: white;
                 border: none;
                 padding: 8px 14px;
@@ -283,10 +283,10 @@ class ChangelogDialog(QDialog):
             }}
             QPushButton#GitHubButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(255, 153, 51, 1.0), stop:1 {highlight});
+                    stop:0 rgba(51, 187, 255, 1.0), stop:1 {highlight});
             }}
             QPushButton#GitHubButton:pressed {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(255, 133, 27, 0.9), stop:1 rgba(255, 133, 27, 0.7));
+                    stop:0 rgba(0, 170, 255, 0.9), stop:1 rgba(0, 170, 255, 0.7));
             }}
         """)

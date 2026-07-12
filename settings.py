@@ -11,7 +11,7 @@ DEFAULT_SETTINGS = {
     "backup_on_save": True,
     "ui_language": "system",
     "translation_target_language": "en",
-    "tree_highlight_color": "#ff851b",
+    "tree_highlight_color": "#00aaff",
     "vgmstream_cli_path": "",
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",

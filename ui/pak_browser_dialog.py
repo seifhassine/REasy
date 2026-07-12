@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 	QMessageBox, QTreeView, QAbstractItemView, QMenu, QApplication
 )
 
-from settings import load_settings
+from settings import DEFAULT_SETTINGS, load_settings
 
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
@@ -39,7 +39,9 @@ class PakBrowserDialog(QDialog):
 		lay = QVBoxLayout(self)
 
 		settings = getattr(parent, 'settings', None) or load_settings()
-		highlight_color = settings.get("tree_highlight_color", "#ff851b")
+		highlight_color = settings.get(
+			"tree_highlight_color", DEFAULT_SETTINGS["tree_highlight_color"]
+		)
 		self._highlight_color = QColor(highlight_color)
 
 		top = QHBoxLayout()

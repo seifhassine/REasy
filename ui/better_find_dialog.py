@@ -572,10 +572,10 @@ class BetterFindDialog(QDockWidget):
             "input_bg": "#3b3b3b",
             "list_bg": "#353535",
             "border": "#555555",
-            "highlight": "#ff851b",
+            "highlight": "#00aaff",
             "button_bg": "#404040",
             "button_hover": "#4a4a4a",
-            "selection": "rgba(255, 133, 27, 0.3)"
+            "selection": "rgba(0, 170, 255, 0.3)"
         }
         
         self.setStyleSheet(f"""

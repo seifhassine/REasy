@@ -112,7 +112,7 @@ class HomePageWidget(QWidget):
     def set_theme(self, colors: dict, accent_color: str):
         accent = QColor(accent_color)
         if not accent.isValid():
-            accent = QColor("#ff851b")
+            accent = QColor("#00aaff")
         accent_text = "#111111" if accent.lightness() > 155 else "#ffffff"
         accent_hover = accent.lighter(112).name()
         accent_pressed = accent.darker(116).name()
