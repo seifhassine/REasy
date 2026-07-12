@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from PySide6.QtGui import QImage, QPixmap
 
+from .dxgi import DXGI_FORMAT_B8G8R8A8_UNORM_SRGB, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
 from .tex_handler import TexHandler
 from .texture_decoder import decode_tex_mip
 
@@ -20,6 +21,7 @@ class TexPreviewMip:
 class TexPreviewUpload:
     gl_format: int
     levels: tuple[TexPreviewMip, ...]
+    compressed: bool = True
 
 
 _GL_COMPRESSED_FORMATS = {
@@ -46,9 +48,18 @@ def build_tex_preview_upload(tex, *, mip_selector: Callable[[object], int] | Non
     if tex is None or header is None:
         raise ValueError("missing TEX header")
     format_info = _GL_COMPRESSED_FORMATS.get(header.format)
-    if format_info is None:
-        raise ValueError(f"unsupported DXGI format {header.format}")
-    gl_format, block_bytes = format_info
+    compressed = format_info is not None
+    if compressed:
+        gl_format, block_bytes = format_info
+    else:
+        # Uncompressed formats are decoded to RGBA8 before upload. Keep sRGB
+        # formats sRGB on the GPU so shader sampling performs the expected
+        # color-space conversion.
+        gl_format = (
+            0x8C43  # GL_SRGB8_ALPHA8
+            if header.format in (DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
+            else 0x8058  # GL_RGBA8
+        )
     first_mip = int(mip_selector(tex) if callable(mip_selector) else 0)
     if not 0 <= first_mip < header.mip_count:
         raise ValueError(f"invalid first mip {first_mip}/{header.mip_count}")
@@ -56,19 +67,27 @@ def build_tex_preview_upload(tex, *, mip_selector: Callable[[object], int] | Non
     levels = []
     expected_dimensions = None
     for mip in range(first_mip, header.mip_count):
-        if header.format_is_block_compressed() and not tex.header_is_power_of_two():
-            data, width, height = tex.read_non_pot_level(mip, 0)
+        if compressed:
+            if header.format_is_block_compressed() and not tex.header_is_power_of_two():
+                data, width, height = tex.read_non_pot_level(mip, 0)
+            else:
+                level = tex.get_mip_map_data(mip, 0)
+                data, width, height = level.data, level.width, level.height
         else:
-            level = tex.get_mip_map_data(mip, 0)
-            data, width, height = level.data, level.width, level.height
+            decoded = decode_tex_mip(tex, 0, mip)
+            data, width, height = bytes(decoded.rgba), decoded.width, decoded.height
         if expected_dimensions and (width, height) != expected_dimensions:
             raise ValueError(f"mip {mip} dimensions {(width, height)} != {expected_dimensions}")
-        expected_size = max(1, (width + 3) // 4) * max(1, (height + 3) // 4) * block_bytes
+        expected_size = (
+            max(1, (width + 3) // 4) * max(1, (height + 3) // 4) * block_bytes
+            if compressed
+            else width * height * 4
+        )
         if len(data) != expected_size:
             raise ValueError(f"mip {mip} size {len(data)} != {expected_size}")
         levels.append(TexPreviewMip(width, height, data))
         expected_dimensions = max(1, width // 2), max(1, height // 2)
-    return TexPreviewUpload(gl_format, tuple(levels))
+    return TexPreviewUpload(gl_format, tuple(levels), compressed=compressed)
 
 
 def _decode_qimage_from_tex(

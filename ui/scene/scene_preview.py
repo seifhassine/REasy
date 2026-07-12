@@ -2093,15 +2093,28 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if error != GL_NO_ERROR:
                 raise RuntimeError(f"texture setup GL error 0x{error:04X}")
             for mip, level in enumerate(texture.levels):
-                glCompressedTexImage2D(
-                    GL_TEXTURE_2D,
-                    mip,
-                    texture.gl_format,
-                    level.width,
-                    level.height,
-                    0,
-                    level.data,
-                )
+                if texture.compressed:
+                    glCompressedTexImage2D(
+                        GL_TEXTURE_2D,
+                        mip,
+                        texture.gl_format,
+                        level.width,
+                        level.height,
+                        0,
+                        level.data,
+                    )
+                else:
+                    glTexImage2D(
+                        GL_TEXTURE_2D,
+                        mip,
+                        texture.gl_format,
+                        level.width,
+                        level.height,
+                        0,
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        level.data,
+                    )
                 error = glGetError()
                 if error != GL_NO_ERROR:
                     raise RuntimeError(
