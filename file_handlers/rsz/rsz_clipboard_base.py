@@ -1,7 +1,6 @@
-import os
 import json
-
 import traceback
+
 from abc import ABC, abstractmethod
 from typing import Dict, Set, Any, Tuple, List
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -33,18 +32,17 @@ class RszClipboardBase(ABC):
     
     def get_clipboard_file(self, viewer):
         """Get the clipboard file path for this clipboard type"""
-        json_name = self.get_json_name(viewer)
-        base_name = os.path.splitext(json_name)[0] if json_name else "default"
-        
-        return os.path.join(
+        return RszClipboardUtils.format_clipboard_file(
             self.get_clipboard_directory(),
-            f"{base_name}-{self.get_clipboard_type()}-clipboard.json"
+            self.get_json_name(viewer),
+            self.get_clipboard_type(),
+            default_name="default",
         )
     
     def has_clipboard_data(self, viewer):
         """Check if clipboard data exists"""
         clipboard_file = self.get_clipboard_file(viewer)
-        return os.path.exists(clipboard_file)
+        return RszClipboardUtils.has_clipboard_data(clipboard_file)
     
     def get_clipboard_data(self, viewer):
         clipboard_file = self.get_clipboard_file(viewer)
@@ -53,11 +51,16 @@ class RszClipboardBase(ABC):
     def save_clipboard_data(self, viewer, data):
         clipboard_file = self.get_clipboard_file(viewer)
         try:
-            with open(clipboard_file, 'w') as f:
-                json.dump(data, f, indent=2, default=RszClipboardUtils.json_serializer)
+            with open(clipboard_file, "w") as stream:
+                json.dump(
+                    data,
+                    stream,
+                    indent=2,
+                    default=RszClipboardUtils.json_serializer,
+                )
             return True
-        except Exception as e:
-            print(f"Error saving clipboard data: {str(e)}")
+        except Exception as exc:
+            print(f"Error saving clipboard data: {exc}")
             traceback.print_exc()
             return False
 

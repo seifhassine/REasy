@@ -1009,117 +1009,26 @@ class RszViewer(QWidget):
 
     def _create_field_dict(self, field_name, data_obj, embedded_context=None, use_lazy=True):
         """Create a dictionary representation of a field for the tree view"""
-        domain_id = None
-        is_embedded = embedded_context is not None
-        
-        if use_lazy and hasattr(self, 'lazy_builder') and self.lazy_builder:
-            if isinstance(data_obj, StructData) and self.lazy_builder.should_use_lazy_loading(data_obj):
-                return self.lazy_builder.create_lazy_struct_node(field_name, data_obj, embedded_context)
-            elif is_array_type(data_obj) and self.lazy_builder.should_use_lazy_loading(data_obj):
-                return self.lazy_builder.create_lazy_array_node(field_name, data_obj, embedded_context)
-            
+        builder = getattr(self, "lazy_builder", None)
+        if isinstance(data_obj, (StructData, ArrayData)) and builder is None:
+            builder = RszLazyNodeBuilder(self)
         if isinstance(data_obj, StructData):
-            original_type = f"{data_obj.orig_type}" if hasattr(data_obj, 'orig_type') and data_obj.orig_type else ""
-            
-            struct_node = DataTreeBuilder.create_data_node(
-                f"{field_name}: {original_type}", "", "struct", data_obj
+            deferred = use_lazy and builder.should_use_lazy_loading(data_obj)
+            return builder.create_struct_node(
+                field_name, data_obj, embedded_context, deferred=deferred
             )
-            
-            struct_type_info = None
-            field_definitions = {}
-            if self.type_registry and original_type:
-                struct_type_info, _ = self.type_registry.find_type_by_name(original_type)
-                if struct_type_info and "fields" in struct_type_info:
-                    field_definitions = {
-                        field_def["name"]: field_def 
-                        for field_def in struct_type_info["fields"] 
-                        if "name" in field_def
-                    }
-            
-            for i, struct_value in enumerate(data_obj.values):
-                if not isinstance(struct_value, dict):
-                    continue
-                    
-                instance_label = f"{i}: {original_type}"
-                
-                if "name" in struct_value and hasattr(struct_value["name"], 'value') and struct_value["name"].value:
-                    instance_label = f"{i}: {struct_value['name'].value}"
-                
-                struct_instance_node = DataTreeBuilder.create_data_node(
-                    instance_label, "", "struct_instance", None
-                )
-                
-                for field_key, field_value in struct_value.items():
-                    if field_key in field_definitions:
-                        field_def = field_definitions[field_key]
-                        display_name = field_def["name"]
-                        display_type = field_def["type"]
-                        
-                        field_node = self._create_field_dict(display_name, field_value, embedded_context)
-                        field_node["data"][0] = f"{display_name} ({display_type})"
-                    else:
-                        field_node = self._create_field_dict(field_key, field_value, embedded_context)
-                        
-                    struct_instance_node["children"].append(field_node)
-                
-                struct_node["children"].append(struct_instance_node)
-            
-            return struct_node
-            
-        elif is_array_type(data_obj):
-            children = []
-            original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
-            
-            if is_embedded:
-                if not hasattr(data_obj, '_owning_context') or data_obj._owning_context is None:
-                    data_obj._owning_context = embedded_context
-                
-                if not hasattr(data_obj, '_owning_instance_id') or data_obj._owning_instance_id is None:
-                    if hasattr(embedded_context, 'embedded_object_table') and embedded_context.embedded_object_table:
-                        data_obj._owning_instance_id = embedded_context.embedded_object_table[0]
-            
-            for i, element in enumerate(data_obj.values):
-                if isinstance(element, (ArrayData, ObjectData, UserDataData)):
-                    if not hasattr(element, '_container_array') or element._container_array is None:
-                        element._container_array = data_obj
-                    # Always update container index to reflect current position
-                    element._container_index = i
-                    if is_embedded:
-                        if not hasattr(element, '_container_context') or element._container_context is None:
-                            element._container_context = embedded_context
-                
-                if is_reference_type(element):
-                    child_node = self._handle_reference_in_array(i, element, embedded_context, domain_id)
-                    if child_node:
-                        if isinstance(child_node, dict):
-                            child_node.setdefault("obj", element)
-                            child_node["element_index"] = i
-                        children.append(child_node)
-                else:
-                    # Non-object elements are handled the same for both contexts
-                    element_type = element.__class__.__name__
-                    elem_node = DataTreeBuilder.create_data_node(str(i) + ": ", "", element_type, element)
-                    if isinstance(elem_node, dict):
-                        elem_node["element_index"] = i
-                    children.append(elem_node)
-                    
-            array_node = DataTreeBuilder.create_data_node(
-                f"{field_name}: {original_type}", "", "array", data_obj, children
+        if is_array_type(data_obj):
+            deferred = use_lazy and builder.should_use_lazy_loading(data_obj)
+            return builder.create_array_node(
+                field_name, data_obj, embedded_context, deferred=deferred
             )
-            
-            if is_embedded and embedded_context:
-                array_node["embedded_context"] = embedded_context
-                array_node["domain_id"] = domain_id
-            
-            return array_node
-            
-        elif is_reference_type(data_obj):
-            return self._handle_object_reference(field_name, data_obj, embedded_context, domain_id)
-        else:
-            # All other data types are handled the same way regardless of context
-            return DataTreeBuilder.create_data_node(
-                f"{field_name}:", "", data_obj.__class__.__name__, data_obj
+        if is_reference_type(data_obj):
+            return self._handle_object_reference(
+                field_name, data_obj, embedded_context, None
             )
+        return DataTreeBuilder.create_data_node(
+            f"{field_name}:", "", data_obj.__class__.__name__, data_obj
+        )
 
     def _handle_reference_in_array(self, index, element, embedded_context, domain_id):
         """Handle object or userdata reference in an array"""
@@ -1453,76 +1362,34 @@ class RszViewer(QWidget):
 
     def _build_embedded_hierarchy(self, embedded_instances):
         """Build hierarchy structure from object references in embedded instances"""
-        # Create hierarchy structure with default values
-        hierarchy = {
-            instance_id: {"children": [], "parent": None} 
-            for instance_id in embedded_instances 
-            if isinstance(embedded_instances[instance_id], dict)
-        }
-        
-        # Process all fields to find parent-child relationships
-        for instance_id, fields in embedded_instances.items():
-            if not isinstance(fields, dict):
-                continue
-            
-            # Process all fields for potential references    
-            for field_data in fields.values():
-                self._process_reference_for_hierarchy(instance_id, field_data, hierarchy)
-        
-        # Consolidate multiple root nodes if needed
-        self._consolidate_root_nodes(hierarchy)
-        
-        return hierarchy
-    
+        return RszInstanceOperations.build_reference_hierarchy(embedded_instances)
+
     def _consolidate_root_nodes(self, hierarchy):
-        """Find main root node and make other roots its children"""
-        # Identify root candidates (nodes with no parent but with children)
-        root_candidates = [
-            id for id, data in hierarchy.items() 
-            if data["parent"] is None and data["children"]
-        ]
-        
-        if len(root_candidates) <= 1:
-            return  # No consolidation needed
-            
-        # Find root with most total children
-        main_root = max(root_candidates, key=lambda x: self._count_all_children(x, hierarchy))
-        
-        # Make other roots children of the main root
-        for candidate in root_candidates:
-            if candidate != main_root and hierarchy[candidate]["parent"] is None:
-                hierarchy[main_root]["children"].append(candidate)
-                hierarchy[candidate]["parent"] = main_root
+        RszInstanceOperations.consolidate_reference_roots(hierarchy)
 
     def _process_reference_for_hierarchy(self, instance_id, field_data, hierarchy):
-        """Process a field for parent-child relationships in hierarchy"""
         from .utils.rsz_field_utils import collect_field_references
-        
+
         def process_object_ref(ref_obj):
             if isinstance(ref_obj, ObjectData) and ref_obj.value in hierarchy:
                 child_id = ref_obj.value
                 if child_id != instance_id:
                     hierarchy[instance_id]["children"].append(child_id)
                     hierarchy[child_id]["parent"] = instance_id
-        
-        # This will handle both direct references and array elements
+
         collect_field_references({field_data: field_data}, process_object_ref)
-    
+
     def _count_all_children(self, node_id, hierarchy, visited=None):
-        """Count all children (direct and indirect) of a node"""
         if visited is None:
             visited = set()
         if node_id in visited:
             return 0
-            
         visited.add(node_id)
-        direct_children = hierarchy[node_id]["children"]
-        count = len(direct_children)
-        
-        for child in direct_children:
-            count += self._count_all_children(child, hierarchy, visited)
-            
-        return count
+        children = hierarchy[node_id]["children"]
+        return len(children) + sum(
+            self._count_all_children(child_id, hierarchy, visited)
+            for child_id in children
+        )
 
     def embed_forms(self):
         def on_modified(changed_obj=None):
@@ -1740,30 +1607,12 @@ class RszViewer(QWidget):
         deleted_nested_ids.add(deleted_id)
         id_mapping = self._create_id_adjustment_map(deleted_nested_ids)
 
-        new_parsed_elements = {}
-        for instance_id, fields in self.scn.parsed_elements.items():
-            if instance_id in deleted_nested_ids:
-                continue
-                
-            new_id = id_mapping.get(instance_id, instance_id)
-            updated_fields = self._update_fields_after_deletion(fields, deleted_nested_ids, id_mapping)
-            new_parsed_elements[new_id] = updated_fields
-            
-        self.scn.parsed_elements = new_parsed_elements
-        
-        new_hierarchy = {}
-        for instance_id, data in self.scn.instance_hierarchy.items():
-            if instance_id in deleted_nested_ids:
-                continue
-            new_id = id_mapping.get(instance_id, instance_id)
-            new_children = [id_mapping.get(child_id, child_id) for child_id in data["children"] if child_id not in deleted_nested_ids]
-            parent_id = data["parent"]
-            if parent_id in deleted_nested_ids:
-                parent_id = None
-            else:
-                parent_id = id_mapping.get(parent_id, parent_id)
-            new_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
-        self.scn.instance_hierarchy = new_hierarchy
+        self.scn.parsed_elements = RszInstanceOperations.remap_instance_fields(
+            self.scn.parsed_elements, id_mapping, deleted_nested_ids
+        )
+        self.scn.instance_hierarchy = RszInstanceOperations.remap_hierarchy(
+            self.scn.instance_hierarchy, id_mapping, deleted_nested_ids
+        )
         
         self._update_userdata_references(deleted_nested_ids, id_mapping)
         
@@ -1812,11 +1661,8 @@ class RszViewer(QWidget):
                 del self.scn._userdata_str_map[ui]
 
     def _update_fields_after_deletion(self, fields, deleted_ids, id_mapping):
-        """Update references in fields after deleting instances"""
         update_references_with_mapping(fields, id_mapping, deleted_ids)
         return fields
-        
-
 
     def _initialize_new_instance(self, type_id, type_info):
         """Create a new instance from type info with proper CRC"""

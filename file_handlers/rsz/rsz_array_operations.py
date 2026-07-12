@@ -6,8 +6,8 @@ This file contains operations for adding and removing elements from arrays in RS
 
 from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, is_reference_type
-from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
 from file_handlers.rsz.utils.rsz_field_utils import (
     create_field_from_definition,
     get_reference_id_and_type,
@@ -263,140 +263,17 @@ class RszArrayOperations:
 
     def _add_element_to_ui_direct(self, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
-        model = getattr(self.viewer.tree, 'model', lambda: None)()
-        if not model or not hasattr(array_item, 'raw'):
-            return False
-            
-        array_data = array_item.raw.get('obj') if isinstance(array_item.raw, dict) else None
-        if not array_data or not hasattr(array_data, 'values'):
-            return False
-        
-        if hasattr(array_item, '_deferred_builder') and array_item._deferred_builder and not array_item._children_built:
-            array_index = model.getIndexFromItem(array_item)
-            self.viewer.tree.expand(array_index)
-            return True
-        
-        element_index = len(array_data.values) - 1
-        
-        if isinstance(element, (ObjectData, UserDataData)):
-            embedded_context = None
-            if hasattr(array_item, 'raw') and isinstance(array_item.raw, dict):
-                embedded_context = array_item.raw.get('embedded_context')
-            
-            node_data = self.viewer._handle_reference_in_array(
-                element_index, element, embedded_context, 
-                getattr(embedded_context, 'instance_id', None) if embedded_context else None
-            )
-        else:
-            # For non-reference types
-            node_data = DataTreeBuilder.create_data_node(
-                f"{element_index}: ", "", element.__class__.__name__, element
-            )
-        
-        model.addChild(array_item, node_data)
-        
-        array_index = model.getIndexFromItem(array_item)
-        self.viewer.tree.expand(array_index)
-        
-        return True
+        return append_array_element_node(self.viewer, array_item, element)
 
     def _calculate_insertion_index(self, parent_instance_id, parent_field_name):
         """Calculate the best insertion index for a new instance based on field positioning"""
-        # Default to placing after parent
-        insertion_index = parent_instance_id  # Default to right after the parent
-        
-        # Early exit for invalid parent
-        if parent_instance_id >= len(self.scn.instance_infos):
-            return insertion_index
-            
-        # Get parent type information
-        parent_type_id = self.scn.instance_infos[parent_instance_id].type_id
-        parent_type_info = self.type_registry.get_type_info(parent_type_id)
-        
-        # Early exit if type info missing
-        if not parent_type_info or "fields" not in parent_type_info:
-            return insertion_index
-        
-        # Get field position information
-        field_indices = {field["name"]: idx for idx, field in enumerate(parent_type_info["fields"])}
-        target_pos = field_indices.get(parent_field_name, -1)
-        
-        if target_pos < 0:
-            return insertion_index
-        
-        # Find minimum reference value in fields after target position and all their nested objects
-        min_later_ref = float('inf')
-        
-        processed_ids = set()
-        
-        # Recursively find all references in object fields
-        def collect_references(instance_id, target_pos = -1):
-            nonlocal min_later_ref, processed_ids
-            
-            # Avoid infinite recursion
-            if instance_id in processed_ids:
-                return
-            processed_ids.add(instance_id)
-            
-            if instance_id not in self.scn.parsed_elements:
-                return
-                
-            # Get instance type info
-            if instance_id >= len(self.scn.instance_infos):
-                return
-            inst_type_id = self.scn.instance_infos[instance_id].type_id
-            inst_type_info = self.type_registry.get_type_info(inst_type_id)
-            if not inst_type_info or "fields" not in inst_type_info:
-                return
-                
-            # Build field position mapping for this instance
-            inst_field_indices = {field["name"]: idx for idx, field in enumerate(inst_type_info["fields"])}
-            
-            # Process all fields in this instance
-            for field_name, field_data in self.scn.parsed_elements[instance_id].items():
-                field_pos = inst_field_indices.get(field_name, -1)
-                
-                # For parent instance, only check fields after target position
-                if instance_id == parent_instance_id and field_pos <= target_pos:
-                    continue
-                    
-                # Check direct object reference
-                if isinstance(field_data, ObjectData):
-                    ref_id = field_data.value
-                    if ref_id > 0:  # valid reference
-                        min_later_ref = min(min_later_ref, ref_id)
-                        # Recursively process this object's fields too
-                        collect_references(ref_id)
-                        
-                elif isinstance(field_data, UserDataData):
-                    ref_id = field_data.value
-                    if ref_id > 0: 
-                        min_later_ref = min(min_later_ref, ref_id)
-                        collect_references(ref_id)
-                        
-                # Check array elements
-                elif isinstance(field_data, ArrayData):
-                    for elem in field_data.values:
-                        if isinstance(elem, ObjectData):
-                            ref_id = elem.value
-                            if ref_id > 0:  # valid reference
-                                min_later_ref = min(min_later_ref, ref_id)
-                                # Recursively process this object's fields too
-                                collect_references(ref_id)
-                        elif isinstance(elem, UserDataData):
-                            ref_id = elem.value
-                            if ref_id > 0:
-                                min_later_ref = min(min_later_ref, ref_id)
-                                collect_references(ref_id)
-        
-        # Start collection from parent instance
-        collect_references(parent_instance_id, target_pos)
-        
-        # Update index if we found a valid reference
-        if min_later_ref != float('inf'):
-            insertion_index = min_later_ref
-        
-        return insertion_index
+        return RszInstanceOperations.find_ordered_insertion_boundary(
+            self.scn.parsed_elements,
+            self.scn.instance_infos,
+            self.type_registry,
+            parent_instance_id,
+            parent_field_name,
+        )
 
     def _calculate_array_element_insertion_index(self, parent_instance_id, parent_field_name):
         """
@@ -537,7 +414,9 @@ class RszArrayOperations:
             id_adjustments = self._build_deletion_id_adjustments(all_nested_objects)
             
             # 2. Update references first
-            self._update_references_before_deletion(all_nested_objects, id_adjustments)
+            self._update_references_before_deletion(
+                all_nested_objects, id_adjustments
+            )
             
             # 3. Remove from instance_infos
             self._remove_deleted_instance_infos(all_nested_objects)
@@ -549,55 +428,27 @@ class RszArrayOperations:
                 elif idx in id_adjustments:
                     self.scn.object_table[i] = id_adjustments[idx]
             
-            # 5. Clean up the instance data
-            if instance_id in self.scn.parsed_elements:
-                del self.scn.parsed_elements[instance_id]
-            
-            # 6. For UserData, clean up userdata specifically
+            # 5. For UserData, clean up userdata specifically
             if ref_type == "userdata":
                 self.viewer._cleanup_userdata_for_instance(instance_id)
+
+            # 6. Update remaining parsed elements
+            self.scn.parsed_elements = RszInstanceOperations.remap_instance_fields(
+                self.scn.parsed_elements,
+                id_adjustments,
+                all_nested_objects,
+                update_references=False,
+            )
+
+            # 7. Update instance hierarchy
+            self.scn.instance_hierarchy = RszInstanceOperations.remap_hierarchy(
+                self.scn.instance_hierarchy, id_adjustments, all_nested_objects
+            )
             
-            # 7. Update remaining parsed elements
-            updated_parsed_elements = {}
-            for idx, fields in self.scn.parsed_elements.items():
-                if idx in all_nested_objects:
-                    continue  # Skip deleted instances
-                new_id = id_adjustments.get(idx, idx)
-                if new_id >= 0:  # Only include non-deleted instances
-                    updated_parsed_elements[new_id] = fields
-            self.scn.parsed_elements = updated_parsed_elements
-            
-            # 8. Update instance hierarchy
-            updated_hierarchy = {}
-            for idx, data in self.scn.instance_hierarchy.items():
-                if idx in all_nested_objects:
-                    continue  # Skip deleted instances
-                
-                new_id = id_adjustments.get(idx, idx)
-                if new_id < 0:
-                    continue  # Skip if this gets deleted
-                    
-                new_children = []
-                for child_id in data["children"]:
-                    if child_id in all_nested_objects:
-                        continue  # Skip deleted children
-                    new_child_id = id_adjustments.get(child_id, child_id)
-                    if new_child_id >= 0:
-                        new_children.append(new_child_id)
-                
-                parent_id = data["parent"]
-                if parent_id in all_nested_objects:
-                    parent_id = None  # Parent is being deleted
-                elif parent_id in id_adjustments:
-                    parent_id = id_adjustments[parent_id]
-                
-                updated_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
-            self.scn.instance_hierarchy = updated_hierarchy
-            
-            # 9. Update userdata references
+            # 8. Update userdata references
             self.viewer._update_userdata_references(all_nested_objects, id_adjustments)
             
-            # 10. Update ID manager
+            # 9. Update ID manager
             for deleted_id in all_nested_objects:
                 self.viewer.handler.id_manager.remove_instance(deleted_id)
                 
@@ -757,8 +608,9 @@ class RszArrayOperations:
             
             # 2. Delete instances and update data structures
             
-            # Update all object references in the remaining elements first
-            self._update_references_before_deletion(all_nested_objects, id_adjustments)
+            self._update_references_before_deletion(
+                all_nested_objects, id_adjustments
+            )
             
             # Now actually remove the instances from instance_infos
             # We need to do this in reverse order to avoid index issues
@@ -771,51 +623,16 @@ class RszArrayOperations:
                 elif instance_id in id_adjustments:
                     self.scn.object_table[i] = id_adjustments[instance_id]
             
-            # 4. Update other data structures
-            # Remove deleted instances from parsed_elements
-            for deleted_id in deleted_ids:
-                if deleted_id in self.scn.parsed_elements:
-                    del self.scn.parsed_elements[deleted_id]
-                
-            # Update keys in parsed_elements for shifted instances
-            updated_parsed_elements = {}
-            for instance_id, fields in self.scn.parsed_elements.items():
-                if instance_id in id_adjustments and id_adjustments[instance_id] >= 0:
-                    updated_parsed_elements[id_adjustments[instance_id]] = fields
-                else:
-                    updated_parsed_elements[instance_id] = fields
-            self.scn.parsed_elements = updated_parsed_elements
-            
-            # Similar updates for instance_hierarchy
-            updated_hierarchy = {}
-            for instance_id, data in self.scn.instance_hierarchy.items():
-                if instance_id in all_nested_objects:
-                    continue 
-                
-                # Calculate new ID
-                new_id = id_adjustments.get(instance_id, instance_id)
-                if new_id < 0:
-                    continue  
-                    
-                # Update children list
-                new_children = []
-                for child_id in data["children"]:
-                    if child_id in all_nested_objects:
-                        continue 
-                    new_child_id = id_adjustments.get(child_id, child_id)
-                    if new_child_id >= 0:
-                        new_children.append(new_child_id)
-                
-                # Update parent
-                parent_id = data["parent"]
-                if parent_id in all_nested_objects:
-                    parent_id = None
-                elif parent_id in id_adjustments:
-                    parent_id = id_adjustments[parent_id]
-                
-                updated_hierarchy[new_id] = {"children": new_children, "parent": parent_id}
-            
-            self.scn.instance_hierarchy = updated_hierarchy
+            # 4. Update other instance-keyed data structures
+            self.scn.parsed_elements = RszInstanceOperations.remap_instance_fields(
+                self.scn.parsed_elements,
+                id_adjustments,
+                all_nested_objects,
+                update_references=False,
+            )
+            self.scn.instance_hierarchy = RszInstanceOperations.remap_hierarchy(
+                self.scn.instance_hierarchy, id_adjustments, all_nested_objects
+            )
             
             # 5. Update userdata - reuse methods from RszViewer
             # First, clean up userdata for all deleted instances
@@ -851,164 +668,48 @@ class RszArrayOperations:
             return False
 
     def _collect_all_nested_objects(self, root_instance_id):
-        """
-        Collect ALL nested objects that are owned exclusively by the given instance.
-        Uses hierarchical ownership rules to identify true nested objects.
-        
-        Returns:
-            set: Set of nested object instance IDs
-        """
-        nested_objects = set()
-        
-        processed_ids = set()
-        
-        # Get metadata about the instance we're deleting
-        root_type_id = 0
-        if 0 <= root_instance_id < len(self.scn.instance_infos):
-            root_type_id = self.scn.instance_infos[root_instance_id].type_id
-            
-        root_type_name = ""
-        type_info = self.type_registry.get_type_info(root_type_id) if root_type_id > 0 else None
-        if type_info:
-            root_type_name = type_info.get("name", "")
-            
-        print(f"Analyzing nested objects for instance {root_instance_id} (type: {root_type_name})")
-        
-        # Exclude these instances from being considered as nested
-        excluded_ids = set(self.scn.object_table) 
-        excluded_ids.add(0)
-        
-        # First, get all objects that are exclusively referenced from this instance
-        def explore_instance(instance_id):
-            """Recursively explore an instance to find truly nested objects"""
-            if instance_id in processed_ids:
-                return
-            processed_ids.add(instance_id)
-            
-            if instance_id not in self.scn.parsed_elements:
-                return
-                
-            # Get instance fields
-            fields = self.scn.parsed_elements[instance_id]
-            
-            # Try position-based detection first (most reliable for adjacent objects)
-            position_based_nested = set()
-            
-            # Find where this instance is in the object table (if it is)
-            object_table_index = -1
-            for i, obj_id in enumerate(self.scn.object_table):
-                if obj_id == instance_id:
-                    object_table_index = i
-                    break
-            
-            # Only use position detection if this instance isn't in the object table or it's
-            # at a position where we can determine adjacent objects
-            if object_table_index < 0:
-                # This object itself isn't in the object table - safe to use positioned-based detection
-                from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-                position_based_nested = RszInstanceOperations.find_nested_objects(
-                    self.scn.parsed_elements, instance_id, self.scn.object_table
-                )
-            
-            # Check each field for object references
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    ref_id = field_data.value
-                    
-                    if ref_id in excluded_ids:
-                        continue
-                        
-                    # Check if this is a nested object:
-                    # 1. Not already processed
-                    # 2. Not a reference to itself
-                    # 3. Valid reference within instance range
-                    if (ref_id != instance_id and 
-                            ref_id not in processed_ids and 
-                            ref_id < len(self.scn.instance_infos)):
-                        
-                        # Add as potential nested object - this is a direct reference so likely a nested object
-                        nested_objects.add(ref_id)
-                        
-                        # Recursively explore this reference to find its nested objects
-                        explore_instance(ref_id)
-                
-                elif isinstance(field_data, UserDataData) and field_data.value > 0:
-                    ref_id = field_data.value
-                    
-                    if ref_id in excluded_ids:
-                        continue
-                    
-                    if (ref_id != instance_id and 
-                            ref_id not in processed_ids and 
-                            ref_id < len(self.scn.instance_infos)):
-                        # For embedded RSZ, userdata can own nested embedded structures.
-                        # For normal RSZ, only collect userdata instances that are exclusively
-                        # referenced from this instance to avoid deleting shared userdata.
-                        if self.scn.has_embedded_rsz or self._is_exclusively_referenced_from(ref_id, instance_id):
-                            nested_objects.add(ref_id)
-                            explore_instance(ref_id)
-                        
-                # Check array elements
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            ref_id = element.value
-                            
-                            # Skip excluded IDs
-                            if ref_id in excluded_ids:
-                                continue
-                                
-                            # Similar checks as above
-                            if (ref_id != instance_id and 
-                                    ref_id not in processed_ids and 
-                                    ref_id < len(self.scn.instance_infos)):
-                                
-                                # Array elements might reference shared objects, so we need to verify ownership
-                                # Check if this object is referenced only from here
-                                is_exclusive = self._is_exclusively_referenced_from(ref_id, instance_id)
-                                
-                                if is_exclusive:
-                                    nested_objects.add(ref_id)
-                                    
-                                    # Recursively explore this reference
-                                    explore_instance(ref_id)
-                        
-                        elif isinstance(element, UserDataData) and element.value > 0:
-                            ref_id = element.value
-                            
-                            if ref_id in excluded_ids:
-                                continue
-                            
-                            if (ref_id != instance_id and 
-                                    ref_id not in processed_ids and 
-                                    ref_id < len(self.scn.instance_infos)):
-                                
-                                is_exclusive = self._is_exclusively_referenced_from(ref_id, instance_id)
-
-                                if self.scn.has_embedded_rsz or is_exclusive:
-                                    nested_objects.add(ref_id)
-                                    explore_instance(ref_id)
-            
-            # Add position-based nested objects last (after checking fields)
-            # but only if they haven't been processed already
-            for nested_id in position_based_nested:
-                if nested_id not in processed_ids and nested_id not in excluded_ids:
-                    # Extra check: only add position-based objects when they're close
-                    # to the parent (adjacent IDs) for safety
-                    if abs(nested_id - instance_id) <= 2:
-                        nested_objects.add(nested_id)
-                        explore_instance(nested_id)
-        
-        # Start exploration from the root instance
-        explore_instance(root_instance_id)
-        
-        print(f"Found {len(nested_objects)} nested objects for instance {root_instance_id}:")
+        root_type_id = (
+            self.scn.instance_infos[root_instance_id].type_id
+            if 0 <= root_instance_id < len(self.scn.instance_infos)
+            else 0
+        )
+        type_info = (
+            self.type_registry.get_type_info(root_type_id)
+            if root_type_id > 0
+            else None
+        )
+        root_type_name = type_info.get("name", "") if type_info else ""
+        print(
+            f"Analyzing nested objects for instance {root_instance_id} "
+            f"(type: {root_type_name})"
+        )
+        nested_objects = RszInstanceOperations.collect_owned_instances(
+            self.scn.parsed_elements,
+            root_instance_id,
+            object_table=self.scn.object_table,
+            include_userdata=True,
+            own_all_userdata=self.scn.has_embedded_rsz,
+            valid_instance_ids=range(len(self.scn.instance_infos)),
+        )
+        print(
+            f"Found {len(nested_objects)} nested objects for instance "
+            f"{root_instance_id}:"
+        )
         for nested_id in sorted(nested_objects):
-            nested_type_id = self.scn.instance_infos[nested_id].type_id if nested_id < len(self.scn.instance_infos) else 0
-            nested_type = self.type_registry.get_type_info(nested_type_id) if nested_type_id > 0 else None
-            nested_type_name = nested_type.get("name", "Unknown") if nested_type else "Unknown"
+            nested_type_id = (
+                self.scn.instance_infos[nested_id].type_id
+                if nested_id < len(self.scn.instance_infos)
+                else 0
+            )
+            nested_type = (
+                self.type_registry.get_type_info(nested_type_id)
+                if nested_type_id > 0
+                else None
+            )
+            nested_type_name = (
+                nested_type.get("name", "Unknown") if nested_type else "Unknown"
+            )
             print(f"  - Nested object {nested_id}: {nested_type_name}")
-            
         return nested_objects
     def _get_instance_type_name(self, instance_id):
         """Get the type name for an instance ID for debugging"""

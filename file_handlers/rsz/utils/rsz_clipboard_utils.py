@@ -45,6 +45,37 @@ class RszClipboardUtils:
         return None
 
     @staticmethod
+    def format_clipboard_file(
+        directory,
+        json_name,
+        clipboard_type,
+        filename_template="{name}-{type}-clipboard.json",
+        default_name=None,
+    ):
+        if not json_name and default_name is not None:
+            json_name = default_name
+        base_name = os.path.splitext(json_name)[0]
+        return os.path.join(
+            directory,
+            filename_template.format(name=base_name, type=clipboard_type),
+        )
+
+    @staticmethod
+    def has_clipboard_data(clipboard_file):
+        return os.path.exists(clipboard_file)
+
+    @staticmethod
+    def write_clipboard_data(clipboard_file, data):
+        """Write JSON using the legacy RSZ clipboard encoding and error behavior."""
+        with open(clipboard_file, "w") as stream:
+            json.dump(
+                data,
+                stream,
+                indent=2,
+                default=RszClipboardUtils.json_serializer,
+            )
+
+    @staticmethod
     def load_clipboard_data(clipboard_file):
         if not os.path.exists(clipboard_file):
             print(f"Clipboard file does not exist: {clipboard_file}")

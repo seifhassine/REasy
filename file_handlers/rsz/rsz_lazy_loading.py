@@ -40,15 +40,23 @@ class RszLazyNodeBuilder:
             if "name" in field_def
         }
 
-    def _apply_embedded_array_context(self, array_node, data_obj, embedded_context):
+    def _apply_embedded_array_context(
+        self, array_node, data_obj, embedded_context, create_missing=False
+    ):
         if not embedded_context:
             return
         array_node["embedded_context"] = embedded_context
-        if hasattr(data_obj, '_owning_context') and data_obj._owning_context is None:
+        if create_missing:
+            array_node["domain_id"] = None
+        if (
+            (create_missing or hasattr(data_obj, "_owning_context"))
+            and getattr(data_obj, "_owning_context", None) is None
+        ):
             data_obj._owning_context = embedded_context
         if (
-            hasattr(data_obj, '_owning_instance_id')
-            and data_obj._owning_instance_id is None
+            (create_missing or hasattr(data_obj, "_owning_instance_id"))
+            and
+            getattr(data_obj, '_owning_instance_id', None) is None
             and hasattr(embedded_context, 'embedded_object_table')
             and embedded_context.embedded_object_table
         ):
@@ -65,7 +73,9 @@ class RszLazyNodeBuilder:
         ):
             element._container_context = embedded_context
     
-    def create_lazy_struct_node(self, field_name: str, data_obj: StructData, embedded_context=None) -> dict:
+    def create_struct_node(
+        self, field_name: str, data_obj: StructData, embedded_context=None, deferred=True
+    ) -> dict:
         original_type = f"{data_obj.orig_type}" if hasattr(data_obj, 'orig_type') and data_obj.orig_type else ""
         
         struct_node = DataTreeBuilder.create_data_node(
@@ -91,20 +101,34 @@ class RszLazyNodeBuilder:
                     )
                     
                     instance_fields_builder = self._create_struct_instance_fields_builder(
-                        struct_value, field_definitions, embedded_context
+                        struct_value,
+                        field_definitions,
+                        embedded_context,
+                        use_lazy=True,
                     )
-                    struct_instance_node["deferred_builder"] = instance_fields_builder
-                    struct_instance_node["expandable"] = len(struct_value) > 0
+                    if deferred:
+                        struct_instance_node["deferred_builder"] = instance_fields_builder
+                        struct_instance_node["expandable"] = len(struct_value) > 0
+                    else:
+                        struct_instance_node["children"] = instance_fields_builder.build()
                     
                     children.append(struct_instance_node)
                 
                 return children
             
-            self._defer_node(struct_node, build_struct_children, len(data_obj.values) > 0)
+            if deferred:
+                self._defer_node(struct_node, build_struct_children, len(data_obj.values) > 0)
+            else:
+                struct_node["children"] = build_struct_children()
         
         return struct_node
-    
-    def _create_struct_instance_fields_builder(self, struct_value: dict, field_definitions: dict, embedded_context) -> DeferredChildBuilder:
+
+    def create_lazy_struct_node(self, field_name, data_obj, embedded_context=None):
+        return self.create_struct_node(field_name, data_obj, embedded_context, deferred=True)
+
+    def _create_struct_instance_fields_builder(
+        self, struct_value, field_definitions, embedded_context, use_lazy=True
+    ):
         def build_fields():
             children = []
             for field_key, field_value in struct_value.items():
@@ -113,18 +137,24 @@ class RszLazyNodeBuilder:
                     display_name = field_def["name"]
                     display_type = field_def["type"]
                     
-                    field_node = self.viewer._create_field_dict(display_name, field_value, embedded_context, use_lazy=True)
+                    field_node = self.viewer._create_field_dict(
+                        display_name, field_value, embedded_context, use_lazy=use_lazy
+                    )
                     field_node["data"][0] = f"{display_name} ({display_type})"
                 else:
-                    field_node = self.viewer._create_field_dict(field_key, field_value, embedded_context, use_lazy=True)
+                    field_node = self.viewer._create_field_dict(
+                        field_key, field_value, embedded_context, use_lazy=use_lazy
+                    )
                     
                 children.append(field_node)
             return children
         
         return DeferredChildBuilder(build_fields)
     
-    def create_lazy_array_node(self, field_name: str, data_obj, embedded_context=None) -> dict:
-        if embedded_context == "userdata_array_needs_embedded":
+    def create_array_node(
+        self, field_name: str, data_obj, embedded_context=None, deferred=True
+    ) -> dict:
+        if deferred and embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
         original_type = f"{data_obj.orig_type}" if data_obj.orig_type else ""
 
@@ -132,21 +162,29 @@ class RszLazyNodeBuilder:
             f"{field_name}: {original_type}", "", "array", data_obj
         )
         
-        self._apply_embedded_array_context(array_node, data_obj, embedded_context)
+        self._apply_embedded_array_context(
+            array_node, data_obj, embedded_context, create_missing=not deferred
+        )
         
         if hasattr(data_obj, 'values') and data_obj.values is not None:
             def build_array_children():
                 total = len(data_obj.values)
                 # For very large arrays, build child nodes in manageable chunks.
-                if total > CHUNK_SIZE:
+                if deferred and total > CHUNK_SIZE:
                     return self._build_array_chunks(data_obj, embedded_context)
                 return self._build_array_elements_range(
-                    data_obj, 0, total, embedded_context
+                    data_obj, 0, total, embedded_context, use_lazy=deferred
                 )
 
-            self._defer_node(array_node, build_array_children, len(data_obj.values) > 0)
+            if deferred:
+                self._defer_node(array_node, build_array_children, len(data_obj.values) > 0)
+            else:
+                array_node["children"] = build_array_children()
         
         return array_node
+
+    def create_lazy_array_node(self, field_name, data_obj, embedded_context=None):
+        return self.create_array_node(field_name, data_obj, embedded_context, deferred=True)
 
     def _build_array_chunks(self, data_obj, embedded_context):
         """Create group nodes for large arrays to defer element creation."""
@@ -168,7 +206,9 @@ class RszLazyNodeBuilder:
 
         return children
 
-    def _build_array_elements_range(self, data_obj, start, end, embedded_context):
+    def _build_array_elements_range(
+        self, data_obj, start, end, embedded_context, use_lazy=True
+    ):
         """Build actual element nodes for a slice of an array."""
         children = []
         for i in range(start, end):
@@ -197,7 +237,7 @@ class RszLazyNodeBuilder:
                     str(i) + ": ", "", element_type, element
                 )
 
-                if isinstance(element, (ArrayData, StructData)):
+                if use_lazy and isinstance(element, (ArrayData, StructData)):
                     elem_node = self._make_element_lazy(
                         str(i), element, embedded_context
                     )

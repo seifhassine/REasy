@@ -3,7 +3,7 @@ Utility functions for embedded RSZ operations.
 """
 
 from utils.id_manager import EmbeddedIdManager
-from file_handlers.rsz.rsz_data_types import ArrayData
+from file_handlers.rsz.rsz_data_types import ArrayData, is_reference_type
 
 
 def update_rsz_header_counts(rui, skip_instance_count=False):
@@ -316,12 +316,12 @@ def update_embedded_references_for_shift(id_mapping, rui):
             continue
             
         for field_name, field_data in fields.items():
-            if hasattr(field_data, 'value') and field_data.value in id_mapping:
+            if is_reference_type(field_data) and field_data.value in id_mapping:
                 field_data.value = id_mapping[field_data.value]
             
             elif hasattr(field_data, 'values') and hasattr(field_data.values, '__iter__'):
                 for element in field_data.values:
-                    if hasattr(element, 'value') and element.value in id_mapping:
+                    if is_reference_type(element) and element.value in id_mapping:
                         element.value = id_mapping[element.value]
                 
                 if isinstance(field_data, ArrayData) and hasattr(field_data, '_owning_instance_id'):

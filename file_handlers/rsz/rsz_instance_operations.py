@@ -2,9 +2,9 @@ from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
     collect_userdata_reference_values,
     iter_field_reference_entries,
-    iter_field_references,
     update_references_with_mapping,
 )
+from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData
 
 
 class RszInstanceOperations:
@@ -107,26 +107,148 @@ class RszInstanceOperations:
             userdata_refs: Set to collect UserDataData references
         """
         userdata_refs.update(collect_userdata_reference_values(fields))
-                        
+
     @staticmethod
-    def update_references_before_deletion(parsed_elements, deleted_ids, id_adjustments):
+    def iter_instance_references(parsed_elements, excluded_instance_ids=()):
+        """Yield every RSZ reference together with its source location.
+
+        The RSZ instance namespace is shared by object and userdata references, so
+        callers that need type-specific behavior can filter on ``ref_obj`` without
+        reimplementing direct-field and array traversal.
         """
-        Update all references in remaining instances before deletion.
-        This ensures object references remain valid after deletion.
-        
-        Args:
-            parsed_elements: Dictionary of all parsed elements
-            deleted_ids: Set of instance IDs to be deleted
-            id_adjustments: Dict mapping old_instance_id -> new_instance_id
-        """
+        excluded_instance_ids = set(excluded_instance_ids)
+        for source_id, fields in parsed_elements.items():
+            if source_id in excluded_instance_ids or not isinstance(fields, dict):
+                continue
+            for field_name, ref_obj, array_index in iter_field_reference_entries(fields):
+                yield source_id, field_name, ref_obj, array_index
+
+    @staticmethod
+    def update_references_before_deletion(parsed_elements, deleted_ids, id_mapping):
+        for instance_id, fields in parsed_elements.items():
+            if instance_id not in deleted_ids:
+                update_references_with_mapping(fields, id_mapping, deleted_ids)
+
+    @staticmethod
+    def remap_instance_fields(
+        parsed_elements, id_mapping, deleted_ids=(), update_references=True
+    ):
+        """Remap instance-keyed fields and every reference they contain."""
+        deleted_ids = set(deleted_ids)
+        remapped = {}
         for instance_id, fields in parsed_elements.items():
             if instance_id in deleted_ids:
                 continue
-            
-            update_references_with_mapping(fields, id_adjustments, deleted_ids)
+            if update_references:
+                update_references_with_mapping(fields, id_mapping, deleted_ids)
+            new_id = id_mapping.get(instance_id, instance_id)
+            if new_id >= 0:
+                remapped[new_id] = fields
+        return remapped
+
+    @staticmethod
+    def remap_hierarchy(hierarchy, id_mapping, deleted_ids=()):
+        """Remap either supported RSZ hierarchy representation.
+
+        Standard hierarchies store ``{"children": ..., "parent": ...}``; some
+        embedded structures store a direct child list. Keeping both shapes here
+        prevents insertion/deletion paths from drifting apart.
+        """
+        deleted_ids = set(deleted_ids)
+        remapped = {}
+        for instance_id, data in hierarchy.items():
+            if instance_id in deleted_ids:
+                continue
+            new_id = id_mapping.get(instance_id, instance_id)
+            if new_id < 0:
+                continue
+
+            if isinstance(data, dict):
+                children = [
+                    id_mapping.get(child_id, child_id)
+                    for child_id in data.get("children", [])
+                    if child_id not in deleted_ids
+                    and id_mapping.get(child_id, child_id) >= 0
+                ]
+                parent_id = data.get("parent")
+                if parent_id in deleted_ids:
+                    parent_id = None
+                elif parent_id is not None:
+                    parent_id = id_mapping.get(parent_id, parent_id)
+                    if parent_id < 0:
+                        parent_id = None
+                remapped[new_id] = {"children": children, "parent": parent_id}
+            else:
+                remapped[new_id] = [
+                    id_mapping.get(child_id, child_id)
+                    for child_id in data
+                    if child_id not in deleted_ids
+                    and id_mapping.get(child_id, child_id) >= 0
+                ]
+        return remapped
+
+    @staticmethod
+    def find_ordered_insertion_boundary(
+        parsed_elements,
+        instance_infos,
+        type_registry,
+        parent_instance_id,
+        parent_field_name,
+    ):
+        """Find the first referenced instance belonging to a later parent field."""
+        boundary = parent_instance_id
+        if parent_instance_id >= len(instance_infos):
+            return boundary
+
+        parent_type = type_registry.get_type_info(
+            instance_infos[parent_instance_id].type_id
+        )
+        parent_fields = parent_type.get("fields", []) if parent_type else []
+        parent_positions = {
+            field["name"]: index for index, field in enumerate(parent_fields)
+        }
+        target_position = parent_positions.get(parent_field_name, -1)
+        if target_position < 0:
+            return boundary
+
+        candidates = []
+        visited = set()
+
+        def visit(instance_id):
+            if instance_id in visited or instance_id not in parsed_elements:
+                return
+            if instance_id >= len(instance_infos):
+                return
+            visited.add(instance_id)
+
+            type_info = type_registry.get_type_info(instance_infos[instance_id].type_id)
+            fields = type_info.get("fields", []) if type_info else []
+            positions = {
+                field["name"]: index for index, field in enumerate(fields)
+            }
+            for field_name, ref_obj, _ in iter_field_reference_entries(
+                parsed_elements[instance_id]
+            ):
+                if (
+                    instance_id == parent_instance_id
+                    and positions.get(field_name, -1) <= target_position
+                ):
+                    continue
+                if ref_obj.value > 0:
+                    candidates.append(ref_obj.value)
+                    visit(ref_obj.value)
+
+        visit(parent_instance_id)
+        return min(candidates) if candidates else boundary
     
     @staticmethod
-    def is_exclusively_referenced_from(parsed_elements, instance_id, source_id, object_table=None):
+    def is_exclusively_referenced_from(
+        parsed_elements,
+        instance_id,
+        source_id,
+        object_table=None,
+        reference_type=None,
+    ):
         """
         Check if an instance is exclusively referenced from the given source instance.
         
@@ -145,15 +267,103 @@ class RszInstanceOperations:
         if object_table and instance_id in object_table:
             return False
             
-        for check_id, fields in parsed_elements.items():
-            if check_id == source_id:
-                continue 
-                
-            for ref_obj in iter_field_references(fields):
-                if ref_obj.value == instance_id:
-                    return False
+        for check_id, _, ref_obj, _ in RszInstanceOperations.iter_instance_references(
+            parsed_elements, (source_id,)
+        ):
+            if reference_type is not None and not isinstance(ref_obj, reference_type):
+                continue
+            if ref_obj.value == instance_id:
+                return False
             
         return True 
+
+    @staticmethod
+    def collect_owned_instances(
+        parsed_elements,
+        root_instance_id,
+        *,
+        object_table=None,
+        include_userdata=False,
+        own_all_userdata=False,
+        valid_instance_ids=None,
+        reference_type_isolation=False,
+        include_positional=False,
+    ):
+        """Collect instances owned by an RSZ reference graph.
+
+        Direct object fields are structural ownership edges. Object references in
+        arrays, and all userdata references, are treated as ownership edges only
+        when no other instance references the target. ``own_all_userdata`` keeps
+        the embedded-RSZ rule where userdata belongs to its containing graph.
+        ``reference_type_isolation`` is for embedded object namespaces whose
+        object and userdata edges must be considered independently.
+        ``include_positional`` preserves legacy ownership of instances located
+        between adjacent object-table entries.
+
+        The root is intentionally excluded from the returned set.
+        """
+        excluded_ids = set(object_table or ())
+        excluded_ids.add(0)
+        valid_ids = (
+            None if valid_instance_ids is None else set(valid_instance_ids)
+        )
+        owned = set()
+        visited = set()
+
+        def explore(source_id):
+            if source_id in visited:
+                return
+            visited.add(source_id)
+
+            fields = parsed_elements.get(source_id)
+            if not isinstance(fields, dict):
+                return
+
+            for _, ref_obj, array_index in iter_field_reference_entries(fields):
+                target_id = ref_obj.value
+                if (
+                    target_id <= 0
+                    or target_id == source_id
+                    or target_id in visited
+                    or target_id in excluded_ids
+                    or (valid_ids is not None and target_id not in valid_ids)
+                ):
+                    continue
+
+                if isinstance(ref_obj, ObjectData):
+                    is_owned = array_index is None or RszInstanceOperations.is_exclusively_referenced_from(
+                        parsed_elements,
+                        target_id,
+                        source_id,
+                        object_table,
+                        ObjectData if reference_type_isolation else None,
+                    )
+                elif include_userdata and isinstance(ref_obj, UserDataData):
+                    is_owned = own_all_userdata or RszInstanceOperations.is_exclusively_referenced_from(
+                        parsed_elements,
+                        target_id,
+                        source_id,
+                        object_table,
+                        UserDataData if reference_type_isolation else None,
+                    )
+                else:
+                    is_owned = False
+
+                if is_owned:
+                    owned.add(target_id)
+                    explore(target_id)
+
+            if include_positional:
+                for target_id in RszInstanceOperations.find_nested_objects(
+                    parsed_elements, source_id, object_table
+                ):
+                    if target_id not in visited and target_id not in excluded_ids:
+                        owned.add(target_id)
+                        explore(target_id)
+
+        explore(root_instance_id)
+        owned.discard(root_instance_id)
+        return owned
         
     @staticmethod
     def find_all_instance_references(parsed_elements, instance_id):
@@ -180,6 +390,74 @@ class RszInstanceOperations:
                         references[ref_id].append((f"{field_name}[{array_index}]", "array_object"))
     
         return references
+
+    @staticmethod
+    def build_reference_hierarchy(parsed_elements, consolidate_roots=True):
+        """Build parent/children metadata from object-reference edges."""
+        hierarchy = {
+            instance_id: {"children": [], "parent": None}
+            for instance_id, fields in parsed_elements.items()
+            if isinstance(fields, dict)
+        }
+
+        for source_id, _, ref_obj, _ in RszInstanceOperations.iter_instance_references(
+            parsed_elements
+        ):
+            child_id = ref_obj.value
+            if (
+                not isinstance(ref_obj, ObjectData)
+                or child_id == source_id
+                or child_id not in hierarchy
+                or source_id not in hierarchy
+            ):
+                continue
+            children = hierarchy[source_id]["children"]
+            children.append(child_id)
+            hierarchy[child_id]["parent"] = source_id
+
+        if consolidate_roots:
+            RszInstanceOperations.consolidate_reference_roots(hierarchy)
+        return hierarchy
+
+    @staticmethod
+    def consolidate_reference_roots(hierarchy):
+        """Attach secondary structural roots to the root with the largest graph."""
+        roots = [
+            instance_id
+            for instance_id, data in hierarchy.items()
+            if data.get("parent") is None and data.get("children")
+        ]
+        if len(roots) <= 1:
+            return hierarchy
+
+        main_root = max(
+            roots,
+            key=lambda instance_id: RszInstanceOperations.count_hierarchy_descendants(
+                instance_id, hierarchy
+            ),
+        )
+        for root_id in roots:
+            if root_id == main_root or hierarchy[root_id].get("parent") is not None:
+                continue
+            if root_id not in hierarchy[main_root]["children"]:
+                hierarchy[main_root]["children"].append(root_id)
+            hierarchy[root_id]["parent"] = main_root
+        return hierarchy
+
+    @staticmethod
+    def count_hierarchy_descendants(instance_id, hierarchy, visited=None):
+        """Count unique descendants without recursing forever on corrupt cycles."""
+        visited = set() if visited is None else visited
+        if instance_id in visited or instance_id not in hierarchy:
+            return 0
+        visited.add(instance_id)
+        children = hierarchy[instance_id].get("children", [])
+        return len(children) + sum(
+            RszInstanceOperations.count_hierarchy_descendants(
+                child_id, hierarchy, visited
+            )
+            for child_id in children
+        )
         
     @staticmethod
     def collect_all_nested_objects(parsed_elements, root_instance_id, object_table=None):
@@ -195,72 +473,12 @@ class RszInstanceOperations:
         Returns:
             set: Set of nested object instance IDs
         """
-        nested_objects = set()
-        processed_ids = set()
-        
-        object_table_ids = set() if object_table is None else set(object_table)
-        object_table_ids.add(0)
-        
-        def explore_instance(instance_id):
-            """Recursively explore an instance to find truly nested objects"""
-            if instance_id in processed_ids:
-                return
-            processed_ids.add(instance_id)
-            
-            if instance_id not in parsed_elements:
-                return
-                
-            fields = parsed_elements[instance_id]
-            
-            position_based_nested = RszInstanceOperations.find_nested_objects(
-                parsed_elements, instance_id, object_table
-            )
-            
-            for _, field_data in fields.items():
-                if field_data.__class__.__name__ == 'ObjectData' and field_data.value > 0:
-                    ref_id = field_data.value
-                    
-                    if ref_id in object_table_ids:
-                        continue
-                        
-                    # Check if this is a nested object:
-                    # 1. Not already processed
-                    # 2. Not a reference to itself
-                    # 3. Valid reference
-                    if (ref_id != instance_id and 
-                            ref_id not in processed_ids):
-                        
-                        nested_objects.add(ref_id)
-                        
-                        explore_instance(ref_id)
-                        
-                elif field_data.__class__.__name__ == 'ArrayData':
-                    for element in field_data.values:
-                        if element.__class__.__name__ == 'ObjectData' and element.value > 0:
-                            ref_id = element.value
-                            
-                            if ref_id in object_table_ids:
-                                continue
-                                
-                            if (ref_id != instance_id and 
-                                    ref_id not in processed_ids):
-                                
-                                is_exclusive = RszInstanceOperations.is_exclusively_referenced_from(
-                                    parsed_elements, ref_id, instance_id, object_table
-                                )
-                                
-                                if is_exclusive:
-                                    nested_objects.add(ref_id)
-                                    
-                                    explore_instance(ref_id)
-            
-            for nested_id in position_based_nested:
-                if nested_id not in processed_ids and nested_id not in object_table_ids:
-                    nested_objects.add(nested_id)
-                    explore_instance(nested_id)
-        
-        explore_instance(root_instance_id)
-        return nested_objects
+        return RszInstanceOperations.collect_owned_instances(
+            parsed_elements,
+            root_instance_id,
+            object_table=object_table,
+            include_positional=True,
+        )
         
     @staticmethod
     def find_object_references(fields):

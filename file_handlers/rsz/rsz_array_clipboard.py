@@ -1,5 +1,3 @@
-import os
-import json
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
@@ -12,6 +10,51 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info
 )
+from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+
+
+_ELEMENT_CODECS = (
+    (ObjectData, "ObjectData", (("value", 0),)),
+    (F32Data, "F32Data", (("value", 0.0),)),
+    (U16Data, "U16Data", (("value", 0),)),
+    (S16Data, "S16Data", (("value", 0),)),
+    (S32Data, "S32Data", (("value", 0),)),
+    (U32Data, "U32Data", (("value", 0),)),
+    (U64Data, "U64Data", (("value", 0),)),
+    (S64Data, "S64Data", (("value", 0),)),
+    (S8Data, "S8Data", (("value", 0),)),
+    (U8Data, "U8Data", (("value", 0),)),
+    (BoolData, "BoolData", (("value", False),)),
+    (StringData, "StringData", (("value", ""),)),
+    (ResourceData, "ResourceData", (("value", ""),)),
+    (RuntimeTypeData, "RuntimeTypeData", (("value", ""),)),
+    (Vec2Data, "Vec2Data", (("x", 0.0), ("y", 0.0))),
+    (Uint2Data, "Uint2Data", (("x", 0), ("y", 0))),
+    (Vec3Data, "Vec3Data", (("x", 0.0), ("y", 0.0), ("z", 0.0))),
+    (Uint3Data, "Uint3Data", (("x", 0), ("y", 0), ("z", 0))),
+    (Vec3ColorData, "Vec3ColorData", (("x", 0.0), ("y", 0.0), ("z", 0.0))),
+    (Vec4Data, "Vec4Data", tuple((name, 0.0) for name in "xyzw")),
+    (Float4Data, "Float4Data", tuple((name, 0.0) for name in "xyzw")),
+    (QuaternionData, "QuaternionData", tuple((name, 0.0) for name in "xyzw")),
+    (ColorData, "ColorData", tuple((name, 0) for name in "rgba")),
+    (RangeData, "RangeData", (("min", 0.0), ("max", 0.0))),
+    (RangeIData, "RangeIData", (("min", 0), ("max", 0))),
+    (Int2Data, "Int2Data", (("x", 0), ("y", 0))),
+    (Int3Data, "Int3Data", (("x", 0), ("y", 0), ("z", 0))),
+    (Int4Data, "Int4Data", tuple((name, 0) for name in "xyzw")),
+    (Int4ColorData, "Int4Data", tuple((name, 0) for name in "xyzw")),
+    (Float2Data, "Float2Data", (("x", 0.0), ("y", 0.0))),
+    (Float3Data, "Float3Data", (("x", 0.0), ("y", 0.0), ("z", 0.0))),
+    (RectData, "RectData", tuple((name, 0.0) for name in ("min_x", "min_y", "max_x", "max_y"))),
+    (SizeData, "SizeData", (("width", 0.0), ("height", 0.0))),
+    (PointData, "PointData", (("x", 0.0), ("y", 0.0), ("z", 0.0))),
+    (PositionData, "PositionData", (("x", 0.0), ("y", 0.0), ("z", 0.0))),
+)
+
+_ELEMENT_DESERIALIZERS = {}
+for _class, _type_name, _fields in _ELEMENT_CODECS:
+    _ELEMENT_DESERIALIZERS.setdefault(_type_name, (_class, _fields))
+_ELEMENT_DESERIALIZERS["Int4ColorData"] = _ELEMENT_DESERIALIZERS["Int4Data"]
 
 
 class RszArrayClipboard:
@@ -26,10 +69,12 @@ class RszArrayClipboard:
         
     @staticmethod
     def get_clipboard_file(widget):
-        json_name = RszArrayClipboard.get_json_name(widget)
-        base_name = os.path.splitext(json_name)[0]
-        clipboard_file = f"{base_name}-clipboard.json"
-        return os.path.join(RszArrayClipboard.get_clipboard_directory(), clipboard_file)
+        return RszClipboardUtils.format_clipboard_file(
+            RszArrayClipboard.get_clipboard_directory(),
+            RszArrayClipboard.get_json_name(widget),
+            "arrayelement",
+            filename_template="{name}-clipboard.json",
+        )
         
     @staticmethod
     def copy_to_clipboard(widget, element, array_type, embedded_context=None):
@@ -39,7 +84,9 @@ class RszArrayClipboard:
             embedded_context = widget.embedded_context
         
         if isinstance(element, ObjectData) and element.value > 0:
-            serialised = RszArrayClipboard._serialize_object_with_graph(element, parent_viewer)
+            serialised = RszArrayClipboard._serialize_object_with_graph(
+                element, parent_viewer, embedded_context
+            )
         elif isinstance(element, UserDataData):
             if element.value > 0:
                 serialised = RszArrayClipboard._serialize_userdata_with_graph(element, parent_viewer, embedded_context)
@@ -169,17 +216,28 @@ class RszArrayClipboard:
         return None
     
     @staticmethod
-    def _create_embedded_rsz_object_graph(rui, viewer, parent_embedded_context=None):
+    def _create_embedded_rsz_object_graph(
+        rui, viewer, parent_embedded_context=None, root_instance_id=None
+    ):
         """Create object graph for embedded RSZ structure with relative IDs"""
 
-        all_instance_ids = set()
+        embedded_instances = getattr(rui, "embedded_instances", {})
+        if root_instance_id is not None:
+            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+
+            all_instance_ids = RszInstanceOperations.collect_owned_instances(
+                embedded_instances,
+                root_instance_id,
+                reference_type_isolation=True,
+                valid_instance_ids=embedded_instances,
+            )
+            all_instance_ids.add(root_instance_id)
+        else:
+            all_instance_ids = {
+                inst_id for inst_id in embedded_instances if inst_id > 0
+            }
         
-        if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
-            for inst_id in rui.embedded_instances.keys():
-                if inst_id > 0:
-                    all_instance_ids.add(inst_id)
-        
-        if hasattr(rui, 'embedded_userdata_infos'):
+        if root_instance_id is None and hasattr(rui, 'embedded_userdata_infos'):
             for nested_ui in rui.embedded_userdata_infos:
                 nested_instance_id = getattr(nested_ui, 'instance_id', 0)
                 if nested_instance_id > 0:
@@ -195,14 +253,33 @@ class RszArrayClipboard:
         
         sorted_ids = sorted(all_instance_ids)
         relative_id_mapping = {orig_id: idx for idx, orig_id in enumerate(sorted_ids)}
+        external_refs = set()
+        if root_instance_id is not None:
+            from file_handlers.rsz.utils.rsz_field_utils import iter_field_reference_entries
+
+            for instance_id in all_instance_ids:
+                for _, reference, _ in iter_field_reference_entries(
+                    embedded_instances.get(instance_id, {})
+                ):
+                    if reference.value > 0 and reference.value not in all_instance_ids:
+                        external_refs.add(reference.value)
         
         object_graph = {
             "instances": [],
             "userdata_infos": [],
-            "embedded_object_table": getattr(rui, 'embedded_object_table', []),
+            "embedded_object_table": (
+                [relative_id_mapping[root_instance_id]]
+                if root_instance_id is not None
+                else getattr(rui, 'embedded_object_table', [])
+            ),
             "userdata_relative_id": 0,  # Will be set to the main userdata's relative ID
-            "context_type": "embedded_rsz"
+            "context_type": (
+                "embedded_object" if root_instance_id is not None
+                else "embedded_rsz"
+            ),
         }
+        if root_instance_id is not None:
+            object_graph["root_id"] = relative_id_mapping[root_instance_id]
         
         for orig_inst_id in sorted_ids:
             if orig_inst_id in rui.embedded_instances:
@@ -242,12 +319,14 @@ class RszArrayClipboard:
                                 print(f"    No userdata_rui found for instance {field_data.value}")
                         
                         instance_entry["fields"][field_name] = RszArrayClipboard._serialize_field_with_mapping(
-                            field_data, relative_id_mapping, all_instance_ids, set(), rui
+                            field_data, relative_id_mapping, all_instance_ids,
+                            external_refs,
+                            None if root_instance_id is not None else rui,
                         )
                 
                 object_graph["instances"].append(instance_entry)
         
-        if hasattr(rui, 'embedded_userdata_infos'):
+        if root_instance_id is None and hasattr(rui, 'embedded_userdata_infos'):
             for nested_ui in rui.embedded_userdata_infos:
                 nested_instance_id = getattr(nested_ui, 'instance_id', 0)
                 ui_entry = {
@@ -274,7 +353,7 @@ class RszArrayClipboard:
         return object_graph
             
     @staticmethod
-    def _serialize_object_with_graph(element, viewer):
+    def _serialize_object_with_graph(element, viewer, embedded_context=None):
         result = {
             "type": "ObjectData",
             "value": element.value,
@@ -282,6 +361,20 @@ class RszArrayClipboard:
         }
         
         if element.value <= 0 or not viewer or not hasattr(viewer, "array_operations"):
+            return result
+
+        embedded_context = embedded_context or getattr(
+            element, "_container_context", None
+        )
+        if (
+            embedded_context
+            and element.value in getattr(embedded_context, "embedded_instances", {})
+        ):
+            result["object_graph"] = RszArrayClipboard._create_embedded_rsz_object_graph(
+                embedded_context,
+                viewer,
+                root_instance_id=element.value,
+            )
             return result
             
         root_object_id = element.value
@@ -589,7 +682,11 @@ class RszArrayClipboard:
         userdata_info.embedded_object_table = []
         userdata_info.embedded_instance_infos = []
         userdata_info.embedded_userdata_infos = []
-        userdata_info.embedded_instances = {}
+        userdata_info.embedded_instances = {0: {}}
+        userdata_info.embedded_instance_hierarchy = {}
+        userdata_info._rsz_userdata_dict = {}
+        userdata_info._rsz_userdata_set = set()
+        userdata_info._rsz_userdata_str_map = {}
 
     @staticmethod
     def _initialize_embedded_userdata_storage(userdata_info, viewer, name, id_manager_instance_id):
@@ -748,6 +845,13 @@ class RszArrayClipboard:
 
     @staticmethod
     def _append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer):
+        if not hasattr(userdata_info, '_rsz_userdata_dict'):
+            userdata_info._rsz_userdata_dict = {}
+        if not hasattr(userdata_info, '_rsz_userdata_set'):
+            userdata_info._rsz_userdata_set = set()
+        if not hasattr(userdata_info, '_rsz_userdata_str_map'):
+            userdata_info._rsz_userdata_str_map = {}
+
         userdata_infos = object_graph.get("userdata_infos", [])
         for ui_data in userdata_infos:
             nested_instance_id = ui_data.get("instance_id", 0)
@@ -766,6 +870,7 @@ class RszArrayClipboard:
             nested_userdata_info.rsz_offset = 0
             nested_userdata_info.data = b""
             nested_userdata_info.modified = True
+            nested_userdata_info.parent_userdata_rui = userdata_info
 
             nested_graph = ui_data.get("nested_object_graph")
             if nested_graph:
@@ -774,6 +879,8 @@ class RszArrayClipboard:
                 )
 
             userdata_info.embedded_userdata_infos.append(nested_userdata_info)
+            userdata_info._rsz_userdata_dict[mapped_instance_id] = nested_userdata_info
+            userdata_info._rsz_userdata_set.add(mapped_instance_id)
 
             nested_string = ui_data.get("userdata_string")
             if nested_string:
@@ -1087,6 +1194,8 @@ class RszArrayClipboard:
 
         RszArrayClipboard._append_nested_userdata_infos(userdata_info, object_graph, id_mapping, viewer)
 
+        update_rsz_header_counts(userdata_info)
+
         return userdata_info
 
     @staticmethod  
@@ -1221,25 +1330,27 @@ class RszArrayClipboard:
     def _reconstruct_field_with_new_ids(field_data, id_mapping):
         """Reconstruct field data with updated IDs (following embedded operations pattern)"""
         field_type = field_data.get("type", "")
-        
+
         if field_type == "ObjectData":
-            return RszArrayClipboard._deserialize_object_field_with_mapping(field_data, id_mapping)
-            
-        elif field_type == "UserDataData":
-            return RszArrayClipboard._deserialize_userdata_field_with_mapping(field_data, id_mapping)
-            
-        elif field_type == "ArrayData":
-            result_values = []
-            for elem_data in field_data.get("values", []):
-                result_values.append(RszArrayClipboard._reconstruct_field_with_new_ids(elem_data, id_mapping))
-            
+            return RszArrayClipboard._deserialize_object_field_with_mapping(
+                field_data, id_mapping
+            )
+        if field_type == "UserDataData":
+            return RszArrayClipboard._deserialize_userdata_field_with_mapping(
+                field_data, id_mapping
+            )
+        if field_type == "ArrayData":
+            values = [
+                RszArrayClipboard._reconstruct_field_with_new_ids(item, id_mapping)
+                for item in field_data.get("values", [])
+            ]
             array_data = ArrayData()
             array_data.orig_type = field_data.get("orig_type", "")
-            array_data.values = result_values
+            array_data.values = values
             return array_data
-        
-        else:
-            return RszArrayClipboard._deserialize_element(field_data, None, {}, randomize_guids=False)
+        return RszArrayClipboard._deserialize_element(
+            field_data, None, {}, randomize_guids=False
+        )
 
     @staticmethod
     def _mapped_graph_value(field_data, id_mapping):
@@ -1397,24 +1508,31 @@ class RszArrayClipboard:
             if nested_ids and field_data.value in nested_ids:
                 result["in_graph"] = True
             return result
-        
-        elif isinstance(field_data, ArrayData):
+
+        if isinstance(field_data, ArrayData):
             values = []
             for element in field_data.values:
-                if isinstance(element, ObjectData) and nested_ids and element.value in nested_ids:
-                    elem_result = RszArrayClipboard._serialize_element(element)
-                    elem_result["in_graph"] = True
-                    values.append(elem_result)
+                if (
+                    isinstance(element, ObjectData)
+                    and nested_ids
+                    and element.value in nested_ids
+                ):
+                    result = RszArrayClipboard._serialize_element(element)
+                    result["in_graph"] = True
+                    values.append(result)
                 else:
                     values.append(RszArrayClipboard._serialize_element(element))
-                    
             return {
                 "type": "ArrayData",
                 "values": values,
                 "orig_type": field_data.orig_type,
-                "element_type": field_data.element_class.__name__ if field_data.element_class else ""
+                "element_type": (
+                    field_data.element_class.__name__
+                    if field_data.element_class
+                    else ""
+                ),
             }
-            
+
         return RszArrayClipboard._serialize_element(field_data)
 
     @staticmethod
@@ -1432,186 +1550,21 @@ class RszArrayClipboard:
 
     @staticmethod
     def _serialize_element(element):
-        if isinstance(element, ObjectData):
-            return {
-                "type": "ObjectData",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, UserDataData):
+        if isinstance(element, UserDataData):
             return {
                 "type": "UserDataData",
                 "value": element.value,
                 "string": element.string,
                 "orig_type": getattr(element, "orig_type", "")
             }
-        elif isinstance(element, F32Data):
-            return {
-                "type": "F32Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, U16Data):
-            return {
-                "type": "U16Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, S16Data):
-            return {
-                "type": "S16Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, S32Data):
-            return {
-                "type": "S32Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, U32Data):
-            return {
-                "type": "U32Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, U64Data):
-            return {
-                "type": "U64Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, S64Data):
-            return {
-                "type": "S64Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, S8Data):
-            return {
-                "type": "S8Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, U8Data):
-            return {
-                "type": "U8Data",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, BoolData):
-            return {
-                "type": "BoolData",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, StringData):
-            return {
-                "type": "StringData",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, ResourceData):
-            return {
-                "type": "ResourceData",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, RuntimeTypeData):
-            return {
-                "type": "RuntimeTypeData",
-                "value": element.value,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Vec2Data):
-            return {
-                "type": "Vec2Data",
-                "x": element.x,
-                "y": element.y,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Uint2Data):
-            return {
-                "type": "Uint2Data",
-                "x": element.x,
-                "y": element.y,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Vec3Data):
-            return {
-                "type": "Vec3Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Uint3Data):
-            return {
-                "type": "Uint3Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Vec3ColorData):
-            return {
-                "type": "Vec3ColorData",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Vec4Data):
-            return {
-                "type": "Vec4Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "w": element.w,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Float4Data):
-            return {
-                "type": "Float4Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "w": element.w,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, QuaternionData):
-            return {
-                "type": "QuaternionData",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "w": element.w,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, ColorData):
-            return {
-                "type": "ColorData",
-                "r": element.r,
-                "g": element.g,
-                "b": element.b,
-                "a": element.a,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, RangeData):
-            return {
-                "type": "RangeData",
-                "min": element.min,
-                "max": element.max,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, RangeIData):
-            return {
-                "type": "RangeIData",
-                "min": element.min,
-                "max": element.max,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, GuidData):
+        for element_class, type_name, fields in _ELEMENT_CODECS:
+            if isinstance(element, element_class):
+                return {
+                    "type": type_name,
+                    **{field: getattr(element, field) for field, _ in fields},
+                    "orig_type": element.orig_type,
+                }
+        if isinstance(element, GuidData):
             return {
                 "type": "GuidData",
                 "guid_str": element.guid_str,
@@ -1699,45 +1652,6 @@ class RszArrayClipboard:
                     ],
                     "orig_type": element.orig_type
                 }
-        elif isinstance(element, Int2Data):
-            return {
-                "type": "Int2Data",
-                "x": element.x,
-                "y": element.y,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Int3Data):
-            return {
-                "type": "Int3Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Int4Data) or isinstance(element, Int4ColorData):
-            return {
-                "type": "Int4Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "w": element.w,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Float2Data):
-            return {
-                "type": "Float2Data",
-                "x": element.x,
-                "y": element.y,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, Float3Data):
-            return {
-                "type": "Float3Data",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
         elif isinstance(element, AABBData):
             return {
                 "type": "AABBData",
@@ -1764,43 +1678,11 @@ class RszArrayClipboard:
             return RszArrayClipboard._serialize_area_element(element, "AreaData")
         elif isinstance(element, AreaDataOld):
             return RszArrayClipboard._serialize_area_element(element, "AreaDataOld")
-        elif isinstance(element, RectData):
-            return {
-                "type": "RectData",
-                "min_x": element.min_x,
-                "min_y": element.min_y,
-                "max_x": element.max_x,
-                "max_y": element.max_y,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, SizeData):
-            return {
-                "type": "SizeData",
-                "width": element.width,
-                "height": element.height,
-                "orig_type": element.orig_type
-            }
         elif isinstance(element, LineSegmentData):
             return {
                 "type": "LineSegmentData",
                 "start": RszArrayClipboard._serialize_element(element.start),
                 "end": RszArrayClipboard._serialize_element(element.end),
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, PointData):
-            return {
-                "type": "PointData",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
-                "orig_type": element.orig_type
-            }
-        elif isinstance(element, PositionData):
-            return {
-                "type": "PositionData",
-                "x": element.x,
-                "y": element.y,
-                "z": element.z,
                 "orig_type": element.orig_type
             }
         elif isinstance(element, StructData):
@@ -1857,15 +1739,14 @@ class RszArrayClipboard:
         Dump *items* (already serialised dicts) to *file_path*.
         Creates a multi-element payload automatically when len(items) > 1.
         """
-        with open(file_path, "w") as f:
-            json.dump(
-                {"type": array_type,
+        RszClipboardUtils.write_clipboard_data(
+            file_path,
+            {
+                "type": array_type,
                 "data": items,
-                "is_multi": len(items) > 1},
-                f,
-                indent=2,
-                default=RszClipboardUtils.json_serializer,
-            )
+                "is_multi": len(items) > 1,
+            },
+        )
 
     @staticmethod
     def _read_clipboard(file_path: str):
@@ -1940,7 +1821,9 @@ class RszArrayClipboard:
         
         for el in elements:
             if isinstance(el, ObjectData) and el.value > 0:
-                serialised = RszArrayClipboard._serialize_object_with_graph(el, parent_viewer)
+                serialised = RszArrayClipboard._serialize_object_with_graph(
+                    el, parent_viewer, embedded_context
+                )
             elif isinstance(el, UserDataData):
                 if el.value > 0:
                     serialised = RszArrayClipboard._serialize_userdata_with_graph(el, parent_viewer, embedded_context)
@@ -1975,7 +1858,7 @@ class RszArrayClipboard:
     def has_clipboard_data(widget):
         """Check if clipboard data exists"""
         clipboard_file = RszArrayClipboard.get_clipboard_file(widget)
-        return os.path.exists(clipboard_file)
+        return RszClipboardUtils.has_clipboard_data(clipboard_file)
             
     @staticmethod
     def get_elements_count_from_clipboard(widget):
@@ -2219,60 +2102,65 @@ class RszArrayClipboard:
             values = field_data.get("values", [])
             orig_type = field_data.get("orig_type", "")
             element_type = field_data.get("element_type", "")
-            
-            element_class = None
-            if element_type:
-                element_class = globals().get(element_type)
-                
+            element_class = globals().get(element_type) if element_type else None
             array = ArrayData([], element_class, orig_type)
-            
             for value_data in values:
-                value_type = value_data.get("type", "")
-                
-                if value_type == "ObjectData" and value_data.get("in_graph", False):
-                    relative_value = value_data.get("value", 0)
-                    orig_type = value_data.get("orig_type", "")
-                    
-                    if relative_value in id_mapping:
-                        new_value = id_mapping[relative_value]
-                        array.values.append(ObjectData(new_value, orig_type))
-                    else:
-                        array.values.append(ObjectData(relative_value, orig_type))
-                elif value_type == "UserDataData" and value_data.get("in_graph", False):
-                    relative_index = value_data.get("value", 0)
-                    string = value_data.get("string", "")
-                    orig_type = value_data.get("orig_type", "")
-                    
-                    if relative_index in id_mapping:
-                        new_index = id_mapping[relative_index]
-                        array.values.append(UserDataData(new_index, string, orig_type))
-                    else:
-                        array.values.append(UserDataData(relative_index, string, orig_type))
-                elif value_type == "GameObjectRefData":
-                    guid_str = value_data.get("guid_str", "")
-                    guid_hex = value_data.get("raw_bytes", "")
-                    orig_type = value_data.get("orig_type", "")
-                    
-                    if guid_hex:
-                        try:
-                            
-                            from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
-                            ref_data = process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping, randomize_guids)
-                            if ref_data:
-                                array.values.append(ref_data)
-                        except Exception as e:
-                            print(f"Error processing GameObjectRefData: {str(e)}")
-                            array.values.append(GameObjectRefData(guid_str, None, orig_type))
-                    else:
-                        array.values.append(GameObjectRefData(guid_str, None, orig_type))
-                else:
-                    element = RszArrayClipboard._deserialize_element(value_data, element_class, guid_mapping, randomize_guids)
-                    if element:
-                        array.values.append(element)
-                    
+                element = RszArrayClipboard._deserialize_relative_array_element(
+                    value_data,
+                    element_class,
+                    id_mapping,
+                    guid_mapping,
+                    randomize_guids,
+                )
+                if element is not None:
+                    array.values.append(element)
             return array
             
         return RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
+
+    @staticmethod
+    def _deserialize_relative_array_element(
+        value_data, element_class, id_mapping, guid_mapping, randomize_guids
+    ):
+        value_type = value_data.get("type", "")
+        if value_type == "ObjectData" and value_data.get("in_graph", False):
+            value = value_data.get("value", 0)
+            return ObjectData(
+                id_mapping.get(value, value), value_data.get("orig_type", "")
+            )
+        if value_type == "UserDataData" and value_data.get("in_graph", False):
+            value = value_data.get("value", 0)
+            return UserDataData(
+                id_mapping.get(value, value),
+                value_data.get("string", ""),
+                value_data.get("orig_type", ""),
+            )
+        if value_type == "GameObjectRefData":
+            return RszArrayClipboard._deserialize_field_with_relative_mapping(
+                value_data, id_mapping, guid_mapping, randomize_guids
+            )
+        return RszArrayClipboard._deserialize_element(
+            value_data,
+            element_class,
+            guid_mapping,
+            randomize_guids,
+        )
+
+    @staticmethod
+    def _deserialize_area_element(element_data, area_class, point_class):
+        points = []
+        for name in ("p0", "p1", "p2", "p3"):
+            point_data = element_data.get(name, point_class())
+            points.append(
+                RszArrayClipboard._deserialize_element(point_data, point_class)
+                if isinstance(point_data, dict) else point_class()
+            )
+        return area_class(
+            *points,
+            element_data.get("height", 0.0),
+            element_data.get("bottom", 0.0),
+            element_data.get("orig_type", ""),
+        )
     
     @staticmethod
     def _deserialize_element(element_data, element_class, guid_mapping=None, randomize_guids=True, on_resource_deserialized=None):
@@ -2281,132 +2169,21 @@ class RszArrayClipboard:
             
         element_type = element_data.get("type", "")
         orig_type = element_data.get("orig_type", "")
-        
-        if element_type == "ObjectData":
-            od = ObjectData(
-                element_data.get("value", 0),
-                orig_type
-            )
-            return od
-            
-        elif element_type == "UserDataData":
-            raise NotImplementedError("Unexpected UserDataData deserialization.")
 
-        elif element_type == "F32Data":
-            return F32Data(element_data.get("value", 0.0), orig_type)
-            
-        elif element_type == "U16Data":
-            return U16Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "S16Data":
-            return S16Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "S32Data":
-            return S32Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "U32Data":
-            return U32Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "U64Data":
-            return U64Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "S64Data":
-            return S64Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "S8Data":
-            return S8Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "U8Data":
-            return U8Data(element_data.get("value", 0), orig_type)
-            
-        elif element_type == "BoolData":
-            return BoolData(element_data.get("value", False), orig_type)
-            
-        elif element_type == "StringData":
-            string_value = element_data.get("value", "")
-            return StringData(string_value, orig_type)
-            
-        elif element_type == "ResourceData":
+        if element_type == "UserDataData":
+            raise NotImplementedError("Unexpected UserDataData deserialization.")
+        if element_type == "ResourceData":
             string_value = element_data.get("value", "")
             if string_value and on_resource_deserialized:
                 on_resource_deserialized()
             return ResourceData(string_value, orig_type)
-        
-        elif element_type == "RuntimeTypeData":
-            return RuntimeTypeData(element_data.get("value", ""), orig_type)
-            
-        elif element_type == "Vec2Data":
-            return Vec2Data(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                orig_type
-            )
-        
-        elif element_type == "Uint2Data":
-            return Uint2Data(
-                element_data.get("x", 0),
-                element_data.get("y", 0),
-                orig_type
-            )
-            
-        elif element_type == "Vec3Data":
-            return Vec3Data(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                orig_type
-            )
-        
-        elif element_type == "Uint3Data":
-            return Uint3Data(
-                element_data.get("x", 0),
-                element_data.get("y", 0),
-                element_data.get("z", 0),
-                orig_type
-            )
-            
-        elif element_type == "Vec3ColorData":
-            return Vec3ColorData(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                orig_type
-            )
-            
-        elif element_type in ["Vec4Data", "Float4Data", "QuaternionData"]:
-            cls = globals().get(element_type, Vec4Data)
+        if element_type in _ELEMENT_DESERIALIZERS:
+            cls, fields = _ELEMENT_DESERIALIZERS[element_type]
             return cls(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                element_data.get("w", 0.0),
-                orig_type
+                *(element_data.get(field, default) for field, default in fields),
+                orig_type,
             )
-            
-        elif element_type == "ColorData":
-            return ColorData(
-                element_data.get("r", 0),
-                element_data.get("g", 0),
-                element_data.get("b", 0),
-                element_data.get("a", 0),
-                orig_type
-            )
-            
-        elif element_type == "RangeData":
-            return RangeData(
-                element_data.get("min", 0.0),
-                element_data.get("max", 0.0),
-                orig_type
-            )
-            
-        elif element_type == "RangeIData":
-            return RangeIData(
-                element_data.get("min", 0),
-                element_data.get("max", 0),
-                orig_type
-            )
-            
-        elif element_type == "GuidData":
+        if element_type == "GuidData":
             guid_str = element_data.get("guid_str", "")
             guid_hex = element_data.get("value", "")
             guid_bytes = bytes.fromhex(guid_hex) if guid_hex else None
@@ -2468,45 +2245,6 @@ class RszArrayClipboard:
                 
             return Mat4Data(values, orig_type)
 
-        elif element_type == "Int2Data":
-            return Int2Data(
-                element_data.get("x", 0),
-                element_data.get("y", 0),
-                orig_type
-            )
-            
-        elif element_type == "Int3Data":
-            return Int3Data(
-                element_data.get("x", 0),
-                element_data.get("y", 0),
-                element_data.get("z", 0),
-                orig_type
-            )
-            
-        elif element_type == "Int4Data" or element_type == "Int4ColorData":
-            return Int4Data(
-                element_data.get("x", 0),
-                element_data.get("y", 0),
-                element_data.get("z", 0),
-                element_data.get("w", 0),
-                orig_type
-            )
-            
-        elif element_type == "Float2Data":
-            return Float2Data(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                orig_type
-            )
-            
-        elif element_type == "Float3Data":
-            return Float3Data(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                orig_type
-            )
-        
         elif element_type == "AABBData":
             min_data = element_data.get("min", {})
             max_data = element_data.get("max", {})
@@ -2533,52 +2271,15 @@ class RszArrayClipboard:
             
             return CylinderData(center, radius, height, orig_type)
         
-        elif element_type == "AreaData":
-            p0 = element_data.get("p0", Float2Data())
-            p1 = element_data.get("p1", Float2Data())
-            p2 = element_data.get("p2", Float2Data())
-            p3 = element_data.get("p3", Float2Data())
-            height = element_data.get("height", 0.0)
-            bottom = element_data.get("bottom", 0.0)
-            
-            p0_deserialized = RszArrayClipboard._deserialize_element(p0, Float2Data) if isinstance(p0, dict) else Float2Data()
-            p1_deserialized = RszArrayClipboard._deserialize_element(p1, Float2Data) if isinstance(p1, dict) else Float2Data()
-            p2_deserialized = RszArrayClipboard._deserialize_element(p2, Float2Data) if isinstance(p2, dict) else Float2Data()
-            p3_deserialized = RszArrayClipboard._deserialize_element(p3, Float2Data) if isinstance(p3, dict) else Float2Data()
-            
-            return AreaData(p0_deserialized, p1_deserialized, p2_deserialized, p3_deserialized, height, bottom, orig_type)
-
-        elif element_type == "AreaDataOld":
-            p0 = element_data.get("p0", Vec2Data())
-            p1 = element_data.get("p1", Vec2Data())
-            p2 = element_data.get("p2", Vec2Data())
-            p3 = element_data.get("p3", Vec2Data())
-            height = element_data.get("height", 0.0)
-            bottom = element_data.get("bottom", 0.0)
-
-            p0_deserialized = RszArrayClipboard._deserialize_element(p0, Vec2Data) if isinstance(p0, dict) else Vec2Data()
-            p1_deserialized = RszArrayClipboard._deserialize_element(p1, Vec2Data) if isinstance(p1, dict) else Vec2Data()
-            p2_deserialized = RszArrayClipboard._deserialize_element(p2, Vec2Data) if isinstance(p2, dict) else Vec2Data()
-            p3_deserialized = RszArrayClipboard._deserialize_element(p3, Vec2Data) if isinstance(p3, dict) else Vec2Data()
-            
-            return AreaDataOld(p0_deserialized, p1_deserialized, p2_deserialized, p3_deserialized, height, bottom, orig_type)
-
-        elif element_type == "RectData":
-            return RectData(
-                element_data.get("min_x", 0.0),
-                element_data.get("min_y", 0.0),
-                element_data.get("max_x", 0.0),
-                element_data.get("max_y", 0.0),
-                orig_type
+        elif element_type in ("AreaData", "AreaDataOld"):
+            area_class, point_class = (
+                (AreaData, Float2Data)
+                if element_type == "AreaData" else (AreaDataOld, Vec2Data)
             )
-        
-        elif element_type == "SizeData":
-            return SizeData(
-                element_data.get("width", 0.0),
-                element_data.get("height", 0.0),
-                orig_type
+            return RszArrayClipboard._deserialize_area_element(
+                element_data, area_class, point_class
             )
-        
+
         elif element_type == "LineSegmentData":
             start_data = element_data.get("start", {})
             end_data = element_data.get("end", {})
@@ -2587,22 +2288,6 @@ class RszArrayClipboard:
             end = RszArrayClipboard._deserialize_element(end_data, Vec3Data) if isinstance(end_data, dict) else Vec3Data()
             
             return LineSegmentData(start, end, orig_type)
-        
-        elif element_type == "PointData":
-            return PointData(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                orig_type
-            )
-        
-        elif element_type == "PositionData":
-            return PositionData(
-                element_data.get("x", 0.0),
-                element_data.get("y", 0.0),
-                element_data.get("z", 0.0),
-                orig_type
-            )
         
         elif element_type == "StructData":
             values = element_data.get("values", [])
@@ -2621,82 +2306,55 @@ class RszArrayClipboard:
     def _add_element_to_ui_direct(widget, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
         from file_handlers.pyside.tree_model import DataTreeBuilder
-        
+
         parent_viewer = widget.parent()
         if not parent_viewer:
             return False
-            
-        model = getattr(widget, 'model', lambda: None)()
-        if not model or not hasattr(array_item, 'raw'):
-            return False
-            
-        array_data = array_item.raw.get('obj') if isinstance(array_item.raw, dict) else None
-        if not array_data or not hasattr(array_data, 'values'):
-            return False
-        
-        element_index = len(array_data.values) - 1
-        
-        if isinstance(element, ObjectData) and hasattr(parent_viewer, "name_helper"):
-            type_name = parent_viewer.name_helper.get_type_name_for_instance(element.value)
-            
-            node_data = DataTreeBuilder.create_data_node(
-                f"{element_index}: ({type_name})",
-                "",
-                None,
-                element
-            )
-            
-            if hasattr(parent_viewer, "scn") and element.value in parent_viewer.scn.parsed_elements:
-                fields = parent_viewer.scn.parsed_elements[element.value]
-                node_data["children"] = []
-                for field_name, field_data in fields.items():
-                    field_dict = parent_viewer._create_field_dict(field_name, field_data)
-                    node_data["children"].append(field_dict)
-        elif isinstance(element, UserDataData) and element.value > 0 and hasattr(parent_viewer, '_handle_reference_in_array'):
-            embedded_context = array_item.raw.get('embedded_context') if isinstance(array_item.raw, dict) else None
-            domain_id = getattr(embedded_context, 'instance_id', None) if embedded_context else None
-            node_data = parent_viewer._handle_reference_in_array(element_index, element, embedded_context, domain_id)
-            if not node_data:
-                # Falback to simple node
-                node_data = DataTreeBuilder.create_data_node(
-                    f"{element_index}: ",
-                    "",
-                    element.__class__.__name__,
-                    element
+        def create_node(index, value, embedded_context):
+            if isinstance(value, ObjectData) and hasattr(parent_viewer, "name_helper"):
+                type_name = parent_viewer.name_helper.get_type_name_for_instance(
+                    value.value
                 )
-        else:
-            node_data = DataTreeBuilder.create_data_node(
-                f"{element_index}: ",
-                "",
-                element.__class__.__name__,
-                element
+                node = DataTreeBuilder.create_data_node(
+                    f"{index}: ({type_name})", "", None, value
+                )
+                if (
+                    hasattr(parent_viewer, "scn")
+                    and value.value in parent_viewer.scn.parsed_elements
+                ):
+                    node["children"] = [
+                        parent_viewer._create_field_dict(field_name, field_data)
+                        for field_name, field_data
+                        in parent_viewer.scn.parsed_elements[value.value].items()
+                    ]
+                return node
+            if (
+                isinstance(value, UserDataData)
+                and value.value > 0
+                and hasattr(parent_viewer, "_handle_reference_in_array")
+            ):
+                domain_id = getattr(embedded_context, "instance_id", None)
+                node = parent_viewer._handle_reference_in_array(
+                    index, value, embedded_context, domain_id
+                )
+                if node:
+                    return node
+            return DataTreeBuilder.create_data_node(
+                f"{index}: ", "", value.__class__.__name__, value
             )
-        
-        model.addChild(array_item, node_data)
-        
-        array_index = model.getIndexFromItem(array_item)
-        widget.expand(array_index)
-        
-        if hasattr(widget, 'create_widgets_for_children'):
-            child_index = model.index(element_index, 0, array_index)
-            if child_index.isValid():
-                widget.scrollTo(child_index)
-                child_item = child_index.internalPointer()
-                if child_item:
-                    from file_handlers.pyside.tree_widgets import TreeWidgetFactory
-                    if not TreeWidgetFactory.should_skip_widget(child_item):
-                        name_text = child_item.data[0] if hasattr(child_item, 'data') and child_item.data else ""
-                        node_type = child_item.raw.get("type", "") if isinstance(child_item.raw, dict) else ""
-                        data_obj = child_item.raw.get("obj", None) if isinstance(child_item.raw, dict) else None
-                        
-                        widget_container = TreeWidgetFactory.create_widget(
-                            node_type, data_obj, name_text, widget, 
-                            widget.parent_modified_callback if hasattr(widget, 'parent_modified_callback') else None
-                        )
-                        if widget_container:
-                            widget.setIndexWidget(child_index, widget_container)
-        
-        return True
+
+        create_widgets = hasattr(widget, "create_widgets_for_children")
+        return append_array_element_node(
+            parent_viewer,
+            array_item,
+            element,
+            tree=widget,
+            node_factory=create_node,
+            initialize_widget=create_widgets,
+            scroll_to_child=create_widgets,
+            respect_deferred=False,
+            child_index_from_row=True,
+        )
 
     @staticmethod
     def _serialize_fields_for_userdata(fields, viewer):
