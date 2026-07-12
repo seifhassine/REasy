@@ -1,63 +1,157 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QIcon
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from utils.app_paths import resource_path
 
 
 class HomePageWidget(QWidget):
     def __init__(self, on_open_file, on_new_project, on_open_project, on_reopen_last, parent=None):
         super().__init__(parent)
+        self.setObjectName("homePage")
+
         root = QVBoxLayout(self)
-        root.setContentsMargins(28, 28, 28, 28)
-        root.addStretch()
+        root.setContentsMargins(32, 32, 32, 32)
+        root.addStretch(3)
 
-        card = QFrame(self)
-        card.setMaximumWidth(760)
-        card.setStyleSheet(
-            "QFrame { border: 1px solid #3a3a3a; border-radius: 12px; background: #242424; }"
-            "QPushButton { padding: 8px 14px; font-weight: 600; }"
+        hero = QWidget(self)
+        hero.setObjectName("homeHero")
+        hero.setMaximumWidth(720)
+        layout = QVBoxLayout(hero)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(16)
+
+        logo = QLabel(hero)
+        logo.setObjectName("homeLogo")
+        logo.setAlignment(Qt.AlignCenter)
+        logo.setFixedSize(64, 64)
+        logo.setPixmap(
+            QIcon(str(resource_path("resources/icons/reasy_editor_logo.ico"))).pixmap(64, 64)
         )
+        layout.addWidget(logo, alignment=Qt.AlignHCenter)
 
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(28, 28, 28, 28)
-        card_layout.setSpacing(12)
-
-        title = QLabel(self.tr("Welcome to REasy"))
+        title = QLabel(self.tr("REasy Editor"), hero)
+        title.setObjectName("homeTitle")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 30px; font-weight: 700; border: 0; background: transparent;")
-        card_layout.addWidget(title)
+        layout.addWidget(title)
 
-        subtitle = QLabel(self.tr("Start by opening a file or project."))
+        subtitle = QLabel(
+            self.tr("Open files. Change things. Try not to anger the engine."),
+            hero,
+        )
+        subtitle.setObjectName("homeSubtitle")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("font-size: 14px; color: #b4bdcc; border: 0; background: transparent;")
-        card_layout.addWidget(subtitle)
+        subtitle.setWordWrap(True)
+        layout.addWidget(subtitle)
 
         actions = QHBoxLayout()
-        actions.setSpacing(8)
-        for text, callback in (
-            (self.tr("Open File…"), on_open_file),
-            (self.tr("New Project…"), on_new_project),
-            (self.tr("Project Library..."), on_open_project),
-            (self.tr("Reopen Last Closed"), on_reopen_last),
-        ):
-            btn = QPushButton(text)
-            btn.clicked.connect(callback)
-            actions.addWidget(btn)
-        card_layout.addLayout(actions)
+        actions.setContentsMargins(0, 12, 0, 4)
+        actions.setSpacing(10)
+        actions.addStretch()
+        self.open_button = self._button(self.tr("Open File"), "primaryButton", on_open_file)
+        self.new_project_button = self._button(
+            self.tr("New Project"), "secondaryButton", on_new_project
+        )
+        self.library_button = self._button(
+            self.tr("Project Library"), "secondaryButton", on_open_project
+        )
+        actions.addWidget(self.open_button)
+        actions.addWidget(self.new_project_button)
+        actions.addWidget(self.library_button)
+        actions.addStretch()
+        layout.addLayout(actions)
 
-        self.recent_label = QLabel(self.tr("No recently closed files yet."))
+        divider = QFrame(hero)
+        divider.setObjectName("homeDivider")
+        divider.setFrameShape(QFrame.HLine)
+        layout.addWidget(divider)
+
+        recent_title = QLabel(self.tr("RECENTLY CLOSED"), hero)
+        recent_title.setObjectName("recentTitle")
+        recent_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(recent_title)
+
+        self.recent_label = QLabel(self.tr("No recently closed files yet."), hero)
+        self.recent_label.setObjectName("recentLabel")
         self.recent_label.setAlignment(Qt.AlignCenter)
-        self.recent_label.setStyleSheet("font-size: 12px; color: #8c96a8; border: 0; background: transparent;")
-        card_layout.addWidget(self.recent_label)
+        self.recent_label.setWordWrap(True)
+        self.recent_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        layout.addWidget(self.recent_label)
 
-        tips = QLabel(self.tr("Tip: you can drag and drop files directly into the window."))
-        tips.setAlignment(Qt.AlignCenter)
-        tips.setStyleSheet("font-size: 12px; color: #8c96a8; border: 0; background: transparent;")
-        card_layout.addWidget(tips)
+        self.reopen_button = self._button(
+            self.tr("Reopen last closed  →"), "linkButton", on_reopen_last
+        )
+        layout.addWidget(self.reopen_button, alignment=Qt.AlignHCenter)
 
-        root.addWidget(card, alignment=Qt.AlignHCenter)
-        root.addStretch()
+        tip = QLabel(
+            self.tr("Tip: drag and drop a file anywhere in the window."), hero
+        )
+        tip.setObjectName("homeTip")
+        tip.setAlignment(Qt.AlignCenter)
+        layout.addWidget(tip)
 
-    def set_recently_closed(self, label: str):
+        root.addWidget(hero, alignment=Qt.AlignHCenter)
+        root.addStretch(4)
+
+    def _button(self, text, object_name, callback):
+        button = QPushButton(text, self)
+        button.setObjectName(object_name)
+        button.setCursor(Qt.PointingHandCursor)
+        button.setMinimumHeight(38)
+        button.clicked.connect(callback)
+        return button
+
+    def set_theme(self, colors: dict, accent_color: str):
+        dark = QColor(colors["bg"]).lightness() < 128
+        accent = QColor(accent_color)
+        if not accent.isValid():
+            accent = QColor("#ff851b")
+        accent_text = "#111111" if accent.lightness() > 155 else "#ffffff"
+        accent_hover = (accent.lighter(112) if dark else accent.darker(108)).name()
+        accent_pressed = accent.darker(116).name()
+        muted = "#a8b0b8" if dark else "#476582"
+        subtle = "#7f8992" if dark else "#6b7280"
+        surface = "#34383c" if dark else "#f1f3f5"
+        hover = "#3d4247" if dark else "#e7ebee"
+        border = "#464c52" if dark else "#d9dee3"
+
+        self.setStyleSheet(f"""
+            QWidget#homePage {{ background: {colors['bg']}; }}
+            QWidget#homeHero {{ background: transparent; }}
+            QLabel#homeLogo {{ background: transparent; }}
+            QLabel#homeTitle {{ color: {colors['fg']}; font-size: 36px; font-weight: 700; }}
+            QLabel#homeSubtitle {{ color: {muted}; font-size: 15px; }}
+            QPushButton#primaryButton, QPushButton#secondaryButton {{ border-radius: 19px;
+                padding: 7px 18px; font-size: 13px; font-weight: 600; }}
+            QPushButton#primaryButton {{ color: {accent_text}; background: {accent.name()};
+                border: 1px solid {accent.name()}; }}
+            QPushButton#primaryButton:hover {{ background: {accent_hover}; }}
+            QPushButton#primaryButton:pressed {{ background: {accent_pressed}; }}
+            QPushButton#secondaryButton {{ color: {colors['fg']}; background: {surface};
+                border: 1px solid {border}; }}
+            QPushButton#secondaryButton:hover {{ background: {hover}; border-color: {accent.name()}; }}
+            QFrame#homeDivider {{ color: {border}; background: {border}; border: none;
+                max-height: 1px; margin: 14px 90px 4px 90px; }}
+            QLabel#recentTitle {{ color: {subtle}; font-size: 10px; font-weight: 700; }}
+            QLabel#recentLabel {{ color: {muted}; font-size: 13px; }}
+            QPushButton#linkButton {{ color: {accent.name()}; background: transparent; border: none;
+                padding: 3px 8px; min-width: 0; font-weight: 600; }}
+            QPushButton#linkButton:hover {{ color: {accent_hover}; }}
+            QPushButton#linkButton:disabled {{ color: {subtle}; }}
+            QLabel#homeTip {{ color: {subtle}; font-size: 11px; margin-top: 12px; }}
+        """)
+
+    def set_recently_closed(self, label: str, available: bool = True):
         self.recent_label.setText(label)
+        self.reopen_button.setEnabled(available)
 
 
 class HomePageStack:
@@ -68,6 +162,6 @@ class HomePageStack:
         self.widget.addWidget(self.homepage)
         self.widget.addWidget(self.notebook)
 
-    def refresh(self, show_notebook: bool, recent_label: str):
+    def refresh(self, show_notebook: bool, recent_label: str, recent_available: bool = True):
         self.widget.setCurrentWidget(self.notebook if show_notebook else self.homepage)
-        self.homepage.set_recently_closed(recent_label)
+        self.homepage.set_recently_closed(recent_label, recent_available)

@@ -3935,44 +3935,49 @@ Save before reloading?</source>
 <context>
     <name>HomePageWidget</name>
     <message>
-        <location filename="../../ui/homepage.py" line="23"/>
-        <source>Welcome to REasy</source>
-        <translation>欢迎使用 REasy</translation>
-    </message>
-    <message>
-        <location filename="../../ui/homepage.py" line="28"/>
-        <source>Start by opening a file or project.</source>
-        <translation>请先打开文件或项目。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/homepage.py" line="36"/>
-        <source>Open File…</source>
-        <translation>打开文件…</translation>
-    </message>
-    <message>
         <location filename="../../ui/homepage.py" line="37"/>
-        <source>New Project…</source>
-        <translation>新建项目…</translation>
+        <source>REasy Editor</source>
+        <translation>REasy 编辑器</translation>
     </message>
     <message>
-        <location filename="../../ui/homepage.py" line="38"/>
-        <source>Project Library...</source>
-        <translation>项目库...</translation>
+        <location filename="../../ui/homepage.py" line="43"/>
+        <source>Open files. Change things. Try not to anger the engine.</source>
+        <translation>打开文件，改点东西。尽量别惹恼引擎。</translation>
     </message>
     <message>
-        <location filename="../../ui/homepage.py" line="39"/>
-        <source>Reopen Last Closed</source>
-        <translation>重新打开上次关闭的文件</translation>
+        <location filename="../../ui/homepage.py" line="54"/>
+        <source>Open File</source>
+        <translation>打开文件</translation>
     </message>
     <message>
-        <location filename="../../ui/homepage.py" line="46"/>
+        <location filename="../../ui/homepage.py" line="56"/>
+        <source>New Project</source>
+        <translation>新建项目</translation>
+    </message>
+    <message>
+        <location filename="../../ui/homepage.py" line="59"/>
+        <source>Project Library</source>
+        <translation>项目库</translation>
+    </message>
+    <message>
+        <location filename="../../ui/homepage.py" line="72"/>
+        <source>RECENTLY CLOSED</source>
+        <translation>最近关闭</translation>
+    </message>
+    <message>
+        <location filename="../../ui/homepage.py" line="77"/>
         <source>No recently closed files yet.</source>
         <translation>暂无最近关闭的文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/homepage.py" line="51"/>
-        <source>Tip: you can drag and drop files directly into the window.</source>
-        <translation>提示：可将文件直接拖放到窗口中。</translation>
+        <location filename="../../ui/homepage.py" line="85"/>
+        <source>Reopen last closed  →</source>
+        <translation>重新打开上次关闭的文件  →</translation>
+    </message>
+    <message>
+        <location filename="../../ui/homepage.py" line="90"/>
+        <source>Tip: drag and drop a file anywhere in the window.</source>
+        <translation>提示：可将文件拖放到窗口中的任意位置。</translation>
     </message>
 </context>
 <context>

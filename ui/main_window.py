@@ -196,7 +196,7 @@ class REasyEditorApp(QMainWindow):
             recent_label = self.tr("Last closed: {filename}").format(
                 filename=os.path.basename(decoded_target)
             )
-        self.home_stack.refresh(show_notebook, recent_label)
+        self.home_stack.refresh(show_notebook, recent_label, bool(self._closed_file_history))
 
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
@@ -643,6 +643,7 @@ class REasyEditorApp(QMainWindow):
 
     def _apply_style(self, colors):
         self.setStyleSheet(get_main_stylesheet(colors))
+        self.home_widget.set_theme(colors, self._theme_accent_color().name())
 
     def _update_tab_viewers(self, dark_mode):
         for tab in self.tabs.values():
