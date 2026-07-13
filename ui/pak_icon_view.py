@@ -310,7 +310,7 @@ class PakThumbnailProvider(QObject):
 		self._mesh_renderer.close()
 
 	def _cache_path(self, path: str) -> Path:
-		key = hashlib.sha256(f"gl-v1:{self._signature}:{path.lower()}".encode()).hexdigest()
+		key = hashlib.sha256(f"gl-v3:{self._signature}:{path.lower()}".encode()).hexdigest()
 		return self._cache_dir / key[:2] / f"{key}.png"
 
 	def _on_ready(self, path: str, generation: int, result):

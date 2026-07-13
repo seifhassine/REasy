@@ -64,6 +64,11 @@ class PakEntry:
     def combined_hash(self) -> int:
         return ((self.hash_upper & 0xFFFFFFFF) << 32) | (self.hash_lower & 0xFFFFFFFF)
 
+    @property
+    def stored_size(self) -> int:
+        """Number of bytes occupied by this entry in the PAK."""
+        return int(self.compressed_size or self.decompressed_size)
+
 
 class PakFile:
     def __init__(self) -> None:
@@ -327,7 +332,7 @@ def _read_entry_raw(
 
     read_stream.seek(entry.offset)
     if entry.compression == 0:
-        size = int(entry.decompressed_size)
+        size = entry.stored_size
         
         buffer_size = min(size, 64 * 1024 * 1024)
         buffer = bytearray(buffer_size)

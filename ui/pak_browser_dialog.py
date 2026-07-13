@@ -171,6 +171,7 @@ class PakBrowserDialog(QDialog):
 		self._cached_show_valid = False
 		self._cached_show_unknown = False
 		self._cache_outdated = False
+		self._scanned_root = ""
 		self._loading_depth = 0
 		self.loading_label = QLabel(self)
 		self.loading_label.setStyleSheet(f"color: {self._highlight_color.name()}; font-weight: 600;")
@@ -211,7 +212,18 @@ class PakBrowserDialog(QDialog):
 		if not paks:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
 			return
-		
+
+		normalized_root = os.path.normcase(os.path.abspath(root))
+		if self._scanned_root and normalized_root != self._scanned_root:
+			# File lists and their resolved cache belong to a specific game. Keeping
+			# them across a folder switch makes the new reader resolve old-game paths.
+			self._thumbnail_provider.cancel_pending()
+			self._base_paths = []
+			self._all_manifest_paths = []
+			self._valid_paths = set()
+			self._cached_reader = None
+			self._icon_directory = ""
+		self._scanned_root = normalized_root
 
 		self._cache_outdated = True
 		old_paks = [self.pak_list.item(i).text() for i in range(self.pak_list.count())]

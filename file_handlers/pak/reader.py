@@ -580,7 +580,7 @@ class CachedPakReader(PakReader):
                                 with open(target_outp, "wb") as out_file:
                                     _read_entry_raw(e, pak_file, out_file, chunk_table=pak.chunk_table)
                         elif e.compression == 0 and e.encryption == 0:
-                            size = int(e.decompressed_size)
+                            size = e.stored_size
                             header = b""
                             if is_unknown:
                                 peek = min(64, size)
