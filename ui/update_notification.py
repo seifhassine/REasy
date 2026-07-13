@@ -1,5 +1,4 @@
 import threading
-import requests
 import os
 import subprocess
 import sys
@@ -27,8 +26,8 @@ class UpdateNotificationManager:
         self._update_check_timer = None
         self._auto_update_prompted = False
 
-        self._check_update_thread = threading.Thread(target=self.check_for_updates, daemon=True)
-        self._check_update_thread.start()
+        QTimer.singleShot(1000, lambda: threading.Thread(
+            target=self.check_for_updates, daemon=True).start())
 
         self._update_check_timer = QTimer(main_window)
         self._update_check_timer.timeout.connect(self._periodic_update_check)
@@ -38,6 +37,8 @@ class UpdateNotificationManager:
 
     def check_for_updates(self):
         try:
+            import requests
+
             resp = requests.get(
                 "https://api.github.com/repos/seifhassine/REasy/releases/latest",
                 timeout=5,

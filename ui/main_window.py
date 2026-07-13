@@ -4,9 +4,7 @@ import os
 import sys
 import weakref
 
-from file_handlers.factory import get_handler_for_data
-from file_handlers.msg.msg_handler import MsgHandler
-from file_handlers.rsz.rsz_handler import RszHandler
+from file_handlers.factory import get_handler_for_data, is_handler_type
 
 from ui.better_find_dialog import BetterFindDialog
 from ui.file_tab import FileTab, UNSAVED_CHANGES_STR
@@ -58,19 +56,26 @@ from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.homepage import HomePageStack, HomePageWidget
-from ui.scene.scn_scene_workspace import ScnSceneController
 from ui.scene.opengl_setup import create_surface_anchor
 from tools.hash_calculator import HashCalculator
 
-from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
 from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
 from ui.project_manager import (  # noqa: E402
     ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
 )
-from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog
 
 RECENTLY_CLOSED_FILES_LIMIT = 20
+
+
+class _LazySceneController:
+    def __init__(self, app):
+        self._app = app
+
+    def __getattr__(self, name):
+        from ui.scene.scn_scene_workspace import ScnSceneController
+        self._app.scenes = controller = ScnSceneController(self._app)
+        return getattr(controller, name)
 
 def set_app_icon(window):
     try:
@@ -137,7 +142,7 @@ class REasyEditorApp(QMainWindow):
         self._closed_file_history = [f for f in history if isinstance(f, str) and f][-RECENTLY_CLOSED_FILES_LIMIT:]
         self.recently_closed_menu = None
         self.scene_menu = None
-        self.scenes = ScnSceneController(self)
+        self.scenes = _LazySceneController(self)
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
@@ -442,7 +447,7 @@ class REasyEditorApp(QMainWindow):
         current_tab = self.get_active_tab()
         is_rsz = False
         if current_tab and hasattr(current_tab, 'handler'):
-            is_rsz = isinstance(current_tab.handler, RszHandler)
+            is_rsz = is_handler_type(current_tab.handler, "RszHandler")
         self.highlight_menu_controller.update_menu_visibility(is_rsz)
         self._update_general_shortcut_state()
 
@@ -599,6 +604,8 @@ class REasyEditorApp(QMainWindow):
         return dialog
 
     def open_pak_browser(self):
+        from ui.pak_browser_dialog import PakBrowserDialog
+
         self._show_singleton_dialog("_pak_browser", lambda: PakBrowserDialog(self))
 
     def open_file_list_generator(self):
@@ -607,6 +614,8 @@ class REasyEditorApp(QMainWindow):
         )
 
     def open_rsz_csv_extractor(self):
+        from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog
+
         dialog = RszCsvExtractorDialog(self, self.settings)
         dialog.exec()
 
@@ -674,7 +683,7 @@ class REasyEditorApp(QMainWindow):
         """Update handler settings from the application settings"""
         active_tabs = set(self.project_workspace.sessions.active_tabs())
         for tab in self.tabs.values():
-            if hasattr(tab, 'handler') and isinstance(tab.handler, RszHandler):
+            if hasattr(tab, 'handler') and is_handler_type(tab.handler, "RszHandler"):
                 tab.handler.set_advanced_mode(self.settings.get("show_rsz_advanced", True))
                 tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
                 if tab in active_tabs:
@@ -748,7 +757,7 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab for searching."))
             return
 
-        if isinstance(active.handler, MsgHandler):
+        if is_handler_type(active.handler, "MsgHandler"):
             QMessageBox.information(self, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
             return
 
@@ -864,7 +873,7 @@ class REasyEditorApp(QMainWindow):
                 if tab.notebook_widget:
                     tab.notebook_widget.deleteLater()
                 return None
-            if isinstance(getattr(tab, "handler", None), RszHandler):
+            if is_handler_type(getattr(tab, "handler", None), "RszHandler"):
                 RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else self.tr("Untitled")

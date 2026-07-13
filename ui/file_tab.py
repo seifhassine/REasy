@@ -15,9 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.factory import get_handler_for_data
-from file_handlers.msg.msg_handler import MsgHandler
-from file_handlers.rsz.rsz_handler import RszHandler
+from file_handlers.factory import get_handler_for_data, is_handler_type
 from services.backup_store import create_backup, find_backups
 from ui.better_find_dialog import BetterFindDialog
 from ui.highlight_delegate import HighlightDelegate
@@ -146,7 +144,7 @@ class FileTab:
         try:
             handler = handler or get_handler_for_data(data, self.filename or "")
 
-            if isinstance(handler, RszHandler):
+            if is_handler_type(handler, "RszHandler"):
                 handler.set_game_version(self.app.settings.get("game_version", "RE4"))
                 handler.show_advanced = self.app.settings.get("show_rsz_advanced", True)
                 handler.confirmation_prompt = self.app.settings.get("confirmation_prompt", True)
@@ -181,7 +179,7 @@ class FileTab:
             self.handler = self._prepare_handler(data, handler)
 
             try:
-                if isinstance(self.handler, RszHandler):
+                if is_handler_type(self.handler, "RszHandler"):
                     self.handler.read(data, validate_type_registry=self.app.settings.get("verify_rsz_crc_on_open", True))
                     if self.app and hasattr(self.app, "scenes"):
                         self.app.scenes.attach_tab_document(self, replace=replace_scene_document)
@@ -211,7 +209,7 @@ class FileTab:
                 self.viewer.modified_changed.connect(self._on_viewer_modified)
             else:
                 layout.addWidget(self.tree)
-                if not isinstance(self.handler, RszHandler):
+                if not is_handler_type(self.handler, "RszHandler"):
                     self.refresh_tree()
 
             if self.app and getattr(self.app, "status_bar", None):
@@ -528,7 +526,7 @@ class FileTab:
         return hit[1] if hit else None
 
     def open_find_dialog(self):
-        if isinstance(self.handler, MsgHandler):
+        if is_handler_type(self.handler, "MsgHandler"):
                 QMessageBox.information(self.notebook_widget, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
                 return
         parent_window = self.notebook_widget.window()

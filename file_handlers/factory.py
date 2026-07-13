@@ -1,46 +1,32 @@
-from file_handlers.uvar.uvar_handler import UvarHandler
-from file_handlers.rsz.rsz_handler import RszHandler
-from file_handlers.msg.msg_handler import MsgHandler
-from file_handlers.cfil.cfil_handler import CfilHandler
-from file_handlers.motbank.motbank_handler import MotbankHandler
-from file_handlers.mcambank.mcambank_handler import McambankHandler
-from file_handlers.tex.tex_handler import TexHandler
-from file_handlers.tex.dds_handler import DdsHandler
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mdf.mdf_handler import MdfHandler
-from file_handlers.base_handler import BaseFileHandler
-from file_handlers.sound.sound_handler import SoundHandler
-from file_handlers.uvs.uvs_handler import UvsHandler
-from file_handlers.rcol.rcol_handler import RcolHandler
-from file_handlers.clip.clip_handler import ClipHandler
-from file_handlers.wel.wel_handler import WelHandler
-from file_handlers.wcc.wcc_handler import WccHandler
-from file_handlers.fol.fol_handler import FolHandler
+from importlib import import_module
 
 
-def get_handler_for_data(data: bytes, filename: str = "") -> BaseFileHandler:
+_FORMATS = (
+    "uvar.uvar", "rsz.rsz", "msg.msg", "cfil.cfil", "motbank.motbank",
+    "mcambank.mcambank", "mdf.mdf", "tex.tex", "tex.dds", "mesh.mesh",
+    "sound.sound", "clip.clip", "uvs.uvs", "rcol.rcol", "fol.fol",
+)
+
+
+def is_handler_type(handler, class_name: str) -> bool:
+    return any(cls.__name__ == class_name for cls in type(handler).__mro__)
+
+
+def _handler_classes():
+    for path in _FORMATS:
+        module = import_module(f"file_handlers.{path}_handler")
+        yield getattr(module, f"{path.rsplit('.', 1)[1].title()}Handler")
+
+
+def get_handler_for_data(data: bytes, filename: str = ""):
     fn = filename.lower()
     if fn.endswith(".wel.11"):
+        from file_handlers.wel.wel_handler import WelHandler
         return WelHandler()
-    elif ".wcc" in fn:
+    if ".wcc" in fn:
+        from file_handlers.wcc.wcc_handler import WccHandler
         return WccHandler()
-    for handler_class in [
-        RszHandler,
-        MsgHandler,
-        UvarHandler,
-        CfilHandler,
-        MotbankHandler,
-        McambankHandler,
-        MdfHandler,
-        TexHandler,
-        DdsHandler,
-        MeshHandler,        
-        SoundHandler,
-        ClipHandler,
-        UvsHandler,
-        RcolHandler,
-        FolHandler,
-    ]:
+    for handler_class in _handler_classes():
         if handler_class.can_handle(data):
             return handler_class()
     raise ValueError("Unsupported file type")
