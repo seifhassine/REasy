@@ -2,10 +2,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
-import time
 from contextlib import contextmanager
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QPoint, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QSize
 
 
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
@@ -13,7 +12,8 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
 	QFileDialog, QLineEdit, QCheckBox, QInputDialog,
-	QMessageBox, QTreeView, QAbstractItemView, QMenu, QApplication
+	QMessageBox, QTreeView, QListView, QAbstractItemView, QMenu, QApplication,
+	QSlider, QStackedWidget, QStyle, QToolButton
 )
 
 from settings import DEFAULT_SETTINGS, load_settings
@@ -22,7 +22,8 @@ from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from ui.project_manager.constants import BASE_DIR
 from ui.project_manager.pak_file_lists import find_suggested_pak_list_paths_for_directory
-from ui.widgets_utils import create_list_file_help_widget
+from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
+from utils.app_paths import resource_path
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -61,6 +62,7 @@ class PakBrowserDialog(QDialog):
 		lay.addLayout(row2)
 		row2.addWidget(QLabel(self.tr("PAK files (ordered):")))
 		row2.addStretch(1)
+		row2.addWidget(QPushButton(self.tr("Load .list…"), clicked=self._load_list_file))
 		row2.addWidget(QPushButton(self.tr("Add PAK…"),   clicked=self._add_paks))
 		row2.addWidget(QPushButton(self.tr("Remove"),     clicked=self._remove_paks))
 		row2.addWidget(QPushButton(self.tr("Move Up"),    clicked=lambda: self._move_selected(-1)))
@@ -74,9 +76,10 @@ class PakBrowserDialog(QDialog):
 		lay.addLayout(mid)
 		mid.addWidget(QLabel(self.tr("Filter:")))
 		self.filter_edit = QLineEdit(self)
-		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex) - shows flat list; clear for tree view"))
+		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex)"))
 		self._filter_timer = QTimer(self)
 		self._filter_timer.setSingleShot(True)
+		self._filter_timer.setInterval(180)
 		self._filter_timer.timeout.connect(self._apply_filter_now)
 		self.filter_edit.textChanged.connect(self._on_filter_text_changed)
 		mid.addWidget(self.filter_edit, 1)
@@ -90,8 +93,21 @@ class PakBrowserDialog(QDialog):
 		self.show_only_valid_cb.toggled.connect(self._on_show_only_valid_toggled)
 		mid.addWidget(self.show_only_valid_cb)
 
-		list_container, _ = create_list_file_help_widget(button_callback=self._load_list_file)
-		mid.addLayout(list_container)
+		self.icon_size_slider = QSlider(Qt.Horizontal, self)
+		self.icon_size_slider.setRange(48, 160)
+		self.icon_size_slider.setValue(88)
+		self.icon_size_slider.setTracking(False)
+		self.icon_size_slider.setFixedWidth(90)
+		self.icon_size_slider.setToolTip(self.tr("Icon size"))
+		self.icon_size_slider.valueChanged.connect(self._set_icon_size)
+		self.icon_size_slider.hide()
+		mid.addWidget(self.icon_size_slider)
+		self.view_mode_btn = QToolButton(self)
+		self.view_mode_btn.setCheckable(True)
+		self.view_mode_btn.setAutoRaise(True)
+		self.view_mode_btn.toggled.connect(self._set_view_mode)
+		mid.addWidget(self.view_mode_btn)
+		self._update_view_mode_button(False)
 
 		self.tree = QTreeView(self)
 		self.tree.setUniformRowHeights(True)
@@ -101,7 +117,29 @@ class PakBrowserDialog(QDialog):
 		self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
 		self.tree.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
 		self.tree.viewport().customContextMenuRequested.connect(self._show_tree_context_menu)
-		lay.addWidget(self.tree, 3)
+		self.icon_view = QListView(self)
+		self.icon_view.setViewMode(QListView.IconMode)
+		self.icon_view.setResizeMode(QListView.Adjust)
+		self.icon_view.setMovement(QListView.Static)
+		self.icon_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		self._set_icon_size(self.icon_size_slider.value())
+		self.icon_view.setWordWrap(True)
+		self.icon_view.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
+		self.icon_view.viewport().customContextMenuRequested.connect(self._show_icon_context_menu)
+		self.icon_view.doubleClicked.connect(self._open_icon_entry)
+		self._thumbnail_provider = PakThumbnailProvider(thumbnail_cache_directory(), settings, self)
+		self._icon_model = PakIconModel(self._thumbnail_provider, self)
+		self.icon_view.setModel(self._icon_model)
+		self._thumbnail_timer = QTimer(self)
+		self._thumbnail_timer.setSingleShot(True)
+		self._thumbnail_timer.timeout.connect(self._request_visible_thumbnails)
+		self.icon_view.verticalScrollBar().valueChanged.connect(self._schedule_visible_thumbnails)
+		self.icon_view.horizontalScrollBar().valueChanged.connect(self._schedule_visible_thumbnails)
+		self._icon_directory = ""
+		self.view_stack = QStackedWidget(self)
+		self.view_stack.addWidget(self.tree)
+		self.view_stack.addWidget(self.icon_view)
+		lay.addWidget(self.view_stack, 3)
 		self._tree_model = None
 		self._flat_model: QStringListModel | None = None
 		self._flat_model_valid_only: QStringListModel | None = None
@@ -159,6 +197,7 @@ class PakBrowserDialog(QDialog):
 		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
 		if d:
 			self.dir_edit.setText(d)
+			self._scan_dir()
 			self._prompt_auto_list_from_directory(d)
 
 	def _scan_dir(self):
@@ -247,7 +286,7 @@ class PakBrowserDialog(QDialog):
 			self._recompute_display()
 
 	def _on_filter_text_changed(self, _=None):
-		self._filter_timer.start(120)
+		self._filter_timer.start()
 
 	def _apply_filter(self):
 		self._apply_filter_now()
@@ -260,6 +299,7 @@ class PakBrowserDialog(QDialog):
 			model.setHorizontalHeaderLabels([self.tr("Paths")])
 			self.tree.setModel(model)
 			self._tree_model = model
+			self._rebuild_icon_model()
 			return
 		
 		if text:
@@ -278,6 +318,7 @@ class PakBrowserDialog(QDialog):
 			self._filter_proxy.setFilterRegularExpression(pat)
 			self.tree.setModel(self._filter_proxy)
 			self._tree_model = None
+			self._rebuild_icon_model()
 			return
 		
 		if hasattr(self, '_cached_tree_model') and self._cached_tree_model:
@@ -285,6 +326,7 @@ class PakBrowserDialog(QDialog):
 				self._cached_show_unknown == self.show_unknown_cb.isChecked()):
 				self.tree.setModel(self._cached_tree_model)
 				self._tree_model = self._cached_tree_model
+				self._rebuild_icon_model()
 				return
 		
 		model = QStandardItemModel()
@@ -340,6 +382,7 @@ class PakBrowserDialog(QDialog):
 		self._cached_tree_model = model
 		self._cached_show_valid = self.show_only_valid_cb.isChecked()
 		self._cached_show_unknown = self.show_unknown_cb.isChecked()
+		self._rebuild_icon_model()
 
 
 	def _build_flat_models(self):
@@ -359,6 +402,96 @@ class PakBrowserDialog(QDialog):
 			self._flat_model_valid_only = QStringListModel(self)
 		self._flat_model_valid_only.setStringList(valid_only)
 		self._update_dump_button_visibility()
+
+	def _set_view_mode(self, icons: bool):
+		self.view_stack.setCurrentIndex(int(icons))
+		self.icon_size_slider.setVisible(icons)
+		self._update_view_mode_button(icons)
+		if icons:
+			self._rebuild_icon_model()
+
+	def _update_view_mode_button(self, icons: bool):
+		style = QApplication.style()
+		pixmap = QStyle.SP_FileDialogDetailedView if icons else QStyle.SP_FileDialogListView
+		self.view_mode_btn.setIcon(style.standardIcon(pixmap))
+		self.view_mode_btn.setToolTip(
+			self.tr("Switch to tree view") if icons else self.tr("Switch to icons view")
+		)
+
+	def _set_icon_size(self, size: int):
+		if not hasattr(self, "icon_view"):
+			return
+		self.icon_view.setIconSize(QSize(size, size))
+		self.icon_view.setGridSize(QSize(size + 32, size + 48))
+		self._schedule_visible_thumbnails()
+
+	def _schedule_visible_thumbnails(self):
+		if hasattr(self, "_thumbnail_timer") and self.view_stack.currentWidget() is self.icon_view:
+			self._thumbnail_timer.start(50)
+
+	def _request_visible_thumbnails(self):
+		viewport = self.icon_view.viewport()
+		step_x = max(24, self.icon_view.gridSize().width() // 2)
+		step_y = max(24, self.icon_view.gridSize().height() // 2)
+		indexes = {
+			self.icon_view.indexAt(QPoint(x, y))
+			for y in range(0, viewport.height() + step_y, step_y)
+			for x in range(0, viewport.width() + step_x, step_x)
+		}
+		for index in indexes:
+			if index.isValid() and not index.data(self._ITEM_IS_DIR_ROLE):
+				self._thumbnail_provider.request(index.data(self._ITEM_EXTRACT_PATH_ROLE))
+
+	def resizeEvent(self, event):
+		super().resizeEvent(event)
+		self._schedule_visible_thumbnails()
+
+	def closeEvent(self, event):
+		self._thumbnail_provider.close()
+		super().closeEvent(event)
+
+	def _rebuild_icon_model(self):
+		paths = list(self._iter_display_paths())
+		text = self.filter_edit.text().strip()
+		if text:
+			pattern = QRegularExpression(text)
+			if not pattern.isValid():
+				pattern = QRegularExpression(QRegularExpression.escape(text))
+			pattern.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
+			entries = [
+				PakIconEntry(p.rsplit("/", 1)[-1], p)
+				for p in paths if pattern.match(p).hasMatch()
+			]
+		else:
+			prefix = f"{self._icon_directory}/" if self._icon_directory else ""
+			directories: dict[str, PakIconEntry] = {}
+			files = []
+			for path in paths:
+				if prefix and not path.startswith(prefix):
+					continue
+				remainder = path[len(prefix):]
+				if "/" in remainder:
+					name = remainder.split("/", 1)[0]
+					folder = prefix + name
+					directories.setdefault(folder, PakIconEntry(name, folder, True))
+				elif remainder:
+					files.append(PakIconEntry(remainder, path))
+			entries = sorted(directories.values(), key=lambda e: e.label.lower())
+			entries += sorted(files, key=lambda e: e.label.lower())
+			if self._icon_directory:
+				entries.insert(0, PakIconEntry("..", self._icon_directory.rpartition("/")[0], True))
+		self._thumbnail_provider.set_source(
+			self._current_reader(), self._selected_paks(), self._base_paths
+		)
+		self._thumbnail_provider.cancel_pending()
+		self._icon_model.set_entries(entries)
+		self._schedule_visible_thumbnails()
+
+	def _open_icon_entry(self, index):
+		if not index.data(self._ITEM_IS_DIR_ROLE):
+			return
+		self._icon_directory = index.data(self._ITEM_EXTRACT_PATH_ROLE) or ""
+		self._rebuild_icon_model()
 
 	def _selected_paks(self) -> List[str]:
 		return [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
@@ -387,6 +520,8 @@ class PakBrowserDialog(QDialog):
 		if r is None or r.pak_file_priority != paks or self._cache_outdated:
 			r = CachedPakReader()
 			r.pak_file_priority = paks
+			if self._base_paths:
+				r.add_files(*self._base_paths)
 			self._cached_reader = r
 			self._cache_outdated = False
 		return r
@@ -405,7 +540,7 @@ class PakBrowserDialog(QDialog):
 				if known:
 					r.add_files(*known)
 			if r._cache is None or not getattr(r, "_cache_complete", True):
-				r.cache_entries(assign_paths=False)
+				r.cache_entries(assign_paths=bool(known))
 			elif known and had_cache:
 				r.assign_paths(known)
 		elif validate:
@@ -469,15 +604,17 @@ class PakBrowserDialog(QDialog):
 		self._apply_filter_now()
 
 	def _load_list_file(self):
-		path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)") )
+		path, _ = QFileDialog.getOpenFileName(
+			self,
+			self.tr("Open list file"),
+			str(resource_path("resources/data/lists")),
+			self.tr("List files (*.list *.txt);;All files (*)"),
+		)
 		if not path:
 			return
 		self._load_list_file_from_path(path)
 
 	def _load_list_file_from_path(self, path: str):
-		_profile = os.getenv("REASY_PROFILE", "0").lower() in ("1", "true", "yes", "on")
-		_sections = []
-		_t0 = time.perf_counter()
 		with self._loading(self.tr("Loading list file...")):
 			try:
 				with open(path, "r", encoding="utf-8") as f:
@@ -485,35 +622,14 @@ class PakBrowserDialog(QDialog):
 			except Exception as e:
 				QMessageBox.critical(self, self.tr("Read failed"), str(e))
 				return
-		_t1 = time.perf_counter()
-		if _profile:
-			_sections.append(("Read & normalize .list", ( _t1 - _t0 ) * 1000.0))
 
 		with self._loading(self.tr("Resolving list entries...")):
-			_t2a = time.perf_counter()
 			manifest_paths = self._auto_merge_manifest()
-			_t2b = time.perf_counter()
-			if _profile:
-				_sections.append(("Read manifest (if any)", ( _t2b - _t2a ) * 1000.0))
-			
-			merged = sorted(set(items) | set(p.lower() for p in manifest_paths))
-			self._base_paths = merged
-
-			_t3a = time.perf_counter()
+			self._base_paths = sorted(set(items) | {p.lower() for p in manifest_paths})
 			self._cached_reader = None
 			self._valid_paths = set()
 			self._cache_outdated = False
 			self._refresh_index()
-			_t3b = time.perf_counter()
-			if _profile:
-				_sections.append(("Refresh display/index", ( _t3b - _t3a ) * 1000.0))
-		_t4 = time.perf_counter()
-		if _profile:
-			_sections.append(("Build UI model", ( _t4 - _t3b ) * 1000.0))
-			_total = sum(ms for _, ms in _sections)
-			msg = "\n".join(f"{name}: {ms:.2f} ms" for name, ms in _sections)
-			msg += f"\nTotal: {_total:.2f} ms"
-			QMessageBox.information(self, self.tr("Profile – Load .list"), msg)
 
 	def _prompt_auto_list_from_directory(self, directory_path: str):
 		suggestions = find_suggested_pak_list_paths_for_directory(directory_path, BASE_DIR)
@@ -541,6 +657,11 @@ class PakBrowserDialog(QDialog):
 
 	def _collect_selected_paths(self) -> List[str]:
 		paths: List[str] = []
+		if self.view_stack.currentWidget() is self.icon_view:
+			for idx in self.icon_view.selectedIndexes():
+				if not idx.data(self._ITEM_IS_DIR_ROLE):
+					paths.append(idx.data(self._ITEM_EXTRACT_PATH_ROLE))
+			return paths
 		model = self.tree.model()
 		if model is None:
 			return paths
@@ -591,6 +712,30 @@ class PakBrowserDialog(QDialog):
 		prefix = folder_path + "/"
 		targets = [p for p in self._iter_display_paths() if p.startswith(prefix)]
 		self._extract(targets)
+
+	def _show_icon_context_menu(self, pos):
+		index = self.icon_view.indexAt(pos)
+		if not index.isValid():
+			if self._icon_directory and not self.filter_edit.text().strip():
+				menu = QMenu(self)
+				up = menu.addAction(self.tr("Up"))
+				if menu.exec(self.icon_view.viewport().mapToGlobal(pos)) == up:
+					self._icon_directory = self._icon_directory.rpartition("/")[0]
+					self._rebuild_icon_model()
+			return
+		if not index.data(self._ITEM_IS_DIR_ROLE):
+			return
+		folder = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		menu = QMenu(self)
+		open_action = menu.addAction(self.tr("Open Folder"))
+		extract_action = None if index.data(Qt.DisplayRole) == ".." else menu.addAction(self.tr("Extract Folder"))
+		chosen = menu.exec(self.icon_view.viewport().mapToGlobal(pos))
+		if chosen == open_action:
+			self._icon_directory = folder
+			self._rebuild_icon_model()
+		elif extract_action is not None and chosen == extract_action:
+			prefix = folder + "/"
+			self._extract([p for p in self._iter_display_paths() if p.startswith(prefix)])
 
 	def _update_dump_button_visibility(self):
 		show = (self.show_only_valid_cb.isChecked() and 

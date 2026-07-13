@@ -155,20 +155,9 @@ class ChangelogDialog(QDialog):
 
         changes = [
             ("New", self.tr("CLIP/TML/UCURVE full support.")),
-            ("New", self.tr("Project library, replacing the old file system picker for browsing projects.")),
-            ("New", self.tr("Multi-project mode, allowing user to open and edit multiple projects at the same time.")),
-            ("New", self.tr("Support for Onimusha Way of the Sword Demo and Pragmata full release.")),
             ("Updated", self.tr("DD2, RE9 and Onimusha WOTS RSZ dumps and enums (<a href=https://github.com/kagenocookie>shadowcookie</a>)).")),
-            ("Updated", self.tr("RSZ dumps, file lists and enums of most other games.")),
             ("Improved", self.tr("Floats will now no longer use scientific notation.")),
-            ("Improved", self.tr("RSZ json will now be autodetected when opening projects.")),
-            ("Improved", self.tr("UI improvements for UVS.")),
-            ("Improved", self.tr("Better performance and coverage for file list generator, as well as a new tex/mdf/mesh mode.")),
-            ("Improved", self.tr("Better load speed for new and existing projects.")),
             ("Fixed", self.tr("Fixed bad aspect ratio of right-side preview in UVS files.")),
-            ("Fixed", self.tr("File list was not updating correctly in PAK Browser even when selecting a different list or toggling valid files/unknown files.")),
-            ("Fixed", self.tr("Fuzzy 3D text for bone names in mesh preview.")),
-            ("Fixed", self.tr("An issue with floats changing values without edits on systems with different locales (comma vs dot).")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)

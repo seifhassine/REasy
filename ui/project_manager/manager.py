@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import re
 import shutil
 from pathlib import Path
 from time import monotonic
@@ -36,7 +37,6 @@ from PySide6.QtCore import qInstallMessageHandler
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from file_handlers.pak.utils import guess_extension_from_header, filepath_hash
-from ui.widgets_utils import create_list_file_help_label
 
 def _custom_message_handler(mode, ctx, msg):
     if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
@@ -47,6 +47,13 @@ def _custom_message_handler(mode, ctx, msg):
 
 _prev_handler = qInstallMessageHandler(_custom_message_handler)
 ADD_TO_PROJECT_TITLE = QT_TRANSLATE_NOOP("ProjectManager", "Add to project")
+
+def _actual_mesh_path(path: str) -> str:
+    """Map an auxiliary streaming mesh path to its loadable mesh path."""
+    return re.sub(
+        r"(?i)(^|[\\/])streaming[\\/](?=(?:[^\\/]+[\\/])*[^\\/]*\.mesh(?:\.[^\\/]*)?$)",
+        r"\1", path, count=1,
+    )
 
 def _safe_path(path, root=None):
     try:
@@ -239,10 +246,6 @@ class ProjectManager(QDockWidget):
         pak_bar.addWidget(self.pak_list_edit, 1)
         pak_bar.addStretch(1)
         self._update_path_label()
-
-        self.list_help_label = create_list_file_help_label()
-        self.list_help_label.setAlignment(Qt.AlignRight)
-        lay.addWidget(self.list_help_label)
 
         # Project label
         self.project_label = QLabel(self.tr("<i>No project open</i>"))
@@ -639,8 +642,6 @@ class ProjectManager(QDockWidget):
     def _update_pak_controls_state(self):
         on_pak = (self._active_tab == "pak")
         widgets_to_control = [self.pak_ignore_mods_cb, self.btn_scan_paks, self.btn_load_list, self.pak_list_edit, self.pak_filter_label, self.pak_filter_edit]
-        if self.list_help_label:
-            widgets_to_control.append(self.list_help_label)
         for w in widgets_to_control:
             w.setVisible(on_pak)
             w.setEnabled(on_pak and self.tree_pak.isEnabled())
@@ -1255,6 +1256,7 @@ class ProjectManager(QDockWidget):
         if not self.tree_pak.isEnabled() or not self._pak_selected_paks:
             return False
         try:
+            path = _actual_mesh_path(path)
             self._warn_if_project_copy_exists(path, pak=True)
             r = self._ensure_project_pak_reader()
             stream = r.get_file(path)
@@ -1422,6 +1424,9 @@ class ProjectManager(QDockWidget):
             self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
 
     def _open_in_editor(self, path, *, warn_project_copy: bool = False):
+        actual_mesh_path = _actual_mesh_path(os.fspath(path))
+        if actual_mesh_path != os.fspath(path) and os.path.isfile(actual_mesh_path):
+            path = actual_mesh_path
         if os.path.isfile(path):
             try:
                 if warn_project_copy:

@@ -46,7 +46,7 @@ from OpenGL.GL import (
     glVertexPointer,
 )
 from OpenGL.GL.shaders import compileProgram, compileShader
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import QObject, Qt, Signal, QTimer
 from PySide6.QtGui import QFontMetrics, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -70,6 +70,7 @@ from file_handlers.tex.texture_quality import (
 )
 from settings import save_settings
 from ui.scene.mesh_scene import build_mesh_scene
+from ui.scene.scene_buffers import mesh_bounds_points
 from .material_resolver import MeshMaterialBinding, MeshMaterialResolver
 
 BONE_LABEL_VERTEX_SHADER = """
@@ -643,3 +644,92 @@ class _MeshGLWidget(ScenePreviewWidget):
         glEnable(GL_CULL_FACE)
         if self.lighting_mode == "fixed":
             glEnable(GL_LIGHTING)
+
+
+class MeshThumbnailRenderer(QObject):
+    """Queue hidden framebuffer captures through the regular mesh renderer."""
+
+    rendered = Signal(object, QImage)
+
+    def __init__(
+        self, settings: dict | None = None, size: int = 160,
+        widget_parent=None, parent=None,
+    ):
+        super().__init__(parent)
+        self._settings = settings if isinstance(settings, dict) else {}
+        self._size = size
+        self._widget_parent = widget_parent
+        self._queue = deque()
+        self._widget: ScenePreviewWidget | None = None
+        self._token = None
+
+    def enqueue(self, token, mesh, profiles, images):
+        self._queue.append((token, mesh, profiles, images))
+        if self._token is None:
+            QTimer.singleShot(0, self._start_next)
+
+    def cancel(self):
+        self._queue.clear()
+        self._token = None
+        if self._widget is not None:
+            self._widget.hide()
+
+    def close(self):
+        self.cancel()
+        if self._widget is not None:
+            self._widget.close()
+            self._widget.deleteLater()
+            self._widget = None
+
+    def _start_next(self):
+        if self._token is not None or not self._queue:
+            return
+        self._token, mesh, profiles, images = self._queue.popleft()
+        widget = self._ensure_widget()
+        widget.show()
+        scene = build_mesh_scene(mesh)
+        widget.set_scene(scene)
+        points = mesh_bounds_points(scene)
+        if len(points):
+            mins, maxs = points.min(axis=0), points.max(axis=0)
+            widget.center = (mins + maxs) * .5
+            widget.scale = 1.0 / max(float(np.max(maxs - mins)), 1e-6)
+            widget.distance = 1.55
+        widget.rot_y = -25.0
+        widget.set_material_profiles(profiles)
+        widget.set_material_images(images)
+        QTimer.singleShot(0, self._capture)
+
+    def _ensure_widget(self):
+        if self._widget is not None:
+            return self._widget
+        widget = ScenePreviewWidget(
+            self._widget_parent,
+            controls="mesh",
+            settings=self._settings,
+            initial_rotation=(0.0, 0.0),
+            initial_distance=3.0,
+            background=(0.1, 0.1, 0.1, 1.0),
+        )
+        widget.color_source = (
+            "vertex" if self._settings.get("mesh_viewer_use_vertex_colors", False) else ""
+        )
+        if self._widget_parent is None:
+            widget.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
+            widget.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        widget.setAttribute(Qt.WA_DontShowOnScreen, True)
+        widget.resize(self._size, self._size)
+        widget.show_bone_labels = False
+        widget.show()
+        self._widget = widget
+        return widget
+
+    def _capture(self):
+        widget, token = self._widget, self._token
+        if widget is None or token is None:
+            return
+        image = widget.grabFramebuffer()
+        widget.hide()
+        self._token = None
+        self.rendered.emit(token, image.copy() if not image.isNull() else QImage())
+        QTimer.singleShot(0, self._start_next)
