@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QRadioButton, QDialo
 
 class SelectSourceDialog(QDialog):
     def __init__(self, parent, game_name: str,
-                 unpacked_checked: bool = True,
-                 paks_checked: bool = False):
+                 unpacked_checked: bool = False,
+                 paks_checked: bool = True):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Project Source"))
         self._rb_unpacked = QRadioButton(self.tr("Unpacked game directory (natives/*)"))
@@ -29,7 +29,7 @@ class SelectSourceDialog(QDialog):
 
     @staticmethod
     def prompt(parent, game_name: str,
-               unpacked_checked: bool = True,
-               paks_checked: bool = False) -> bool | None:
+               unpacked_checked: bool = False,
+               paks_checked: bool = True) -> bool | None:
         dlg = SelectSourceDialog(parent, game_name, unpacked_checked, paks_checked)
         return dlg.choose_paks() if dlg.exec() == QDialog.Accepted else None

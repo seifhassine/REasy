@@ -466,7 +466,7 @@ class REasyEditorApp(QMainWindow):
         if not game:
             return
 
-        choose_paks = SelectSourceDialog.prompt(self, game, unpacked_checked=True, paks_checked=False)
+        choose_paks = SelectSourceDialog.prompt(self, game)
         if choose_paks is None:
             return
 
