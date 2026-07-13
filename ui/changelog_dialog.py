@@ -154,10 +154,18 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", self.tr("CLIP/TML/UCURVE full support.")),
-            ("Updated", self.tr("DD2, RE9 and Onimusha WOTS RSZ dumps and enums (<a href=https://github.com/kagenocookie>shadowcookie</a>)).")),
-            ("Improved", self.tr("Floats will now no longer use scientific notation.")),
-            ("Fixed", self.tr("Fixed bad aspect ratio of right-side preview in UVS files.")),
+            ("New", self.tr("SCN scene viewing and editing, with synchronized previews and source-backed changes.")),
+            ("New", self.tr("Light-probe (LPRB/PRB) parsing and scene previews. Currently, only positional editing of the entire probe grid is supported.")),
+            ("New", self.tr("An icon view for the PAK Browser, including mesh thumbnails.")),
+            ("Updated", self.tr("A refreshed dark interface, welcome page, and default color scheme based on the REasy logo.")),
+            ("Updated", self.tr("Completed Simplified Chinese translation and improved localization throughout the application.")),
+            ("Updated", self.tr("RSZ dumps and file lists for RE9, MHST3, MHWilds, Pragmata, Onimusha WOTS, Kunitsu-Gami, RE2, RE4, RE8, SF6, and other games.")),
+            ("Improved", self.tr("Faster startup, scene and project tabs, GDeflate texture previews, and file-extension dumping.")),
+            ("Improved", self.tr("File-list generation with a new discovery mode and better texture, MDF, and mesh coverage.")),
+            ("Improved", self.tr("PAK and project browsing, including better list loading and support for edge-case RE2 PAK files.")),
+            ("Improved", self.tr("Scene and mesh previews with quality modes, vertex-color controls, and broader game compatibility.")),
+            ("Fixed", self.tr("CLIP compatibility across multiple versions and RSZ embedded-userdata edge cases in older games.")),
+            ("Fixed", self.tr("Mesh preview crashes, scene texture color issues, RCOL controls, Onimusha WOTS textures, and edited-file reloads.")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)

@@ -1459,116 +1459,101 @@ material information on collision shapes for backward compatibility.</source>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="157"/>
-        <source>CLIP/TML/UCURVE full support.</source>
-        <translation>完整支持 CLIP/TML/UCURVE。</translation>
+        <source>SCN scene viewing and editing, with synchronized previews and source-backed changes.</source>
+        <translation>SCN 场景查看与编辑，支持同步预览和基于源文件的修改。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="158"/>
-        <source>Project library, replacing the old file system picker for browsing projects.</source>
-        <translation>新增项目库，取代旧的文件系统选择器来浏览项目。</translation>
+        <source>Light-probe (LPRB/PRB) parsing and scene previews. Currently, only positional editing of the entire probe grid is supported.</source>
+        <translation>光照探针 (LPRB/PRB) 解析与场景预览。目前仅支持对整个探针网格进行位置编辑。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="159"/>
-        <source>Multi-project mode, allowing user to open and edit multiple projects at the same time.</source>
-        <translation>新增多项目模式，可同时打开和编辑多个项目。</translation>
+        <source>An icon view for the PAK Browser, including mesh thumbnails.</source>
+        <translation>PAK 浏览器新增图标视图，包括网格缩略图。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="160"/>
-        <source>Support for Onimusha Way of the Sword Demo and Pragmata full release.</source>
-        <translation>支持 Onimusha Way of the Sword Demo 和 Pragmata 正式版。</translation>
+        <source>A refreshed dark interface, welcome page, and default color scheme based on the REasy logo.</source>
+        <translation>焕新的深色界面和欢迎页，并采用基于 REasy 徽标的默认配色。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="161"/>
-        <source>DD2, RE9 and Onimusha WOTS RSZ dumps and enums (&lt;a href=https://github.com/kagenocookie&gt;shadowcookie&lt;/a&gt;)).</source>
-        <translation>更新了 DD2、RE9 和 Onimusha WOTS 的 RSZ 转储与枚举（&lt;a href=https://github.com/kagenocookie&gt;shadowcookie&lt;/a&gt;）。</translation>
+        <source>Completed Simplified Chinese translation and improved localization throughout the application.</source>
+        <translation>完成了简体中文翻译，并改进了整个应用程序的本地化。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="162"/>
-        <source>RSZ dumps, file lists and enums of most other games.</source>
-        <translation>更新了大多数其他游戏的 RSZ 转储、文件列表和枚举。</translation>
+        <source>RSZ dumps and file lists for RE9, MHST3, MHWilds, Pragmata, Onimusha WOTS, Kunitsu-Gami, RE2, RE4, RE8, SF6, and other games.</source>
+        <translation>更新了 RE9、MHST3、MHWilds、Pragmata、Onimusha WOTS、Kunitsu-Gami、RE2、RE4、RE8、SF6 及其他游戏的 RSZ 转储和文件列表。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="163"/>
-        <source>Floats will now no longer use scientific notation.</source>
-        <translation>浮点数现在不再使用科学计数法。</translation>
+        <source>Faster startup, scene and project tabs, GDeflate texture previews, and file-extension dumping.</source>
+        <translation>提升了启动、场景和项目标签页、GDeflate 纹理预览以及文件扩展名转储的性能。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="164"/>
-        <source>RSZ json will now be autodetected when opening projects.</source>
-        <translation>打开项目时将自动检测 RSZ JSON。</translation>
+        <source>File-list generation with a new discovery mode and better texture, MDF, and mesh coverage.</source>
+        <translation>文件列表生成器新增发现模式，并提高了纹理、MDF 和网格的覆盖范围。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="165"/>
-        <source>UI improvements for UVS.</source>
-        <translation>改进了 UVS 界面。</translation>
+        <source>PAK and project browsing, including better list loading and support for edge-case RE2 PAK files.</source>
+        <translation>改进了 PAK 和项目浏览，包括更好的列表加载以及对特殊 RE2 PAK 文件的支持。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="166"/>
-        <source>Better performance and coverage for file list generator, as well as a new tex/mdf/mesh mode.</source>
-        <translation>提升了文件列表生成器的性能和覆盖范围，并新增 tex/mdf/mesh 模式。</translation>
+        <source>Scene and mesh previews with quality modes, vertex-color controls, and broader game compatibility.</source>
+        <translation>场景和网格预览新增质量模式、顶点颜色控制，并扩展了游戏兼容性。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="167"/>
-        <source>Better load speed for new and existing projects.</source>
-        <translation>提升了新项目和现有项目的加载速度。</translation>
+        <source>CLIP compatibility across multiple versions and RSZ embedded-userdata edge cases in older games.</source>
+        <translation>修复了多个版本的 CLIP 兼容性问题，以及旧版游戏中的 RSZ 嵌入式用户数据特殊情况。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="168"/>
-        <source>Fixed bad aspect ratio of right-side preview in UVS files.</source>
-        <translation>修复了 UVS 文件右侧预览的宽高比错误。</translation>
+        <source>Mesh preview crashes, scene texture color issues, RCOL controls, Onimusha WOTS textures, and edited-file reloads.</source>
+        <translation>修复了网格预览崩溃、场景纹理颜色、RCOL 控件、Onimusha WOTS 纹理以及已编辑文件重新加载等问题。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="169"/>
-        <source>File list was not updating correctly in PAK Browser even when selecting a different list or toggling valid files/unknown files.</source>
-        <translation>修复了在 PAK 浏览器中选择不同列表或切换有效/未知文件时，文件列表未正确更新的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="170"/>
-        <source>Fuzzy 3D text for bone names in mesh preview.</source>
-        <translation>修复了网格预览中骨骼名称的 3D 文本模糊问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="171"/>
-        <source>An issue with floats changing values without edits on systems with different locales (comma vs dot).</source>
-        <translation>修复了在使用不同区域设置（逗号与点）的系统上，浮点数未经编辑却发生变化的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="181"/>
+        <location filename="../../ui/changelog_dialog.py" line="178"/>
         <source>⭐ Star on GitHub</source>
         <translation>⭐ 在 GitHub 上加星</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="188"/>
+        <location filename="../../ui/changelog_dialog.py" line="185"/>
         <source>View release notes…</source>
         <translation>查看发行说明…</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="190"/>
+        <location filename="../../ui/changelog_dialog.py" line="187"/>
         <source>Let’s go!</source>
         <translation>开始吧！</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="208"/>
+        <location filename="../../ui/changelog_dialog.py" line="205"/>
         <source>New</source>
         <translation>新增</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="209"/>
+        <location filename="../../ui/changelog_dialog.py" line="206"/>
         <source>Updated</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="210"/>
+        <location filename="../../ui/changelog_dialog.py" line="207"/>
         <source>Improved</source>
         <translation>改进</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="211"/>
+        <location filename="../../ui/changelog_dialog.py" line="208"/>
         <source>Fixed</source>
         <translation>修复</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="212"/>
+        <location filename="../../ui/changelog_dialog.py" line="209"/>
         <source>Planned</source>
         <translation>计划</translation>
     </message>
