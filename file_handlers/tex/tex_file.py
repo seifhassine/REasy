@@ -198,10 +198,22 @@ class TexFile:
         self.mips = [MipHeader(*unpack_from("<qii", data, pos + index * 16)) for index in range(total)]
         self.packed_mips.clear()
 
-        if self.uses_packed_mips and self.mips:
+        if self.uses_packed_mips and self.mips and not self._has_unpacked_mip_payload():
             self._read_packed_mip_headers(total)
 
         return True
+
+    def _has_unpacked_mip_payload(self) -> bool:
+        """Return whether the declared mip ranges form the complete file payload."""
+        if not self.mips:
+            return False
+
+        expected_offset = self.mips[0].offset
+        for mip in self.mips:
+            if mip.size <= 0 or mip.offset != expected_offset:
+                return False
+            expected_offset += mip.size
+        return expected_offset == len(self._data)
 
     def _read_packed_mip_headers(self, total: int) -> bool:
         table_offset = self.mips[0].offset
@@ -216,17 +228,23 @@ class TexFile:
         if max_payload < 0:
             return False
 
-        prev_offset = -1
-        for index, cmip in enumerate(candidate):
+        expected_offset = 0
+        for cmip, mip in zip(candidate, self.mips):
             if (
-                cmip.size < 0
-                or cmip.offset < 0
-                or (index == 0 and cmip.offset != 0)
-                or cmip.offset < prev_offset
+                cmip.size <= 0
+                or cmip.offset != expected_offset
                 or cmip.offset + cmip.size > max_payload
             ):
                 return False
-            prev_offset = cmip.offset
+            start = packed_payload_offset + cmip.offset
+            chunk = self._data[start:start + cmip.size]
+            if not is_gdeflate_payload(chunk) and cmip.size != mip.size:
+                return False
+            expected_offset += cmip.size
+
+        # Packed mip chunks fill the payload contiguously.
+        if expected_offset != max_payload:
+            return False
 
         self.packed_mips = candidate
         return True

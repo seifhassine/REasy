@@ -193,6 +193,13 @@ def decode_texture_data(dxgi_format: int, width: int, height: int, data: bytes) 
     if width <= 0 or height <= 0:
         raise ValueError("Invalid texture dimensions")
 
+    expected_input_size = top_mip_size_bytes(dxgi_format, width, height)
+    if len(data) < expected_input_size:
+        raise ValueError(
+            f"Texture payload is truncated: {len(data)} bytes "
+            f"(expected at least {expected_input_size})"
+        )
+
     if decoder_name := _BC_DECODERS.get(dxgi_format):
         module = _get_texture2ddecoder()
         if module is None:
