@@ -18,6 +18,7 @@ if /I "%GITHUB_ACTIONS%"=="true" (
 )
 
 "%PY%" -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
+  --collect-submodules file_handlers ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
   --hidden-import fast_string_scan --collect-binaries fast_string_scan ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
