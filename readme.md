@@ -1,4 +1,4 @@
-# REasy Editor v0.7.1 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
+# REasy Editor v0.7.2 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -143,7 +143,7 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @don on Discord for helping out with .exe debugging related stuff.
 
-@shadowcookie for consulting with misc. stuff as well as many updated file format structures. 
+@shadowcookie for consulting with misc. stuff as well as many updated file format structures (REE Lib). 
 
 @Ekey - PAK file decryption algorithms
 
