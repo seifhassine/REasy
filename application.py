@@ -15,6 +15,7 @@ from i18n.language_manager import LanguageManager
 from settings import load_settings
 from utils.app_paths import application_root
 from utils.native_build import ensure_fastmesh, ensure_fast_pakresolve
+from ui.scene.opengl_setup import configure_default_surface_format
 
 
 def _configure_garbage_collector() -> None:
@@ -56,12 +57,15 @@ def main(argv=None) -> int:
     _configure_garbage_collector()
     _prepare_native_modules()
 
-    # Import after native preparation because PAK modules use the native hash helper.
-    from ui.main_window import REasyEditorApp
-
     QLocale.setDefault(QLocale.c())
+    # QSurfaceFormat defaults must be selected before QApplication on platforms
+    # where OpenGL context sharing and pixel formats are fixed at startup.
+    configure_default_surface_format()
     app = QApplication(argv)
     app.setStyle(QStyleFactory.create("Fusion"))
+
+    # Import after native preparation because PAK modules use the native hash helper.
+    from ui.main_window import REasyEditorApp
 
     settings = load_settings()
     _compile_translation_if_needed(settings)

@@ -59,6 +59,7 @@ from ui.directory_search import search_directory_for_type
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.homepage import HomePageStack, HomePageWidget
 from ui.scene.scn_scene_workspace import ScnSceneController
+from ui.scene.opengl_setup import create_surface_anchor
 from tools.hash_calculator import HashCalculator
 
 from ui.pak_browser_dialog import PakBrowserDialog  # noqa: E402
@@ -102,6 +103,9 @@ class REasyEditorApp(QMainWindow):
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
+        # This child must exist before the main window is first shown. Otherwise
+        # Qt recreates the native window when the first mesh preview is opened.
+        self._opengl_surface_anchor = create_surface_anchor(central_widget)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)

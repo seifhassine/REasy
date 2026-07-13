@@ -126,7 +126,7 @@ from OpenGL.GL import (
 )
 from OpenGL.GLU import gluPerspective, gluProject
 from PySide6.QtCore import QEvent, QTimer, Qt, Signal, Slot
-from PySide6.QtGui import QCursor, QImage, QSurfaceFormat
+from PySide6.QtGui import QCursor, QImage
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel, QSpinBox, QToolButton, QVBoxLayout, QWidget
 
@@ -139,6 +139,7 @@ from file_handlers.tex.texture_quality import (
 )
 from settings import save_settings
 from ui.opengl_camera import OrbitCameraMixin
+from .opengl_setup import mesh_surface_format
 from .freecam_controller import FreecamController
 from .scene_buffers import (
     SceneBufferSet,
@@ -229,14 +230,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         initial_distance: float = 8.0,
         background: tuple[float, float, float, float] = (0.08, 0.08, 0.08, 1.0),
     ):
-        fmt = QSurfaceFormat()
-        fmt.setDepthBufferSize(24)
-        fmt.setAlphaBufferSize(0)
-        fmt.setSwapInterval(0)
-        fmt.setVersion(2, 1)
-        fmt.setProfile(QSurfaceFormat.CompatibilityProfile)
-        fmt.setRenderableType(QSurfaceFormat.OpenGL)
-        QSurfaceFormat.setDefaultFormat(fmt)
+        fmt = mesh_surface_format()
         super().__init__(parent)
         self.setFormat(fmt)
 
