@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtWidgets import QFileDialog
+
+from utils.app_paths import resource_path
+
 DEFAULT_PAK_FILE_LISTS: dict[str, str] = {
     "DD2": "DD2_STM.list",
     "DMC5": "DMC5_STM.list",
@@ -43,6 +47,18 @@ DIRECTORY_NAME_PAK_LIST_SUGGESTIONS: dict[str, tuple[str, ...]] = {
     "Resident Evil Village BIOHAZARD VILLAGE": ("RE8_STM.list",),
     "Street Fighter 6": ("SF6_STM.list",),
 }
+
+def choose_pak_list_file(parent) -> str:
+    return QFileDialog.getOpenFileName(
+        parent, parent.tr("Open list file"), str(resource_path("resources/data/lists")),
+        parent.tr("List files (*.list *.txt);;All files (*)"),
+    )[0]
+
+def read_pak_list_file(path: str | Path) -> list[str]:
+    with Path(path).open("r", encoding="utf-8") as f:
+        return list(dict.fromkeys(
+            item for line in f if (item := line.strip().replace("\\", "/").lower())
+        ))
 
 def find_default_pak_list_path(game: str | None, base_dir: Path) -> Path | None:
     if not game:

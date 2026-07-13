@@ -21,9 +21,10 @@ from settings import DEFAULT_SETTINGS, load_settings
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from ui.project_manager.constants import BASE_DIR
-from ui.project_manager.pak_file_lists import find_suggested_pak_list_paths_for_directory
+from ui.project_manager.pak_file_lists import (
+	choose_pak_list_file, find_suggested_pak_list_paths_for_directory, read_pak_list_file,
+)
 from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
-from utils.app_paths import resource_path
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -604,12 +605,7 @@ class PakBrowserDialog(QDialog):
 		self._apply_filter_now()
 
 	def _load_list_file(self):
-		path, _ = QFileDialog.getOpenFileName(
-			self,
-			self.tr("Open list file"),
-			str(resource_path("resources/data/lists")),
-			self.tr("List files (*.list *.txt);;All files (*)"),
-		)
+		path = choose_pak_list_file(self)
 		if not path:
 			return
 		self._load_list_file_from_path(path)
@@ -617,8 +613,7 @@ class PakBrowserDialog(QDialog):
 	def _load_list_file_from_path(self, path: str):
 		with self._loading(self.tr("Loading list file...")):
 			try:
-				with open(path, "r", encoding="utf-8") as f:
-					items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
+				items = read_pak_list_file(path)
 			except Exception as e:
 				QMessageBox.critical(self, self.tr("Read failed"), str(e))
 				return

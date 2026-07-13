@@ -18,7 +18,7 @@ from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_pac
 from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate   import _ActionsDelegate, _PakActionsDelegate
 from .trees      import _DndTree, _DropTree
-from .pak_file_lists import find_default_pak_list_path
+from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
 from .project_config import (
     load_project_config,
     project_config_path,
@@ -900,7 +900,7 @@ class ProjectManager(QDockWidget):
             self._rebuild_pak_index()
 
     def _choose_pak_list(self):
-        path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)"))
+        path = choose_pak_list_file(self)
         if not path:
             return
         self._load_pak_list_file(path)
@@ -911,15 +911,7 @@ class ProjectManager(QDockWidget):
             list_path = _safe_path(path)
             if list_path is None:
                 raise OSError(self.tr("Invalid list file path."))
-            with list_path.open("r", encoding="utf-8") as f:
-                seen: set[str] = set()
-                items: list[str] = []
-                for ln in f:
-                    item = ln.strip().replace("\\", "/").lower()
-                    if not item or item in seen:
-                        continue
-                    seen.add(item)
-                    items.append(item)
+            items = read_pak_list_file(list_path)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Read failed"), str(e))
             return
