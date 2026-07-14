@@ -125,10 +125,22 @@ from OpenGL.GL import (
     glViewport,
 )
 from OpenGL.GLU import gluPerspective, gluProject
-from PySide6.QtCore import QEvent, QTimer, Qt, Signal, Slot
+from PySide6.QtCore import QEvent, QThreadPool, QTimer, Qt, Signal, Slot
 from PySide6.QtGui import QCursor, QImage
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel, QSpinBox, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QSpinBox,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from file_handlers.tex.qt_image_utils import TexPreviewUpload
 from file_handlers.tex.texture_quality import (
@@ -154,6 +166,12 @@ from .scene_buffers import (
     transform_points,
 )
 from .lightprobe_preview import SceneLightProbeSet
+from .lightprobe_shading import (
+    ProbeShadeInput,
+    ProbeShadeRequest,
+    ProbeShadeWorker,
+    snapshot_probe_boxes,
+)
 from .scene_model import SceneDrawMesh
 from .viewport_overlay import ViewportOverlayManager
 
@@ -297,6 +315,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._probe_viz_candidate_indices_cache: np.ndarray | None = None
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache: tuple[np.ndarray, np.ndarray] | None = None
+        self._probe_shade_pool = QThreadPool(self)
+        self._probe_shade_pool.setMaxThreadCount(1)
+        self._probe_shade_worker: ProbeShadeWorker | None = None
+        self._probe_shade_job_id = 0
+        self._probe_shade_result: tuple[tuple, dict[int, np.ndarray]] | None = None
+        self._probe_shade_error = ""
+        self._probe_shade_percent = 0
         self.line_width = self._setting_float("mesh_viewer_line_width", 0.5, 8.0)
         self.color_source = "vertex"
         self.ambient = self._setting_float("mesh_viewer_ambient", 0.0, 1.0)
@@ -335,6 +360,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             QToolButton:hover { background:#253342; border-color:#4eb4a6; }
             QComboBox, QSpinBox, QDoubleSpinBox { background:#151b22; border:1px solid #33414e; color:#e8eef5; padding:2px 4px; min-height:18px; }
             QCheckBox { color:#dce3ea; background-color:transparent; font-size:11px; }
+            QProgressBar { background:#151b22; border:1px solid #33414e; border-radius:3px; color:#e8eef5; text-align:center; font-size:9px; }
+            QProgressBar::chunk { background:#328f83; border-radius:2px; }
         """)
         layout = QVBoxLayout(self.overlay)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -498,6 +525,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.probe_status_label.setWordWrap(True)
         self.probe_status_label.setStyleSheet("color:#7fced6; background-color:transparent; font-size:10px;")
         layout.addWidget(self.probe_status_label)
+        self.probe_progress_bar = QProgressBar(self.overlay)
+        self.probe_progress_bar.setRange(0, 100)
+        self.probe_progress_bar.setValue(0)
+        self.probe_progress_bar.setFormat(self.tr("Calculating probe lighting… %p%"))
+        self.probe_progress_bar.setFixedHeight(14)
+        self.probe_progress_bar.hide()
+        layout.addWidget(self.probe_progress_bar)
         self._refresh_probe_status_label()
         self.gizmo_mode_combo = self._data_combo(
             (
@@ -710,6 +744,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.update()
 
     def set_light_probe_set(self, probe_set: SceneLightProbeSet | None, status: str = "", obbs: list[object] | None = None, key: str = "") -> None:
+        self._cancel_probe_shading()
+        self._probe_shade_error = ""
         self._light_probe_set = probe_set
         self._light_probe_status = str(status or "")
         self._light_probe_key = str(key or "")
@@ -720,8 +756,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             target_mode = None
             if 0 < vertex_count <= self.PROBE_AUTO_ENABLE_VERTEX_LIMIT:
                 target_mode = "probes"
-            elif self.lighting_mode == "probes":
-                target_mode = "fixed"
             if target_mode is not None:
                 self.lighting_mode = target_mode
                 combo = getattr(self, "scene_light_combo", None)
@@ -746,6 +780,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         label = getattr(self, "probe_status_label", None)
         if label is None:
             return
+        label.setToolTip(self._probe_shade_error)
         if self._light_probe_set is None:
             label.setText(
                 self.tr("Probe: none")
@@ -759,6 +794,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if self.lighting_mode == "probes"
             else self.tr("mode {mode}").format(mode=self.lighting_mode)
         )
+        if self._probe_shade_worker is not None:
+            mode = self.tr("calculating {percent}%").format(percent=self._probe_shade_percent)
+        elif self._probe_shade_result is not None:
+            mode = self.tr("applying")
+        elif self._probe_shade_error:
+            mode = self.tr("error")
         candidate_indices = self._probe_viz_candidate_indices()
         probe_count = 0 if candidate_indices is None else len(candidate_indices)
         label.setText(
@@ -767,6 +808,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             )
         )
 
+    def _show_probe_shade_progress(self, visible: bool, percent: int = 0) -> None:
+        bar = getattr(self, "probe_progress_bar", None)
+        if bar is None:
+            return
+        bar.setValue(max(0, min(100, int(percent))))
+        bar.setVisible(bool(visible))
+
     def _light_probe_boxes(self) -> list[object]:
         return [box for box in self._light_probe_obbs if not getattr(box, "is_default_unit_box", lambda: False)()]
 
@@ -774,8 +822,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.probe_exposure = float(value)
         self._save_view_setting("scene_probe_exposure", self.probe_exposure)
         self._invalidate_probe_viz_points()
-        self._colors_dirty = True
-        self._refresh_probe_status_label()
+        self._invalidate_probe_shading()
         self.update()
 
     def _set_probe_viz_mode(self, mode: str) -> None:
@@ -831,7 +878,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._refresh_selection_bounds()
         if deltas:
             if self._mesh_transform_affects_display_colors():
-                self._colors_dirty = True
+                self._invalidate_probe_shading()
             if not self._scene_matrix_is_identity():
                 self._upload_buffers()
             elif not self._apply_transform_deltas(deltas):
@@ -1276,6 +1323,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not self._gizmo_drag["matrices"] and not self._gizmo_drag["probe_matrices"]:
             self._gizmo_drag = None
             return False
+        if self._mesh_transform_affects_display_colors() or self._gizmo_drag["probe_matrices"]:
+            self._cancel_probe_shading()
         self._set_hover_key("")
         self._gizmo_drag["whole_scene"] = self._selection_is_whole_scene()
         if not self._gizmo_drag["whole_scene"] and len(self._gizmo_drag["matrices"]) == 1 and not self._gizmo_drag["probe_matrices"]:
@@ -1327,6 +1376,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         matrix = drag.get("matrix")
         committed = {}
         rebuild_after_drag = False
+        display_colors_changed = self._uses_probe_shading() and bool(
+            drag.get("matrices") or drag.get("probe_matrices")
+        )
         if commit and matrix is not None:
             for mesh in self._meshes:
                 start = drag["matrices"].get(mesh.key)
@@ -1338,21 +1390,24 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             elif drag.get("deferred_geometry"):
                 self._commit_deferred_gizmo_geometry(matrix)
             if drag.get("matrices") and self._mesh_transform_affects_display_colors():
-                self._colors_dirty = True
+                display_colors_changed = True
                 rebuild_after_drag = bool(drag.get("whole_scene"))
             if drag.get("probe_matrices") and self._light_probe_key:
                 self._apply_light_probe_drag_matrix(matrix)
                 committed[self._light_probe_key] = np.asarray(drag["probe_matrices"][0][0].matrix(), dtype=np.float32).copy()
-                self._colors_dirty = True
+                display_colors_changed = True
         elif not commit and not drag.get("whole_scene") and not drag.get("deferred_geometry"):
             self._apply_gizmo_drag_matrix(IDENTITY4)
         if not commit and drag.get("probe_matrices"):
             self._restore_light_probe_drag_matrices()
+            display_colors_changed = True
         deferred = bool(drag.get("deferred_geometry"))
         self._gizmo_drag = None
         if rebuild_after_drag:
             self._scene_matrix = IDENTITY4.copy()
             self._upload_buffers()
+        elif display_colors_changed:
+            self._invalidate_probe_shading()
         if committed:
             self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
         if deferred:
@@ -1803,34 +1858,155 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         buffer_set.lines_ready = False
 
     def _display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        if self.lighting_mode == "probes":
-            return self._light_probe_display_colors(buffer_set)
+        # Probe colors are calculated asynchronously. Until they are ready,
+        # keep the normal unlit material colors visible in the viewport.
         return self._base_display_colors(buffer_set)
 
-    def _light_probe_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        if self._light_probe_set is None:
-            return self._base_display_colors(buffer_set)
-        colors = self._light_probe_set.shade_vertices(
-            buffer_set.vertices,
-            buffer_set.normals,
-            exposure=self.probe_exposure,
-        )
-        mask = self._light_probe_vertex_mask(buffer_set.vertices)
-        if mask is not None and len(mask) == len(colors):
-            colors[~mask, :3] = 0.0
-        if buffer_set.base_colors is not None:
-            colors[:, :3] *= np.clip(buffer_set.base_colors[:, :3], 0.0, 1.0)
-        return colors.astype(np.float32, copy=False)
+    def _uses_probe_shading(self) -> bool:
+        return self.lighting_mode == "probes" and self._light_probe_set is not None
 
-    def _light_probe_vertex_mask(self, vertices: np.ndarray) -> np.ndarray | None:
-        boxes = self._light_probe_boxes()
-        if not boxes:
+    def _probe_shade_request(self) -> ProbeShadeRequest | None:
+        probe_set = self._light_probe_set
+        if probe_set is None:
             return None
-        points = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
-        inside = np.zeros(len(points), dtype=bool)
-        for box in boxes:
-            inside |= self._points_inside_light_probe_box(points, box)
-        return inside
+        inputs = tuple(
+            ProbeShadeInput(
+                key=id(buffer_set.data),
+                vertices=buffer_set.data.vertices,
+                normals=buffer_set.data.normals,
+                base_colors=buffer_set.data.base_colors,
+            )
+            for buffer_set in (self._regular_set, self._solid_set)
+            if buffer_set is not None and len(buffer_set.data.vertices)
+        )
+        if not inputs:
+            return None
+        boxes = snapshot_probe_boxes(self._light_probe_boxes())
+        return ProbeShadeRequest(probe_set, inputs, self.probe_exposure, boxes)
+
+    def _start_probe_shading(self, request: ProbeShadeRequest) -> None:
+        self._cancel_probe_shading()
+        self._probe_shade_job_id += 1
+        worker = ProbeShadeWorker(self._probe_shade_job_id, request)
+        worker.signals.progress.connect(self._on_probe_shade_progress)
+        worker.signals.finished.connect(self._on_probe_shade_finished)
+        worker.signals.cancelled.connect(self._on_probe_shade_cancelled)
+        worker.signals.failed.connect(self._on_probe_shade_failed)
+        self._probe_shade_worker = worker
+        self._probe_shade_error = ""
+        self._probe_shade_percent = 0
+        self._show_probe_shade_progress(True, 0)
+        self._refresh_probe_status_label()
+        self._probe_shade_pool.start(worker)
+
+    def _cancel_probe_shading(self) -> None:
+        if self._probe_shade_worker is not None:
+            self._probe_shade_worker.cancel()
+        self._probe_shade_pool.clear()
+        self._probe_shade_worker = None
+        self._probe_shade_result = None
+        self._probe_shade_percent = 0
+        self._show_probe_shade_progress(False)
+
+    def _invalidate_probe_shading(self) -> None:
+        self._cancel_probe_shading()
+        self._probe_shade_error = ""
+        self._colors_dirty = True
+        self._refresh_probe_status_label()
+
+    @Slot(int, int, int)
+    def _on_probe_shade_progress(self, job_id: int, completed: int, total: int) -> None:
+        worker = self._probe_shade_worker
+        if worker is None or worker.job_id != job_id:
+            return
+        percent = 100 if total <= 0 else int((max(0, completed) * 100) / total)
+        percent = max(0, min(100, percent))
+        if percent == self._probe_shade_percent:
+            return
+        self._probe_shade_percent = percent
+        self._show_probe_shade_progress(True, percent)
+        self._refresh_probe_status_label()
+
+    @Slot(int, object)
+    def _on_probe_shade_finished(self, job_id: int, results: object) -> None:
+        worker = self._probe_shade_worker
+        if worker is None or worker.job_id != job_id or not isinstance(results, dict):
+            return
+        self._probe_shade_result = (worker.request.key, results)
+        self._probe_shade_worker = None
+        self._probe_shade_percent = 100
+        self._show_probe_shade_progress(True, 100)
+        self._colors_dirty = True
+        self._refresh_probe_status_label()
+        self.update()
+
+    @Slot(int)
+    def _on_probe_shade_cancelled(self, job_id: int) -> None:
+        worker = self._probe_shade_worker
+        if worker is None or worker.job_id != job_id:
+            return
+        self._probe_shade_worker = None
+        self._show_probe_shade_progress(False)
+        self._refresh_probe_status_label()
+
+    @Slot(int, str)
+    def _on_probe_shade_failed(self, job_id: int, message: str) -> None:
+        worker = self._probe_shade_worker
+        if worker is None or worker.job_id != job_id:
+            return
+        self._probe_shade_worker = None
+        self._probe_shade_error = str(message)
+        self._show_probe_shade_progress(False)
+        self._colors_dirty = False
+        self._refresh_probe_status_label()
+        print(f"Probe lighting calculation failed: {message}")
+
+    def _refresh_probe_color_vbos(self) -> None:
+        request = self._probe_shade_request()
+        if request is None:
+            self._cancel_probe_shading()
+            self._colors_dirty = False
+            return
+        key = request.key
+        if self._probe_shade_result is not None:
+            result_key, results = self._probe_shade_result
+            if result_key == key and self._upload_probe_color_results(results):
+                self._probe_shade_result = None
+                self._probe_shade_error = ""
+                self._show_probe_shade_progress(False)
+                self._colors_dirty = False
+                self._refresh_probe_status_label()
+                return
+            self._probe_shade_result = None
+        if self._probe_shade_worker is None or self._probe_shade_worker.request.key != key:
+            self._start_probe_shading(request)
+        self._colors_dirty = False
+
+    def _upload_probe_color_results(self, results: dict[int, np.ndarray]) -> bool:
+        active_sets = tuple(
+            buffer_set
+            for buffer_set in (self._regular_set, self._solid_set)
+            if buffer_set is not None and len(buffer_set.data.vertices)
+        )
+        if any(id(buffer_set.data) not in results for buffer_set in active_sets):
+            return False
+        for buffer_set in active_sets:
+            colors = results[id(buffer_set.data)]
+            if buffer_set.colors_vbo is not None:
+                self._dispose_vbo(buffer_set.colors_vbo)
+            buffer_set.colors = colors
+            buffer_set.colors_vbo = self._array_vbo(colors)
+        self._sync_selection_color_buffers()
+        return True
+
+    def _sync_selection_color_buffers(self) -> None:
+        for selection, source in (
+            (self._selection_regular_set, self._regular_set),
+            (self._selection_solid_set, self._solid_set),
+        ):
+            if selection is not None and source is not None:
+                selection.colors = source.colors
+                selection.colors_vbo = source.colors_vbo
 
     def _base_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
         return display_colors(
@@ -1951,6 +2127,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return vbo.VBO(data, usage=GL_DYNAMIC_DRAW, target=GL_ELEMENT_ARRAY_BUFFER)
 
     def _refresh_color_vbos(self):
+        if self._uses_probe_shading():
+            self._refresh_probe_color_vbos()
+            return
+        if self._probe_shade_worker is not None or self._probe_shade_result is not None:
+            self._cancel_probe_shading()
+            self._probe_shade_error = ""
         for buffer_set in (self._regular_set, self._solid_set):
             if buffer_set is None:
                 continue
@@ -1959,6 +2141,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             colors = self._display_colors(buffer_set.data)
             buffer_set.colors = colors
             buffer_set.colors_vbo = self._array_vbo(colors) if colors is not None else None
+        self._sync_selection_color_buffers()
         self._colors_dirty = False
 
     @staticmethod
@@ -1992,6 +2175,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _upload_buffers(self, *, rebuild: bool = True, current: bool = False):
         if rebuild:
+            self._cancel_probe_shading()
             self._rebuild_buffer_data()
             if not (self._gizmo_drag and self._gizmo_drag.get("whole_scene")):
                 self._scene_matrix = IDENTITY4.copy()
@@ -2005,7 +2189,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._regular_set = self._upload_buffer_set(self._regular_data)
         self._solid_set = self._upload_buffer_set(self._solid_data)
         self._refresh_selection_buffer_sets(current=True)
-        self._colors_dirty = False
+        self._colors_dirty = self._uses_probe_shading()
         if not current:
             self.doneCurrent()
         self._needs_gl_upload = False
@@ -2183,6 +2367,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def cleanup(self):
         self._timer.stop()
+        self._cancel_probe_shading()
         self._leave_view_fullscreen()
         self._cleanup_gl()
         self._clear_scene_memory()
@@ -2206,6 +2391,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._light_probe_set = None
         self._light_probe_status = self._light_probe_key = ""
         self._light_probe_obbs.clear()
+        self._probe_shade_error = ""
         self._invalidate_probe_viz_points()
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
@@ -2261,6 +2447,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._regular_set = self._upload_buffer_set(self._regular_data)
         self._solid_set = self._upload_buffer_set(self._solid_data)
         self._refresh_selection_buffer_sets(current=True)
+        self._colors_dirty = self._uses_probe_shading()
         self._sync_gl_textures()
         self.texture_upload_status_changed.emit()
         self._needs_gl_upload = False
@@ -2713,8 +2900,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         self.lighting_mode = mode
         self._save_view_setting("mesh_viewer_lighting_mode", mode)
-        self._colors_dirty = True
-        self._refresh_probe_status_label()
+        self._invalidate_probe_shading()
         self.update()
 
     def _set_line_width(self, value: float):

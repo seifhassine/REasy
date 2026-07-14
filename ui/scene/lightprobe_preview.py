@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 
 from file_handlers.lightprobe.data import LightProbeData
+
+
+class ProbeShadingCancelled(RuntimeError):
+    """Raised when a in-progress probe shading request is superceded"""
 
 
 @dataclass(slots=True)
@@ -84,30 +89,27 @@ class SceneLightProbeSet:
         exposure: float = 0.035,
         max_neighbor_steps: int = 96,
         exact_vertex_limit: int = 4096,
-        preview_vertex_budget: int = 80000,
+        progress_callback: Callable[[int, int], None] | None = None,
+        cancel_requested: Callable[[], bool] | None = None,
     ) -> np.ndarray:
         points = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
         normals_array = _normal_array(points, normals)
         if len(points) > exact_vertex_limit:
-            if len(points) > preview_vertex_budget:
-                return self._shade_vertices_budgeted(
-                    points,
-                    normals_array,
-                    exposure=exposure,
-                    budget=preview_vertex_budget,
-                    max_neighbor_steps=max_neighbor_steps,
-                )
-            return self._shade_vertices_approx(
+            return self._shade_vertices_chunked(
                 points,
                 normals_array,
                 exposure=exposure,
                 max_neighbor_steps=max_neighbor_steps,
+                progress_callback=progress_callback,
+                cancel_requested=cancel_requested,
             )
         return self._shade_vertices_exact(
             points,
             normals_array,
             exposure=exposure,
             max_neighbor_steps=max_neighbor_steps,
+            progress_callback=progress_callback,
+            cancel_requested=cancel_requested,
         )
 
     def _shade_vertices_exact(
@@ -117,69 +119,63 @@ class SceneLightProbeSet:
         *,
         exposure: float,
         max_neighbor_steps: int,
+        progress_callback: Callable[[int, int], None] | None,
+        cancel_requested: Callable[[], bool] | None,
     ) -> np.ndarray:
         colors = np.ones((len(points), 4), dtype=np.float32)
         for index, (point, normal) in enumerate(zip(points, normals_array)):
+            if cancel_requested is not None and cancel_requested():
+                raise ProbeShadingCancelled()
             rgb = self.sample_surface_rgb(point, normal, max_neighbor_steps=max_neighbor_steps)
             if rgb is None:
                 colors[index, :3] = (0.05, 0.05, 0.06)
             else:
                 colors[index, :3] = _tonemap_rgb(rgb, exposure)
+            completed = index + 1
+            if progress_callback is not None and (completed == len(points) or completed % 64 == 0):
+                progress_callback(completed, len(points))
         return colors
 
-    def _shade_vertices_budgeted(
-        self,
-        points: np.ndarray,
-        normals_array: np.ndarray,
-        *,
-        exposure: float,
-        budget: int,
-        max_neighbor_steps: int,
-    ) -> np.ndarray:
-        sample_count = max(2, min(int(budget), len(points)))
-        sample_indices = np.linspace(0, len(points) - 1, sample_count, dtype=np.int64)
-        sample_colors = self._shade_vertices_approx(
-            points[sample_indices],
-            normals_array[sample_indices],
-            exposure=exposure,
-            max_neighbor_steps=max_neighbor_steps,
-        )
-        boundaries = np.empty(sample_count + 1, dtype=np.int64)
-        boundaries[0] = 0
-        boundaries[-1] = len(points)
-        boundaries[1:-1] = ((sample_indices[:-1] + sample_indices[1:]) // 2) + 1
-        return np.repeat(sample_colors, np.diff(boundaries), axis=0).astype(np.float32, copy=False)
-
-    def _shade_vertices_approx(
+    def _shade_vertices_chunked(
         self,
         points: np.ndarray,
         normals_array: np.ndarray,
         *,
         exposure: float,
         max_neighbor_steps: int,
-        chunk_size: int = 16384,
+        progress_callback: Callable[[int, int], None] | None,
+        cancel_requested: Callable[[], bool] | None,
+        chunk_size: int = 8192,
     ) -> np.ndarray:
         colors = np.ones((len(points), 4), dtype=np.float32)
-        tetra_indices = self._initial_tetra_indices(points)
-        invalid = tetra_indices < 0
-        if np.any(invalid):
-            colors[invalid, :3] = (0.05, 0.05, 0.06)
-        valid_indices = np.flatnonzero(~invalid)
         probe_indices_by_tetra = self.tetra_probe_indices.reshape(-1, 4)
-        for start in range(0, len(valid_indices), chunk_size):
-            rows = valid_indices[start:start + chunk_size]
-            chunk_points = points[rows]
-            chunk_normals = normals_array[rows]
-            chunk_tetra = tetra_indices[rows].astype(np.int64, copy=False)
-            chunk_tetra, weights = self._walk_tetra_rows(
-                chunk_points,
-                chunk_tetra,
-                max_neighbor_steps=max_neighbor_steps,
-            )
-            probe_indices = probe_indices_by_tetra[chunk_tetra]
-            blended_terms = (self.terms_rgb[probe_indices] * weights[:, :, np.newaxis, np.newaxis]).sum(axis=1)
-            rgb = _sample_directional_rgb(blended_terms, chunk_normals)
-            colors[rows, :3] = _tonemap_rgb_array(rgb, exposure)
+        for start in range(0, len(points), chunk_size):
+            if cancel_requested is not None and cancel_requested():
+                raise ProbeShadingCancelled()
+            end = min(start + chunk_size, len(points))
+            chunk_points = points[start:end]
+            chunk_normals = normals_array[start:end]
+            initial_tetra = self._initial_tetra_indices(chunk_points)
+            valid_rows = np.flatnonzero(initial_tetra >= 0)
+            invalid_rows = np.flatnonzero(initial_tetra < 0)
+            if len(invalid_rows):
+                colors[start + invalid_rows, :3] = (0.05, 0.05, 0.06)
+            if len(valid_rows):
+                tetra, weights = self._walk_tetra_rows(
+                    chunk_points[valid_rows],
+                    initial_tetra[valid_rows],
+                    max_neighbor_steps=max_neighbor_steps,
+                    cancel_requested=cancel_requested,
+                )
+                probe_indices = probe_indices_by_tetra[tetra]
+                blended_terms = (
+                    self.terms_rgb[probe_indices]
+                    * weights[:, :, np.newaxis, np.newaxis]
+                ).sum(axis=1)
+                rgb = _sample_directional_rgb(blended_terms, chunk_normals[valid_rows])
+                colors[start + valid_rows, :3] = _tonemap_rgb_array(rgb, exposure)
+            if progress_callback is not None:
+                progress_callback(end, len(points))
         return colors
 
     def _walk_tetra_rows(
@@ -188,6 +184,7 @@ class SceneLightProbeSet:
         tetra_indices: np.ndarray,
         *,
         max_neighbor_steps: int,
+        cancel_requested: Callable[[], bool] | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
         current = np.asarray(tetra_indices, dtype=np.int64).reshape(-1).copy()
@@ -202,6 +199,8 @@ class SceneLightProbeSet:
         neighbors = self.tetra_neighbors.reshape(-1, 4)
         active = valid.copy()
         for _step in range(max(1, int(max_neighbor_steps))):
+            if cancel_requested is not None and cancel_requested():
+                raise ProbeShadingCancelled()
             rows = np.flatnonzero(active)
             if not len(rows):
                 break
