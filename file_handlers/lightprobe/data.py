@@ -40,3 +40,17 @@ class LightProbeData:
                 f"Probe count mismatch: PRB has {self.prb.probe_count}, "
                 f"LPRB has {self.lprb.probe_count}"
             )
+        terms_shape = self.lprb.terms_rgb.shape
+        if (
+            self.lprb.terms_rgb.ndim != 3
+            or terms_shape[0:1] != (self.lprb.probe_count,)
+            or terms_shape[2:] != (3,)
+        ):
+            raise ValueError(
+                "LPRB lighting terms must have shape "
+                f"({self.lprb.probe_count}, term_count, 3)"
+            )
+        if self.lprb.terms_rgb.shape[1] not in (6, 12):
+            raise ValueError(
+                f"Unsupported LPRB lighting term count: {self.lprb.terms_rgb.shape[1]}"
+            )

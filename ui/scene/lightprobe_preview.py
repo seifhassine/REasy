@@ -61,9 +61,10 @@ class SceneLightProbeSet:
         count = max(1, min(int(max_points), len(source_indices)))
         indices = source_indices[np.linspace(0, len(source_indices) - 1, count, dtype=np.int64)] if count < len(source_indices) else source_indices
         positions = self.probe_positions[indices].astype(np.float32, copy=False)
-        term_indices, term_weights = _directional_term_rows(np.asarray(normal, dtype=np.float32).reshape(1, 3))
-        terms = self.terms_rgb[indices][:, term_indices[0]]
-        rgb = (terms * term_weights[0, :, np.newaxis]).sum(axis=1)
+        rgb = _sample_directional_rgb(
+            self.terms_rgb[indices],
+            np.asarray(normal, dtype=np.float32).reshape(1, 3),
+        )
         colors = np.ones((len(positions), 4), dtype=np.float32)
         colors[:, :3] = _tonemap_rgb_array(rgb, exposure)
         if normalize_display and len(colors):
@@ -177,9 +178,7 @@ class SceneLightProbeSet:
             )
             probe_indices = probe_indices_by_tetra[chunk_tetra]
             blended_terms = (self.terms_rgb[probe_indices] * weights[:, :, np.newaxis, np.newaxis]).sum(axis=1)
-            term_indices, term_weights = _directional_term_rows(chunk_normals)
-            selected = blended_terms[np.arange(len(rows))[:, np.newaxis], term_indices]
-            rgb = (selected * term_weights[:, :, np.newaxis]).sum(axis=1)
+            rgb = _sample_directional_rgb(blended_terms, chunk_normals)
             colors[rows, :3] = _tonemap_rgb_array(rgb, exposure)
         return colors
 
@@ -279,8 +278,10 @@ class SceneLightProbeSet:
         base = int(tetra_index) * 4
         probe_indices = self.tetra_probe_indices[base:base + 4]
         blended_terms = np.tensordot(weights, self.terms_rgb[probe_indices], axes=(0, 0))
-        term_indices, term_weights = _directional_term_rows(np.asarray(normal, dtype=np.float32).reshape(1, 3))
-        rgb = (blended_terms[term_indices[0]] * term_weights[0, :, np.newaxis]).sum(axis=0)
+        rgb = _sample_directional_rgb(
+            blended_terms[np.newaxis, ...],
+            np.asarray(normal, dtype=np.float32).reshape(1, 3),
+        )[0]
         return float(max(0.0, rgb[0])), float(max(0.0, rgb[1])), float(max(0.0, rgb[2]))
 
     def _find_tetra(
@@ -359,8 +360,41 @@ def _normalize3_rows(values: np.ndarray) -> np.ndarray:
     return normalized
 
 
-def _directional_term_rows(normals: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _sample_directional_rgb(terms_rgb: np.ndarray, normals: np.ndarray) -> np.ndarray:
+    terms = np.asarray(terms_rgb, dtype=np.float32)
+    if terms.ndim != 3 or terms.shape[2] != 3:
+        raise ValueError("Directional lighting terms must have shape (row_count, term_count, 3)")
+
+    normal_rows = np.asarray(normals, dtype=np.float32).reshape(-1, 3)
+    if len(normal_rows) == 1 and len(terms) != 1:
+        normal_rows = np.broadcast_to(normal_rows, (len(terms), 3))
+    elif len(normal_rows) != len(terms):
+        raise ValueError("Directional lighting terms and normals must have the same row count")
+
+    term_indices, term_weights = _directional_term_rows(normal_rows, terms.shape[1])
+    selected = terms[np.arange(len(terms))[:, np.newaxis], term_indices]
+    return (selected * term_weights[:, :, np.newaxis]).sum(axis=1)
+
+
+def _directional_term_rows(normals: np.ndarray, term_count: int) -> tuple[np.ndarray, np.ndarray]:
     normal = _normalize3_rows(normals)
+    if term_count == 6:
+        return _ambient_cube_term_rows(normal)
+    if term_count == 12:
+        return _icosahedral_term_rows(normal)
+    raise ValueError(f"Unsupported directional lighting term count: {term_count}")
+
+
+def _ambient_cube_term_rows(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # LPRB.3 stores the positive X/Z/Y terms first, followed by negative X/Z/Y.
+    axis_values = normal[:, (0, 2, 1)]
+    positive_terms = np.array((0, 1, 2), dtype=np.int64)
+    negative_terms = np.array((3, 4, 5), dtype=np.int64)
+    term_indices = np.where(axis_values < 0.0, negative_terms, positive_terms)
+    return term_indices, np.square(axis_values).astype(np.float32, copy=False)
+
+
+def _icosahedral_term_rows(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     x = normal[:, 0]
     y = normal[:, 1]
     z = normal[:, 2]

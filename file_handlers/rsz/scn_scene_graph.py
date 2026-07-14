@@ -29,7 +29,18 @@ VIA_RENDER_COMPOSITE_MESH_INSTANCE_GROUP = "via.render.CompositeMeshInstanceGrou
 VIA_RENDER_COMPOSITE_MESH_TRANSFORM_CONTROLLER = "via.render.CompositeMeshTransformController"
 VIA_RENDER_LIGHT_PROBES = "via.render.LightProbes"
 VIA_LANDSCAPE_FOLIAGE = "via.landscape.Foliage"
-PRB9_LPRB6_LIGHT_PROBE_GAMES = frozenset({"DD2", "MHRise", "RE2RT", "RE3RT", "RE4", "RE7RT", "RE8", "SF6"})
+LIGHT_PROBE_PREVIEW_GAMES = frozenset({
+    "DD2",
+    "DMC5",
+    "MHRise",
+    "RE2",
+    "RE2RT",
+    "RE3RT",
+    "RE4",
+    "RE7RT",
+    "RE8",
+    "SF6",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -683,7 +694,7 @@ class ScnSceneGraphBuilder:
                 self._append_light_probe_binding(graph, document, source_object, component, document_instance_id)
 
     def _append_light_probe_binding(self, graph, document, source_object, component, document_instance_id) -> None:
-        if self.game_version not in PRB9_LPRB6_LIGHT_PROBE_GAMES:
+        if self.game_version not in LIGHT_PROBE_PREVIEW_GAMES:
             return
         values = [value for _name, value in _resource_string_fields(component.fields) if value]
         if len(values) < 2:

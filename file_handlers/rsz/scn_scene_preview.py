@@ -10,7 +10,7 @@ import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from file_handlers.lightprobe.loader import parse_prb9_lprb6_light_probe_data
+from file_handlers.lightprobe.loader import parse_prb9_light_probe_data
 from file_handlers.mesh.material_resolver import MdfSurfaceProfile, MeshMaterialBinding, MeshMaterialResolver
 from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.tex.qt_image_utils import TexPreviewUpload, build_tex_preview_upload, parse_tex_bytes
@@ -362,7 +362,7 @@ class ScnScenePreviewWidget(QWidget):
                 raise FileNotFoundError(f"Unable to resolve LPRB resource: {binding.lprb_path}")
             if prb is None or prb.data is None:
                 raise FileNotFoundError(f"Unable to resolve PRB resource: {binding.prb_path}")
-            probe_data = parse_prb9_lprb6_light_probe_data(
+            probe_data = parse_prb9_light_probe_data(
                 prb_data=prb.data,
                 lprb_data=lprb.data,
             )
