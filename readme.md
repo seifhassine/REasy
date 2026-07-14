@@ -10,7 +10,7 @@
 **REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of some RE Engine files. It also includes miscellaneous tools to speed up your work. 
 Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBANK, MESH and CFIL files.
 
-REasy GUI is currently available in English and Chinese (limited) 
+REasy GUI is currently available in English and Chinese.
 
 
 <br>
@@ -34,7 +34,7 @@ REasy GUI is currently available in English and Chinese (limited)
 | UVAR      | ✅       | Most Titles  |
 | RCOL      | ✅    <sub><sup>[RE7, Wilds NOT SUPPORTED]</sup></sub>   | Most titles       |
 | SCN       | ✅       | Most titles       |
-| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      | DD2, MHRise, RE2RT, RE3RT, RE4, RE7RT, RE8, SF6      |
+| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      |  DD2, MHRise, DMC5, RE2, RE3, RE2RT, RE3RT, RE4, RE7RT, RE8, SF6      |
 | User       | ✅       |Most titles       |
 | PFB       | ✅       | Most titles      |
 | MSG       | ✅       | Most titles      |
