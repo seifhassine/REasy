@@ -243,6 +243,18 @@ class BetterFindDialog(QDockWidget):
         self._apply_theme()
         self.search_entry.setFocus()
 
+    def _record_match(self, name: str, value: str, full_path: str, rows):
+        self.results.append({
+            "path": full_path,
+            "name": name,
+            "value": value,
+            "rows": list(rows),
+        })
+        display = f"{name}: {value}" if value else name
+        if full_path.count(" > ") >= 3:
+            display = "…" + display
+        self.result_list.addItem(display)
+
     def find_all(self):
         search_text = self.search_entry.text().strip()
         if not search_text:
@@ -328,14 +340,7 @@ class BetterFindDialog(QDockWidget):
 
                     full_path = " > ".join(names_path + [name]) if names_path else name
                     rows = self._row_path(tree.indexFromItem(item, 0))
-                    self.results.append({
-                        "path": full_path, "name": name,
-                        "value": value_blob, "rows": rows
-                    })
-                    disp = f"{name}: {value_blob}" if value_blob else name
-                    if len(full_path.split(" > ")) > 3:
-                        disp = "…" + disp
-                    self.result_list.addItem(disp)
+                    self._record_match(name, value_blob, full_path, rows)
 
                 for r in range(item.childCount()):
                     child = item.child(r)
@@ -397,14 +402,7 @@ class BetterFindDialog(QDockWidget):
                             value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
                         full_path = " > ".join(names_path + [name]) if names_path else name
-                        self.results.append({
-                            "path": full_path, "name": name,
-                            "value": value_blob, "rows": rows_path[:]
-                        })
-                        disp = f"{name}: {value_blob}" if value_blob else name
-                        if len(full_path.split(" > ")) > 3:
-                            disp = "…" + disp
-                        self.result_list.addItem(disp)
+                        self._record_match(name, value_blob, full_path, rows_path)
 
                     child_count = item.child_count()
                     if child_count:
@@ -467,14 +465,9 @@ class BetterFindDialog(QDockWidget):
                                 value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
                             full_path = f"{path} > {name}" if path else name
-                            self.results.append({
-                                "path": full_path, "name": name,
-                                "value": value_blob, "rows": self._row_path(idx0)
-                            })
-                            disp = f"{name}: {value_blob}" if value_blob else name
-                            if len(full_path.split(" > ")) > 3:
-                                disp = "…" + disp
-                            self.result_list.addItem(disp)
+                            self._record_match(
+                                name, value_blob, full_path, self._row_path(idx0)
+                            )
 
                         if model.hasChildren(idx0):
                             next_path = f"{path} > {name}" if path else name

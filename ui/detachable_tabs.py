@@ -183,8 +183,6 @@ class DetachTabBar(QTabBar):
 class CustomNotebook(QTabWidget):
 	def __init__(self, parent=None):
 		super().__init__(parent)
-		self.setTabsClosable(True)
-		self.setMovable(True)
 		self.tabCloseRequested.connect(self.on_tab_close_requested)
 		self.app_instance = None
 		self._floating_windows = []
@@ -192,7 +190,6 @@ class CustomNotebook(QTabWidget):
 		self.setTabBar(DetachTabBar(self))
 		self.setTabsClosable(True)
 		self.setMovable(True)
-		bar = self.tabBar()
 		self._refresh_detach_buttons()
 
 	def addTab(self, widget: QWidget, label: str) -> int:

@@ -51,27 +51,56 @@ def create_shortcuts_tab():
     shortcuts_layout.addLayout(edit_shortcut_layout)
     
     shortcuts_layout.addWidget(shortcuts_list)
+
+    def shortcut_item_text(name, shortcut):
+        return QCoreApplication.translate(
+            "KeyboardShortcuts", "{name}: {shortcut}"
+        ).format(name=name, shortcut=shortcut)
+
+    def selected_shortcut_item(parent_dialog, missing_message):
+        current_item = shortcuts_list.currentItem()
+        if current_item is None:
+            QMessageBox.warning(
+                parent_dialog,
+                QCoreApplication.translate("KeyboardShortcuts", "No Selection"),
+                missing_message,
+            )
+        return current_item
+
+    def find_shortcut_conflict(shortcuts_dict, shortcut_key, shortcut):
+        for key, value in shortcuts_dict.items():
+            if value == shortcut and key != shortcut_key:
+                return key, shortcut_names.get(key, key)
+        return None, None
+
+    def show_shortcut_conflict(parent_dialog, message):
+        msg = QMessageBox(
+            QMessageBox.Warning,
+            QCoreApplication.translate("KeyboardShortcuts", "Shortcut Conflict"),
+            message,
+            QMessageBox.Ok,
+            parent_dialog,
+        )
+        msg.exec()
     
     def populate_shortcuts_list(shortcuts):
         """Populates the shortcuts list with the current shortcuts"""
         shortcuts_list.clear()
         for key, name in shortcut_names.items():
             shortcut = shortcuts.get(key, DEFAULT_SETTINGS["keyboard_shortcuts"].get(key, ""))
-            item = QListWidgetItem(QCoreApplication.translate(
-                "KeyboardShortcuts", "{name}: {shortcut}"
-            ).format(name=name, shortcut=shortcut))
+            item = QListWidgetItem(shortcut_item_text(name, shortcut))
             item.setData(Qt.UserRole, key)  
             shortcuts_list.addItem(item)
     
     def edit_shortcut(shortcuts_dict, parent_dialog):
         """Opens a dialog to edit the selected shortcut"""
-        current_item = shortcuts_list.currentItem()
-        if not current_item:
-            QMessageBox.warning(
-                parent_dialog,
-                QCoreApplication.translate("KeyboardShortcuts", "No Selection"),
-                QCoreApplication.translate("KeyboardShortcuts", "Please select a shortcut to edit."),
-            )
+        current_item = selected_shortcut_item(
+            parent_dialog,
+            QCoreApplication.translate(
+                "KeyboardShortcuts", "Please select a shortcut to edit."
+            ),
+        )
+        if current_item is None:
             return
             
         shortcut_key = current_item.data(Qt.UserRole)
@@ -142,87 +171,62 @@ def create_shortcuts_tab():
                 shortcut_dialog.accept()
                 return
                 
-            conflict_key = None
-            conflict_name = None
-            
-            for k, v in shortcuts_dict.items():
-                if v == new_shortcut and k != shortcut_key:
-                    conflict_key = k
-                    conflict_name = shortcut_names.get(k, k)
-                    break
+            conflict_key, conflict_name = find_shortcut_conflict(
+                shortcuts_dict, shortcut_key, new_shortcut
+            )
                     
             if conflict_key:
-                msg = QMessageBox(
-                    QMessageBox.Warning,
-                    QCoreApplication.translate("KeyboardShortcuts", "Shortcut Conflict"),
+                show_shortcut_conflict(
+                    shortcut_dialog,
                     QCoreApplication.translate(
                         "KeyboardShortcuts",
                         "The shortcut '{shortcut}' is already assigned to '{name}'.",
                     ).format(shortcut=new_shortcut, name=conflict_name),
-                    QMessageBox.Ok,
-                    shortcut_dialog
                 )
-                msg.exec()
                 return
                 
             shortcuts_dict[shortcut_key] = new_shortcut
-            current_item.setText(QCoreApplication.translate(
-                "KeyboardShortcuts", "{name}: {shortcut}"
-            ).format(name=name, shortcut=new_shortcut))
+            current_item.setText(shortcut_item_text(name, new_shortcut))
             shortcut_dialog.accept()
         
         shortcut_dialog.exec()
     
     def reset_shortcut(shortcuts_dict, parent_dialog):
         """Resets the selected shortcut to its default value"""
-        current_item = shortcuts_list.currentItem()
-        if not current_item:
-            QMessageBox.warning(
-                parent_dialog,
-                QCoreApplication.translate("KeyboardShortcuts", "No Selection"),
-                QCoreApplication.translate("KeyboardShortcuts", "Please select a shortcut to reset."),
-            )
+        current_item = selected_shortcut_item(
+            parent_dialog,
+            QCoreApplication.translate(
+                "KeyboardShortcuts", "Please select a shortcut to reset."
+            ),
+        )
+        if current_item is None:
             return
             
         shortcut_key = current_item.data(Qt.UserRole)
         default_shortcut = DEFAULT_SETTINGS["keyboard_shortcuts"].get(shortcut_key, "")
         name = shortcut_names.get(shortcut_key, shortcut_key)
         
-        conflict_key = None
-        conflict_name = None
-        
-        for k, v in shortcuts_dict.items():
-            if v == default_shortcut and k != shortcut_key:
-                conflict_key = k
-                conflict_name = shortcut_names.get(k, k)
-                break
+        conflict_key, conflict_name = find_shortcut_conflict(
+            shortcuts_dict, shortcut_key, default_shortcut
+        )
                 
         if conflict_key:
-            msg = QMessageBox(
-                QMessageBox.Warning,
-                QCoreApplication.translate("KeyboardShortcuts", "Shortcut Conflict"),
+            show_shortcut_conflict(
+                parent_dialog,
                 QCoreApplication.translate(
                     "KeyboardShortcuts",
                     "The default shortcut '{shortcut}' is already assigned to '{name}'.",
                 ).format(shortcut=default_shortcut, name=conflict_name),
-                QMessageBox.Ok,
-                parent_dialog
             )
-            msg.exec()
             return
         
         shortcuts_dict[shortcut_key] = default_shortcut
-        current_item.setText(QCoreApplication.translate(
-            "KeyboardShortcuts", "{name}: {shortcut}"
-        ).format(name=name, shortcut=default_shortcut))
+        current_item.setText(shortcut_item_text(name, default_shortcut))
     
     shortcuts_tab.populate_shortcuts_list = populate_shortcuts_list
     shortcuts_tab.edit_shortcut = edit_shortcut
     shortcuts_tab.reset_shortcut = reset_shortcut
 
-    edit_shortcut_btn.clicked.connect(lambda: None)
-    reset_shortcut_btn.clicked.connect(lambda: None)
-    
     shortcuts_tab.edit_shortcut_btn = edit_shortcut_btn
     shortcuts_tab.reset_shortcut_btn = reset_shortcut_btn
     

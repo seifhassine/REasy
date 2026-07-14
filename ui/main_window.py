@@ -263,19 +263,26 @@ class REasyEditorApp(QMainWindow):
                 configured_shortcuts.get(name, DEFAULT_SETTINGS["keyboard_shortcuts"].get(name, ""))
             )
 
+        def create_action(text, callback, shortcut_name=None):
+            action = QAction(text, self)
+            if shortcut_name:
+                action.setObjectName(shortcut_name)
+                action.setShortcut(shortcut(shortcut_name))
+            action.triggered.connect(callback)
+            return action
+
+        def add_action(menu, text, callback, shortcut_name=None):
+            action = create_action(text, callback, shortcut_name)
+            menu.addAction(action)
+            return action
+
         file_menu = menubar.addMenu(self.tr("File"))
 
-        open_act = QAction(self.tr("Open File..."), self)
-        open_act.setObjectName("file_open")
-        open_act.setShortcut(shortcut("file_open"))
-        open_act.triggered.connect(self.on_open)
+        open_act = create_action(self.tr("Open File..."), self.on_open, "file_open")
 
-        new_proj_act = QAction(self.tr("New Project (Create Mod)..."), self)
-        open_proj_act = QAction(self.tr("Project Library..."), self)
-        close_proj_act = QAction(self.tr("Close Project"), self)
-        new_proj_act.triggered.connect(self.new_project)
-        open_proj_act.triggered.connect(self.open_project)
-        close_proj_act.triggered.connect(self.close_project)
+        new_proj_act = create_action(self.tr("New Project (Create Mod)..."), self.new_project)
+        open_proj_act = create_action(self.tr("Project Library..."), self.open_project)
+        close_proj_act = create_action(self.tr("Close Project"), self.close_project)
         file_menu.insertSeparator(open_act)
         file_menu.insertAction(open_act, new_proj_act)
         file_menu.insertAction(open_act, open_proj_act)
@@ -285,161 +292,104 @@ class REasyEditorApp(QMainWindow):
 
         file_menu.addAction(open_act)
 
-        save_act = QAction(self.tr("Save"), self)
-        save_act.setObjectName("file_save")
-        save_act.setShortcut(shortcut("file_save"))
-        save_act.triggered.connect(self.on_direct_save)
-        file_menu.addAction(save_act)
-
-        save_as_act = QAction(self.tr("Save As..."), self)
-        save_as_act.setObjectName("file_save_as")
-        save_as_act.setShortcut(shortcut("file_save_as"))
-        save_as_act.triggered.connect(self.on_save)
-        file_menu.addAction(save_as_act)
-
-        restore_backup_act = QAction(self.tr("Restore Backup..."), self)
-        restore_backup_act.triggered.connect(self.on_restore_backup)
-        file_menu.addAction(restore_backup_act)
-
-        reload_act = QAction(self.tr("Reload"), self)
-        reload_act.setObjectName("file_reload")
-        reload_act.setShortcut(shortcut("file_reload"))
-        reload_act.triggered.connect(self.reload_file)
-        file_menu.addAction(reload_act)
-
-        close_tab_act = QAction(self.tr("Close Tab"), self)
-        close_tab_act.setObjectName("file_close_tab")
-        close_tab_act.setShortcut(shortcut("file_close_tab"))
-        close_tab_act.triggered.connect(self.close_current_tab)
-        file_menu.addAction(close_tab_act)
-
-        reopen_closed_act = QAction(self.tr("Reopen Last Closed File"), self)
-        reopen_closed_act.setObjectName("file_reopen_closed")
-        reopen_closed_act.setShortcut(shortcut("file_reopen_closed"))
-        reopen_closed_act.triggered.connect(self.reopen_last_closed_file)
-        file_menu.addAction(reopen_closed_act)
+        add_action(file_menu, self.tr("Save"), self.on_direct_save, "file_save")
+        add_action(file_menu, self.tr("Save As..."), self.on_save, "file_save_as")
+        add_action(file_menu, self.tr("Restore Backup..."), self.on_restore_backup)
+        add_action(file_menu, self.tr("Reload"), self.reload_file, "file_reload")
+        add_action(file_menu, self.tr("Close Tab"), self.close_current_tab, "file_close_tab")
+        add_action(
+            file_menu,
+            self.tr("Reopen Last Closed File"),
+            self.reopen_last_closed_file,
+            "file_reopen_closed",
+        )
 
         self.recently_closed_menu = file_menu.addMenu(self.tr("Recently Closed Files"))
         self.recently_closed_menu.aboutToShow.connect(self._populate_recently_closed_menu)
 
         file_menu.addSeparator()
 
-        settings_act = QAction(self.tr("Settings"), self)
-        settings_act.triggered.connect(self.open_settings_dialog)
-        file_menu.addAction(settings_act)
-
-        exit_act = QAction(self.tr("Exit"), self)
-        exit_act.triggered.connect(self.close)
-        file_menu.addAction(exit_act)
+        add_action(file_menu, self.tr("Settings"), self.open_settings_dialog)
+        add_action(file_menu, self.tr("Exit"), self.close)
 
         find_menu = menubar.addMenu(self.tr("Find"))
 
-        find_act = QAction(self.tr("Find"), self)
-        find_act.setObjectName("find_search")
-        find_act.setShortcut(shortcut("find_search"))
-        find_act.triggered.connect(self.open_find_dialog)
-        find_menu.addAction(find_act)
-
-        guid_act = QAction(self.tr("Search Directory for GUID"), self)
-        guid_act.setObjectName("find_search_guid")
-        guid_act.setShortcut(shortcut("find_search_guid"))
-        guid_act.triggered.connect(self.search_directory_for_guid)
-        find_menu.addAction(guid_act)
-
-        text_act = QAction(self.tr("Search Directory for Text"), self)
-        text_act.setObjectName("find_search_text")
-        text_act.setShortcut(shortcut("find_search_text"))
-        text_act.triggered.connect(self.search_directory_for_text)
-        find_menu.addAction(text_act)
-
-        num_act = QAction(self.tr("Search Directory for Number"), self)
-        num_act.setObjectName("find_search_number")
-        num_act.setShortcut(shortcut("find_search_number"))
-        num_act.triggered.connect(self.search_directory_for_number)
-        find_menu.addAction(num_act)
-
-        hex_act = QAction(self.tr("Search Directory for Hex"), self)
-        hex_act.setObjectName("find_search_hex")
-        hex_act.setShortcut(shortcut("find_search_hex"))
-        hex_act.triggered.connect(self.search_directory_for_hex)
-        find_menu.addAction(hex_act)
-
-        rsz_field_act = QAction(self.tr("Find RSZ Field Value"), self)
-        rsz_field_act.setObjectName("find_rsz_field_value")
-        rsz_field_act.setShortcut(shortcut("find_rsz_field_value"))
-        rsz_field_act.triggered.connect(self.open_rsz_field_value_finder)
-        find_menu.addAction(rsz_field_act)
+        add_action(find_menu, self.tr("Find"), self.open_find_dialog, "find_search")
+        add_action(
+            find_menu,
+            self.tr("Search Directory for GUID"),
+            self.search_directory_for_guid,
+            "find_search_guid",
+        )
+        add_action(
+            find_menu,
+            self.tr("Search Directory for Text"),
+            self.search_directory_for_text,
+            "find_search_text",
+        )
+        add_action(
+            find_menu,
+            self.tr("Search Directory for Number"),
+            self.search_directory_for_number,
+            "find_search_number",
+        )
+        add_action(
+            find_menu,
+            self.tr("Search Directory for Hex"),
+            self.search_directory_for_hex,
+            "find_search_hex",
+        )
+        add_action(
+            find_menu,
+            self.tr("Find RSZ Field Value"),
+            self.open_rsz_field_value_finder,
+            "find_rsz_field_value",
+        )
 
         view_menu = menubar.addMenu(self.tr("View"))
 
-        prev_tab_act = QAction(self.tr("Previous Tab"), self)
-        prev_tab_act.setObjectName("view_prev_tab")
-        prev_tab_act.setShortcut(shortcut("view_prev_tab"))
-        prev_tab_act.triggered.connect(self.goto_previous_tab)
-        view_menu.addAction(prev_tab_act)
-
-        next_tab_act = QAction(self.tr("Next Tab"), self)
-        next_tab_act.setObjectName("view_next_tab")
-        next_tab_act.setShortcut(shortcut("view_next_tab"))
-        next_tab_act.triggered.connect(self.goto_next_tab)
-        view_menu.addAction(next_tab_act)
-
-        dbg_act = QAction(self.tr("Toggle Debug Console"), self)
-        dbg_act.setObjectName("view_debug_console")
-        dbg_act.setShortcut(shortcut("view_debug_console"))
-        dbg_act.triggered.connect(
+        add_action(
+            view_menu, self.tr("Previous Tab"), self.goto_previous_tab, "view_prev_tab"
+        )
+        add_action(view_menu, self.tr("Next Tab"), self.goto_next_tab, "view_next_tab")
+        add_action(
+            view_menu,
+            self.tr("Toggle Debug Console"),
             lambda: self.toggle_debug_console(
                 not self.settings.get("show_debug_console", True)
-            )
+            ),
+            "view_debug_console",
         )
-        view_menu.addAction(dbg_act)
 
         self.scene_menu = menubar.addMenu(self.tr("Scene"))
         self.scene_menu.aboutToShow.connect(lambda: self.scenes.populate_scene_menu(self.scene_menu))
 
         tools_menu = menubar.addMenu(self.tr("Tools"))
-        guid_conv_act = QAction(self.tr("GUID Converter"), self)
-        guid_conv_act.triggered.connect(self.open_guid_converter)
-        tools_menu.addAction(guid_conv_act)
-
-        hash_calc_act = QAction(self.tr("Hash Calculator"), self)
-        hash_calc_act.triggered.connect(self.open_hash_calculator)
-        tools_menu.addAction(hash_calc_act)
-
-        outdated_files_action = QAction(self.tr("Outdated Files Detector"), self)
-        outdated_files_action.triggered.connect(self.open_outdated_files_detector)
-        tools_menu.addAction(outdated_files_action)
-
-        rsz_differ_act = QAction(self.tr("RSZ Diff Viewer"), self)
-        rsz_differ_act.triggered.connect(self.open_rsz_differ)
-        tools_menu.addAction(rsz_differ_act)
-
-        pak_browser_act = QAction(self.tr("PAK Browser"), self)
-        pak_browser_act.triggered.connect(self.open_pak_browser)
-        tools_menu.addAction(pak_browser_act)
-
-        file_list_gen_act = QAction(self.tr("File List Generator"), self)
-        file_list_gen_act.triggered.connect(self.open_file_list_generator)
-        tools_menu.addAction(file_list_gen_act)
+        add_action(tools_menu, self.tr("GUID Converter"), self.open_guid_converter)
+        add_action(tools_menu, self.tr("Hash Calculator"), self.open_hash_calculator)
+        add_action(
+            tools_menu,
+            self.tr("Outdated Files Detector"),
+            self.open_outdated_files_detector,
+        )
+        add_action(tools_menu, self.tr("RSZ Diff Viewer"), self.open_rsz_differ)
+        add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser)
+        add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator)
 
         tools_menu.addSeparator()
 
-        csv_extractor_act = QAction(self.tr("CSV Extractor (RSZ Data Matcher)"), self)
-        csv_extractor_act.triggered.connect(self.open_rsz_csv_extractor)
-        tools_menu.addAction(csv_extractor_act)
+        add_action(
+            tools_menu,
+            self.tr("CSV Extractor (RSZ Data Matcher)"),
+            self.open_rsz_csv_extractor,
+        )
 
         help_menu = menubar.addMenu(self.tr("Help"))
-        about_act = QAction(self.tr("About"), self)
-        wiki_act = QAction(self.tr("REasy Wiki"), self)
-        about_act.triggered.connect(self.show_about)
-        wiki_act.triggered.connect(self.show_wiki)
-        help_menu.addAction(about_act)
-        help_menu.addAction(wiki_act)
+        add_action(help_menu, self.tr("About"), self.show_about)
+        add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki)
 
         donate_menu = menubar.addMenu(self.tr("Donate"))
-        donate_act = QAction(self.tr("Support REasy"), self)
-        donate_act.triggered.connect(self.show_donate_dialog)
-        donate_menu.addAction(donate_act)
+        add_action(donate_menu, self.tr("Support REasy"), self.show_donate_dialog)
 
         self.highlight_menu_controller.create_menu(menubar)
 

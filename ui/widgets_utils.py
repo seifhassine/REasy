@@ -12,6 +12,20 @@ CHECKER_DARK = QColor(204, 204, 204)
 CHECKER_SIZE = 4  # Size of each square in pixels
 
 
+def _paint_checkerboard(painter, rect):
+    painter.save()
+    painter.setClipRect(rect)
+
+    for y in range(rect.top(), rect.bottom() + 1, CHECKER_SIZE):
+        for x in range(rect.left(), rect.right() + 1, CHECKER_SIZE):
+            col = (x - rect.left()) // CHECKER_SIZE
+            row = (y - rect.top()) // CHECKER_SIZE
+            color = CHECKER_LIGHT if (col + row) % 2 == 0 else CHECKER_DARK
+            painter.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE, color)
+
+    painter.restore()
+
+
 def create_color_preview_pixmap(r, g, b, a=255, width=24, height=24):
     pixmap = QPixmap(width, height)
     pixmap.fill(Qt.transparent)
@@ -23,13 +37,7 @@ def create_color_preview_pixmap(r, g, b, a=255, width=24, height=24):
     rect = pixmap.rect()
     
     if a < 255:
-        for y in range(0, height, CHECKER_SIZE):
-            for x in range(0, width, CHECKER_SIZE):
-                col = x // CHECKER_SIZE
-                row = y // CHECKER_SIZE
-                is_light = (col + row) % 2 == 0
-                checker_color = CHECKER_LIGHT if is_light else CHECKER_DARK
-                painter.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE, checker_color)
+        _paint_checkerboard(painter, rect)
     
     painter.fillRect(rect, color)
     
@@ -48,13 +56,7 @@ def get_color_preview_brush(r, g, b, a=255, size=24):
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.Antialiasing, False)
     
-    for y in range(0, size, CHECKER_SIZE):
-        for x in range(0, size, CHECKER_SIZE):
-            col = x // CHECKER_SIZE
-            row = y // CHECKER_SIZE
-            is_light = (col + row) % 2 == 0
-            checker_color = CHECKER_LIGHT if is_light else CHECKER_DARK
-            painter.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE, checker_color)
+    _paint_checkerboard(painter, pixmap.rect())
     
     painter.fillRect(pixmap.rect(), QColor(int(r), int(g), int(b), int(a)))
     
@@ -86,18 +88,7 @@ class ColorPreviewButton(QPushButton):
         rect = self.rect().adjusted(1, 1, -1, -1)
         
         if self._has_alpha and self._color.alpha() < 255:
-            painter.save()
-            painter.setClipRect(rect)
-            
-            for y in range(rect.top(), rect.bottom() + 1, CHECKER_SIZE):
-                for x in range(rect.left(), rect.right() + 1, CHECKER_SIZE):
-                    col = (x - rect.left()) // CHECKER_SIZE
-                    row = (y - rect.top()) // CHECKER_SIZE
-                    is_light = (col + row) % 2 == 0
-                    color = CHECKER_LIGHT if is_light else CHECKER_DARK
-                    painter.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE, color)
-            
-            painter.restore()
+            _paint_checkerboard(painter, rect)
         
         painter.fillRect(rect, self._color)
         

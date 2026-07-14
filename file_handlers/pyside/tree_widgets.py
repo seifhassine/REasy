@@ -12,6 +12,7 @@ from .tree_core import TreeModel
 from .component_selector import ComponentSelectorDialog 
 from ui.template_manager_dialog import TemplateManagerDialog
 from ui.template_export_dialog import TemplateExportDialog
+from ui.highlight_utils import model_index_row_path
 from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
 from .tree_widget_factory import TreeWidgetFactory
@@ -36,7 +37,7 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
         if tree_view and hasattr(tree_view, 'highlight_manager') and index.isValid():
             highlight_manager = tree_view.highlight_manager
             if highlight_manager:
-                item_id = self._get_index_identifier(index)
+                item_id = model_index_row_path(index)
                 should_highlight = highlight_manager.is_item_highlighted(item_id)
         
         if should_highlight:
@@ -47,15 +48,6 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
         else:
             super().paint(painter, option, index)
     
-    def _get_index_identifier(self, index):
-        """Create a unique identifier for a tree index"""
-        path = []
-        current = index
-        while current.isValid():
-            path.append(current.row())
-            current = current.parent()
-        return tuple(reversed(path))
-        
     def sizeHint(self, option, index):
         """Ensure consistent row height for all items"""
         size = super().sizeHint(option, index)
@@ -146,7 +138,7 @@ class AdvancedTreeView(QTreeView):
         if not index.isValid():
             return
             
-        item_id = self._get_index_identifier(index)
+        item_id = model_index_row_path(index)
         
         if self.highlight_manager.is_item_highlighted(item_id):
             self.highlight_manager.remove_highlighted_item(item_id)
@@ -156,15 +148,6 @@ class AdvancedTreeView(QTreeView):
             self._update_widget_highlight(index, True)
         
         self.viewport().update()
-    
-    def _get_index_identifier(self, index):
-        """Create a unique identifier for a tree index"""
-        path = []
-        current = index
-        while current.isValid():
-            path.append(current.row())
-            current = current.parent()
-        return tuple(reversed(path))
     
     def _update_widget_highlight(self, index, highlight):
         if not self.highlight_manager:
@@ -306,7 +289,7 @@ class AdvancedTreeView(QTreeView):
                 self.setIndexWidget(index0, widget)
                 
                 if self.highlight_manager:
-                    item_id = self._get_index_identifier(index0)
+                    item_id = model_index_row_path(index0)
                     if self.highlight_manager.is_item_highlighted(item_id):
                         self._update_widget_highlight(index0, True)
                 
@@ -967,11 +950,9 @@ class AdvancedTreeView(QTreeView):
         
         if embedded_context == "userdata_array_needs_embedded":
             creator = parent.create_array_element
-            print_context = "regular (UserData array)"
             embedded_context = None
         else:
             creator = RszEmbeddedArrayOperations(parent).create_array_element if embedded_context else parent.create_array_element
-            print_context = "embedded" if embedded_context else "regular"
         
         if not embedded_context:
             try:
@@ -1328,7 +1309,7 @@ class AdvancedTreeView(QTreeView):
         if widget:
             self.setIndexWidget(folder_index, widget)
             if self.highlight_manager:
-                item_id = self._get_index_identifier(folder_index)
+                item_id = model_index_row_path(folder_index)
                 if self.highlight_manager.is_item_highlighted(item_id):
                     self._update_widget_highlight(folder_index, True)
         self.expand(model.getIndexFromItem(parent_node))
@@ -1731,7 +1712,7 @@ class AdvancedTreeView(QTreeView):
             if widget:
                 self.setIndexWidget(child_index, widget)
                 if self.highlight_manager:
-                    item_id = self._get_index_identifier(child_index)
+                    item_id = model_index_row_path(child_index)
                     if self.highlight_manager.is_item_highlighted(item_id):
                         self._update_widget_highlight(child_index, True)
             
@@ -2093,7 +2074,7 @@ class AdvancedTreeView(QTreeView):
         if widget:
             self.setIndexWidget(go_index, widget)
             if self.highlight_manager:
-                item_id = self._get_index_identifier(go_index)
+                item_id = model_index_row_path(go_index)
                 if self.highlight_manager.is_item_highlighted(item_id):
                     self._update_widget_highlight(go_index, True)
 
@@ -2229,7 +2210,7 @@ class AdvancedTreeView(QTreeView):
         )
         self.setIndexWidget(component_index, widget)
         if self.highlight_manager:
-            item_id = self._get_index_identifier(component_index)
+            item_id = model_index_row_path(component_index)
             if self.highlight_manager.is_item_highlighted(item_id):
                 self._update_widget_highlight(component_index, True)
                         

@@ -11,6 +11,68 @@ from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 from file_handlers.rsz.rsz_community_template_manager import RszCommunityTemplateManager
 from datetime import datetime
 
+
+_NO_RESULT = object()
+
+
+class _ResultWorker(QThread):
+    """Run one callable and deliver its result back to the UI thread."""
+
+    result_ready = Signal(object)
+
+    def __init__(self, operation, *args, discard_if_interrupted=False):
+        super().__init__()
+        self._operation = operation
+        self._args = args
+        self._discard_if_interrupted = discard_if_interrupted
+
+    def run(self):
+        if self._discard_if_interrupted and self.isInterruptionRequested():
+            return
+        result = self._operation(*self._args)
+        if result is _NO_RESULT:
+            return
+        if self._discard_if_interrupted and self.isInterruptionRequested():
+            return
+        self.result_ready.emit(result)
+
+
+def _fetch_community_templates(game, sort_by, query):
+    try:
+        return RszCommunityTemplateManager.get_community_templates(
+            sort_by=sort_by,
+            game=game,
+            search=query or None,
+        )
+    except Exception as e:
+        print("Template loading error:", e)
+        return []
+
+
+def _fetch_template_details(community_id):
+    try:
+        api_url = (
+            f"{RszCommunityTemplateManager.get_api_base_url()}"
+            f"/templates/{community_id}"
+        )
+
+        headers = {}
+        if RszCommunityTemplateManager._auth_token:
+            headers["Authorization"] = (
+                f"Bearer {RszCommunityTemplateManager._auth_token}"
+            )
+
+        import requests
+
+        response = requests.get(api_url, headers=headers)
+        if response.status_code != 200:
+            return _NO_RESULT
+        return response.json()
+    except Exception as e:
+        print(f"Error loading template details: {e}")
+        return _NO_RESULT
+
+
 class QStarWidget(QWidget):
     """Custom star rating widget that allows setting and displaying ratings"""
     ratingChanged = Signal(int)
@@ -335,10 +397,6 @@ class CommunityTemplatesDialog(QDialog):
         
         main_layout.addWidget(splitter)
 
-        self.sort_combo.currentIndexChanged.connect(self._load_templates)
-        self.game_combo.currentIndexChanged.connect(self._on_game_changed)
-        self.search_input.textChanged.connect(self._on_search_text_changed)
-        
         self.template_info.setVisible(False)
         
         self.no_template_label = QLabel(self.tr("Select a template from the list to view details"))
@@ -358,6 +416,7 @@ class CommunityTemplatesDialog(QDialog):
         self.logout_button.clicked.connect(self._handle_logout)
         self.template_list.itemSelectionChanged.connect(self._on_template_selected)
         self.sort_combo.currentIndexChanged.connect(self._on_sort_changed)
+        self.game_combo.currentIndexChanged.connect(self._on_game_changed)
         self.search_input.textChanged.connect(self._on_search_text_changed)
         self.upload_button.clicked.connect(self._upload_template)
         self.download_button.clicked.connect(self._download_template)
@@ -388,21 +447,7 @@ class CommunityTemplatesDialog(QDialog):
         self.login_status.setStyleSheet("color: blue;")
         self.login_button.setEnabled(False)
         
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
         remember = self.remember_me.isChecked()
-        class LoginThread(QThread):
-            login_complete = ThreadSignal(dict)
-            def __init__(self, email, password, remember):
-                super().__init__()
-                self.email     = email
-                self.password  = password
-                self.remember  = remember
-            def run(self):
-                res = RszCommunityTemplateManager.authenticate(
-                        self.email, self.password, self.remember)
-                self.login_complete.emit(res)
-
-        self.login_thread = LoginThread(email, password, remember)
         
         def on_login_complete(result):
             self.login_button.setEnabled(True)
@@ -414,8 +459,13 @@ class CommunityTemplatesDialog(QDialog):
                 self.login_status.setText(result["message"])
                 self.login_status.setStyleSheet("color: red;")
         
-        self.login_thread = LoginThread(email, password, remember)
-        self.login_thread.login_complete.connect(on_login_complete)
+        self.login_thread = _ResultWorker(
+            RszCommunityTemplateManager.authenticate,
+            email,
+            password,
+            remember,
+        )
+        self.login_thread.result_ready.connect(on_login_complete)
         self.login_thread.start()
     
     def _handle_register(self):
@@ -445,23 +495,6 @@ class CommunityTemplatesDialog(QDialog):
         self.register_status.setStyleSheet("color: blue;")
         self.register_button.setEnabled(False)
         
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-        
-        class RegisterThread(QThread):
-            register_complete = ThreadSignal(dict)
-            
-            def __init__(self, email, password, display_name):
-                super().__init__()
-                self.email = email
-                self.password = password
-                self.display_name = display_name
-                
-            def run(self):
-                result = RszCommunityTemplateManager.register_user(
-                    self.email, self.password, self.display_name
-                )
-                self.register_complete.emit(result)
-        
         def on_register_complete(result):
             self.register_button.setEnabled(True)
             
@@ -477,8 +510,13 @@ class CommunityTemplatesDialog(QDialog):
                 self.register_status.setText(result["message"])
                 self.register_status.setStyleSheet("color: red;")
         
-        self.register_thread = RegisterThread(email, password, display_name)
-        self.register_thread.register_complete.connect(on_register_complete)
+        self.register_thread = _ResultWorker(
+            RszCommunityTemplateManager.register_user,
+            email,
+            password,
+            display_name,
+        )
+        self.register_thread.result_ready.connect(on_register_complete)
         self.register_thread.start()
     
     def _handle_logout(self):
@@ -523,26 +561,6 @@ class CommunityTemplatesDialog(QDialog):
         loading_item.setData(self._SENTINEL_ROLE, True)
         self.template_list.addItem(loading_item)
 
-        class Loader(QThread):
-            done = Signal(list)
-            def __init__(self, game, sort_by, query):
-                super().__init__()
-                self._game, self._sort, self._query = game, sort_by, query
-            def run(self):
-                if self.isInterruptionRequested():
-                    return
-                try:
-                    tpl = RszCommunityTemplateManager.get_community_templates(
-                        sort_by=self._sort,
-                        game=self._game,
-                        search=self._query or None,
-                    )
-                except Exception as e:
-                    print("Template loading error:", e)
-                    tpl = []
-                if not self.isInterruptionRequested():
-                    self.done.emit(tpl)
-
         def show_list(templates):
             self.template_list.clear()
             if not templates:
@@ -559,12 +577,14 @@ class CommunityTemplatesDialog(QDialog):
                 ).format(rating=avg, downloads=t.get("downloadCnt", 0)))
                 self.template_list.addItem(it)
 
-        self._loader = Loader(
+        self._loader = _ResultWorker(
+            _fetch_community_templates,
             self.game_combo.currentText(),
             self.sort_combo.currentData(),
             self.search_input.text().strip(),
+            discard_if_interrupted=True,
         )
-        self._loader.done.connect(show_list)
+        self._loader.result_ready.connect(show_list)
         self._loader.finished.connect(self._loader.deleteLater)
         self._loader.finished.connect(lambda: setattr(self, "_loader", None))
         self._loader.start()
@@ -588,34 +608,6 @@ class CommunityTemplatesDialog(QDialog):
         self.current_community_id = community_id
         
         self.no_template_label.setVisible(False)
-        
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-        
-        class TemplateDetailThread(QThread):
-            template_loaded = ThreadSignal(dict)
-            
-            def __init__(self, community_id):
-                super().__init__()
-                self.community_id = community_id
-                
-            def run(self):
-                try:
-                    api_url = f"{RszCommunityTemplateManager.get_api_base_url()}/templates/{self.community_id}"
-                    
-                    headers = {}
-                    if RszCommunityTemplateManager._auth_token:
-                        headers["Authorization"] = f"Bearer {RszCommunityTemplateManager._auth_token}"
-                    
-                    import requests
-                    response = requests.get(api_url, headers=headers)
-                    
-                    if response.status_code != 200:
-                        return
-                    
-                    template_data = response.json()
-                    self.template_loaded.emit(template_data)
-                except Exception as e:
-                    print(f"Error loading template details: {e}")
         
         def on_template_details_loaded(template_data):
             self.template_name.setText(template_data.get("name", self.tr("Unnamed Template")))
@@ -680,14 +672,14 @@ class CommunityTemplatesDialog(QDialog):
                 pass 
             self.detail_thread = None   
 
-        self.detail_thread = TemplateDetailThread(community_id)
+        self.detail_thread = _ResultWorker(_fetch_template_details, community_id)
 
         self.detail_thread.finished.connect(self.detail_thread.deleteLater)
         self.detail_thread.finished.connect(
             lambda: setattr(self, "detail_thread", None)  
         )
 
-        self.detail_thread.template_loaded.connect(on_template_details_loaded)
+        self.detail_thread.result_ready.connect(on_template_details_loaded)
         self.detail_thread.start()
     
     def _load_comments(self, comments):
@@ -854,21 +846,6 @@ class CommunityTemplatesDialog(QDialog):
         QVBoxLayout(busy).addWidget(QLabel(self.tr("Uploading template, please wait…")))
         busy.show()
 
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-
-        class UploadThread(QThread):
-            upload_complete = ThreadSignal(dict)
-
-            def __init__(self, tpl_id: str, game: str):
-                super().__init__()
-                self.tpl_id = tpl_id
-                self.game = game
-
-            def run(self):
-                result = RszCommunityTemplateManager.upload_template(
-                    self.tpl_id, self.game)
-                self.upload_complete.emit(result)
-
         def _on_done(result: dict):
             busy.close()
             if result.get("success"):
@@ -883,8 +860,12 @@ class CommunityTemplatesDialog(QDialog):
                     result.get("message", self.tr("Unknown error")),
                 )
 
-        self.upload_thread = UploadThread(template_id, game_id)
-        self.upload_thread.upload_complete.connect(_on_done)
+        self.upload_thread = _ResultWorker(
+            RszCommunityTemplateManager.upload_template,
+            template_id,
+            game_id,
+        )
+        self.upload_thread.result_ready.connect(_on_done)
         self.upload_thread.start()
     def _download_template(self):
         """Download the selected template"""
@@ -898,19 +879,6 @@ class CommunityTemplatesDialog(QDialog):
         loading_layout.addWidget(QLabel(self.tr("Downloading template from community...")))
         loading_dialog.show()
         
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-        
-        class DownloadThread(QThread):
-            download_complete = ThreadSignal(dict)
-            
-            def __init__(self, community_id):
-                super().__init__()
-                self.community_id = community_id
-                
-            def run(self):
-                result = RszCommunityTemplateManager.download_template(self.community_id)
-                self.download_complete.emit(result)
-        
         def on_download_complete(result):
             loading_dialog.close()
             
@@ -920,8 +888,11 @@ class CommunityTemplatesDialog(QDialog):
             else:
                 QMessageBox.warning(self, self.tr("Download Failed"), result["message"])
         
-        self.download_thread = DownloadThread(self.current_community_id)
-        self.download_thread.download_complete.connect(on_download_complete)
+        self.download_thread = _ResultWorker(
+            RszCommunityTemplateManager.download_template,
+            self.current_community_id,
+        )
+        self.download_thread.result_ready.connect(on_download_complete)
         self.download_thread.start()
     
     def _submit_comment(self):
@@ -946,20 +917,6 @@ class CommunityTemplatesDialog(QDialog):
         self.submit_comment_button.setEnabled(False)
         self.submit_comment_button.setText(self.tr("Sending..."))
         
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-        
-        class CommentThread(QThread):
-            comment_complete = ThreadSignal(dict)
-            
-            def __init__(self, community_id, comment_text):
-                super().__init__()
-                self.community_id = community_id
-                self.comment_text = comment_text
-                
-            def run(self):
-                result = RszCommunityTemplateManager.add_comment(self.community_id, self.comment_text)
-                self.comment_complete.emit(result)
-        
         def on_comment_complete(result):
             self.submit_comment_button.setEnabled(True)
             self.submit_comment_button.setText(self.tr("Submit"))
@@ -970,8 +927,12 @@ class CommunityTemplatesDialog(QDialog):
             else:
                 QMessageBox.warning(self, self.tr("Comment Failed"), result["message"])
         
-        self.comment_thread = CommentThread(self.current_community_id, comment_text)
-        self.comment_thread.comment_complete.connect(on_comment_complete)
+        self.comment_thread = _ResultWorker(
+            RszCommunityTemplateManager.add_comment,
+            self.current_community_id,
+            comment_text,
+        )
+        self.comment_thread.result_ready.connect(on_comment_complete)
         self.comment_thread.start()
     
     def _submit_rating(self, rating):
@@ -985,20 +946,6 @@ class CommunityTemplatesDialog(QDialog):
             
         if not self.current_community_id:
             return
-        
-        from PySide6.QtCore import QThread, Signal as ThreadSignal
-        
-        class RatingThread(QThread):
-            rating_complete = ThreadSignal(dict)
-            
-            def __init__(self, community_id, rating):
-                super().__init__()
-                self.community_id = community_id
-                self.rating = rating
-                
-            def run(self):
-                result = RszCommunityTemplateManager.add_rating(self.community_id, self.rating)
-                self.rating_complete.emit(result)
         
         def on_rating_complete(result):
             if result["success"]:
@@ -1015,8 +962,12 @@ class CommunityTemplatesDialog(QDialog):
             except RuntimeError:
                 pass
             
-        self.rating_thread = RatingThread(self.current_community_id, rating)
-        self.rating_thread.rating_complete.connect(on_rating_complete)
+        self.rating_thread = _ResultWorker(
+            RszCommunityTemplateManager.add_rating,
+            self.current_community_id,
+            rating,
+        )
+        self.rating_thread.result_ready.connect(on_rating_complete)
         self.rating_thread.finished.connect(self.rating_thread.deleteLater)
         self.rating_thread.finished.connect(lambda: setattr(self, "rating_thread", None))
         self.rating_thread.start()

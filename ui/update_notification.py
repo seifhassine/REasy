@@ -231,7 +231,9 @@ class UpdateNotificationManager:
                             "The update failed with code {return_code}.\n\nDetails:\n{details}",
                         ).format(return_code=result.returncode, details=msg))
             QTimer.singleShot(0, notify_done)
-        except Exception as e:
+        except Exception as exc:
+            error = str(exc)
+
             def notify_error():
                 QMessageBox.critical(
                     self.main_window,
@@ -239,5 +241,5 @@ class UpdateNotificationManager:
                     QCoreApplication.translate(
                         "UpdateNotificationManager",
                         "An unexpected error occurred during update.\n\n{error}",
-                    ).format(error=e))
+                    ).format(error=error))
             QTimer.singleShot(0, notify_error)

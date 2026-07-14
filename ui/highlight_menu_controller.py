@@ -2,6 +2,8 @@ from PySide6.QtWidgets import QColorDialog
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtCore import QCoreApplication, QModelIndex
 
+from ui.highlight_utils import model_index_row_path
+
 
 class HighlightMenuController:
     def __init__(self, main_window):
@@ -122,12 +124,7 @@ class HighlightMenuController:
             if not index.isValid():
                 continue
             
-            path = []
-            current = index
-            while current.isValid():
-                path.append(current.row())
-                current = current.parent()
-            item_id = tuple(reversed(path))
+            item_id = model_index_row_path(index)
             
             if item_id in highlighted_items:
                 if hasattr(tree, '_update_widget_highlight'):

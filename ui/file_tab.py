@@ -20,10 +20,12 @@ from services.backup_store import create_backup, find_backups
 from ui.better_find_dialog import BetterFindDialog
 from ui.highlight_delegate import HighlightDelegate
 from ui.highlight_manager import HighlightManager
+from ui.highlight_utils import model_index_row_path
 
 
 NO_FILE_LOADED_STR = QT_TRANSLATE_NOOP("FileTab", "No file loaded")
 UNSAVED_CHANGES_STR = QT_TRANSLATE_NOOP("FileTab", "Unsaved changes")
+_DEFAULT_LAYOUT_PRESERVE = object()
 
 
 class FileTab:
@@ -39,6 +41,8 @@ class FileTab:
         self.modified = False
         self.app = app
         self.viewer = None
+        self._find_dialog = None
+        self._connected_model = None
         self.pak_source_path: str | None = pak_source_path
         self.pak_project_dir: str | None = pak_project_dir
         self.pak_data_loader = None
@@ -87,7 +91,7 @@ class FileTab:
 
     def _invalidate_search_dialog_tree(self):
         dialogs = []
-        if hasattr(self, "_find_dialog") and self._find_dialog:
+        if self._find_dialog:
             dialogs.append(self._find_dialog)
 
         shared_dialog = getattr(self.app, "_shared_find_dialog", None) if self.app else None
@@ -119,26 +123,25 @@ class FileTab:
         if index != -1:
             self.parent_notebook.setTabText(index, title)
 
-    def _cleanup_layout(self, layout):
+    def _cleanup_layout(self, layout, preserve_widget=_DEFAULT_LAYOUT_PRESERVE):
         """Clean up layout but preserve the tree widget"""
         if not layout:
             return
 
-        tree_widget = None
-        for i in range(layout.count()):
-            item = layout.itemAt(i)
-            if item.widget() == self.tree:
-                tree_widget = self.tree
-                break
+        if preserve_widget is _DEFAULT_LAYOUT_PRESERVE:
+            preserve_widget = self.tree
 
+        preserved_widget = None
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
-            if widget and widget != tree_widget:
+            if widget is preserve_widget:
+                preserved_widget = widget
+            elif widget:
                 widget.setParent(None)
                 widget.deleteLater()
 
-        return tree_widget
+        return preserved_widget
 
     def _prepare_handler(self, data, handler=None):
         try:
@@ -253,13 +256,13 @@ class FileTab:
 
             model = self.tree.model()
             if model:
-                if hasattr(self, '_connected_model') and self._connected_model and self._connected_model != model:
+                if self._connected_model and self._connected_model != model:
                     try:
                         self._connected_model.dataChanged.disconnect(self.on_tree_edit)
                     except (RuntimeError, TypeError):
                         pass
 
-                if not hasattr(self, '_connected_model') or self._connected_model != model:
+                if self._connected_model != model:
                     model.dataChanged.connect(self.on_tree_edit)
                     self._connected_model = model
 
@@ -293,7 +296,7 @@ class FileTab:
         if not index.isValid():
             return
 
-        item_id = self._get_index_identifier(index)
+        item_id = model_index_row_path(index)
 
         if self.highlight_manager.is_item_highlighted(item_id):
             self.highlight_manager.remove_highlighted_item(item_id)
@@ -301,14 +304,6 @@ class FileTab:
             self.highlight_manager.add_highlighted_item(item_id)
 
         self.tree.viewport().update()
-
-    def _get_index_identifier(self, index):
-        path = []
-        current = index
-        while current.isValid():
-            path.append(current.row())
-            current = current.parent()
-        return tuple(reversed(path))
 
     def on_double_click(self, index):
         if not self.tree or not self.handler or not self.handler.supports_tree_editing():
@@ -531,7 +526,7 @@ class FileTab:
                 return
         parent_window = self.notebook_widget.window()
         if isinstance(parent_window, QMainWindow) and parent_window.__class__.__name__ == 'FloatingTabWindow':
-            if hasattr(self, "_find_dialog") and self._find_dialog:
+            if self._find_dialog:
                 try:
                     if self._find_dialog.isVisible():
                         if not self._find_dialog.isFloating():
@@ -662,13 +657,7 @@ class FileTab:
             print(f"Warning: Error clearing tree model: {e}")
 
         layout = self.notebook_widget.layout() if self.notebook_widget else None
-        if layout:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget:
-                    widget.setParent(None)
-                    widget.deleteLater()
+        self._cleanup_layout(layout, preserve_widget=None)
 
         if self.tree:
             try:
@@ -694,7 +683,7 @@ class FileTab:
                 pass
             self.notebook_widget = None
 
-        if hasattr(self, "_find_dialog") and self._find_dialog:
+        if self._find_dialog:
             try:
                 self._find_dialog.close()
             except RuntimeError:

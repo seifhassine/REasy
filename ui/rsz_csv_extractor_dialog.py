@@ -295,8 +295,6 @@ class RszCsvExtractorDialog(QDialog):
 
         self._setup_type_autocomplete(self.type_edit_A)
         self._setup_type_autocomplete(self.type_edit_B)
-        self.type_edit_A.editingFinished.connect(lambda: self._on_type_resolved('A'))
-        self.type_edit_B.editingFinished.connect(lambda: self._on_type_resolved('B'))
 
         add_btn.clicked.connect(self._add_rule)
         remove_btn.clicked.connect(self._remove_rule)

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QProcess
+from PySide6.QtCore import QProcess
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QProgressBar, QPushButton
 from PySide6.QtWidgets import QApplication
@@ -83,10 +83,8 @@ class UpdateProgressDialog(QDialog):
                 if self._staged_path and self._script_path and self._target_dir:
                     self._on_apply()
                     return
-            elif line.startswith("TARGET "):
-                pass
-            elif line.strip() == "READY":
-                pass
+            elif line.startswith("TARGET ") or line.strip() == "READY":
+                continue
             else:
                 if line.strip():
                     self._log.moveCursor(QTextCursor.End)

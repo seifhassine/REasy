@@ -147,8 +147,6 @@ class TemplateManagerDialog(QDialog):
         self.import_button.clicked.connect(self._import_template)
         
         self.registry_combo.currentIndexChanged.connect(self._on_filter_changed)
-        self.tag_combo.currentIndexChanged.connect(self._on_filter_changed)
-        self.search_input.textChanged.connect(self._on_search_text_changed)
     
     def _load_templates(self):
         """Load templates into the list widget"""
@@ -349,12 +347,16 @@ class TemplateManagerDialog(QDialog):
         """Delete the selected template"""
         if not self.current_template_id:
             return
-            
+
+        self._delete_template_by_id(self.current_template_id, self.name_edit.text())
+
+    def _delete_template_by_id(self, template_id, name):
+        """Delete a template after confirmation and refresh the dialog state."""
         confirm = QMessageBox.question(
             self,
             self.tr("Confirm Deletion"),
             self.tr("Are you sure you want to delete the template '{name}'?").format(
-                name=self.name_edit.text()
+                name=name
             ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
@@ -363,14 +365,15 @@ class TemplateManagerDialog(QDialog):
         if confirm != QMessageBox.Yes:
             return
             
-        success = RszTemplateManager.delete_template(self.current_template_id)
+        success = RszTemplateManager.delete_template(template_id)
         
         if success:
             QMessageBox.information(
                 self, self.tr("Success"), self.tr("Template deleted successfully")
             )
-            self.current_template_id = None
-            self.template_details.setVisible(False)
+            if template_id == self.current_template_id:
+                self.current_template_id = None
+                self.template_details.setVisible(False)
             self._load_templates()
             self._load_filters()
         else:
@@ -477,35 +480,8 @@ class TemplateManagerDialog(QDialog):
             
         template_info = metadata["templates"][template_id]
         name = template_info.get("name", self.tr("Unknown"))
-        
-        confirm = QMessageBox.question(
-            self,
-            self.tr("Confirm Deletion"),
-            self.tr("Are you sure you want to delete the template '{name}'?").format(name=name),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-        
-        if confirm != QMessageBox.Yes:
-            return
-            
-        success = RszTemplateManager.delete_template(template_id)
-        
-        if success:
-            QMessageBox.information(
-                self, self.tr("Success"), self.tr("Template deleted successfully")
-            )
-            
-            if template_id == self.current_template_id:
-                self.current_template_id = None
-                self.template_details.setVisible(False)
-                
-            self._load_templates()
-            self._load_filters()
-        else:
-            QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Failed to delete template")
-            )
+
+        self._delete_template_by_id(template_id, name)
     
     def _open_community_templates(self):
         """Open the community templates browser dialog"""

@@ -324,7 +324,6 @@ class RszFieldValueFinderDialog(QDialog):
         
         try:
             type_items = []
-            total_items = len(self.type_registry.registry)
             processed = 0
             
             for hex_key, type_info in self.type_registry.registry.items():

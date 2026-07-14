@@ -96,6 +96,7 @@ class OutdatedFilesDialog(QDialog):
         self.delete_btn = QPushButton(self.tr("Delete Selected Files"))
         self.delete_btn.clicked.connect(self._delete_selected)
         self.delete_btn.setEnabled(False)
+        self.results_tree.itemChanged.connect(self._on_item_checked)
         
         action_layout.addWidget(self.select_all_btn)
         action_layout.addWidget(self.deselect_all_btn)
@@ -222,12 +223,14 @@ class OutdatedFilesDialog(QDialog):
         progress.setValue(total_files)
         self.scan_results = results
         
-        if len(results) > 500:
-            self._populate_tree_in_batches(results)
-        else:
-            self._populate_tree(results)
-        
-        self.results_tree.itemChanged.connect(self._on_item_checked)
+        signals_were_blocked = self.results_tree.blockSignals(True)
+        try:
+            if len(results) > 500:
+                self._populate_tree_in_batches(results)
+            else:
+                self._populate_tree(results)
+        finally:
+            self.results_tree.blockSignals(signals_were_blocked)
         
         QMessageBox.information(
             self, 
@@ -240,29 +243,37 @@ class OutdatedFilesDialog(QDialog):
     def _populate_tree(self, results):
         """Populate tree with results - used for smaller result sets"""
         for file_path, mismatches in results:
-            item = QTreeWidgetItem(self.results_tree)
-            item.setText(0, file_path)
-            item.setText(1, str(len(mismatches)))
-            item.setCheckState(0, Qt.Unchecked)
-            
-            for mismatch in mismatches:
-                child = QTreeWidgetItem(item)
-                type_name = mismatch.get("name", self.tr("Unknown"))
-                file_crc = mismatch.get("file_crc", 0)
-                registry_crc = mismatch.get("registry_crc", None)
-                
-                if registry_crc is not None:
-                    crc_text = self.tr(
-                        "File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}"
-                    ).format(file_crc=file_crc, registry_crc=registry_crc)
-                else:
-                    crc_text = self.tr(
-                        "File CRC: 0x{file_crc:08X}, Not found in registry"
-                    ).format(file_crc=file_crc)
-                
-                child.setText(0, f"{type_name} - {crc_text}")
-            
-            item.setExpanded(False)
+            self._add_result_item(file_path, mismatches)
+
+    def _add_result_item(self, file_path, mismatches, detail_limit=None):
+        item = QTreeWidgetItem(self.results_tree)
+        item.setText(0, file_path)
+        item.setText(1, str(len(mismatches)))
+        item.setCheckState(0, Qt.Unchecked)
+
+        displayed = mismatches if detail_limit is None else mismatches[:detail_limit]
+        for mismatch in displayed:
+            type_name = mismatch.get("name", self.tr("Unknown"))
+            file_crc = mismatch.get("file_crc", 0)
+            registry_crc = mismatch.get("registry_crc")
+            if registry_crc is None:
+                crc_text = self.tr(
+                    "File CRC: 0x{file_crc:08X}, Not found in registry"
+                ).format(file_crc=file_crc)
+            else:
+                crc_text = self.tr(
+                    "File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}"
+                ).format(file_crc=file_crc, registry_crc=registry_crc)
+            QTreeWidgetItem(item).setText(0, f"{type_name} - {crc_text}")
+
+        if detail_limit is not None and len(mismatches) > detail_limit:
+            more_item = QTreeWidgetItem(item)
+            more_item.setText(0, self.tr(
+                "... and {count} more mismatches (double-click to load)"
+            ).format(count=len(mismatches) - detail_limit))
+            more_item.setData(0, Qt.UserRole, mismatches[detail_limit:])
+
+        item.setExpanded(False)
     
     def _populate_tree_in_batches(self, results):
         """Populate tree with results in batches to avoid UI freezing"""
@@ -287,34 +298,7 @@ class OutdatedFilesDialog(QDialog):
                 
             batch = results[i:min(i+batch_size, total_items)]
             for file_path, mismatches in batch:
-                item = QTreeWidgetItem(self.results_tree)
-                item.setText(0, file_path)
-                item.setText(1, str(len(mismatches)))
-                item.setCheckState(0, Qt.Unchecked)
-                
-                for mismatch in mismatches[:20]:
-                    child = QTreeWidgetItem(item)
-                    type_name = mismatch.get("name", self.tr("Unknown"))
-                    file_crc = mismatch.get("file_crc", 0)
-                    registry_crc = mismatch.get("registry_crc", None)
-                    
-                    if registry_crc is not None:
-                        crc_text = self.tr(
-                            "File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}"
-                        ).format(file_crc=file_crc, registry_crc=registry_crc)
-                    else:
-                        crc_text = self.tr(
-                            "File CRC: 0x{file_crc:08X}, Not found in registry"
-                        ).format(file_crc=file_crc)
-                    
-                    child.setText(0, f"{type_name} - {crc_text}")
-                
-                if len(mismatches) > 20:
-                    more_item = QTreeWidgetItem(item)
-                    more_item.setText(0, self.tr(
-                        "... and {count} more mismatches (double-click to load)"
-                    ).format(count=len(mismatches) - 20))
-                    more_item.setData(0, Qt.UserRole, mismatches[20:])
+                self._add_result_item(file_path, mismatches, detail_limit=20)
             
             progress.setValue(min(i + batch_size, total_items))
             QApplication.processEvents()
@@ -469,25 +453,3 @@ class OutdatedFilesDialog(QDialog):
                     self, self.tr("Deletion Complete"),
                     self.tr("Successfully deleted {count} files.").format(count=len(success))
                 )
-        confirm = QMessageBox.question(
-            self, self.tr("Confirm Deletion"),
-            self.tr("Are you sure you want to delete {count} files?").format(
-                count=len(files_to_delete)
-            ),
-            QMessageBox.Yes | QMessageBox.No
-        )
-        
-        if confirm == QMessageBox.Yes:
-            success, errors = delete_files(files_to_delete)
-            
-            for file_path in success:
-                for i in range(self.results_tree.topLevelItemCount()):
-                    item = self.results_tree.topLevelItem(i)
-                    if item.text(0) == file_path:
-                        self.results_tree.takeTopLevelItem(i)
-                        break
-                for i in range(self.results_tree.topLevelItemCount()):
-                    item = self.results_tree.topLevelItem(i)
-                    if item.text(0) == file_path:
-                        self.results_tree.takeTopLevelItem(i)
-                        break

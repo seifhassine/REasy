@@ -23,20 +23,17 @@ class ProjectSettingsDialog(QDialog):
         form = QFormLayout()
         layout.addLayout(form)
 
-        self.name_edit = QLineEdit(self.cfg.get("name", project_dir.name))
-        form.addRow(self.tr("Mod Name:"), self.name_edit)
-
-        self.desc_edit = QLineEdit(self.cfg.get("description", ""))
-        form.addRow(self.tr("Description:"), self.desc_edit)
-
-        self.auth_edit = QLineEdit(self.cfg.get("author", ""))
-        form.addRow(self.tr("Author:"), self.auth_edit)
-
-        self.ver_edit  = QLineEdit(self.cfg.get("version", "v1.0"))
-        form.addRow(self.tr("Version:"), self.ver_edit)
-
-        self.pak_edit = QLineEdit(self.cfg.get("pak_name", project_dir.name))
-        form.addRow(self.tr("PAK File Name:"), self.pak_edit)
+        fields = (
+            ("name_edit", self.tr("Mod Name:"), "name", project_dir.name),
+            ("desc_edit", self.tr("Description:"), "description", ""),
+            ("auth_edit", self.tr("Author:"), "author", ""),
+            ("ver_edit", self.tr("Version:"), "version", "v1.0"),
+            ("pak_edit", self.tr("PAK File Name:"), "pak_name", project_dir.name),
+        )
+        for attr, label, key, default in fields:
+            edit = QLineEdit(self.cfg.get(key, default))
+            setattr(self, attr, edit)
+            form.addRow(label, edit)
 
         self.bundle_chk = QCheckBox(self.tr("Build PAK instead of loose folders in Fluffy ZIP"))
         self.bundle_chk.setChecked(self.cfg.get("bundle_pak", False))
@@ -101,9 +98,8 @@ class ProjectSettingsDialog(QDialog):
             self.preview.clear()
 
     def _save(self):
-        self.cfg["bundle_pak"] = self.bundle_chk.isChecked()
-
         self.cfg.update({
+            "bundle_pak":  self.bundle_chk.isChecked(),
             "name":        self.name_edit.text().strip(),
             "description": self.desc_edit.text().strip(),
             "author":      self.auth_edit.text().strip(),

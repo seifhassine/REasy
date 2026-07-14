@@ -267,50 +267,45 @@ class RszDifferDialog(QDialog):
         separator.setFrameShadow(QFrame.Sunken)
         layout.addWidget(separator)
         
-        file1_layout = QHBoxLayout()
-        file1_layout.addWidget(QLabel(self.tr("File 1:")))
-        self.file1_label = DropLabel(self.tr("Drop RSZ file here or click Browse..."))
-        self.file1_label.file_dropped.connect(lambda path: self.load_file(1, path))
-        file1_layout.addWidget(self.file1_label, 1)
-        self.file1_button = QPushButton(self.tr("Browse..."))
-        self.file1_button.clicked.connect(lambda: self.select_file(1))
-        file1_layout.addWidget(self.file1_button)
-        layout.addLayout(file1_layout)
-
-        file1_json_layout = QHBoxLayout()
-        file1_json_layout.addWidget(QLabel(self.tr("File 1 JSON Override:")))
-        self.file1_json_input = QLineEdit()
-        self.file1_json_input.setPlaceholderText(self.tr("Optional JSON file for File 1..."))
-        self.file1_json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(1, text))
-        file1_json_layout.addWidget(self.file1_json_input, 1)
-        self.file1_json_button = QPushButton(self.tr("Browse..."))
-        self.file1_json_button.clicked.connect(lambda: self.browse_file_json_path(1))
-        file1_json_layout.addWidget(self.file1_json_button)
-        layout.addLayout(file1_json_layout)
-
-        file2_layout = QHBoxLayout()
-        file2_layout.addWidget(QLabel(self.tr("File 2:")))
-        self.file2_label = DropLabel(self.tr("Drop RSZ file here or click Browse..."))
-        self.file2_label.file_dropped.connect(lambda path: self.load_file(2, path))
-        file2_layout.addWidget(self.file2_label, 1)
-        self.file2_button = QPushButton(self.tr("Browse..."))
-        self.file2_button.clicked.connect(lambda: self.select_file(2))
-        file2_layout.addWidget(self.file2_button)
-        layout.addLayout(file2_layout)
-
-        file2_json_layout = QHBoxLayout()
-        file2_json_layout.addWidget(QLabel(self.tr("File 2 JSON Override:")))
-        self.file2_json_input = QLineEdit()
-        self.file2_json_input.setPlaceholderText(self.tr("Optional JSON file for File 2..."))
-        self.file2_json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(2, text))
-        file2_json_layout.addWidget(self.file2_json_input, 1)
-        self.file2_json_button = QPushButton(self.tr("Browse..."))
-        self.file2_json_button.clicked.connect(lambda: self.browse_file_json_path(2))
-        file2_json_layout.addWidget(self.file2_json_button)
-        layout.addLayout(file2_json_layout)
+        self._add_file_controls(layout, 1)
+        self._add_file_controls(layout, 2)
 
         group.setLayout(layout)
         return group
+
+    def _add_file_controls(self, layout, file_number: int):
+        prefix = f"file{file_number}"
+        file_caption = (self.tr("File 1:"), self.tr("File 2:"))[file_number - 1]
+        override_caption = (self.tr("File 1 JSON Override:"), self.tr("File 2 JSON Override:"))[file_number - 1]
+        override_placeholder = (self.tr("Optional JSON file for File 1..."), self.tr("Optional JSON file for File 2..."))[file_number - 1]
+
+        def add_browse_row(caption, widget, callback):
+            row = QHBoxLayout()
+            row.addWidget(QLabel(caption))
+            row.addWidget(widget, 1)
+            button = QPushButton(self.tr("Browse..."))
+            button.clicked.connect(callback)
+            row.addWidget(button)
+            layout.addLayout(row)
+            return button
+
+        file_label = DropLabel(self.tr("Drop RSZ file here or click Browse..."))
+        file_label.file_dropped.connect(lambda path: self.load_file(file_number, path))
+        setattr(self, f"{prefix}_label", file_label)
+        file_button = add_browse_row(
+            file_caption, file_label, lambda _checked=False: self.select_file(file_number)
+        )
+        setattr(self, f"{prefix}_button", file_button)
+
+        json_input = QLineEdit()
+        json_input.setPlaceholderText(override_placeholder)
+        json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(file_number, text))
+        setattr(self, f"{prefix}_json_input", json_input)
+        json_button = add_browse_row(
+            override_caption, json_input,
+            lambda _checked=False: self.browse_file_json_path(file_number),
+        )
+        setattr(self, f"{prefix}_json_button", json_button)
         
     def create_summary_widget(self) -> QTextEdit:
         widget = QTextEdit()
@@ -384,11 +379,8 @@ class RszDifferDialog(QDialog):
             self.update_results()
 
     def on_file_json_path_changed(self, file_number: int, text: str):
-        path = text if text else None
-        if file_number == 1:
-            self.file1_json_path = path
-        else:
-            self.file2_json_path = path
+        prefix = "file1" if file_number == 1 else "file2"
+        setattr(self, f"{prefix}_json_path", text or None)
 
         if self.file1_data and self.file2_data:
             self.diff_result = None
@@ -406,7 +398,8 @@ class RszDifferDialog(QDialog):
             self.json_path = file_path
 
     def browse_file_json_path(self, file_number: int):
-        current_path = self.file1_json_path if file_number == 1 else self.file2_json_path
+        prefix = "file1" if file_number == 1 else "file2"
+        current_path = getattr(self, f"{prefix}_json_path")
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             self.tr("Select JSON Override for File {file_number}").format(
@@ -417,12 +410,8 @@ class RszDifferDialog(QDialog):
         )
 
         if file_path:
-            if file_number == 1:
-                self.file1_json_input.setText(file_path)
-                self.file1_json_path = file_path
-            else:
-                self.file2_json_input.setText(file_path)
-                self.file2_json_path = file_path
+            getattr(self, f"{prefix}_json_input").setText(file_path)
+            setattr(self, f"{prefix}_json_path", file_path)
 
     def select_file(self, file_number: int):
         file_path, _ = QFileDialog.getOpenFileName(
