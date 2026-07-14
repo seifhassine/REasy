@@ -10,16 +10,28 @@ from .data import LprbData
 _HEADER_SIZE = 16
 _PACKED_TERM_SIZE = 4
 _V3_TERM_COUNT = 6
-_V6_TERM_COUNT = 12
+_ICOSAHEDRAL_TERM_COUNT = 12
 
 
 def parse_lprb(data: bytes, *, version: int | None = None) -> LprbData:
     header = _read_header(data)
     if version is None:
         probe_count, probe_data_size, _payload_start, _payload_end = header
-        version = 3 if probe_data_size == probe_count * _V3_TERM_COUNT * _PACKED_TERM_SIZE else 6
+        if probe_data_size == probe_count * _V3_TERM_COUNT * _PACKED_TERM_SIZE:
+            version = 3
+        elif probe_data_size == probe_count * _ICOSAHEDRAL_TERM_COUNT * _PACKED_TERM_SIZE:
+            version = 4
+        else:
+            version = 6
     if version == 3:
-        return _parse_v3_payload(data, header)
+        return _parse_direct_payload(data, header, version=3, term_count=_V3_TERM_COUNT)
+    if version == 4:
+        return _parse_direct_payload(
+            data,
+            header,
+            version=4,
+            term_count=_ICOSAHEDRAL_TERM_COUNT,
+        )
     if version == 6:
         return _parse_v6_payload(data, header)
     raise ValueError(f"Unsupported LPRB version: {version}")
@@ -27,7 +39,22 @@ def parse_lprb(data: bytes, *, version: int | None = None) -> LprbData:
 
 def parse_lprb_v3(data: bytes) -> LprbData:
     """Parse direct 24-byte records ordered +X, +Z, +Y, -X, -Z, -Y."""
-    return _parse_v3_payload(data, _read_header(data))
+    return _parse_direct_payload(
+        data,
+        _read_header(data),
+        version=3,
+        term_count=_V3_TERM_COUNT,
+    )
+
+
+def parse_lprb_v4(data: bytes) -> LprbData:
+    """Parse direct 48-byte records containing 12 icosahedral terms."""
+    return _parse_direct_payload(
+        data,
+        _read_header(data),
+        version=4,
+        term_count=_ICOSAHEDRAL_TERM_COUNT,
+    )
 
 
 def parse_lprb_v6(data: bytes) -> LprbData:
@@ -44,23 +71,26 @@ def _read_header(data: bytes) -> tuple[int, int, int, int]:
     return int(probe_count), int(probe_data_size), _HEADER_SIZE, payload_end
 
 
-def _parse_v3_payload(
+def _parse_direct_payload(
     data: bytes,
     header: tuple[int, int, int, int],
+    *,
+    version: int,
+    term_count: int,
 ) -> LprbData:
     probe_count, probe_data_size, payload_start, _payload_end = header
-    expected_size = probe_count * _V3_TERM_COUNT * _PACKED_TERM_SIZE
+    expected_size = probe_count * term_count * _PACKED_TERM_SIZE
     if probe_data_size != expected_size:
         raise ValueError(
-            f"LPRB v3 payload size is {probe_data_size}, expected {expected_size} "
+            f"LPRB v{version} payload size is {probe_data_size}, expected {expected_size} "
             f"for {probe_count} probes"
         )
     words = np.frombuffer(
         data,
         dtype="<u4",
-        count=probe_count * _V3_TERM_COUNT,
+        count=probe_count * term_count,
         offset=payload_start,
-    ).reshape(probe_count, _V3_TERM_COUNT)
+    ).reshape(probe_count, term_count)
     return LprbData(probe_count=probe_count, terms_rgb=_decode_packed_probe_words(words))
 
 
@@ -74,8 +104,8 @@ def _parse_v6_payload(
         raise ValueError("LPRB offset table is truncated")
 
     offsets = np.frombuffer(data, dtype="<u4", count=probe_count, offset=payload_start)
-    words = np.empty((probe_count, _V6_TERM_COUNT), dtype=np.uint32)
-    record_size = _V6_TERM_COUNT * _PACKED_TERM_SIZE
+    words = np.empty((probe_count, _ICOSAHEDRAL_TERM_COUNT), dtype=np.uint32)
+    record_size = _ICOSAHEDRAL_TERM_COUNT * _PACKED_TERM_SIZE
     for probe_index, offset in enumerate(offsets):
         absolute = payload_start + int(offset)
         if absolute < payload_start + offset_table_bytes or absolute + record_size > payload_end:
@@ -83,7 +113,7 @@ def _parse_v6_payload(
         words[probe_index] = np.frombuffer(
             data,
             dtype="<u4",
-            count=_V6_TERM_COUNT,
+            count=_ICOSAHEDRAL_TERM_COUNT,
             offset=absolute,
         )
     return LprbData(probe_count=probe_count, terms_rgb=_decode_packed_probe_words(words))

@@ -35,6 +35,7 @@ LIGHT_PROBE_PREVIEW_GAMES = frozenset({
     "MHRise",
     "RE2",
     "RE2RT",
+    "RE3",
     "RE3RT",
     "RE4",
     "RE7RT",
