@@ -27,13 +27,39 @@ class ProbeShadeInput:
     normals: np.ndarray | None
     base_colors: np.ndarray | None
 
+    def fingerprint(self) -> tuple:
+        return (
+            self.key,
+            id(self.vertices),
+            id(self.normals),
+            id(self.base_colors),
+            len(self.vertices),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ProbeShadeLayer:
+    key: str
+    probe_set: SceneLightProbeSet
+    boxes: tuple[ProbeBoxSnapshot, ...] = ()
+    priority: int = 0
+    intensity: float = 1.0
+
+    def fingerprint(self) -> tuple:
+        return (
+            self.key,
+            id(self.probe_set),
+            int(self.priority),
+            round(float(self.intensity), 6),
+            tuple(box.fingerprint() for box in self.boxes),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class ProbeShadeRequest:
-    probe_set: SceneLightProbeSet
+    layers: tuple[ProbeShadeLayer, ...]
     inputs: tuple[ProbeShadeInput, ...]
     exposure: float
-    boxes: tuple[ProbeBoxSnapshot, ...] = ()
     key: tuple = field(init=False)
 
     def __post_init__(self) -> None:
@@ -43,19 +69,9 @@ class ProbeShadeRequest:
             self,
             "key",
             (
-                id(self.probe_set),
+                tuple(layer.fingerprint() for layer in self.layers),
                 exposure,
-                tuple(
-                    (
-                        item.key,
-                        id(item.vertices),
-                        id(item.normals),
-                        id(item.base_colors),
-                        len(item.vertices),
-                    )
-                    for item in self.inputs
-                ),
-                tuple(box.fingerprint() for box in self.boxes),
+                tuple(item.fingerprint() for item in self.inputs),
             ),
         )
 
@@ -74,72 +90,87 @@ def snapshot_probe_boxes(boxes: Iterable[object]) -> tuple[ProbeBoxSnapshot, ...
     return tuple(snapshots)
 
 
-def shade_probe_inputs(
-    probe_set: SceneLightProbeSet,
+def shade_probe_layers(
+    layers: tuple[ProbeShadeLayer, ...],
     inputs: tuple[ProbeShadeInput, ...],
     *,
     exposure: float,
-    boxes: tuple[ProbeBoxSnapshot, ...] = (),
     progress_callback: Callable[[int, int], None] | None = None,
     cancel_requested: Callable[[], bool] | None = None,
 ) -> dict[int, np.ndarray]:
     total = sum(len(item.vertices) for item in inputs)
     completed = 0
     results: dict[int, np.ndarray] = {}
+    ordered_layers = tuple(sorted(layers, key=_layer_sort_key))
     if progress_callback is not None:
         progress_callback(0, total)
 
     for item in inputs:
         if cancel_requested is not None and cancel_requested():
             raise ProbeShadingCancelled()
-        offset = completed
-        colors = probe_set.shade_vertices(
-            item.vertices,
-            item.normals,
-            exposure=exposure,
-            progress_callback=(
-                (lambda done, _count, offset=offset: progress_callback(offset + done, total))
-                if progress_callback is not None
-                else None
-            ),
-            cancel_requested=cancel_requested,
-        )
+        points = np.asarray(item.vertices, dtype=np.float32).reshape(-1, 3)
+        normals = None
+        if item.normals is not None:
+            candidate_normals = np.asarray(item.normals, dtype=np.float32).reshape(-1, 3)
+            if len(candidate_normals) == len(points):
+                normals = candidate_normals
+        colors = np.ones((len(points), 4), dtype=np.float32)
+        colors[:, :3] = 0.0
+        remaining = np.ones(len(points), dtype=bool)
+        shaded_count = 0
+        for layer in ordered_layers:
+            rows = np.flatnonzero(remaining & _points_in_boxes(points, layer.boxes, cancel_requested))
+            if not len(rows):
+                continue
+            offset = completed + shaded_count
+            shaded = layer.probe_set.shade_vertices(
+                points[rows],
+                None if normals is None else normals[rows],
+                exposure=float(exposure) * max(0.0, float(layer.intensity)),
+                progress_callback=(
+                    (lambda done, _count, offset=offset: progress_callback(offset + done, total))
+                    if progress_callback is not None
+                    else None
+                ),
+                cancel_requested=cancel_requested,
+            )
+            colors[rows] = shaded
+            remaining[rows] = False
+            shaded_count += len(rows)
+            if not np.any(remaining):
+                break
         if cancel_requested is not None and cancel_requested():
             raise ProbeShadingCancelled()
-        _apply_probe_display_modulation(
-            colors,
-            item,
-            boxes,
-            cancel_requested=cancel_requested,
-        )
+        if item.base_colors is not None:
+            colors[:, :3] *= np.clip(item.base_colors[:, :3], 0.0, 1.0)
         results[item.key] = colors.astype(np.float32, copy=False)
         completed += len(item.vertices)
+        if progress_callback is not None:
+            progress_callback(completed, total)
 
-    if progress_callback is not None:
-        progress_callback(total, total)
     return results
 
 
-def _apply_probe_display_modulation(
-    colors: np.ndarray,
-    item: ProbeShadeInput,
+def _points_in_boxes(
+    points: np.ndarray,
     boxes: tuple[ProbeBoxSnapshot, ...],
-    *,
     cancel_requested: Callable[[], bool] | None,
-) -> None:
-    if boxes:
-        points = np.asarray(item.vertices, dtype=np.float32).reshape(-1, 3)
-        inside = np.zeros(len(points), dtype=bool)
-        for box in boxes:
-            if cancel_requested is not None and cancel_requested():
-                raise ProbeShadingCancelled()
-            local = (points - box.center) @ box.axes.T
-            inside |= np.all(np.abs(local) <= (box.extent + 1e-4), axis=1)
-        colors[~inside, :3] = 0.0
-    if cancel_requested is not None and cancel_requested():
-        raise ProbeShadingCancelled()
-    if item.base_colors is not None:
-        colors[:, :3] *= np.clip(item.base_colors[:, :3], 0.0, 1.0)
+) -> np.ndarray:
+    if not boxes:
+        return np.ones(len(points), dtype=bool)
+    inside = np.zeros(len(points), dtype=bool)
+    for box in boxes:
+        if cancel_requested is not None and cancel_requested():
+            raise ProbeShadingCancelled()
+        local = (points - box.center) @ box.axes.T
+        inside |= np.all(np.abs(local) <= (box.extent + 1e-4), axis=1)
+    return inside
+
+
+def _layer_sort_key(layer: ProbeShadeLayer) -> tuple[float, float, str]:
+    volumes = [float(np.prod(np.maximum(box.extent, 0.0) * 2.0)) for box in layer.boxes]
+    coverage = sum(volumes) if volumes else float("inf")
+    return -int(layer.priority), coverage, layer.key
 
 
 class _ProbeShadeSignals(QObject):
@@ -167,11 +198,10 @@ class ProbeShadeWorker(QRunnable):
     def run(self) -> None:
         request = self.request
         try:
-            results = shade_probe_inputs(
-                request.probe_set,
+            results = shade_probe_layers(
+                request.layers,
                 request.inputs,
                 exposure=request.exposure,
-                boxes=request.boxes,
                 progress_callback=lambda done, total: self.signals.progress.emit(
                     self.job_id,
                     done,

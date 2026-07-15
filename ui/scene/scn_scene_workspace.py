@@ -656,11 +656,21 @@ class ScnSceneTab:
         return None
 
     def _refresh_controls(self, *, focus_changed: bool = True) -> None:
-        has_selection = any(isinstance(item.data(0, Qt.UserRole), int) for item in self.source_tree.selectedItems())
-        keys = {key for item in self.source_tree.selectedItems() for key in (item.data(1, Qt.UserRole) or ())}
+        selected_items = self.source_tree.selectedItems()
+        has_selection = any(isinstance(item.data(0, Qt.UserRole), int) for item in selected_items)
+        keys = {key for item in selected_items for key in (item.data(1, Qt.UserRole) or ())}
+        direct_keys = {
+            key
+            for item in selected_items
+            for key in (item.data(0, Qt.UserRole + 2) or ())
+        }
         changed = keys != self._selected_renderables
         self._selected_renderables = keys
-        self.preview.set_selection(keys, focus=focus_changed and changed and bool(keys))
+        self.preview.set_selection(
+            keys,
+            preferred_keys=direct_keys,
+            focus=focus_changed and changed and bool(keys),
+        )
         self.add_button.setEnabled(bool(self.app.scenes.open_scn_sources()))
         self.remove_button.setEnabled(has_selection)
         record = self._selected_raw_record()

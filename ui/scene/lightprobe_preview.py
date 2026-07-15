@@ -338,6 +338,15 @@ class SceneLightProbeSet:
         return np.asarray((b0, b1, b2, 1.0 - b0 - b1 - b2), dtype=np.float32)
 
 
+@dataclass(slots=True)
+class SceneLightProbeInstance:
+    key: str
+    probe_set: SceneLightProbeSet | None
+    obbs: list[object]
+    priority: int = 0
+    intensity: float = 1.0
+
+
 def _normal_array(points: np.ndarray, normals: np.ndarray | None) -> np.ndarray:
     fallback = np.array((0.0, 1.0, 0.0), dtype=np.float32)
     if normals is None:

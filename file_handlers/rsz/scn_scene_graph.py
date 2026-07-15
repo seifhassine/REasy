@@ -233,6 +233,8 @@ class ScnLightProbeBinding:
     lprb_path: str
     prb_path: str
     obbs: list[ScnOrientedBox] = field(default_factory=list)
+    priority: int = 0
+    intensity: float = 1.0
 
     @property
     def key(self) -> str:
@@ -370,6 +372,16 @@ def _resource_string_fields(fields: Mapping[str, object]) -> list[tuple[str, str
         for name, value in fields.items()
         if isinstance(value, (ResourceData, StringData))
     ]
+
+
+def _numeric_field(fields: Mapping[str, object], name: str, default: float) -> float:
+    target = name.casefold()
+    field = next((value for key, value in fields.items() if key.casefold() == target), None)
+    try:
+        value = float(getattr(field, "value", field))
+    except (TypeError, ValueError):
+        return float(default)
+    return value if np.isfinite(value) else float(default)
 
 
 def _obb_fields(fields: Mapping[str, object]) -> list[ScnOrientedBox]:
@@ -734,6 +746,8 @@ class ScnSceneGraphBuilder:
                 lprb_path=normalize_scene_path(values[0]),
                 prb_path=normalize_scene_path(values[1]),
                 obbs=_obb_fields(component.fields),
+                priority=int(_numeric_field(component.fields, "Priority", 0.0)),
+                intensity=max(0.0, _numeric_field(component.fields, "Intensity", 1.0)),
             )
         )
 

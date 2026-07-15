@@ -165,8 +165,9 @@ from .scene_buffers import (
     transform_normals,
     transform_points,
 )
-from .lightprobe_preview import SceneLightProbeSet
+from .lightprobe_preview import SceneLightProbeInstance
 from .lightprobe_shading import (
+    ProbeShadeLayer,
     ProbeShadeInput,
     ProbeShadeRequest,
     ProbeShadeWorker,
@@ -307,12 +308,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.texture_quality = self._setting_choice("renderer_texture_quality", tuple(TEXTURE_QUALITY_PROFILES))
         self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", self.WIREFRAME_MODES)
         self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", self.LIGHTING_MODES)
-        self._light_probe_set: SceneLightProbeSet | None = None
+        self._light_probe_instances: dict[str, SceneLightProbeInstance] = {}
         self._light_probe_status = ""
-        self._light_probe_key = ""
-        self._light_probe_obbs: list[object] = []
-        self._probe_viz_candidate_indices_cache_key = None
-        self._probe_viz_candidate_indices_cache: np.ndarray | None = None
+        self._preferred_selection_keys: set[str] = set()
+        self._probe_viz_candidate_indices_cache: dict[tuple, np.ndarray] = {}
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache: tuple[np.ndarray, np.ndarray] | None = None
         self._probe_shade_pool = QThreadPool(self)
@@ -743,31 +742,38 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._upload_buffers()
         self.update()
 
-    def set_light_probe_set(self, probe_set: SceneLightProbeSet | None, status: str = "", obbs: list[object] | None = None, key: str = "") -> None:
+    def set_light_probe_instances(self, instances: list[SceneLightProbeInstance]) -> None:
         self._cancel_probe_shading()
         self._probe_shade_error = ""
-        self._light_probe_set = probe_set
-        self._light_probe_status = str(status or "")
-        self._light_probe_key = str(key or "")
-        self._light_probe_obbs = list(obbs or [])
+        self._light_probe_instances = {instance.key: instance for instance in instances}
+        loaded = sum(instance.probe_set is not None for instance in instances)
+        self._light_probe_status = (
+            self.tr("LightProbes: {loaded}/{total} loaded").format(loaded=loaded, total=len(instances))
+            if instances
+            else ""
+        )
         self._invalidate_probe_viz_points()
-        if probe_set is not None and self._controls != "mesh":
-            vertex_count = self._buffer_vertex_count()
-            target_mode = None
-            if 0 < vertex_count <= self.PROBE_AUTO_ENABLE_VERTEX_LIMIT:
-                target_mode = "probes"
-            if target_mode is not None:
-                self.lighting_mode = target_mode
-                combo = getattr(self, "scene_light_combo", None)
-                if combo is not None:
-                    combo.blockSignals(True)
-                    target_index = combo.findData(target_mode)
-                    if target_index >= 0:
-                        combo.setCurrentIndex(target_index)
-                    combo.blockSignals(False)
+        vertex_count = self._buffer_vertex_count()
+        if (
+            loaded
+            and self._controls != "mesh"
+            and 0 < vertex_count <= self.PROBE_AUTO_ENABLE_VERTEX_LIMIT
+        ):
+            self.lighting_mode = "probes"
+            combo = getattr(self, "scene_light_combo", None)
+            if combo is not None:
+                combo.blockSignals(True)
+                target_index = combo.findData("probes")
+                if target_index >= 0:
+                    combo.setCurrentIndex(target_index)
+                combo.blockSignals(False)
         self._colors_dirty = True
         self._refresh_probe_status_label()
         self.update()
+
+    @property
+    def light_probe_status(self) -> str:
+        return self._light_probe_status
 
     def _buffer_vertex_count(self) -> int:
         total = 0
@@ -781,7 +787,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if label is None:
             return
         label.setToolTip(self._probe_shade_error)
-        if self._light_probe_set is None:
+        visible = self._visible_light_probe_instances()
+        loaded = [instance for instance in visible if instance.probe_set is not None]
+        if not loaded:
             label.setText(
                 self.tr("Probe: none")
                 if not self._light_probe_status
@@ -800,11 +808,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             mode = self.tr("applying")
         elif self._probe_shade_error:
             mode = self.tr("error")
-        candidate_indices = self._probe_viz_candidate_indices()
-        probe_count = 0 if candidate_indices is None else len(candidate_indices)
+        probe_count = sum(len(self._probe_viz_candidate_indices(instance)) for instance in loaded)
         label.setText(
-            self.tr("Probe: {mode} | OBB {boxes} | probes {probes}").format(
-                mode=mode, boxes=len(boxes), probes=probe_count
+            self.tr("Probe: {mode} | sets {sets} | OBB {boxes} | probes {probes}").format(
+                mode=mode, sets=len(loaded), boxes=len(boxes), probes=probe_count
             )
         )
 
@@ -816,7 +823,29 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         bar.setVisible(bool(visible))
 
     def _light_probe_boxes(self) -> list[object]:
-        return [box for box in self._light_probe_obbs if not getattr(box, "is_default_unit_box", lambda: False)()]
+        return [box for _key, box in self._light_probe_box_entries()]
+
+    def _light_probe_box_entries(self) -> list[tuple[str, object]]:
+        return [
+            (instance.key, box)
+            for instance in self._visible_light_probe_instances()
+            for box in self._instance_light_probe_boxes(instance)
+        ]
+
+    @staticmethod
+    def _instance_light_probe_boxes(instance: SceneLightProbeInstance) -> list[object]:
+        return [
+            box
+            for box in instance.obbs
+            if not getattr(box, "is_default_unit_box", lambda: False)()
+        ]
+
+    def _visible_light_probe_instances(self) -> list[SceneLightProbeInstance]:
+        return [
+            instance
+            for key, instance in self._light_probe_instances.items()
+            if key not in self._hidden_keys
+        ]
 
     def _set_probe_exposure(self, value: float) -> None:
         self.probe_exposure = float(value)
@@ -840,20 +869,27 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.update()
 
     def _invalidate_probe_viz_points(self) -> None:
-        self._probe_viz_candidate_indices_cache_key = None
-        self._probe_viz_candidate_indices_cache = None
+        self._probe_viz_candidate_indices_cache.clear()
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache = None
 
     def _mesh_transform_affects_display_colors(self) -> bool:
         return self.lighting_mode in {"software", "probes"}
 
-    def set_selected_keys(self, keys: set[str], *, focus: bool = False) -> None:
+    def set_selected_keys(
+        self,
+        keys: set[str],
+        *,
+        preferred_keys: set[str] | None = None,
+        focus: bool = False,
+    ) -> None:
         keys = set(keys)
-        if keys == self._selection_keys and not focus:
+        preferred = set(preferred_keys or ())
+        if keys == self._selection_keys and preferred == self._preferred_selection_keys and not focus:
             return
         self._finish_gizmo_drag(commit=False)
         self._selection_keys = keys
+        self._preferred_selection_keys = preferred
         self._highlighted_keys = set(keys)
         self._gizmo_hover_axis = None
         self._refresh_selection_bounds()
@@ -904,10 +940,16 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         keys = set(keys)
         if keys == self._hidden_keys:
             return
+        probe_visibility_changed = bool(
+            (keys ^ self._hidden_keys) & self._light_probe_instances.keys()
+        )
         self._hidden_keys = keys
         if self._hover_key in self._hidden_keys:
             self._hover_key = ""
         self._refresh_selection_bounds()
+        if probe_visibility_changed:
+            self._invalidate_probe_viz_points()
+            self._invalidate_probe_shading()
         if not refresh:
             return
         if self.context() is None:
@@ -1172,9 +1214,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return np.concatenate(chunks, axis=0) if chunks else np.zeros((0, 3), dtype=np.float32)
 
     def _selected_light_probe_boxes(self) -> list[object]:
-        if not self._light_probe_key or self._light_probe_key not in self._selection_keys or self._light_probe_key in self._hidden_keys:
-            return []
-        return self._light_probe_boxes()
+        return [box for _key, box in self._selected_light_probe_box_entries()]
+
+    def _selected_light_probe_box_entries(self) -> list[tuple[str, object]]:
+        selected = self._preferred_selection_keys & self._light_probe_instances.keys()
+        if not selected:
+            selected = self._selection_keys & self._light_probe_instances.keys()
+        return [
+            (key, box)
+            for key in selected
+            if key not in self._hidden_keys
+            for box in self._instance_light_probe_boxes(self._light_probe_instances[key])
+        ]
 
     def _selection_is_whole_scene(self) -> bool:
         visible = {mesh.key for mesh in self._meshes if mesh.key not in self._hidden_keys}
@@ -1315,7 +1366,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             "extent": max(float(self._selection_extent), 1e-3),
             "screen_axis": None if screen_axis is None else screen_axis / np.linalg.norm(screen_axis),
             "matrices": {mesh.key: np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else np.identity(4), dtype=np.float32) for mesh in self._meshes if mesh.key in self._selection_keys},
-            "probe_matrices": [(box, box.matrix()) for box in self._selected_light_probe_boxes() if hasattr(box, "matrix")],
+            "probe_matrices": [
+                (key, box, box.matrix())
+                for key, box in self._selected_light_probe_box_entries()
+                if hasattr(box, "matrix")
+            ],
         }
         if isinstance(handle, tuple):
             self._gizmo_drag["plane_axes"] = handle
@@ -1392,9 +1447,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if drag.get("matrices") and self._mesh_transform_affects_display_colors():
                 display_colors_changed = True
                 rebuild_after_drag = bool(drag.get("whole_scene"))
-            if drag.get("probe_matrices") and self._light_probe_key:
+            if drag.get("probe_matrices"):
                 self._apply_light_probe_drag_matrix(matrix)
-                committed[self._light_probe_key] = np.asarray(drag["probe_matrices"][0][0].matrix(), dtype=np.float32).copy()
+                for key, box, _start in drag["probe_matrices"]:
+                    committed.setdefault(key, np.asarray(box.matrix(), dtype=np.float32).copy())
                 display_colors_changed = True
         elif not commit and not drag.get("whole_scene") and not drag.get("deferred_geometry"):
             self._apply_gizmo_drag_matrix(IDENTITY4)
@@ -1423,7 +1479,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not drag:
             return
         changed = False
-        for box, start in drag.get("probe_matrices", ()):
+        for _key, box, start in drag.get("probe_matrices", ()):
             try:
                 box.set_from_matrix(np.asarray(matrix, dtype=np.float32) @ np.asarray(start, dtype=np.float32))
                 changed = True
@@ -1437,7 +1493,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not drag:
             return
         changed = False
-        for box, start in drag.get("probe_matrices", ()):
+        for _key, box, start in drag.get("probe_matrices", ()):
             try:
                 box.set_from_matrix(start)
                 changed = True
@@ -1715,18 +1771,19 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glEnable(GL_LIGHTING)
 
     def _draw_light_probe_obb_boxes(self) -> None:
-        boxes = self._light_probe_boxes()
-        if not boxes:
+        entries = self._light_probe_box_entries()
+        if not entries:
             return
+        selected = self._selection_keys | self._preferred_selection_keys
         glLineWidth(2.0)
-        for index, box in enumerate(boxes):
+        for key, box in entries:
             try:
                 corners = np.asarray(box.corners(), dtype=np.float32).reshape(8, 3)
             except Exception:
                 continue
             if not np.isfinite(corners).all():
                 continue
-            alpha = 0.9 if index == 0 else 0.55
+            alpha = 0.9 if key in selected else 0.55
             glColor4f(0.1, 0.9, 1.0, alpha)
             self._draw_wire_box(corners)
             center = np.asarray(getattr(box, "center", ()), dtype=np.float32).reshape(3)
@@ -1743,14 +1800,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 glVertex3f(float(endpoint[0]), float(endpoint[1]), float(endpoint[2]))
             glEnd()
 
-    def _probe_viz_candidate_indices(self) -> np.ndarray | None:
-        probe_set = self._light_probe_set
+    def _probe_viz_candidate_indices(self, instance: SceneLightProbeInstance) -> np.ndarray:
+        probe_set = instance.probe_set
         if probe_set is None or not len(probe_set.probe_positions):
-            return None
-        boxes = self._light_probe_boxes()
-        key = (id(probe_set), tuple(id(box) for box in boxes))
-        if self._probe_viz_candidate_indices_cache_key == key:
-            return self._probe_viz_candidate_indices_cache
+            return np.zeros((0,), dtype=np.int64)
+        boxes = self._instance_light_probe_boxes(instance)
+        key = (instance.key, id(probe_set), tuple(id(box) for box in boxes))
+        cached = self._probe_viz_candidate_indices_cache.get(key)
+        if cached is not None:
+            return cached
         if not boxes:
             indices = np.arange(probe_set.probe_count, dtype=np.int64)
         else:
@@ -1759,24 +1817,52 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             for box in boxes:
                 inside |= self._points_inside_light_probe_box(points, box)
             indices = np.flatnonzero(inside).astype(np.int64, copy=False)
-        self._probe_viz_candidate_indices_cache_key = key
-        self._probe_viz_candidate_indices_cache = indices
+        self._probe_viz_candidate_indices_cache[key] = indices
         return indices
 
     def _probe_viz_points(self) -> tuple[np.ndarray, np.ndarray]:
-        probe_set = self._light_probe_set
-        if probe_set is None:
+        entries = [
+            (instance, self._probe_viz_candidate_indices(instance))
+            for instance in self._visible_light_probe_instances()
+            if instance.probe_set is not None
+        ]
+        entries = [(instance, indices) for instance, indices in entries if len(indices)]
+        if not entries:
             return np.zeros((0, 3), dtype=np.float32), np.zeros((0, 4), dtype=np.float32)
-        candidate_indices = self._probe_viz_candidate_indices()
-        candidate_key = None if candidate_indices is None else (len(candidate_indices), int(candidate_indices[0]) if len(candidate_indices) else -1, int(candidate_indices[-1]) if len(candidate_indices) else -1)
-        key = (id(probe_set), int(self.probe_viz_points), round(float(self.probe_exposure), 4), candidate_key)
+        key = (
+            tuple((instance.key, id(instance.probe_set), len(indices)) for instance, indices in entries),
+            int(self.probe_viz_points),
+            round(float(self.probe_exposure), 4),
+        )
         if self._probe_viz_point_cache_key != key or self._probe_viz_point_cache is None:
-            self._probe_viz_point_cache = probe_set.probe_point_cloud(
-                max_points=self.probe_viz_points,
-                normal=(0.0, 1.0, 0.0),
-                exposure=self.probe_exposure,
-                candidate_indices=candidate_indices,
-                normalize_display=True,
+            counts = np.asarray([len(indices) for _instance, indices in entries], dtype=np.int64)
+            limit = max(1, int(self.probe_viz_points))
+            if int(counts.sum()) <= limit:
+                allocations = counts
+            else:
+                shares = counts.astype(np.float64) * (limit / float(counts.sum()))
+                allocations = np.floor(shares).astype(np.int64)
+                remainder = limit - int(allocations.sum())
+                if remainder:
+                    order = np.argsort(-(shares - allocations), kind="stable")
+                    allocations[order[:remainder]] += 1
+            clouds = [
+                instance.probe_set.probe_point_cloud(
+                    max_points=int(allocation),
+                    normal=(0.0, 1.0, 0.0),
+                    exposure=self.probe_exposure * max(0.0, float(instance.intensity)),
+                    candidate_indices=indices,
+                    normalize_display=True,
+                )
+                for (instance, indices), allocation in zip(entries, allocations)
+                if allocation > 0 and instance.probe_set is not None
+            ]
+            self._probe_viz_point_cache = (
+                np.concatenate([points for points, _colors in clouds], axis=0),
+                np.concatenate([colors for _points, colors in clouds], axis=0),
+            ) if clouds else (
+                np.zeros((0, 3), dtype=np.float32),
+                np.zeros((0, 4), dtype=np.float32),
             )
             self._probe_viz_point_cache_key = key
         return self._probe_viz_point_cache
@@ -1863,11 +1949,24 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         return self._base_display_colors(buffer_set)
 
     def _uses_probe_shading(self) -> bool:
-        return self.lighting_mode == "probes" and self._light_probe_set is not None
+        return self.lighting_mode == "probes" and any(
+            instance.probe_set is not None
+            for instance in self._visible_light_probe_instances()
+        )
 
     def _probe_shade_request(self) -> ProbeShadeRequest | None:
-        probe_set = self._light_probe_set
-        if probe_set is None:
+        layers = tuple(
+            ProbeShadeLayer(
+                key=instance.key,
+                probe_set=instance.probe_set,
+                boxes=snapshot_probe_boxes(self._instance_light_probe_boxes(instance)),
+                priority=instance.priority,
+                intensity=instance.intensity,
+            )
+            for instance in self._visible_light_probe_instances()
+            if instance.probe_set is not None
+        )
+        if not layers:
             return None
         inputs = tuple(
             ProbeShadeInput(
@@ -1881,8 +1980,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         )
         if not inputs:
             return None
-        boxes = snapshot_probe_boxes(self._light_probe_boxes())
-        return ProbeShadeRequest(probe_set, inputs, self.probe_exposure, boxes)
+        return ProbeShadeRequest(layers, inputs, self.probe_exposure)
 
     def _start_probe_shading(self, request: ProbeShadeRequest) -> None:
         self._cancel_probe_shading()
@@ -2388,9 +2486,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._texture_sources.clear()
         self._texture_source_ids.clear()
         self._hover_vertex_cache.clear()
-        self._light_probe_set = None
-        self._light_probe_status = self._light_probe_key = ""
-        self._light_probe_obbs.clear()
+        self._light_probe_instances.clear()
+        self._light_probe_status = ""
+        self._preferred_selection_keys.clear()
         self._probe_shade_error = ""
         self._invalidate_probe_viz_points()
         self._hover_key = self._hover_block_key = ""
