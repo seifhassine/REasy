@@ -27,6 +27,7 @@ class PrbData:
 class LprbData:
     probe_count: int
     terms_rgb: np.ndarray
+    range_compression_ev: int = 0
 
 
 @dataclass(slots=True)

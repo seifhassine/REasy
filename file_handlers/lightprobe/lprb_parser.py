@@ -7,22 +7,19 @@ import numpy as np
 from .data import LprbData
 
 
-_HEADER_SIZE = 16
+_LEGACY_HEADER_SIZE = 16
+_V8_HEADER_SIZE = 32
 _PACKED_TERM_SIZE = 4
 _V3_TERM_COUNT = 6
 _ICOSAHEDRAL_TERM_COUNT = 12
 
 
 def parse_lprb(data: bytes, *, version: int | None = None) -> LprbData:
-    header = _read_header(data)
     if version is None:
-        probe_count, probe_data_size, _payload_start, _payload_end = header
-        if probe_data_size == probe_count * _V3_TERM_COUNT * _PACKED_TERM_SIZE:
-            version = 3
-        elif probe_data_size == probe_count * _ICOSAHEDRAL_TERM_COUNT * _PACKED_TERM_SIZE:
-            version = 4
-        else:
-            version = 6
+        version = _detect_version(data)
+    if version not in (3, 4, 6, 8):
+        raise ValueError(f"Unsupported LPRB version: {version}")
+    header = _read_header(data, version=version)
     if version == 3:
         return _parse_direct_payload(data, header, version=3, term_count=_V3_TERM_COUNT)
     if version == 4:
@@ -32,43 +29,58 @@ def parse_lprb(data: bytes, *, version: int | None = None) -> LprbData:
             version=4,
             term_count=_ICOSAHEDRAL_TERM_COUNT,
         )
-    if version == 6:
-        return _parse_v6_payload(data, header)
-    raise ValueError(f"Unsupported LPRB version: {version}")
+    range_compression_ev = struct.unpack_from("<i", data, 0x1C)[0] if version == 8 else 0
+    return _parse_offset_payload(
+        data,
+        header,
+        version=version,
+        range_compression_ev=range_compression_ev,
+    )
 
 
 def parse_lprb_v3(data: bytes) -> LprbData:
     """Parse direct 24-byte records ordered +X, +Z, +Y, -X, -Z, -Y."""
-    return _parse_direct_payload(
-        data,
-        _read_header(data),
-        version=3,
-        term_count=_V3_TERM_COUNT,
-    )
+    return parse_lprb(data, version=3)
 
 
 def parse_lprb_v4(data: bytes) -> LprbData:
     """Parse direct 48-byte records containing 12 icosahedral terms."""
-    return _parse_direct_payload(
-        data,
-        _read_header(data),
-        version=4,
-        term_count=_ICOSAHEDRAL_TERM_COUNT,
-    )
+    return parse_lprb(data, version=4)
 
 
 def parse_lprb_v6(data: bytes) -> LprbData:
-    return _parse_v6_payload(data, _read_header(data))
+    return parse_lprb(data, version=6)
 
 
-def _read_header(data: bytes) -> tuple[int, int, int, int]:
-    if len(data) < _HEADER_SIZE or data[:4] != b"NPRB":
+def parse_lprb_v8(data: bytes) -> LprbData:
+    return parse_lprb(data, version=8)
+
+
+def _detect_version(data: bytes) -> int:
+    probe_count, probe_data_size = _read_header_prefix(data)
+    if len(data) == _V8_HEADER_SIZE + probe_data_size:
+        return 8
+    if probe_data_size == probe_count * _V3_TERM_COUNT * _PACKED_TERM_SIZE:
+        return 3
+    if probe_data_size == probe_count * _ICOSAHEDRAL_TERM_COUNT * _PACKED_TERM_SIZE:
+        return 4
+    return 6
+
+
+def _read_header_prefix(data: bytes) -> tuple[int, int]:
+    if len(data) < 12 or data[:4] != b"NPRB":
         raise ValueError("LPRB data is not an NPRB payload")
     probe_count, probe_data_size = struct.unpack_from("<II", data, 4)
-    payload_end = _HEADER_SIZE + probe_data_size
+    return int(probe_count), int(probe_data_size)
+
+
+def _read_header(data: bytes, *, version: int) -> tuple[int, int, int, int]:
+    probe_count, probe_data_size = _read_header_prefix(data)
+    payload_start = _V8_HEADER_SIZE if version == 8 else _LEGACY_HEADER_SIZE
+    payload_end = payload_start + probe_data_size
     if payload_end > len(data):
         raise ValueError("LPRB payload is truncated")
-    return int(probe_count), int(probe_data_size), _HEADER_SIZE, payload_end
+    return probe_count, probe_data_size, payload_start, payload_end
 
 
 def _parse_direct_payload(
@@ -94,9 +106,12 @@ def _parse_direct_payload(
     return LprbData(probe_count=probe_count, terms_rgb=_decode_packed_probe_words(words))
 
 
-def _parse_v6_payload(
+def _parse_offset_payload(
     data: bytes,
     header: tuple[int, int, int, int],
+    *,
+    version: int,
+    range_compression_ev: int = 0,
 ) -> LprbData:
     probe_count, probe_data_size, payload_start, payload_end = header
     offset_table_bytes = probe_count * 4
@@ -109,14 +124,22 @@ def _parse_v6_payload(
     for probe_index, offset in enumerate(offsets):
         absolute = payload_start + int(offset)
         if absolute < payload_start + offset_table_bytes or absolute + record_size > payload_end:
-            raise ValueError(f"LPRB probe {probe_index} record is outside the payload")
+            raise ValueError(f"LPRB v{version} probe {probe_index} record is outside the payload")
         words[probe_index] = np.frombuffer(
             data,
             dtype="<u4",
             count=_ICOSAHEDRAL_TERM_COUNT,
             offset=absolute,
         )
-    return LprbData(probe_count=probe_count, terms_rgb=_decode_packed_probe_words(words))
+    terms_rgb = _decode_packed_probe_words(words)
+    if range_compression_ev:
+        # Match the runtime decoding scale: each EV stop is a power of two.
+        terms_rgb = np.ldexp(terms_rgb, range_compression_ev)
+    return LprbData(
+        probe_count=probe_count,
+        terms_rgb=terms_rgb,
+        range_compression_ev=range_compression_ev,
+    )
 
 
 def _decode_packed_probe_words(words: np.ndarray) -> np.ndarray:
