@@ -417,6 +417,7 @@ class ScnSceneGraphBuilder:
         self.max_depth = max(0, int(max_depth))
         self._document_source_cache: dict[str, ScnSceneDocument] = {}
         self._type_name_cache: dict[tuple[int, int], str] = {}
+        self._type_parent_cache: dict[str, frozenset[str]] = {}
 
     def build(self, root_scn, *, root_path: str | None = None) -> ScnSceneGraph:
         source_path = root_path or getattr(root_scn, "filepath", "") or "<memory>"
@@ -467,6 +468,19 @@ class ScnSceneGraphBuilder:
         if instance_id <= 0 or instance_id >= len(getattr(scn, "instance_infos", [])):
             return 0
         return int(getattr(scn.instance_infos[instance_id], "type_id", 0) or 0)
+
+    def _type_is_a(self, type_name: str, base_type_name: str) -> bool:
+        if type_name == base_type_name:
+            return True
+        parents = self._type_parent_cache.get(type_name)
+        if parents is None:
+            try:
+                get_parents = getattr(self.type_registry, "getTypeParents")
+                parents = frozenset(get_parents(type_name) or ())
+            except (AttributeError, TypeError, ValueError):
+                parents = frozenset()
+            self._type_parent_cache[type_name] = parents
+        return base_type_name in parents
 
     def _object_instance_id(self, scn, local_object_id: int) -> int:
         table = getattr(scn, "object_table", [])
@@ -694,7 +708,7 @@ class ScnSceneGraphBuilder:
                     document_instance_id,
                     base_world_matrix,
                 )
-            elif component.type_name == VIA_RENDER_LIGHT_PROBES:
+            elif self._type_is_a(component.type_name, VIA_RENDER_LIGHT_PROBES):
                 self._append_light_probe_binding(graph, document, source_object, component, document_instance_id)
 
     def _append_light_probe_binding(self, graph, document, source_object, component, document_instance_id) -> None:
@@ -705,7 +719,7 @@ class ScnSceneGraphBuilder:
             self._warn_component(
                 graph,
                 "missing_light_probe_paths",
-                f"via.render.LightProbes component {component.id.instance_id} has fewer than two resource/string paths.",
+                f"Light probe component '{component.type_name}' ({component.id.instance_id}) has fewer than two resource/string paths.",
                 document,
                 document_instance_id,
                 source_object,
