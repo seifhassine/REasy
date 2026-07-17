@@ -1,12 +1,39 @@
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
 
 from file_handlers.lightprobe.data import LightProbeData
+
+
+# Captured probe shaders through PRB.11 test at most 199 tetrahedra per lookup.
+_RUNTIME_MAX_TETRA_STEPS = 199
+_TETRA_CORNER_TAGS = np.arange(4, dtype=np.uint32)
+
+_LEGACY_LPRB8_CUBE_TERM_INDICES = np.asarray(
+    (
+        (0, 2, 8),    # +X
+        (9, 4, 8),    # +Z
+        (0, 4, 6),    # +Y
+        (1, 3, 9),    # -X
+        (11, 6, 10),  # -Z
+        (2, 5, 7),    # -Y
+    ),
+    dtype=np.int64,
+)
+_LEGACY_LPRB8_CUBE_TERM_WEIGHTS = np.asarray(
+    (
+        (0.4707382, 0.5292618, 0.0),
+        (0.4707382, 0.0, 0.5292618),
+        (0.0, 0.5292618, 0.5292618),
+        (0.4707382, 0.5292618, 0.0),
+        (0.4707382, 0.0, 0.5292618),
+        (0.0, 0.5292618, 0.5292618),
+    ),
+    dtype=np.float32,
+)
 
 
 class ProbeShadingCancelled(RuntimeError):
@@ -20,10 +47,10 @@ class SceneLightProbeSet:
     tetrahedron_count: int
     tetra_probe_indices: np.ndarray
     tetra_neighbors: np.ndarray
-    tetra_transforms: np.ndarray
+    tetra_transforms: np.ndarray | None
     grid_bias: tuple[float, float, float]
     inv_cell_size: tuple[float, float, float]
-    linear_z_stride: int
+    linear_x_stride: int
     linear_y_stride: int
     grid_dimensions: tuple[int, int, int]
     grid_indices: np.ndarray
@@ -41,11 +68,11 @@ class SceneLightProbeSet:
             tetra_transforms=prb.tetra_transforms,
             grid_bias=prb.grid_bias,
             inv_cell_size=prb.inv_cell_size,
-            linear_z_stride=prb.linear_z_stride,
+            linear_x_stride=prb.linear_x_stride,
             linear_y_stride=prb.linear_y_stride,
             grid_dimensions=prb.grid_dimensions,
             grid_indices=prb.grid_indices,
-            terms_rgb=data.lprb.terms_rgb,
+            terms_rgb=_scene_directional_terms(data),
         )
 
     def probe_point_cloud(
@@ -87,7 +114,7 @@ class SceneLightProbeSet:
         normals: np.ndarray | None,
         *,
         exposure: float = 0.035,
-        max_neighbor_steps: int = 96,
+        max_neighbor_steps: int = _RUNTIME_MAX_TETRA_STEPS,
         exact_vertex_limit: int = 4096,
         progress_callback: Callable[[int, int], None] | None = None,
         cancel_requested: Callable[[], bool] | None = None,
@@ -167,13 +194,21 @@ class SceneLightProbeSet:
                     max_neighbor_steps=max_neighbor_steps,
                     cancel_requested=cancel_requested,
                 )
-                probe_indices = probe_indices_by_tetra[tetra]
-                blended_terms = (
-                    self.terms_rgb[probe_indices]
-                    * weights[:, :, np.newaxis, np.newaxis]
-                ).sum(axis=1)
-                rgb = _sample_directional_rgb(blended_terms, chunk_normals[valid_rows])
-                colors[start + valid_rows, :3] = _tonemap_rgb_array(rgb, exposure)
+                resolved = tetra >= 0
+                if np.any(~resolved):
+                    colors[start + valid_rows[~resolved], :3] = (0.05, 0.05, 0.06)
+                if np.any(resolved):
+                    resolved_rows = valid_rows[resolved]
+                    probe_indices = probe_indices_by_tetra[tetra[resolved]]
+                    blended_terms = (
+                        self.terms_rgb[probe_indices]
+                        * weights[resolved, :, np.newaxis, np.newaxis]
+                    ).sum(axis=1)
+                    rgb = _sample_directional_rgb(
+                        blended_terms,
+                        chunk_normals[resolved_rows],
+                    )
+                    colors[start + resolved_rows, :3] = _tonemap_rgb_array(rgb, exposure)
             if progress_callback is not None:
                 progress_callback(end, len(points))
         return colors
@@ -188,14 +223,20 @@ class SceneLightProbeSet:
     ) -> tuple[np.ndarray, np.ndarray]:
         points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
         current = np.asarray(tetra_indices, dtype=np.int64).reshape(-1).copy()
+        if len(current) != len(points):
+            raise ValueError("Point and tetrahedron row counts must match")
         valid = (current >= 0) & (current < self.tetrahedron_count)
-        best_tetra = np.where(valid, current, 0).astype(np.int64, copy=False)
-        best_weights = np.full((len(points), 4), 0.25, dtype=np.float32)
-        best_min_weight = np.full(len(points), -np.inf, dtype=np.float32)
+        current[~valid] = -1
+        weights = np.zeros((len(points), 4), dtype=np.float32)
         if not np.any(valid):
-            return best_tetra, best_weights
+            return current, weights
 
-        transforms = self.tetra_transforms.reshape(-1, 12)
+        transforms = (
+            None
+            if self.tetra_transforms is None
+            else self.tetra_transforms.reshape(-1, 12)
+        )
+        probe_indices = self.tetra_probe_indices.reshape(-1, 4)
         neighbors = self.tetra_neighbors.reshape(-1, 4)
         active = valid.copy()
         for _step in range(max(1, int(max_neighbor_steps))):
@@ -205,17 +246,17 @@ class SceneLightProbeSet:
             if not len(rows):
                 break
             tetra = current[rows]
-            weights = _tetra_weights_batch(transforms[tetra], points[rows])
-            min_corner = np.argmin(weights, axis=1).astype(np.int64, copy=False)
-            min_weight = weights[np.arange(len(rows)), min_corner]
-            improved = min_weight > best_min_weight[rows]
-            if np.any(improved):
-                improved_rows = rows[improved]
-                best_tetra[improved_rows] = tetra[improved]
-                best_weights[improved_rows] = weights[improved]
-                best_min_weight[improved_rows] = min_weight[improved]
-
-            inside = min_weight >= -0.0001
+            row_weights = (
+                _tetra_weights_from_positions(
+                    self.probe_positions[probe_indices[tetra]],
+                    points[rows],
+                )
+                if transforms is None
+                else _tetra_weights_batch(transforms[tetra], points[rows])
+            )
+            weights[rows] = row_weights
+            min_corner, outside = _tetra_exit_rows(row_weights)
+            inside = ~outside
             if np.any(inside):
                 active[rows[inside]] = False
             outside_rows = rows[~inside]
@@ -224,12 +265,13 @@ class SceneLightProbeSet:
             outside_tetra = tetra[~inside]
             outside_corner = min_corner[~inside]
             next_tetra = neighbors[outside_tetra, outside_corner].astype(np.int64, copy=False)
-            can_step = (next_tetra >= 0) & (next_tetra < self.tetrahedron_count) & (next_tetra != outside_tetra)
+            can_step = (next_tetra >= 0) & (next_tetra < self.tetrahedron_count)
             if np.any(can_step):
                 current[outside_rows[can_step]] = next_tetra[can_step]
             if np.any(~can_step):
+                current[outside_rows[~can_step]] = -1
                 active[outside_rows[~can_step]] = False
-        return best_tetra, _normalized_barycentric_rows(best_weights)
+        return current, weights
 
     def _initial_tetra_indices(self, points: np.ndarray) -> np.ndarray:
         dim_x, dim_y, dim_z = self.grid_dimensions
@@ -250,7 +292,7 @@ class SceneLightProbeSet:
             return tetra_indices
         valid_rows = np.flatnonzero(valid)
         linear_indices = (
-            cells[valid_rows, 0] * self.linear_z_stride
+            cells[valid_rows, 0] * self.linear_x_stride
             + cells[valid_rows, 1] * self.linear_y_stride
             + cells[valid_rows, 2]
         )
@@ -268,7 +310,7 @@ class SceneLightProbeSet:
         point: np.ndarray,
         normal: np.ndarray,
         *,
-        max_neighbor_steps: int = 96,
+        max_neighbor_steps: int = _RUNTIME_MAX_TETRA_STEPS,
     ) -> tuple[float, float, float] | None:
         result = self._find_tetra(point, max_neighbor_steps=max_neighbor_steps)
         if result is None:
@@ -289,53 +331,18 @@ class SceneLightProbeSet:
         *,
         max_neighbor_steps: int,
     ) -> tuple[int, np.ndarray] | None:
-        tetra_index = self._initial_tetra(point)
-        if tetra_index is None:
+        points = np.asarray(point, dtype=np.float32).reshape(1, 3)
+        initial_tetra = self._initial_tetra_indices(points)
+        if initial_tetra[0] < 0:
             return None
-        best_tetra = tetra_index
-        best_weights = np.array((0.25, 0.25, 0.25, 0.25), dtype=np.float32)
-        best_min_weight = -float("inf")
-        for _step in range(max_neighbor_steps):
-            weights = self._tetra_weights(tetra_index, point)
-            min_corner = int(np.argmin(weights))
-            min_weight = float(weights[min_corner])
-            if min_weight > best_min_weight:
-                best_tetra = tetra_index
-                best_weights = weights
-                best_min_weight = min_weight
-            if min_weight >= -0.0001:
-                return tetra_index, _normalized_barycentric(weights)
-            neighbor = int(self.tetra_neighbors[(tetra_index * 4) + min_corner])
-            if neighbor < 0 or neighbor >= self.tetrahedron_count or neighbor == tetra_index:
-                return best_tetra, _normalized_barycentric(best_weights)
-            tetra_index = neighbor
-        return best_tetra, _normalized_barycentric(best_weights)
-
-    def _initial_tetra(self, point: np.ndarray) -> int | None:
-        dim_x, dim_y, dim_z = self.grid_dimensions
-        cell_x = math.floor((float(point[0]) * self.inv_cell_size[0]) + self.grid_bias[0])
-        cell_y = math.floor((float(point[1]) * self.inv_cell_size[1]) + self.grid_bias[1])
-        cell_z = math.floor((float(point[2]) * self.inv_cell_size[2]) + self.grid_bias[2])
-        if cell_x < 0 or cell_y < 0 or cell_z < 0 or cell_x >= dim_x or cell_y >= dim_y or cell_z >= dim_z:
+        tetra, weights = self._walk_tetra_rows(
+            points,
+            initial_tetra,
+            max_neighbor_steps=max_neighbor_steps,
+        )
+        if tetra[0] < 0:
             return None
-        linear_index = (cell_x * self.linear_z_stride) + (cell_y * self.linear_y_stride) + cell_z
-        if linear_index < 0 or linear_index >= len(self.grid_indices):
-            return None
-        tetra_index = int(self.grid_indices[linear_index])
-        if tetra_index == 0xFFFFFFFF or tetra_index >= self.tetrahedron_count:
-            return None
-        return tetra_index
-
-    def _tetra_weights(self, tetra_index: int, point: np.ndarray) -> np.ndarray:
-        base = tetra_index * 12
-        transform = self.tetra_transforms
-        dx = float(point[0]) - float(transform[base + 3])
-        dy = float(point[1]) - float(transform[base + 7])
-        dz = float(point[2]) - float(transform[base + 11])
-        b0 = (transform[base + 0] * dx) + (transform[base + 1] * dy) + (transform[base + 2] * dz)
-        b1 = (transform[base + 4] * dx) + (transform[base + 5] * dy) + (transform[base + 6] * dz)
-        b2 = (transform[base + 8] * dx) + (transform[base + 9] * dy) + (transform[base + 10] * dz)
-        return np.asarray((b0, b1, b2, 1.0 - b0 - b1 - b2), dtype=np.float32)
+        return int(tetra[0]), weights[0]
 
 
 @dataclass(slots=True)
@@ -391,6 +398,24 @@ def _directional_term_rows(normals: np.ndarray, term_count: int) -> tuple[np.nda
     if term_count == 12:
         return _icosahedral_term_rows(normal)
     raise ValueError(f"Unsupported directional lighting term count: {term_count}")
+
+
+def _scene_directional_terms(data: LightProbeData) -> np.ndarray:
+    terms = data.lprb.terms_rgb
+    if data.prb.version == 9 and data.lprb.version == 8:
+        return _legacy_lprb8_ambient_cube_terms(terms)
+    return terms
+
+
+def _legacy_lprb8_ambient_cube_terms(terms: np.ndarray) -> np.ndarray:
+    """Apply the PRB.9/LPRB.8 runtime's 12-to-6-term injection pass."""
+    terms = np.asarray(terms, dtype=np.float32)
+    if terms.ndim != 3 or terms.shape[1:] != (12, 3):
+        raise ValueError("LPRB.8 lighting terms must have shape (probe_count, 12, 3)")
+    selected = terms[:, _LEGACY_LPRB8_CUBE_TERM_INDICES]
+    return (
+        selected * _LEGACY_LPRB8_CUBE_TERM_WEIGHTS[np.newaxis, :, :, np.newaxis]
+    ).sum(axis=2, dtype=np.float32)
 
 
 def _ambient_cube_term_rows(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -485,44 +510,48 @@ def _icosahedral_term_rows(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return term_indices, weights.astype(np.float32, copy=False)
 
 
-def _normalized_barycentric(weights: np.ndarray) -> np.ndarray:
-    clamped = np.maximum(weights, 0.0)
-    total = float(clamped.sum())
-    if total > 1e-6:
-        return (clamped / total).astype(np.float32)
-    total = float(weights.sum())
-    if abs(total) > 1e-6:
-        return (weights / total).astype(np.float32)
-    return np.array((0.25, 0.25, 0.25, 0.25), dtype=np.float32)
-
-
-def _normalized_barycentric_rows(weights: np.ndarray) -> np.ndarray:
-    clamped = np.maximum(weights, 0.0)
-    totals = clamped.sum(axis=1)
-    normalized = np.divide(
-        clamped,
-        totals[:, np.newaxis],
-        out=np.zeros_like(clamped, dtype=np.float32),
-        where=totals[:, np.newaxis] > 1e-6,
-    )
-    fallback = totals <= 1e-6
-    if np.any(fallback):
-        raw_totals = weights[fallback].sum(axis=1)
-        normalized[fallback] = np.divide(
-            weights[fallback],
-            raw_totals[:, np.newaxis],
-            out=np.full((int(np.count_nonzero(fallback)), 4), 0.25, dtype=np.float32),
-            where=np.abs(raw_totals[:, np.newaxis]) > 1e-6,
-        )
-    return normalized.astype(np.float32, copy=False)
-
-
 def _tetra_weights_batch(transforms: np.ndarray, points: np.ndarray) -> np.ndarray:
     delta = points - transforms[:, (3, 7, 11)]
     b0 = (transforms[:, 0:3] * delta).sum(axis=1)
     b1 = (transforms[:, 4:7] * delta).sum(axis=1)
     b2 = (transforms[:, 8:11] * delta).sum(axis=1)
     return np.stack((b0, b1, b2, 1.0 - b0 - b1 - b2), axis=1).astype(np.float32, copy=False)
+
+
+def _tetra_weights_from_positions(
+    tetra_positions: np.ndarray,
+    points: np.ndarray,
+) -> np.ndarray:
+    """Rebuild PRB.11 barycentric coordinates as its captured shader does."""
+    positions = np.asarray(tetra_positions, dtype=np.float32).reshape(-1, 4, 3)
+    points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    edge0 = positions[:, 0] - positions[:, 3]
+    edge1 = positions[:, 1] - positions[:, 3]
+    edge2 = positions[:, 2] - positions[:, 3]
+    delta = points - positions[:, 3]
+    cross12 = np.cross(edge1, edge2)
+    denominator = (edge0 * cross12).sum(axis=1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        b0 = (delta * cross12).sum(axis=1) / denominator
+        b1 = (delta * np.cross(edge2, edge0)).sum(axis=1) / denominator
+        b2 = (delta * np.cross(edge0, edge1)).sum(axis=1) / denominator
+    return np.stack((b0, b1, b2, 1.0 - b0 - b1 - b2), axis=1).astype(
+        np.float32,
+        copy=False,
+    )
+
+
+def _tetra_exit_rows(weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Recover the runtime's low-bit-tagged exit corner and outside mask."""
+    tagged_bits = (
+        np.asarray(weights, dtype=np.float32).view(np.uint32)
+        & np.uint32(0xFFFFFFFC)
+    ) | _TETRA_CORNER_TAGS
+    tagged_weights = tagged_bits.view(np.float32)
+    corners = np.argmin(tagged_weights, axis=1).astype(np.int64, copy=False)
+    minima = tagged_weights[np.arange(len(tagged_weights)), corners]
+    outside = np.isnan(minima) | (minima < np.float32(-0.0))
+    return corners, outside
 
 
 def _tonemap_rgb(rgb: tuple[float, float, float], exposure: float) -> np.ndarray:

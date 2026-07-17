@@ -14,7 +14,7 @@ DEFAULT_PAK_FILE_LISTS: dict[str, str] = {
     "MHWilds": "MHWS_STM.list",
     "O2": "O2_STM.list",
     "OnimushaWOTS": "ONIWOTS_STM.list",
-    "Pragmata": "PRAGMATA.list",
+    "Pragmata": "PRAGMATA_STM.list",
     "RE2RT": "RE2_RT_STM.list",
     "RE2": "RE2_STM.list",
     "RE3RT": "RE3_RT_STM.list",
