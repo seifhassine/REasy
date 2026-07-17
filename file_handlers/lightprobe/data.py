@@ -12,15 +12,16 @@ class PrbData:
     tetrahedron_count: int
     tetra_probe_indices: np.ndarray
     tetra_neighbors: np.ndarray
-    tetra_transforms: np.ndarray
+    tetra_transforms: np.ndarray | None
     grid_bias: tuple[float, float, float]
     inv_cell_size: tuple[float, float, float]
-    linear_z_stride: int
+    linear_x_stride: int
     linear_y_stride: int
     grid_dimensions: tuple[int, int, int]
     grid_indices: np.ndarray
     bsp_data_size: int
     bsp_padding_size: int
+    version: int | None = None
 
 
 @dataclass(slots=True)
@@ -28,6 +29,7 @@ class LprbData:
     probe_count: int
     terms_rgb: np.ndarray
     range_compression_ev: int = 0
+    version: int | None = None
 
 
 @dataclass(slots=True)

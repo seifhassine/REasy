@@ -32,10 +32,13 @@ VIA_LANDSCAPE_FOLIAGE = "via.landscape.Foliage"
 LIGHT_PROBE_PREVIEW_GAMES = frozenset({
     "DD2",
     "DMC5",
-    "MHRise",
-    "O2",
-    "MHWilds",
     "KunitsuGami",
+    "MHRise",
+    "MHST3",
+    "MHWilds",
+    "O2",
+    "OnimushaWOTS",
+    "Pragmata",
     "RE2",
     "RE2RT",
     "RE3",
@@ -43,6 +46,7 @@ LIGHT_PROBE_PREVIEW_GAMES = frozenset({
     "RE4",
     "RE7RT",
     "RE8",
+    "RE9",
     "SF6",
 })
 

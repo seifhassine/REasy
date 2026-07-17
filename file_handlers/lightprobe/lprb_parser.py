@@ -103,7 +103,11 @@ def _parse_direct_payload(
         count=probe_count * term_count,
         offset=payload_start,
     ).reshape(probe_count, term_count)
-    return LprbData(probe_count=probe_count, terms_rgb=_decode_packed_probe_words(words))
+    return LprbData(
+        probe_count=probe_count,
+        terms_rgb=_decode_packed_probe_words(words),
+        version=version,
+    )
 
 
 def _parse_offset_payload(
@@ -139,6 +143,7 @@ def _parse_offset_payload(
         probe_count=probe_count,
         terms_rgb=terms_rgb,
         range_compression_ev=range_compression_ev,
+        version=version,
     )
 
 
