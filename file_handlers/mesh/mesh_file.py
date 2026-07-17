@@ -4,12 +4,17 @@ from array import array
 from bisect import bisect_right
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Dict, List, Tuple, Optional
+from typing import TYPE_CHECKING, Dict, List, Tuple, Optional
 
 import numpy as np
 
 from utils.binary_handler import BinaryHandler
 from utils.native_build import ensure_fastmesh
+
+if TYPE_CHECKING:
+    from .blend_shape import BlendShapeData
+
+
 ensure_fastmesh()
 from fastmesh import (
     unpack_normals_tangents,
@@ -291,10 +296,13 @@ class MeshBuffer:
         self.version = version
         self.element_headers_offset = 0
         self.vertex_buffer_offset = 0
+        self.index_buffer_offset = 0
         self.face_buffer_offset = 0
         self.total_buffer_size = 0
         self.vertex_buffer_size = 0
+        self.index_buffer_size = 0
         self.element_count = 0
+        self.total_element_count = 0
         self.ukn1 = 0
         self.ukn2 = 0
         self.blend_shape_offset = 0
@@ -303,8 +311,6 @@ class MeshBuffer:
         self.buffer_index_unkn = 0
         self.shadow_mesh_index_buffer_offset = 0
         self.occluder_mesh_index_buffer_offset = 0
-        self.blend_shape_index_remap_offset = 0
-        self.blend_shape_vertex_remap_offset = 0
         self.buffer_index = 0
         self.buffer_headers: List[MeshBufferItemHeader] = []
         self.streaming_buffer_headers: Dict[int, StreamingBufferHeader] = {}
@@ -365,7 +371,6 @@ class MeshBuffer:
                 payload.uv2 = _unpack_raw_uvs(data)
             elif bh.type == VertexBufferType.Colors:
                 payload.colors = unpack_colors(data)
-
         if has_32bit_indices:
             payload.integer_faces = array("I")
             payload.integer_faces.frombytes(payload.face_bytes)
@@ -472,16 +477,31 @@ class MeshBuffer:
             self.shapekey_weight_buffer_offset = h.read_int64()
             self.total_buffer_size = h.read_int32()
             self.vertex_buffer_size = h.read_int32()
-            self.face_buffer_offset = self.vertex_buffer_offset + self.vertex_buffer_size
+            self.index_buffer_offset = self.vertex_buffer_offset + self.vertex_buffer_size
+            self.face_buffer_offset = self.index_buffer_offset
+            self.index_buffer_size = max(
+                0,
+                self.total_buffer_size - self.vertex_buffer_size,
+            )
         else:
-            self.face_buffer_offset = h.read_int64()
+            self.index_buffer_offset = h.read_int64()
+            self.face_buffer_offset = self.index_buffer_offset
             if self.version == MeshMainVersion.RE_RT:
                 h.read_int64()  # rtPadding
-            self.total_buffer_size = h.read_int32()
-            h.read_int32()
-            self.vertex_buffer_size = self.face_buffer_offset - self.vertex_buffer_offset
+            if self.version == MeshMainVersion.RE8:
+                self.vertex_buffer_size = h.read_uint32()
+                self.index_buffer_size = h.read_uint32()
+                self.total_buffer_size = (
+                    self.vertex_buffer_size + self.index_buffer_size
+                )
+            else:
+                self.total_buffer_size = h.read_int32()
+                h.read_int32()
+                self.vertex_buffer_size = (
+                    self.face_buffer_offset - self.vertex_buffer_offset
+                )
         self.element_count = h.read_int16()
-        h.read_int16()
+        self.total_element_count = h.read_int16()
         if self.version >= MeshMainVersion.PRAGMATA:
             self.shapekey_weight_buffer_size = h.read_int32()
             self.ukn1 = h.read_int32()
@@ -491,8 +511,8 @@ class MeshBuffer:
             self.shadow_mesh_index_buffer_offset = h.read_int32()
             self.occluder_mesh_index_buffer_offset = h.read_int32()
             if self.version >= MeshMainVersion.MHWILDS:
-                self.blend_shape_index_remap_offset = h.read_int32()
-                self.blend_shape_vertex_remap_offset = h.read_int32()
+                h.read_int32()
+                h.read_int32()
                 self.blend_shape_offset = h.read_int32()
                 h.read_int32()
                 self.buffer_index = h.read_int32()
@@ -769,6 +789,7 @@ class MeshData:
             payload.face_bytes = payload.face_bytes[:required_size]
 
         self.buffer.finalize_payloads()
+
 
 @dataclass
 class MPLYChunkFlags:
@@ -1226,6 +1247,8 @@ class MeshFile:
         self.joint_count: int = 0
         self.bone_remap_count: int = 0
         self.blend_shape_indices: List[int] = []
+        self.blend_shape_data: Optional["BlendShapeData"] = None
+        self.blend_shape_parse_error = ""
         self.streaming_data_loaded = False
         self.streaming_buffer_count = 0
         
@@ -1323,8 +1346,13 @@ class MeshFile:
         read_extras: bool = False,
         streaming_data: Optional[bytes] = None,
     ) -> bool:
+        from .blend_shape import parse_blend_shapes, read_blend_shape_name_indices
+
         self.joint_count = 0
         self.bone_remap_count = 0
+        self.blend_shape_indices = []
+        self.blend_shape_data = None
+        self.blend_shape_parse_error = ""
         h = BinaryHandler(data, file_version=file_version)
         if not self.header.read(h, file_version=file_version):
             raise ValueError("Not a mesh file")
@@ -1356,7 +1384,30 @@ class MeshFile:
         sorted_offsets = self._collect_section_offsets()
         self._parse_bones(h)
         self._parse_bone_indices(data, sorted_offsets)
-        
+
+        if self.header.blend_shapes_offset:
+            try:
+                self.blend_shape_data = parse_blend_shapes(
+                    data,
+                    self.header.blend_shapes_offset,
+                    self.header.format_version,
+                )
+            except (ValueError, struct.error, OverflowError) as exc:
+                self.blend_shape_parse_error = str(exc)
+
+        if self.header.blend_shape_indices_offset:
+            size = self._section_size(
+                self.header.blend_shape_indices_offset,
+                sorted_offsets,
+            )
+            self.blend_shape_indices = read_blend_shape_name_indices(
+                data,
+                self.header.blend_shape_indices_offset,
+                size,
+                self.header.format_version,
+                self.blend_shape_data,
+            )
+
         if read_extras:
             if self.header.shadow_lods_offset:
                 size = self._section_size(self.header.shadow_lods_offset, sorted_offsets)
@@ -1386,12 +1437,6 @@ class MeshFile:
                 size = self._section_size(self.header.floats_offset, sorted_offsets)
                 h.seek(self.header.floats_offset)
                 self.float_bytes = h.read_bytes(size)
-            if self.header.blend_shape_indices_offset:
-                size = self._section_size(self.header.blend_shape_indices_offset, sorted_offsets)
-                start = self.header.blend_shape_indices_offset
-                fmt = '<{}H'.format(size // 2)
-                self.blend_shape_indices = list(struct.unpack_from(fmt, data, start))
-
         if self.header.name_offsets_offset:
             start = self.header.name_offsets_offset
             h.seek(start)
@@ -1406,5 +1451,11 @@ class MeshFile:
                 for idx in self.material_indices:
                     if 0 <= idx < len(self.names):
                         self.material_names.append(self.names[idx])
+
+        if self.blend_shape_data is not None:
+            self.blend_shape_data.set_channel_names(
+                self.blend_shape_indices,
+                self.names,
+            )
 
         return True
