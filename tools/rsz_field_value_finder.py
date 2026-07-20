@@ -15,6 +15,14 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils.type_registry import TypeRegistry
 from utils.number_format import format_display_value, format_float_sequence
 
+
+def _registered_field_name(field_identifier, type_info):
+    if not isinstance(field_identifier, int) or not type_info or "fields" not in type_info:
+        return field_identifier
+    fields = type_info["fields"]
+    return fields[field_identifier]["name"] if 0 <= field_identifier < len(fields) else None
+
+
 def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     if not os.path.isfile(filepath):
         return []
@@ -49,32 +57,21 @@ def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     type_info = type_registry.get_type_info(type_id)
     
     for idx, instance in enumerate(rsz_file.instance_infos):
-        if instance.type_id == type_id:
-            if idx in rsz_file.parsed_elements:
-                fields = rsz_file.parsed_elements[idx]
-                
-                if field_identifier is None:
-                    if type_info and "fields" in type_info:
-                        for field in type_info["fields"]:
-                            field_name = field["name"]
-                            if field_name in fields:
-                                value = fields[field_name]
-                                found_values.append((filepath, idx, field_name, value))
-                else:
-                    field_name = field_identifier
-                    if isinstance(field_identifier, int):
-                        if type_info and "fields" in type_info:
-                            if 0 <= field_identifier < len(type_info["fields"]):
-                                field_name = type_info["fields"][field_identifier]["name"]
-                            else:
-                                return []
-                                
-                    if not field_name:
-                        return []
-                        
-                    if field_name in fields:
-                        value = fields[field_name]
-                        found_values.append((filepath, idx, field_name, value))
+        if instance.type_id != type_id or idx not in rsz_file.parsed_elements:
+            continue
+        fields = rsz_file.parsed_elements[idx]
+        if field_identifier is None:
+            for field in type_info.get("fields", []) if type_info else []:
+                field_name = field["name"]
+                if field_name in fields:
+                    found_values.append((filepath, idx, field_name, fields[field_name]))
+            continue
+
+        field_name = _registered_field_name(field_identifier, type_info)
+        if not field_name:
+            return []
+        if field_name in fields:
+            found_values.append((filepath, idx, field_name, fields[field_name]))
     
     return found_values
 
@@ -85,7 +82,6 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
     results = []
     path = Path(directory)
     candidate_files = []
-    total_files_found = 0
     matches_found = 0
     
     try:

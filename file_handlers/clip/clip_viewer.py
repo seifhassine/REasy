@@ -3,7 +3,16 @@ from contextlib import contextmanager
 from math import ceil
 from typing import Any
 
-from PySide6.QtCore import QCoreApplication, QPoint, QRectF, QSignalBlocker, Qt, QTimer, Signal
+from PySide6.QtCore import (
+    QCoreApplication,
+    QPoint,
+    QRectF,
+    QSignalBlocker,
+    QT_TRANSLATE_NOOP,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -42,6 +51,7 @@ from .metadata import (
     NODE_TYPE_NAMES,
     enum_text,
 )
+from .parser import ParsedClip
 from .reader import ClipParserError
 from .structures import (
     ActionKey,
@@ -61,6 +71,19 @@ from utils.number_format import format_display_value, format_float_sequence, for
 
 KEY_OBJECT_TYPES = (Key, BoolKey, ActionKey, NoHermiteKey, SpeedPoint)
 INVALID_FIELD_STYLE = "border: 1px solid #cc3333;"
+TIMELINE_ROOT_NODES_LABEL = QT_TRANSLATE_NOOP(
+    "ClipTimelineCanvas", "Root Nodes"
+)
+TIMELINE_ROOT_COUNT_TEXT = QT_TRANSLATE_NOOP(
+    "ClipTimelineCanvas", "{count} roots"
+)
+TIMELINE_CHILDREN_COUNT_TEXT = QT_TRANSLATE_NOOP(
+    "ClipTimelineCanvas", "{count} children"
+)
+VIEWER_ROOT_NODES_LABEL = QT_TRANSLATE_NOOP("ClipViewer", "Root Nodes")
+USER_DATA_ASSETS_LABEL = QT_TRANSLATE_NOOP(
+    "ClipViewer", "User Data Assets"
+)
 
 
 def _node_type_value(node: Node) -> int:
@@ -157,10 +180,12 @@ def _property_path_to(parsed, target: Property) -> tuple[Node, list[Property]] |
 
 
 def _iter_graph_nodes(parsed):
-    roots = (
-        [node for track in parsed.tracks for node in track.child_nodes]
-        if parsed.tracks else ([] if parsed.header.version >= 85 else parsed.root_nodes)
-    )
+    if parsed.tracks:
+        roots = [node for track in parsed.tracks for node in track.child_nodes]
+    elif parsed.header.version >= 85:
+        roots = []
+    else:
+        roots = parsed.root_nodes
     return ClipGraphOperations._walk_unique(roots, "child_nodes")
 
 
@@ -190,6 +215,14 @@ def _live_oword_rows(parsed) -> list[tuple[int, tuple]]:
 def _live_user_data_assets(parsed) -> list[UserDataAssetInfo]:
     wanted = _live_reference_ids(parsed, "user_data_asset_ref")
     return [asset for asset in parsed.user_data_assets if id(asset) in wanted]
+
+
+def _row_background_color(selected: bool, hovered: bool, row_index: int) -> QColor:
+    if selected:
+        return QColor("#303b48")
+    if hovered:
+        return QColor("#2d333a")
+    return QColor("#25282c") if row_index % 2 else QColor("#202327")
 
 
 def _replace_oword_reference(parsed, index: int, new_values: tuple[float, ...]):
@@ -300,8 +333,10 @@ class ClipTimelineCanvas(QWidget):
                 "section",
                 None,
                 0,
-                self.tr("Root Nodes"),
-                meta=self.tr("{count} roots").format(count=len(loose_roots)),
+                self.tr(TIMELINE_ROOT_NODES_LABEL),
+                meta=self.tr(TIMELINE_ROOT_COUNT_TEXT).format(
+                    count=len(loose_roots)
+                ),
             ))
             for node in loose_roots:
                 self._add_node_rows(node, 1)
@@ -359,9 +394,14 @@ class ClipTimelineCanvas(QWidget):
         if node.properties:
             counts.append(self.tr("{count} props").format(count=len(node.properties)))
         if node.child_nodes:
-            counts.append(self.tr("{count} children").format(count=len(node.child_nodes)))
+            counts.append(
+                self.tr(TIMELINE_CHILDREN_COUNT_TEXT).format(
+                    count=len(node.child_nodes)
+                )
+            )
         if counts:
             meta = f"{meta} | {', '.join(counts)}"
+        owner_badge = self._node_owner_badge(owner_track, owner_clip, owner_node)
         self.rows.append(self._row(
             "node",
             node,
@@ -369,12 +409,7 @@ class ClipTimelineCanvas(QWidget):
             name,
             badge=_node_type_name(node),
             badge_color=_node_type_color(node),
-            owner_badge=(
-                self.tr("Child Node") if owner_node
-                else self.tr("Clip Root") if owner_clip
-                else self.tr("Track Root") if owner_track
-                else self.tr("Root Node")
-            ),
+            owner_badge=owner_badge,
             meta=meta,
             owner_track=owner_track,
             owner_clip=owner_clip,
@@ -387,7 +422,27 @@ class ClipTimelineCanvas(QWidget):
             for child in node.child_nodes:
                 self._add_node_rows(child, depth + 1, owner_node=node)
 
+    def _node_owner_badge(
+        self,
+        owner_track: Track | None,
+        owner_clip: ClipInfo | None,
+        owner_node: Node | None,
+    ) -> str:
+        if owner_node:
+            return self.tr("Child Node")
+        if owner_clip:
+            return self.tr("Clip Root")
+        if owner_track:
+            return self.tr("Track Root")
+        return self.tr("Root Node")
+
     def _add_property_rows(self, prop: Property, depth: int, owner_node: Node | None = None, owner_prop: Property | None = None):
+        if owner_prop:
+            owner_badge = self.tr("Child Prop")
+        elif owner_node:
+            owner_badge = self.tr("Node Prop")
+        else:
+            owner_badge = ""
         self.rows.append(self._row(
             "property",
             prop,
@@ -397,11 +452,7 @@ class ClipTimelineCanvas(QWidget):
             owner_prop=owner_prop,
             badge=_prop_type_name(prop),
             badge_color=QColor("#806dc0"),
-            owner_badge=(
-                self.tr("Child Prop") if owner_prop
-                else self.tr("Node Prop") if owner_node
-                else ""
-            ),
+            owner_badge=owner_badge,
             meta=self._property_meta(prop),
         ))
         if not self._is_collapsed(prop) and ClipGraphOperations.is_property_container(prop) and self._show_property_children(prop):
@@ -442,7 +493,11 @@ class ClipTimelineCanvas(QWidget):
     def _property_meta(self, prop: Property):
         count = len(prop.child_properties) if ClipGraphOperations.is_property_container(prop) else len(prop.keys)
         if ClipGraphOperations.is_property_container(prop):
-            suffix = self.tr("{count} child").format(count=count) if count == 1 else self.tr("{count} children").format(count=count)
+            suffix = (
+                self.tr("{count} child").format(count=count)
+                if count == 1
+                else self.tr(TIMELINE_CHILDREN_COUNT_TEXT).format(count=count)
+            )
         else:
             suffix = self.tr("{count} key").format(count=count) if count == 1 else self.tr("{count} keys").format(count=count)
         if prop.speed_points_ref:
@@ -453,7 +508,9 @@ class ClipTimelineCanvas(QWidget):
         visible_roots = len(_visible_track_child_nodes(track))
         parts = [self.tr("{count} clips").format(count=len(track.clip_infos))]
         if visible_roots:
-            parts.append(self.tr("{count} roots").format(count=visible_roots))
+            parts.append(
+                self.tr(TIMELINE_ROOT_COUNT_TEXT).format(count=visible_roots)
+            )
         return ", ".join(parts)
 
     def _show_clip_nodes(self, clip_info: ClipInfo) -> bool:
@@ -536,7 +593,7 @@ class ClipTimelineCanvas(QWidget):
         y = self.header_h + row_index * self.row_h
         selected = self.selected and row.get("obj") is not None and row.get("obj") is self.selected.get("obj")
         hovered = self.hover_row is row
-        bg = QColor("#303b48") if selected else QColor("#2d333a") if hovered else QColor("#25282c") if row_index % 2 else QColor("#202327")
+        bg = _row_background_color(bool(selected), hovered, row_index)
         painter.fillRect(0, y, self.width(), self.row_h, bg)
         painter.setPen(QColor("#4b5158"))
         painter.drawLine(0, y + self.row_h - 1, self.width(), y + self.row_h - 1)
@@ -618,7 +675,7 @@ class ClipTimelineCanvas(QWidget):
             )
         elif isinstance(obj, Property):
             owner_prop = row.get("owner_prop")
-            owner_list = owner_prop.child_properties if owner_prop else row.get("owner_node").properties if row.get("owner_node") else None
+            owner_list = self._owner_list_for_row(row)
             self._paint_range(
                 painter,
                 row_index,
@@ -703,45 +760,52 @@ class ClipTimelineCanvas(QWidget):
             self.toggle_row(row)
             return
         item = self._item_at(event.position())
-        if not item:
-            if row:
-                item = self._meta_from_row(row)
+        if not item and row:
+            item = self._meta_from_row(row)
         if not item or item.get("obj") is None:
             return
         self.selected = item
         self.selection_changed.emit(item)
         self.update()
         if "rect" in item and item["kind"] in {"clip_info", "node", "property", "key", "speed_point"}:
-            rect = item["rect"]
-            mode = "move"
-            if item["kind"] in {"clip_info", "node", "property"}:
-                if abs(event.position().x() - rect.left()) <= 6:
-                    mode = "start"
-                elif abs(event.position().x() - rect.right()) <= 6:
-                    mode = "end"
-            self.drag = {
-                "item": item,
-                "mode": mode,
-                "start_frame": self._x_to_frame(event.position().x()),
-                "orig": self._range_values(item),
-            }
+            self._begin_drag(event, item)
+
+    def _begin_drag(self, event, item: dict[str, Any]):
+        rect = item["rect"]
+        mode = "move"
+        if item["kind"] in {"clip_info", "node", "property"}:
+            if abs(event.position().x() - rect.left()) <= 6:
+                mode = "start"
+            elif abs(event.position().x() - rect.right()) <= 6:
+                mode = "end"
+        self.drag = {
+            "item": item,
+            "mode": mode,
+            "start_frame": self._x_to_frame(event.position().x()),
+            "orig": self._range_values(item),
+        }
 
     def _owner_list_for_row(self, row):
-        if row["kind"] == "track":
+        kind = row["kind"]
+        if kind == "track":
             return self.parsed.tracks if self.parsed else None
-        if row["kind"] == "clip_info":
+        if kind == "clip_info":
             owner = row.get("owner_track")
             return owner.clip_infos if owner else None
-        if row["kind"] == "node":
-            if row.get("owner_node"):
-                return row["owner_node"].child_nodes
-            if row.get("owner_clip"):
-                return row["owner_clip"].root_nodes
-            if row.get("owner_track"):
-                return row["owner_track"].child_nodes
-        if row["kind"] == "property":
+        if kind == "node":
+            for owner_key, child_key in (
+                ("owner_node", "child_nodes"),
+                ("owner_clip", "root_nodes"),
+                ("owner_track", "child_nodes"),
+            ):
+                if owner := row.get(owner_key):
+                    return getattr(owner, child_key)
+        if kind == "property":
             owner_prop = row.get("owner_prop")
-            return owner_prop.child_properties if owner_prop else row.get("owner_node").properties if row.get("owner_node") else None
+            if owner_prop:
+                return owner_prop.child_properties
+            owner_node = row.get("owner_node")
+            return owner_node.properties if owner_node else None
         return None
 
     def mouseMoveEvent(self, event):
@@ -962,18 +1026,15 @@ class ClipTimelineCanvas(QWidget):
             return
         meta = meta or self.selected or {}
         obj = meta.get("obj")
-        if isinstance(obj, ClipInfo):
-            if not self._is_collapsed(obj):
-                self.expanded.add(id(obj))
-                self._ensure_clip_info_nodes(obj)
-        elif isinstance(obj, Node):
-            if not self._is_collapsed(obj):
-                self.expanded.add(id(obj))
-                self._ensure_node_properties(obj)
-        elif isinstance(obj, Property):
-            if not self._is_collapsed(obj):
-                self.expanded.add(id(obj))
-                self._ensure_property_context(obj, meta.get("owner_node"), meta.get("owner_prop"))
+        if isinstance(obj, ClipInfo) and not self._is_collapsed(obj):
+            self.expanded.add(id(obj))
+            self._ensure_clip_info_nodes(obj)
+        elif isinstance(obj, Node) and not self._is_collapsed(obj):
+            self.expanded.add(id(obj))
+            self._ensure_node_properties(obj)
+        elif isinstance(obj, Property) and not self._is_collapsed(obj):
+            self.expanded.add(id(obj))
+            self._ensure_property_context(obj, meta.get("owner_node"), meta.get("owner_prop"))
         elif isinstance(obj, KEY_OBJECT_TYPES):
             owner = meta.get("owner_prop")
             if isinstance(owner, Property) and not self._is_collapsed(owner):
@@ -1013,7 +1074,12 @@ class ClipTimelineCanvas(QWidget):
         parent_index = self.row_index_for(parent)
         if owner_node is None and parent_index >= 0:
             owner_node = self.rows[parent_index].get("owner_node")
-        siblings = owner_prop.child_properties if owner_prop else owner_node.properties if owner_node else []
+        if owner_prop:
+            siblings = owner_prop.child_properties
+        elif owner_node:
+            siblings = owner_node.properties
+        else:
+            siblings = []
         return self._insert_child_row(
             prop,
             parent,
@@ -1029,11 +1095,14 @@ class ClipTimelineCanvas(QWidget):
         owner_node: Node | None = None,
     ) -> bool:
         parent = owner_node or owner_clip or owner_track
-        siblings = (
-            owner_node.child_nodes if owner_node else
-            owner_clip.root_nodes if owner_clip else
-            owner_track.child_nodes if owner_track else []
-        )
+        if owner_node:
+            siblings = owner_node.child_nodes
+        elif owner_clip:
+            siblings = owner_clip.root_nodes
+        elif owner_track:
+            siblings = owner_track.child_nodes
+        else:
+            siblings = []
         return self._insert_child_row(
             node,
             parent,
@@ -1050,7 +1119,7 @@ class ClipTimelineCanvas(QWidget):
     def insert_root_node_row(self, node: Node) -> bool:
         if self.row_index_for(node) >= 0:
             return False
-        root_nodes_label = self.tr("Root Nodes")
+        root_nodes_label = self.tr(TIMELINE_ROOT_NODES_LABEL)
         section_index = next((
             i for i, row in enumerate(self.rows)
             if row["kind"] == "section" and row["label"] == root_nodes_label
@@ -1059,12 +1128,12 @@ class ClipTimelineCanvas(QWidget):
             section_index = len(self.rows)
             self.rows.append(self._row(
                 "section", None, 0, root_nodes_label,
-                meta=self.tr("{count} roots").format(count=1),
+                meta=self.tr(TIMELINE_ROOT_COUNT_TEXT).format(count=1),
             ))
         elif self.parsed:
-            self.rows[section_index]["meta"] = self.tr("{count} roots").format(
-                count=len(self.parsed.root_nodes)
-            )
+            self.rows[section_index]["meta"] = self.tr(
+                TIMELINE_ROOT_COUNT_TEXT
+            ).format(count=len(self.parsed.root_nodes))
         rows = self._captured_rows(lambda: self._add_node_rows(node, self.rows[section_index].get("depth", 0) + 1))
         insert_at = self._subtree_end(section_index)
         self.rows[insert_at:insert_at] = rows
@@ -1115,15 +1184,7 @@ class ClipTimelineCanvas(QWidget):
         elif isinstance(obj, ClipInfo):
             row.update(label=obj.unicode_name or self.tr("Clip"), meta=_frame_range_text(obj.frame_in, obj.frame_out))
         elif isinstance(obj, Node):
-            meta = _frame_range_text(obj.begin_frame, obj.end_frame)
-            counts = []
-            if obj.properties:
-                counts.append(self.tr("{count} props").format(count=len(obj.properties)))
-            if obj.child_nodes:
-                counts.append(self.tr("{count} children").format(count=len(obj.child_nodes)))
-            if counts:
-                meta = f"{meta} | {', '.join(counts)}"
-            row.update(label=_node_display_name(obj), badge=_node_type_name(obj), badge_color=_node_type_color(obj), meta=meta)
+            row.update(self._node_row_values(obj))
         elif isinstance(obj, Property):
             row.update(label=self._property_label(obj), badge=_prop_type_name(obj), meta=self._property_meta(obj))
         row["search"] = self._row(row["kind"], row.get("obj"), row.get("depth", 0), row["label"], **{
@@ -1131,6 +1192,26 @@ class ClipTimelineCanvas(QWidget):
             if key not in {"kind", "obj", "depth", "label", "search"}
         })["search"]
         self.update()
+
+    def _node_row_values(self, node: Node) -> dict[str, Any]:
+        meta = _frame_range_text(node.begin_frame, node.end_frame)
+        counts = []
+        if node.properties:
+            counts.append(self.tr("{count} props").format(count=len(node.properties)))
+        if node.child_nodes:
+            counts.append(
+                self.tr(TIMELINE_CHILDREN_COUNT_TEXT).format(
+                    count=len(node.child_nodes)
+                )
+            )
+        if counts:
+            meta = f"{meta} | {', '.join(counts)}"
+        return {
+            "label": _node_display_name(node),
+            "badge": _node_type_name(node),
+            "badge_color": _node_type_color(node),
+            "meta": meta,
+        }
 
     def remove_object_row(self, obj):
         index = self.row_index_for(obj)
@@ -1656,7 +1737,7 @@ class ClipViewer(QWidget):
             owner = self.current.get("owner_prop") if self.current else self._property_for_key(obj)
             return ([*self._object_path(owner)] if owner else []) + [self._title(obj)]
         if isinstance(obj, UserDataAssetInfo):
-            return [self.tr("User Data Assets"), self._title(obj)]
+            return [self.tr(USER_DATA_ASSETS_LABEL), self._title(obj)]
         return [self._title(obj)]
 
     def _node_path_to(self, target: Node):
@@ -1683,7 +1764,7 @@ class ClipViewer(QWidget):
                 if found:
                     return found
         for node in self.parsed.root_nodes:
-            found = walk(node, [self.tr("Root Nodes")])
+            found = walk(node, [self.tr(VIEWER_ROOT_NODES_LABEL)])
             if found:
                 return found
         return [self._title(target)]
@@ -1695,13 +1776,16 @@ class ClipViewer(QWidget):
 
     def _validation_messages(self, obj):
         messages = []
-        if isinstance(obj, ClipInfo) and obj.frame_out < obj.frame_in:
+        invalid_range = (
+            isinstance(obj, ClipInfo) and obj.frame_out < obj.frame_in
+        ) or (
+            isinstance(obj, (Node, Property))
+            and getattr(obj, "end_frame", 0.0) < getattr(obj, "begin_frame", 0.0)
+        )
+        if invalid_range:
             messages.append(self.tr("End frame is before begin frame"))
-        elif isinstance(obj, (Node, Property)) and getattr(obj, "end_frame", 0.0) < getattr(obj, "begin_frame", 0.0):
-            messages.append(self.tr("End frame is before begin frame"))
-        if isinstance(obj, Property):
-            if not _property_path_to(self.parsed, obj):
-                messages.append(self.tr("Property has no graph owner"))
+        if isinstance(obj, Property) and not _property_path_to(self.parsed, obj):
+            messages.append(self.tr("Property has no graph owner"))
         if isinstance(obj, KEY_OBJECT_TYPES):
             owner = self.current.get("owner_prop") if self.current else self._property_for_key(obj)
             if not isinstance(owner, Property):
@@ -1732,7 +1816,12 @@ class ClipViewer(QWidget):
         def commit():
             old = getattr(obj, attr)
             try:
-                value = float(edit.text()) if isinstance(old, float) else int(edit.text(), 0) if isinstance(old, int) and not isinstance(old, bool) else edit.text()
+                if isinstance(old, float):
+                    value = float(edit.text())
+                elif isinstance(old, int) and not isinstance(old, bool):
+                    value = int(edit.text(), 0)
+                else:
+                    value = edit.text()
                 setattr(obj, attr, value)
                 edit.setStyleSheet("")
                 self._object_changed(obj)
@@ -1834,7 +1923,7 @@ class ClipViewer(QWidget):
             ("Clip Infos", len(clips)),
             ("Nodes", len(nodes)),
             ("Properties", len(properties)),
-            (self.tr("User Data Assets"), len(assets)),
+            (self.tr(USER_DATA_ASSETS_LABEL), len(assets)),
             ("OWords", len(oword_rows)),
         ))
         self._related_section("Tracks")
@@ -1843,7 +1932,7 @@ class ClipViewer(QWidget):
             self._related_section("Clip Infos")
             self._related(clips, "clip_info")
         if assets:
-            self._related_section(self.tr("User Data Assets"))
+            self._related_section(self.tr(USER_DATA_ASSETS_LABEL))
             self._related(assets, "user_data_asset")
         if oword_rows:
             self._related_section("OWords")
@@ -2215,7 +2304,12 @@ class ClipViewer(QWidget):
         obj = self.current.get("obj") if self.current else None
         def mutate():
             clip_info = self.ops.add_clip_info()
-            track = obj if isinstance(obj, Track) else self._track_for_clip(obj) if isinstance(obj, ClipInfo) else None
+            if isinstance(obj, Track):
+                track = obj
+            elif isinstance(obj, ClipInfo):
+                track = self._track_for_clip(obj)
+            else:
+                track = None
             if track is None and self.parsed.tracks:
                 track = self.parsed.tracks[0]
             if track is not None:
@@ -2387,11 +2481,7 @@ class ClipViewer(QWidget):
 
     def _move_current(self, delta: int):
         obj = self.current.get("obj") if self.current else None
-        key_owner = _find_key_property(self.ops.parsed, obj) if isinstance(obj, KEY_OBJECT_TYPES) else None
-        owner_list = (
-            _key_owner_list(key_owner, obj) if key_owner is not None
-            else self.current.get("owner_list") if self.current else None
-        )
+        _, owner_list = self._owner_context(obj)
         if obj is None or owner_list is None:
             return
         def mutate():
@@ -2440,6 +2530,12 @@ class ClipViewer(QWidget):
             "speed_point" if isinstance(key, SpeedPoint) else "key", key,
             owner_prop=prop, owner_list=_key_owner_list(prop, key), key_role=_key_role(prop, key),
         )
+
+    def _owner_context(self, obj):
+        key_owner = _find_key_property(self.ops.parsed, obj) if isinstance(obj, KEY_OBJECT_TYPES) else None
+        if key_owner is not None:
+            return key_owner, _key_owner_list(key_owner, obj)
+        return key_owner, self.current.get("owner_list") if self.current else None
 
     def _clear_selection_view(self):
         self.current = None
@@ -2508,11 +2604,7 @@ class ClipViewer(QWidget):
                     return
 
     def _update_buttons(self, obj):
-        key_owner = _find_key_property(self.parsed, obj) if isinstance(obj, KEY_OBJECT_TYPES) else None
-        owner_list = (
-            _key_owner_list(key_owner, obj) if key_owner is not None
-            else self.current.get("owner_list") if self.current else None
-        )
+        key_owner, owner_list = self._owner_context(obj)
         owner_index = _identity_index(owner_list, obj)
         is_key = isinstance(obj, KEY_OBJECT_TYPES)
         can_add_track = obj is None
@@ -2525,13 +2617,7 @@ class ClipViewer(QWidget):
             _prop_type(obj) == PropertyType.PATH_POINT3D or bool(obj.speed_points_ref)
         )
         key_role = _key_role(key_owner, obj)
-        can_duplicate = isinstance(obj, (Track, ClipInfo, Node, Property, *KEY_OBJECT_TYPES)) and (
-            not is_key or key_role is not None
-        ) and not (
-            key_role == "last"
-            or key_role == "extra"
-            and len(key_owner.extra_keys) >= 4
-        )
+        can_duplicate = self._can_duplicate_object(obj, is_key, key_owner, key_role)
         can_delete = isinstance(obj, (Track, ClipInfo, Node, Property, UserDataAssetInfo, *KEY_OBJECT_TYPES)) and (
             not is_key or key_role is not None
         )
@@ -2551,6 +2637,16 @@ class ClipViewer(QWidget):
         self._action(self.del_btn, can_delete)
         self._action(self.move_up_btn, owner_index > 0)
         self._action(self.move_down_btn, owner_list is not None and 0 <= owner_index < len(owner_list) - 1)
+
+    @staticmethod
+    def _can_duplicate_object(obj, is_key: bool, key_owner: Property | None, key_role: str | None) -> bool:
+        if not isinstance(obj, (Track, ClipInfo, Node, Property, *KEY_OBJECT_TYPES)):
+            return False
+        if is_key and key_role is None:
+            return False
+        if key_role == "last":
+            return False
+        return key_role != "extra" or len(key_owner.extra_keys) < 4
     @staticmethod
 
     def _action(action, visible: bool):

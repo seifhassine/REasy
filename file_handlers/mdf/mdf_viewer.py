@@ -7,13 +7,17 @@ from PySide6.QtWidgets import (
 	QMessageBox, QToolButton, QStyle, QStackedWidget
 )
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
-from PySide6.QtCore import Qt, Signal, QSize, QPoint
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSize, QPoint
 from utils.hash_util import murmur3_hash_utf16le
 from utils.number_format import format_display_value
 from .mdf_clipboard import MdfClipboard
 from .mdf_template_manager import MdfTemplateManager
 from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 from ui.widgets_utils import get_color_preview_brush
+
+
+COPY_MATERIALS_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Copy Materials")
+EXPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Export Template")
 
 
 class MdfViewer(QWidget):
@@ -518,10 +522,7 @@ class MdfViewer(QWidget):
 		h = m.materials[i].header
 		version = self._current_file_version()
 		
-		alpha = 0
-		for bit, cb in enumerate(self.flags1_checks):
-			if cb.isChecked():
-				alpha |= (1 << bit)
+		alpha = self._checked_flag_bits(self.flags1_checks)
 		
 		if version >= 31:
 			if self.transparent_zpostpass_check.isChecked():
@@ -531,16 +532,10 @@ class MdfViewer(QWidget):
 			alpha |= (self.tess_spin.value() & 0x3F) << 10
 		
 		alpha |= (self.phong_spin.value() & 0xFF) << 16
-		
-		for bit, cb in enumerate(self.flags2_checks):
-			if cb.isChecked():
-				alpha |= (1 << (24 + bit))
+		alpha |= self._checked_flag_bits(self.flags2_checks, start_bit=24)
 		
 		if version >= 31:
-			for bit, cb in enumerate(self.flags3_checks):
-				if cb.isChecked():
-					alpha |= (1 << (32 + bit))
-			
+			alpha |= self._checked_flag_bits(self.flags3_checks, start_bit=32)
 			bias = self.transparent_priority_bias_spin.value()
 			if bias < 0:
 				bias = (1 << 8) + bias
@@ -548,6 +543,14 @@ class MdfViewer(QWidget):
 		
 		h.material_flags = alpha
 		self.modified = True
+
+	@staticmethod
+	def _checked_flag_bits(checks, start_bit: int = 0) -> int:
+		return sum(
+			1 << (start_bit + bit)
+			for bit, checkbox in enumerate(checks)
+			if checkbox.isChecked()
+		)
 
 	def _update_flags_ui(self, h):
 		alpha = int(h.material_flags)
@@ -910,32 +913,45 @@ class MdfViewer(QWidget):
 				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
 			table.setItem(row, 3 + i, item)
 		
-		name_lower = (p.name or "").lower()
-		is_color = name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4)
-		
-		color_item = QTableWidgetItem("")
-		if is_color:
-			rgb = [values[0], values[1], values[2]]
-			alpha = values[3] if p.component_count == 4 else 1.0
-			def clamp01(v):
-				try:
-					return max(0.0, min(1.0, float(v)))
-				except Exception:
-					return 0.0
-			R = int(clamp01(rgb[0]) * 255)
-			G = int(clamp01(rgb[1]) * 255)
-			B = int(clamp01(rgb[2]) * 255)
-			A = int(clamp01(alpha) * 255)
-   
-			color_item.setBackground(get_color_preview_brush(R, G, B, A))
-			if p.component_count == 4:
-				color_item.setToolTip(f"RGBA: {R},{G},{B},{A}")
-			else:
-				color_item.setToolTip(f"RGB: {R},{G},{B}")
-			color_item.setFlags((color_item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
+		table.setItem(row, 7, self._parameter_color_item(p, values))
+
+	def _parameter_color_item(self, parameter, values) -> QTableWidgetItem:
+		item = QTableWidgetItem("")
+		name = (parameter.name or "").lower()
+		is_color = (
+			name.endswith(("color", "color1", "color2", "color3"))
+			and parameter.component_count in (3, 4)
+		)
+		if not is_color:
+			item.setFlags(
+				(item.flags() | Qt.ItemIsEnabled)
+				& ~(Qt.ItemIsEditable | Qt.ItemIsSelectable)
+			)
+			return item
+
+		red, green, blue = (
+			int(self._clamp01(value) * 255)
+			for value in values[:3]
+		)
+		alpha_value = values[3] if parameter.component_count == 4 else 1.0
+		alpha = int(self._clamp01(alpha_value) * 255)
+		item.setBackground(get_color_preview_brush(red, green, blue, alpha))
+		if parameter.component_count == 4:
+			item.setToolTip(f"RGBA: {red},{green},{blue},{alpha}")
 		else:
-			color_item.setFlags((color_item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-		table.setItem(row, 7, color_item)
+			item.setToolTip(f"RGB: {red},{green},{blue}")
+		item.setFlags(
+			(item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+			& ~Qt.ItemIsEditable
+		)
+		return item
+
+	@staticmethod
+	def _clamp01(value) -> float:
+		try:
+			return max(0.0, min(1.0, float(value)))
+		except Exception:
+			return 0.0
 
 	def _refresh_gpbf_table(self, md):
 		self.gpbf_table.blockSignals(True)
@@ -1062,7 +1078,14 @@ class MdfViewer(QWidget):
 		for n in names:
 			ln = n.lower()
 			if ln.startswith("layercolor_"):
-				idx = 0 if "red" in ln else 1 if "green" in ln else 2 if "blue" in ln else -1
+				if "red" in ln:
+					idx = 0
+				elif "green" in ln:
+					idx = 1
+				elif "blue" in ln:
+					idx = 2
+				else:
+					idx = -1
 				cur_seg.append(idx)
 			else:
 				if cur_seg:
@@ -1521,7 +1544,7 @@ class MdfViewer(QWidget):
 		selected = self.materials_table.selectionModel().selectedRows()
 		if not selected:
 			QMessageBox.information(
-				self, self.tr("Copy Materials"), self.tr("Select at least one material to copy.")
+				self, self.tr(COPY_MATERIALS_TITLE), self.tr("Select at least one material to copy.")
 			)
 			return
 		indices = sorted(idx.row() for idx in selected)
@@ -1529,7 +1552,7 @@ class MdfViewer(QWidget):
 		if not materials:
 			QMessageBox.warning(
 				self,
-				self.tr("Copy Materials"),
+				self.tr(COPY_MATERIALS_TITLE),
 				self.tr("No valid materials selected for copying."),
 			)
 			return
@@ -1540,7 +1563,7 @@ class MdfViewer(QWidget):
 		)
 		QMessageBox.information(
 			self,
-			self.tr("Copy Materials"),
+			self.tr(COPY_MATERIALS_TITLE),
 			self.tr("Copied {count} material(s) to clipboard.").format(count=len(materials)),
 		)
 
@@ -1548,7 +1571,7 @@ class MdfViewer(QWidget):
 		material, file_version, source_name = self.get_material_export_context()
 		if material is None:
 			QMessageBox.information(
-				self, self.tr("Export Template"), self.tr("Select a material to export.")
+				self, self.tr(EXPORT_TEMPLATE_TITLE), self.tr("Select a material to export.")
 			)
 			return
 		default_name = material.header.mat_name
@@ -1568,13 +1591,13 @@ class MdfViewer(QWidget):
 		if not result.get("success"):
 			QMessageBox.warning(
 				self,
-				self.tr("Export Template"),
+				self.tr(EXPORT_TEMPLATE_TITLE),
 				result.get("message") or self.tr("Failed to export template."),
 			)
 			return
 		QMessageBox.information(
 			self,
-			self.tr("Export Template"),
+			self.tr(EXPORT_TEMPLATE_TITLE),
 			self.tr("Template '{name}' exported successfully.").format(name=data["name"]),
 		)
 

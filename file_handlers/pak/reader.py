@@ -156,7 +156,6 @@ class PakReader:
         pak = PakFile()
         for pakpath in self._enumerate_temp_paks_with_searched_files(pak):
             entries = pak.entries
-            entry_count = len(entries)
             matched: List[tuple[int, int]] = []
             sp = self._searched_paths
             for idx, e in enumerate(entries):
@@ -402,7 +401,7 @@ class CachedPakReader(PakReader):
                     if len(header_data) != 16:
                         continue
                     
-                    magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBhII", header_data)
+                    magic, maj, minr, features, file_count, _ = struct.unpack("<IBBhII", header_data)
                     if magic != 0x414B504B:
                         continue
                     

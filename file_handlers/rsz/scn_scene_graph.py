@@ -411,7 +411,9 @@ def _obb_fields(fields: Mapping[str, object]) -> list[ScnOrientedBox]:
 
 
 def _object_ref_id(value) -> int:
-    return int(value.value or 0) if isinstance(value, ObjectData) else int(value) if isinstance(value, int) else 0
+    if isinstance(value, ObjectData):
+        return int(value.value or 0)
+    return int(value) if isinstance(value, int) else 0
 
 
 def _first_name(fields: Mapping[str, object], fallback: str) -> str:

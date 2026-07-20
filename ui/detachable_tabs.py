@@ -78,31 +78,38 @@ class FloatingTabWindow(QMainWindow):
 			src_menu = top_action.menu()
 			if not src_menu:
 				continue
+			new_menu = dst_mb.addMenu(src_menu.title())
 			if any(action.objectName() == "find_search" for action in src_menu.actions()):
-				new_menu = dst_mb.addMenu(src_menu.title())
-				if hasattr(self, '_find_action'):
-					new_menu.addAction(self._find_action)
-				new_menu.addSeparator()
-				for act in src_menu.actions():
-					if act.objectName() != "find_search":
-						if act.isSeparator():
-							new_menu.addSeparator()
-						else:
-							new_menu.addAction(act)
+				self._copy_find_menu(src_menu, new_menu)
 			else:
-				new_menu = dst_mb.addMenu(src_menu.title())
-				for act in src_menu.actions():
-					if act.isSeparator():
-						new_menu.addSeparator()
-					elif act.menu():
-						sub = new_menu.addMenu(act.menu().title())
-						for sub_act in act.menu().actions():
-							if sub_act.isSeparator():
-								sub.addSeparator()
-							else:
-								sub.addAction(sub_act)
+				self._copy_menu_actions(src_menu, new_menu)
+
+	def _copy_find_menu(self, source, destination):
+		if hasattr(self, '_find_action'):
+			destination.addAction(self._find_action)
+		destination.addSeparator()
+		for action in source.actions():
+			if action.objectName() == "find_search":
+				continue
+			if action.isSeparator():
+				destination.addSeparator()
+			else:
+				destination.addAction(action)
+
+	@staticmethod
+	def _copy_menu_actions(source, destination):
+		for action in source.actions():
+			if action.isSeparator():
+				destination.addSeparator()
+			elif action.menu():
+				submenu = destination.addMenu(action.menu().title())
+				for sub_action in action.menu().actions():
+					if sub_action.isSeparator():
+						submenu.addSeparator()
 					else:
-						new_menu.addAction(act)
+						submenu.addAction(sub_action)
+			else:
+				destination.addAction(action)
 
 	def _create_find_action(self, main_window):
 		find_act = QAction(self.tr("Find"), self)
@@ -132,21 +139,21 @@ class FloatingTabWindow(QMainWindow):
 	def open_find_dialog(self):
 		if self.file_tab:
 			self.file_tab.open_find_dialog()
-		else:
-			page = self.centralWidget()
-			if page:
-				main_window = self._get_main_window()
-				if main_window and hasattr(main_window, 'tabs'):
-					for tab in main_window.tabs.values():
-						if hasattr(tab, 'notebook_widget') and tab.notebook_widget == page:
-							self.file_tab = tab
-							tab.open_find_dialog()
-							return
-			QMessageBox.warning(
-				self,
-				self.tr("Warning"),
-				self.tr("Cannot open find dialog for this tab"),
-			)
+			return
+		page = self.centralWidget()
+		if page:
+			main_window = self._get_main_window()
+			if main_window and hasattr(main_window, 'tabs'):
+				for tab in main_window.tabs.values():
+					if hasattr(tab, 'notebook_widget') and tab.notebook_widget == page:
+						self.file_tab = tab
+						tab.open_find_dialog()
+						return
+		QMessageBox.warning(
+			self,
+			self.tr("Warning"),
+			self.tr("Cannot open find dialog for this tab"),
+		)
 	
 	def keyPressEvent(self, event):
 		if not getattr(self.file_tab, "suppress_general_shortcuts", False) and event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_F:

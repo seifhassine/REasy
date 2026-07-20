@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QTimer
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -20,6 +20,14 @@ from PySide6.QtWidgets import (
 )
 
 from file_handlers.mdf.mdf_template_manager import MdfTemplateManager
+
+
+IMPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP(
+    "MdfTemplateManagerDialog", "Import Template"
+)
+DELETE_TEMPLATE_TITLE = QT_TRANSLATE_NOOP(
+    "MdfTemplateManagerDialog", "Delete Template"
+)
 
 
 class MdfTemplateManagerDialog(QDialog):
@@ -112,9 +120,9 @@ class MdfTemplateManagerDialog(QDialog):
         right_layout.addWidget(self.modified_label)
 
         actions_row = QHBoxLayout()
-        self.import_button = QPushButton(self.tr("Import Template"))
+        self.import_button = QPushButton(self.tr(IMPORT_TEMPLATE_TITLE))
         actions_row.addWidget(self.import_button)
-        self.delete_button = QPushButton(self.tr("Delete Template"))
+        self.delete_button = QPushButton(self.tr(DELETE_TEMPLATE_TITLE))
         actions_row.addWidget(self.delete_button)
         right_layout.addLayout(actions_row)
 
@@ -150,6 +158,41 @@ class MdfTemplateManagerDialog(QDialog):
             return None
         return item.data(Qt.UserRole)
 
+    @staticmethod
+    def _template_matches(tpl: Dict, tag_filter, search_text: str) -> bool:
+        if tag_filter and tag_filter not in tpl.get("tags", []):
+            return False
+        if not search_text:
+            return True
+        haystack = "\n".join([
+            tpl.get("name", ""),
+            tpl.get("description", ""),
+            ",".join(tpl.get("tags", [])),
+        ]).lower()
+        return search_text in haystack
+
+    def _template_item(self, tpl: Dict) -> QListWidgetItem:
+        item = QListWidgetItem(tpl.get("name", self.tr("Unnamed")))
+        item.setData(Qt.UserRole, tpl.get("id"))
+        tooltip_lines = []
+        if tpl.get("description"):
+            tooltip_lines.append(tpl["description"])
+        if tpl.get("tags"):
+            tooltip_lines.append(
+                self.tr("Tags: {tags}").format(tags=", ".join(tpl["tags"]))
+            )
+        if tpl.get("source_file_name"):
+            tooltip_lines.append(self.tr("Source: {source}").format(
+                source=tpl["source_file_name"]
+            ))
+        if tpl.get("source_version"):
+            tooltip_lines.append(self.tr("Version: {version}").format(
+                version=tpl["source_version"]
+            ))
+        if tooltip_lines:
+            item.setToolTip("\n".join(tooltip_lines))
+        return item
+
     def _refresh_templates(self, select_id: Optional[str] = None) -> None:
         if select_id is None:
             select_id = self._current_template_id()
@@ -164,35 +207,9 @@ class MdfTemplateManagerDialog(QDialog):
         chosen_row = -1
 
         for tpl in templates:
-            if tag_filter and tag_filter not in tpl.get("tags", []):
+            if not self._template_matches(tpl, tag_filter, search_text):
                 continue
-            if search_text:
-                haystack = "\n".join([
-                    tpl.get("name", ""),
-                    tpl.get("description", ""),
-                    ",".join(tpl.get("tags", [])),
-                ]).lower()
-                if search_text not in haystack:
-                    continue
-            item = QListWidgetItem(tpl.get("name", self.tr("Unnamed")))
-            item.setData(Qt.UserRole, tpl.get("id"))
-            tooltip_lines = []
-            if tpl.get("description"):
-                tooltip_lines.append(tpl["description"])
-            if tpl.get("tags"):
-                tooltip_lines.append(
-                    self.tr("Tags: {tags}").format(tags=", ".join(tpl["tags"]))
-                )
-            if tpl.get("source_file_name"):
-                tooltip_lines.append(self.tr("Source: {source}").format(
-                    source=tpl["source_file_name"]
-                ))
-            if tpl.get("source_version"):
-                tooltip_lines.append(self.tr("Version: {version}").format(
-                    version=tpl["source_version"]
-                ))
-            if tooltip_lines:
-                item.setToolTip("\n".join(tooltip_lines))
+            item = self._template_item(tpl)
             row = self.template_list.count()
             self.template_list.addItem(item)
             if select_id and tpl.get("id") == select_id:
@@ -286,20 +303,20 @@ class MdfTemplateManagerDialog(QDialog):
     def _import_selected_template(self) -> None:
         if not self.viewer:
             QMessageBox.warning(
-                self, self.tr("Import Template"), self.tr("The MDF viewer is unavailable.")
+                self, self.tr(IMPORT_TEMPLATE_TITLE), self.tr("The MDF viewer is unavailable.")
             )
             return
         template_id = self._current_template_id()
         if not template_id:
             QMessageBox.warning(
-                self, self.tr("Import Template"), self.tr("Select a template to import.")
+                self, self.tr(IMPORT_TEMPLATE_TITLE), self.tr("Select a template to import.")
             )
             return
         target_version = self.viewer.get_target_version()
         result = MdfTemplateManager.import_template(template_id, target_version)
         if not result.get("success"):
             QMessageBox.warning(
-                self, self.tr("Import Template"),
+                self, self.tr(IMPORT_TEMPLATE_TITLE),
                 result.get("message", self.tr("Failed to import template.")),
             )
             return
@@ -310,19 +327,19 @@ class MdfTemplateManagerDialog(QDialog):
         template_id = self._current_template_id()
         if not template_id:
             QMessageBox.warning(
-                self, self.tr("Delete Template"), self.tr("Select a template to delete."),
+                self, self.tr(DELETE_TEMPLATE_TITLE), self.tr("Select a template to delete."),
             )
             return
         confirm = QMessageBox.question(
             self,
-            self.tr("Delete Template"),
+            self.tr(DELETE_TEMPLATE_TITLE),
             self.tr("Are you sure you want to delete this template?"),
         )
         if confirm != QMessageBox.Yes:
             return
         if not MdfTemplateManager.delete_template(template_id):
             QMessageBox.warning(
-                self, self.tr("Delete Template"), self.tr("Failed to delete template."),
+                self, self.tr(DELETE_TEMPLATE_TITLE), self.tr("Failed to delete template."),
             )
             return
         self._load_tags()

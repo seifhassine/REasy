@@ -111,6 +111,74 @@ NONVEC_WRITERS = {
     TypeKind.Enum:    lambda h, v: h.write('<i', v),
 }
 
+_UNSET = object()
+_INTEGER_VEC3_LIST_TYPES = {
+    TypeKind.Int8,
+    TypeKind.Uint8,
+    TypeKind.Int16,
+    TypeKind.Uint16,
+    TypeKind.Int64,
+    TypeKind.Uint64,
+}
+_DEFAULT_VALUE_FACTORIES = {
+    str: str,
+    bool: bool,
+    int: int,
+    float: float,
+    uuid.UUID: lambda: uuid.UUID(int=0),
+    Vec3: lambda: Vec3(0.0, 0.0, 0.0),
+    Int3: lambda: Int3(0, 0, 0),
+    Uint3: lambda: Uint3(0, 0, 0),
+    Position: lambda: Position(0.0, 0.0, 0.0),
+}
+
+
+def _create_default_value(var_type: Type, type_kind: TypeKind, is_vec3: bool):
+    if is_vec3 and var_type is list:
+        return [0, 0, 0] if type_kind in _INTEGER_VEC3_LIST_TYPES else []
+    if var_type is tuple:
+        tuple_size = {TypeKind.Vec2: 2, TypeKind.Vec4: 4}.get(type_kind)
+        return (0.0,) * tuple_size if tuple_size else _UNSET
+    if var_type is list and type_kind == TypeKind.Matrix:
+        return [[0.0] * 4 for _ in range(4)]
+
+    factory = _DEFAULT_VALUE_FACTORIES.get(var_type)
+    return factory() if factory else None
+
+
+def _write_vec3_value(
+    handler: FileHandler,
+    type_kind: TypeKind,
+    name: str,
+    value: Any,
+):
+    writer = VEC3_WRITERS.get(type_kind)
+    if writer is None:
+        raise Exception(f"Unhandled vec3 variable type {name} = {type_kind}")
+    writer(handler, value)
+
+
+def _write_nonvec_value(
+    handler: FileHandler,
+    type_kind: TypeKind,
+    name: str,
+    value: Any,
+):
+    writer = NONVEC_WRITERS.get(type_kind)
+    if writer is not None:
+        writer(handler, value)
+        return
+
+    fmt = TYPE_FORMATS.get(type_kind)
+    if fmt is None:
+        raise Exception(f"Unhandled variable type {name} = {type_kind}")
+
+    out_val = value
+    if type_kind == TypeKind.Boolean:
+        out_val = 1 if value else 0
+    handler.write(fmt, out_val)
+
+
 class Variable(BaseModel):
     def __init__(self):
         super().__init__()
@@ -141,40 +209,10 @@ class Variable(BaseModel):
         if var_type is None:
             self.value = None
             return
-        
-        if self.is_vec3 and var_type is list:
-            if self.type in [TypeKind.Int8, TypeKind.Uint8, TypeKind.Int16, 
-                             TypeKind.Uint16, TypeKind.Int64, TypeKind.Uint64]:
-                self.value = [0, 0, 0]
-            else:
-                self.value = []
-        elif var_type is str:
-            self.value = ""
-        elif var_type is bool:
-            self.value = False
-        elif var_type is int:
-            self.value = 0
-        elif var_type is float:
-            self.value = 0.0
-        elif var_type is uuid.UUID:
-            self.value = uuid.UUID(int=0)
-        elif var_type is Vec3:
-            self.value = Vec3(0.0, 0.0, 0.0)
-        elif var_type is Int3:
-            self.value = Int3(0, 0, 0)
-        elif var_type is Uint3:
-            self.value = Uint3(0, 0, 0)
-        elif var_type is Position:
-            self.value = Position(0.0, 0.0, 0.0)
-        elif var_type is tuple:
-            if self.type == TypeKind.Vec2:
-                self.value = (0.0, 0.0)
-            elif self.type == TypeKind.Vec4:
-                self.value = (0.0, 0.0, 0.0, 0.0)
-        elif var_type is list and self.type == TypeKind.Matrix:
-            self.value = [[0.0] * 4 for _ in range(4)]
-        else:
-            self.value = None
+
+        default_value = _create_default_value(var_type, self.type, self.is_vec3)
+        if default_value is not _UNSET:
+            self.value = default_value
             
     def read_header(self, handler: FileHandler) -> bool:
         self.start_offset = handler.tell
@@ -261,20 +299,9 @@ class Variable(BaseModel):
         handler.write_at(self.start_offset + 24, '<Q', declared_offset)
         self.value_offset = declared_offset
         if self.is_vec3:
-            writer = VEC3_WRITERS.get(self.type)
-            if writer is None:
-                raise Exception(f"Unhandled vec3 variable type {self.name} = {self.type}")
-            writer(handler, self.value)
+            _write_vec3_value(handler, self.type, self.name, self.value)
         else:
-            writer = NONVEC_WRITERS.get(self.type)
-            if writer is not None:
-                writer(handler, self.value)
-            elif self.type in TYPE_FORMATS:
-                fmt = TYPE_FORMATS[self.type]
-                out_val = (1 if self.value else 0) if self.type == TypeKind.Boolean else self.value
-                handler.write(fmt, out_val)
-            else:
-                raise Exception(f"Unhandled variable type {self.name} = {self.type}")
+            _write_nonvec_value(handler, self.type, self.name, self.value)
         handler.align_write(4)
 
     def write_expression(self, handler: FileHandler):

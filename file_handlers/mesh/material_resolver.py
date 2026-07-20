@@ -84,6 +84,49 @@ class MeshMaterialResolver:
         return ".rtex" in normalized
 
     @classmethod
+    def _material_binding(
+        cls,
+        handler,
+        resolved_mdf: ResolvedMdf,
+        mesh_name: str,
+        *,
+        prefer_streaming: bool,
+        resolve_textures: bool,
+        resource_cache: dict[tuple[bool, str], tuple[str, bytes] | None] | None,
+    ) -> MeshMaterialBinding:
+        surface = resolved_mdf.surfaces.get(mesh_name)
+        if surface is None:
+            return MeshMaterialBinding(mesh_name, status="Missing MDF material")
+        if not surface.texture_path:
+            return MeshMaterialBinding(
+                mesh_material_name=mesh_name,
+                mdf_material_name=mesh_name,
+                surface=surface,
+                status="No usable texture",
+            )
+
+        resolved_tex = None
+        status = "Resolved MDF"
+        if resolve_textures:
+            resolved_tex = cls.resolve_texture_path(
+                handler,
+                surface.texture_path,
+                prefer_streaming=prefer_streaming,
+                resource_cache=resource_cache,
+            )
+            status = "Resolved" if resolved_tex else "Texture not found"
+        return MeshMaterialBinding(
+            mesh_material_name=mesh_name,
+            mdf_material_name=mesh_name,
+            texture_type=surface.texture_type,
+            texture_path=surface.texture_path,
+            resolved_texture_path=resolved_tex[0] if resolved_tex else "",
+            resolved_texture_data=resolved_tex[1] if resolved_tex else None,
+            surface=surface,
+            status=status,
+        )
+
+    @classmethod
     def resolve_for_handler(
         cls,
         handler,
@@ -112,42 +155,14 @@ class MeshMaterialResolver:
 
         bindings: list[MeshMaterialBinding] = []
         for mesh_name in material_names:
-            surface = resolved_mdf.surfaces.get(mesh_name)
-            if surface is None:
-                bindings.append(MeshMaterialBinding(mesh_name, status="Missing MDF material"))
-                continue
-
-            if not surface.texture_path:
-                bindings.append(
-                    MeshMaterialBinding(
-                        mesh_material_name=mesh_name,
-                        mdf_material_name=mesh_name,
-                        surface=surface,
-                        status="No usable texture",
-                    )
-                )
-                continue
-
-            resolved_tex = None
-            status = "Resolved MDF"
-            if resolve_textures:
-                resolved_tex = cls.resolve_texture_path(
-                    handler,
-                    surface.texture_path,
-                    prefer_streaming=prefer_streaming,
-                    resource_cache=resource_cache,
-                )
-                status = "Resolved" if resolved_tex else "Texture not found"
             bindings.append(
-                MeshMaterialBinding(
-                    mesh_material_name=mesh_name,
-                    mdf_material_name=mesh_name,
-                    texture_type=surface.texture_type,
-                    texture_path=surface.texture_path,
-                    resolved_texture_path=resolved_tex[0] if resolved_tex else "",
-                    resolved_texture_data=resolved_tex[1] if resolved_tex else None,
-                    surface=surface,
-                    status=status,
+                cls._material_binding(
+                    handler,
+                    resolved_mdf,
+                    mesh_name,
+                    prefer_streaming=prefer_streaming,
+                    resolve_textures=resolve_textures,
+                    resource_cache=resource_cache,
                 )
             )
         return resolved_mdf, bindings

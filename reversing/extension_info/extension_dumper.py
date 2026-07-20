@@ -354,8 +354,35 @@ def rname(m, r):
     if n.startswith("e") and len(n) == 3: n = "r"+n[1:]  # eax -> rax
     return n
 
+_WIDTH_MASKS = {
+    8: 0xFFFFFFFFFFFFFFFF,
+    4: 0xFFFFFFFF,
+    2: 0xFFFF,
+}
+
+
 def apply_width(v, w):                      # mask value to operand width
-    return v & (0xFFFFFFFFFFFFFFFF if w == 8 else 0xFFFFFFFF if w == 4 else 0xFFFF if w == 2 else 0xFF)
+    return v & _WIDTH_MASKS.get(w, 0xFF)
+
+
+def _operand_value(operand, state, disassembler):
+    if operand.type == X86_OP_IMM:
+        return int(operand.imm)
+    if operand.type == X86_OP_REG:
+        return state.get(rname(disassembler, operand.reg))
+    return None
+
+
+def _apply_binary_alu(instruction_id, left, right):
+    if instruction_id == X86_INS_ADD:
+        return left + right
+    if instruction_id == X86_INS_SUB:
+        return left - right
+    if instruction_id == X86_INS_AND:
+        return left & right
+    if instruction_id == X86_INS_OR:
+        return left | right
+    return left ^ right
 
 def is_hard_barrier(b, i):
     """Stop points for the backward block search (ret/int/jmp)."""
@@ -531,9 +558,9 @@ def eval_block(img, base, secs, s, start_va, call_off, m):
         elif insn.id in (X86_INS_ADD,X86_INS_SUB,X86_INS_AND,X86_INS_OR,X86_INS_XOR) and len(ops) == 2 and ops[0].type == X86_OP_REG:
             dst = rname(m, ops[0].reg); cur = st.get(dst)
             if cur is None: continue
-            srcv = int(ops[1].imm) if ops[1].type == X86_OP_IMM else st.get(rname(m, ops[1].reg)) if ops[1].type == X86_OP_REG else None
+            srcv = _operand_value(ops[1], st, m)
             if srcv is None: continue
-            nv = cur+srcv if insn.id==X86_INS_ADD else cur-srcv if insn.id==X86_INS_SUB else (cur & srcv if insn.id==X86_INS_AND else cur | srcv if insn.id==X86_INS_OR else cur ^ srcv)
+            nv = _apply_binary_alu(insn.id, cur, srcv)
             st[dst] = apply_width(nv, ops[0].size)
         elif insn.id in (X86_INS_SHL,X86_INS_SHR,X86_INS_SAR) and len(ops) == 2 and ops[0].type == X86_OP_REG and ops[1].type == X86_OP_IMM:
             dst = rname(m, ops[0].reg); cur = st.get(dst); sh = int(ops[1].imm) & 0x3F
@@ -602,13 +629,12 @@ def extract_extensions(pe_path, exts):
                 continue
             aliases.update(chain)
     
-    if not aliases:
-        if callees:
-            for cal in callees:
-                cal, chain = resolve_thunk(img, base, cal)
-                if not validate_callee(img, base, cal, allow_4_args=True):
-                    continue
-                aliases.update(chain)
+    if not aliases and callees:
+        for cal in callees:
+            cal, chain = resolve_thunk(img, base, cal)
+            if not validate_callee(img, base, cal, allow_4_args=True):
+                continue
+            aliases.update(chain)
     
     if not aliases:
         return {"error": "no callees resolved from provided -ext strings"}

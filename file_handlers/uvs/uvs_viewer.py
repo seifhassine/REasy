@@ -37,6 +37,10 @@ from utils.resource_file_utils import resolve_resource_data
 from ui.project_manager.constants import EXPECTED_NATIVE
 
 
+PLAY_BUTTON_TEXT = QT_TRANSLATE_NOOP("UvsViewer", "▶ Play")
+INVALID_VALUE_TITLE = QT_TRANSLATE_NOOP("UvsViewer", "Invalid value")
+
+
 class UvsPreviewWidget(QWidget):
     pattern_changed = Signal()
 
@@ -244,13 +248,8 @@ class UvsPreviewWidget(QWidget):
         draw_rect = self._find_draw_area(pm, pat)
         pr = self._pattern_rect(pat, draw_rect)
 
-        if self._edit_cutouts and pat.cutout_uvs:
-            idx = self._hit_cutout(pat, draw_rect, QPointF(e.position()))
-            if idx >= 0:
-                self._drag_mode = "cutout"
-                self._drag_cutout_index = idx
-                self._drag_start = QPointF(e.position())
-                return
+        if self._start_cutout_drag(e, pat, draw_rect):
+            return
 
         if self._rect_edit_enabled:
             for k, hr in self._rect_handles(pr).items():
@@ -262,6 +261,17 @@ class UvsPreviewWidget(QWidget):
 
             self._drag_start = QPointF(e.position())
             self._drag_origin = (pat.left, pat.top, pat.right, pat.bottom)
+
+    def _start_cutout_drag(self, event, pat: UvsPattern, draw_rect: QRectF) -> bool:
+        if not self._edit_cutouts or not pat.cutout_uvs:
+            return False
+        index = self._hit_cutout(pat, draw_rect, QPointF(event.position()))
+        if index < 0:
+            return False
+        self._drag_mode = "cutout"
+        self._drag_cutout_index = index
+        self._drag_start = QPointF(event.position())
+        return True
 
     def mouseMoveEvent(self, e):
         if not self._interaction_enabled:
@@ -468,7 +478,7 @@ class UvsViewer(QWidget):
         preview_group = QGroupBox(self.tr("Playback"))
         pv_layout = QVBoxLayout(preview_group)
         ctl = QHBoxLayout()
-        self.play_btn = QPushButton(self.tr("▶ Play"))
+        self.play_btn = QPushButton(self.tr(PLAY_BUTTON_TEXT))
         self.play_btn.clicked.connect(self._toggle_play)
         self.frame_slider = QSlider(Qt.Orientation.Horizontal)
         self.frame_slider.valueChanged.connect(self._on_frame_slider)
@@ -1270,7 +1280,7 @@ class UvsViewer(QWidget):
             self._mark_modified()
             self._sync_preview()
         except Exception as ex:
-            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
+            QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
             self._set_loading(True)
             self._reload_textures()
             self._set_loading(False)
@@ -1297,7 +1307,7 @@ class UvsViewer(QWidget):
             self._mark_modified()
             self._sync_preview()
         except Exception as ex:
-            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
+            QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
             self._set_loading(True)
             self._reload_patterns()
             self._set_loading(False)
@@ -1319,7 +1329,7 @@ class UvsViewer(QWidget):
                 self.preview_focused.update()
             self._mark_modified()
         except Exception as ex:
-            QMessageBox.warning(self, self.tr("Invalid value"), str(ex))
+            QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
             self._set_loading(True)
             self._reload_cutouts()
             self._set_loading(False)
@@ -1358,7 +1368,7 @@ class UvsViewer(QWidget):
     def _toggle_play(self):
         if self.play_timer.isActive():
             self.play_timer.stop()
-            self.play_btn.setText(self.tr("▶ Play"))
+            self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
             return
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
@@ -1371,7 +1381,7 @@ class UvsViewer(QWidget):
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
             self.play_timer.stop()
-            self.play_btn.setText(self.tr("▶ Play"))
+            self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
             return
         nxt = self._selected_pattern + 1
         if nxt >= len(seq.patterns):
@@ -1379,7 +1389,7 @@ class UvsViewer(QWidget):
                 nxt = 0
             else:
                 self.play_timer.stop()
-                self.play_btn.setText(self.tr("▶ Play"))
+                self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
                 return
         self.frame_slider.setValue(nxt)
 

@@ -180,38 +180,60 @@ class SceneLightProbeSet:
             if cancel_requested is not None and cancel_requested():
                 raise ProbeShadingCancelled()
             end = min(start + chunk_size, len(points))
-            chunk_points = points[start:end]
-            chunk_normals = normals_array[start:end]
-            initial_tetra = self._initial_tetra_indices(chunk_points)
-            valid_rows = np.flatnonzero(initial_tetra >= 0)
-            invalid_rows = np.flatnonzero(initial_tetra < 0)
-            if len(invalid_rows):
-                colors[start + invalid_rows, :3] = (0.05, 0.05, 0.06)
-            if len(valid_rows):
-                tetra, weights = self._walk_tetra_rows(
-                    chunk_points[valid_rows],
-                    initial_tetra[valid_rows],
-                    max_neighbor_steps=max_neighbor_steps,
-                    cancel_requested=cancel_requested,
-                )
-                resolved = tetra >= 0
-                if np.any(~resolved):
-                    colors[start + valid_rows[~resolved], :3] = (0.05, 0.05, 0.06)
-                if np.any(resolved):
-                    resolved_rows = valid_rows[resolved]
-                    probe_indices = probe_indices_by_tetra[tetra[resolved]]
-                    blended_terms = (
-                        self.terms_rgb[probe_indices]
-                        * weights[resolved, :, np.newaxis, np.newaxis]
-                    ).sum(axis=1)
-                    rgb = _sample_directional_rgb(
-                        blended_terms,
-                        chunk_normals[resolved_rows],
-                    )
-                    colors[start + resolved_rows, :3] = _tonemap_rgb_array(rgb, exposure)
+            self._shade_vertex_chunk(
+                points[start:end],
+                normals_array[start:end],
+                colors,
+                start=start,
+                exposure=exposure,
+                max_neighbor_steps=max_neighbor_steps,
+                probe_indices_by_tetra=probe_indices_by_tetra,
+                cancel_requested=cancel_requested,
+            )
             if progress_callback is not None:
                 progress_callback(end, len(points))
         return colors
+
+    def _shade_vertex_chunk(
+        self,
+        points: np.ndarray,
+        normals: np.ndarray,
+        colors: np.ndarray,
+        *,
+        start: int,
+        exposure: float,
+        max_neighbor_steps: int,
+        probe_indices_by_tetra: np.ndarray,
+        cancel_requested: Callable[[], bool] | None,
+    ) -> None:
+        initial_tetra = self._initial_tetra_indices(points)
+        valid_rows = np.flatnonzero(initial_tetra >= 0)
+        invalid_rows = np.flatnonzero(initial_tetra < 0)
+        if len(invalid_rows):
+            colors[start + invalid_rows, :3] = (0.05, 0.05, 0.06)
+        if not len(valid_rows):
+            return
+
+        tetra, weights = self._walk_tetra_rows(
+            points[valid_rows],
+            initial_tetra[valid_rows],
+            max_neighbor_steps=max_neighbor_steps,
+            cancel_requested=cancel_requested,
+        )
+        resolved = tetra >= 0
+        if np.any(~resolved):
+            colors[start + valid_rows[~resolved], :3] = (0.05, 0.05, 0.06)
+        if not np.any(resolved):
+            return
+
+        resolved_rows = valid_rows[resolved]
+        probe_indices = probe_indices_by_tetra[tetra[resolved]]
+        blended_terms = (
+            self.terms_rgb[probe_indices]
+            * weights[resolved, :, np.newaxis, np.newaxis]
+        ).sum(axis=1)
+        rgb = _sample_directional_rgb(blended_terms, normals[resolved_rows])
+        colors[start + resolved_rows, :3] = _tonemap_rgb_array(rgb, exposure)
 
     def _walk_tetra_rows(
         self,
@@ -242,36 +264,59 @@ class SceneLightProbeSet:
         for _step in range(max(1, int(max_neighbor_steps))):
             if cancel_requested is not None and cancel_requested():
                 raise ProbeShadingCancelled()
-            rows = np.flatnonzero(active)
-            if not len(rows):
+            if not self._walk_active_tetra_rows(
+                points,
+                current,
+                weights,
+                active,
+                transforms=transforms,
+                probe_indices=probe_indices,
+                neighbors=neighbors,
+            ):
                 break
-            tetra = current[rows]
-            row_weights = (
-                _tetra_weights_from_positions(
-                    self.probe_positions[probe_indices[tetra]],
-                    points[rows],
-                )
-                if transforms is None
-                else _tetra_weights_batch(transforms[tetra], points[rows])
-            )
-            weights[rows] = row_weights
-            min_corner, outside = _tetra_exit_rows(row_weights)
-            inside = ~outside
-            if np.any(inside):
-                active[rows[inside]] = False
-            outside_rows = rows[~inside]
-            if not len(outside_rows):
-                continue
-            outside_tetra = tetra[~inside]
-            outside_corner = min_corner[~inside]
-            next_tetra = neighbors[outside_tetra, outside_corner].astype(np.int64, copy=False)
-            can_step = (next_tetra >= 0) & (next_tetra < self.tetrahedron_count)
-            if np.any(can_step):
-                current[outside_rows[can_step]] = next_tetra[can_step]
-            if np.any(~can_step):
-                current[outside_rows[~can_step]] = -1
-                active[outside_rows[~can_step]] = False
         return current, weights
+
+    def _walk_active_tetra_rows(
+        self,
+        points: np.ndarray,
+        current: np.ndarray,
+        weights: np.ndarray,
+        active: np.ndarray,
+        *,
+        transforms: np.ndarray | None,
+        probe_indices: np.ndarray,
+        neighbors: np.ndarray,
+    ) -> bool:
+        rows = np.flatnonzero(active)
+        if not len(rows):
+            return False
+        tetra = current[rows]
+        if transforms is None:
+            row_weights = _tetra_weights_from_positions(
+                self.probe_positions[probe_indices[tetra]],
+                points[rows],
+            )
+        else:
+            row_weights = _tetra_weights_batch(transforms[tetra], points[rows])
+        weights[rows] = row_weights
+        min_corner, outside = _tetra_exit_rows(row_weights)
+        inside = ~outside
+        if np.any(inside):
+            active[rows[inside]] = False
+
+        outside_rows = rows[~inside]
+        if not len(outside_rows):
+            return True
+        next_tetra = neighbors[tetra[~inside], min_corner[~inside]].astype(
+            np.int64, copy=False
+        )
+        can_step = (next_tetra >= 0) & (next_tetra < self.tetrahedron_count)
+        if np.any(can_step):
+            current[outside_rows[can_step]] = next_tetra[can_step]
+        if np.any(~can_step):
+            current[outside_rows[~can_step]] = -1
+            active[outside_rows[~can_step]] = False
+        return True
 
     def _initial_tetra_indices(self, points: np.ndarray) -> np.ndarray:
         dim_x, dim_y, dim_z = self.grid_dimensions

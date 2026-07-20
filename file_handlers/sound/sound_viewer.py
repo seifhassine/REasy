@@ -41,19 +41,20 @@ BULK_REPLACE_TITLE = QT_TRANSLATE_NOOP("SoundViewer", "Bulk Replace")
 
 _vgmstream_dl = None
 
+def _asset_preferences(sys_name: str, machine: str) -> list[str]:
+    if sys_name == "windows" or os.name == "nt":
+        return ["win64"] if ("64" in machine or machine in ("amd64", "x86_64")) else ["win32"]
+    if sys_name == "linux":
+        return ["linux"]
+    if sys_name == "darwin":
+        return ["macos", "mac"]
+    return ["win64"]
+
+
 def _vgmstream_asset_url(tag, assets):
     import platform as _plat
-    sys_name = _plat.system().lower()
-    machine = _plat.machine().lower()
-    if sys_name == "windows" or os.name == "nt":
-        prefs = ["win64"] if ("64" in machine or machine in ("amd64", "x86_64")) else ["win32"]
-    elif sys_name == "linux":
-        prefs = ["linux"]
-    elif sys_name == "darwin":
-        prefs = ["macos", "mac"]
-    else:
-        prefs = ["win64"]
-    for pref in prefs:
+    preferences = _asset_preferences(_plat.system().lower(), _plat.machine().lower())
+    for pref in preferences:
         for a in assets:
             name, url = a.get("name", "").lower(), a.get("browser_download_url", "")
             if pref in name and name.endswith((".zip", ".tar.gz")):

@@ -341,6 +341,24 @@ class PakThumbnailProvider(QObject):
 			self._failed.add(path)
 		self.ready.emit(path)
 
+def _add_thumbnail_upload(images, binding, quality, profile, upload_cache):
+	if not binding.resolved_texture_data or not binding.resolved_texture_path:
+		return
+	try:
+		key = quality, binding.resolved_texture_path
+		upload = upload_cache.get(key) if upload_cache is not None else None
+		if upload is None:
+			tex = parse_tex_bytes(binding.resolved_texture_data, raise_errors=True)
+			upload = build_tex_preview_upload(
+				tex, mip_selector=lambda parsed: choose_texture_mip(parsed, profile)
+			)
+			if upload_cache is not None:
+				upload_cache[key] = upload
+		images[binding.mesh_material_name] = (binding.resolved_texture_path, upload)
+	except Exception as exc:
+		print(f"PAK thumbnail texture failed for {binding.resolved_texture_path}: {exc}")
+
+
 def _prepare_mesh_scene(
 	data: bytes, path: str, reader, quality: str,
 	resource_cache=None, upload_cache=None,
@@ -360,21 +378,7 @@ def _prepare_mesh_scene(
 	}
 	images = {}
 	for binding in bindings:
-		if not binding.resolved_texture_data or not binding.resolved_texture_path:
-			continue
-		try:
-			key = quality, binding.resolved_texture_path
-			upload = upload_cache.get(key) if upload_cache is not None else None
-			if upload is None:
-				tex = parse_tex_bytes(binding.resolved_texture_data, raise_errors=True)
-				upload = build_tex_preview_upload(
-					tex, mip_selector=lambda parsed: choose_texture_mip(parsed, profile)
-				)
-				if upload_cache is not None:
-					upload_cache[key] = upload
-			images[binding.mesh_material_name] = (binding.resolved_texture_path, upload)
-		except Exception as exc:
-			print(f"PAK thumbnail texture failed for {binding.resolved_texture_path}: {exc}")
+		_add_thumbnail_upload(images, binding, quality, profile, upload_cache)
 	for cache in (resource_cache, upload_cache):
 		while cache is not None and len(cache) > 32:
 			cache.popitem(last=False)

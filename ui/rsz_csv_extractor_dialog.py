@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
 
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QThread, Signal, QTimer
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -30,6 +30,12 @@ from tools.rsz_field_value_finder import format_value
 from tools.rsz_data_matcher import scan_directory_single_pass
 
 _REGISTRY_CACHE: Dict[str, TypeRegistry] = {}
+ANY_VALUE = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Any value")
+GREATER_THAN = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Greater than")
+LESS_THAN = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Less than")
+EQUAL_TO = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Equal to")
+NOT_EQUAL_TO = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Not equal to")
+VALUE_CONSTRAINTS = (GREATER_THAN, LESS_THAN, EQUAL_TO, NOT_EQUAL_TO)
 
 class MatcherWorker(QThread):
     progress_update = Signal(int, int)
@@ -301,13 +307,13 @@ class RszCsvExtractorDialog(QDialog):
 
     def _constraint_type_options(self):
         return [
-            (self.tr("Any value"), "Any value"),
+            (self.tr(ANY_VALUE), ANY_VALUE),
             (self.tr("Not empty (strings)"), "Not empty (strings)"),
             (self.tr("Is empty (strings)"), "Is empty (strings)"),
-            (self.tr("Greater than"), "Greater than"),
-            (self.tr("Less than"), "Less than"),
-            (self.tr("Equal to"), "Equal to"),
-            (self.tr("Not equal to"), "Not equal to"),
+            (self.tr(GREATER_THAN), GREATER_THAN),
+            (self.tr(LESS_THAN), LESS_THAN),
+            (self.tr(EQUAL_TO), EQUAL_TO),
+            (self.tr(NOT_EQUAL_TO), NOT_EQUAL_TO),
         ]
 
     def _build_side(self, label: str):
@@ -606,15 +612,15 @@ class RszCsvExtractorDialog(QDialog):
     def _add_rule(self):
         a_field = self.a_field_combo.currentData() or ""
         b_field = self.b_field_combo.currentData() or ""
-        a_constraint_type = self.a_constraint_type_combo.currentData() or "Any value"
-        b_constraint_type = self.b_constraint_type_combo.currentData() or "Any value"
+        a_constraint_type = self.a_constraint_type_combo.currentData() or ANY_VALUE
+        b_constraint_type = self.b_constraint_type_combo.currentData() or ANY_VALUE
         a_constraint_value = self.a_constraint_value_edit.text().strip()
         b_constraint_value = self.b_constraint_value_edit.text().strip()
         
         has_a_field = bool(a_field)
         has_b_field = bool(b_field)
-        has_a_constraint = a_constraint_type != "Any value"
-        has_b_constraint = b_constraint_type != "Any value"
+        has_a_constraint = a_constraint_type != ANY_VALUE
+        has_b_constraint = b_constraint_type != ANY_VALUE
         
         if not has_a_field and not has_b_field and not has_a_constraint and not has_b_constraint:
             QMessageBox.warning(
@@ -631,7 +637,7 @@ class RszCsvExtractorDialog(QDialog):
             return
             
         def needs_value(constraint_type):
-            return constraint_type in ["Greater than", "Less than", "Equal to", "Not equal to"]
+            return constraint_type in VALUE_CONSTRAINTS
         
         if needs_value(a_constraint_type) and not a_constraint_value:
             QMessageBox.warning(
@@ -672,7 +678,7 @@ class RszCsvExtractorDialog(QDialog):
         def format_constraint(constraint_type, value):
             labels = {value: text for text, value in self._constraint_type_options()}
             label = labels.get(constraint_type, constraint_type)
-            if constraint_type == "Any value":
+            if constraint_type == ANY_VALUE:
                 return self.tr("any")
             elif needs_value(constraint_type):
                 return self.tr("{constraint} '{value}'").format(
@@ -695,9 +701,9 @@ class RszCsvExtractorDialog(QDialog):
         rule_data = {
             'a_field': a_field,
             'b_field': b_field,
-            'a_constraint_type': a_constraint_type if a_constraint_type != "Any value" else None,
+            'a_constraint_type': a_constraint_type if a_constraint_type != ANY_VALUE else None,
             'a_constraint_value': a_constraint_value,
-            'b_constraint_type': b_constraint_type if b_constraint_type != "Any value" else None,
+            'b_constraint_type': b_constraint_type if b_constraint_type != ANY_VALUE else None,
             'b_constraint_value': b_constraint_value,
         }
         

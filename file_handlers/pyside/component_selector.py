@@ -40,46 +40,43 @@ class ComponentSelectorDialog(QDialog):
         self.component_list.itemDoubleClicked.connect(self.accept)
         
         self.search_input.setFocus()
+
+    def _should_include_component(self, type_info):
+        if not isinstance(type_info, dict) or "name" not in type_info:
+            return False
+
+        type_name = type_info["name"]
+        if not isinstance(type_name, str) or not type_name:
+            return False
+        if (
+            type_name.startswith("System.")
+            or ".Collections." in type_name
+            or "[]" in type_name
+        ):
+            return False
+
+        if not self.required_parent_name:
+            return bool(type_info["fields"])
+        if type_name == self.required_parent_name:
+            return self.include_parent
+
+        parents = self.type_registry.getTypeParents(type_name)
+        return self.required_parent_name in parents
         
     def _load_component_types(self):
         """Extract all component types from the type registry"""
-        self.all_component_types = []
-        
-        registry_dict = self.type_registry.registry
-        count = 0
-        for _, type_info in registry_dict.items():
-            if isinstance(type_info, dict) and "name" in type_info:
-                type_name = type_info["name"]
-                if not isinstance(type_name, str) or not type_name:
-                    continue
-                    
-                # Skip system and collection types
-                if (type_name.startswith("System.") or 
-                    ".Collections." in type_name or 
-                    "[]" in type_name):
-                    continue
-                    
-                if self.required_parent_name:
-                    if type_name == self.required_parent_name:
-                        if self.include_parent:
-                            self.all_component_types.append(type_name)
-                            count += 1
-                        continue
-                    parents = self.type_registry.getTypeParents(type_name)
-                    if self.required_parent_name in parents:
-                        self.all_component_types.append(type_name)
-                        count += 1
-                    continue
-
-                # Only add types with fields (likely to be valid components)
-                if type_info["fields"]:
-                    self.all_component_types.append(type_name)
-                    count += 1
+        self.all_component_types = [
+            type_info["name"]
+            for type_info in self.type_registry.registry.values()
+            if self._should_include_component(type_info)
+        ]
         
         self.all_component_types.sort()
         
         self.status_label.setText(
-            self.tr("Found {count} component types").format(count=count)
+            self.tr("Found {count} component types").format(
+                count=len(self.all_component_types)
+            )
         )
         self.populate_component_list("")
         

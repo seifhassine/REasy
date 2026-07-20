@@ -20,60 +20,75 @@ class UvarExpression(BaseModel):
         
         self._orig_relations_size: int | None = None
         self._had_zero_terminator: bool = False
-        
-    def do_read(self, handler: FileHandler) -> bool:
-        self.nodes_offset = handler.read('<Q')
-        self.relations_offset = handler.read('<Q')
-        self.nodes_count = handler.read('<h')
-        self.output_node_id = handler.read('<h')
-        self.unknown_count = handler.read('<h')
-        
-        base = getattr(handler, 'offset', 0)
-        data_len = len(handler.data)
+
+    def _has_valid_offsets(self, base: int, data_len: int) -> bool:
         if self.nodes_count < 0:
             return False
         if self.nodes_count > 0:
             nodes_end = base + self.nodes_offset + self.nodes_count * 32
             if self.nodes_offset <= 0 or nodes_end > data_len:
                 return False
-        if self.relations_offset and base + self.relations_offset >= data_len:
-            return False
-        
+        return not (
+            self.relations_offset
+            and base + self.relations_offset >= data_len
+        )
+
+    def _read_nodes(self, handler: FileHandler):
         self.nodes = []
-        if self.nodes_count > 0 and self.nodes_offset > 0:
-            with handler.seek_temp(self.nodes_offset):
-                for _ in range(self.nodes_count):
-                    node = UvarNode()
-                    if not node.read(handler):
-                        raise ValueError("Failed to read node")
-                    self.nodes.append(node)
-        
+        if self.nodes_count <= 0 or self.nodes_offset <= 0:
+            return
+
+        with handler.seek_temp(self.nodes_offset):
+            for _ in range(self.nodes_count):
+                node = UvarNode()
+                if not node.read(handler):
+                    raise ValueError("Failed to read node")
+                self.nodes.append(node)
+
+    def _read_relations(self, handler: FileHandler):
         self.relations = []
         self._orig_relations_size = None
         self._had_zero_terminator = False
         if self.nodes_count == 0:
             self._orig_relations_size = 0
-            return True
-        if self.relations_offset > 0:
-            rp = self.relations_offset
-            data = handler.data
-            base = getattr(handler, 'offset', 0)
-            end = len(data)
-            while base + rp + 8 <= end:
-                next_u64 = struct.unpack_from('<Q', data, base + rp)[0]
-                if next_u64 == 0:
-                    break
-                first_u16 = struct.unpack_from('<H', data, base + rp)[0]
-                if self.nodes_count > 0 and first_u16 >= self.nodes_count:
-                    break
-                rel = NodeConnection()
-                rel.src_node = struct.unpack_from('<H', data, base + rp)[0]
-                rel.src_port = struct.unpack_from('<H', data, base + rp + 2)[0]
-                rel.dst_node = struct.unpack_from('<H', data, base + rp + 4)[0]
-                rel.dst_port = struct.unpack_from('<H', data, base + rp + 6)[0]
-                self.relations.append(rel)
-                rp += 8
-            self._orig_relations_size = rp - self.relations_offset
+            return
+        if self.relations_offset <= 0:
+            return
+
+        rp = self.relations_offset
+        data = handler.data
+        base = getattr(handler, 'offset', 0)
+        end = len(data)
+        while base + rp + 8 <= end:
+            next_u64 = struct.unpack_from('<Q', data, base + rp)[0]
+            if next_u64 == 0:
+                break
+            first_u16 = struct.unpack_from('<H', data, base + rp)[0]
+            if self.nodes_count > 0 and first_u16 >= self.nodes_count:
+                break
+            rel = NodeConnection()
+            rel.src_node = struct.unpack_from('<H', data, base + rp)[0]
+            rel.src_port = struct.unpack_from('<H', data, base + rp + 2)[0]
+            rel.dst_node = struct.unpack_from('<H', data, base + rp + 4)[0]
+            rel.dst_port = struct.unpack_from('<H', data, base + rp + 6)[0]
+            self.relations.append(rel)
+            rp += 8
+        self._orig_relations_size = rp - self.relations_offset
+
+    def do_read(self, handler: FileHandler) -> bool:
+        self.nodes_offset = handler.read('<Q')
+        self.relations_offset = handler.read('<Q')
+        self.nodes_count = handler.read('<h')
+        self.output_node_id = handler.read('<h')
+        self.unknown_count = handler.read('<h')
+
+        base = getattr(handler, 'offset', 0)
+        data_len = len(handler.data)
+        if not self._has_valid_offsets(base, data_len):
+            return False
+
+        self._read_nodes(handler)
+        self._read_relations(handler)
         
         return True
         

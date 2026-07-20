@@ -1,5 +1,5 @@
 import os
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView,
@@ -13,6 +13,13 @@ from tools.file_list_generator import (
     PathCollector,
     validate_game_executable,
 )
+
+
+PROCESSING_PROGRESS_TEXT = QT_TRANSLATE_NOOP(
+    "FileListGeneratorDialog",
+    "{message}\n\nProcessing {current} of {total}...",
+)
+EXPORT_ERROR_TITLE = QT_TRANSLATE_NOOP("FileListGeneratorDialog", "Export Error")
 
 
 class ExtensionDumperThread(QThread):
@@ -528,9 +535,11 @@ class FileListGeneratorDialog(QDialog):
                 percentage = int((current / total) * 100)
                 progress.setValue(percentage)
             
-            progress.setLabelText(self.tr(
-                "{message}\n\nProcessing {current} of {total}..."
-            ).format(message=message, current=current, total=total))
+            progress.setLabelText(
+                self.tr(PROCESSING_PROGRESS_TEXT).format(
+                    message=message, current=current, total=total
+                )
+            )
             QApplication.processEvents()
             return False
         
@@ -597,9 +606,11 @@ class FileListGeneratorDialog(QDialog):
                 if total > 0:
                     percentage = int((current / total) * 100)
                     progress.setValue(percentage)
-                progress.setLabelText(self.tr(
-                    "{message}\n\nProcessing {current} of {total}..."
-                ).format(message=message, current=current, total=total))
+                progress.setLabelText(
+                    self.tr(PROCESSING_PROGRESS_TEXT).format(
+                        message=message, current=current, total=total
+                    )
+                )
                 QApplication.processEvents()
             
             success, error, validated_paths = self.path_collector.validate_paths_against_paks(pak_directory, progress_callback=update_validation_progress)
@@ -645,7 +656,7 @@ class FileListGeneratorDialog(QDialog):
             )
         else:
             QMessageBox.critical(
-                self, self.tr("Export Error"),
+                self, self.tr(EXPORT_ERROR_TITLE),
                 self.tr("Failed to export paths:\n\n{error}").format(error=error),
             )
     
@@ -724,9 +735,11 @@ class FileListGeneratorDialog(QDialog):
         def update_progress(message, current, total):
             if total > 0:
                 progress.setValue(int((current / total) * 100))
-            progress.setLabelText(self.tr(
-                "{message}\n\nProcessing {current} of {total}..."
-            ).format(message=message, current=current, total=total))
+            progress.setLabelText(
+                self.tr(PROCESSING_PROGRESS_TEXT).format(
+                    message=message, current=current, total=total
+                )
+            )
             QApplication.processEvents()
 
         success, error, stats, validated_paths = self.path_collector.improve_list_with_chunked_validation(
@@ -764,7 +777,7 @@ class FileListGeneratorDialog(QDialog):
         success, error = self.path_collector.export_to_file(output_path, export_paths)
         if not success:
             QMessageBox.critical(
-                self, self.tr("Export Error"),
+                self, self.tr(EXPORT_ERROR_TITLE),
                 self.tr("Failed to export improved list:\n\n{error}").format(error=error),
             )
             return
@@ -971,7 +984,7 @@ class FileListGeneratorDialog(QDialog):
             )
         else:
             QMessageBox.critical(
-                self, self.tr("Export Error"),
+                self, self.tr(EXPORT_ERROR_TITLE),
                 self.tr("Failed to export paths:\n\n{error}").format(error=error),
             )
 

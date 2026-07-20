@@ -10,6 +10,13 @@ from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
 from utils.hex_util import guid_le_to_str
 from utils.number_format import format_display_value, format_float_sequence, format_full_float
 
+
+def _rsz_kind(rsz_file: RszFile) -> str:
+    if rsz_file.is_usr:
+        return "USR"
+    return "PFB" if rsz_file.is_pfb else "SCN"
+
+
 @dataclass
 class GameObjectDiff:
     guid: str
@@ -1246,7 +1253,9 @@ class RszDiffer:
                 return "0"
             return format_full_float(value)
         if isinstance(value, str):
-            return f'"{value[:50]}..."' if len(value) > 50 else f'"{value}"' if value else '""'
+            if len(value) > 50:
+                return f'"{value[:50]}..."'
+            return f'"{value}"' if value else '""'
         if isinstance(value, int):
             return str(value)
         return format_display_value(value)[:100]
@@ -1494,8 +1503,8 @@ class RszDiffer:
 
         rsz1, rsz2 = self.load_rsz_files(file1_data, file2_data, file1_path, file2_path)
 
-        type1 = 'USR' if rsz1.is_usr else 'PFB' if rsz1.is_pfb else 'SCN'
-        type2 = 'USR' if rsz2.is_usr else 'PFB' if rsz2.is_pfb else 'SCN'
+        type1 = _rsz_kind(rsz1)
+        type2 = _rsz_kind(rsz2)
 
         if type1 != type2:
             raise ValueError(f"Mismatched RSZ file types: {type1} vs {type2}")

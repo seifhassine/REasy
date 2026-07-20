@@ -36,30 +36,58 @@ class ViewportOverlayManager:
         if not overlay:
             return None
         kind = event.type()
-        if kind in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease) and self.hover_key is not None and getattr(self.view, "_controls", "mesh") != "mesh" and event.key() == self.hover_key:
-            (self.view.keyPressEvent if kind == QEvent.Type.KeyPress else self.view.keyReleaseEvent)(event)
+        if self._forward_hover_key_event(kind, event):
             return True
-        active = "resize" if self.resize_overlay is overlay else "drag" if self.drag_overlay is overlay else ""
+        active = self._active_mode(overlay)
         if active and kind == QEvent.Type.MouseMove and event.buttons() & Qt.LeftButton:
-            self.resize_to(overlay, event.globalPosition().toPoint()) if active == "resize" else self.move(overlay, self.view.mapFromGlobal(event.globalPosition().toPoint()) - self.drag_offset)
+            self._continue_drag(active, overlay, event.globalPosition().toPoint())
             return True
         if active and kind == QEvent.Type.MouseButtonRelease:
             overlay.releaseMouse()
             self.resize_overlay = self.drag_overlay = self.drag_offset = None
             return True
         if kind == QEvent.Type.MouseButtonPress and event.button() == Qt.LeftButton:
-            if getattr(obj, "_viewport_resize_overlay", None) is overlay:
-                self.resize_overlay = overlay
-            elif self.can_drag_from(obj):
-                self.drag_overlay = overlay
-                self.drag_offset = overlay.mapFromGlobal(event.globalPosition().toPoint())
-            else:
-                return None
-            overlay.viewport_anchor = "manual"
-            overlay.raise_()
-            overlay.grabMouse()
-            return True
+            if self._begin_drag(obj, overlay, event.globalPosition().toPoint()):
+                return True
         return None
+
+    def _forward_hover_key_event(self, kind, event) -> bool:
+        if (
+            kind not in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease)
+            or self.hover_key is None
+            or getattr(self.view, "_controls", "mesh") == "mesh"
+            or event.key() != self.hover_key
+        ):
+            return False
+        handler = self.view.keyPressEvent if kind == QEvent.Type.KeyPress else self.view.keyReleaseEvent
+        handler(event)
+        return True
+
+    def _active_mode(self, overlay) -> str:
+        if self.resize_overlay is overlay:
+            return "resize"
+        if self.drag_overlay is overlay:
+            return "drag"
+        return ""
+
+    def _continue_drag(self, active: str, overlay, global_pos) -> None:
+        if active == "resize":
+            self.resize_to(overlay, global_pos)
+        else:
+            self.move(overlay, self.view.mapFromGlobal(global_pos) - self.drag_offset)
+
+    def _begin_drag(self, obj, overlay, global_pos) -> bool:
+        if getattr(obj, "_viewport_resize_overlay", None) is overlay:
+            self.resize_overlay = overlay
+        elif self.can_drag_from(obj):
+            self.drag_overlay = overlay
+            self.drag_offset = overlay.mapFromGlobal(global_pos)
+        else:
+            return False
+        overlay.viewport_anchor = "manual"
+        overlay.raise_()
+        overlay.grabMouse()
+        return True
 
     def can_drag_from(self, widget) -> bool:
         while widget is not None:

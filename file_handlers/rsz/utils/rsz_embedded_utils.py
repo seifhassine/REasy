@@ -224,7 +224,6 @@ def find_embedded_context(item):
     
     # Check parent items
     parent = item.parent if hasattr(item, 'parent') else None
-    level = 1
     while parent:
         if hasattr(parent, 'raw') and isinstance(parent.raw, dict):
             raw = parent.raw
@@ -232,7 +231,6 @@ def find_embedded_context(item):
                 context = raw.get('embedded_context')
                 return context
         parent = parent.parent if hasattr(parent, 'parent') else None
-        level += 1
     
     # special case: if this is a userdata array that needs embedded RSZ
     # but is in a non-embedded context, we we need to check if it's a userdata array
@@ -329,6 +327,6 @@ def update_embedded_references_for_shift(id_mapping, rui):
                         field_data._owning_instance_id = id_mapping[field_data._owning_instance_id]
     
     if hasattr(rui, '_array_registry'):
-        for array_id, owner_id in list(rui._array_registry.items()):
+        for array_id, owner_id in rui._array_registry.items():
             if owner_id in id_mapping:
                 rui._array_registry[array_id] = id_mapping[owner_id]

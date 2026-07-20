@@ -275,9 +275,14 @@ class BetterFindDialog(QDockWidget):
             self.status.setText(self.tr("Tree has no model"))
             return
 
-        case  = self.case_box.isChecked()
-        mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
-        needle= search_text if case else search_text.lower()
+        case = self.case_box.isChecked()
+        if self.opt_name.isChecked():
+            mode = "name"
+        elif self.opt_value.isChecked():
+            mode = "value"
+        else:
+            mode = "both"
+        needle = search_text if case else search_text.lower()
         include_advanced = self.include_advanced_box.isChecked()
 
         self.results.clear()

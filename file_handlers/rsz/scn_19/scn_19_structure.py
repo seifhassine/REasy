@@ -17,6 +17,23 @@ from file_handlers.rsz.rsz_build_utils import (
     write_wstring_entries,
 )
 
+_RSZ_V3_HEADER_FORMAT = "<4I Q Q"
+
+
+def _has_userdata_payload(userdata_info) -> bool:
+    return bool(
+        (
+            hasattr(userdata_info, "data")
+            and userdata_info.data
+            and len(userdata_info.data) > 0
+        )
+        or (
+            hasattr(userdata_info, "embedded_instances")
+            and userdata_info.embedded_instances
+        )
+    )
+
+
 class Scn19Header:
     SIZE = 64
     def __init__(self):
@@ -466,13 +483,7 @@ def build_embedded_rsz(rui, type_registry=None):
             if hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
                 nested_rui.data = memoryview(build_embedded_rsz(nested_rui, type_registry))
             
-            has_data = False
-            if hasattr(nested_rui, 'data') and nested_rui.data and len(nested_rui.data) > 0:
-                has_data = True
-            elif hasattr(nested_rui, 'embedded_instances') and nested_rui.embedded_instances:
-                has_data = True
-            
-            if has_data:
+            if _has_userdata_payload(nested_rui):
                 non_empty_embedded_userdata.append(nested_rui)
         
         mini_scn.rsz_userdata_infos = non_empty_embedded_userdata
@@ -501,7 +512,7 @@ def build_embedded_rsz(rui, type_registry=None):
             )
         else:
             rsz_header_bytes = struct.pack(
-                "<4I Q Q",
+                _RSZ_V3_HEADER_FORMAT,
                 mini_scn.rsz_header.magic,
                 mini_scn.rsz_header.version,
                 mini_scn.rsz_header.object_count,
@@ -611,7 +622,7 @@ def build_embedded_rsz(rui, type_registry=None):
             header_size = 48 
         else:
             new_rsz_header = struct.pack(
-                "<4I Q Q",
+                _RSZ_V3_HEADER_FORMAT,
                 mini_scn.rsz_header.magic,
                 mini_scn.rsz_header.version,
                 mini_scn.rsz_header.object_count,
@@ -644,14 +655,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
     
     non_empty_userdata_infos = []
     for rui in rsz_file.rsz_userdata_infos:
-        # Check if userdata has actual data
-        has_data = False
-        if hasattr(rui, 'data') and rui.data and len(rui.data) > 0:
-            has_data = True
-        elif hasattr(rui, 'embedded_instances') and rui.embedded_instances:
-            has_data = True
-        
-        if has_data:
+        if _has_userdata_payload(rui):
             non_empty_userdata_infos.append(rui)
     
     if rsz_file.rsz_header.version > 3:
@@ -670,7 +674,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         out += rsz_header_bytes
     else:
         rsz_header_bytes = struct.pack(
-            "<4I Q Q",
+            _RSZ_V3_HEADER_FORMAT,
             rsz_file.rsz_header.magic,
             rsz_file.rsz_header.version,
             rsz_file.rsz_header.object_count,
@@ -787,7 +791,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
     else:
         new_rsz_header = struct.pack(
-            "<4I Q Q",
+            _RSZ_V3_HEADER_FORMAT,
             rsz_file.rsz_header.magic,
             rsz_file.rsz_header.version,
             rsz_file.rsz_header.object_count,

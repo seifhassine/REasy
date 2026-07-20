@@ -91,20 +91,20 @@ class MotionCameraTableModel(QAbstractTableModel):
         if column == 0:
             entry.path = str(value)
         else:
+            attribute = {
+                1: "bank_id",
+                2: "bank_type",
+                3: "bank_type_mask_bit",
+            }.get(column)
+            if attribute is None:
+                return False
             try:
                 parsed = int(value, 0) if isinstance(value, str) else int(value)
             except (TypeError, ValueError):
                 return False
             if not 0 <= parsed <= 0xFFFFFFFF:
                 return False
-            if column == 1:
-                entry.bank_id = parsed
-            elif column == 2:
-                entry.bank_type = parsed
-            elif column == 3:
-                entry.bank_type_mask_bit = parsed
-            else:
-                return False
+            setattr(entry, attribute, parsed)
 
         self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
         return True

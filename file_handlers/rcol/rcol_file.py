@@ -486,20 +486,6 @@ class RcolFile:
                                         for offset_pos in string_refs[string]:
                                             handler.write_at(offset_pos, '<q', offset)
                         # Skip subsequent occurrences of non-empty joint names - they're deduplicated within context
-                    elif context == 'shape_name':
-                        # Shape names (including empty ones) should NOT be deduplicated - write every occurrence
-                        if string not in string_first_offset:
-                            # First occurrence - remember offset for references
-                            string_first_offset[string] = handler.tell
-                            handler.write_wstring(string)
-                            # Update all references to point to this first occurrence
-                            if string in string_refs:
-                                for offset_pos in string_refs[string]:
-                                    handler.write_at(offset_pos, '<q', string_first_offset[string])
-                        else:
-                            # Subsequent occurrence - write it again (no deduplication)
-                            handler.write_wstring(string)
-                            # References already point to the first occurrence
                     elif context == 'request_key':
                         # Request keys are NOT deduplicated - write every occurrence
                         offset = handler.tell

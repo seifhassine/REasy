@@ -44,6 +44,9 @@ _COMPONENT_INPUT_STYLE = """
     }
 """
 
+_INVALID_BORDER_STYLE = "border: 1px solid red;"
+_INDENTED_INPUT_STYLE = "margin-left: 6px;"
+
 ADD_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Add Resource")
 OPEN_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Open Resource")
 
@@ -335,7 +338,7 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
                     self._parse_input_value(input_field)
                     input_field.setStyleSheet("")
                 except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
+                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
 
     def _data_values(self):
         return tuple(getattr(self._data, field) for field in self.fields)
@@ -523,7 +526,7 @@ class GuidInput(BaseValueWidget):
         else:
             cursor_snapshot = self.line_edit.cursorPosition()
             self._remember_pending_guid(formatted, cursor_snapshot)
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
     def update_display(self):
         if not self._data:
@@ -553,7 +556,7 @@ class GuidInput(BaseValueWidget):
         if is_valid:
             self.line_edit.setStyleSheet("")
         else:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
 class OverwriteGuidLineEdit(QLineEdit):
     def __init__(self, guid_widget, parent=None):
@@ -672,7 +675,7 @@ class NumberInput(BaseValueWidget):
                     self.mark_modified()
                 self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
 class F32Input(NumberInput):
     def __init__(self, parent=None):
@@ -785,7 +788,7 @@ class IntVectorInput(BaseValueWidget):
                     input_field.setStyleSheet("")
                         
                 except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
+                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
                     valid_input = False
                     value = 0
                     
@@ -1454,49 +1457,89 @@ class StringInput(BaseValueWidget):
         )
         
         proj_dock = app_window.proj_dock
-        
         if add_to_project:
-            project_dir = proj_dock.project_dir
-            if not project_dir:
-                QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
-                    self.tr("No project is currently open."))
+            if not proj_dock.project_dir:
+                QMessageBox.information(
+                    self,
+                    self.tr(ADD_RESOURCE_TITLE),
+                    self.tr("No project is currently open."),
+                )
                 return
-            
             path_prefix = get_path_prefix_for_game(app_window.current_game)
-            
-            overwrite_state = {"asked": False, "accepted": False}
-
-            def _confirm_overwrite(dest_path: str) -> bool:
-                overwrite_state["asked"] = True
-                accepted = True
-                if hasattr(proj_dock, "_confirm_project_overwrite"):
-                    accepted = proj_dock._confirm_project_overwrite(dest_path, self)
-                overwrite_state["accepted"] = accepted
-                return accepted
-            
-            dest_path = copy_resource_to_project(
+            self._add_resource_to_project(
+                proj_dock,
                 resource_path,
-                project_dir,
-                proj_dock.unpacked_dir,
                 path_prefix,
-                proj_dock._pak_cached_reader,
-                should_overwrite=_confirm_overwrite,
-                selection_parent=self,
+                copy_resource_to_project,
             )
-            
-            if dest_path:
-                if hasattr(proj_dock, '_refresh_proj'):
-                    proj_dock._refresh_proj()
-                QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
-                    self.tr("File added to project:\n{}").format(dest_path))
-            else:
-                if overwrite_state["asked"] and not overwrite_state["accepted"]:
-                    return
-                QMessageBox.critical(self, self.tr(ADD_RESOURCE_TITLE),
-                    self.tr("Error: Resource file not found.\n\nResource: {}\n\nSearched in both PAK files and system files.").format(resource_path))
             return
-        
+
         path_prefix = get_path_prefix_for_game(app_window.current_game)
+        self._open_resolved_resource(
+            app_window,
+            proj_dock,
+            resource_path,
+            path_prefix,
+            resolve_resource_data,
+        )
+
+    def _add_resource_to_project(
+        self,
+        proj_dock,
+        resource_path,
+        path_prefix,
+        copy_resource_to_project,
+    ):
+        project_dir = proj_dock.project_dir
+        overwrite_state = {"asked": False, "accepted": False}
+
+        def _confirm_overwrite(dest_path: str) -> bool:
+            overwrite_state["asked"] = True
+            accepted = True
+            if hasattr(proj_dock, "_confirm_project_overwrite"):
+                accepted = proj_dock._confirm_project_overwrite(
+                    dest_path, self
+                )
+            overwrite_state["accepted"] = accepted
+            return accepted
+
+        dest_path = copy_resource_to_project(
+            resource_path,
+            project_dir,
+            proj_dock.unpacked_dir,
+            path_prefix,
+            proj_dock._pak_cached_reader,
+            should_overwrite=_confirm_overwrite,
+            selection_parent=self,
+        )
+        if dest_path:
+            if hasattr(proj_dock, '_refresh_proj'):
+                proj_dock._refresh_proj()
+            QMessageBox.information(
+                self,
+                self.tr(ADD_RESOURCE_TITLE),
+                self.tr("File added to project:\n{}").format(dest_path),
+            )
+            return
+        if overwrite_state["asked"] and not overwrite_state["accepted"]:
+            return
+        QMessageBox.critical(
+            self,
+            self.tr(ADD_RESOURCE_TITLE),
+            self.tr(
+                "Error: Resource file not found.\n\nResource: {}\n\n"
+                "Searched in both PAK files and system files."
+            ).format(resource_path),
+        )
+
+    def _open_resolved_resource(
+        self,
+        app_window,
+        proj_dock,
+        resource_path,
+        path_prefix,
+        resolve_resource_data,
+    ):
         resolved = resolve_resource_data(
             resource_path,
             proj_dock.project_dir,
@@ -1505,59 +1548,92 @@ class StringInput(BaseValueWidget):
             proj_dock._pak_cached_reader,
             self,
         )
-
         if resolved:
             file_path, file_data = resolved
-            tab = app_window.add_tab(file_path, file_data, pak_source_path=file_path if not os.path.isabs(file_path) else None, pak_project_dir=proj_dock.project_dir)
+            tab = app_window.add_tab(
+                file_path,
+                file_data,
+                pak_source_path=(
+                    file_path if not os.path.isabs(file_path) else None
+                ),
+                pak_project_dir=proj_dock.project_dir,
+            )
             if tab and not os.path.isabs(file_path):
-                app_window.attach_pak_source_tab(tab, file_path, proj_dock.project_dir)
-        else:
-            QMessageBox.critical(self, self.tr(OPEN_RESOURCE_TITLE),
-                self.tr("Error: Resource file not found.\n\nResource: {}\n\nSearched in both PAK files and system files.").format(resource_path))
+                app_window.attach_pak_source_tab(
+                    tab, file_path, proj_dock.project_dir
+                )
+            return
+        QMessageBox.critical(
+            self,
+            self.tr(OPEN_RESOURCE_TITLE),
+            self.tr(
+                "Error: Resource file not found.\n\nResource: {}\n\n"
+                "Searched in both PAK files and system files."
+            ).format(resource_path),
+        )
 
     def _on_text_changed(self, text):
-        if self._data:
-            self._data.value = text
-            self.valueChanged.emit(text)
-            self.mark_modified()
-            
-            fm = QFontMetrics(self.line_edit.font())
-            text_width = fm.horizontalAdvance(text) + 10
-            new_width = max(text_width, self.minimum_width)
-            self.line_edit.setFixedWidth(new_width)
-            
-            if hasattr(self._data, "is_gameobject_or_folder_name") and self._data.is_gameobject_or_folder_name:
-                if isinstance(self._data.is_gameobject_or_folder_name, dict):
-                    node_dict = self._data.is_gameobject_or_folder_name
-                    
-                    current_name = node_dict["data"][0]
-                    id_part = current_name[current_name.find("(ID:"):] if "(ID:" in current_name else ""
-                    new_node_name = f"{text} {id_part}"
-                    node_dict["data"][0] = new_node_name
-                    
-                    parent_widget = self
-                    tree_view = None
-                    while parent_widget and not tree_view:
-                        parent_widget = parent_widget.parent()
-                        if hasattr(parent_widget, 'tree'):
-                            tree_view = parent_widget.tree
-                        elif isinstance(parent_widget, QTreeView):
-                            tree_view = parent_widget
-                        
-                    if tree_view and tree_view.model():
-                        model = tree_view.model()
-                        
-                        for visible_item in tree_view.findChildren(QLabel):
-                            if "(ID:" in visible_item.text() and visible_item.text().endswith(id_part):
-                                visible_item.setText(new_node_name)
-                        
-                        for i in range(model.rowCount()):
-                            parent_index = model.index(i, 0)
-                            for j in range(model.rowCount(parent_index)):
-                                child_index = model.index(j, 0, parent_index)
-                                tree_view.update(child_index)
-                        
-                        tree_view.repaint()
+        if not self._data:
+            return
+
+        self._data.value = text
+        self.valueChanged.emit(text)
+        self.mark_modified()
+        fm = QFontMetrics(self.line_edit.font())
+        text_width = fm.horizontalAdvance(text) + 10
+        self.line_edit.setFixedWidth(max(text_width, self.minimum_width))
+        self._sync_bound_node_name(text)
+
+    def _sync_bound_node_name(self, text):
+        node_dict = getattr(
+            self._data, "is_gameobject_or_folder_name", None
+        )
+        if not isinstance(node_dict, dict):
+            return
+
+        current_name = node_dict["data"][0]
+        id_part = (
+            current_name[current_name.find("(ID:"):]
+            if "(ID:" in current_name
+            else ""
+        )
+        new_node_name = f"{text} {id_part}"
+        node_dict["data"][0] = new_node_name
+
+        tree_view = self._find_tree_view()
+        if tree_view and tree_view.model():
+            self._refresh_bound_node_name(
+                tree_view, new_node_name, id_part
+            )
+
+    def _find_tree_view(self):
+        parent_widget = self
+        tree_view = None
+        while parent_widget and not tree_view:
+            parent_widget = parent_widget.parent()
+            if hasattr(parent_widget, 'tree'):
+                tree_view = parent_widget.tree
+            elif isinstance(parent_widget, QTreeView):
+                tree_view = parent_widget
+        return tree_view
+
+    @staticmethod
+    def _refresh_bound_node_name(tree_view, new_node_name, id_part):
+        model = tree_view.model()
+        for visible_item in tree_view.findChildren(QLabel):
+            if (
+                "(ID:" in visible_item.text()
+                and visible_item.text().endswith(id_part)
+            ):
+                visible_item.setText(new_node_name)
+
+        for row in range(model.rowCount()):
+            parent_index = model.index(row, 0)
+            for child_row in range(model.rowCount(parent_index)):
+                tree_view.update(
+                    model.index(child_row, 0, parent_index)
+                )
+        tree_view.repaint()
 
 class UserDataInput(BaseValueWidget):
     valueChanged = Signal(str) 
@@ -1605,27 +1681,9 @@ class UserDataInput(BaseValueWidget):
         if getattr(scn, 'has_embedded_rsz', False):
             return
 
-        current_instance_id = getattr(self._data, 'value', 0) or 0
-        default_type_name = None
-        default_string = getattr(self._data, 'string', '') or ''
-
-        if current_instance_id > 0 and current_instance_id < len(scn.instance_infos):
-            try:
-                type_id = scn.instance_infos[current_instance_id].type_id
-                if viewer.type_registry:
-                    tinfo = viewer.type_registry.get_type_info(type_id)
-                    if tinfo and 'name' in tinfo:
-                        default_type_name = tinfo['name']
-            except Exception:
-                pass
-            try:
-                rui = scn._rsz_userdata_dict.get(current_instance_id)
-                if rui:
-                    default_string = scn._rsz_userdata_str_map.get(rui, default_string)
-            except Exception:
-                pass
-        else:
-            default_type_name = getattr(self._data, 'orig_type', '') or ''
+        default_type_name, default_string = self._get_userdata_defaults(
+            viewer, scn
+        )
 
         new_string, ok = QInputDialog.getText(
             self,
@@ -1637,16 +1695,9 @@ class UserDataInput(BaseValueWidget):
         if not ok:
             return
 
-        type_dialog = ComponentSelectorDialog(self, viewer.type_registry, required_parent_name="via.UserData")
-        type_dialog.setWindowTitle(self.tr("Select UserData Instance Type"))
-        if default_type_name:
-            try:
-                type_dialog.search_input.setText(default_type_name)
-            except Exception:
-                pass
-        if not type_dialog.exec_():
-            return
-        selected_type = type_dialog.get_selected_component()
+        selected_type = self._select_userdata_type(
+            viewer, default_type_name
+        )
         if not selected_type:
             return
 
@@ -1656,6 +1707,54 @@ class UserDataInput(BaseValueWidget):
                 self.line_edit.setText(new_string)
         except Exception:
             pass
+
+    def _get_userdata_defaults(self, viewer, scn):
+        current_instance_id = getattr(self._data, 'value', 0) or 0
+        default_string = getattr(self._data, 'string', '') or ''
+        if not 0 < current_instance_id < len(scn.instance_infos):
+            return (
+                getattr(self._data, 'orig_type', '') or '',
+                default_string,
+            )
+
+        default_type_name = None
+        try:
+            type_id = scn.instance_infos[current_instance_id].type_id
+            if viewer.type_registry:
+                type_info = viewer.type_registry.get_type_info(type_id)
+                if type_info and 'name' in type_info:
+                    default_type_name = type_info['name']
+        except Exception:
+            pass
+        try:
+            userdata_info = scn._rsz_userdata_dict.get(
+                current_instance_id
+            )
+            if userdata_info:
+                default_string = scn._rsz_userdata_str_map.get(
+                    userdata_info, default_string
+                )
+        except Exception:
+            pass
+        return default_type_name, default_string
+
+    def _select_userdata_type(self, viewer, default_type_name):
+        type_dialog = ComponentSelectorDialog(
+            self,
+            viewer.type_registry,
+            required_parent_name="via.UserData",
+        )
+        type_dialog.setWindowTitle(
+            self.tr("Select UserData Instance Type")
+        )
+        if default_type_name:
+            try:
+                type_dialog.search_input.setText(default_type_name)
+            except Exception:
+                pass
+        if not type_dialog.exec_():
+            return None
+        return type_dialog.get_selected_component()
 
 class BoolInput(BaseValueWidget):
     valueChanged = Signal(bool)
@@ -1905,7 +2004,7 @@ class EnumInput(BaseValueWidget):
                 
             self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
             
     def _on_combo_changed(self, index):
         """Update value when an enum option is selected"""
@@ -2341,7 +2440,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
             grid.addWidget(line_edit, 0, (i*2)+2)
             self.start_inputs.append(line_edit)
             
@@ -2353,7 +2452,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
             grid.addWidget(line_edit, 1, (i*2)+2)
             self.end_inputs.append(line_edit)
             
@@ -2361,7 +2460,7 @@ class CapsuleInput(BaseValueWidget):
         self.radius_input.setValidator(QDoubleValidator())
         self.radius_input.setFixedWidth(80)
         self.radius_input.setAlignment(Qt.AlignLeft)
-        self.radius_input.setStyleSheet("margin-left: 6px;")
+        self.radius_input.setStyleSheet(_INDENTED_INPUT_STYLE)
         grid.addWidget(self.radius_input, 2, 2)
         
         self.layout.addStretch()

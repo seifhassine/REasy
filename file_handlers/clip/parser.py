@@ -302,10 +302,12 @@ class ClipParser:
                 yield item
                 stack.extend(reversed(getattr(item, child_attr)))
 
-        node_roots = (
-            [node for track in parsed.tracks for node in track.child_nodes]
-            if parsed.tracks else ([] if parsed.header.version >= 85 else parsed.root_nodes)
-        )
+        if parsed.tracks:
+            node_roots = [node for track in parsed.tracks for node in track.child_nodes]
+        elif parsed.header.version >= 85:
+            node_roots = []
+        else:
+            node_roots = parsed.root_nodes
         live_nodes = list(walk_unique(node_roots, "child_nodes"))
         live_property_ids = {
             id(prop) for prop in walk_unique(

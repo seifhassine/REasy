@@ -168,6 +168,146 @@ def _parse_legacy(
     )
 
 
+def _read_target_ranges(
+    data: bytes | bytearray,
+    target_index: int,
+    range_count: int,
+    ranges_offset: int,
+) -> List[BlendShapeTargetRange]:
+    if range_count and ranges_offset <= 0:
+        raise ValueError(f"Blendshape target {target_index} has no range pointer")
+
+    ranges = []
+    for range_index in range(range_count):
+        base_vertex, blend_location, vertex_count, tag = _unpack(
+            "<IIII",
+            data,
+            ranges_offset + range_index * 16,
+            f"Blendshape target {target_index} range {range_index}",
+        )
+        ranges.append(
+            BlendShapeTargetRange(
+                base_vertex_location=base_vertex,
+                blend_shape_location=blend_location,
+                vertex_count=vertex_count,
+                tag=tag,
+            )
+        )
+    return ranges
+
+
+def _read_modern_target(
+    data: bytes | bytearray,
+    *,
+    target_index: int,
+    target_count: int,
+    targets_offset: int,
+    aabb_offset: int,
+    channel_offset: int,
+    sequential_channel: int,
+    sequential_payload: int,
+    version: MeshMainVersion,
+) -> tuple[BlendShapeTarget, int, int]:
+    is_none_target = target_index >= target_count
+    target_offset = targets_offset + target_index * 16
+    if version >= MeshMainVersion.RE4:
+        (
+            raw_channel_location,
+            channel_count,
+            same_target_id,
+            range_count,
+            is_blend_shape,
+            ranges_offset,
+        ) = _unpack(
+            "<HHHBBq",
+            data,
+            target_offset,
+            f"Blendshape target {target_index}",
+        )
+        channel_location = raw_channel_location
+        if version >= MeshMainVersion.DD2_OLD and channel_location >= channel_offset:
+            channel_location -= channel_offset
+        ranges = _read_target_ranges(data, target_index, range_count, ranges_offset)
+        part_index = None
+        raw_reserve = None
+        compatibility_fields_derived = False
+    elif version == MeshMainVersion.RE8:
+        (
+            base_vertex,
+            vertex_count,
+            part_index,
+            channel_count,
+            reserve0,
+            reserve1,
+        ) = _unpack(
+            "<IIHHHH",
+            data,
+            target_offset,
+            f"RE8 blendshape target {target_index}",
+        )
+        channel_location = sequential_channel
+        same_target_id = target_index
+        ranges = [
+            BlendShapeTargetRange(
+                base_vertex_location=base_vertex,
+                blend_shape_location=sequential_payload,
+                vertex_count=vertex_count,
+                derived_from_target=True,
+            )
+        ]
+        is_blend_shape = bool(channel_count and vertex_count)
+        sequential_channel += channel_count
+        sequential_payload += vertex_count * channel_count
+        raw_reserve = (reserve0, reserve1)
+        compatibility_fields_derived = True
+    else:
+        (
+            base_vertex,
+            vertex_count,
+            part_index,
+            channel_count,
+            shared_field,
+        ) = _unpack(
+            "<IIHHI",
+            data,
+            target_offset,
+            f"Pre-RE4 blendshape target {target_index}",
+        )
+        channel_location = sequential_channel
+        same_target_id = target_index
+        ranges = [
+            BlendShapeTargetRange(
+                base_vertex_location=base_vertex,
+                blend_shape_location=sequential_payload,
+                vertex_count=vertex_count,
+                derived_from_target=True,
+            )
+        ]
+        is_blend_shape = bool(channel_count and vertex_count)
+        sequential_channel += channel_count
+        sequential_payload += vertex_count * channel_count
+        raw_reserve = (shared_field & 0xFFFF, shared_field >> 16)
+        compatibility_fields_derived = True
+
+    aabb = (
+        _read_aabb(data, aabb_offset, target_index)
+        if aabb_offset > 0 and target_index < target_count
+        else None
+    )
+    target = BlendShapeTarget(
+        channel_location=channel_location,
+        channel_count=channel_count,
+        same_target_id=same_target_id,
+        ranges=ranges,
+        aabb=aabb,
+        is_blend_shape=bool(is_blend_shape and not is_none_target),
+        part_index=part_index,
+        raw_reserve=raw_reserve,
+        compatibility_fields_derived=compatibility_fields_derived,
+    )
+    return target, sequential_channel, sequential_payload
+
+
 def _parse_modern(
     data: bytes | bytearray,
     offset: int,
@@ -278,126 +418,18 @@ def _parse_modern(
     sequential_payload = 0
     total_target_count = target_count + none_target_count
     for target_index in range(total_target_count):
-        is_none_target = target_index >= target_count
-        if version >= MeshMainVersion.RE4:
-            (
-                raw_channel_location,
-                channel_count,
-                same_target_id,
-                range_count,
-                is_blend_shape,
-                ranges_offset,
-            ) = _unpack(
-                "<HHHBBq",
-                data,
-                targets_offset + target_index * 16,
-                f"Blendshape target {target_index}",
-            )
-            channel_location = raw_channel_location
-            if (
-                version >= MeshMainVersion.DD2_OLD
-                and channel_location >= channel_offset
-            ):
-                channel_location -= channel_offset
-            ranges = []
-            if range_count and ranges_offset <= 0:
-                raise ValueError(
-                    f"Blendshape target {target_index} has no range pointer"
-                )
-            for range_index in range(range_count):
-                base_vertex, blend_location, vertex_count, tag = _unpack(
-                    "<IIII",
-                    data,
-                    ranges_offset + range_index * 16,
-                    f"Blendshape target {target_index} range {range_index}",
-                )
-                ranges.append(
-                    BlendShapeTargetRange(
-                        base_vertex_location=base_vertex,
-                        blend_shape_location=blend_location,
-                        vertex_count=vertex_count,
-                        tag=tag,
-                    )
-                )
-            part_index = None
-            raw_reserve = None
-            compatibility_fields_derived = False
-        elif version == MeshMainVersion.RE8:
-            (
-                base_vertex,
-                vertex_count,
-                part_index,
-                channel_count,
-                reserve0,
-                reserve1,
-            ) = _unpack(
-                "<IIHHHH",
-                data,
-                targets_offset + target_index * 16,
-                f"RE8 blendshape target {target_index}",
-            )
-            channel_location = sequential_channel
-            same_target_id = target_index
-            ranges = [
-                BlendShapeTargetRange(
-                    base_vertex_location=base_vertex,
-                    blend_shape_location=sequential_payload,
-                    vertex_count=vertex_count,
-                    derived_from_target=True,
-                )
-            ]
-            is_blend_shape = bool(channel_count and vertex_count)
-            sequential_channel += channel_count
-            sequential_payload += vertex_count * channel_count
-            raw_reserve = (reserve0, reserve1)
-            compatibility_fields_derived = True
-        else:
-            (
-                base_vertex,
-                vertex_count,
-                part_index,
-                channel_count,
-                shared_field,
-            ) = _unpack(
-                "<IIHHI",
-                data,
-                targets_offset + target_index * 16,
-                f"Pre-RE4 blendshape target {target_index}",
-            )
-            channel_location = sequential_channel
-            same_target_id = target_index
-            ranges = [
-                BlendShapeTargetRange(
-                    base_vertex_location=base_vertex,
-                    blend_shape_location=sequential_payload,
-                    vertex_count=vertex_count,
-                    derived_from_target=True,
-                )
-            ]
-            is_blend_shape = bool(channel_count and vertex_count)
-            sequential_channel += channel_count
-            sequential_payload += vertex_count * channel_count
-            raw_reserve = (shared_field & 0xFFFF, shared_field >> 16)
-            compatibility_fields_derived = True
-
-        aabb = (
-            _read_aabb(data, aabb_offset, target_index)
-            if aabb_offset > 0 and target_index < target_count
-            else None
+        target, sequential_channel, sequential_payload = _read_modern_target(
+            data,
+            target_index=target_index,
+            target_count=target_count,
+            targets_offset=targets_offset,
+            aabb_offset=aabb_offset,
+            channel_offset=channel_offset,
+            sequential_channel=sequential_channel,
+            sequential_payload=sequential_payload,
+            version=version,
         )
-        targets.append(
-            BlendShapeTarget(
-                channel_location=channel_location,
-                channel_count=channel_count,
-                same_target_id=same_target_id,
-                ranges=ranges,
-                aabb=aabb,
-                is_blend_shape=bool(is_blend_shape and not is_none_target),
-                part_index=part_index,
-                raw_reserve=raw_reserve,
-                compatibility_fields_derived=compatibility_fields_derived,
-            )
-        )
+        targets.append(target)
 
     return BlendShapeData(
         compression_type=compression_type,

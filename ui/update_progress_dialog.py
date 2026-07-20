@@ -71,25 +71,33 @@ class UpdateProgressDialog(QDialog):
         if len(text) and not text.endswith("\n"):
             text += "\n"
         for line in text.splitlines(True):
-            if line.startswith("PROGRESS "):
-                try:
-                    pct = int(line.split()[1])
-                    self._progress.setRange(0, 100)
-                    self._progress.setValue(max(0, min(100, pct)))
-                except Exception:
-                    pass
-            elif line.startswith("STAGED "):
-                self._staged_path = line.split(" ", 1)[1].strip()
-                if self._staged_path and self._script_path and self._target_dir:
-                    self._on_apply()
-                    return
-            elif line.startswith("TARGET ") or line.strip() == "READY":
-                continue
-            else:
-                if line.strip():
-                    self._log.moveCursor(QTextCursor.End)
-                    self._log.insertPlainText(line)
-                    self._log.moveCursor(QTextCursor.End)
+            if self._handle_output_line(line):
+                return
+
+    def _handle_output_line(self, line: str) -> bool:
+        if line.startswith("PROGRESS "):
+            try:
+                pct = int(line.split()[1])
+                self._progress.setRange(0, 100)
+                self._progress.setValue(max(0, min(100, pct)))
+            except Exception:
+                pass
+            return False
+
+        if line.startswith("STAGED "):
+            self._staged_path = line.split(" ", 1)[1].strip()
+            if self._staged_path and self._script_path and self._target_dir:
+                self._on_apply()
+                return True
+            return False
+
+        if line.startswith("TARGET ") or line.strip() == "READY":
+            return False
+        if line.strip():
+            self._log.moveCursor(QTextCursor.End)
+            self._log.insertPlainText(line)
+            self._log.moveCursor(QTextCursor.End)
+        return False
 
     def _on_finished(self, exit_code: int, exit_status):
         self._progress.setRange(0, 1)

@@ -56,6 +56,7 @@ from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource
 
 MESH_LOAD_FAILED_TITLE = QT_TRANSLATE_NOOP("RcolViewer", "Mesh Load Failed")
 NONE_TEXT = QT_TRANSLATE_NOOP("RcolViewer", "(none)")
+GROUP_NUMBER_TEXT = QT_TRANSLATE_NOOP("RcolViewer", "Group {number}")
 
 
 @dataclass(frozen=True)
@@ -353,7 +354,7 @@ class RcolViewer(QWidget):
             NavPayload(kind="groups"),
         )
         for g_idx, group in enumerate(self.rcol.groups):
-            group_name = group.info.name or self.tr("Group {number}").format(
+            group_name = group.info.name or self.tr(GROUP_NUMBER_TEXT).format(
                 number=g_idx + 1
             )
             group_item = self._add_item(tree, f"[{g_idx}] {group_name}", NavPayload(kind="group", group_index=g_idx), parent=groups_root)
@@ -517,7 +518,7 @@ class RcolViewer(QWidget):
         group_name = self.tr("(unassigned)")
         if 0 <= req.info.group_index < len(self.rcol.groups):
             group_name = self.rcol.groups[req.info.group_index].info.name or self.tr(
-                "Group {number}"
+                GROUP_NUMBER_TEXT
             ).format(number=req.info.group_index)
         return self.tr(
             "[{index}] {name} · Group: {group} · key: {key}"
@@ -1080,7 +1081,7 @@ class RcolViewer(QWidget):
         group_labels = []
         for group_index, group in enumerate(self.rcol.groups):
             group_name = (group.info.name or "").strip() or self.tr(
-                "Group {number}"
+                GROUP_NUMBER_TEXT
             ).format(number=group_index + 1)
             group_labels.append(f"[{group_index}] {group_name}")
 
@@ -1492,7 +1493,7 @@ class RcolViewer(QWidget):
 
         if payload.kind == "group" and payload.group_index is not None:
             group = self.rcol.groups[payload.group_index]
-            default_name = self.tr("Group {number}").format(
+            default_name = self.tr(GROUP_NUMBER_TEXT).format(
                 number=payload.group_index + 1
             )
             item.setText(0, f"[{payload.group_index}] {group.info.name or default_name}")
@@ -1633,7 +1634,7 @@ class RcolViewer(QWidget):
         self._row_text(
             "Group",
             group.info.name
-            or self.tr("Group {number}").format(number=payload.group_index),
+            or self.tr(GROUP_NUMBER_TEXT).format(number=payload.group_index),
         )
         self._row_text("Count", str(count))
         self._action_button(

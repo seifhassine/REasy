@@ -5,12 +5,17 @@ from PySide6.QtWidgets import (
     QPushButton, QCheckBox, QSpinBox, QDoubleSpinBox,
     QDialogButtonBox, QWidget
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 
 import uuid
 
 from utils.number_format import format_float_sequence, format_full_float
+
+
+VALUE_LABEL_TEXT = QT_TRANSLATE_NOOP(
+    "UvarValueEditDialog", "Value:"
+)
 
 
 class UvarValueEditDialog(QDialog):
@@ -65,36 +70,9 @@ class UvarValueEditDialog(QDialog):
         # Handle special case: vector type based on flags
         if is_vec3_flag and var_type in (TypeKind.Single, TypeKind.Int32, TypeKind.Uint32, 
                                           TypeKind.Int8, TypeKind.Int16, TypeKind.Uint8, TypeKind.Uint16):
-            # This is actually a Vec3/Int3/Uint3 stored with special flags
-            self.inputs = []
-            components = ['X', 'Y', 'Z']
-            
-            # Parse current value
-            if hasattr(current_value, 'x'):
-                values = [current_value.x, current_value.y, current_value.z]
-            elif isinstance(current_value, (list, tuple)) and len(current_value) >= 3:
-                values = list(current_value[:3])
-            else:
-                values = [0, 0, 0]
-            
-            for i in range(3):
-                label = QLabel(f"{components[i]}:")
-                layout.addWidget(label)
-                
-                input_field = QLineEdit()
-                if var_type == TypeKind.Single:
-                    input_field.setValidator(QDoubleValidator())
-                    input_field.setText(format_full_float(values[i], 8))
-                else:
-                    # Integer types
-                    input_field.setValidator(QIntValidator())
-                    input_field.setText(str(int(values[i])))
-                input_field.setMaximumWidth(100)
-                layout.addWidget(input_field)
-                self.inputs.append(input_field)
-                
-            # Store reference for multi-input
-            self.input = self.inputs
+            self._create_flagged_vector_input(
+                layout, var_type, current_value, TypeKind
+            )
             
         elif var_type == TypeKind.Boolean:
             # Checkbox for boolean
@@ -104,128 +82,168 @@ class UvarValueEditDialog(QDialog):
             layout.addWidget(self.input)
             
         elif var_type in (TypeKind.Int8, TypeKind.Int16, TypeKind.Int32, TypeKind.Int64, TypeKind.Enum):
-            # Integer input with appropriate range
-            label = QLabel(self.tr("Value:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(str(current_value) if current_value is not None else "0")
-            
-            # Set validator based on type
-            if var_type == TypeKind.Int8:
-                validator = QIntValidator(-128, 127)
-            elif var_type == TypeKind.Int16:
-                validator = QIntValidator(-32768, 32767)
-            elif var_type == TypeKind.Int32:
-                validator = QIntValidator(-2147483648, 2147483647)
-            else:  # Int64 or Enum
-                validator = QIntValidator()
-            
-            self.input.setValidator(validator)
-            layout.addWidget(self.input)
+            self._create_integer_input(
+                layout, var_type, current_value, TypeKind, unsigned=False
+            )
             
         elif var_type in (TypeKind.Uint8, TypeKind.Uint16, TypeKind.Uint32, TypeKind.Uint64):
-            # Unsigned integer input
-            label = QLabel(self.tr("Value:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(str(current_value) if current_value is not None else "0")
-            
-            # Set validator based on type
-            if var_type == TypeKind.Uint8:
-                validator = QIntValidator(0, 255)
-            elif var_type == TypeKind.Uint16:
-                validator = QIntValidator(0, 65535)
-            elif var_type == TypeKind.Uint32:
-                validator = QIntValidator(0, 4294967295)
-            else:  # Uint64
-                validator = QIntValidator(0, 9223372036854775807)  # Max for QIntValidator
-            
-            self.input.setValidator(validator)
-            layout.addWidget(self.input)
+            self._create_integer_input(
+                layout, var_type, current_value, TypeKind, unsigned=True
+            )
             
         elif var_type in (TypeKind.Single, TypeKind.Double):
-            # Float/Double input
-            label = QLabel(self.tr("Value:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(current_str)
-            self.input.setValidator(QDoubleValidator())
-            layout.addWidget(self.input)
+            self.input = self._create_line_input(
+                layout, current_str, validator=QDoubleValidator()
+            )
             
         elif var_type in (TypeKind.C8, TypeKind.C16, TypeKind.String):
-            # String input - no validation needed
-            label = QLabel(self.tr("Value:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(current_str)
-            layout.addWidget(self.input)
-            self.input.setMinimumWidth(250)
+            self.input = self._create_line_input(
+                layout, current_str, minimum_width=250
+            )
             
         elif var_type == TypeKind.GUID:
-            # GUID input with format validation
-            label = QLabel(self.tr("GUID:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(str(current_value) if current_value else "00000000-0000-0000-0000-000000000000")
-            self.input.setPlaceholderText("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
-            layout.addWidget(self.input)
-            self.input.setMinimumWidth(280)
+            self.input = self._create_line_input(
+                layout,
+                str(current_value)
+                if current_value
+                else "00000000-0000-0000-0000-000000000000",
+                label_text="GUID:",
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                minimum_width=280,
+            )
             
         elif var_type in (TypeKind.Vec2, TypeKind.Vec3, TypeKind.Vec4):
-            # Vector inputs
-            self.inputs = []
-            components = ['X', 'Y', 'Z', 'W']
-            
-            # Determine number of components
-            if var_type == TypeKind.Vec2:
-                num_components = 2
-            elif var_type == TypeKind.Vec3:
-                num_components = 3
-            else:  # Vec4
-                num_components = 4
-            
-            # Parse current value
-            if hasattr(current_value, 'x'):
-                values = [current_value.x, current_value.y]
-                if num_components >= 3:
-                    values.append(current_value.z)
-                if num_components >= 4:
-                    values.append(current_value.w)
-            elif isinstance(current_value, (list, tuple)) and len(current_value) >= num_components:
-                values = list(current_value[:num_components])
-            else:
-                values = [0.0] * num_components
-            
-            for i in range(num_components):
-                label = QLabel(f"{components[i]}:")
-                layout.addWidget(label)
-                
-                input_field = QLineEdit()
-                input_field.setValidator(QDoubleValidator())
-                input_field.setText(format_full_float(values[i], 8) if i < len(values) else "0.0")
-                input_field.setMaximumWidth(100)
-                layout.addWidget(input_field)
-                self.inputs.append(input_field)
-                
-            # Store reference for multi-input
-            self.input = self.inputs
+            self._create_vector_input(
+                layout, var_type, current_value, TypeKind
+            )
             
         else:
-            # Default text input for unknown types
-            label = QLabel(self.tr("Value:"))
-            layout.addWidget(label)
-            
-            self.input = QLineEdit()
-            self.input.setText(current_str)
-            layout.addWidget(self.input)
+            self.input = self._create_line_input(layout, current_str)
             
         layout.addStretch()
         return container
+
+    def _create_line_input(
+        self,
+        layout,
+        text,
+        *,
+        validator=None,
+        label_text=VALUE_LABEL_TEXT,
+        placeholder=None,
+        minimum_width=None,
+    ):
+        layout.addWidget(QLabel(self.tr(label_text)))
+        input_field = QLineEdit()
+        input_field.setText(text)
+        if validator is not None:
+            input_field.setValidator(validator)
+        if placeholder is not None:
+            input_field.setPlaceholderText(placeholder)
+        layout.addWidget(input_field)
+        if minimum_width is not None:
+            input_field.setMinimumWidth(minimum_width)
+        return input_field
+
+    def _create_integer_input(
+        self,
+        layout,
+        var_type,
+        current_value,
+        type_kind,
+        *,
+        unsigned,
+    ):
+        if unsigned:
+            bounds = {
+                type_kind.Uint8: (0, 255),
+                type_kind.Uint16: (0, 65535),
+                type_kind.Uint32: (0, 4294967295),
+                type_kind.Uint64: (0, 9223372036854775807),
+            }
+        else:
+            bounds = {
+                type_kind.Int8: (-128, 127),
+                type_kind.Int16: (-32768, 32767),
+                type_kind.Int32: (-2147483648, 2147483647),
+            }
+        validator_bounds = bounds.get(var_type)
+        validator = (
+            QIntValidator(*validator_bounds)
+            if validator_bounds is not None
+            else QIntValidator()
+        )
+        self.input = self._create_line_input(
+            layout,
+            str(current_value) if current_value is not None else "0",
+            validator=validator,
+        )
+
+    def _create_flagged_vector_input(
+        self,
+        layout,
+        var_type,
+        current_value,
+        type_kind,
+    ):
+        if hasattr(current_value, 'x'):
+            values = [current_value.x, current_value.y, current_value.z]
+        elif isinstance(current_value, (list, tuple)) and len(current_value) >= 3:
+            values = list(current_value[:3])
+        else:
+            values = [0, 0, 0]
+
+        self.inputs = []
+        for component, value in zip(('X', 'Y', 'Z'), values):
+            layout.addWidget(QLabel(f"{component}:"))
+            input_field = QLineEdit()
+            if var_type == type_kind.Single:
+                input_field.setValidator(QDoubleValidator())
+                input_field.setText(format_full_float(value, 8))
+            else:
+                input_field.setValidator(QIntValidator())
+                input_field.setText(str(int(value)))
+            input_field.setMaximumWidth(100)
+            layout.addWidget(input_field)
+            self.inputs.append(input_field)
+        self.input = self.inputs
+
+    def _create_vector_input(
+        self,
+        layout,
+        var_type,
+        current_value,
+        type_kind,
+    ):
+        num_components = {
+            type_kind.Vec2: 2,
+            type_kind.Vec3: 3,
+            type_kind.Vec4: 4,
+        }[var_type]
+        if hasattr(current_value, 'x'):
+            values = [current_value.x, current_value.y]
+            if num_components >= 3:
+                values.append(current_value.z)
+            if num_components >= 4:
+                values.append(current_value.w)
+        elif (
+            isinstance(current_value, (list, tuple))
+            and len(current_value) >= num_components
+        ):
+            values = list(current_value[:num_components])
+        else:
+            values = [0.0] * num_components
+
+        self.inputs = []
+        for component, value in zip(('X', 'Y', 'Z', 'W'), values):
+            layout.addWidget(QLabel(f"{component}:"))
+            input_field = QLineEdit()
+            input_field.setValidator(QDoubleValidator())
+            input_field.setText(format_full_float(value, 8))
+            input_field.setMaximumWidth(100)
+            layout.addWidget(input_field)
+            self.inputs.append(input_field)
+        self.input = self.inputs
         
     def _format_current_value(self, value):
         """Format current value for display"""
@@ -264,24 +282,9 @@ class UvarValueEditDialog(QDialog):
             # Handle special case: vector type based on flags
             if is_vec3_flag and self.var_type in (TypeKind.Single, TypeKind.Int32, TypeKind.Uint32,
                                                   TypeKind.Int8, TypeKind.Int16, TypeKind.Uint8, TypeKind.Uint16):
-                values = []
-                for inp in self.inputs:
-                    text = inp.text()
-                    if self.var_type == TypeKind.Single:
-                        values.append(float(text) if text else 0.0)
-                    else:
-                        values.append(int(text) if text else 0)
-                
-                # Return appropriate vector type
-                if self.var_type == TypeKind.Single:
-                    return Vec3(values[0], values[1], values[2])
-                elif self.var_type == TypeKind.Int32:
-                    return Int3(values[0], values[1], values[2])
-                elif self.var_type == TypeKind.Uint32:
-                    return Uint3(values[0], values[1], values[2])
-                else:
-                    # For smaller int types, return as list
-                    return values
+                return self._get_flagged_vector_value(
+                    TypeKind, Vec3, Int3, Uint3
+                )
             if self.var_type == TypeKind.Boolean:
                 return self.input.isChecked()
                 
@@ -292,15 +295,13 @@ class UvarValueEditDialog(QDialog):
             elif self.var_type in (TypeKind.Uint8, TypeKind.Uint16, TypeKind.Uint32, TypeKind.Uint64):
                 text = self.input.text()
                 value = int(text) if text else 0
-                # Apply unsigned mask
-                if self.var_type == TypeKind.Uint8:
-                    return value & 0xFF
-                elif self.var_type == TypeKind.Uint16:
-                    return value & 0xFFFF
-                elif self.var_type == TypeKind.Uint32:
-                    return value & 0xFFFFFFFF
-                else:
-                    return value & 0xFFFFFFFFFFFFFFFF
+                masks = {
+                    TypeKind.Uint8: 0xFF,
+                    TypeKind.Uint16: 0xFFFF,
+                    TypeKind.Uint32: 0xFFFFFFFF,
+                    TypeKind.Uint64: 0xFFFFFFFFFFFFFFFF,
+                }
+                return value & masks[self.var_type]
                     
             elif self.var_type in (TypeKind.Single, TypeKind.Double):
                 text = self.input.text()
@@ -316,26 +317,11 @@ class UvarValueEditDialog(QDialog):
                 except:
                     return uuid.UUID('00000000-0000-0000-0000-000000000000')
                     
-            elif self.var_type == TypeKind.Vec2:
-                values = []
-                for inp in self.inputs:
-                    text = inp.text()
-                    values.append(float(text) if text else 0.0)
-                return tuple(values)
-                
-            elif self.var_type == TypeKind.Vec3:
-                values = []
-                for inp in self.inputs:
-                    text = inp.text()
-                    values.append(float(text) if text else 0.0)
+            elif self.var_type in (TypeKind.Vec2, TypeKind.Vec3, TypeKind.Vec4):
+                values = self._get_float_input_values()
+                if self.var_type != TypeKind.Vec3:
+                    return tuple(values)
                 return Vec3(values[0], values[1], values[2])
-                
-            elif self.var_type == TypeKind.Vec4:
-                values = []
-                for inp in self.inputs:
-                    text = inp.text()
-                    values.append(float(text) if text else 0.0)
-                return tuple(values)
                 
             else:
                 # Default: return text
@@ -344,3 +330,29 @@ class UvarValueEditDialog(QDialog):
         except Exception as e:
             print(f"Error getting value: {e}")
             return None
+
+    def _get_float_input_values(self):
+        return [
+            float(text) if text else 0.0
+            for text in (input_field.text() for input_field in self.inputs)
+        ]
+
+    def _get_flagged_vector_value(
+        self,
+        type_kind,
+        vec3_type,
+        int3_type,
+        uint3_type,
+    ):
+        converter = float if self.var_type == type_kind.Single else int
+        default = 0.0 if converter is float else 0
+        values = [
+            converter(text) if text else default
+            for text in (input_field.text() for input_field in self.inputs)
+        ]
+        vector_factory = {
+            type_kind.Single: vec3_type,
+            type_kind.Int32: int3_type,
+            type_kind.Uint32: uint3_type,
+        }.get(self.var_type)
+        return vector_factory(*values) if vector_factory else values

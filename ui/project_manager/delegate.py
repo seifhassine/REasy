@@ -111,6 +111,16 @@ class _PakActionsDelegate(_ActionIconsDelegate):
         is_leaf = not index.model().hasChildren(index)
         self._paint_actions(painter, option, index, self.plus, is_leaf)
 
+    def _extract_path(self, path) -> bool:
+        if not isinstance(path, str) or not path:
+            return False
+        if path.endswith('/'):
+            if self.mgr and hasattr(self.mgr, "_extract_folder_by_prefix"):
+                self.mgr._extract_folder_by_prefix(path)
+        else:
+            self.mgr._extract_from_paks_to_project([path])
+        return True
+
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
             return False
@@ -124,16 +134,8 @@ class _PakActionsDelegate(_ActionIconsDelegate):
             path = index.data(Qt.DisplayRole)
 
         if action == "primary":
-            if isinstance(path, str) and path:
-                if path.endswith('/'):
-                    if self.mgr and hasattr(self.mgr, "_extract_folder_by_prefix"):
-                        self.mgr._extract_folder_by_prefix(path)
-                else:
-                    self.mgr._extract_from_paks_to_project([path])
-                return True
-            return False
-        if action == "open" and is_leaf:
-            if isinstance(path, str) and path:
-                self.mgr._open_pak_path_in_editor(path)
-                return True
+            return self._extract_path(path)
+        if action == "open" and is_leaf and isinstance(path, str) and path:
+            self.mgr._open_pak_path_in_editor(path)
+            return True
         return False

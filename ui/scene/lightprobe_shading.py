@@ -90,6 +90,61 @@ def snapshot_probe_boxes(boxes: Iterable[object]) -> tuple[ProbeBoxSnapshot, ...
     return tuple(snapshots)
 
 
+def _matching_normals(item: ProbeShadeInput, points: np.ndarray) -> np.ndarray | None:
+    if item.normals is None:
+        return None
+    normals = np.asarray(item.normals, dtype=np.float32).reshape(-1, 3)
+    return normals if len(normals) == len(points) else None
+
+
+def _shade_probe_input(
+    item: ProbeShadeInput,
+    ordered_layers: tuple[ProbeShadeLayer, ...],
+    *,
+    exposure: float,
+    completed: int,
+    total: int,
+    progress_callback: Callable[[int, int], None] | None,
+    cancel_requested: Callable[[], bool] | None,
+) -> np.ndarray:
+    if cancel_requested is not None and cancel_requested():
+        raise ProbeShadingCancelled()
+    points = np.asarray(item.vertices, dtype=np.float32).reshape(-1, 3)
+    normals = _matching_normals(item, points)
+    colors = np.ones((len(points), 4), dtype=np.float32)
+    colors[:, :3] = 0.0
+    remaining = np.ones(len(points), dtype=bool)
+    shaded_count = 0
+
+    for layer in ordered_layers:
+        rows = np.flatnonzero(remaining & _points_in_boxes(points, layer.boxes, cancel_requested))
+        if not len(rows):
+            continue
+        offset = completed + shaded_count
+        layer_progress = None
+        if progress_callback is not None:
+            layer_progress = (
+                lambda done, _count, offset=offset: progress_callback(offset + done, total)
+            )
+        colors[rows] = layer.probe_set.shade_vertices(
+            points[rows],
+            None if normals is None else normals[rows],
+            exposure=float(exposure) * max(0.0, float(layer.intensity)),
+            progress_callback=layer_progress,
+            cancel_requested=cancel_requested,
+        )
+        remaining[rows] = False
+        shaded_count += len(rows)
+        if not np.any(remaining):
+            break
+
+    if cancel_requested is not None and cancel_requested():
+        raise ProbeShadingCancelled()
+    if item.base_colors is not None:
+        colors[:, :3] *= np.clip(item.base_colors[:, :3], 0.0, 1.0)
+    return colors
+
+
 def shade_probe_layers(
     layers: tuple[ProbeShadeLayer, ...],
     inputs: tuple[ProbeShadeInput, ...],
@@ -106,43 +161,15 @@ def shade_probe_layers(
         progress_callback(0, total)
 
     for item in inputs:
-        if cancel_requested is not None and cancel_requested():
-            raise ProbeShadingCancelled()
-        points = np.asarray(item.vertices, dtype=np.float32).reshape(-1, 3)
-        normals = None
-        if item.normals is not None:
-            candidate_normals = np.asarray(item.normals, dtype=np.float32).reshape(-1, 3)
-            if len(candidate_normals) == len(points):
-                normals = candidate_normals
-        colors = np.ones((len(points), 4), dtype=np.float32)
-        colors[:, :3] = 0.0
-        remaining = np.ones(len(points), dtype=bool)
-        shaded_count = 0
-        for layer in ordered_layers:
-            rows = np.flatnonzero(remaining & _points_in_boxes(points, layer.boxes, cancel_requested))
-            if not len(rows):
-                continue
-            offset = completed + shaded_count
-            shaded = layer.probe_set.shade_vertices(
-                points[rows],
-                None if normals is None else normals[rows],
-                exposure=float(exposure) * max(0.0, float(layer.intensity)),
-                progress_callback=(
-                    (lambda done, _count, offset=offset: progress_callback(offset + done, total))
-                    if progress_callback is not None
-                    else None
-                ),
-                cancel_requested=cancel_requested,
-            )
-            colors[rows] = shaded
-            remaining[rows] = False
-            shaded_count += len(rows)
-            if not np.any(remaining):
-                break
-        if cancel_requested is not None and cancel_requested():
-            raise ProbeShadingCancelled()
-        if item.base_colors is not None:
-            colors[:, :3] *= np.clip(item.base_colors[:, :3], 0.0, 1.0)
+        colors = _shade_probe_input(
+            item,
+            ordered_layers,
+            exposure=exposure,
+            completed=completed,
+            total=total,
+            progress_callback=progress_callback,
+            cancel_requested=cancel_requested,
+        )
         results[item.key] = colors.astype(np.float32, copy=False)
         completed += len(item.vertices)
         if progress_callback is not None:

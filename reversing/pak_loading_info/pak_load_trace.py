@@ -28,13 +28,14 @@ except ImportError:
 PACK_PATH_OFFSET = 0x8
 STRING_CAPACITY_OFFSET = 0x1C
 STRING_HEAP_THRESHOLD = 0xC
+_INTERLOCKED_INCREMENT_ANCHOR = "F0 0F C1 05"
 
 # Each short anchor is scanned by Frida. The longer pattern is then checked
 # manually, avoiding Frida match-pattern length/version differences.
 PATTERNS = (
     {
         "name": "Village generation",
-        "anchor": "F0 0F C1 05",
+        "anchor": _INTERLOCKED_INCREMENT_ANCHOR,
         "adjustment": -6,
         "pattern": (
             "80 7D ?? 00 74 ?? F0 0F C1 05 ?? ?? ?? ?? EB ?? "
@@ -49,7 +50,7 @@ PATTERNS = (
     },
     {
         "name": "RE4 generation",
-        "anchor": "F0 0F C1 05",
+        "anchor": _INTERLOCKED_INCREMENT_ANCHOR,
         "adjustment": 0,
         "pattern": (
             "F0 0F C1 05 ?? ?? ?? ?? EB ?? "
@@ -95,7 +96,7 @@ PATTERNS = (
     },
     {
         "name": "MHST3/Requiem generation",
-        "anchor": "F0 0F C1 05",
+        "anchor": _INTERLOCKED_INCREMENT_ANCHOR,
         "adjustment": 0,
         "pattern": (
             "F0 0F C1 05 ?? ?? ?? ?? FF C8 "

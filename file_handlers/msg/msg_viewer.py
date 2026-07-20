@@ -4,10 +4,13 @@ from PySide6.QtWidgets import (
     QTextEdit, QGroupBox, QFrame, QCheckBox, QFileDialog,
     QSpinBox, QFormLayout, QHeaderView, QScrollArea
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont, QPalette, QKeySequence, QShortcut
 
 from utils.number_format import format_full_float
+
+
+CHAR_COUNT_TEXT = QT_TRANSLATE_NOOP("MsgViewer", "{count} chars")
 
 
 class MsgViewer(QWidget):
@@ -212,7 +215,7 @@ class MsgViewer(QWidget):
         content_header.addWidget(QLabel(self.tr("Message text:")))
         content_header.addStretch()
         
-        self.char_count_label = QLabel(self.tr("{count} chars").format(count=0))
+        self.char_count_label = QLabel(self.tr(CHAR_COUNT_TEXT).format(count=0))
         content_header.addWidget(self.char_count_label)
         content_layout.addLayout(content_header)
         
@@ -382,7 +385,7 @@ class MsgViewer(QWidget):
     def _update_char_count(self):
         text = self.content_edit.toPlainText()
         char_count = len(text)
-        self.char_count_label.setText(self.tr("{count} chars").format(count=char_count))
+        self.char_count_label.setText(self.tr(CHAR_COUNT_TEXT).format(count=char_count))
 
     def _on_export_json(self):
         default_name = "messages.json"
@@ -517,7 +520,7 @@ class MsgViewer(QWidget):
         self.soundid_edit.clear()
         self.content_edit.clear()
         self.index_label.setText("—")
-        self.char_count_label.setText(self.tr("{count} chars").format(count=0))
+        self.char_count_label.setText(self.tr(CHAR_COUNT_TEXT).format(count=0))
         while self.attributes_layout.count() > 1:
             c = self.attributes_layout.takeAt(0)
             if w := c.widget():

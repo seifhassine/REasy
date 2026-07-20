@@ -50,10 +50,9 @@ ADD_TO_PROJECT_TITLE = QT_TRANSLATE_NOOP("ProjectManager", "Add to project")
 
 def _actual_mesh_path(path: str) -> str:
     """Map an auxiliary streaming mesh path to its loadable mesh path."""
-    return re.sub(
-        r"(?i)(^|[\\/])streaming[\\/](?=(?:[^\\/]+[\\/])*[^\\/]*\.mesh(?:\.[^\\/]*)?$)",
-        r"\1", path, count=1,
-    )
+    if not re.search(r"(?i)\.mesh(?:\.[^\\/]*)?$", path):
+        return path
+    return re.sub(r"(?i)(^|[\\/])streaming[\\/]", r"\1", path, count=1)
 
 def _safe_path(path, root=None):
     try:
@@ -1143,20 +1142,19 @@ class ProjectManager(QDockWidget):
                 if isinstance(val, str) and val:
                     paths.append(val)
             return sorted(set(paths))
-        def collect_from_index(idx):
-            if model.rowCount(idx) == 0:
-                p = idx.data(Qt.UserRole + 1)
-                if isinstance(p, str) and p:
-                    paths.append(p)
-                return
-            # Folder: collect files under it
-            rows = model.rowCount(idx)
-            for i in range(rows):
-                child = model.index(i, 0, idx)
-                collect_from_index(child)
         for idx in self.tree_pak.selectedIndexes():
-            collect_from_index(idx)
+            self._collect_pak_leaf_paths(model, idx, paths)
         return sorted(set(paths))
+
+    def _collect_pak_leaf_paths(self, model, index, paths: list[str]) -> None:
+        rows = model.rowCount(index)
+        if rows == 0:
+            path = index.data(Qt.UserRole + 1)
+            if isinstance(path, str) and path:
+                paths.append(path)
+            return
+        for row in range(rows):
+            self._collect_pak_leaf_paths(model, model.index(row, 0, index), paths)
 
     def _extract_folder_by_index(self, index):
         if not self._pak_tree_model or not index.isValid():
@@ -1215,14 +1213,7 @@ class ProjectManager(QDockWidget):
         chosen = menu.exec(self.tree_pak.viewport().mapToGlobal(pos))
         if chosen is add_act:
             folder_prefix = idx.data(Qt.UserRole + 2)
-            is_folder = False
-            if isinstance(folder_prefix, str) and folder_prefix.endswith('/'):
-                is_folder = True
-            else:
-                try:
-                    is_folder = model.hasChildren(idx) or model.rowCount(idx) > 0
-                except Exception:
-                    is_folder = False
+            is_folder = self._pak_index_is_folder(model, idx, folder_prefix)
             if is_folder and isinstance(folder_prefix, str) and folder_prefix.endswith('/'):
                 self._extract_folder_by_prefix(folder_prefix)
             else:
@@ -1232,6 +1223,15 @@ class ProjectManager(QDockWidget):
             sel = self._collect_selected_pak_paths()
             if sel:
                 self._open_pak_path_in_editor(sel[0])
+
+    @staticmethod
+    def _pak_index_is_folder(model, index, folder_prefix) -> bool:
+        if isinstance(folder_prefix, str) and folder_prefix.endswith('/'):
+            return True
+        try:
+            return model.hasChildren(index) or model.rowCount(index) > 0
+        except Exception:
+            return False
 
     def _on_pak_double(self, idx):
         model = self.tree_pak.model()
@@ -1264,7 +1264,9 @@ class ProjectManager(QDockWidget):
                 ext = guess_extension_from_header(data[:64])
             except Exception:
                 ext = None
-            name = path if ('.' in os.path.basename(path)) else (path + ('.' + ext.lower() if ext else ''))
+            name = path
+            if '.' not in os.path.basename(path) and ext:
+                name += '.' + ext.lower()
             tab = self.app_win.add_tab(name, data, pak_source_path=path, pak_project_dir=self.project_dir)
             if tab:
                 self.app_win.attach_pak_source_tab(tab, path, self.project_dir)

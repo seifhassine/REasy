@@ -1575,7 +1575,7 @@ class RszViewer(QWidget):
                         break
             
             if not string_still_in_use:
-                for ui in list(self.scn.userdata_infos):
+                for ui in self.scn.userdata_infos:
                     ui_string = self.scn._userdata_str_map.get(ui, "")
                     if ui_string == rui_string and ui not in userdata_infos_to_remove:
                         userdata_infos_to_remove.append(ui)

@@ -5,7 +5,7 @@ import sys
 import argparse
 import json
 from collections import defaultdict
-from typing import Dict, Set, List
+from typing import Dict, List
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -63,6 +63,19 @@ def build_property_map_for_file(filepath: str, type_registry: TypeRegistry):
     return pairs
 
 
+def _serialize_mapping(mapping):
+    return {
+        type_name: {
+            str(property_id): {
+                "files": sorted(data["files"]),
+                "array_ids": sorted(data["array_ids"]),
+            }
+            for property_id, data in property_map.items()
+        }
+        for type_name, property_map in mapping.items()
+    }
+
+
 def aggregate(root: str, registry_json: str):
     type_registry = TypeRegistry(registry_json) if registry_json else None
 
@@ -78,15 +91,7 @@ def aggregate(root: str, registry_json: str):
         except Exception as ex:
             print(f"[warn] Failed {fp}: {ex}")
 
-    result = {}
-    for t, prop_map in mapping.items():
-        result[t] = {}
-        for pid, data in prop_map.items():
-            result[t][str(pid)] = {
-                'files': sorted(list(data['files'])),
-                'array_ids': sorted(list(data['array_ids']))
-            }
-    return result
+    return _serialize_mapping(mapping)
 
 
 def main():
@@ -99,7 +104,6 @@ def main():
     args = parser.parse_args()
 
     if os.path.isfile(args.path):
-        root = os.path.dirname(args.path)
         single_file = os.path.abspath(args.path)
         type_registry = TypeRegistry(args.registry) if args.registry else None
         mapping: Dict[str, Dict[int, dict]] = defaultdict(lambda: defaultdict(lambda: { 'files': set(), 'array_ids': set() }))
@@ -110,14 +114,7 @@ def main():
                 mapping[type_name][prop_id]['array_ids'].add(array_idx)
         except Exception as ex:
             print(f"[warn] Failed {single_file}: {ex}")
-        result = {}
-        for t, prop_map in mapping.items():
-            result[t] = {}
-            for pid, data in prop_map.items():
-                result[t][str(pid)] = {
-                    'files': sorted(list(data['files'])),
-                    'array_ids': sorted(list(data['array_ids']))
-                }
+        result = _serialize_mapping(mapping)
     else:
         result = aggregate(args.path, args.registry)
 

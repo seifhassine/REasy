@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, QThread
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QThread
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
     QLabel, QLineEdit, QTextEdit, QPushButton, QComboBox,
@@ -13,6 +13,15 @@ from datetime import datetime
 
 
 _NO_RESULT = object()
+ERROR_TEXT_STYLE = "color: red;"
+LOGIN_REQUIRED_TITLE = QT_TRANSLATE_NOOP(
+    "CommunityTemplatesDialog", "Login Required"
+)
+_ACTIVE_STAR_STYLE = "QPushButton { border: none; color: #ffd700; }"
+_EMPTY_STAR_STYLE = "QPushButton { border: none; color: #ccc; }"
+_STAR_HOVER_STYLE = (
+    "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }"
+)
 
 
 class _ResultWorker(QThread):
@@ -118,26 +127,13 @@ class QStarWidget(QWidget):
 
         for i, btn in enumerate(self.star_buttons):
             if i < filled:
-                btn.setText("★")
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
-                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                glyph, style = "★", _ACTIVE_STAR_STYLE
             elif i == filled and partial >= 0.5:
-                btn.setText("⯨")            
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ffd700; }"
-                                      "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                glyph, style = "⯨", _ACTIVE_STAR_STYLE
             else:
-                btn.setText("☆")
-                if self.readonly:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }")
-                else:
-                    btn.setStyleSheet("QPushButton { border: none; color: #ccc; }"
-                                     "QPushButton:hover { color: #ffcc00; border: 1px solid #ffcc00; }")
+                glyph, style = "☆", _EMPTY_STAR_STYLE
+            btn.setText(glyph)
+            btn.setStyleSheet(style if self.readonly else style + _STAR_HOVER_STYLE)
 
 class CommunityTemplatesDialog(QDialog):
     """Dialog for browsing, downloading, rating, and commenting on community templates"""
@@ -219,7 +215,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.login_status = QLabel("")
 
-        self.login_status.setStyleSheet("color: red;")
+        self.login_status.setStyleSheet(ERROR_TEXT_STYLE)
         login_tab_layout.addRow("", self.login_status)
         
         self.auth_tabs.addTab(login_tab, self.tr("Login"))
@@ -250,7 +246,7 @@ class CommunityTemplatesDialog(QDialog):
         
         self.register_status = QLabel("")
 
-        self.register_status.setStyleSheet("color: red;")
+        self.register_status.setStyleSheet(ERROR_TEXT_STYLE)
         register_tab_layout.addRow("", self.register_status)
         
         self.auth_tabs.addTab(register_tab, self.tr("Register"))
@@ -457,7 +453,7 @@ class CommunityTemplatesDialog(QDialog):
                 self._show_main_page()
             else:
                 self.login_status.setText(result["message"])
-                self.login_status.setStyleSheet("color: red;")
+                self.login_status.setStyleSheet(ERROR_TEXT_STYLE)
         
         self.login_thread = _ResultWorker(
             RszCommunityTemplateManager.authenticate,
@@ -508,7 +504,7 @@ class CommunityTemplatesDialog(QDialog):
 
             else:
                 self.register_status.setText(result["message"])
-                self.register_status.setStyleSheet("color: red;")
+                self.register_status.setStyleSheet(ERROR_TEXT_STYLE)
         
         self.register_thread = _ResultWorker(
             RszCommunityTemplateManager.register_user,
@@ -589,7 +585,49 @@ class CommunityTemplatesDialog(QDialog):
         self._loader.finished.connect(lambda: setattr(self, "_loader", None))
         self._loader.start()
 
-    
+    def _show_community_template_details(self, template_data):
+        self.template_name.setText(
+            template_data.get("name", self.tr("Unnamed Template"))
+        )
+
+        registry = template_data.get("registry", "default")
+        tags = ", ".join(template_data.get("tags", []))
+        meta_text = self.tr("Registry: {registry}").format(registry=registry)
+        if tags:
+            meta_text += self.tr(" | Tags: {tags}").format(tags=tags)
+        downloads = template_data.get("downloadCnt", 0)
+        meta_text += self.tr(" | Downloads: {downloads}").format(downloads=downloads)
+
+        self.template_description.setText(
+            template_data.get("description", self.tr("No description provided"))
+        )
+
+        avg_rating = template_data.get("avgRating", 0)
+        if avg_rating is None:
+            ratings = template_data.get("ratings", [])
+            avg_rating = sum(ratings) / len(ratings) if ratings else 0
+        rating_count = len(template_data.get("ratings", []))
+        self.star_widget.setRating(avg_rating)
+        self.rating_count.setText(
+            self.tr("({count} ratings)").format(count=rating_count)
+        )
+
+        self.registry_label.setText(registry)
+        self.tags_label.setText(tags if tags else self.tr("None"))
+        uploader = template_data.get("uploaderName") or self.tr("Unknown")
+        self.uploader_label.setText(uploader)
+
+        created_at_data = template_data.get("createdAt")
+        timestamp = datetime.fromtimestamp(created_at_data["_seconds"])
+        created_at = timestamp.strftime("%Y-%m-%d %H:%M")
+        meta_text += self.tr(" | Uploaded by: {uploader}").format(uploader=uploader)
+        meta_text += self.tr(" on {date}").format(date=created_at)
+        self.template_meta.setText(meta_text)
+        self.date_label.setText(created_at)
+        self.downloads_label.setText(str(template_data.get("downloadCnt", 0)))
+        self._load_comments(template_data.get("comments", []))
+        self.template_info.setVisible(True)
+
     def _on_template_selected(self):
         """Handle template selection from list"""
         selected_items = self.template_list.selectedItems()
@@ -608,59 +646,7 @@ class CommunityTemplatesDialog(QDialog):
         self.current_community_id = community_id
         
         self.no_template_label.setVisible(False)
-        
-        def on_template_details_loaded(template_data):
-            self.template_name.setText(template_data.get("name", self.tr("Unnamed Template")))
-            
-            registry = template_data.get("registry", "default")
-            tags = ", ".join(template_data.get("tags", []))
-            meta_text = self.tr("Registry: {registry}").format(registry=registry)
-            if tags:
-                meta_text += self.tr(" | Tags: {tags}").format(tags=tags)
-            downloads = template_data.get("downloadCnt", 0)
-            meta_text += self.tr(" | Downloads: {downloads}").format(downloads=downloads)
 
-
-            self.template_description.setText(
-                template_data.get("description", self.tr("No description provided"))
-            )
-            
-            avg_rating = template_data.get("avgRating", 0)
-            if avg_rating is None:
-                ratings_arr = template_data.get("ratings", [])
-                avg_rating = sum(ratings_arr) / len(ratings_arr) if ratings_arr else 0
-            rating_count = len(template_data.get("ratings", []))
-            self.star_widget.setRating(avg_rating)
-            self.rating_count.setText(
-                self.tr("({count} ratings)").format(count=rating_count)
-            )
-            
-            self.registry_label.setText(registry)
-            self.tags_label.setText(tags if tags else self.tr("None"))
-
-            uploader = (template_data.get("uploaderName")
-                        or self.tr("Unknown"))
-            self.uploader_label.setText(uploader)
-
-            created_at = template_data.get("createdAt")  
-            
-            created_at_str = self.tr("Unknown date")
-            
-            timestamp = datetime.fromtimestamp(created_at["_seconds"])
-            created_at_str = timestamp.strftime("%Y-%m-%d %H:%M")
-            
-            meta_text += self.tr(" | Uploaded by: {uploader}").format(uploader=uploader)
-            meta_text += self.tr(" on {date}").format(date=created_at_str)
-            self.template_meta.setText(meta_text)
-
-            self.date_label.setText(created_at_str)
-            
-            self.downloads_label.setText(str(template_data.get("downloadCnt", 0)))
-            
-            self._load_comments(template_data.get("comments", []))
-            
-            self.template_info.setVisible(True)
-        
         old = getattr(self, "detail_thread", None)
         if isinstance(old, QThread):
             try:
@@ -679,15 +665,58 @@ class CommunityTemplatesDialog(QDialog):
             lambda: setattr(self, "detail_thread", None)  
         )
 
-        self.detail_thread.result_ready.connect(on_template_details_loaded)
+        self.detail_thread.result_ready.connect(self._show_community_template_details)
         self.detail_thread.start()
-    
-    def _load_comments(self, comments):
-        """Load and display comments for the selected template"""
+
+    def _clear_comments(self):
         while self.comments_layout.count():
             item = self.comments_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+
+    @staticmethod
+    def _comment_time_label(timestamp):
+        if not timestamp:
+            return None
+        try:
+            if isinstance(timestamp, dict) and "_seconds" in timestamp:
+                value = datetime.fromtimestamp(timestamp["_seconds"])
+            elif isinstance(timestamp, (int, float)):
+                value = datetime.fromtimestamp(timestamp)
+            elif hasattr(timestamp, "strftime"):
+                value = timestamp
+            else:
+                return None
+            if not value:
+                return None
+            label = QLabel(value.strftime("%Y-%m-%d %H:%M"))
+            label.setStyleSheet("color: #888;")
+            return label
+        except Exception as e:
+            print(f"Error formatting timestamp: {e}")
+            return None
+
+    def _comment_frame(self, comment):
+        frame = QFrame()
+        frame.setFrameShape(QFrame.StyledPanel)
+        frame.setStyleSheet("border-radius: 5px;")
+        layout = QVBoxLayout(frame)
+        header = QHBoxLayout()
+        username = QLabel(comment.get("username", self.tr("Anonymous")))
+        username.setStyleSheet("font-weight: bold;")
+        header.addWidget(username)
+        if time_label := self._comment_time_label(comment.get("timestamp")):
+            header.addWidget(time_label)
+        header.addStretch()
+        layout.addLayout(header)
+        text = QLabel(comment.get("text", ""))
+        text.setWordWrap(True)
+        layout.addWidget(text)
+        return frame
+
+    def _load_comments(self, comments):
+        """Load and display comments for the selected template"""
+        self._clear_comments()
         
         if not comments:
             no_comments = QLabel(self.tr("No comments yet. Be the first to comment!"))
@@ -702,44 +731,7 @@ class CommunityTemplatesDialog(QDialog):
             sorted_comments = comments
         
         for comment in sorted_comments:
-            comment_frame = QFrame()
-            comment_frame.setFrameShape(QFrame.StyledPanel)
-            comment_frame.setStyleSheet("border-radius: 5px;")
-            
-            comment_layout = QVBoxLayout(comment_frame)
-            
-            header_layout = QHBoxLayout()
-            username = QLabel(comment.get("username", self.tr("Anonymous")))
-            username.setStyleSheet("font-weight: bold;")
-            header_layout.addWidget(username)
-            
-            timestamp = comment.get("timestamp")
-            if timestamp:
-                try:
-                    if isinstance(timestamp, dict) and "_seconds" in timestamp:
-                        dt = datetime.fromtimestamp(timestamp["_seconds"])
-                    elif isinstance(timestamp, (int, float)):
-                        dt = datetime.fromtimestamp(timestamp)
-                    elif hasattr(timestamp, "strftime"):
-                        dt = timestamp
-                    else:
-                        dt = None
-                    if dt:
-                        date_str = dt.strftime("%Y-%m-%d %H:%M")
-                        time_label = QLabel(date_str)
-                        time_label.setStyleSheet("color: #888;")
-                        header_layout.addWidget(time_label)
-                except Exception as e:
-                    print(f"Error formatting timestamp: {e}")
-            
-            header_layout.addStretch()
-            comment_layout.addLayout(header_layout)
-            
-            text = QLabel(comment.get("text", ""))
-            text.setWordWrap(True)
-            comment_layout.addWidget(text)
-            
-            self.comments_layout.addWidget(comment_frame)
+            self.comments_layout.addWidget(self._comment_frame(comment))
         
         self.comments_layout.addStretch()
     
@@ -774,7 +766,7 @@ class CommunityTemplatesDialog(QDialog):
         """Select a local template, choose a game, confirm, then upload."""
         if not RszCommunityTemplateManager.is_authenticated():
             QMessageBox.warning(
-                self, self.tr("Login Required"),
+                self, self.tr(LOGIN_REQUIRED_TITLE),
                 self.tr("You must be logged in to upload templates."),
             )
             return
@@ -899,7 +891,7 @@ class CommunityTemplatesDialog(QDialog):
         """Submit a comment on the selected template"""
         if not RszCommunityTemplateManager.is_authenticated():
             QMessageBox.warning(
-                self, self.tr("Login Required"), self.tr("You must be logged in to comment.")
+                self, self.tr(LOGIN_REQUIRED_TITLE), self.tr("You must be logged in to comment.")
             )
             return
             
@@ -939,7 +931,7 @@ class CommunityTemplatesDialog(QDialog):
         """Submit a rating for the selected template"""
         if not RszCommunityTemplateManager.is_authenticated():
             QMessageBox.warning(
-                self, self.tr("Login Required"),
+                self, self.tr(LOGIN_REQUIRED_TITLE),
                 self.tr("You must be logged in to rate templates."),
             )
             return

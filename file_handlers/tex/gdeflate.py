@@ -12,6 +12,7 @@ _GDEFLATE_ID = 4
 _TILE_SIZE = 0x10000
 _MIN_PARALLEL_TILES = 16
 _MAX_WORKERS = 16
+_DLL_NAME = "libGDeflate.dll"
 _LOCK = threading.RLock()
 _DLL = _DECOMPRESSOR = _DLL_DIR = None
 
@@ -27,9 +28,9 @@ def is_gdeflate_payload(data: bytes | bytearray | memoryview) -> bool:
 def _candidate_paths() -> list[Path]:
     root = Path(__file__).resolve().parents[2]
     return [
-        root / "tools" / "runtimes" / "win-x64" / "native" / "libGDeflate.dll",
-        root / ".cache" / "gdeflate" / "libGDeflate.dll",
-        root / "GDeflateNet" / "GDeflateNet" / "runtimes" / "win-x64" / "native" / "libGDeflate.dll",
+        root / "tools" / "runtimes" / "win-x64" / "native" / _DLL_NAME,
+        root / ".cache" / "gdeflate" / _DLL_NAME,
+        root / "GDeflateNet" / "GDeflateNet" / "runtimes" / "win-x64" / "native" / _DLL_NAME,
     ]
 
 
@@ -130,6 +131,70 @@ def _header(data: bytes | bytearray | memoryview):
     return view, int.from_bytes(view[2:4], "little"), int.from_bytes(view[4:8], "little")
 
 
+def _build_page_table(view: memoryview, tile_count: int, payload_start: int):
+    offsets = [int.from_bytes(view[8 + i * 4 : 12 + i * 4], "little") for i in range(tile_count)]
+    compressed = ctypes.create_string_buffer(bytes(view))
+    pages = (_Page * tile_count)()
+    cursor = payload_start
+    base = ctypes.addressof(compressed)
+    for i in range(tile_count):
+        tile_offset = offsets[i] if i else 0
+        tile_size = (offsets[i + 1] - tile_offset) if i + 1 < tile_count else offsets[0]
+        if tile_size < 0 or cursor + tile_size > len(view):
+            raise RuntimeError("GDeflate tile payload is truncated")
+        pages[i] = _Page(base + cursor, tile_size)
+        cursor += tile_size
+    return compressed, pages
+
+
+def _decompress_all(
+    dll,
+    pages,
+    tile_count: int,
+    output_address: int,
+    expected_size: int,
+) -> None:
+    written = ctypes.c_size_t()
+    with _LOCK:
+        result = dll.libdeflate_gdeflate_decompress(
+            _decompressor(),
+            pages,
+            tile_count,
+            output_address,
+            expected_size,
+            ctypes.byref(written),
+        )
+    if result != 0:
+        raise RuntimeError(f"GDeflate decompression failed with code {result}")
+
+
+def _decompress_in_parallel(
+    dll,
+    pages,
+    ranges: list[tuple[int, int]],
+    output_address: int,
+    expected_size: int,
+) -> None:
+    with ThreadPoolExecutor(max_workers=len(ranges), thread_name_prefix="gdeflate") as executor:
+        futures = []
+        for start, count in ranges:
+            range_output_offset = start * _TILE_SIZE
+            range_output_size = min(count * _TILE_SIZE, expected_size - range_output_offset)
+            futures.append(
+                executor.submit(
+                    _decompress_range,
+                    dll,
+                    pages,
+                    start,
+                    count,
+                    output_address + range_output_offset,
+                    range_output_size,
+                )
+            )
+        for future in futures:
+            future.result()
+
+
 def gdeflate_uncompressed_size(data: bytes | bytearray | memoryview, fallback_size: int) -> int:
     parsed = _header(data)
     if parsed is None:
@@ -149,18 +214,7 @@ def decompress_gdeflate(data: bytes | bytearray | memoryview, expected_size: int
     if tile_count <= 0 or payload_start > len(view):
         raise RuntimeError("Invalid GDeflate tile table")
 
-    offsets = [int.from_bytes(view[8 + i * 4 : 12 + i * 4], "little") for i in range(tile_count)]
-    compressed = ctypes.create_string_buffer(bytes(view))
-    pages = (_Page * tile_count)()
-    cursor = payload_start
-    base = ctypes.addressof(compressed)
-    for i in range(tile_count):
-        tile_offset = offsets[i] if i else 0
-        tile_size = (offsets[i + 1] - tile_offset) if i + 1 < tile_count else offsets[0]
-        if tile_size < 0 or cursor + tile_size > len(view):
-            raise RuntimeError("GDeflate tile payload is truncated")
-        pages[i] = _Page(base + cursor, tile_size)
-        cursor += tile_size
+    _compressed, pages = _build_page_table(view, tile_count, payload_start)
 
     output = ctypes.create_string_buffer(expected_size)
     output_address = ctypes.addressof(output)
@@ -168,30 +222,7 @@ def decompress_gdeflate(data: bytes | bytearray | memoryview, expected_size: int
     is_complete_tile_stream = (tile_count - 1) * _TILE_SIZE < expected_size <= tile_count * _TILE_SIZE
     ranges = _parallel_ranges(tile_count) if is_complete_tile_stream else [(0, tile_count)]
     if len(ranges) == 1:
-        written = ctypes.c_size_t()
-        with _LOCK:
-            result = dll.libdeflate_gdeflate_decompress(
-                _decompressor(), pages, tile_count, output_address, expected_size, ctypes.byref(written)
-            )
-        if result != 0:
-            raise RuntimeError(f"GDeflate decompression failed with code {result}")
+        _decompress_all(dll, pages, tile_count, output_address, expected_size)
     else:
-        with ThreadPoolExecutor(max_workers=len(ranges), thread_name_prefix="gdeflate") as executor:
-            futures = []
-            for start, count in ranges:
-                range_output_offset = start * _TILE_SIZE
-                range_output_size = min(count * _TILE_SIZE, expected_size - range_output_offset)
-                futures.append(
-                    executor.submit(
-                        _decompress_range,
-                        dll,
-                        pages,
-                        start,
-                        count,
-                        output_address + range_output_offset,
-                        range_output_size,
-                    )
-                )
-            for future in futures:
-                future.result()
+        _decompress_in_parallel(dll, pages, ranges, output_address, expected_size)
     return output.raw[:expected_size]

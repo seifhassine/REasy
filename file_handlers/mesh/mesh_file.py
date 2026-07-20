@@ -280,6 +280,47 @@ class MeshBufferPayload:
     integer_faces: Optional[array] = None
 
 
+def _decode_position_payload(payload: MeshBufferPayload) -> int:
+    for index, header in enumerate(payload.buffer_headers):
+        if header.type != VertexBufferType.Position:
+            continue
+        start = header.offset
+        end = (
+            len(payload.vertex_bytes)
+            if index == len(payload.buffer_headers) - 1
+            else payload.buffer_headers[index + 1].offset
+        )
+        payload.positions = array("f")
+        payload.positions.frombytes(memoryview(payload.vertex_bytes)[start:end])
+        return len(payload.positions) // 3
+    return 0
+
+
+def _decode_vertex_attributes(payload: MeshBufferPayload, vert_count: int) -> None:
+    for index, header in enumerate(payload.buffer_headers):
+        if header.type == VertexBufferType.Position:
+            continue
+        start = header.offset
+        end = (
+            payload.buffer_headers[index + 1].offset
+            if index < len(payload.buffer_headers) - 1
+            else start + header.size * vert_count
+        )
+        data = memoryview(payload.vertex_bytes)[start:end]
+        if header.type == VertexBufferType.NormalsTangents:
+            payload.normals, payload.normal_ws, payload.tangents, payload.tangent_ws = (
+                unpack_normals_tangents(data)
+            )
+        elif header.type == VertexBufferType.UV0:
+            payload.uv0 = _unpack_raw_uvs(data)
+        elif header.type == VertexBufferType.UV1:
+            payload.uv1 = _unpack_raw_uvs(data)
+        elif header.type == VertexBufferType.UV2:
+            payload.uv2 = _unpack_raw_uvs(data)
+        elif header.type == VertexBufferType.Colors:
+            payload.colors = unpack_colors(data)
+
+
 @dataclass
 class StreamingBufferHeader:
     element_headers_offset: int
@@ -337,40 +378,8 @@ class MeshBuffer:
         *,
         has_32bit_indices: bool = False,
     ) -> None:
-        vert_count = 0
-        for i, bh in enumerate(payload.buffer_headers):
-            if bh.type != VertexBufferType.Position:
-                continue
-            start = bh.offset
-            if i == len(payload.buffer_headers) - 1:
-                end = len(payload.vertex_bytes)
-            else:
-                end = payload.buffer_headers[i + 1].offset
-            data = memoryview(payload.vertex_bytes)[start:end]
-            payload.positions = array("f")
-            payload.positions.frombytes(data)
-            vert_count = len(payload.positions) // 3
-            break
-
-        for i, bh in enumerate(payload.buffer_headers):
-            if bh.type == VertexBufferType.Position:
-                continue
-            start = bh.offset
-            if i < len(payload.buffer_headers) - 1:
-                end = payload.buffer_headers[i + 1].offset
-            else:
-                end = start + bh.size * vert_count
-            data = memoryview(payload.vertex_bytes)[start:end]
-            if bh.type == VertexBufferType.NormalsTangents:
-                payload.normals, payload.normal_ws, payload.tangents, payload.tangent_ws = unpack_normals_tangents(data)
-            elif bh.type == VertexBufferType.UV0:
-                payload.uv0 = _unpack_raw_uvs(data)
-            elif bh.type == VertexBufferType.UV1:
-                payload.uv1 = _unpack_raw_uvs(data)
-            elif bh.type == VertexBufferType.UV2:
-                payload.uv2 = _unpack_raw_uvs(data)
-            elif bh.type == VertexBufferType.Colors:
-                payload.colors = unpack_colors(data)
+        vert_count = _decode_position_payload(payload)
+        _decode_vertex_attributes(payload, vert_count)
         if has_32bit_indices:
             payload.integer_faces = array("I")
             payload.integer_faces.frombytes(payload.face_bytes)

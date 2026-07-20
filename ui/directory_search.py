@@ -7,6 +7,7 @@ from typing import Callable
 from PySide6.QtCore import (
     Qt,
     QCoreApplication,
+    QT_TRANSLATE_NOOP,
 )
 from PySide6.QtGui import (
     QKeyEvent,
@@ -32,6 +33,9 @@ from PySide6.QtWidgets import (
 )
 
 from utils.binary_search import create_binary_matcher, create_search_patterns
+
+PAK_SEARCH_TITLE = QT_TRANSLATE_NOOP("DirectorySearch", "PAK Search")
+
 
 def _search_type_label(search_type: str) -> str:
     return {
@@ -365,7 +369,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
     if not paks:
         QMessageBox.information(
             parent,
-            QCoreApplication.translate("DirectorySearch", "PAK Search"),
+            QCoreApplication.translate("DirectorySearch", PAK_SEARCH_TITLE),
             QCoreApplication.translate("DirectorySearch", "No .pak files found."),
         )
         return
@@ -434,7 +438,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
                 item.setData(Qt.UserRole, entry_data)
             QMessageBox.information(
                 parent,
-                QCoreApplication.translate("DirectorySearch", "PAK Search"),
+                QCoreApplication.translate("DirectorySearch", PAK_SEARCH_TITLE),
                 QCoreApplication.translate(
                     "DirectorySearch", "Loaded list and resolved {count} cached entries."
                 ).format(count=updated),
@@ -442,7 +446,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         except Exception as e:
             QMessageBox.critical(
                 parent,
-                QCoreApplication.translate("DirectorySearch", "PAK Search"),
+                QCoreApplication.translate("DirectorySearch", PAK_SEARCH_TITLE),
                 str(e),
             )
 

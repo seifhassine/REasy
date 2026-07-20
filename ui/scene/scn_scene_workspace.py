@@ -5,7 +5,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -35,6 +35,11 @@ from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
 from file_handlers.rsz.scn_document_store import ScnDocumentStore
 from file_handlers.rsz.rsz_handler import RszHandler
 from ui.scene.scn_raw_inspector import ScnRawInspector
+
+
+ALREADY_OPEN_TEXT = QT_TRANSLATE_NOOP(
+    "ScnSceneWorkspace", "{source} is already open in {scene}."
+)
 
 
 def _file_source_path(filename: str | None, project_dir: str | None, unpacked_dir: str | None) -> tuple[str, str]:
@@ -1024,7 +1029,7 @@ class ScnSceneController:
             return False
         self.focus(owner)
         self._notice(QCoreApplication.translate(
-            "ScnSceneWorkspace", "{source} is already open in {scene}."
+            "ScnSceneWorkspace", ALREADY_OPEN_TEXT
         ).format(source=_source_display_name(source), scene=owner.title))
         return True
 
@@ -1060,7 +1065,7 @@ class ScnSceneController:
         if owner is not None:
             self.focus(owner)
             self._notice(QCoreApplication.translate(
-                "ScnSceneWorkspace", "{source} is already open in {scene}."
+                "ScnSceneWorkspace", ALREADY_OPEN_TEXT
             ).format(source=_source_display_name(source), scene=owner.title))
             return
         owned_keys = self._checked_source_identity_keys(source)
@@ -1073,7 +1078,7 @@ class ScnSceneController:
         if conflict is not None:
             self.focus(conflict)
             self._notice(QCoreApplication.translate(
-                "ScnSceneWorkspace", "{source} is already open in {scene}."
+                "ScnSceneWorkspace", ALREADY_OPEN_TEXT
             ).format(source=_source_display_name(source), scene=conflict.title))
             return
         if scene_tab.add_source(source, owned_keys):
@@ -1169,7 +1174,7 @@ class ScnSceneController:
         if conflict := self.owner_for(owned_keys):
             self.focus(conflict)
             self._notice(QCoreApplication.translate(
-                "ScnSceneWorkspace", "{source} is already open in {scene}."
+                "ScnSceneWorkspace", ALREADY_OPEN_TEXT
             ).format(source=_source_display_name(source), scene=conflict.title))
             return conflict
         scene = self.create_tab()

@@ -28,6 +28,8 @@ from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, t
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
+INDEX_FAILED_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Index failed")
+UNKNOWN_PATH_PREFIX = "__Unknown/"
 
 
 class PakBrowserDialog(QDialog):
@@ -284,7 +286,7 @@ class PakBrowserDialog(QDialog):
 				if self.show_unknown_cb.isChecked():
 					self._ensure_cache(full=True)
 			except Exception as e:
-				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 				return
 			self._recompute_display()
 
@@ -294,7 +296,7 @@ class PakBrowserDialog(QDialog):
 				if self.show_only_valid_cb.isChecked():
 					self._ensure_cache(validate=True)
 			except Exception as e:
-				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 				return
 			self._recompute_display()
 
@@ -349,7 +351,7 @@ class PakBrowserDialog(QDialog):
 		for p in self._all_manifest_paths:
 			p_lower = p.lower()
 			if self.show_only_valid_cb.isChecked():
-				if not p.startswith("__Unknown/") and p_lower not in self._valid_paths:
+				if not p.startswith(UNKNOWN_PATH_PREFIX) and p_lower not in self._valid_paths:
 					continue
 			parts = p.split('/')
 			node = root
@@ -406,7 +408,7 @@ class PakBrowserDialog(QDialog):
 		self._flat_model.setStringList(list(self._all_manifest_paths))
 		valid_only = []
 		for p in self._all_manifest_paths:
-			if p.startswith("__Unknown/"):
+			if p.startswith(UNKNOWN_PATH_PREFIX):
 				valid_only.append(p)
 				continue
 			if p.lower() in self._valid_paths:
@@ -463,36 +465,44 @@ class PakBrowserDialog(QDialog):
 		self._thumbnail_provider.close()
 		super().closeEvent(event)
 
+	def _filtered_icon_entries(self, paths, text):
+		pattern = QRegularExpression(text)
+		if not pattern.isValid():
+			pattern = QRegularExpression(QRegularExpression.escape(text))
+		pattern.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
+		return [
+			PakIconEntry(path.rsplit("/", 1)[-1], path)
+			for path in paths if pattern.match(path).hasMatch()
+		]
+
+	def _directory_icon_entries(self, paths):
+		prefix = f"{self._icon_directory}/" if self._icon_directory else ""
+		directories: dict[str, PakIconEntry] = {}
+		files = []
+		for path in paths:
+			if prefix and not path.startswith(prefix):
+				continue
+			remainder = path[len(prefix):]
+			if "/" in remainder:
+				name = remainder.split("/", 1)[0]
+				folder = prefix + name
+				directories.setdefault(folder, PakIconEntry(name, folder, True))
+			elif remainder:
+				files.append(PakIconEntry(remainder, path))
+		entries = sorted(directories.values(), key=lambda entry: entry.label.lower())
+		entries += sorted(files, key=lambda entry: entry.label.lower())
+		if self._icon_directory:
+			parent = self._icon_directory.rpartition("/")[0]
+			entries.insert(0, PakIconEntry("..", parent, True))
+		return entries
+
 	def _rebuild_icon_model(self):
 		paths = list(self._iter_display_paths())
 		text = self.filter_edit.text().strip()
 		if text:
-			pattern = QRegularExpression(text)
-			if not pattern.isValid():
-				pattern = QRegularExpression(QRegularExpression.escape(text))
-			pattern.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
-			entries = [
-				PakIconEntry(p.rsplit("/", 1)[-1], p)
-				for p in paths if pattern.match(p).hasMatch()
-			]
+			entries = self._filtered_icon_entries(paths, text)
 		else:
-			prefix = f"{self._icon_directory}/" if self._icon_directory else ""
-			directories: dict[str, PakIconEntry] = {}
-			files = []
-			for path in paths:
-				if prefix and not path.startswith(prefix):
-					continue
-				remainder = path[len(prefix):]
-				if "/" in remainder:
-					name = remainder.split("/", 1)[0]
-					folder = prefix + name
-					directories.setdefault(folder, PakIconEntry(name, folder, True))
-				elif remainder:
-					files.append(PakIconEntry(remainder, path))
-			entries = sorted(directories.values(), key=lambda e: e.label.lower())
-			entries += sorted(files, key=lambda e: e.label.lower())
-			if self._icon_directory:
-				entries.insert(0, PakIconEntry("..", self._icon_directory.rpartition("/")[0], True))
+			entries = self._directory_icon_entries(paths)
 		self._thumbnail_provider.set_source(
 			self._current_reader(), self._selected_paks(), self._base_paths
 		)
@@ -547,27 +557,35 @@ class PakBrowserDialog(QDialog):
 
 		known = sorted(set(self._base_paths))
 		if full:
-			had_cache = r._cache is not None
-			if r._cache is None:
-				r.reset_file_list()
-				if known:
-					r.add_files(*known)
-			if r._cache is None or not getattr(r, "_cache_complete", True):
-				r.cache_entries(assign_paths=bool(known))
-			elif known and had_cache:
-				r.assign_paths(known)
+			self._ensure_full_cache(r, known)
 		elif validate:
 			if not known:
 				self._valid_paths = set()
 				return r
-			if r._cache is None:
-				r.cache_entries_for_paths(known)
-			elif getattr(r, "_cache_complete", True):
-				r.assign_paths(known)
+			self._ensure_validation_cache(r, known)
 
 		if full or validate:
 			self._valid_paths = {p.lower() for p in r.cached_paths(include_unknown=False)}
 		return r
+
+	@staticmethod
+	def _ensure_full_cache(reader, known):
+		had_cache = reader._cache is not None
+		if reader._cache is None:
+			reader.reset_file_list()
+			if known:
+				reader.add_files(*known)
+		if reader._cache is None or not getattr(reader, "_cache_complete", True):
+			reader.cache_entries(assign_paths=bool(known))
+		elif known and had_cache:
+			reader.assign_paths(known)
+
+	@staticmethod
+	def _ensure_validation_cache(reader, known):
+		if reader._cache is None:
+			reader.cache_entries_for_paths(known)
+		elif getattr(reader, "_cache_complete", True):
+			reader.assign_paths(known)
 
 	def _refresh_index(self):
 		paks = self._selected_paks()
@@ -592,7 +610,7 @@ class PakBrowserDialog(QDialog):
 			else:
 				self._valid_paths = set()
 		except Exception as e:
-			QMessageBox.critical(self, self.tr("Index failed"), str(e))
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 			return
 
 		self._recompute_display()
@@ -606,7 +624,7 @@ class PakBrowserDialog(QDialog):
 			cached = self._cached_reader.cached_paths(include_unknown=True)
 			unknowns = []
 			for p in cached:
-				if p.startswith("__Unknown/") and p.lower() not in base_set:
+				if p.startswith(UNKNOWN_PATH_PREFIX) and p.lower() not in base_set:
 					unknowns.append(p)
 
 			self._all_manifest_paths = sorted(base_set) + unknowns
@@ -662,38 +680,49 @@ class PakBrowserDialog(QDialog):
 		targets = list(self._iter_display_paths())
 		self._extract(targets)
 
+	def _selected_icon_paths(self) -> List[str]:
+		return [
+			index.data(self._ITEM_EXTRACT_PATH_ROLE)
+			for index in self.icon_view.selectedIndexes()
+			if not index.data(self._ITEM_IS_DIR_ROLE)
+		]
+
+	def _selected_flat_paths(self) -> List[str]:
+		paths = []
+		for index in self.tree.selectedIndexes():
+			value = index.data(Qt.DisplayRole)
+			if isinstance(value, str) and value:
+				paths.append(value)
+		return paths
+
+	def _selected_tree_paths(self) -> List[str]:
+		paths = []
+		for index in self.tree.selectedIndexes():
+			if index.data(self._ITEM_IS_DIR_ROLE):
+				continue
+			value = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+			if isinstance(value, str) and value:
+				paths.append(value)
+		return paths
+
 	def _collect_selected_paths(self) -> List[str]:
-		paths: List[str] = []
 		if self.view_stack.currentWidget() is self.icon_view:
-			for idx in self.icon_view.selectedIndexes():
-				if not idx.data(self._ITEM_IS_DIR_ROLE):
-					paths.append(idx.data(self._ITEM_EXTRACT_PATH_ROLE))
-			return paths
+			return self._selected_icon_paths()
 		model = self.tree.model()
 		if model is None:
-			return paths
+			return []
 		if isinstance(model, (QSortFilterProxyModel, QStringListModel)):
-			for idx in self.tree.selectedIndexes():
-				val = idx.data(Qt.DisplayRole)
-				if isinstance(val, str) and val:
-					paths.append(val)
-			return paths
+			return self._selected_flat_paths()
 		if isinstance(model, QStandardItemModel):
-			for idx in self.tree.selectedIndexes():
-				is_dir = bool(idx.data(self._ITEM_IS_DIR_ROLE))
-				if is_dir:
-					continue
-				data = idx.data(self._ITEM_EXTRACT_PATH_ROLE)
-				if isinstance(data, str) and data:
-					paths.append(data)
-		return paths
+			return self._selected_tree_paths()
+		return []
 
 	def _iter_display_paths(self):
 		for p in self._all_manifest_paths:
 			if not self.show_only_valid_cb.isChecked():
 				yield p
 				continue
-			if p.startswith("__Unknown/") or p.lower() in self._valid_paths:
+			if p.startswith(UNKNOWN_PATH_PREFIX) or p.lower() in self._valid_paths:
 				yield p
 
 	def _show_tree_context_menu(self, pos):
@@ -754,7 +783,7 @@ class PakBrowserDialog(QDialog):
 		if not self._flat_model_valid_only or self._flat_model_valid_only.rowCount() == 0:
 			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
 			return
-		valid_paths = [p for p in self._flat_model_valid_only.stringList() if not p.startswith("__Unknown/")]
+		valid_paths = [p for p in self._flat_model_valid_only.stringList() if not p.startswith(UNKNOWN_PATH_PREFIX)]
 		if not valid_paths:
 			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
 			return
@@ -830,15 +859,15 @@ class PakBrowserDialog(QDialog):
 			return
 		Path(outdir).mkdir(parents=True, exist_ok=True)
 
-		if any(t.startswith("__Unknown/") for t in targets):
+		if any(t.startswith(UNKNOWN_PATH_PREFIX) for t in targets):
 
 			try:
 				rc = self._ensure_cache(full=True)
 			except Exception as e:
-				QMessageBox.critical(self, self.tr("Index failed"), str(e))
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 				return
 			if not rc:
-				QMessageBox.critical(self, self.tr("Index failed"), self.tr("Could not build PAK index."))
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), self.tr("Could not build PAK index."))
 				return
 			missing: List[str] = []
 			count = self._run_extraction_with_progress(
@@ -857,10 +886,10 @@ class PakBrowserDialog(QDialog):
 		try:
 			r = self._ensure_cache(validate=True)
 		except Exception as e:
-			QMessageBox.critical(self, self.tr("Index failed"), str(e))
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 			return
 		if not r:
-			QMessageBox.critical(self, self.tr("Index failed"), self.tr("Could not build PAK index."))
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), self.tr("Could not build PAK index."))
 			return
 		missing: List[str] = []
 

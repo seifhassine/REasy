@@ -740,7 +740,12 @@ class ClipWriter:
                 raise ClipParserError("Only PathPoint3D legacy properties can own speed points")
             if parsed.header.version < 85 and any(not isinstance(key, Key) for key in payload_keys):
                 raise ClipParserError("Properties before v85 require main-key table records")
-            expected_width = 0 if ptype in c8_types else 1 if ptype in c16_types else None
+            if ptype in c8_types:
+                expected_width = 0
+            elif ptype in c16_types:
+                expected_width = 1
+            else:
+                expected_width = None
             for key in payload_keys:
                 if expected_width is not None and getattr(key, "string_is_wide", -1) != expected_width:
                     encoding = "UTF-16" if expected_width else "ASCII"
@@ -800,7 +805,12 @@ class ClipWriter:
             )
             if version >= 40 and range_count > 0xFFFF:
                 raise ClipParserError("Property key/child count exceeds u16")
-            speed_bits = 8 if version >= 43 else 16 if version >= 40 else 32
+            if version >= 43:
+                speed_bits = 8
+            elif version >= 40:
+                speed_bits = 16
+            else:
+                speed_bits = 32
             if len(prop.speed_points_ref) >= 1 << speed_bits:
                 raise ClipParserError(f"Property speed-point count exceeds u{speed_bits}")
             if ptype not in PROPERTY_TYPES_WITH_CHILDREN:
@@ -1089,10 +1099,12 @@ class ClipWriter:
         for p in parsed.properties:
             if parsed.header.version < 86:
                 p.name_hash = murmur3_hash((p.name or "").encode("utf-8"))
-            unicode_name = (
-                p.name if parsed.header.version == 34 else
-                (p.legacy_unicode_name if parsed.header.version < 40 else p.name)
-            )
+            if parsed.header.version == 34:
+                unicode_name = p.name
+            elif parsed.header.version < 40:
+                unicode_name = p.legacy_unicode_name
+            else:
+                unicode_name = p.name
             p.unicode_name_hash = murmur3_hash((unicode_name or "").encode("utf-16le"))
 
     def _write_key(self, out: bytearray, k, version: int):

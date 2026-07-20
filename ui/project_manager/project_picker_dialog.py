@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Sequence
 
-from PySide6.QtCore import QEvent, Qt, QSize
+from PySide6.QtCore import QEvent, QT_TRANSLATE_NOOP, Qt, QSize
 from PySide6.QtGui import QColor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
@@ -28,6 +28,9 @@ from PySide6.QtWidgets import (
 
 from .project_config import load_project_config, project_config_path
 from ui.styles import get_color_scheme
+
+
+NO_PREVIEW_TEXT = QT_TRANSLATE_NOOP("ProjectPickerDialog", "No preview")
 
 
 @dataclass(frozen=True)
@@ -304,6 +307,16 @@ class ProjectPickerDialog(QDialog):
             "Unpacked": self.tr("Unpacked"),
         }.get(source, source)
 
+    def _filtered_entries(self, needle: str, game_filter):
+        for entry in self.entries:
+            if game_filter and entry.game != game_filter:
+                continue
+            haystack = " ".join(
+                (entry.name, entry.game, entry.description, entry.author, str(entry.path))
+            ).lower()
+            if not needle or needle in haystack:
+                yield entry
+
     def _populate(self):
         self.tree.clear()
         self._entry_by_path.clear()
@@ -313,13 +326,7 @@ class ProjectPickerDialog(QDialog):
         preferred_item = None
         shown_count = 0
 
-        for entry in self.entries:
-            if game_filter and entry.game != game_filter:
-                continue
-            haystack = " ".join((entry.name, entry.game, entry.description, entry.author, str(entry.path))).lower()
-            if needle and needle not in haystack:
-                continue
-
+        for entry in self._filtered_entries(needle, game_filter):
             group = groups.get(entry.game)
             if group is None:
                 group = QTreeWidgetItem([entry.game, "", ""])
@@ -403,19 +410,19 @@ class ProjectPickerDialog(QDialog):
         self.preview.clear()
         screenshot = entry.screenshot.strip()
         if not screenshot:
-            self.preview.setText(self.tr("No preview"))
+            self.preview.setText(self.tr(NO_PREVIEW_TEXT))
             return
 
         path = Path(screenshot)
         if not path.is_absolute():
             path = entry.path / path
         if not path.is_file():
-            self.preview.setText(self.tr("No preview"))
+            self.preview.setText(self.tr(NO_PREVIEW_TEXT))
             return
 
         pixmap = QPixmap(str(path))
         if pixmap.isNull():
-            self.preview.setText(self.tr("No preview"))
+            self.preview.setText(self.tr(NO_PREVIEW_TEXT))
             return
         self.preview.setPixmap(pixmap.scaled(self.preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
 

@@ -324,28 +324,20 @@ class MsgHandler(BaseFileHandler):
             return False
             
         if ftype == "uuid":
-            try:
-                uuid.UUID(new)
-                return True
-            except ValueError:
-                return False
+            return self._is_convertible(new, uuid.UUID)
         if ftype == "name":
             return bool(new)
         if ftype == "SoundID":
-            try:
-                int(new)
-                return True
-            except ValueError:
-                return False
+            return self._is_convertible(new, int)
         if ftype == "attribute":
             aidx = meta.get("attr_index", -1)
             if not (0 <= aidx < len(self.userParamTypes)):
                 return False
             atype = self.userParamTypes[aidx]
-            try:
-                return atype == 0 and int(new) or atype == 1 and float(new) or True
-            except ValueError:
-                return False
+            return self._is_convertible(
+                new,
+                lambda value: self._convert_attribute_value(atype, value),
+            )
         return True
 
     def handle_edit(self, meta: Dict[str, Any], new: str, _old: str, *_):
@@ -355,13 +347,7 @@ class MsgHandler(BaseFileHandler):
         if ftype == "uuid":
             entry["uuid"] = new.lower()
         elif ftype == "name":
-            entry["name"] = new
-            if self._by_hash(self.header["version"]):
-                if new:
-                    name_bytes = new.encode("utf-16le")
-                    entry["nameHash"] = murmur3_hash(name_bytes)
-                else:
-                    entry["nameHash"] = 0
+            self._set_entry_name(entry, new)
         elif ftype == "SoundID":
             entry["SoundID"] = int(new) if new else 0
         elif ftype == "content":
@@ -369,16 +355,29 @@ class MsgHandler(BaseFileHandler):
         elif ftype == "attribute":
             aidx = meta["attr_index"]
             atype = self.userParamTypes[aidx]
-            if atype == 0:
-                entry["attributes"][aidx] = int(new)
-            elif atype == 1:
-                entry["attributes"][aidx] = float(new)
-            else:
-                entry["attributes"][aidx] = new
+            entry["attributes"][aidx] = self._convert_attribute_value(atype, new)
         elif ftype == "attribute_name":
             aidx = meta.get("attr_index")
             if aidx is not None and 0 <= aidx < len(self.userParamNames):
                 self.userParamNames[aidx] = new
+
+    @staticmethod
+    def _is_convertible(value, converter) -> bool:
+        try:
+            converter(value)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _convert_attribute_value(param_type: int, value):
+        converter = {0: int, 1: float}.get(param_type)
+        return converter(value) if converter else value
+
+    def _set_entry_name(self, entry: Dict[str, Any], name: str):
+        entry["name"] = name
+        if self._by_hash(self.header["version"]):
+            entry["nameHash"] = murmur3_hash(name.encode("utf-16le")) if name else 0
 
     def _parse_header(self) -> Dict[str, Any]:
         r = self.raw_data
@@ -613,27 +612,31 @@ class MsgHandler(BaseFileHandler):
         return normalized[:target_len]
 
     def _normalize_attributes(self, attrs: List[Any]) -> List[Any]:
-        normalized = []
-        for atype, aval in zip(self.userParamTypes, attrs):
-            if atype in (-1, 2):
-                normalized.append("" if aval is None else str(aval))
-            elif atype == 0:
-                normalized.append(int(aval) if aval not in (None, "") else 0)
-            elif atype == 1:
-                normalized.append(float(aval) if aval not in (None, "") else 0.0)
-            else:
-                normalized.append(None)
-        if len(normalized) < len(self.userParamTypes):
-            for atype in self.userParamTypes[len(normalized):]:
-                if atype in (-1, 2):
-                    normalized.append("")
-                elif atype == 0:
-                    normalized.append(0)
-                elif atype == 1:
-                    normalized.append(0.0)
-                else:
-                    normalized.append(None)
+        normalized = [
+            self._normalize_attribute_value(atype, value)
+            for atype, value in zip(self.userParamTypes, attrs)
+        ]
+        normalized.extend(
+            self._default_attribute_value(atype)
+            for atype in self.userParamTypes[len(normalized):]
+        )
         return normalized
+
+    @classmethod
+    def _normalize_attribute_value(cls, param_type: int, value):
+        if param_type in (-1, 2):
+            return "" if value is None else str(value)
+        if param_type in (0, 1):
+            return (
+                cls._convert_attribute_value(param_type, value)
+                if value not in (None, "")
+                else cls._default_attribute_value(param_type)
+            )
+        return None
+
+    @staticmethod
+    def _default_attribute_value(param_type: int):
+        return {-1: "", 2: "", 0: 0, 1: 0.0}.get(param_type)
 
     def remove_entry(self, idx: int):
         if 0 <= idx < len(self.entries):
@@ -652,7 +655,12 @@ class MsgHandler(BaseFileHandler):
         self.userParamNames.append(name)
         self.userParamTypes.append(param_type)
         
-        default_value = "" if param_type in (-1, 2) else (0 if param_type == 0 else 0.0)
+        if param_type in (-1, 2):
+            default_value = ""
+        elif param_type == 0:
+            default_value = 0
+        else:
+            default_value = 0.0
         for entry in self.entries:
             entry["attributes"].append(default_value)
     

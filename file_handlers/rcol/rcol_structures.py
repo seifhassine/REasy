@@ -391,35 +391,39 @@ class RcolGroup(BaseModel):
     def do_read(self, handler: FileHandler) -> bool:
         self.shapes.clear()
         total_shapes = self.info.num_shapes + self.info.num_mirror_shapes
-        has_shape_stream = False
         if total_shapes <= 0:
             return True
-        if self.info.shapes_offset > 0:
-            # Check if offset is valid
-            if self.info.shapes_offset >= len(handler.data):
-                print(f"Warning: shapes_offset {self.info.shapes_offset} is beyond file size {len(handler.data)}")
-                return False
-            
-            handler.seek(self.info.shapes_offset)
-            has_shape_stream = True
-        else:
+        if self.info.shapes_offset <= 0:
             return False
-        if self.info.num_shapes > 0 and has_shape_stream:
-            for i in range(self.info.num_shapes):
-                shape = RcolShape()
-                if not shape.read(handler):
-                    raise ValueError(f"Failed to read shape {i} in group '{self.info.name}'")
-                self.shapes.append(shape)
-                
+        if self.info.shapes_offset >= len(handler.data):
+            print(f"Warning: shapes_offset {self.info.shapes_offset} is beyond file size {len(handler.data)}")
+            return False
+
+        handler.seek(self.info.shapes_offset)
+        self._read_shapes(handler, self.info.num_shapes, "shape", self.shapes)
         self.extra_shapes.clear()
-        if self.info.num_mirror_shapes > 0 and has_shape_stream:
-            for i in range(self.info.num_mirror_shapes):
-                shape = RcolShape()
-                if not shape.read(handler):
-                    raise ValueError(f"Failed to read extra shape {i} in group '{self.info.name}'")
-                self.extra_shapes.append(shape)
-                
+        self._read_shapes(
+            handler,
+            self.info.num_mirror_shapes,
+            "extra shape",
+            self.extra_shapes,
+        )
         return len(self.shapes) == self.info.num_shapes and len(self.extra_shapes) == self.info.num_mirror_shapes
+
+    def _read_shapes(
+        self,
+        handler: FileHandler,
+        count: int,
+        label: str,
+        target: List[RcolShape],
+    ):
+        for index in range(count):
+            shape = RcolShape()
+            if not shape.read(handler):
+                raise ValueError(
+                    f"Failed to read {label} {index} in group '{self.info.name}'"
+                )
+            target.append(shape)
         
     def do_write(self, handler: FileHandler) -> bool:
         has_shape_payload = self.info.num_shapes > 0 or self.info.num_mirror_shapes > 0

@@ -1,9 +1,13 @@
 import uuid
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem,
     QHeaderView, QLabel, QPushButton, QLineEdit, QSpinBox, QFrame, QMessageBox, QFileDialog, QGroupBox
 )
+
+
+TEXT_FILE_FILTER = "Text Files (*.txt);;All Files (*)"
+IMPORT_IDS_TITLE = QT_TRANSLATE_NOOP("CfilViewer", "Import IDs")
 
 
 class CfilViewer(QWidget):
@@ -321,7 +325,7 @@ class CfilViewer(QWidget):
             self._mark_modified()
 
     def _import_guids(self, guid_list: list, title: str):
-        path, _ = QFileDialog.getOpenFileName(self, title, "", "Text Files (*.txt);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, title, "", TEXT_FILE_FILTER)
         if not path:
             return
         try:
@@ -346,7 +350,7 @@ class CfilViewer(QWidget):
             QMessageBox.critical(self, title, self.tr("Failed to import: {error}").format(error=e))
 
     def _export_guids(self, guid_list: list, title: str, default_filename: str):
-        path, _ = QFileDialog.getSaveFileName(self, title, default_filename, "Text Files (*.txt);;All Files (*)")
+        path, _ = QFileDialog.getSaveFileName(self, title, default_filename, TEXT_FILE_FILTER)
         if not path:
             return
         try:
@@ -361,41 +365,60 @@ class CfilViewer(QWidget):
         if not cfil:
             return
         if cfil.version == 3:
-            path, _ = QFileDialog.getOpenFileName(self, self.tr("Import IDs"), "", "Text Files (*.txt);;All Files (*)")
+            path, _ = QFileDialog.getOpenFileName(
+                self,
+                self.tr(IMPORT_IDS_TITLE),
+                "",
+                TEXT_FILE_FILTER,
+            )
             if not path:
                 return
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     content = f.read()
-                appended = 0
-                for part in content.replace(',', ' ').replace(';', ' ').split():
-                    try:
-                        val = int(part, 10)
-                        if 0 <= val <= 255:
-                            cfil.mask_ids.append(val)
-                            appended += 1
-                    except Exception:
-                        pass
-                if appended > 0:
+                values = self._parse_mask_ids(content)
+                cfil.mask_ids.extend(values)
+                if values:
                     self._mark_modified()
                     self._refresh_ui_from_model()
                 else:
-                    QMessageBox.information(self, self.tr("Import IDs"), self.tr("No new entries to import."))
+                    QMessageBox.information(
+                        self,
+                        self.tr(IMPORT_IDS_TITLE),
+                        self.tr("No new entries to import."),
+                    )
             except Exception as e:
                 QMessageBox.critical(
                     self,
-                    self.tr("Import IDs"),
+                    self.tr(IMPORT_IDS_TITLE),
                     self.tr("Failed to import: {error}").format(error=e),
                 )
         else:
             self._import_guids(cfil.mask_guids, self.tr("Import Mask GUIDs"))
+
+    @staticmethod
+    def _parse_mask_ids(content: str) -> list[int]:
+        values = []
+        for part in content.replace(',', ' ').replace(';', ' ').split():
+            try:
+                value = int(part, 10)
+            except ValueError:
+                continue
+            if 0 <= value <= 255:
+                values.append(value)
+        return values
 
     def _on_export_masks(self):
         cfil = self.handler.cfil
         if not cfil:
             return
         if cfil.version == 3:
-            path, _ = QFileDialog.getSaveFileName(self, self.tr("Export IDs"), "mask_ids.txt", "Text Files (*.txt);;All Files (*)")
+            path, _ = QFileDialog.getSaveFileName(
+                self,
+                self.tr("Export IDs"),
+                "mask_ids.txt",
+                TEXT_FILE_FILTER,
+            )
             if not path:
                 return
             try:

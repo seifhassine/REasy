@@ -33,6 +33,7 @@ _KEY_VALUE_FIELDS = frozenset(
     "raw0 raw1 interpolation_offset string_value string_is_wide string_original_value "
     "oword_ref user_data_asset_index user_data_asset_ref".split()
 )
+_CONTAINER_KEY_ERROR = "Container properties cannot own key payloads"
 
 
 class ClipGraphOperations:
@@ -335,7 +336,7 @@ class ClipGraphOperations:
 
     def add_property_key(self, prop: Property, key_obj: object | None = None):
         if self.is_property_container(prop):
-            raise ClipParserError("Container properties cannot own key payloads")
+            raise ClipParserError(_CONTAINER_KEY_ERROR)
         if key_obj is None:
             key_obj = self._create_key_for_property(prop)
         self._validate_key_for_property(prop, key_obj)
@@ -354,7 +355,7 @@ class ClipGraphOperations:
     ):
         """Add or move a key into one of the four v53+ extra-key slots."""
         if self.is_property_container(prop):
-            raise ClipParserError("Container properties cannot own key payloads")
+            raise ClipParserError(_CONTAINER_KEY_ERROR)
         if self.parsed.header.version < 53:
             raise ClipParserError("Properties before v53 cannot own extra keys")
         if slot is not None and not 0 <= slot < 4:
@@ -374,7 +375,23 @@ class ClipGraphOperations:
         if current_slot is not None and (slot is None or slot == current_slot):
             return key_obj
 
-        occupied = set(self.extra_key_slots(prop))
+        slot = self._resolve_extra_key_slot(prop, slot, current_slot)
+        self._detach_key(key_obj, prop)
+        slots = self.extra_key_slots(prop)
+        insert_at = sum(existing < slot for existing in slots)
+        prop.extra_keys.insert(insert_at, key_obj)
+        prop.extra_key_flags = sum(1 << existing for existing in [*slots, slot])
+        self.register_key_reference(key_obj)
+        return key_obj
+
+    @classmethod
+    def _resolve_extra_key_slot(
+        cls,
+        prop: Property,
+        slot: int | None,
+        current_slot: int | None,
+    ) -> int:
+        occupied = set(cls.extra_key_slots(prop))
         if current_slot is not None:
             occupied.remove(current_slot)
         if slot is None:
@@ -385,14 +402,7 @@ class ClipGraphOperations:
             raise ClipParserError(f"Extra-key slot {slot} is already occupied")
         if current_slot is None and len(prop.extra_keys) >= 4:
             raise ClipParserError("Properties support at most four extra keys")
-
-        self._detach_key(key_obj, prop)
-        slots = self.extra_key_slots(prop)
-        insert_at = sum(existing < slot for existing in slots)
-        prop.extra_keys.insert(insert_at, key_obj)
-        prop.extra_key_flags = sum(1 << existing for existing in [*slots, slot])
-        self.register_key_reference(key_obj)
-        return key_obj
+        return slot
 
     def add_last_key(self, prop: Property, key_obj: object | None = None):
         """Create or move a key into the versioned LastKey slot."""
@@ -407,20 +417,9 @@ class ClipGraphOperations:
     def set_last_key(self, prop: Property, key_obj: object | None):
         """Replace or clear the versioned LastKey relationship."""
         if self.is_property_container(prop):
-            raise ClipParserError("Container properties cannot own key payloads")
+            raise ClipParserError(_CONTAINER_KEY_ERROR)
         if self.parsed.header.version >= 53:
-            if len(prop.extra_keys) > 4:
-                raise ClipParserError("Properties support at most four extra-key flags")
-            slots = self.extra_key_slots(prop)
-            current = next((key for key, slot in zip(prop.extra_keys, slots) if slot == 0), None)
-            if key_obj is current:
-                return key_obj
-            if key_obj is not None:
-                self._validate_key_for_property(prop, key_obj)
-                self._key_location(key_obj, prop)
-            if current is not None:
-                self._remove_key_from_owner(prop, current)
-            return self.add_extra_key(prop, key_obj, slot=0) if key_obj is not None else None
+            return self._set_extra_last_key(prop, key_obj)
         if self.parsed.header.version > 43:
             raise ClipParserError("Properties after v43 cannot own legacy last-key records")
         if key_obj is prop.last_key_ref:
@@ -434,6 +433,20 @@ class ClipGraphOperations:
         if key_obj is not None:
             self.register_key_reference(key_obj)
         return key_obj
+
+    def _set_extra_last_key(self, prop: Property, key_obj: object | None):
+        if len(prop.extra_keys) > 4:
+            raise ClipParserError("Properties support at most four extra-key flags")
+        slots = self.extra_key_slots(prop)
+        current = next((key for key, slot in zip(prop.extra_keys, slots) if slot == 0), None)
+        if key_obj is current:
+            return key_obj
+        if key_obj is not None:
+            self._validate_key_for_property(prop, key_obj)
+            self._key_location(key_obj, prop)
+        if current is not None:
+            self._remove_key_from_owner(prop, current)
+        return self.add_extra_key(prop, key_obj, slot=0) if key_obj is not None else None
 
     def add_speed_point(self, prop: Property, point: SpeedPoint | None = None) -> SpeedPoint:
         if self.is_property_container(prop):
@@ -568,7 +581,12 @@ class ClipGraphOperations:
         asset = getattr(key_obj, "user_data_asset_ref", None)
         oword = getattr(key_obj, "oword_ref", None)
         width = getattr(key_obj, "string_is_wide", -1)
-        expected_width = 0 if ptype in _C8_TYPES else 1 if ptype in _C16_TYPES or ptype == legacy_uda else -1
+        if ptype in _C8_TYPES:
+            expected_width = 0
+        elif ptype in _C16_TYPES or ptype == legacy_uda:
+            expected_width = 1
+        else:
+            expected_width = -1
         compatible = (
             width == expected_width
             and (asset is not None) == (ptype == PropertyType.USER_DATA_ASSET and version >= 62)

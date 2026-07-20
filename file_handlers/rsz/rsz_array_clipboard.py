@@ -160,9 +160,8 @@ class RszArrayClipboard:
                 instance_data["type_name"] = type_name
             
             userdata_dict = RszClipboardUtils.check_userdata_info(viewer, element.value)
-            if userdata_dict:
-                if userdata_dict["userdata_string"] is not None:
-                    instance_data["userdata_string"] = userdata_dict["userdata_string"]
+            if userdata_dict and userdata_dict["userdata_string"] is not None:
+                instance_data["userdata_string"] = userdata_dict["userdata_string"]
             
             result["object_graph"] = {
                 "root_id": 0,
@@ -757,18 +756,12 @@ class RszArrayClipboard:
             for field_name, field_data in fields.items():
                 if isinstance(field_data, dict):
                     field_type = field_data.get("type")
-                    if field_type == "ObjectData":
+                    if field_type in ("ObjectData", "UserDataData"):
                         child_relative_id = field_data.get("value", 0)
                         if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
-                    elif field_type == "UserDataData":
-                        child_relative_id = field_data.get("value", 0)
-                        if child_relative_id > 0 and child_relative_id in instance_by_relative_id:
-                            if relative_id not in parent_child_map:
-                                parent_child_map[relative_id] = []
-                            parent_child_map[relative_id].append((field_name, child_relative_id))
+                            parent_child_map.setdefault(relative_id, []).append(
+                                (field_name, child_relative_id)
+                            )
 
         id_mapping = {}
         next_embedded_id = 1
@@ -2088,7 +2081,7 @@ class RszArrayClipboard:
             
             if guid_hex:
                 try:
-                    guid_bytes = bytes.fromhex(guid_hex)
+                    _ = bytes.fromhex(guid_hex)
                     
                     from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
                     return process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping, randomize_guids)
@@ -2412,7 +2405,7 @@ class RszArrayClipboard:
                     for elem in d["values"]:
                         _mark_relative(elem)
                 else:
-                    for key, val in list(d.items()):
+                    for val in d.values():
                         if isinstance(val, dict) or isinstance(val, list):
                             _mark_relative(val)
             elif isinstance(d, list):

@@ -630,19 +630,22 @@ class RszObjectOperations:
         if not selected_type:
             return False
 
-        if action == "change" and current_instance_id > 0:
-            if not self._is_object_reference_shared(
+        if (
+            action == "change"
+            and current_instance_id > 0
+            and not self._is_object_reference_shared(
                 current_instance_id, parent_instance_id, parent_field_name, is_array, element_index
-            ):
-                if not self.viewer.array_operations:
-                    from .rsz_array_operations import RszArrayOperations
-                    self.viewer.array_operations = RszArrayOperations(self.viewer)
-                self.viewer.array_operations._delete_instance_and_children(current_instance_id)
-                object_field.value = 0
-                parent_instance_id, parent_field_name, is_array, _, element_index = self._find_reference_parent_info(
-                    object_field
-                )
-                current_instance_id = 0
+            )
+        ):
+            if not self.viewer.array_operations:
+                from .rsz_array_operations import RszArrayOperations
+                self.viewer.array_operations = RszArrayOperations(self.viewer)
+            self.viewer.array_operations._delete_instance_and_children(current_instance_id)
+            object_field.value = 0
+            parent_instance_id, parent_field_name, is_array, _, element_index = self._find_reference_parent_info(
+                object_field
+            )
+            current_instance_id = 0
 
         insertion_index = self._compute_object_insertion_index(
             parent_instance_id, parent_field_name, is_array, element_index
@@ -736,7 +739,7 @@ class RszObjectOperations:
             return False
 
         current_instance_id = getattr(userdata_field, 'value', 0) or 0
-        parent_instance_id, parent_field_name, is_array, array_data, element_index = (
+        parent_instance_id, parent_field_name, is_array, _, element_index = (
             self._find_reference_parent_info(userdata_field)
         )
         insertion_index = self._compute_userdata_insertion_index(parent_instance_id, parent_field_name, is_array)
@@ -1299,9 +1302,7 @@ class RszObjectOperations:
             
             children = []
             for field_name, field_obj in instance_fields.items():
-                if isinstance(field_obj, ObjectData) and field_obj.value > 0:
-                    children.append(field_obj.value)
-                elif isinstance(field_obj, UserDataData) and field_obj.value > 0:
+                if isinstance(field_obj, (ObjectData, UserDataData)) and field_obj.value > 0:
                     children.append(field_obj.value)
                     
             userdata_info.embedded_instance_hierarchy[current_instance_id] = {
@@ -1330,9 +1331,7 @@ class RszObjectOperations:
         
         children = []
         for field_name, field_obj in main_instance_fields.items():
-            if isinstance(field_obj, ObjectData) and field_obj.value > 0:
-                children.append(field_obj.value)
-            elif isinstance(field_obj, UserDataData) and field_obj.value > 0:
+            if isinstance(field_obj, (ObjectData, UserDataData)) and field_obj.value > 0:
                 children.append(field_obj.value)
                 
         userdata_info.embedded_instance_hierarchy[main_instance_id] = {

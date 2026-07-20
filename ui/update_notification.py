@@ -2,10 +2,15 @@ import threading
 import os
 import subprocess
 import sys
-from PySide6.QtCore import QCoreApplication, QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
+
+AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
+    "UpdateNotificationManager", "Auto Update"
+)
+
 
 def is_windows() -> bool:
     return os.name == "nt"
@@ -120,7 +125,7 @@ class UpdateNotificationManager:
             )
             reply = QMessageBox.question(
                 self.main_window,
-                QCoreApplication.translate("UpdateNotificationManager", "Auto Update"),
+                QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
                 QCoreApplication.translate(
                     "UpdateNotificationManager",
                     "{version} is available.\nDo you want to auto-download and update now?",
@@ -140,7 +145,7 @@ class UpdateNotificationManager:
             )
             reply = QMessageBox.question(
                 self.main_window,
-                QCoreApplication.translate("UpdateNotificationManager", "Auto Update"),
+                QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
                 QCoreApplication.translate(
                     "UpdateNotificationManager",
                     "Do you want to auto-download and update to {version}?",
@@ -192,7 +197,7 @@ class UpdateNotificationManager:
                 def notify_missing():
                     QMessageBox.warning(
                         self.main_window,
-                        QCoreApplication.translate("UpdateNotificationManager", "Auto Update"),
+                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
                         QCoreApplication.translate(
                             "UpdateNotificationManager",
                             "Auto-update script not found. Opening releases page instead.",
@@ -214,7 +219,7 @@ class UpdateNotificationManager:
                 if result.returncode == 0:
                     QMessageBox.information(
                         self.main_window,
-                        QCoreApplication.translate("UpdateNotificationManager", "Auto Update"),
+                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
                         QCoreApplication.translate(
                             "UpdateNotificationManager",
                             "Update completed successfully. Please restart REasy to apply changes.",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QPoint, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QPoint, QTimer
 import numpy as np
 from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
 )
 
 from .texture_decoder import decode_dds_mip, decode_tex_mip
+
+_EXPORT_TEX_TITLE = QT_TRANSLATE_NOOP("TexViewer", "Export TEX")
+
 
 class DraggableLabel(QLabel):
     def __init__(self, parent=None):
@@ -353,7 +356,7 @@ class TexViewer(QWidget):
                 from .tex_file import TexFile
                 dds_bytes = getattr(self.handler, 'raw_data', b"")
                 if not dds_bytes:
-                    QMessageBox.warning(self, self.tr("Export TEX"), self.tr("No DDS data loaded."))
+                    QMessageBox.warning(self, self.tr(_EXPORT_TEX_TITLE), self.tr("No DDS data loaded."))
                     return
                 import struct as _st
                 height = _st.unpack_from('<I', dds_bytes, 12)[0]
@@ -411,8 +414,8 @@ class TexViewer(QWidget):
                     with open(path, 'wb') as f:
                         f.write(tex_bytes)
                 else:
-                    QMessageBox.information(self, self.tr("Export TEX"), self.tr("Save cancelled."))
+                    QMessageBox.information(self, self.tr(_EXPORT_TEX_TITLE), self.tr("Save cancelled."))
             else:
-                QMessageBox.warning(self, self.tr("Export TEX"), self.tr("Open a DDS file first."))
+                QMessageBox.warning(self, self.tr(_EXPORT_TEX_TITLE), self.tr("Open a DDS file first."))
         except Exception as e:
             QMessageBox.critical(self, self.tr("Export TEX failed"), str(e))

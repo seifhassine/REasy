@@ -19,6 +19,9 @@ from file_handlers.rsz.utils.rsz_gameobject_utils import (
     update_gameobject_hierarchy,
 )
 
+_IMPORT_ERROR_TITLE = "Import Error"
+_JSON_SUFFIX = ".json"
+
 
 class _ReferenceUpdater:
     """Helper class to centralize reference updating logic"""
@@ -979,7 +982,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             os.makedirs(dir_path, exist_ok=True)
             
             for filename in os.listdir(dir_path):
-                if filename.endswith('.json'):
+                if filename.endswith(_JSON_SUFFIX):
                     os.remove(os.path.join(dir_path, filename))
 
             if hasattr(viewer.scn, 'is_usr') and viewer.scn.is_usr:
@@ -1307,7 +1310,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 return False
 
             if file_type == 'usr':
-                array_files = [f for f in os.listdir(export_dir) if f.endswith('.json') and '_' in f]
+                array_files = [f for f in os.listdir(export_dir) if f.endswith(_JSON_SUFFIX) and '_' in f]
                 export_manifest = {
                     'file_type': file_type,
                     'type_registry': registry_name,
@@ -1353,18 +1356,18 @@ class RszGameObjectClipboard(RszClipboardBase):
             exports_root = os.path.join('exports', file_type)
             
             if not os.path.isdir(exports_root):
-                QMessageBox.warning(None, "Import Error", f"No exports directory found for '{file_type}' files")
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE, f"No exports directory found for '{file_type}' files")
                 return None
 
             try:
                 choices = sorted([d for d in os.listdir(exports_root) 
                                 if os.path.isdir(os.path.join(exports_root, d))])
             except OSError as e:
-                QMessageBox.warning(None, "Import Error", f"Cannot read exports directory: {e}")
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE, f"Cannot read exports directory: {e}")
                 return None
                 
             if not choices:
-                QMessageBox.warning(None, "Import Error", f"No exports found for '{file_type}' files")
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE, f"No exports found for '{file_type}' files")
                 return None
 
             name, ok = QInputDialog.getItem(
@@ -1387,19 +1390,19 @@ class RszGameObjectClipboard(RszClipboardBase):
             elif os.path.exists(manifest_path):
                 manifest_file = manifest_path
             else:
-                QMessageBox.warning(None, "Import Error", "No manifest file found in export")
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE, "No manifest file found in export")
                 return None
 
             try:
                 with open(manifest_file, 'r', encoding='utf-8') as m:
                     manifest = json.load(m)
             except Exception as e:
-                QMessageBox.warning(None, "Import Error", f"Cannot read manifest file: {e}")
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE, f"Cannot read manifest file: {e}")
                 return None
 
             manifest_file_type = manifest.get('file_type')
             if manifest_file_type and manifest_file_type != file_type:
-                QMessageBox.warning(None, "Import Error",
+                QMessageBox.warning(None, _IMPORT_ERROR_TITLE,
                     f"Export is for '{manifest_file_type}' files, current file is '{file_type}'.")
                 return None
                 
@@ -1437,7 +1440,7 @@ class RszGameObjectClipboard(RszClipboardBase):
             return result
 
         except Exception as e:
-            QMessageBox.critical(None, "Import Error", f"Error importing Data Block:\n{e}")
+            QMessageBox.critical(None, _IMPORT_ERROR_TITLE, f"Error importing Data Block:\n{e}")
             traceback.print_exc()
             RszGameObjectClipboard._export_override_dir = None
             return None
@@ -1751,7 +1754,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         """
         try:
             array_files = [f for f in os.listdir(dir_path) 
-                          if f.endswith('.json') and '_' in f and not f.startswith('export_manifest')]
+                          if f.endswith(_JSON_SUFFIX) and '_' in f and not f.startswith('export_manifest')]
             
             if not array_files:
                 print("No user file array data found in clipboard")

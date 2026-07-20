@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -20,6 +20,11 @@ from PySide6.QtWidgets import (
 )
 
 from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
+
+
+SELECT_EVENT_TEXT = QT_TRANSLATE_NOOP(
+    "WelViewer", "Select an event to edit"
+)
 
 
 class WelViewer(QWidget):
@@ -80,7 +85,7 @@ class WelViewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        self.detail_title = QLabel(self.tr("Select an event to edit"))
+        self.detail_title = QLabel(self.tr(SELECT_EVENT_TEXT))
         layout.addWidget(self.detail_title)
 
         scroll = QScrollArea()
@@ -244,7 +249,7 @@ class WelViewer(QWidget):
         wel = self.handler.wel
         if not wel or row < 0 or row >= len(wel.events):
             self._set_detail_enabled(False)
-            self.detail_title.setText(self.tr("Select an event to edit"))
+            self.detail_title.setText(self.tr(SELECT_EVENT_TEXT))
             return
 
         self._set_detail_enabled(True)
@@ -425,7 +430,7 @@ class WelViewer(QWidget):
             self.event_list.setCurrentRow(min(row, len(wel.events) - 1))
         else:
             self._set_detail_enabled(False)
-            self.detail_title.setText(self.tr("Select an event to edit"))
+            self.detail_title.setText(self.tr(SELECT_EVENT_TEXT))
 
         self._set_modified(True)
 

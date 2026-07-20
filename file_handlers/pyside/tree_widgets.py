@@ -4,7 +4,13 @@ from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLay
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QPushButton)
 from PySide6.QtGui import QCursor, QPalette
-from PySide6.QtCore import Qt, QEvent, QModelIndex, QSignalBlocker
+from PySide6.QtCore import (
+    QT_TRANSLATE_NOOP,
+    Qt,
+    QEvent,
+    QModelIndex,
+    QSignalBlocker,
+)
 from shiboken6 import isValid
 
 
@@ -24,7 +30,24 @@ from utils.translate_utils import (
     show_translation_error,
     show_translation_result,
 )
-                        
+
+
+_DATA_BLOCK_LABEL = "Data Block"
+_GAMEOBJECT_NOT_FOUND_TEXT = QT_TRANSLATE_NOOP(
+    "AdvancedTreeView", "Could not find GameObject in object table"
+)
+_FOLDER_NOT_FOUND_TEXT = QT_TRANSLATE_NOOP(
+    "AdvancedTreeView", "Could not find folder in object table"
+)
+_NEW_GAMEOBJECT_NAME = QT_TRANSLATE_NOOP(
+    "AdvancedTreeView", "New GameObject"
+)
+_GAMEOBJECT_NAME_PROMPT = QT_TRANSLATE_NOOP(
+    "AdvancedTreeView", "GameObject Name:"
+)
+_MISSING = object()
+
+
 class AdvancedStyledDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -94,39 +117,57 @@ class AdvancedTreeView(QTreeView):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts and track shift key"""
         if event.key() == Qt.Key_Delete:
-            indexes = self.selectedIndexes()
-            if not indexes:
+            if not self._handle_delete_key():
                 return
-                
-            index = indexes[0]
-            item = index.internalPointer()
-            item_info = self._identify_item_type(item)
-
-            if item_info.get('is_array_group'):
-                return
-
-            if item_info.get('is_embedded', False) and not item_info['is_array_element']:
-                return
-            
-            if item_info['is_gameobject']:
-                self.delete_gameobject(index)
-            elif item_info['is_folder']:
-                self.delete_folder(index)
-            elif item_info['is_component'] and item_info['component_instance_id'] > 0:
-                self.delete_component(index, item_info['component_instance_id'])
-            elif item_info['is_resource']:
-                resources_node = self._find_resources_node()
-                selected = self.get_selected_resources(resources_node)
-                self.delete_resources(selected)
-            elif item_info['is_array_element'] and item_info['element_index'] >= 0:
-                parent_array = item_info['parent_array_item']
-                sel_idxs = self.get_selected_array_elements(parent_array)
-                if len(sel_idxs) > 1:
-                    self.delete_array_elements(parent_array, sel_idxs)
-                else:
-                    self.delete_array_element(parent_array, item_info['element_index'])
-                
         super().keyPressEvent(event)
+
+    def _handle_delete_key(self):
+        indexes = self.selectedIndexes()
+        if not indexes:
+            return False
+
+        index = indexes[0]
+        item_info = self._identify_item_type(index.internalPointer())
+        if item_info.get('is_array_group'):
+            return False
+        if (
+            item_info.get('is_embedded', False)
+            and not item_info['is_array_element']
+        ):
+            return False
+
+        if item_info['is_gameobject']:
+            self.delete_gameobject(index)
+        elif item_info['is_folder']:
+            self.delete_folder(index)
+        elif (
+            item_info['is_component']
+            and item_info['component_instance_id'] > 0
+        ):
+            self.delete_component(
+                index, item_info['component_instance_id']
+            )
+        elif item_info['is_resource']:
+            resources_node = self._find_resources_node()
+            selected = self.get_selected_resources(resources_node)
+            self.delete_resources(selected)
+        elif (
+            item_info['is_array_element']
+            and item_info['element_index'] >= 0
+        ):
+            parent_array = item_info['parent_array_item']
+            selected_indices = self.get_selected_array_elements(
+                parent_array
+            )
+            if len(selected_indices) > 1:
+                self.delete_array_elements(
+                    parent_array, selected_indices
+                )
+            else:
+                self.delete_array_element(
+                    parent_array, item_info['element_index']
+                )
+        return True
 
     def keyReleaseEvent(self, event):
         """Track shift key release"""
@@ -173,19 +214,26 @@ class AdvancedTreeView(QTreeView):
         
         if new_widget:
             if highlight:
-                labels = new_widget.findChildren(QLabel)
-                color = self.highlight_manager.highlight_color
-                color_str = f"rgb({color.red()}, {color.green()}, {color.blue()})"
-                
-                for label in labels:
-                    if label.textFormat() == Qt.RichText:
-                        original_text = label.text()
-                        highlighted_text = f'<span style="color: {color_str};">{original_text}</span>'
-                        label.setText(highlighted_text)
-                    else:
-                        label.setStyleSheet(f"QLabel {{ color: {color_str}; }}")
-            
+                self._apply_widget_highlight(new_widget)
+
             self.setIndexWidget(index, new_widget)
+
+    def _apply_widget_highlight(self, widget):
+        color = self.highlight_manager.highlight_color
+        color_str = (
+            f"rgb({color.red()}, {color.green()}, {color.blue()})"
+        )
+        for label in widget.findChildren(QLabel):
+            if label.textFormat() == Qt.RichText:
+                original_text = label.text()
+                label.setText(
+                    f'<span style="color: {color_str};">'
+                    f'{original_text}</span>'
+                )
+            else:
+                label.setStyleSheet(
+                    f"QLabel {{ color: {color_str}; }}"
+                )
 
     def setModelData(self, root_data):
         """
@@ -271,33 +319,44 @@ class AdvancedTreeView(QTreeView):
         rows = model.rowCount(parent_index)
         for row in range(rows):
             index0 = model.index(row, 0, parent_index)
-            if not index0.isValid():
-                continue
-                
-            item = index0.internalPointer()
-            if not item or TreeWidgetFactory.should_skip_widget(item):
-                continue
+            self._create_widget_for_index(index0)
 
-            name_text = item.data[0] if item.data else ""
-            node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
-            data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
-            
-            widget = TreeWidgetFactory.create_widget(
-                node_type, data_obj, name_text, self, self.parent_modified_callback
+    def _create_widget_for_index(self, index):
+        if not index.isValid():
+            return
+
+        item = index.internalPointer()
+        if not item or TreeWidgetFactory.should_skip_widget(item):
+            return
+
+        name_text = item.data[0] if item.data else ""
+        raw = item.raw if isinstance(item.raw, dict) else {}
+        node_type = raw.get("type", "")
+        data_obj = raw.get("obj")
+        widget = TreeWidgetFactory.create_widget(
+            node_type,
+            data_obj,
+            name_text,
+            self,
+            self.parent_modified_callback,
+        )
+        if not widget:
+            return
+
+        self.setIndexWidget(index, widget)
+        if self.highlight_manager:
+            item_id = model_index_row_path(index)
+            if self.highlight_manager.is_item_highlighted(item_id):
+                self._update_widget_highlight(index, True)
+
+        if (
+            self.parent().handler.auto_resource_management
+            and node_type == "ResourceData"
+        ):
+            from file_handlers.pyside.value_widgets import StringInput
+            widget.findChild(StringInput).valueChanged.connect(
+                lambda _=index: self._on_resource_name_changed()
             )
-            if widget:
-                self.setIndexWidget(index0, widget)
-                
-                if self.highlight_manager:
-                    item_id = model_index_row_path(index0)
-                    if self.highlight_manager.is_item_highlighted(item_id):
-                        self._update_widget_highlight(index0, True)
-                
-                if self.parent().handler.auto_resource_management and node_type == "ResourceData":
-                    from file_handlers.pyside.value_widgets import StringInput
-                    widget.findChild(StringInput).valueChanged.connect(
-                        lambda _=index0: self._on_resource_name_changed()
-                    )
 
     def refresh_widgets_for(self, data_objects):
         for data_id in {id(obj) for obj in data_objects if obj is not None}:
@@ -358,7 +417,7 @@ class AdvancedTreeView(QTreeView):
         has_component_clipboard = parent_widget.handler.has_component_clipboard_data(self)
 
 
-        if item.data and item.data[0] == "Data Block":
+        if item.data and item.data[0] == _DATA_BLOCK_LABEL:
             exp_act = menu.addAction(self.tr("Export Data Block"))
             imp_act = menu.addAction(self.tr("Import Data from Exports folder"))
             translate_all_act = menu.addAction(self.tr("Translate All GameObject Names"))
@@ -601,23 +660,10 @@ class AdvancedTreeView(QTreeView):
 
         selected_type = None
         if action in {"initialize", "change"}:
-            default_type = getattr(object_data, "orig_type", "") or ""
-            if object_data.value > 0:
-                try:
-                    default_type = parent.name_helper.get_type_name_for_instance(object_data.value) or default_type
-                except Exception:
-                    pass
-            type_dialog = ComponentSelectorDialog(self, parent.type_registry)
-            type_dialog.setWindowTitle(self.tr("Select Object Instance Type"))
-            if default_type:
-                try:
-                    type_dialog.search_input.setText(default_type)
-                except Exception:
-                    pass
-            if not type_dialog.exec_():
-                return
-            selected_type = type_dialog.get_selected_component()
-            if not selected_type:
+            selected_type = self._select_object_reference_type(
+                parent, object_data
+            )
+            if selected_type is None:
                 return
 
         success = parent.object_operations.modify_object_field(
@@ -630,6 +676,34 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Failed to update object reference")
             )
+
+    def _select_object_reference_type(self, parent, object_data):
+        default_type = getattr(object_data, "orig_type", "") or ""
+        if object_data.value > 0:
+            try:
+                default_type = (
+                    parent.name_helper.get_type_name_for_instance(
+                        object_data.value
+                    )
+                    or default_type
+                )
+            except Exception:
+                pass
+
+        type_dialog = ComponentSelectorDialog(
+            self, parent.type_registry
+        )
+        type_dialog.setWindowTitle(
+            self.tr("Select Object Instance Type")
+        )
+        if default_type:
+            try:
+                type_dialog.search_input.setText(default_type)
+            except Exception:
+                pass
+        if not type_dialog.exec_():
+            return None
+        return type_dialog.get_selected_component() or None
 
     def _refresh_object_reference_node(self, index, object_data):
         model = self.model()
@@ -743,7 +817,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
             
@@ -831,6 +905,7 @@ class AdvancedTreeView(QTreeView):
     
     def _identify_item_type(self, item):
         """Identify item type and extract relevant information"""
+        raw = item.raw
         result = {
             'is_embedded': False, 'is_array': False, 'array_type': "", 'data_obj': None,
             'is_array_element': False, 'parent_array_item': None, 'element_index': -1,
@@ -840,26 +915,50 @@ class AdvancedTreeView(QTreeView):
             'is_array_group': False,
             'is_object_ref': False, 'object_data': None, 'is_object_ref_non_array': False,
         }
-        
         result.update({
-            "is_embedded": item.raw.get("embedded", False),
-            "is_gameobject": item.raw.get("type") == "gameobject",
-            "is_folder": item.raw.get("type") == "folder",
-            "is_resource": item.raw.get("type") == "resource",
-            "is_array": item.raw.get("type") == "array",
-            "data_obj": item.raw.get("obj"),
-            "resource_index": item.raw.get("resource_index", -1) if item.raw.get("type") == "resource" else -1,
-            "is_array_group": item.raw.get("type") == "array_group",
+            "is_embedded": raw.get("embedded", False),
+            "is_gameobject": raw.get("type") == "gameobject",
+            "is_folder": raw.get("type") == "folder",
+            "is_resource": raw.get("type") == "resource",
+            "is_array": raw.get("type") == "array",
+            "data_obj": raw.get("obj"),
+            "resource_index": (
+                raw.get("resource_index", -1)
+                if raw.get("type") == "resource"
+                else -1
+            ),
+            "is_array_group": raw.get("type") == "array_group",
         })
-        
-        if result['is_array'] and result['data_obj'] and hasattr(result['data_obj'], 'orig_type'):
+
+        if (
+            result['is_array']
+            and result['data_obj']
+            and hasattr(result['data_obj'], 'orig_type')
+        ):
             result['array_type'] = result['data_obj'].orig_type
-        
-        if not result['is_gameobject'] and item.parent and hasattr(item.parent, 'data') and item.parent.data[0] == "Components":
-            if reasy_id := item.raw.get("reasy_id"):
-                result['is_component'] = True
-                result['component_instance_id'] = self.parent().handler.id_manager.get_instance_id(reasy_id)
-        
+
+        self._identify_component(item, raw, result)
+        self._identify_root_section(item, result)
+        self._identify_array_element(item, raw, result)
+        self._identify_object_reference(raw, result)
+        return result
+
+    def _identify_component(self, item, raw, result):
+        if (
+            result['is_gameobject']
+            or not item.parent
+            or not hasattr(item.parent, 'data')
+            or item.parent.data[0] != "Components"
+        ):
+            return
+        if reasy_id := raw.get("reasy_id"):
+            result['is_component'] = True
+            result['component_instance_id'] = (
+                self.parent().handler.id_manager.get_instance_id(reasy_id)
+            )
+
+    @staticmethod
+    def _identify_root_section(item, result):
         if item.data and item.data[0] == "Resources" and item.parent and item.parent.data[0] == "Advanced Information":
             result['is_resources_section'] = True
         elif item.data and item.data[0] == "Game Objects":
@@ -867,33 +966,54 @@ class AdvancedTreeView(QTreeView):
         elif item.data and item.data[0] == "Folders":
             result['is_folders_root'] = True
 
-        if (not result['is_array'] and not result['is_array_group']
-                and item.parent and hasattr(item.parent, 'raw') and isinstance(item.parent.raw, dict)):
-            parent_item = item.parent
-            # Walk up through any array_group wrappers
-            while parent_item and isinstance(parent_item.raw, dict) and parent_item.raw.get("type") == "array_group":
-                parent_item = parent_item.parent
+    @staticmethod
+    def _identify_array_element(item, raw, result):
+        if (
+            result['is_array']
+            or result['is_array_group']
+            or not item.parent
+            or not hasattr(item.parent, 'raw')
+            or not isinstance(item.parent.raw, dict)
+        ):
+            return
 
-            if parent_item and isinstance(parent_item.raw, dict) and parent_item.raw.get("type") == "array":
-                elem_obj = item.raw.get("obj") if isinstance(item.raw, dict) else None
-                elem_index = item.raw.get("element_index")
-                if elem_index is None:
-                    elem_index = getattr(elem_obj, "_container_index", item.row())
-                result.update({
-                    'parent_array_item': parent_item,
-                    'array_type': parent_item.raw['obj'].orig_type,
-                    'is_array_element': True,
-                    'element_index': elem_index,
-                })
+        parent_item = item.parent
+        while (
+            parent_item
+            and isinstance(parent_item.raw, dict)
+            and parent_item.raw.get("type") == "array_group"
+        ):
+            parent_item = parent_item.parent
+        if (
+            not parent_item
+            or not isinstance(parent_item.raw, dict)
+            or parent_item.raw.get("type") != "array"
+        ):
+            return
 
-        if isinstance(item.raw, dict):
-            obj = item.raw.get("obj")
-            if obj is not None and obj.__class__.__name__ == "ObjectData":
-                result["is_object_ref"] = True
-                result["object_data"] = obj
-                result["is_object_ref_non_array"] = not result["is_array_element"]
-        
-        return result
+        element_obj = raw.get("obj") if isinstance(raw, dict) else None
+        element_index = raw.get("element_index")
+        if element_index is None:
+            element_index = getattr(
+                element_obj, "_container_index", item.row()
+            )
+        result.update({
+            'parent_array_item': parent_item,
+            'array_type': parent_item.raw['obj'].orig_type,
+            'is_array_element': True,
+            'element_index': element_index,
+        })
+
+    @staticmethod
+    def _identify_object_reference(raw, result):
+        if not isinstance(raw, dict):
+            return
+        obj = raw.get("obj")
+        if obj is None or obj.__class__.__name__ != "ObjectData":
+            return
+        result["is_object_ref"] = True
+        result["object_data"] = obj
+        result["is_object_ref_non_array"] = not result["is_array_element"]
     
     @staticmethod
     def _get_element_type(array_type):
@@ -946,67 +1066,27 @@ class AdvancedTreeView(QTreeView):
         element_type = AdvancedTreeView._get_element_type(array_type)
         parent = self.parent()
         embedded_context = self._find_embedded_context(array_item)
-        userdata_string = None
-        
-        if embedded_context == "userdata_array_needs_embedded":
-            creator = parent.create_array_element
-            embedded_context = None
-        else:
-            creator = RszEmbeddedArrayOperations(parent).create_array_element if embedded_context else parent.create_array_element
-        
-        if not embedded_context:
-            try:
-                from file_handlers.rsz.rsz_data_types import UserDataData
-                is_userdata_array = getattr(data_obj, 'element_class', None) == UserDataData
-            except Exception:
-                is_userdata_array = False
-            is_normal_rsz = not parent.scn.has_embedded_rsz
-            if is_userdata_array and is_normal_rsz:
-                from file_handlers.pyside.component_selector import ComponentSelectorDialog
-                default_text = element_type or ""
-                text, ok = QInputDialog.getText(
-                    self,
-                    self.tr("New UserData String"),
-                    self.tr("Enter UserData string:"),
-                    QLineEdit.Normal,
-                    default_text
-                )
-                if ok:
-                    userdata_string = text
-                else: 
-                    return
-                
-                type_dialog = ComponentSelectorDialog(self, parent.type_registry, required_parent_name="via.UserData")
-                type_dialog.setWindowTitle(self.tr("Select UserData Instance Type"))
-                
-                if element_type:
-                    try:
-                        type_dialog.search_input.setText(element_type)
-                    except Exception:
-                        pass
-                
-                if not type_dialog.exec_():
-                    return
-                    
-                selected_type = type_dialog.get_selected_component()
-                if not selected_type:
-                    return
-                
-                element_type = selected_type
+        creator, embedded_context = self._get_array_element_creator(
+            parent, embedded_context
+        )
 
-        new_element = (
-            creator(
-                element_type, data_obj, embedded_context,
-                direct_update=True, array_item=array_item
+        userdata_string = None
+        if not embedded_context:
+            element_type, userdata_string, accepted = (
+                self._get_userdata_array_details(
+                    parent, data_obj, element_type
+                )
             )
-            if embedded_context
-            else creator(
-                element_type,
-                data_obj,
-                direct_update=True,
-                array_item=array_item,
-                userdata_string=userdata_string,
-            )
+            if not accepted:
+                return
+
+        new_element = self._create_array_element(
+            creator,
+            element_type,
+            data_obj,
+            embedded_context,
+            array_item,
+            userdata_string,
         )
 
         if not new_element:
@@ -1014,6 +1094,92 @@ class AdvancedTreeView(QTreeView):
 
         self._refresh_array_node(array_item)
         self._scroll_to_array_end(array_item)
+
+    @staticmethod
+    def _get_array_element_creator(parent, embedded_context):
+        if embedded_context == "userdata_array_needs_embedded":
+            return parent.create_array_element, None
+        if embedded_context:
+            return (
+                RszEmbeddedArrayOperations(
+                    parent
+                ).create_array_element,
+                embedded_context,
+            )
+        return parent.create_array_element, embedded_context
+
+    def _get_userdata_array_details(
+        self,
+        parent,
+        data_obj,
+        element_type,
+    ):
+        try:
+            from file_handlers.rsz.rsz_data_types import UserDataData
+            is_userdata_array = (
+                getattr(data_obj, 'element_class', None) == UserDataData
+            )
+        except Exception:
+            is_userdata_array = False
+        is_normal_rsz = not parent.scn.has_embedded_rsz
+        if not is_userdata_array or not is_normal_rsz:
+            return element_type, None, True
+
+        userdata_string, ok = QInputDialog.getText(
+            self,
+            self.tr("New UserData String"),
+            self.tr("Enter UserData string:"),
+            QLineEdit.Normal,
+            element_type or "",
+        )
+        if not ok:
+            return element_type, None, False
+
+        type_dialog = ComponentSelectorDialog(
+            self,
+            parent.type_registry,
+            required_parent_name="via.UserData",
+        )
+        type_dialog.setWindowTitle(
+            self.tr("Select UserData Instance Type")
+        )
+        if element_type:
+            try:
+                type_dialog.search_input.setText(element_type)
+            except Exception:
+                pass
+        if not type_dialog.exec_():
+            return element_type, userdata_string, False
+
+        selected_type = type_dialog.get_selected_component()
+        if not selected_type:
+            return element_type, userdata_string, False
+        return selected_type, userdata_string, True
+
+    @staticmethod
+    def _create_array_element(
+        creator,
+        element_type,
+        data_obj,
+        embedded_context,
+        array_item,
+        userdata_string,
+    ):
+        if embedded_context:
+            return creator(
+                element_type,
+                data_obj,
+                embedded_context,
+                direct_update=True,
+                array_item=array_item,
+            )
+        return creator(
+            element_type,
+            data_obj,
+            direct_update=True,
+            array_item=array_item,
+            userdata_string=userdata_string,
+        )
 
     def delete_array_element(self, parent_array_item, element_index):
         """Delete an element from an array with proper backend updates"""
@@ -1135,17 +1301,19 @@ class AdvancedTreeView(QTreeView):
                 
         if folder_object_id < 0:
             QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Could not find folder in object table")
+                self,
+                self.tr("Error"),
+                self.tr(_FOLDER_NOT_FOUND_TEXT),
             )
             return
             
         # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(
             self,
-            self.tr("New GameObject"),
-            self.tr("GameObject Name:"),
+            self.tr(_NEW_GAMEOBJECT_NAME),
+            self.tr(_GAMEOBJECT_NAME_PROMPT),
             QLineEdit.Normal,
-            "New GameObject",
+            _NEW_GAMEOBJECT_NAME,
         )
         if not ok or not name:
             return
@@ -1186,7 +1354,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
         
@@ -1194,9 +1362,9 @@ class AdvancedTreeView(QTreeView):
         name, ok = QInputDialog.getText(
             self,
             self.tr("New Child GameObject"),
-            self.tr("GameObject Name:"),
+            self.tr(_GAMEOBJECT_NAME_PROMPT),
             QLineEdit.Normal,
-            "New GameObject",
+            _NEW_GAMEOBJECT_NAME,
         )
         if not ok or not name:
             return
@@ -1236,7 +1404,9 @@ class AdvancedTreeView(QTreeView):
                                 if x == parent_instance_id), -1)
         if parent_object_id < 0:
             QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Could not find folder in object table")
+                self,
+                self.tr("Error"),
+                self.tr(_FOLDER_NOT_FOUND_TEXT),
             )
             return
 
@@ -1286,7 +1456,9 @@ class AdvancedTreeView(QTreeView):
 
         parent_node = self._resolve_parent_node(parent_index, model)
         if not parent_node:
-            parent_node = self._find_root_node_child("Data Block", "Folders")
+            parent_node = self._find_root_node_child(
+                _DATA_BLOCK_LABEL, "Folders"
+            )
             if not parent_node:
                 print("Failed to find Folders node")
                 return None
@@ -1324,9 +1496,9 @@ class AdvancedTreeView(QTreeView):
         name, ok = QInputDialog.getText(
             self,
             self.tr("New Root GameObject"),
-            self.tr("GameObject Name:"),
+            self.tr(_GAMEOBJECT_NAME_PROMPT),
             QLineEdit.Normal,
-            "New GameObject",
+            _NEW_GAMEOBJECT_NAME,
         )
         if not ok or not name:
             return
@@ -1417,7 +1589,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
         
@@ -1540,21 +1712,29 @@ class AdvancedTreeView(QTreeView):
         reasy_id = item.raw.get("reasy_id")
         parent = self.parent()
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
-        go_object_id = -1
-        for i, obj_id in enumerate(parent.scn.object_table):
-            if obj_id == instance_id:
-                go_object_id = i
-                break
-        target_go = None
-        for go in parent.scn.gameobjects:
-            if go.id == go_object_id:
-                target_go = go
-                break
+        go_object_id = next(
+            (
+                object_id
+                for object_id, instance in enumerate(
+                    parent.scn.object_table
+                )
+                if instance == instance_id
+            ),
+            -1,
+        )
+        target_go = next(
+            (
+                gameobject
+                for gameobject in parent.scn.gameobjects
+                if gameobject.id == go_object_id
+            ),
+            None,
+        )
         if target_go is None:
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
         if getattr(target_go, 'prefab_id', -1) >= 0:
@@ -1566,36 +1746,20 @@ class AdvancedTreeView(QTreeView):
             True: {
             "dialog_title": self.tr("Modify Prefab Path"),
             "prompt_text": self.tr("Enter new prefab path:"),
-            "action_type": "modified"
             },
             False: {
             "dialog_title": self.tr("Associate with Prefab"),
             "prompt_text": self.tr("Enter prefab path:"),
-            "action_type": "created"
             }
         }
         action_info = prefab_actions[has_prefab]
-        dialog_title = action_info["dialog_title"]
-        prompt_text = action_info["prompt_text"]
-
-        while True:
-            dialog = QInputDialog(self)
-            dialog.setWindowTitle(dialog_title)
-            dialog.setLabelText(prompt_text)
-            dialog.setTextValue(current_path)
-            dialog.setInputMode(QInputDialog.TextInput)
-            dialog.resize(500, dialog.height())
-            ok = dialog.exec_()
-            path = dialog.textValue()
-            if not ok:
-                return
-            if (path.strip() != ""):
-                break
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid Input"),
-                self.tr("Prefab path cannot be empty. Please enter a valid path."),
-            )
+        path = self._prompt_prefab_path(
+            action_info["dialog_title"],
+            action_info["prompt_text"],
+            current_path,
+        )
+        if path is None:
+            return
 
         if not path.endswith(".pfb") and QMessageBox.question(
                 self, self.tr("Add Extension?"),
@@ -1612,6 +1776,33 @@ class AdvancedTreeView(QTreeView):
         QMessageBox.warning(
             self, self.tr("Error"), self.tr("Failed to manage prefab")
         )
+
+    def _prompt_prefab_path(
+        self,
+        dialog_title,
+        prompt_text,
+        current_path,
+    ):
+        while True:
+            dialog = QInputDialog(self)
+            dialog.setWindowTitle(dialog_title)
+            dialog.setLabelText(prompt_text)
+            dialog.setTextValue(current_path)
+            dialog.setInputMode(QInputDialog.TextInput)
+            dialog.resize(500, dialog.height())
+            if not dialog.exec_():
+                return None
+            path = dialog.textValue()
+            if path.strip():
+                return path
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid Input"),
+                self.tr(
+                    "Prefab path cannot be empty. "
+                    "Please enter a valid path."
+                ),
+            )
 
     def _rebuild_resources_list(self):
         viewer  = self.parent()
@@ -1935,7 +2126,9 @@ class AdvancedTreeView(QTreeView):
         parent_node = self._resolve_parent_node(parent_index, model)
         
         if not parent_node:
-            parent_node = self._find_root_node_child("Data Block", "Game Objects")
+            parent_node = self._find_root_node_child(
+                _DATA_BLOCK_LABEL, "Game Objects"
+            )
             if not parent_node:
                 print("Failed to find GameObjects node for root GameObject placement")
                 return None
@@ -2134,7 +2327,12 @@ class AdvancedTreeView(QTreeView):
             for row in range(model.rowCount(QModelIndex())):
                 index = model.index(row, 0, QModelIndex())
                 item = index.internalPointer()
-                if item and hasattr(item, 'data') and item.data and item.data[0].startswith("Data Block"):
+                if (
+                    item
+                    and hasattr(item, 'data')
+                    and item.data
+                    and item.data[0].startswith(_DATA_BLOCK_LABEL)
+                ):
                     data_block_item = item
                     break
             
@@ -2485,7 +2683,9 @@ class AdvancedTreeView(QTreeView):
         if not target_lang:
             target_lang = self.translation_manager.default_target_language
 
-        game_objects_root = self._find_root_node_child("Data Block", "Game Objects")
+        game_objects_root = self._find_root_node_child(
+            _DATA_BLOCK_LABEL, "Game Objects"
+        )
         if not game_objects_root:
             QMessageBox.warning(
                 self,
@@ -2577,22 +2777,40 @@ class AdvancedTreeView(QTreeView):
 
         while stack:
             item = stack.pop()
-            for row in range(item.child_count()):
-                child = item.child(row)
-                if not child:
-                    continue
-
-                raw = child.raw if isinstance(child.raw, dict) else {}
-                node_type = raw.get("type", "")
-                label = child.data[0] if child.data else ""
-
-                if node_type == "gameobject":
-                    index = model.getIndexFromItem(child)
-                    if index and index.isValid():
-                        yield label, index
-
-                if node_type in {"gameobject", "folder"} or label in {"Game Objects", "Children"}:
+            for child in self._iter_child_items(item):
+                entry = self._get_gameobject_node_entry(model, child)
+                if entry is not None:
+                    yield entry
+                if self._should_descend_gameobject_tree(child):
                     stack.append(child)
+
+    @staticmethod
+    def _iter_child_items(item):
+        for row in range(item.child_count()):
+            child = item.child(row)
+            if child:
+                yield child
+
+    @staticmethod
+    def _get_gameobject_node_entry(model, item):
+        raw = item.raw if isinstance(item.raw, dict) else {}
+        if raw.get("type", "") != "gameobject":
+            return None
+        index = model.getIndexFromItem(item)
+        if not index or not index.isValid():
+            return None
+        label = item.data[0] if item.data else ""
+        return label, index
+
+    @staticmethod
+    def _should_descend_gameobject_tree(item):
+        raw = item.raw if isinstance(item.raw, dict) else {}
+        node_type = raw.get("type", "")
+        label = item.data[0] if item.data else ""
+        return (
+            node_type in {"gameobject", "folder"}
+            or label in {"Game Objects", "Children"}
+        )
 
     @staticmethod
     def _split_display_name(display_text):
@@ -2619,22 +2837,16 @@ class AdvancedTreeView(QTreeView):
         
         embedded_context = self._find_embedded_context(parent_array_item)
         parent = self.parent()
-        success = True
         
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
 
-        if embedded_context:
-            rsz_operations = RszEmbeddedArrayOperations(parent)
-            for idx in element_indices:
-                if not rsz_operations.delete_array_element(array_data, idx, embedded_context):
-                    success = False
-                    break
-        else:
-            for idx in element_indices:
-                if not parent.delete_array_element(array_data, idx):
-                    success = False
-                    break
+        success = self._delete_array_indices(
+            parent,
+            array_data,
+            element_indices,
+            embedded_context,
+        )
         if success:
             self._refresh_array_node(parent_array_item)
             QApplication.beep()
@@ -2643,6 +2855,26 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Failed to delete all elements")
             )
+
+    @staticmethod
+    def _delete_array_indices(
+        parent,
+        array_data,
+        element_indices,
+        embedded_context,
+    ):
+        if embedded_context:
+            operations = RszEmbeddedArrayOperations(parent)
+            return all(
+                operations.delete_array_element(
+                    array_data, index, embedded_context
+                )
+                for index in element_indices
+            )
+        return all(
+            parent.delete_array_element(array_data, index)
+            for index in element_indices
+        )
 
     def _refresh_array_node(self, array_item):
         """Rebuild UI nodes for an array after modifications"""
@@ -2728,34 +2960,39 @@ class AdvancedTreeView(QTreeView):
             return selected_indices
 
         for index in selection_model.selectedIndexes():
-            if not index.isValid():
+            if not self._index_belongs_to(index, parent_index):
                 continue
-
-            # Verify the selected item belongs to the target array
-            ancestor = index
-            belongs = False
-            while ancestor.isValid():
-                if ancestor == parent_index:
-                    belongs = True
-                    break
-                ancestor = ancestor.parent()
-            if not belongs:
-                continue
-
-            item = index.internalPointer()
-            if not item or not isinstance(item.raw, dict):
-                continue
-            if "element_index" in item.raw:
-                selected_indices.append(item.raw["element_index"])
-                continue
-            elem_obj = item.raw.get("obj")
-            if elem_obj is None:
-                continue
-            elem_idx = getattr(elem_obj, "_container_index", -1)
-            if elem_idx >= 0:
-                selected_indices.append(elem_idx)
+            found, element_index = self._get_selected_element_index(
+                index
+            )
+            if found:
+                selected_indices.append(element_index)
 
         return sorted(set(selected_indices))
+
+    @staticmethod
+    def _index_belongs_to(index, parent_index):
+        if not index.isValid():
+            return False
+        ancestor = index
+        while ancestor.isValid():
+            if ancestor == parent_index:
+                return True
+            ancestor = ancestor.parent()
+        return False
+
+    @staticmethod
+    def _get_selected_element_index(index):
+        item = index.internalPointer()
+        if not item or not isinstance(item.raw, dict):
+            return False, None
+        if "element_index" in item.raw:
+            return True, item.raw["element_index"]
+        element_obj = item.raw.get("obj")
+        if element_obj is None:
+            return False, None
+        element_index = getattr(element_obj, "_container_index", -1)
+        return element_index >= 0, element_index
         
     def copy_component(self, component_instance_id):
         """Copy a component to clipboard for pasting to another GameObject"""
@@ -2845,7 +3082,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
         embedded_context = self._find_embedded_context(item)      
@@ -2892,7 +3129,9 @@ class AdvancedTreeView(QTreeView):
                 
         if folder_object_id < 0:
             QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Could not find folder in object table")
+                self,
+                self.tr("Error"),
+                self.tr(_FOLDER_NOT_FOUND_TEXT),
             )
             return
             
@@ -2919,7 +3158,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(
                 self,
                 self.tr("Error"),
-                self.tr("Could not find GameObject in object table"),
+                self.tr(_GAMEOBJECT_NOT_FOUND_TEXT),
             )
             return
             
@@ -2979,11 +3218,7 @@ class AdvancedTreeView(QTreeView):
         if not element_item or not hasattr(element_item, 'raw'):
             return
 
-        parent_array_item = element_item.parent
-        while parent_array_item and isinstance(parent_array_item.raw, dict) \
-                and parent_array_item.raw.get("type") == "array_group":
-            parent_array_item = parent_array_item.parent
-
+        parent_array_item = self._find_parent_array_item(element_item)
         if not parent_array_item or parent_array_item.raw.get("type") != "array":
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Invalid array element selection")
@@ -2998,14 +3233,16 @@ class AdvancedTreeView(QTreeView):
             )
             return
 
-        element_index = element_item.raw.get("element_index")
-        if element_index is None:
-            if elem_obj is None:
-                QMessageBox.warning(
-                    self, self.tr("Error"), self.tr("Failed to access array element")
-                )
-                return
-            element_index = getattr(elem_obj, '_container_index', element_item.row())
+        element_index = self._resolve_array_element_index(
+            element_item, elem_obj
+        )
+        if element_index is _MISSING:
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to access array element"),
+            )
+            return
         embedded_context = self._find_embedded_context(parent_array_item)
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
@@ -3033,6 +3270,28 @@ class AdvancedTreeView(QTreeView):
                 self.tr("Error"),
                 self.tr("Error copying element: {}").format(e),
             )
+
+    @staticmethod
+    def _find_parent_array_item(element_item):
+        parent_array_item = element_item.parent
+        while (
+            parent_array_item
+            and isinstance(parent_array_item.raw, dict)
+            and parent_array_item.raw.get("type") == "array_group"
+        ):
+            parent_array_item = parent_array_item.parent
+        return parent_array_item
+
+    @staticmethod
+    def _resolve_array_element_index(element_item, element_obj):
+        element_index = element_item.raw.get("element_index")
+        if element_index is not None:
+            return element_index
+        if element_obj is None:
+            return _MISSING
+        return getattr(
+            element_obj, '_container_index', element_item.row()
+        )
 
     def paste_array_element(self, index, data_obj, array_item):
         """Paste an element from clipboard to an array"""

@@ -4,13 +4,16 @@ from PySide6.QtWidgets import (
     QTextEdit, QFileDialog, QMessageBox, QTabWidget,
     QLineEdit, QFrame
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QThread, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from pathlib import Path
 from typing import List, Optional
 import os
 
 from file_handlers.rsz.rsz_differ import RszDiffer, DiffResult
+
+
+COMPARE_FILES_TEXT = QT_TRANSLATE_NOOP("RszDifferDialog", "Compare Files")
 
 
 DROP_LABEL_DEFAULT_STYLE = """
@@ -208,7 +211,7 @@ class RszDifferDialog(QDialog):
         file_section = self.create_file_section()
         layout.addWidget(file_section)
         
-        self.compare_button = QPushButton(self.tr("Compare Files"))
+        self.compare_button = QPushButton(self.tr(COMPARE_FILES_TEXT))
         self.compare_button.clicked.connect(self.compare_files)
         self.compare_button.setEnabled(False)
         self.compare_button.setStyleSheet("""
@@ -485,7 +488,7 @@ class RszDifferDialog(QDialog):
         self.diff_result = result
         self.update_results()
         self.compare_button.setEnabled(True)
-        self.compare_button.setText(self.tr("Compare Files"))
+        self.compare_button.setText(self.tr(COMPARE_FILES_TEXT))
         
     def on_comparison_error(self, error: str):
         QMessageBox.critical(
@@ -493,7 +496,7 @@ class RszDifferDialog(QDialog):
             self.tr("Failed to compare files: {error}").format(error=error),
         )
         self.compare_button.setEnabled(True)
-        self.compare_button.setText(self.tr("Compare Files"))
+        self.compare_button.setText(self.tr(COMPARE_FILES_TEXT))
         
     def update_results(self):
         if not self.diff_result:
