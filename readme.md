@@ -153,6 +153,10 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
 
+## Related Resources
+
+- [MH Wilds Guides](https://mhwildsguides.xyz/) — Monster Hunter Wilds weapon tier lists, monster guides, armor builds, and skill combos.
+
 ## License, Contributions:
 
 REasy is under MIT license.
