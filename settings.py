@@ -16,6 +16,7 @@ DEFAULT_SETTINGS = {
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",
         "file_save": "Ctrl+S",
+        "file_save_all": "Ctrl+Alt+S",
         "file_save_as": "Ctrl+Shift+S",
         "file_reload": "Ctrl+R",
         "file_close_tab": "Ctrl+W",

@@ -3983,6 +3983,10 @@ Save before reloading?</source>
         <translation>保存文件</translation>
     </message>
     <message>
+        <source>Save All Modified Files</source>
+        <translation>保存所有已修改文件</translation>
+    </message>
+    <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="25"/>
         <source>Save File As</source>
         <translation>文件另存为</translation>
@@ -6487,6 +6491,10 @@ This will permanently remove:
 </context>
 <context>
     <name>REasyEditorApp</name>
+    <message><source>Save All Modified Files</source><translation>保存所有已修改文件</translation></message>
+    <message><source>No modified files to save.</source><translation>没有需要保存的已修改文件。</translation></message>
+    <message><source>Saved {count} modified file(s).</source><translation>已保存 {count} 个已修改文件。</translation></message>
+    <message><source>Saved {saved} modified file(s); {failed} could not be saved.</source><translation>已保存 {saved} 个已修改文件；{failed} 个文件无法保存。</translation></message>
     <message>
         <location filename="../../ui/main_window.py" line="259"/>
         <source>File</source>

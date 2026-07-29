@@ -61,6 +61,7 @@ from tools.hash_calculator import HashCalculator
 
 from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
+from ui.project_manager.project_sessions import save_modified_tabs  # noqa: E402
 from ui.project_manager import (  # noqa: E402
     ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
 )
@@ -293,6 +294,12 @@ class REasyEditorApp(QMainWindow):
         file_menu.addAction(open_act)
 
         add_action(file_menu, self.tr("Save"), self.on_direct_save, "file_save")
+        add_action(
+            file_menu,
+            self.tr("Save All Modified Files"),
+            self.on_save_all,
+            "file_save_all",
+        )
         add_action(file_menu, self.tr("Save As..."), self.on_save, "file_save_as")
         add_action(file_menu, self.tr("Restore Backup..."), self.on_restore_backup)
         add_action(file_menu, self.tr("Reload"), self.reload_file, "file_reload")
@@ -925,6 +932,29 @@ class REasyEditorApp(QMainWindow):
             active.on_save()
         else:
             QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to save."))
+
+    def save_all_modified_files(self) -> dict:
+        result = save_modified_tabs(
+            self.project_workspace.sessions.all_tabs()
+        )
+        if result["requested_count"] == 0:
+            message = self.tr("No modified files to save.")
+        elif result["success"]:
+            message = self.tr(
+                "Saved {count} modified file(s)."
+            ).format(count=result["saved_count"])
+        else:
+            message = self.tr(
+                "Saved {saved} modified file(s); {failed} could not be saved."
+            ).format(
+                saved=result["saved_count"],
+                failed=result["failed_count"],
+            )
+        self.status_bar.showMessage(message, 5000)
+        return result
+
+    def on_save_all(self):
+        return self.save_all_modified_files()
 
     def reload_file(self):
         active = self.get_active_tab()

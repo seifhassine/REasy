@@ -22,6 +22,9 @@ def create_shortcuts_tab():
     shortcut_names = {
         "file_open": QCoreApplication.translate("KeyboardShortcuts", "Open File"),
         "file_save": QCoreApplication.translate("KeyboardShortcuts", "Save File"),
+        "file_save_all": QCoreApplication.translate(
+            "KeyboardShortcuts", "Save All Modified Files"
+        ),
         "file_save_as": QCoreApplication.translate("KeyboardShortcuts", "Save File As"),
         "file_reload": QCoreApplication.translate("KeyboardShortcuts", "Reload File"),
         "file_close_tab": QCoreApplication.translate("KeyboardShortcuts", "Close Tab"),

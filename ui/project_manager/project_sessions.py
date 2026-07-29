@@ -61,6 +61,17 @@ class ProjectSessionManager:
     def active_tabs(self) -> list[Any]:
         return list(self.get(self.active_key).tabs)
 
+    def all_tabs(self) -> list[Any]:
+        tabs = []
+        seen = set()
+        for session in [self._scratch, *self._sessions.values()]:
+            for tab in session.tabs:
+                if id(tab) in seen:
+                    continue
+                seen.add(id(tab))
+                tabs.append(tab)
+        return tabs
+
     def session_for_tab(self, tab: Any) -> ProjectSession | None:
         sessions = [self._scratch, *self._sessions.values()]
         return next((session for session in sessions if tab in session.tabs), None)
@@ -155,3 +166,68 @@ class ProjectSessionManager:
     def _show_windows(self, session: ProjectSession, visible: bool) -> None:
         for window in self.windows_for(session.tabs):
             window.setVisible(visible and not getattr(window.file_tab, "_workspace_hidden", False))
+
+
+def save_modified_tabs(tabs) -> dict[str, Any]:
+    """Save every currently modified tab and report failures without stopping."""
+
+    unique_tabs = []
+    seen = set()
+    for tab in tabs:
+        if tab is None or id(tab) in seen:
+            continue
+        seen.add(id(tab))
+        unique_tabs.append(tab)
+
+    def label_for(tab) -> str:
+        return str(
+            getattr(tab, "filename", "")
+            or getattr(tab, "title", "")
+            or "Untitled"
+        )
+
+    candidates = [tab for tab in unique_tabs if bool(getattr(tab, "modified", False))]
+    candidates.sort(
+        key=lambda tab: not bool(getattr(tab, "hide_notebook_tab", False))
+    )
+    saved = []
+    failed = []
+    for tab in candidates:
+        if not bool(getattr(tab, "modified", False)):
+            continue
+        label = label_for(tab)
+        save = getattr(tab, "direct_save", None)
+        if not callable(save):
+            failed.append({"file": label, "error_code": "unsupported"})
+            continue
+        try:
+            succeeded = bool(save())
+        except Exception as exc:
+            failed.append(
+                {
+                    "file": label,
+                    "error_code": "exception",
+                    "detail": str(exc),
+                }
+            )
+            continue
+        if succeeded and not bool(getattr(tab, "modified", False)):
+            saved.append(label)
+        else:
+            failed.append({"file": label, "error_code": "still_modified"})
+
+    remaining = [
+        label_for(tab)
+        for tab in unique_tabs
+        if bool(getattr(tab, "modified", False))
+    ]
+    return {
+        "requested_count": len(candidates),
+        "saved": saved,
+        "saved_count": len(saved),
+        "failed": failed,
+        "failed_count": len(failed),
+        "remaining_modified": remaining,
+        "remaining_modified_count": len(remaining),
+        "success": not failed and not remaining,
+    }
