@@ -91,8 +91,10 @@ class MsgHandler(BaseFileHandler):
         self.raw_data = bytearray(self.raw_data)
         struct.pack_into("<I", self.raw_data, 16, len(self.entries))
         struct.pack_into("<I", self.raw_data, 20, len(self.userParamTypes))
+        struct.pack_into("<I", self.raw_data, 24, len(self.useLanguages))
         self.header["messageCount"] = len(self.entries)
         self.header["userParamCount"] = len(self.userParamTypes)
+        self.header["languageDataCount"] = len(self.useLanguages)
         
         if self._by_hash(self.header["version"]):
             for entry in self.entries:
