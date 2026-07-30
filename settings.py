@@ -2,10 +2,28 @@ import os
 import json
 from copy import deepcopy
 
+from services.ai.chat_service import (
+    AI_PROVIDER_CONFIGS,
+    DEEPSEEK_PROVIDER,
+    LOCAL_PROVIDER,
+    get_ai_provider_config,
+    normalize_context_window,
+    thinking_config_for_model,
+)
+
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
 DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
     "show_debug_console": True,
+    "show_ai_chat": True,
+    "ai_provider": DEEPSEEK_PROVIDER.id,
+    "deepseek_model": DEEPSEEK_PROVIDER.default_model,
+    "deepseek_context_window_tokens": 0,
+    "deepseek_thinking_mode": "enabled",
+    "deepseek_reasoning_effort": "high",
+    "local_ai_endpoint": LOCAL_PROVIDER.default_endpoint,
+    "local_ai_model": LOCAL_PROVIDER.default_model,
+    "local_ai_context_window_tokens": 0,
     "show_rsz_advanced": True,
     "game_version": "RE4",  # Default game version
     "backup_on_save": True,
@@ -27,7 +45,8 @@ DEFAULT_SETTINGS = {
         "find_search_number": "Ctrl+N",
         "view_prev_tab": "PgDown",
         "view_next_tab": "PgUp",
-        "view_debug_console": "Ctrl+Shift+D"
+        "view_debug_console": "Ctrl+Shift+D",
+        "view_ai_chat": "Ctrl+Shift+A"
     },
     "confirmation_prompt": True,
     "verify_rsz_crc_on_open": True,
@@ -65,6 +84,48 @@ def normalize_settings(settings=None):
             )
         else:
             normalized[key] = value
+
+    normalized["ai_provider"] = get_ai_provider_config(
+        normalized["ai_provider"]
+    ).id
+    for provider in AI_PROVIDER_CONFIGS.values():
+        normalized[provider.context_setting] = normalize_context_window(
+            normalized[provider.context_setting]
+        )
+        for key, fallback in (
+            (provider.model_setting, provider.default_model),
+            (provider.endpoint_setting, provider.default_endpoint),
+        ):
+            if key is None:
+                continue
+            value = normalized[key]
+            normalized[key] = (
+                value.strip()
+                if isinstance(value, str) and value.strip()
+                else fallback
+            )
+        thinking = thinking_config_for_model(
+            provider,
+            normalized[provider.model_setting],
+        )
+        if thinking is None:
+            continue
+        for key, allowed, fallback in (
+            (
+                provider.thinking_mode_setting,
+                thinking.modes,
+                thinking.default_mode,
+            ),
+            (
+                provider.reasoning_effort_setting,
+                thinking.reasoning_efforts,
+                thinking.default_reasoning_effort,
+            ),
+        ):
+            if key is None:
+                continue
+            value = str(normalized.get(key, "")).strip().casefold()
+            normalized[key] = value if value in allowed else fallback
     return normalized
 
 

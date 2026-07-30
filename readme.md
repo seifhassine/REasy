@@ -87,6 +87,12 @@ REasy GUI is currently available in English and Chinese.
 - **Project Manager:**
  
   Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
+
+- **AI Assistant:**
+
+  For now, supports DeepSeek API or a local OpenAI-compatible server such as LM Studio. It can navigate projects, tabs, and PAK files, and inspect or edit MDF and MSG files through REasy. 
+
+  Local servers are restricted to loopback addresses. DeepSeek keys can be used for the current session, loaded from `DEEPSEEK_API_KEY`, or stored in the operating system keyring (not tested on Linux). Chat messages and requested editor context are sent to the selected provider.
   
 -  **Backup System for Files**
 

@@ -136,6 +136,40 @@ class ProjectWorkspaceController:
         )
         return session
 
+    def focus_open_tab(self, tab) -> bool:
+
+        session = self.sessions.session_for_tab(tab)
+        if session is None or getattr(tab, "_workspace_hidden", False):
+            return False
+
+        if session is not self.sessions.get(self.sessions.active_key):
+            if session.path:
+                self.activate(session.path, session.game)
+            else:
+                self.sessions.activate(None)
+                self.host.current_project = self.host.current_game = None
+                self.host.proj_dock.set_project(None)
+                self.host.proj_dock.hide()
+                self._sync_tabs()
+
+        widget = getattr(tab, "notebook_widget", None)
+        index = self.sessions.notebook.indexOf(widget) if widget is not None else -1
+        if index != -1:
+            self.sessions.notebook.setCurrentIndex(index)
+            ensure_loaded = getattr(getattr(tab, "preview", None), "ensure_loaded", None)
+            if callable(ensure_loaded):
+                ensure_loaded()
+            self._sync_tabs()
+            return True
+
+        windows = self.sessions.windows_for([tab])
+        for window in windows:
+            window.show()
+            window.raise_()
+            window.activateWindow()
+        self._sync_tabs()
+        return bool(windows)
+
     def delete_project(self, project_path: Path) -> bool:
         key = ProjectSessionManager.key_for(project_path)
         session = self.sessions.get(key)

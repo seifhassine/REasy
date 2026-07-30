@@ -13,5 +13,6 @@ PyOpenGL_accelerate
 numpy
 capstone
 pefile
+keyring>=25
 meson==1.4.0
 ninja==1.13.0

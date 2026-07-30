@@ -52,6 +52,7 @@ from PySide6.QtWidgets import (
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
+from ui.ai.chat_dock import AiChatDock
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.directory_search import search_directory_for_type
 from ui.highlight_menu_controller import HighlightMenuController
@@ -181,6 +182,25 @@ class REasyEditorApp(QMainWindow):
         main_layout.addWidget(self.console_widget)
 
         self.project_workspace = ProjectWorkspaceController(self, self.notebook, self.tabs)
+        self.ai_chat_dock = AiChatDock(self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.ai_chat_dock)
+        ai_chat_action = self.ai_chat_dock.toggleViewAction()
+        ai_chat_action.setText(self.tr("AI Assistant"))
+        ai_chat_action.setObjectName("view_ai_chat")
+        ai_chat_action.setShortcut(
+            QKeySequence(
+                self.settings.get("keyboard_shortcuts", {}).get(
+                    "view_ai_chat",
+                    DEFAULT_SETTINGS["keyboard_shortcuts"]["view_ai_chat"],
+                )
+            )
+        )
+        self.view_menu.addSeparator()
+        self.view_menu.addAction(ai_chat_action)
+        self.ai_chat_dock.setVisible(self.settings.get("show_ai_chat", True))
+        # QAction.triggered only records an intentional menu/shortcut toggle;
+        # parent-window hide/show events must not overwrite the preference.
+        ai_chat_action.triggered.connect(self._on_ai_chat_visibility_changed)
 
         if self.settings.get("show_debug_console", True):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
@@ -354,6 +374,7 @@ class REasyEditorApp(QMainWindow):
         )
 
         view_menu = menubar.addMenu(self.tr("View"))
+        self.view_menu = view_menu
 
         add_action(
             view_menu, self.tr("Previous Tab"), self.goto_previous_tab, "view_prev_tab"
@@ -590,6 +611,8 @@ class REasyEditorApp(QMainWindow):
     def _apply_style(self, colors):
         self.setStyleSheet(get_main_stylesheet(colors))
         self.home_widget.set_theme(colors, self._theme_accent_color().name())
+        if hasattr(self, "ai_chat_dock"):
+            self.ai_chat_dock.apply_theme()
 
     def toggle_debug_console(self, show: bool):
         if hasattr(self, "console_widget"):
@@ -608,6 +631,11 @@ class REasyEditorApp(QMainWindow):
                     sys.stderr = sys.stderr.original_stream
 
             self.settings["show_debug_console"] = show
+            self.save_settings()
+
+    def _on_ai_chat_visibility_changed(self, visible: bool):
+        if self.settings.get("show_ai_chat", True) != bool(visible):
+            self.settings["show_ai_chat"] = bool(visible)
             self.save_settings()
 
     def save_settings(self):
@@ -629,6 +657,8 @@ class REasyEditorApp(QMainWindow):
         if not self._confirm_tabs_close(list(self.tabs.values())):
             event.ignore()
             return
+        if hasattr(self, "ai_chat_dock"):
+            self.ai_chat_dock.shutdown()
         for tab in list(self.tabs.values()):
             try:
                 tab.cleanup()
