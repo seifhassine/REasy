@@ -420,17 +420,41 @@ class MsgHandler(BaseFileHandler):
     def _by_hash(version: int) -> bool:
         return version > 15 and version != 0x2022033D
 
+    @classmethod
+    def decrypt_for_search(cls, data: bytes | bytearray) -> bytes | bytearray:
+        if not cls.can_handle(data) or len(data) < 40:
+            return data
+
+        try:
+            version = struct.unpack_from("<I", data, 0)[0]
+            if not cls._is_encrypted(version):
+                return data
+
+            data_offset = struct.unpack_from("<Q", data, 32)[0]
+        except (struct.error, TypeError, ValueError):
+            return data
+
+        if data_offset < 40 or data_offset >= len(data):
+            return data
+
+        raw = bytes(data)
+        decrypted_pool = cls._decrypt_pool(raw[data_offset:])
+        return raw[:data_offset] + decrypted_pool
+
+    @classmethod
+    def _decrypt_pool(cls, encrypted: bytes | bytearray) -> bytes:
+        decrypted = bytearray(len(encrypted))
+        previous_cipher_byte = 0
+        for index, cipher_byte in enumerate(encrypted):
+            decrypted[index] = cipher_byte ^ previous_cipher_byte ^ cls._KEY[index & 0xF]
+            previous_cipher_byte = cipher_byte
+        return bytes(decrypted)
+
     def _decrypt_string_pool(self):
         if not self.is_encrypted or self.header["data_offset"] is None:
             return
         off = self.header["data_offset"]
-        enc = self.raw_data[off:]
-        dec = bytearray(len(enc))
-        prev = 0
-        for i, c in enumerate(enc):
-            dec[i] = c ^ prev ^ self._KEY[i & 0xF]
-            prev = c
-        self._pool = bytes(dec)
+        self._pool = self._decrypt_pool(self.raw_data[off:])
 
     def _encrypt(self) -> bytes:
         if not self.is_encrypted or self.header["data_offset"] is None:

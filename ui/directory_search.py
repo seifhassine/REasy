@@ -1,5 +1,6 @@
 import os
 import queue
+import re
 import threading
 import mmap
 from typing import Callable
@@ -32,9 +33,21 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from file_handlers.msg.msg_handler import MsgHandler
 from utils.binary_search import create_binary_matcher, create_search_patterns
 
 PAK_SEARCH_TITLE = QT_TRANSLATE_NOOP("DirectorySearch", "PAK Search")
+
+
+def _is_msg_filename(source_name) -> bool:
+    filename = os.path.basename(os.fspath(source_name or ""))
+    return bool(re.search(r"\.msg(?:\.[^.\\/]+)?$", filename, re.IGNORECASE))
+
+
+def _prepare_msg_search_data(data):
+    if MsgHandler.can_handle(data):
+        return MsgHandler.decrypt_for_search(data)
+    return data
 
 
 def _search_type_label(search_type: str) -> str:
@@ -330,15 +343,17 @@ def search_items_with_progress(
 def search_directory_common(parent, dpath, matcher, ptitle, rtext, max_bytes):
     """Search plain files in a directory."""
     flist = [os.path.join(r, f) for r, _, fs in os.walk(dpath) for f in fs]
+
     def process_file(fp):
         try:
             if max_bytes is not None and os.path.getsize(fp) > max_bytes:
                 return False
             with open(fp, "rb") as f:
                 data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-                found = matcher(data)
-                data.close()
-                return found
+                try:
+                    return matcher(_prepare_msg_search_data(data))
+                finally:
+                    data.close()
         except Exception:
             pass
         return False
@@ -398,7 +413,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         if not buf:
             return False
         data = buf.getvalue()
-        return matcher(data)
+        return matcher(_prepare_msg_search_data(data))
 
     def resolved_label(entry_data):
         if entry_data['kind'] == 'path':
