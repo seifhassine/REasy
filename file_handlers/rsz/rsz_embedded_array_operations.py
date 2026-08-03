@@ -412,7 +412,15 @@ class RszEmbeddedArrayOperations:
                 return False
         return True
 
-    def create_array_element(self, element_type, array_data, top_rui, direct_update=False, array_item=None):
+    def create_array_element(
+        self,
+        element_type,
+        array_data,
+        top_rui,
+        direct_update=False,
+        array_item=None,
+        notify=True,
+    ):
         """Create array element with proper instance ordering in embedded contexts."""
         parent_context = getattr(array_data, '_owning_context', None)
         parent_instance_id = getattr(array_data, '_owning_instance_id', None)
@@ -454,7 +462,7 @@ class RszEmbeddedArrayOperations:
         if new_elem and direct_update and array_item and hasattr(self.viewer.tree, 'model'):
             self._add_element_to_ui_direct(array_item, new_elem)
         
-        if new_elem:
+        if new_elem and notify:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self.viewer, "Element Added", f"New {element_type} created.")
         

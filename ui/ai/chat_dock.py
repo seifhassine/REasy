@@ -709,17 +709,25 @@ class _EmptyState(QFrame):
         formats_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(formats_label)
 
-        formats_row = QHBoxLayout()
-        formats_row.setSpacing(6)
-        formats_row.addStretch(1)
-        for name in ("MDF", "MSG"):
-            chip = QLabel(name, self)
-            chip.setObjectName(f"empty{name.title()}Chip")
-            chip.setAlignment(Qt.AlignCenter)
-            chip.setMinimumWidth(42)
-            formats_row.addWidget(chip)
-        formats_row.addStretch(1)
-        layout.addLayout(formats_row)
+        format_rows = (
+            (("MDF2", "Mdf"), ("MSG", "Msg")),
+            tuple(
+                (name, "Rsz")
+                for name in ("USER", "SCN", "PFB", "WCC")
+            ),
+        )
+        for formats in format_rows:
+            formats_row = QHBoxLayout()
+            formats_row.setSpacing(6)
+            formats_row.addStretch(1)
+            for name, family in formats:
+                chip = QLabel(name, self)
+                chip.setObjectName(f"empty{family}Chip")
+                chip.setAlignment(Qt.AlignCenter)
+                chip.setMinimumWidth(42)
+                formats_row.addWidget(chip)
+            formats_row.addStretch(1)
+            layout.addLayout(formats_row)
 
 
 class AiChatDock(QDockWidget):
@@ -1512,7 +1520,8 @@ acting on file state. Return only the compacted memory.
                 font-size: 7.5pt;
                 font-weight: 600;
             }}
-            QLabel#emptyMdfChip, QLabel#emptyMsgChip {{
+            QLabel#emptyMdfChip, QLabel#emptyMsgChip,
+            QLabel#emptyRszChip {{
                 border-radius: 6px;
                 padding: 3px 8px;
                 font-size: 7.5pt;
@@ -1527,6 +1536,11 @@ acting on file state. Return only the compacted memory.
                 color: #d6c1ff;
                 background-color: #302943;
                 border: 1px solid #544675;
+            }}
+            QLabel#emptyRszChip {{
+                color: #b9e4ca;
+                background-color: #20382e;
+                border: 1px solid #35634c;
             }}
             QFrame#assistantBubble, QFrame#errorBubble, QFrame#userBubble {{
                 border-radius: 12px;
@@ -2520,6 +2534,15 @@ acting on file state. Return only the compacted memory.
                 "Stopped after {completed} of {total}; no output was "
                 "published."
             ).format(completed=completed, total=total)
+        if progress.get("stage") == "migrating_files":
+            return self.tr(
+                "Stopped after {completed} of {total}; no output was "
+                "published."
+            ).format(completed=completed, total=total)
+        if progress.get("stage") == "writing_migrated_files":
+            return self.tr(
+                "Stopped after writing {completed} of {total} outputs."
+            ).format(completed=completed, total=total)
         return self.tr(
             "Stopped after {completed} of {total}; completed edits remain "
             "unsaved."
@@ -2972,6 +2995,18 @@ acting on file state. Return only the compacted memory.
         if stage == "updating_mod_folder":
             return self.tr(
                 "Updating mod file {current} of {total}: {item}"
+            ).format(current=current, total=total, item=item)
+        if stage == "migrating_files":
+            return self.tr(
+                "Migrating file {current} of {total}: {item}"
+            ).format(current=current, total=total, item=item)
+        if stage == "analyzing_rsz_update":
+            return self.tr(
+                "Analyzing RSZ file {current} of {total}: {item}"
+            ).format(current=current, total=total, item=item)
+        if stage == "writing_migrated_files":
+            return self.tr(
+                "Writing migrated file {current} of {total}: {item}"
             ).format(current=current, total=total, item=item)
         return self._tool_activity(name)[0]
 

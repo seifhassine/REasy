@@ -13,6 +13,15 @@ from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
 
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.msg.msg_viewer import MsgViewer
+from ui.ai.file_migration import (
+    migration_job_schema,
+)
+from ui.ai.msg_migration import (
+    MsgMigrationStrategy,
+    default_msg_attribute,
+    overlay_msg_data,
+)
+from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
 from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
@@ -48,6 +57,21 @@ Use copy_msg_values for a source-to-destination transfer. Map "from A to B"
 literally: source=A and destination=B. REasy confirms the resolved direction
 before applying changes. An opened PAK-backed MSG is a valid unsaved in-memory
 destination and does not need to be extracted first.
+
+Use migrate_msg_files for one or many external outdated/latest pairs. It keeps
+each latest MSG as the structural base and writes a separate output file; do
+not open every pair first. Before it can run, the user must open the relevant
+game project and load that game's PAK files in the Project Browser.
+
+When the user supplies a mod folder and asks to update all MSG files, call
+update_msg_mod_folder once. It discovers them recursively, matches versioned
+paths against the loaded game PAKs, and writes a separate updated copy of the
+complete mod. Do not enumerate the directory or open it as a file.
+
+Completed MSG migrations retain a post-update report. Use
+inspect_file_update_report when the user later asks for exact imported text,
+name, SoundID, or attribute changes, source additions, latest-only entries, or
+unresolved values.
 
 MSG edits stay unsaved until a save tool succeeds. Importing JSON replaces the
 active MSG's editable data; exporting JSON writes a separate file and requires
@@ -459,6 +483,80 @@ def msg_tool_definitions() -> tuple[AiToolDefinition, ...]:
             unsaved_result=True,
         ),
         tool(
+            "migrate_msg_files",
+            "Migrate one or many MSG files on disk. Use only when explicit "
+            "outdated/latest/output file paths are already known; use "
+            "update_msg_mod_folder for a mod directory. Each latest file "
+            "remains the structural and format-version base; entries match by UUID, "
+            "languages by code, and attributes by name and compatible type. "
+            "Outputs are written separately and atomically. Requires the user "
+            "to first open the relevant game project with its PAK files loaded.",
+            {
+                "jobs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 256,
+                    "items": migration_job_schema("msg"),
+                },
+                "include_source_only": {
+                    "type": "boolean",
+                    "description": (
+                        "Also carry over source-only entries, languages, and "
+                        "attributes. Default false; latest-only data is preserved."
+                    ),
+                },
+            },
+            ["jobs"],
+            activity=(
+                QT_TRANSLATE_NOOP("AiChatDock", "Migrating MSG files"),
+                QT_TRANSLATE_NOOP("AiChatDock", "Migrated MSG files"),
+            ),
+            capability=MSG_EDIT_CAPABILITY,
+            incremental=True,
+            persistent=True,
+        ),
+        tool(
+            "update_msg_mod_folder",
+            "Recursively update every MSG file in an exact external mod "
+            "folder. Files are discovered internally and paired by "
+            "version-insensitive RE Engine path with latest originals from "
+            "the active project's loaded game PAKs. All other mod files are "
+            "copied and a separate output folder is published atomically. "
+            "Never open or enumerate the folder with other assistant tools. "
+            "Requires the user to open the relevant project and load its "
+            "PAKs first.",
+            {
+                "mod_folder": {
+                    "type": "string",
+                    "description": (
+                        "Exact existing mod-folder path to scan recursively."
+                    ),
+                },
+                "output_folder": {
+                    "type": "string",
+                    "description": (
+                        "Optional new or empty output folder. Omit to create a "
+                        "unique sibling named <mod folder>_updated."
+                    ),
+                },
+                "include_source_only": {
+                    "type": "boolean",
+                    "description": (
+                        "Also carry over source-only entries, languages, and "
+                        "attributes. Default false."
+                    ),
+                },
+            },
+            ["mod_folder"],
+            activity=(
+                QT_TRANSLATE_NOOP("AiChatDock", "Updating the MSG mod folder"),
+                QT_TRANSLATE_NOOP("AiChatDock", "Updated the MSG mod folder"),
+            ),
+            capability=MSG_EDIT_CAPABILITY,
+            incremental=True,
+            persistent=True,
+        ),
+        tool(
             "import_msg_json",
             "Replace the active MSG's editable in-memory data from an existing JSON file exported by REasy. The MSG remains unsaved.",
             {
@@ -854,7 +952,7 @@ class MsgAssistantToolMixin:
 
     @staticmethod
     def _default_attribute(param_type: int) -> Any:
-        return "" if param_type in (-1, 2) else 0 if param_type == 0 else 0.0
+        return default_msg_attribute(param_type)
 
     @staticmethod
     def _attribute_value(param_type: int, value: Any) -> Any:
@@ -2314,23 +2412,11 @@ class MsgAssistantToolMixin:
             "save_requires_copy": bool(target_payload.get("pak_backed")),
         }
         source_json = source_viewer.handler.to_json_dict()
-        target_json = copy.deepcopy(target_viewer.handler.to_json_dict())
         source_sections = (
             set(_MSG_COPY_SECTIONS)
             if not sections
             else {str(value) for value in sections}
         )
-        unknown_sections = source_sections.difference(_MSG_COPY_SECTIONS)
-        if unknown_sections:
-            raise AssistantToolError(
-                _tr(
-                    QT_TRANSLATE_NOOP(
-                        "ReasyAssistantTools",
-                        "Unknown MSG copy sections: {sections}",
-                    ),
-                    sections=sorted(unknown_sections),
-                )
-            )
         source_entry_indices = self._selected_copy_indices(
             source_json["entries"],
             entries,
@@ -2354,242 +2440,33 @@ class MsgAssistantToolMixin:
             if "attributes" in source_sections
             else []
         )
-        changes = []
-        source_only = []
-        incompatible = []
-        destination_only = []
-
-        target_language_codes = {
-            int(language["code"]): index
-            for index, language in enumerate(target_json["languages"])
+        target_json, overlay = overlay_msg_data(
+            source_json,
+            target_viewer.handler.to_json_dict(),
+            entry_indices=(source_entry_indices if entries else None),
+            language_indices=(source_language_indices if languages else None),
+            attribute_indices=(source_attribute_indices if attributes else None),
+            sections=source_sections,
+            include_source_only=include_source_only,
+        )
+        change_count = overlay["changes_applied"]
+        selected_source_uuids = {
+            str(source_json["entries"][index].get("uuid", "")).casefold()
+            for index in source_entry_indices
         }
-        selected_source_codes = {
-            int(source_json["languages"][index]["code"])
-            for index in source_language_indices
-        }
-        if "content" in source_sections and not languages:
-            destination_only.extend(
-                f"language[{code}]"
-                for code in target_language_codes
-                if code not in selected_source_codes
-            )
-        language_map = {}
-        for source_index in source_language_indices:
-            source_language = source_json["languages"][source_index]
-            code = int(source_language["code"])
-            target_index = target_language_codes.get(code)
-            if target_index is None:
-                if not include_source_only:
-                    source_only.append(f"language[{code}]")
-                    continue
-                target_json["languages"].append(
-                    copy.deepcopy(source_language)
-                )
-                target_index = len(target_json["languages"]) - 1
-                target_language_codes[code] = target_index
-                for entry in target_json["entries"]:
-                    entry["content"].append("")
-                changes.append(
-                    {
-                        "path": f"language[{code}]",
-                        "kind": "added",
-                    }
-                )
-            language_map[source_index] = target_index
-
-        target_params_by_name = {
-            str(param.get("name", "")).casefold(): (index, param)
-            for index, param in enumerate(target_json["user_params"])
-        }
-        selected_source_param_names = {
-            str(
-                source_json["user_params"][index].get("name", "")
-            ).casefold()
-            for index in source_attribute_indices
-        }
-        if "attributes" in source_sections and not attributes:
-            destination_only.extend(
-                f"attribute[{param.get('name', '')}]"
-                for key, (_index, param) in target_params_by_name.items()
-                if key not in selected_source_param_names
-            )
-        attribute_map = {}
-        for source_index in source_attribute_indices:
-            source_param = source_json["user_params"][source_index]
-            key = str(source_param.get("name", "")).casefold()
-            target_match = target_params_by_name.get(key)
-            if target_match is None:
-                if not include_source_only:
-                    source_only.append(
-                        f"attribute[{source_param.get('name', '')}]"
-                    )
-                    continue
-                target_json["user_params"].append(
-                    copy.deepcopy(source_param)
-                )
-                target_index = len(target_json["user_params"]) - 1
-                target_params_by_name[key] = (
-                    target_index,
-                    target_json["user_params"][target_index],
-                )
-                default = self._default_attribute(
-                    int(source_param["type"])
-                )
-                for entry in target_json["entries"]:
-                    entry["attributes"].append(copy.deepcopy(default))
-                changes.append(
-                    {
-                        "path": f"attribute[{source_param.get('name', '')}]",
-                        "kind": "added",
-                    }
-                )
-            else:
-                target_index, target_param = target_match
-                if int(target_param["type"]) != int(source_param["type"]):
-                    incompatible.append(
-                        {
-                            "path": (
-                                f"attribute[{source_param.get('name', '')}]"
-                            ),
-                            "source_type": int(source_param["type"]),
-                            "destination_type": int(target_param["type"]),
-                        }
-                    )
-                    continue
-            attribute_map[source_index] = target_index
-
-        target_entries = {
-            str(entry.get("uuid", "")).casefold(): (index, entry)
-            for index, entry in enumerate(target_json["entries"])
-        }
-        selected_source_uuids = set()
-        for source_index in source_entry_indices:
-            source_entry = source_json["entries"][source_index]
-            entry_uuid = str(source_entry.get("uuid", "")).casefold()
-            selected_source_uuids.add(entry_uuid)
-            target_match = target_entries.get(entry_uuid)
-            entry_added = target_match is None
-            if target_match is None:
-                if not include_source_only:
-                    source_only.append(f"entry[{entry_uuid}]")
-                    continue
-                target_entry = {
-                    "uuid": source_entry["uuid"],
-                    "name": (
-                        source_entry.get("name", "")
-                        if "name" in source_sections
-                        else ""
-                    ),
-                    "SoundID": (
-                        int(source_entry.get("SoundID", 0))
-                        if "sound_id" in source_sections
-                        else 0
-                    ),
-                    "content": [
-                        "" for _ in target_json["languages"]
-                    ],
-                    "attributes": [
-                        self._default_attribute(int(param["type"]))
-                        for param in target_json["user_params"]
-                    ],
-                }
-                target_json["entries"].append(target_entry)
-                target_index = len(target_json["entries"]) - 1
-                target_entries[entry_uuid] = (target_index, target_entry)
-            else:
-                target_index, target_entry = target_match
-            if "name" in source_sections:
-                old = target_entry.get("name", "")
-                new = source_entry.get("name", "")
-                if old != new:
-                    target_entry["name"] = new
-                    changes.append(
-                        {
-                            "path": f"entry[{entry_uuid}].name",
-                            "kind": "changed",
-                            "old": old,
-                            "new": new,
-                        }
-                    )
-            if "sound_id" in source_sections:
-                old = int(target_entry.get("SoundID", 0))
-                new = int(source_entry.get("SoundID", 0))
-                if old != new:
-                    target_entry["SoundID"] = new
-                    changes.append(
-                        {
-                            "path": f"entry[{entry_uuid}].sound_id",
-                            "kind": "changed",
-                            "old": old,
-                            "new": new,
-                        }
-                    )
-            if "content" in source_sections:
-                for source_language, target_language in language_map.items():
-                    old = target_entry["content"][target_language]
-                    new = source_entry["content"][source_language]
-                    if old != new:
-                        target_entry["content"][target_language] = new
-                        if not entry_added:
-                            code = source_json["languages"][
-                                source_language
-                            ]["code"]
-                            changes.append(
-                                {
-                                    "path": (
-                                        f"entry[{entry_uuid}].content[{code}]"
-                                    ),
-                                    "kind": "changed",
-                                    "old": old,
-                                    "new": new,
-                                }
-                            )
-            if "attributes" in source_sections:
-                for source_attr, target_attr in attribute_map.items():
-                    old = target_entry["attributes"][target_attr]
-                    new = source_entry["attributes"][source_attr]
-                    if old != new:
-                        target_entry["attributes"][target_attr] = (
-                            copy.deepcopy(new)
-                        )
-                        if not entry_added:
-                            name = source_json["user_params"][
-                                source_attr
-                            ]["name"]
-                            changes.append(
-                                {
-                                    "path": (
-                                        f"entry[{entry_uuid}].attribute[{name}]"
-                                    ),
-                                    "kind": "changed",
-                                    "old": old,
-                                    "new": new,
-                                }
-                            )
-            if entry_added:
-                changes.append(
-                    {"path": f"entry[{entry_uuid}]", "kind": "added"}
-                )
-
-        if not entries:
-            destination_only.extend(
-                f"entry[{entry_uuid}]"
-                for entry_uuid in target_entries
-                if entry_uuid not in selected_source_uuids
-            )
-        if changes and not self._confirm_file_copy_for_request(
+        if change_count and not self._confirm_file_copy_for_request(
             source_payload,
             target_payload,
-            len(changes),
+            change_count,
         ):
             return {
                 "status": "cancelled",
                 "cancelled": True,
-                "changes_planned": len(changes),
+                "changes_planned": change_count,
                 "changes_applied": 0,
                 **copy_metadata,
             }
-        if changes:
+        if change_count:
             self._activate_open_tab(target_payload["id"])
             self._apply_msg_data(target_viewer, target_json)
             if target_viewer.handler.entries:
@@ -2613,28 +2490,133 @@ class MsgAssistantToolMixin:
         return {
             "status": (
                 "partial"
-                if source_only or incompatible
+                if (
+                    overlay["source_only_value_count"]
+                    or overlay["incompatible_value_count"]
+                )
                 else "destination_only_values_preserved"
-                if destination_only
+                if overlay["destination_only_value_count"]
                 else "completed"
-                if changes
+                if change_count
                 else "no_changes"
             ),
             "cancelled": False,
-            "changes_planned": len(changes),
-            "changes_applied": len(changes),
-            "changes": changes[:500],
-            "details_truncated": len(changes) > 500,
-            "source_only_value_count": len(source_only),
-            "source_only_values": source_only[:500],
-            "destination_only_value_count": len(destination_only),
-            "destination_only_values_preserved": destination_only[:500],
-            "incompatible_value_count": len(incompatible),
-            "incompatible_values": incompatible[:500],
+            "changes_planned": change_count,
+            **overlay,
             "modified": bool(target_viewer.modified),
             "saved": False,
             **copy_metadata,
         }
+
+    def _migrate_msg_files(
+        self,
+        jobs: list[dict[str, Any]],
+        include_source_only: bool = False,
+    ) -> dict[str, Any]:
+        return self._run_incremental_steps(
+            self._migrate_msg_files_steps(jobs, include_source_only)
+        )
+
+    def _migrate_msg_files_steps(
+        self,
+        jobs: list[dict[str, Any]],
+        include_source_only: bool = False,
+    ):
+        project_context = self._require_update_project_paks()
+        strategy = MsgMigrationStrategy(
+            include_source_only=self._boolean(
+                include_source_only,
+                "include_source_only",
+            ),
+        )
+        return (
+            yield from self._migrate_reported_file_jobs_steps(
+                jobs,
+                strategy,
+                project_context,
+            )
+        )
+
+    @staticmethod
+    def _summarize_migrate_msg_files(
+        arguments: dict[str, Any],
+    ) -> tuple[str, str]:
+        jobs = arguments.get("jobs")
+        count = len(jobs) if isinstance(jobs, list) else 0
+        outputs = [
+            str(job.get("output_file", ""))
+            for job in (jobs or [])[:5]
+            if isinstance(job, dict)
+        ]
+        details = _tr("Jobs: {count}", count=count)
+        if outputs:
+            details += "\n" + _tr(
+                "Output files: {paths}",
+                paths=", ".join(outputs),
+            )
+        return _tr("Migrate MSG files"), details
+
+    def _update_msg_mod_folder(
+        self,
+        mod_folder: str,
+        output_folder: str = "",
+        include_source_only: bool = False,
+    ) -> dict[str, Any]:
+        return self._run_incremental_steps(
+            self._update_msg_mod_folder_steps(
+                mod_folder,
+                output_folder,
+                include_source_only,
+            )
+        )
+
+    def _update_msg_mod_folder_steps(
+        self,
+        mod_folder: str,
+        output_folder: str = "",
+        include_source_only: bool = False,
+    ):
+        project_context = self._require_update_project_paks()
+        collector = self._new_file_update_report_collector()
+        strategy = MsgMigrationStrategy(
+            include_source_only=self._boolean(
+                include_source_only,
+                "include_source_only",
+            ),
+            detail_limit=None,
+        )
+        result = yield from update_mod_folder_from_paks_steps(
+            mod_folder=mod_folder,
+            output_folder=output_folder,
+            pak_paths=self._configured_pak_paths(),
+            read_pak_file=self._read_configured_pak_file,
+            strategy=strategy,
+            suffixes=("msg",),
+            report_sink=collector,
+        )
+        return self._attach_file_update_report(
+            result,
+            format_name="msg",
+            operation="mod_folder_update",
+            project_context=project_context,
+            source=str(result.get("mod_folder") or mod_folder),
+            output=str(result.get("output_folder") or output_folder),
+            collector=collector,
+        )
+
+    @staticmethod
+    def _summarize_update_msg_mod_folder(
+        arguments: dict[str, Any],
+    ) -> tuple[str, str]:
+        output = arguments.get("output_folder") or _tr("Automatic sibling folder")
+        return (
+            _tr("Update MSG mod folder"),
+            _tr(
+                "Mod folder: {mod}\nOutput folder: {output}",
+                mod=arguments.get("mod_folder", ""),
+                output=output,
+            ),
+        )
 
     def _load_msg_json(
         self,

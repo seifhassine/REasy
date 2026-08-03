@@ -25,6 +25,7 @@ from ui.ai.action_policy import (
     AiActionPolicy,
     AiChangeDecision,
 )
+from ui.ai.file_migration import migrate_file_jobs_steps
 from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
@@ -32,6 +33,7 @@ from ui.ai.tool_registry import (
     tool as _tool,
     translate_tool_text as _tr,
 )
+from ui.ai.update_reports import FileUpdateReport, UpdateReportCollector
 from ui.ai.msg_tools import (
     MSG_ASSISTANT_CAPABILITY_PROMPT,
     MSG_CAPABILITY,
@@ -40,6 +42,15 @@ from ui.ai.msg_tools import (
     MsgAssistantToolMixin,
     msg_prompt_matches,
     msg_tool_definitions,
+)
+from ui.ai.rsz_tools import (
+    RSZ_ASSISTANT_CAPABILITY_PROMPT,
+    RSZ_CAPABILITY,
+    RSZ_EDIT_ASSISTANT_CAPABILITY_PROMPT,
+    RSZ_EDIT_CAPABILITY,
+    RszAssistantToolMixin,
+    rsz_prompt_matches,
+    rsz_tool_definitions,
 )
 from ui.project_manager.constants import PROJECTS_ROOT
 from ui.project_manager.project_picker_dialog import discover_projects
@@ -56,9 +67,10 @@ project state, or successful actions. When a request is ambiguous, ask one
 concise question instead of guessing.
 
 Format-specific editor tools are loaded only when relevant. If a result reveals
-an MDF or MSG and its read tools are unavailable, call enable_ai_capability with
-capability="mdf" or capability="msg". Load the corresponding "mdf_edit" or
-"msg_edit" capability only for requested changes or ordinary two-file value
+an MDF, MSG, or RSZ-based file and its read tools are unavailable, call
+enable_ai_capability with capability="mdf", capability="msg", or
+capability="rsz". Load the corresponding "mdf_edit", "msg_edit", or
+"rsz_edit" capability only for requested changes or ordinary two-file value
 copies. Load capability="mdf_three_way" only when the user explicitly asks for
 a "three-way" or "3-way" migration, and capability="mdf_folder_update" only
 when they explicitly request an external-folder mod rebuild. Use
@@ -73,6 +85,22 @@ asks to see the project manager or choose through the UI. New projects still use
 REasy's guided dialog. Export tools may display dialogs and may only start an
 asynchronous workflow, so report exactly what their tool result says.
 
+Projects are optional. Use open_file for an exact local filesystem path when the
+user wants to work directly with a file. With no active project, REasy opens it
+as a standalone tab; inspection, comparison, editing, and saving tools work on
+standalone tabs exactly as they do on project tabs. Never require the user to
+create or open a project just to work with an already-open or directly opened
+file.
+
+File-update workflows are the exception: migrate_mdf_files, update_mod_folder,
+migrate_msg_files, update_msg_mod_folder, migrate_rsz_files, and
+analyze_rsz_mod_folder_update/update_rsz_mod_folder require the user to first
+open the project for the relevant game and load that game's PAK files in the
+Project Browser. If that precondition is missing, stop and explain it; do not
+open a project, show a picker, create a project, or begin the update on the
+user's behalf. Return control to the user so they can open the project
+themselves.
+
 Honor the source named by the user. For a file requested from or in a project,
 search with list_project_files and open it with open_project_file. Never
 silently substitute a game-PAK file; use PAK discovery only when the user asks
@@ -83,6 +111,17 @@ Use get_reasy_context when you need workspace or navigation details that another
 tool result did not already provide. It reports every open project and tab,
 including modified in-memory files. Prefer activate_open_tab over reopening a
 path so unsaved editor state is preserved.
+
+Completed RSZ and MSG disk or mod-folder update attempts retain an exact,
+paginated post-update report. When the user later asks what was imported into
+the latest files, which elements were new, what stayed at the latest PAK value,
+or what could not be imported, call inspect_file_update_report. Omit update_id
+for the most recent update; use section="updates" to find an older one. Fetch
+the report instead of inferring differences from the conversation or reopening
+every file. Page or filter detailed sections as needed, and never claim the
+detail list is exhaustive when details_complete is false. These reports
+describe output copies built from the latest PAK originals; never imply that
+the game PAK archives themselves were changed.
 
 Changes made through editor tools remain unsaved; only call save_active_file or save_all_modified_files
 when the user explicitly asks to save. Use Save All after a batch only when the
@@ -178,6 +217,23 @@ MDF_EDIT_CAPABILITY = "mdf_edit"
 MDF_THREE_WAY_CAPABILITY = "mdf_three_way"
 MDF_FOLDER_UPDATE_CAPABILITY = "mdf_folder_update"
 PAK_CAPABILITY = "pak"
+_UPDATE_PROJECT_TOOL_NAMES = frozenset(
+    {
+        "migrate_mdf_files",
+        "update_mod_folder",
+        "migrate_msg_files",
+        "update_msg_mod_folder",
+        "migrate_rsz_files",
+        "update_rsz_mod_folder",
+    }
+)
+_PROJECT_OPEN_TOOL_NAMES = frozenset(
+    {
+        "open_project",
+        "show_open_project_dialog",
+        "show_create_project_dialog",
+    }
+)
 _CAPABILITY_PROMPTS = {
     MDF_CAPABILITY: MDF_ASSISTANT_CAPABILITY_PROMPT,
     MDF_EDIT_CAPABILITY: MDF_EDIT_ASSISTANT_CAPABILITY_PROMPT,
@@ -187,6 +243,8 @@ _CAPABILITY_PROMPTS = {
     ),
     MSG_CAPABILITY: MSG_ASSISTANT_CAPABILITY_PROMPT,
     MSG_EDIT_CAPABILITY: MSG_EDIT_ASSISTANT_CAPABILITY_PROMPT,
+    RSZ_CAPABILITY: RSZ_ASSISTANT_CAPABILITY_PROMPT,
+    RSZ_EDIT_CAPABILITY: RSZ_EDIT_ASSISTANT_CAPABILITY_PROMPT,
     PAK_CAPABILITY: PAK_ASSISTANT_CAPABILITY_PROMPT,
 }
 
@@ -246,6 +304,14 @@ _MDF_NORMAL_MIGRATION_PROMPT_HINT_RE = re.compile(
     r"\b(?:migrat(?:e|ion)|outdated\s+mod|old\s+mod|"
     r"update\s+(?:(?:this|the|my|an?)\s+)?mod)\b"
     r"|(?:迁移|旧版模组|旧模组|更新模组)"
+    r")",
+    re.IGNORECASE,
+)
+_FORMAT_MIGRATION_PROMPT_HINT_RE = re.compile(
+    r"(?:"
+    r"\b(?:migrat(?:e|ion)|updat(?:e|ed|ing)|upgrade)\b"
+    r"|\bcarry\s+(?:it\s+)?over\b"
+    r"|(?:迁移|更新|升级)"
     r")",
     re.IGNORECASE,
 )
@@ -312,6 +378,24 @@ def _pak_source_requested(prompt: str) -> bool:
     return bool(
         _PAK_PROMPT_HINT_RE.search(prompt)
         or _GAME_ORIGINAL_PROMPT_HINT_RE.search(prompt)
+    )
+
+
+def _file_update_requested(prompt: str) -> bool:
+    prompt = str(prompt or "")
+    if (
+        _MDF_THREE_WAY_PROMPT_HINT_RE.search(prompt)
+        or _MDF_NORMAL_MIGRATION_PROMPT_HINT_RE.search(prompt)
+        or _MDF_FOLDER_UPDATE_PROMPT_HINT_RE.search(prompt)
+    ):
+        return True
+    return bool(
+        _FORMAT_MIGRATION_PROMPT_HINT_RE.search(prompt)
+        and (
+            _MDF_PROMPT_HINT_RE.search(prompt)
+            or msg_prompt_matches(prompt)
+            or rsz_prompt_matches(prompt)
+        )
     )
 
 
@@ -520,7 +604,7 @@ _INDEX = {
 }
 
 
-class ReasyAssistantTools(MsgAssistantToolMixin):
+class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
     """Expose constrained REasy and format-editor operations to chat model."""
 
     _tool_definitions_cache: tuple[AiToolDefinition, ...] | None = None
@@ -552,6 +636,9 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         self._next_tab_id = 1
         self._enabled_capabilities: set[str] = set()
         self._blocked_capabilities: set[str] = set()
+        self._update_waiting_for_user_project = False
+        self._rsz_update_analyses: dict[str, Any] = {}
+        self._file_update_reports: dict[str, FileUpdateReport] = {}
 
     def _pulse_open_tab(self, tab):
         sessions = getattr(
@@ -623,6 +710,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         prompt = str(prompt or "")
         active_mdf = False
         active_msg = False
+        active_rsz = False
         active_tab = self.app.get_active_tab()
         try:
             self._mdf_for_tab(active_tab)
@@ -636,9 +724,15 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             pass
         else:
             active_msg = True
+        try:
+            self._rsz_for_tab(active_tab)
+        except AssistantToolError:
+            pass
+        else:
+            active_rsz = True
 
         if (
-            (active_mdf or active_msg)
+            (active_mdf or active_msg or active_rsz)
             and getattr(active_tab, "pak_source_path", None)
         ):
             inferred.add(PAK_CAPABILITY)
@@ -673,8 +767,19 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         msg_request = bool(active_msg or msg_prompt_matches(prompt))
         if msg_request:
             inferred.add(MSG_CAPABILITY)
-        if msg_request and _EDIT_PROMPT_HINT_RE.search(prompt):
+        if msg_request and (
+            _EDIT_PROMPT_HINT_RE.search(prompt)
+            or _FORMAT_MIGRATION_PROMPT_HINT_RE.search(prompt)
+        ):
             inferred.add(MSG_EDIT_CAPABILITY)
+        rsz_request = bool(active_rsz or rsz_prompt_matches(prompt))
+        if rsz_request:
+            inferred.add(RSZ_CAPABILITY)
+        if rsz_request and (
+            _EDIT_PROMPT_HINT_RE.search(prompt)
+            or _FORMAT_MIGRATION_PROMPT_HINT_RE.search(prompt)
+        ):
+            inferred.add(RSZ_EDIT_CAPABILITY)
         if _pak_source_requested(prompt):
             inferred.add(PAK_CAPABILITY)
         return inferred
@@ -684,6 +789,10 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
 
         self._action_policy.begin_request()
         prompt = str(prompt or "")
+        self._update_waiting_for_user_project = bool(
+            not getattr(self.app, "current_project", None)
+            and _file_update_requested(prompt)
+        )
         previous = self._enabled_capabilities.copy()
         follow_up = bool(
             previous and _FOLLOW_UP_REFERENCE_RE.search(prompt)
@@ -735,6 +844,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
     def reset_capabilities(self) -> None:
         self._enabled_capabilities.clear()
         self._blocked_capabilities.clear()
+        self._update_waiting_for_user_project = False
         self._action_policy.reset()
 
     @staticmethod
@@ -823,15 +933,77 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         definitions = (
             _tool(
                 "get_reasy_context",
-                "Get every open project and tab, including active, modified, detached, PAK-backed, and in-memory editability state.",
+                "Get every open project and tab, including standalone/direct-open, active, modified, detached, PAK-backed, and in-memory editability state.",
                 activity=(
                     QT_TRANSLATE_NOOP("AiChatDock", "Reading the current REasy workspace"),
                     QT_TRANSLATE_NOOP("AiChatDock", "Checked the current REasy workspace"),
                 ),
             ),
             _tool(
+                "inspect_file_update_report",
+                "Retrieve exact details retained after completed RSZ or MSG "
+                "disk/folder updates. It can list prior updates or page the "
+                "latest update's imported value changes, new elements from "
+                "either the mod or latest PAK, AI-kept latest values, "
+                "unresolved differences, and per-file counts. Omit update_id "
+                "to inspect the most recent update.",
+                {
+                    "update_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional update ID returned by an updater. Omit "
+                            "for the most recent successful update."
+                        ),
+                    },
+                    "section": {
+                        "type": "string",
+                        "enum": [
+                            "summary",
+                            "imported",
+                            "new_elements",
+                            "kept_latest",
+                            "unresolved",
+                            "files",
+                            "updates",
+                        ],
+                        "description": "Report section; defaults to summary.",
+                    },
+                    "file": {
+                        "type": "string",
+                        "description": (
+                            "Optional case-insensitive file, PAK path, or "
+                            "output-path filter."
+                        ),
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "Optional case-insensitive search across paths, "
+                            "values, kinds, reasons, and decisions."
+                        ),
+                    },
+                    "offset": {"type": "integer", "minimum": 0},
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 200,
+                        "description": "Maximum rows; defaults to 50.",
+                    },
+                },
+                activity=(
+                    QT_TRANSLATE_NOOP("AiChatDock", "Reading the file update report"),
+                    QT_TRANSLATE_NOOP("AiChatDock", "Read the file update report"),
+                ),
+            ),
+            _tool(
                 "enable_ai_capability",
-                "Load tools for the next round. Use 'mdf' for MDF inspection and comparison, 'mdf_edit' for requested MDF changes and ordinary two-file migration or copying, 'mdf_three_way' only after an explicit three-way or 3-way request, 'mdf_folder_update' only for an explicitly requested external-folder rebuild, and 'pak' only for explicitly requested game-archive, game-original, or vanilla sources.",
+                "Load tools for the next round. Use 'mdf', 'msg', or 'rsz' for "
+                "format inspection; use the corresponding *_edit capability only "
+                "for requested changes. RSZ covers USER/SCN/PFB and headless RSZ "
+                "containers such as RCOL. Use 'mdf_three_way' only after an explicit "
+                "three-way request, 'mdf_folder_update' only for an explicitly "
+                "requested external-folder rebuild, and 'pak' only for explicitly "
+                "requested game-archive, game-original, or vanilla sources.",
                 _capability_schema_properties,
                 ["capability"],
                 activity=(
@@ -938,16 +1110,8 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                 persistent=True,
             ),
             _tool(
-                "show_open_file_dialog",
-                "Show REasy's file-open dialog.",
-                activity=(
-                    QT_TRANSLATE_NOOP("AiChatDock", "Opening the file picker"),
-                    QT_TRANSLATE_NOOP("AiChatDock", "Opened the file picker"),
-                ),
-            ),
-            _tool(
                 "open_file",
-                "Open an existing file by an exact filesystem path.",
+                "Open an existing file by an exact filesystem path. This does not require a project; with no active project the file opens in a standalone tab.",
                 {"path": {"type": "string", "description": "Absolute or working-directory-relative file path."}},
                 ["path"],
                 activity=(
@@ -957,7 +1121,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             ),
             _tool(
                 "show_open_project_dialog",
-                "Show REasy's project library dialog.",
+                "Show REasy's project library dialog only when the user explicitly asks for it. Never use it to satisfy a file-update prerequisite.",
                 activity=(
                     QT_TRANSLATE_NOOP("AiChatDock", "Opening the project library"),
                     QT_TRANSLATE_NOOP("AiChatDock", "Opened the project library"),
@@ -983,7 +1147,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             ),
             _tool(
                 "open_project",
-                "Directly open or switch to an existing REasy project without showing the project library.",
+                "Directly open or switch to an existing REasy project without showing the project library. Never use it to satisfy a file-update prerequisite; the user must open that project themselves.",
                 {
                     "project": {
                         "type": "string",
@@ -1010,7 +1174,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             ),
             _tool(
                 "show_create_project_dialog",
-                "Show REasy's guided new-project dialog.",
+                "Show REasy's guided new-project dialog only when explicitly requested. Never use it to satisfy a file-update prerequisite.",
                 activity=(
                     QT_TRANSLATE_NOOP("AiChatDock", "Opening project creation"),
                     QT_TRANSLATE_NOOP("AiChatDock", "Opened project creation"),
@@ -1175,7 +1339,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             ),
             _tool(
                 "migrate_mdf_files",
-                "Run an explicitly requested three-way MDF migration for one or more files. Each job compares an old original with its modded copy and applies only the mod's changes to a latest-update destination through the MDF UI. Do not use this for an ordinary two-file migration.",
+                "Run an explicitly requested three-way MDF migration for one or more files. Requires the user to first open the relevant game project with its PAK files loaded. Each job compares an old original with its modded copy and applies only the mod's changes to a latest-update destination through the MDF UI. Do not use this for an ordinary two-file migration.",
                 {
                     "jobs": {
                         "type": "array",
@@ -1227,7 +1391,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             ),
             _tool(
                 "update_mod_folder",
-                "Create an updated mod from an external mod folder and a folder of latest extracted originals. Recursively match versioned MDFs by relative path, use each latest original as the output base, overlay source MDF values through the UI, and copy every other mod file unchanged. This writes a separate output folder; use only when the user explicitly requests it.",
+                "Create an updated mod from an external mod folder and a folder of latest extracted originals. Requires the user to first open the relevant game project with its PAK files loaded. Recursively match versioned MDFs by relative path, use each latest original as the output base, overlay source MDF values through the UI, and copy every other mod file unchanged. This writes a separate output folder; use only when the user explicitly requests it.",
                 {
                     "mod_folder": {
                         "type": "string",
@@ -1265,7 +1429,11 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                     QT_TRANSLATE_NOOP("AiChatDock", "Editing files"),
                     QT_TRANSLATE_NOOP("AiChatDock", "Edited files"),
                 ),
-                capability=(MDF_EDIT_CAPABILITY, MSG_EDIT_CAPABILITY),
+                capability=(
+                    MDF_EDIT_CAPABILITY,
+                    MSG_EDIT_CAPABILITY,
+                    RSZ_EDIT_CAPABILITY,
+                ),
                 incremental=True,
                 ui_edit=True,
                 result_card=True,
@@ -1513,7 +1681,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                 mutation=True,
             ),
         )
-        return (*definitions, *msg_tool_definitions())
+        return (*definitions, *msg_tool_definitions(), *rsz_tool_definitions())
 
     @classmethod
     def tool_definitions(cls) -> tuple[AiToolDefinition, ...]:
@@ -1703,6 +1871,8 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         if definition is None or not definition.persistent:
             return True
         arguments = self._decode_tool_arguments(arguments_json)
+        if name in _UPDATE_PROJECT_TOOL_NAMES:
+            self._require_update_project_paks()
         return self._action_policy.request(
             lambda: self._confirm_tool_action(name, arguments)
         )
@@ -1804,6 +1974,8 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         definition = self.tool_definition(name)
         if definition is None:
             raise AssistantToolError(_tr("Unknown tool: {name}", name=name))
+        if name in _PROJECT_OPEN_TOOL_NAMES:
+            self._require_project_open_action_allowed()
         handler = getattr(self, definition.handler_name)
         call_arguments = self._prepare_tool_call_arguments(
             definition,
@@ -1843,6 +2015,8 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             additions.add(MDF_CAPABILITY)
         elif name == MSG_EDIT_CAPABILITY:
             additions.add(MSG_CAPABILITY)
+        elif name == RSZ_EDIT_CAPABILITY:
+            additions.add(RSZ_CAPABILITY)
         self._enabled_capabilities = set(
             _validate_capabilities(
                 self._enabled_capabilities.union(additions)
@@ -1852,6 +2026,206 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "enabled": name,
             "available_next_round": True,
         }
+
+    @staticmethod
+    def _new_file_update_report_collector() -> UpdateReportCollector:
+        return UpdateReportCollector()
+
+    def _migrate_reported_file_jobs_steps(
+        self,
+        jobs: list[dict[str, Any]],
+        strategy,
+        project_context: dict[str, Any],
+    ):
+        collector = self._new_file_update_report_collector()
+        result = yield from migrate_file_jobs_steps(
+            jobs,
+            strategy,
+            report_sink=collector,
+        )
+        format_name = str(strategy.format_name).casefold()
+        format_label = format_name.upper()
+        single_job = len(jobs) == 1 and isinstance(jobs[0], dict)
+        source = (
+            str(jobs[0].get("outdated_file", ""))
+            if single_job
+            else f"{len(jobs)} explicit {format_label} files"
+        )
+        output = (
+            str(jobs[0].get("output_file", ""))
+            if single_job
+            else f"{len(collector.files)} output {format_label} files"
+        )
+        return self._attach_file_update_report(
+            result,
+            format_name=format_name,
+            operation="file_migration",
+            project_context=project_context,
+            source=source,
+            output=output,
+            collector=collector,
+        )
+
+    def _record_file_update_report(
+        self,
+        *,
+        format_name: str,
+        operation: str,
+        project: str,
+        game: str,
+        source: str,
+        output: str,
+        result: dict[str, Any],
+        collector: UpdateReportCollector,
+        decision_lookup: dict[
+            tuple[str, str], dict[str, Any]
+        ] | None = None,
+    ) -> FileUpdateReport:
+        summary = {
+            key: copy.deepcopy(value)
+            for key, value in result.items()
+            if key not in {"jobs", "ai_decisions"}
+        }
+        report = FileUpdateReport.create(
+            format_name=format_name,
+            operation=operation,
+            project=project,
+            game=game,
+            source=source,
+            output=output,
+            result=summary,
+            files=collector.files,
+            decision_lookup=decision_lookup,
+        )
+        self._file_update_reports[report.update_id] = report
+        while len(self._file_update_reports) > 16:
+            self._file_update_reports.pop(next(iter(self._file_update_reports)))
+        return report
+
+    def _attach_file_update_report(
+        self,
+        result: dict[str, Any],
+        *,
+        format_name: str,
+        operation: str,
+        project_context: dict[str, Any],
+        source: str,
+        output: str,
+        collector: UpdateReportCollector,
+        decision_lookup: dict[
+            tuple[str, str], dict[str, Any]
+        ] | None = None,
+    ) -> dict[str, Any]:
+        report = self._record_file_update_report(
+            format_name=format_name,
+            operation=operation,
+            project=project_context["project"],
+            game=project_context["game"],
+            source=source,
+            output=output,
+            result=result,
+            collector=collector,
+            decision_lookup=decision_lookup,
+        )
+        result.update(
+            {
+                "update_report_id": report.update_id,
+                "update_report_available": True,
+                "update_report_sections": report.summary()[
+                    "available_sections"
+                ],
+            }
+        )
+        return result
+
+    def _file_update_report(self, update_id: str = "") -> FileUpdateReport:
+        key = str(update_id or "").strip()
+        if key:
+            report = self._file_update_reports.get(key)
+        else:
+            report = (
+                next(reversed(self._file_update_reports.values()))
+                if self._file_update_reports
+                else None
+            )
+        if report is None:
+            if key:
+                raise AssistantToolError(
+                    _tr(
+                        "File update report was not found: {update_id}.",
+                        update_id=key,
+                    )
+                )
+            raise AssistantToolError(
+                _tr("No completed RSZ or MSG file update report is available.")
+            )
+        return report
+
+    def _inspect_file_update_report(
+        self,
+        update_id: str = "",
+        section: str = "summary",
+        file: str = "",
+        query: str = "",
+        offset: int = 0,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        section = str(section or "summary").strip().casefold()
+        allowed = {
+            "summary",
+            "imported",
+            "new_elements",
+            "kept_latest",
+            "unresolved",
+            "files",
+            "updates",
+        }
+        if section not in allowed:
+            raise AssistantToolError(
+                _tr("Unknown file update report section: {section}", section=section)
+            )
+        offset = self._integer(offset, "offset", 0, 1_000_000)
+        limit = self._integer(limit, "limit", 1, 200)
+        if section == "updates":
+            reports = list(reversed(self._file_update_reports.values()))
+            needle = " ".join(
+                value.strip() for value in (str(file or ""), str(query or ""))
+                if value.strip()
+            ).casefold()
+            summaries = [report.summary() for report in reports]
+            if needle:
+                summaries = [
+                    item
+                    for item in summaries
+                    if needle
+                    in json.dumps(
+                        item,
+                        ensure_ascii=False,
+                        default=str,
+                        sort_keys=True,
+                    ).casefold()
+                ]
+            page = summaries[offset : offset + limit]
+            return {
+                "section": "updates",
+                "offset": offset,
+                "limit": limit,
+                "total": len(summaries),
+                "updates": page,
+                "next_offset": (
+                    offset + len(page)
+                    if offset + len(page) < len(summaries)
+                    else None
+                ),
+            }
+        report = self._file_update_report(update_id)
+        return report.inspect(
+            section=section,
+            file_filter=file,
+            query=query,
+            offset=offset,
+            limit=limit,
+        )
 
     def _tab_id(self, tab) -> str:
         tab_id = getattr(tab, "_reasy_ai_tab_id", "")
@@ -1880,48 +2254,73 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         records = []
         seen = set()
 
+        def append(tab, session) -> None:
+            if tab is None or id(tab) in seen:
+                return
+            seen.add(id(tab))
+            filename = str(getattr(tab, "filename", "") or "")
+            source_path = str(getattr(tab, "pak_source_path", "") or "")
+            viewer = getattr(tab, "viewer", None)
+            handler = getattr(tab, "handler", None)
+            editor = (
+                type(viewer).__name__
+                if viewer is not None
+                else type(handler).__name__
+                if handler is not None
+                else type(tab).__name__
+            )
+            windows = manager.windows_for([tab])
+            hidden = bool(getattr(tab, "_workspace_hidden", False))
+            pak_backed = bool(source_path)
+            project = getattr(session, "path", None)
+            game = (
+                getattr(session, "game", None)
+                or getattr(handler, "game_version", None)
+                or getattr(viewer, "game_version", None)
+            )
+            payload = {
+                "id": self._tab_id(tab),
+                "title": self._tab_title(tab),
+                "path": filename or None,
+                "source_path": source_path or None,
+                "editor": editor,
+                "modified": bool(getattr(tab, "modified", False)),
+                "active": tab is active_tab,
+                "detached": bool(windows),
+                "activatable": not hidden,
+                "editable_in_memory": not hidden,
+                "pak_backed": pak_backed,
+                "save_requires_copy": pak_backed,
+                "workspace": "project" if project else "standalone",
+                "project": project,
+                "project_name": Path(project).name if project else None,
+                "game": game,
+                "project_active": bool(project and session is active_session),
+            }
+            if pak_backed:
+                payload["can_write_back_to_pak"] = False
+            records.append((tab, session, payload))
+
         for session in sessions:
-            if session is None:
-                continue
-            for tab in session.tabs:
-                if id(tab) in seen:
-                    continue
-                seen.add(id(tab))
-                filename = str(getattr(tab, "filename", "") or "")
-                source_path = str(getattr(tab, "pak_source_path", "") or "")
-                viewer = getattr(tab, "viewer", None)
-                handler = getattr(tab, "handler", None)
-                editor = (
-                    type(viewer).__name__
-                    if viewer is not None
-                    else type(handler).__name__
-                    if handler is not None
-                    else type(tab).__name__
-                )
-                windows = manager.windows_for([tab])
-                hidden = bool(getattr(tab, "_workspace_hidden", False))
-                pak_backed = bool(source_path)
-                payload = {
-                    "id": self._tab_id(tab),
-                    "title": self._tab_title(tab),
-                    "path": filename or None,
-                    "source_path": source_path or None,
-                    "editor": editor,
-                    "modified": bool(getattr(tab, "modified", False)),
-                    "active": tab is active_tab,
-                    "detached": bool(windows),
-                    "activatable": not hidden,
-                    "editable_in_memory": not hidden,
-                    "pak_backed": pak_backed,
-                    "save_requires_copy": pak_backed,
-                    "project": session.path,
-                    "project_name": Path(session.path).name if session.path else None,
-                    "game": session.game,
-                    "project_active": session is active_session,
-                }
-                if pak_backed:
-                    payload["can_write_back_to_pak"] = False
-                records.append((tab, session, payload))
+            if session is not None:
+                for tab in session.tabs:
+                    append(tab, session)
+
+        # Direct-open and detached tabs normally belong to the scratch session.
+        # Include UI-owned tabs as a fallback so assistant access does not depend
+        # on a project/session bookkeeping detail.
+        tab_lookup = getattr(self.app, "tabs", {})
+        extra_tabs = list(tab_lookup.values()) if hasattr(tab_lookup, "values") else []
+        extra_tabs.append(active_tab)
+        notebook = getattr(manager, "notebook", None)
+        extra_tabs.extend(
+            getattr(window, "file_tab", None)
+            for window in getattr(notebook, "_floating_windows", ())
+        )
+        session_for_tab = getattr(manager, "session_for_tab", None)
+        for tab in extra_tabs:
+            session = session_for_tab(tab) if callable(session_for_tab) else None
+            append(tab, session)
         return records
 
     def _get_reasy_context(self) -> dict[str, Any]:
@@ -1954,6 +2353,11 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "active_project": self.app.current_project,
             "active_game": self.app.current_game,
             "active_tab_id": active_tab["id"] if active_tab else None,
+            "active_workspace": active_tab.get("workspace") if active_tab else None,
+            "standalone_tab_count": sum(
+                payload.get("workspace") == "standalone"
+                for _tab, _session, payload in records
+            ),
             "open_projects": open_projects,
             "open_tabs": [payload for _tab, _session, payload in records],
         }
@@ -2020,7 +2424,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                     "That tab is currently managed by a scene and cannot be activated directly.",
                 )
             )
-        if not self.app.project_workspace.focus_open_tab(target):
+        if not self._focus_open_tab(target):
             raise AssistantToolError(
                 _tr(
                     "REasy could not activate open tab: {tab_id}",
@@ -2038,6 +2442,42 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "reused_in_memory": True,
             "disk_reloaded": False,
         }
+
+    def _focus_open_tab(self, tab) -> bool:
+        if tab is None or getattr(tab, "_workspace_hidden", False):
+            return False
+        focus = getattr(self.app.project_workspace, "focus_open_tab", None)
+        if callable(focus) and focus(tab):
+            return True
+        if tab is self.app.get_active_tab():
+            return True
+
+        manager = getattr(self.app.project_workspace, "sessions", None)
+        notebook = getattr(manager, "notebook", None) or getattr(
+            self.app, "notebook", None
+        )
+        widget = getattr(tab, "notebook_widget", None)
+        if notebook is not None and widget is not None:
+            try:
+                index = notebook.indexOf(widget)
+            except (AttributeError, RuntimeError):
+                index = -1
+            if index >= 0:
+                notebook.setCurrentIndex(index)
+                ensure_loaded = getattr(
+                    getattr(tab, "preview", None), "ensure_loaded", None
+                )
+                if callable(ensure_loaded):
+                    ensure_loaded()
+                return True
+
+        windows_for = getattr(manager, "windows_for", None)
+        windows = windows_for([tab]) if callable(windows_for) else ()
+        for window in windows:
+            window.show()
+            window.raise_()
+            window.activateWindow()
+        return bool(windows)
 
     def _active_project_root(self) -> Path:
         path = self.app.current_project
@@ -2285,19 +2725,20 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "project_relative_path": target.relative_to(root).as_posix(),
         }
 
-    def _configured_pak_paths(self) -> list[str]:
-        self._active_project_root()
+    def _loaded_project_pak_state(self):
+        root = self._active_project_root()
         dock = self.app.proj_dock
-        if not getattr(dock, "_pak_selected_paks", None):
+        selected = tuple(getattr(dock, "_pak_selected_paks", None) or ())
+        if not selected:
             raise AssistantToolError(
                 _tr(
                     "No game PAKs are configured and scanned for the active project."
                 )
             )
-        paths = list(
+        paths = tuple(
             getattr(dock, "_pak_all_paths", None)
             or getattr(dock, "_pak_base_paths", None)
-            or []
+            or ()
         )
         if not paths:
             raise AssistantToolError(
@@ -2306,6 +2747,77 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                     ".list file in the Project Browser first."
                 )
             )
+        return root, dock, selected, paths
+
+    def _require_update_project_paks(self) -> dict[str, Any]:
+        if not getattr(self.app, "current_project", None):
+            self._update_waiting_for_user_project = True
+            raise AssistantToolError(
+                _tr(
+                    "This file update cannot continue. The user must open the relevant game project themselves and load that game's PAK files in the Project Browser; the AI assistant will not open or choose a project for this prerequisite."
+                )
+            )
+        root, dock, selected, paths = self._loaded_project_pak_state()
+        dock_project = str(getattr(dock, "project_dir", None) or "").strip()
+        if dock_project and self._path_key(dock_project) != self._path_key(str(root)):
+            raise AssistantToolError(
+                _tr(
+                    "The loaded Project Browser PAK context belongs to a different project."
+                )
+            )
+        game = str(
+            getattr(self.app, "current_game", None)
+            or getattr(dock, "current_game", None)
+            or ""
+        ).strip()
+        if not game:
+            raise AssistantToolError(
+                _tr(
+                    "File updates require an active project with a known game and that game's PAK files loaded."
+                )
+            )
+        dock_game = str(getattr(dock, "current_game", None) or "").strip()
+        if dock_game and dock_game.casefold() != game.casefold():
+            raise AssistantToolError(
+                _tr(
+                    "The active project game does not match the loaded Project Browser PAK context."
+                )
+            )
+        known_paths = []
+        for path in paths:
+            normalized = str(path or "").strip().replace("\\", "/")
+            if (
+                normalized
+                and not normalized.endswith("/")
+                and not normalized.casefold().startswith("__unknown/")
+            ):
+                known_paths.append(normalized)
+        if not known_paths:
+            raise AssistantToolError(
+                _tr(
+                    "The active project has no loaded PAK file-path index. Load the correct game's PAK files in the Project Browser first."
+                )
+            )
+        return {
+            "project": str(root),
+            "game": game,
+            "pak_count": len(selected),
+            "indexed_path_count": len(known_paths),
+        }
+
+    def _require_project_open_action_allowed(self) -> None:
+        if (
+            self._update_waiting_for_user_project
+            and not getattr(self.app, "current_project", None)
+        ):
+            raise AssistantToolError(
+                _tr(
+                    "This file update is waiting for the user to open the relevant game project themselves. The AI assistant cannot open, choose, or create a project for this prerequisite."
+                )
+            )
+
+    def _configured_pak_paths(self) -> list[str]:
+        _root, _dock, _selected, paths = self._loaded_project_pak_state()
         unique: dict[str, str] = {}
         for path in paths:
             normalized = str(path or "").strip().replace("\\", "/")
@@ -2351,6 +2863,16 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                 )
             )
         return matches[0]
+
+    def _read_configured_pak_file(self, path: str) -> bytes | None:
+        root, dock, _selected, _paths = self._loaded_project_pak_state()
+        read_file = getattr(dock, "read_project_pak_file", None)
+        if callable(read_file):
+            return read_file(str(root), path)
+        ensure_reader = getattr(dock, "_ensure_project_pak_reader", None)
+        reader = ensure_reader() if callable(ensure_reader) else None
+        stream = reader.get_file(path) if reader is not None else None
+        return stream.read() if stream is not None else None
 
     def _open_pak_file(self, path: str) -> dict[str, Any]:
         resolved = self._resolve_pak_path(path)
@@ -2399,19 +2921,65 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "message": "REasy completed or displayed the extraction workflow.",
         }
 
-    def _show_open_file_dialog(self) -> str:
-        self.app.on_open()
-        return "The file-open dialog was shown."
-
     def _open_file(self, path: str) -> dict[str, Any]:
-        target = Path(os.path.expandvars(os.path.expanduser(path))).resolve()
+        requested = str(path or "").strip()
+        target = Path(
+            os.path.expandvars(os.path.expanduser(requested))
+        ).resolve()
         if not target.is_file():
             raise AssistantToolError(_tr("File does not exist: {path}", path=target))
+
+        target_key = self._path_key(str(target))
+
+        def matching_records():
+            return [
+                record
+                for record in self._open_tab_records()
+                if record[2].get("path")
+                and self._path_key(str(record[2]["path"])) == target_key
+            ]
+
+        existing = matching_records()
+        if existing:
+            active = [item for item in existing if item[2].get("active")]
+            if len(existing) > 1 and len(active) != 1:
+                choices = ", ".join(item[2]["id"] for item in existing)
+                raise AssistantToolError(
+                    _tr(
+                        "File is open in multiple tabs: {tabs}. Activate the intended tab instead.",
+                        tabs=choices,
+                    )
+                )
+            record = active[0] if active else existing[0]
+            if not self._focus_open_tab(record[0]):
+                raise AssistantToolError(
+                    _tr("REasy could not activate open file: {path}", path=target)
+                )
+            self._pulse_open_tab(record[0])
+            payload = self._tab_target_payload(record[0])
+            return {
+                "opened": str(target),
+                "opened_tab": payload,
+                "reused_open_tab": True,
+                "disk_reloaded": False,
+            }
+
+        before = {id(tab) for tab, _session, _payload in self._open_tab_records()}
         opened = bool(self.app._open_path(str(target)))
         if not opened:
             raise AssistantToolError(_tr("REasy could not open: {path}", path=target))
-        self._pulse_open_tab(self.app.get_active_tab())
-        return {"opened": str(target)}
+        record = next(iter(matching_records()), None)
+        if record is None:
+            raise AssistantToolError(
+                _tr("REasy did not expose an editor tab for: {path}", path=target)
+            )
+        self._pulse_open_tab(record[0])
+        return {
+            "opened": str(target),
+            "opened_tab": record[2],
+            "reused_open_tab": id(record[0]) in before,
+            "disk_reloaded": False,
+        }
 
     def _show_open_project_dialog(self) -> str:
         QTimer.singleShot(0, self.app.open_project)
@@ -2681,9 +3249,11 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
             "editable_in_memory": True,
             "pak_backed": pak_backed,
             "save_requires_copy": pak_backed,
+            "workspace": "standalone",
             "project": None,
             "project_name": None,
             "game": None,
+            "project_active": False,
             "active": tab is self.app.get_active_tab(),
         }
         if pak_backed:
@@ -3688,7 +4258,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         viewer: MdfViewer,
         changes: list[dict[str, Any]],
     ) -> tuple[list[str], list[dict[str, str]]]:
-        if not self.app.project_workspace.focus_open_tab(target_tab):
+        if not self._focus_open_tab(target_tab):
             raise AssistantToolError(
                 _tr(
                     "REasy could not activate the destination MDF.",
@@ -3866,6 +4436,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         jobs: list[dict[str, Any]],
         conflict_policy: str = "skip",
     ) -> dict[str, Any]:
+        self._require_update_project_paks()
         resolve, close_opened_tabs = self._tracked_migration_resolver()
         try:
             return self._migrate_mdf_files_impl(
@@ -3881,6 +4452,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         jobs: list[dict[str, Any]],
         conflict_policy: str = "skip",
     ):
+        self._require_update_project_paks()
         resolve, close_opened_tabs = self._tracked_migration_resolver()
         try:
             return (
@@ -4881,9 +5453,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
                 else ([], [])
             )
         if plan["rows"] and not cancelled:
-            if not supported and not self.app.project_workspace.focus_open_tab(
-                target_tab
-            ):
+            if not supported and not self._focus_open_tab(target_tab):
                 raise AssistantToolError(
                     _tr("REasy could not activate the destination MDF.")
                 )
@@ -5116,7 +5686,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         if tab is None:
             return
         try:
-            self.app.project_workspace.focus_open_tab(tab)
+            self._focus_open_tab(tab)
         except RuntimeError:
             pass
 
@@ -5183,6 +5753,7 @@ class ReasyAssistantTools(MsgAssistantToolMixin):
         output_folder: str = "",
         include_source_only: bool = False,
     ):
+        self._require_update_project_paks()
         output_state: dict[str, Any] = {}
         try:
             result = yield from self._build_mod_output_steps(

@@ -26,23 +26,50 @@ class RszArrayOperations:
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
 
-    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
+    def create_array_element(
+        self,
+        element_type,
+        array_data,
+        direct_update=False,
+        array_item=None,
+        userdata_string=None,
+        notify=True,
+    ):
         """Create a new element for an array based on type information"""
         element_class = getattr(array_data, 'element_class', None) if array_data else None
         
         if not self.type_registry or not array_data or not element_class:
-            QMessageBox.warning(self.viewer, "Error", "Missing required data for array element creation")
+            if notify:
+                QMessageBox.warning(
+                    self.viewer,
+                    "Error",
+                    "Missing required data for array element creation",
+                )
             return None
             
         type_info, type_id = self.type_registry.find_type_by_name(element_type)
         if not type_info and array_data.element_class != ResourceData:
-            QMessageBox.warning(self.viewer, "Error", f"Type not found in registry: {element_type}")
+            if notify:
+                QMessageBox.warning(
+                    self.viewer,
+                    "Error",
+                    f"Type not found in registry: {element_type}",
+                )
             return None
         
         if element_class == ObjectData:
-            new_element = self._create_new_object_instance_for_array(type_id, type_info, element_type, array_data)
+            new_element = self._create_new_object_instance_for_array(
+                type_id, type_info, element_type, array_data, notify=notify
+            )
         elif element_class == UserDataData:
-            new_element = self._create_new_userdata_instance_for_array(type_id, type_info, element_type, array_data, userdata_string)
+            new_element = self._create_new_userdata_instance_for_array(
+                type_id,
+                type_info,
+                element_type,
+                array_data,
+                userdata_string,
+                notify=notify,
+            )
         else:
             new_element = self.viewer._create_default_field(element_class, array_data.orig_type)
         
@@ -52,18 +79,31 @@ class RszArrayOperations:
             
             if direct_update and array_item:
                 self._add_element_to_ui_direct(array_item, new_element)
-            QMessageBox.information(self.viewer, "Element Added", f"New {element_type} element added successfully.")
+            if notify:
+                QMessageBox.information(
+                    self.viewer,
+                    "Element Added",
+                    f"New {element_type} element added successfully.",
+                )
             
         return new_element
 
 
-    def _create_new_userdata_instance_for_array(self, type_id, type_info, element_type, array_data, userdata_string=None):
+    def _create_new_userdata_instance_for_array(
+        self,
+        type_id,
+        type_info,
+        element_type,
+        array_data,
+        userdata_string=None,
+        notify=True,
+    ):
         """Create a new UserDataData instance with associated RSZUserDataInfo for an array element"""
         from file_handlers.rsz.rsz_object_operations import RszObjectOperations
         
         object_ops = RszObjectOperations(self.viewer)
         
-        parent_data = self._find_array_parent_data(array_data)
+        parent_data = self._find_array_parent_data(array_data, notify=notify)
         if not parent_data:
             raise RuntimeError("Warning: Could not find parent data for array, using fallback insertion")
         else:
@@ -93,9 +133,11 @@ class RszArrayOperations:
             return UserDataData(0, "", element_type)
                 
 
-    def _create_new_object_instance_for_array(self, type_id, type_info, element_type, array_data):
+    def _create_new_object_instance_for_array(
+        self, type_id, type_info, element_type, array_data, notify=True
+    ):
         """Create a new object instance for an array element"""
-        parent_data = self._find_array_parent_data(array_data) 
+        parent_data = self._find_array_parent_data(array_data, notify=notify)
         if not parent_data:
             return None
         parent_instance_id, parent_field_name = parent_data
@@ -106,7 +148,12 @@ class RszArrayOperations:
         # Create and initialize the instance
         new_instance = self.viewer._initialize_new_instance(type_id, type_info)
         if not new_instance or new_instance.type_id == 0:
-            QMessageBox.warning(self.viewer, "Error", f"Failed to create valid instance with type {element_type}")
+            if notify:
+                QMessageBox.warning(
+                    self.viewer,
+                    "Error",
+                    f"Failed to create valid instance with type {element_type}",
+                )
             return None
         
         # We'll use this to hold all nested objects in a hierarchical structure
@@ -308,7 +355,7 @@ class RszArrayOperations:
                 
         return base_insertion_index
 
-    def _find_array_parent_data(self, array_data):
+    def _find_array_parent_data(self, array_data, notify=True):
         """Find parent instance and field for an array"""
         for instance_id, fields in self.scn.parsed_elements.items():
             for field_name, field_data in fields.items():
@@ -337,7 +384,8 @@ class RszArrayOperations:
                                     if emb_field_data is array_data:
                                         return emb_id, emb_field_name
         
-        QMessageBox.warning(self.viewer, "Error", "Could not find array's parent instance")
+        if notify:
+            QMessageBox.warning(self.viewer, "Error", "Could not find array's parent instance")
         return None
 
 

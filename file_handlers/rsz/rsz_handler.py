@@ -1449,16 +1449,31 @@ class RszViewer(QWidget):
             self.array_operations = RszArrayOperations(self)
         return self.array_operations, None
 
-    def create_array_element(self, element_type, array_data, direct_update=False, array_item=None, userdata_string=None):
+    def create_array_element(
+        self,
+        element_type,
+        array_data,
+        direct_update=False,
+        array_item=None,
+        userdata_string=None,
+        notify=True,
+    ):
         array_operations, embedded_context = self._resolve_array_operations(array_data)
         if embedded_context:
             return array_operations.create_array_element(
                 element_type, array_data, embedded_context,
-                direct_update=direct_update, array_item=array_item
+                direct_update=direct_update,
+                array_item=array_item,
+                notify=notify,
             )
 
         return array_operations.create_array_element(
-            element_type, array_data, direct_update, array_item, userdata_string=userdata_string
+            element_type,
+            array_data,
+            direct_update,
+            array_item,
+            userdata_string=userdata_string,
+            notify=notify,
         )
 
     def delete_array_element(self, array_data, element_index):
