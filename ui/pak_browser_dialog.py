@@ -574,14 +574,13 @@ class PakBrowserDialog(QDialog):
 
 	@staticmethod
 	def _ensure_full_cache(reader, known):
-		had_cache = reader._cache is not None
 		if reader._cache is None:
 			reader.reset_file_list()
 			if known:
 				reader.add_files(*known)
 		if reader._cache is None or not getattr(reader, "_cache_complete", True):
-			reader.cache_entries(assign_paths=bool(known))
-		elif known and had_cache:
+			reader.cache_entries(assign_paths=False)
+		if known:
 			reader.assign_paths(known)
 
 	@staticmethod
