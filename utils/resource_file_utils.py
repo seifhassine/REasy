@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass, replace
 from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
@@ -7,11 +8,52 @@ _PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, str]]" = WeakKeyDic
 _DIR_ENTRIES_CACHE: dict[str, tuple[str, ...]] = {}
 
 
-def _normalize_lookup_path(path: str) -> str:
+@dataclass(frozen=True, slots=True)
+class ResourceResolutionContext:
+    """The owning project and resource sources for an opened asset."""
+
+    project_dir: str = ""
+    unpacked_dir: str = ""
+    path_prefix: str = "natives/stm"
+    pak_cached_reader: object | None = None
+    game: str = ""
+
+    def resolve(
+        self,
+        resource_path: str,
+        selection_parent=None,
+        *,
+        allow_selection_dialog: bool = True,
+    ) -> Optional[Tuple[str, bytes]]:
+        return resolve_resource_data(
+            resource_path,
+            self.project_dir,
+            self.unpacked_dir,
+            self.path_prefix,
+            self.pak_cached_reader,
+            selection_parent,
+            allow_selection_dialog=allow_selection_dialog,
+        )
+
+    def with_pak_reader(self, reader) -> "ResourceResolutionContext":
+        return replace(self, pak_cached_reader=reader)
+
+
+def normalize_resource_path(path: str) -> str:
+    """Return the canonical display form of an RE Engine resource path."""
     s = (path or "").replace("\\", "/").strip().rstrip("\x00")
     if s.startswith("@"):
         s = s[1:]
-    return s.lstrip("/").lower()
+    return s.lstrip("/")
+
+
+def resource_path_key(path: str) -> str:
+    """Return a case-insensitive cache key for an RE Engine resource path."""
+    return normalize_resource_path(path).casefold()
+
+
+def _normalize_lookup_path(path: str) -> str:
+    return resource_path_key(path)
 
 
 def _resource_path_candidates(resource_path: str) -> list[str]:
@@ -101,7 +143,13 @@ def _get_dir_entries(dir_path: str) -> tuple[str, ...]:
     return entries
 
 
-def _find_resource_in_root(resource_path: str, root_dir: str, path_prefix: str) -> Optional[Tuple[str, bytes]]:
+def _find_resource_in_root(
+    resource_path: str,
+    root_dir: str,
+    path_prefix: str,
+    *,
+    cache_entries: bool = True,
+) -> Optional[Tuple[str, bytes]]:
     if not root_dir or not os.path.isdir(root_dir):
         return None
 
@@ -115,8 +163,9 @@ def _find_resource_in_root(resource_path: str, root_dir: str, path_prefix: str) 
     if not os.path.isdir(dir_path):
         return None
 
+    entries = _get_dir_entries(dir_path) if cache_entries else os.listdir(dir_path)
     target_file = next(
-        (os.path.join(dir_path, f) for f in _get_dir_entries(dir_path) if f == base_name or f.startswith(base_name + ".")),
+        (os.path.join(dir_path, f) for f in entries if f == base_name or f.startswith(base_name + ".")),
         None,
     )
     if not target_file:
@@ -180,7 +229,12 @@ def resolve_resource_data(
     candidates = _resource_path_candidates(resource_path)
 
     for c in candidates:
-        hit = _find_resource_in_root(c, project_dir, path_prefix)
+        hit = _find_resource_in_root(
+            c,
+            project_dir,
+            path_prefix,
+            cache_entries=False,
+        )
         if hit:
             return hit
 
@@ -202,26 +256,95 @@ def resolve_resource_data(
     return None
 
 
-def resolve_app_resource_data(app, resource_path: str, selection_parent=None, *, allow_selection_dialog: bool = True):
+def resolve_app_resource_data(
+    app,
+    resource_path: str,
+    selection_parent=None,
+    *,
+    allow_selection_dialog: bool = True,
+) -> Optional[Tuple[str, bytes]]:
+    context = resource_context_for_app(app)
+    return (
+        context.resolve(
+            resource_path,
+            selection_parent,
+            allow_selection_dialog=allow_selection_dialog,
+        )
+        if context is not None
+        else None
+    )
+
+
+def resource_context_for_app(
+    app,
+    *,
+    project_dir: str | os.PathLike | None = None,
+    game: str = "",
+) -> ResourceResolutionContext | None:
+    """Build a resolution context for the asset's owning project."""
     if app is None:
         return None
-    proj = getattr(app, "proj_dock", None)
-    if proj is None:
+    project = getattr(app, "proj_dock", None)
+    if project is None:
         return None
-    game = str(
-        getattr(proj, "current_game", "")
+
+    root = os.fspath(project_dir or getattr(project, "project_dir", "") or "")
+    unpacked_dir = ""
+    reader = None
+    ensure_context = getattr(project, "ensure_project_pak_context", None)
+    if root and callable(ensure_context):
+        unpacked_dir, reader = ensure_context(root)
+    else:
+        unpacked_dir = str(getattr(project, "unpacked_dir", "") or "")
+        reader = getattr(project, "_pak_cached_reader", None)
+
+    infer_game = getattr(project, "infer_project_game", None)
+    inferred_game = infer_game(root) if root and callable(infer_game) else ""
+    resolved_game = str(
+        inferred_game
+        or game
+        or getattr(project, "current_game", "")
         or getattr(app, "current_game", "")
         or getattr(getattr(app, "project_manager", None), "current_game", "")
         or ""
     )
-    return resolve_resource_data(
-        resource_path,
-        getattr(proj, "project_dir", None),
-        getattr(proj, "unpacked_dir", None),
-        get_path_prefix_for_game(game),
-        getattr(proj, "_pak_cached_reader", None),
-        selection_parent,
-        allow_selection_dialog=allow_selection_dialog,
+    return ResourceResolutionContext(
+        project_dir=root,
+        unpacked_dir=str(unpacked_dir or ""),
+        path_prefix=get_path_prefix_for_game(resolved_game),
+        pak_cached_reader=reader,
+        game=resolved_game,
+    )
+
+
+def resource_context_for_handler(handler) -> ResourceResolutionContext | None:
+    context = getattr(handler, "resource_context", None)
+    if context is None:
+        context = resource_context_for_app(
+            getattr(handler, "app", None),
+            game=str(getattr(handler, "game_version", "") or ""),
+        )
+        if context is not None:
+            handler.resource_context = context
+    return context
+
+
+def resolve_handler_resource_data(
+    handler,
+    resource_path: str,
+    selection_parent=None,
+    *,
+    allow_selection_dialog: bool = True,
+) -> Optional[Tuple[str, bytes]]:
+    context = resource_context_for_handler(handler)
+    return (
+        context.resolve(
+            resource_path,
+            selection_parent,
+            allow_selection_dialog=allow_selection_dialog,
+        )
+        if context is not None
+        else None
     )
 
 

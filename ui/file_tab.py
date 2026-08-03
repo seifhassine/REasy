@@ -21,6 +21,10 @@ from ui.better_find_dialog import BetterFindDialog
 from ui.highlight_delegate import HighlightDelegate
 from ui.highlight_manager import HighlightManager
 from ui.highlight_utils import model_index_row_path
+from utils.resource_file_utils import (
+    resolve_handler_resource_data,
+    resource_context_for_app,
+)
 
 
 NO_FILE_LOADED_STR = QT_TRANSLATE_NOOP("FileTab", "No file loaded")
@@ -156,6 +160,12 @@ class FileTab:
 
             handler.refresh_tree_callback = self.refresh_tree
             handler.app = self.app
+            if getattr(handler, "resource_context", None) is None:
+                handler.resource_context = resource_context_for_app(
+                    self.app,
+                    project_dir=self.pak_project_dir,
+                    game=str(getattr(handler, "game_version", "") or ""),
+                )
             handler.highlight_manager = self.highlight_manager
 
             if hasattr(handler, "setup_tree"):
@@ -508,12 +518,10 @@ class FileTab:
             data = self.pak_data_loader(self.pak_source_path)
             if data is not None:
                 return data
-        if not self.app or not self.filename:
+        if not self.filename:
             return None
-        from utils.resource_file_utils import resolve_app_resource_data
-
-        hit = resolve_app_resource_data(
-            self.app,
+        hit = resolve_handler_resource_data(
+            self.handler,
             self.filename,
             None,
             allow_selection_dialog=False,

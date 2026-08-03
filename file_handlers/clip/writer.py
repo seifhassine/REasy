@@ -14,7 +14,15 @@ from .parser import (
     prop_size,
 )
 from .reader import ClipParserError
-from .structures import ActionKey, BoolKey, Key, NoHermiteKey, SpeedPoint
+from .structures import (
+    ActionKey,
+    BoolKey,
+    Key,
+    NoHermiteKey,
+    PathPoint3DValue,
+    SpeedPoint,
+    validate_path_point3d,
+)
 from utils.hash_util import murmur3_hash
 
 
@@ -129,7 +137,7 @@ class ClipWriter:
         rebuilt_user_data_asset_index_by_id: dict[int, int] = {
             id(asset): index for index, asset in enumerate(rebuilt_user_data_assets)
         }
-        rebuilt_owords: list[tuple[float, float, float, float]] = self._retain_reference_order(
+        rebuilt_owords: list[PathPoint3DValue] = self._retain_reference_order(
             parsed.owords,
             [getattr(key, "oword_ref", None) for key in reference_keys],
         )
@@ -158,6 +166,7 @@ class ClipWriter:
                 key.raw0, key.raw1 = index & 0xFFFFFFFF, index >> 32
             if getattr(key, "oword_ref", None) is not None:
                 key.raw0 = rebuilt_oword_index_by_id[id(key.oword_ref)]
+                key.raw1 = 0
 
         def allocate_string_patches(sorted_entries: list[tuple[int, str, bool, bool]]):
             dedupe = h.version >= 34
@@ -446,10 +455,9 @@ class ClipWriter:
         align(8)
         h.oword_ptr = tell()
         for row in rebuilt_owords:
-            if len(row) != 4:
-                raise ClipParserError("OWord row must have 4 floats")
             for v in row:
                 wf(v)
+            w32(0)
         data_size_pos: int | None = None
         data_size_dup_pos: int | None = None
         if parsed.header.data_ptr != 0:
@@ -753,8 +761,12 @@ class ClipWriter:
                 if ptype == PropertyType.USER_DATA_ASSET and parsed.header.version >= 62:
                     if getattr(key, "user_data_asset_ref", None) is None:
                         raise ClipParserError("UserDataAsset key has no referenced asset record")
-                if ptype == PropertyType.PATH_POINT3D and getattr(key, "oword_ref", None) is None:
-                    raise ClipParserError("PathPoint3D key has no referenced OWord record")
+                if ptype == PropertyType.PATH_POINT3D:
+                    value = getattr(key, "oword_ref", None)
+                    try:
+                        validate_path_point3d(value)
+                    except ValueError as exc:
+                        raise ClipParserError(str(exc)) from None
 
         interpolation_objects = [
             key for prop in all_properties for key in self._property_payload_keys(prop)

@@ -77,6 +77,12 @@ class MdfViewer(QWidget):
 		self.version_edit.setMaximumWidth(80)
 		self.version_edit.textChanged.connect(self._on_version_changed)
 		head.addWidget(self.version_edit)
+		self.meshlet_check = QCheckBox(self.tr("Meshlet Material"))
+		self.meshlet_check.setToolTip(
+			self.tr("Sets bit 0 of the MDF header options field.")
+		)
+		self.meshlet_check.stateChanged.connect(self._on_meshlet_changed)
+		head.addWidget(self.meshlet_check)
 		head.addStretch(1)
 		layout.addLayout(head)
 
@@ -420,6 +426,9 @@ class MdfViewer(QWidget):
 		self.version_edit.blockSignals(True)
 		self.version_edit.setText(str(self._current_file_version()))
 		self.version_edit.blockSignals(False)
+		self.meshlet_check.blockSignals(True)
+		self.meshlet_check.setChecked(bool(m.header.meshlet_material))
+		self.meshlet_check.blockSignals(False)
 		self._update_version_dependent_tabs()
 		self._refresh_materials_list()
 		if self.materials_table.rowCount() > 0:
@@ -466,6 +475,15 @@ class MdfViewer(QWidget):
 			self._refresh_material_row(current_row)
 		self._refresh_details_for_current_material()
 
+	def _on_meshlet_changed(self, state: int):
+		m = self.handler.mdf
+		if not m:
+			return
+		enabled = state == Qt.Checked.value
+		if m.header.meshlet_material != enabled:
+			m.header.meshlet_material = enabled
+			self.modified = True
+
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
 		if not m or not (0 <= r < len(m.materials)):
@@ -509,8 +527,13 @@ class MdfViewer(QWidget):
 			except ValueError:
 				return
 		value = max(0, min(value, 0xFFFFFFFFFFFFFFFF))
-		if m.materials[i].header.ukn != value:
-			m.materials[i].header.ukn = value
+		header = m.materials[i].header
+		current_value = header.ukn_re7 if self._current_file_version() == 6 else header.ukn
+		if current_value != value:
+			if self._current_file_version() == 6:
+				header.ukn_re7 = value
+			else:
+				header.ukn = value
 			self.modified = True
 
 	def _on_flags_changed(self, *_):
@@ -857,9 +880,14 @@ class MdfViewer(QWidget):
 			self.bake_texture_spin.setVisible(False)
 			self.bake_texture_spin.blockSignals(False)
 
-		if version >= 51:
+		if version == 6 or version >= 51:
 			self.ukn_edit.blockSignals(True)
-			self.ukn_edit.setText(str(md.header.ukn))
+			if version == 6:
+				self.ukn_edit.setText(str(md.header.ukn_re7))
+				self.ukn_label.setText(self.tr("Unknown RE7 64"))
+			else:
+				self.ukn_edit.setText(str(md.header.ukn))
+				self.ukn_label.setText(self.tr("Unknown 64"))
 			self.ukn_label.setVisible(True)
 			self.ukn_edit.setVisible(True)
 			self.ukn_edit.blockSignals(False)

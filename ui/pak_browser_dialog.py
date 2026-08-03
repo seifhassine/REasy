@@ -25,6 +25,7 @@ from ui.project_manager.pak_file_lists import (
 	choose_pak_list_file, find_suggested_pak_list_paths_for_directory, read_pak_list_file,
 )
 from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
+from utils.resource_file_utils import resource_context_for_app
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -504,7 +505,10 @@ class PakBrowserDialog(QDialog):
 		else:
 			entries = self._directory_icon_entries(paths)
 		self._thumbnail_provider.set_source(
-			self._current_reader(), self._selected_paks(), self._base_paths
+			self._current_reader(),
+			self._selected_paks(),
+			self._base_paths,
+			resource_context_for_app(self.parent()),
 		)
 		self._thumbnail_provider.cancel_pending()
 		self._icon_model.set_entries(entries)

@@ -161,7 +161,7 @@ class ClipGraphOperations:
             key.user_data_asset_ref = old_ref if old_type == ptype and old_ref else UserDataAssetInfo()
         elif ptype == PropertyType.PATH_POINT3D:
             old_ref = getattr(source, "oword_ref", None)
-            key.oword_ref = old_ref if old_type == ptype and old_ref else (0.0, 0.0, 0.0, 0.0)
+            key.oword_ref = old_ref if old_type == ptype and old_ref else (0.0, 0.0, 0.0)
         return key
 
     def retarget_property_type(self, prop: Property, property_type: int):

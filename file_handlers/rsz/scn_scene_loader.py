@@ -4,7 +4,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from utils.resource_file_utils import get_path_prefix_for_game, resolve_app_resource_data, resolve_resource_data
+from utils.resource_file_utils import (
+    ResourceResolutionContext,
+    resource_context_for_app,
+    resource_context_for_handler,
+)
 
 from .scn_scene_graph import (
     ScnResolvedResource,
@@ -138,12 +142,22 @@ class ScnSceneLoader:
         handler = source.handler if source is not None else None
         is_scn = ".scn" in normalized.lower() and source is not None
         context = self.resource_context_for_source(source)
+
         def found(path: str, data: bytes) -> ScnResolvedResource:
             if is_scn and context:
-                path = self._project_resource_path(path, context[0], context[1], context[2])
+                path = self._project_resource_path(
+                    path,
+                    context.project_dir,
+                    context.unpacked_dir,
+                    context.path_prefix,
+                )
             return self._linked_scn_resource(source, path, data) if is_scn else ScnResolvedResource(path=path, data=data)
 
-        hit = resolve_resource_data(normalized, *context, allow_selection_dialog=False) if context else resolve_app_resource_data(getattr(handler, "app", None), normalized, allow_selection_dialog=False)
+        hit = (
+            context.resolve(normalized, allow_selection_dialog=False)
+            if context is not None
+            else None
+        )
         if hit is not None:
             return found(hit[0], hit[1])
 
@@ -171,7 +185,12 @@ class ScnSceneLoader:
         return ScnResolvedResource(path=scoped_document_path(doc.project_dir, doc.resource_path), rsz_file=doc.rsz_file)
 
     @staticmethod
-    def _project_resource_path(path: str, project_dir: str, unpacked_dir: str, path_prefix: str) -> str:
+    def _project_resource_path(
+        path: str,
+        project_dir: str,
+        unpacked_dir: str,
+        path_prefix: str,
+    ) -> str:
         for root in (project_dir, unpacked_dir):
             if not root:
                 continue
@@ -187,13 +206,33 @@ class ScnSceneLoader:
             return normalized
         return normalize_scene_path(f"{prefix}/{normalized}")
 
-    def resource_context_for_source(self, source: ScnSceneSource | None):
+    def resource_context_for_source(
+        self,
+        source: ScnSceneSource | None,
+    ) -> ResourceResolutionContext | None:
         handler = source.handler if source is not None else None
         app = getattr(handler, "app", None)
-        proj = getattr(app, "proj_dock", None) if app is not None else None
-        project_dir = str(getattr(source, "project_dir", "") or getattr(proj, "project_dir", "") or "")
-        game = str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or getattr(app, "current_game", "") or "")
-        if not project_dir or proj is None:
-            return None
-        unpacked_dir, reader = proj.ensure_project_pak_context(project_dir)
-        return project_dir, unpacked_dir, get_path_prefix_for_game(game), reader
+        inherited = resource_context_for_handler(handler)
+        source_project = str(getattr(source, "project_dir", "") or "")
+        source_game = str(getattr(source, "game_version", "") or "")
+        if inherited is not None and not source_project and not source_game:
+            return inherited
+        project_dir = str(
+            source_project
+            or getattr(inherited, "project_dir", "")
+            or ""
+        )
+        game = str(
+            source_game
+            or getattr(handler, "game_version", "")
+            or getattr(inherited, "game", "")
+            or ""
+        )
+        return (
+            resource_context_for_app(
+                app,
+                project_dir=project_dir or None,
+                game=game,
+            )
+            or inherited
+        )

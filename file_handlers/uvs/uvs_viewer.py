@@ -33,8 +33,7 @@ from .uvs_file import UvsPattern, UvsSequence, UvsTexture
 from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
 from file_handlers.tex.tex_viewer import TexViewer
 from utils.number_format import format_display_value
-from utils.resource_file_utils import resolve_resource_data
-from ui.project_manager.constants import EXPECTED_NATIVE
+from utils.resource_file_utils import resolve_handler_resource_data
 
 
 PLAY_BUTTON_TEXT = QT_TRANSLATE_NOOP("UvsViewer", "▶ Play")
@@ -1188,12 +1187,6 @@ class UvsViewer(QWidget):
             return None
         return seq.patterns[self._selected_pattern]
 
-    def _game_native_prefix(self) -> str:
-        app = getattr(self.handler, "app", None)
-        proj_mgr = getattr(app, "project_manager", None) if app is not None else None
-        game = str(getattr(proj_mgr, "current_game", "") or "")
-        return "/".join(EXPECTED_NATIVE.get(game, ("natives", "stm"))).strip("/") + "/"
-
     def _resolve_texture_resource(self, tex_idx: int, source: str) -> tuple[str, bytes] | None:
         if not (uvs := self.handler.uvs) or tex_idx < 0 or tex_idx >= len(uvs.textures):
             return None
@@ -1204,18 +1197,9 @@ class UvsViewer(QWidget):
         if not raw_path:
             return None
 
-        app = getattr(self.handler, "app", None)
-        proj = getattr(app, "proj_dock", None)
-        if proj is None:
-            return None
-
-        path_prefix = self._game_native_prefix().rstrip("/")
-        return resolve_resource_data(
+        return resolve_handler_resource_data(
+            self.handler,
             raw_path,
-            getattr(proj, "project_dir", None),
-            getattr(proj, "unpacked_dir", None),
-            path_prefix,
-            getattr(proj, "_pak_cached_reader", None),
             self,
         )
         

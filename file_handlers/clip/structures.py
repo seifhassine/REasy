@@ -1,6 +1,26 @@
 from __future__ import annotations
 
+import math
+import struct
 from dataclasses import dataclass, field
+
+
+PathPoint3DValue = tuple[float, float, float]
+
+
+def validate_path_point3d(value: object) -> None:
+    message = "PathPoint3D value must be a three-float tuple of finite binary32 values"
+    if not isinstance(value, tuple) or len(value) != 3:
+        raise ValueError(message)
+    for component in value:
+        if type(component) not in (int, float):
+            raise ValueError(message)
+        try:
+            if not math.isfinite(component):
+                raise ValueError(message)
+            struct.pack("<f", component)
+        except (OverflowError, struct.error, TypeError, ValueError):
+            raise ValueError(message) from None
 
 
 @dataclass(slots=True)
@@ -110,7 +130,7 @@ class Key:
     string_value: str = ""
     string_is_wide: int = -1
     string_original_value: str | None = None
-    oword_ref: tuple[float, float, float, float] | None = None
+    oword_ref: PathPoint3DValue | None = None
     user_data_asset_index: int = -1
     user_data_asset_ref: "UserDataAssetInfo | None" = None
 
@@ -143,7 +163,7 @@ class NoHermiteKey:
     string_value: str = ""
     string_is_wide: int = -1
     string_original_value: str | None = None
-    oword_ref: tuple[float, float, float, float] | None = None
+    oword_ref: PathPoint3DValue | None = None
     user_data_asset_index: int = -1
     user_data_asset_ref: "UserDataAssetInfo | None" = None
 

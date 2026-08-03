@@ -149,10 +149,12 @@ from file_handlers.tex.texture_quality import (
     normalize_texture_quality,
     texture_quality_profile,
 )
+from file_handlers.mesh.material_effects import riglogic_material_effect
 from settings import save_settings
 from ui.opengl_camera import OrbitCameraMixin
 from .opengl_setup import mesh_surface_format
 from .freecam_controller import FreecamController
+from .gpu_skinning import GpuSkinningDeformer
 from .scene_buffers import (
     SceneBufferSet,
     build_scene_buffer_set,
@@ -162,6 +164,7 @@ from .scene_buffers import (
     scene_bounds,
     scene_index_buffers,
     scene_key_index_buffers,
+    triangle_line_indices,
     transform_normals,
     transform_points,
 )
@@ -173,8 +176,9 @@ from .lightprobe_shading import (
     ProbeShadeWorker,
     snapshot_probe_boxes,
 )
-from .scene_model import SceneDrawMesh
+from .scene_model import SceneDrawMesh, SceneSkinningBinding
 from .viewport_overlay import ViewportOverlayManager
+from .riglogic_material import RigLogicMaterialRenderer
 
 
 @dataclass(slots=True)
@@ -192,6 +196,25 @@ class _GlBufferSet:
     index_count: int = 0
     line_count: int = 0
     lines_ready: bool = False
+
+
+@dataclass(slots=True)
+class _GlSkinnedDrawSet:
+    key: str
+    source: _GlBufferSet
+    vertex_offset: int
+    model_matrix: np.ndarray
+    force_solid: bool
+    batches: list[tuple[str, object, int]]
+    line_indices_vbo: object | None = None
+    line_count: int = 0
+
+
+@dataclass(slots=True)
+class _GlRigidDrawSet:
+    key: str
+    buffer_set: _GlBufferSet
+    force_solid: bool
 
 
 GIZMO_AXES = np.identity(3, dtype=np.float32)
@@ -212,6 +235,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     gizmo_transform_committed = Signal(object)
     texture_quality_changed = Signal(str)
     texture_upload_status_changed = Signal()
+    render_failure = Signal(str)
 
     SETTINGS_DEFAULTS = {
         "mesh_viewer_fps_limit": 60,
@@ -295,9 +319,21 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._max_texture_anisotropy = 1.0
         self._anisotropy_limit_logs: set[tuple[str, float]] = set()
         self._pending_material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
+        self._material_effects: dict[str, object] = {}
         self._material_tints: dict[str, tuple[float, float, float, float]] = {}
         self._two_sided_materials: set[str] = set()
+        self._material_parameters: dict[str, dict[str, float]] = {}
+        self._riglogic_material = RigLogicMaterialRenderer()
+        self._material_effect_errors: dict[str, str] = {}
+        self._material_resource_errors: dict[str, str] = {}
+        self._material_upload_errors: dict[str, tuple[str, str]] = {}
         self._hidden_keys: set[str] = set()
+        self._hidden_parts: dict[str, frozenset[int]] = {}
+        self._gpu_skinning = GpuSkinningDeformer()
+        self._skinned_draw_sets: list[_GlSkinnedDrawSet] = []
+        self._rigid_draw_sets: list[_GlRigidDrawSet] = []
+        self._mesh_draw_matrices: dict[str, np.ndarray] = {}
+        self._skinned_draw_sets_dirty = False
         self._gl_cleanup_context = None
         self._needs_gl_upload = False
 
@@ -338,7 +374,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
         self._timer = QTimer(self)
         self._timer.setTimerType(Qt.PreciseTimer)
-        self._timer.timeout.connect(self.update)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._request_frame)
+        self._frame_callback = None
         self._overlays = ViewportOverlayManager(self, HOVER_DETECT_KEY)
 
         self.setFocusPolicy(Qt.StrongFocus)
@@ -554,6 +592,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _build_rcol_controls(self, layout: QVBoxLayout):
         self._add_scene_mode_control(layout)
+        self._add_fps_limit_control(layout)
         self._add_highlight_filter_control(layout)
 
     def _add_scene_mode_control(self, layout: QVBoxLayout):
@@ -578,6 +617,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         fps_spin.setRange(0, 240)
         fps_spin.setFixedWidth(50)
         fps_spin.setValue(self._fps_limit)
+        fps_spin.setToolTip(
+            self.tr("Viewport and animation pose refresh rate; 0 is uncapped.")
+        )
         fps_spin.valueChanged.connect(self._change_fps_limit)
         self._add_control_row(layout, self.tr("Limit"), fps_spin)
 
@@ -732,6 +774,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         save_settings(self._settings)
 
     def set_scene(self, meshes: list[SceneDrawMesh], highlighted_keys: set[str] | None = None, *, reset_camera: bool = True):
+        self._gpu_skinning.clear()
+        self._mesh_draw_matrices.clear()
+        self._skinned_draw_sets_dirty = True
         self._meshes = meshes
         self._highlighted_keys = set(self._selection_keys if highlighted_keys is None else highlighted_keys)
         self._hover_key = self._hover_block_key = ""
@@ -740,6 +785,47 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if reset_camera:
             self.freecam.reset(self.center, self.extent, self.camera_speed)
         self._upload_buffers()
+        self.update()
+
+    def set_mesh_skinning(
+        self,
+        key: str,
+        binding: SceneSkinningBinding,
+    ) -> None:
+        matches = [mesh for mesh in self._meshes if mesh.key == key]
+        if len(matches) != 1:
+            raise ValueError(
+                f"skinned mesh key {key!r} matched {len(matches)} scene meshes"
+            )
+        if len(matches[0].vertices) != len(binding.positions):
+            raise ValueError(
+                f"skinned mesh {key!r} has {len(binding.positions)} bind "
+                f"vertices; scene geometry has {len(matches[0].vertices)}"
+            )
+        self._gpu_skinning.set_binding(key, binding)
+        self._skinned_draw_sets_dirty = True
+        self.update()
+
+    def update_mesh_skinning(
+        self,
+        key: str,
+        matrices: np.ndarray,
+    ) -> None:
+        self._gpu_skinning.update_palette(key, matrices)
+        self.update()
+
+    def update_mesh_skinning_source(
+        self,
+        key: str,
+        positions: np.ndarray,
+        normals: np.ndarray | None,
+    ) -> None:
+        self._gpu_skinning.update_source(key, positions, normals)
+        self.update()
+
+    def clear_mesh_skinning(self, keys: set[str] | None = None) -> None:
+        removed = self._gpu_skinning.remove(keys)
+        self._skinned_draw_sets_dirty |= bool(removed)
         self.update()
 
     def set_light_probe_instances(self, instances: list[SceneLightProbeInstance]) -> None:
@@ -899,26 +985,126 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self.focus_selection()
         self.update()
 
-    def update_mesh_transforms(self, matrices: dict[str, np.ndarray]) -> None:
+    def update_mesh_transforms(
+        self,
+        matrices: dict[str, np.ndarray],
+        *,
+        recompute_bounds: bool = True,
+    ) -> None:
         if not matrices:
             return
+        matches = [mesh for mesh in self._meshes if mesh.key in matrices]
         deltas: dict[str, np.ndarray] = {}
-        for mesh in self._meshes:
-            if mesh.key in matrices:
-                old = np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else IDENTITY4, dtype=np.float32)
-                new = np.asarray(matrices[mesh.key], dtype=np.float32)
-                if not np.allclose(old, new):
-                    deltas[mesh.key] = new @ np.linalg.inv(old)
-                mesh.transform_matrix = new
-        self._recompute_bounds()
-        self._refresh_selection_bounds()
+        if matches:
+            old = np.stack(
+                [
+                    np.asarray(
+                        mesh.transform_matrix
+                        if mesh.transform_matrix is not None
+                        else IDENTITY4,
+                        dtype=np.float32,
+                    )
+                    for mesh in matches
+                ]
+            )
+            new = np.stack(
+                [np.asarray(matrices[mesh.key], dtype=np.float32) for mesh in matches]
+            )
+            changed = ~np.all(np.isclose(old, new), axis=(1, 2))
+            if np.any(changed):
+                delta_values = new[changed] @ np.linalg.inv(old[changed])
+                deltas = dict(
+                    zip(
+                        (mesh.key for mesh, value in zip(matches, changed) if value),
+                        delta_values,
+                        strict=True,
+                    )
+                )
+            for mesh, matrix in zip(matches, new, strict=True):
+                mesh.transform_matrix = matrix
+        if recompute_bounds:
+            self._recompute_bounds()
+            self._refresh_selection_bounds()
         if deltas:
             if self._mesh_transform_affects_display_colors():
                 self._invalidate_probe_shading()
             if not self._scene_matrix_is_identity():
                 self._upload_buffers()
             elif not self._apply_transform_deltas(deltas):
-                raise RuntimeError("Incremental mesh transform upload failed")
+                self._rebuild_buffer_data()
+                self._needs_gl_upload = True
+        self.update()
+
+    def set_mesh_draw_transforms(
+        self,
+        matrices: dict[str, np.ndarray],
+    ) -> None:
+        """Set transient world transforms without rewriting vertex buffers."""
+        by_key = {mesh.key: mesh for mesh in self._meshes}
+        draw_matrices: dict[str, np.ndarray] = {}
+        for key, value in matrices.items():
+            mesh = by_key.get(str(key))
+            if mesh is None:
+                continue
+            world = np.asarray(value, dtype=np.float32).reshape(4, 4)
+            authored = np.asarray(
+                mesh.transform_matrix
+                if mesh.transform_matrix is not None
+                else IDENTITY4,
+                dtype=np.float32,
+            )
+            if not np.isfinite(world).all():
+                raise ValueError(f"mesh {key!r} has a nonfinite draw transform")
+            delta = world @ np.linalg.inv(authored)
+            draw_matrices[str(key)] = delta.astype(np.float32, copy=False)
+        old_keys = set(self._mesh_draw_matrices)
+        self._mesh_draw_matrices = draw_matrices
+        if old_keys != set(draw_matrices):
+            self._skinned_draw_sets_dirty = True
+        self.update()
+
+    def clear_mesh_draw_transforms(self) -> None:
+        self.set_mesh_draw_transforms({})
+
+    def update_mesh_geometry(
+        self,
+        key: str,
+        vertices: np.ndarray,
+        normals: np.ndarray | None = None,
+        *,
+        recompute_bounds: bool = True,
+    ) -> None:
+        """Replace one keyed mesh's vertex data without rebuilding its scene."""
+        vertices = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
+        normals = (
+            np.asarray(normals, dtype=np.float32).reshape(-1, 3)
+            if normals is not None
+            else None
+        )
+        if normals is not None and len(normals) != len(vertices):
+            raise ValueError("dynamic mesh normals must match its vertex count")
+        matches = [mesh for mesh in self._meshes if mesh.key == key]
+        if len(matches) != 1:
+            raise ValueError(f"dynamic mesh key {key!r} matched {len(matches)} meshes")
+        mesh = matches[0]
+        if len(mesh.vertices) != len(vertices):
+            raise ValueError(
+                f"dynamic mesh {key!r} has {len(vertices)} vertices; expected {len(mesh.vertices)}"
+            )
+        mesh.vertices = vertices
+        if normals is not None:
+            mesh.normals = normals
+        if recompute_bounds:
+            self._recompute_bounds()
+            self._refresh_selection_bounds()
+        if self._mesh_transform_affects_display_colors():
+            self._invalidate_probe_shading()
+            self._colors_dirty = True
+        if not self._scene_matrix_is_identity():
+            self._upload_buffers()
+        elif not self._apply_geometry_update(key, vertices, normals):
+            self._rebuild_buffer_data()
+            self._needs_gl_upload = True
         self.update()
 
     def set_gizmo_mode(self, mode: str) -> None:
@@ -950,6 +1136,27 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if probe_visibility_changed:
             self._invalidate_probe_viz_points()
             self._invalidate_probe_shading()
+        self._refresh_index_visibility(refresh)
+
+    def set_hidden_parts(
+        self,
+        parts: dict[str, set[int] | frozenset[int]],
+        *,
+        refresh: bool = True,
+    ) -> None:
+        normalized = {
+            str(key): frozenset(int(index) for index in indices if index >= 0)
+            for key, indices in parts.items()
+            if indices
+        }
+        if normalized == self._hidden_parts:
+            return
+        self._hidden_parts = normalized
+        self._skinned_draw_sets_dirty = True
+        self._hover_vertex_cache.clear()
+        self._refresh_index_visibility(refresh)
+
+    def _refresh_index_visibility(self, refresh: bool) -> None:
         if not refresh:
             return
         if self.context() is None:
@@ -965,6 +1172,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def set_material_images(self, images: dict[str, tuple[str, TexPreviewUpload]]):
         self._pending_material_images = dict(images)
         self._texture_upload_failures.intersection_update(images)
+        self._material_upload_errors = {
+            name: error
+            for name, error in self._material_upload_errors.items()
+            if name in images
+        }
         self._sync_material_images()
         self.texture_upload_status_changed.emit()
 
@@ -976,15 +1188,67 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def texture_upload_counts(self) -> tuple[int, int, int]:
         return len(self._pending_material_images), len(self._texture_ids), len(self._texture_upload_failures)
 
+    def material_effect_errors(self) -> tuple[str, ...]:
+        return tuple(dict.fromkeys((
+            *self._material_effect_errors.values(),
+            *self._material_resource_errors.values(),
+            *(message for _material, message in self._material_upload_errors.values()),
+        )))
+
+    def set_material_failures(self, failures: dict[str, str]) -> None:
+        failures = {
+            str(material): str(message)
+            for material, message in failures.items()
+            if message
+        }
+        if failures == self._material_resource_errors:
+            return
+        previous = self._material_resource_errors
+        self._material_resource_errors = failures
+        known = set(self._material_effect_errors.values())
+        for material, message in failures.items():
+            if previous.get(material) != message and message not in known:
+                self.render_failure.emit(message)
+        self.texture_upload_status_changed.emit()
+        self.update()
+
     def set_material_profiles(self, profiles: dict[str, object]):
+        self._material_effects.clear()
         self._material_tints, self._two_sided_materials = {}, set()
+        self._material_effect_errors.clear()
+        self._material_resource_errors.clear()
+        self._material_upload_errors.clear()
         self.update_material_profiles(profiles)
 
     def update_material_profiles(self, profiles: dict[str, object]):
         for name, profile in profiles.items():
+            self._material_effects.pop(name, None)
+            self._material_effect_errors.pop(name, None)
+            try:
+                effect = riglogic_material_effect(profile)
+            except ValueError as exc:
+                self._record_material_effect_error(name, f"{name}: {exc}")
+            else:
+                if effect is not None:
+                    self._material_effects[name] = effect
             tint = tuple(float(value) for value in getattr(profile, "tint", (1.0, 1.0, 1.0, 1.0)))
             self._material_tints[name] = (tint + (1.0, 1.0, 1.0, 1.0))[:4]
             (self._two_sided_materials.add if getattr(profile, "two_sided", False) else self._two_sided_materials.discard)(name)
+        self.update()
+
+    def set_material_parameters(
+        self,
+        parameters: dict[str, dict[str, float]],
+    ):
+        """Store semantic runtime parameters for material-capable backends."""
+
+        normalized = {
+            material: dict(values)
+            for material, values in parameters.items()
+        }
+        if normalized == self._material_parameters:
+            return
+        self._material_parameters = normalized
         self.update()
 
     def _sync_material_images(self, names=None):
@@ -998,6 +1262,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _set_render_mode(self, mode: str):
         self.render_mode = str(mode or "wire")
+        self._skinned_draw_sets_dirty = True
         if self._controls != "mesh":
             self._save_view_setting("scene_render_mode", self.render_mode)
         self.update()
@@ -1505,7 +1770,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _capture_gizmo_geometry(self, buffer_set: _GlBufferSet | None) -> dict | None:
         if buffer_set is None:
             return None
-        indices, _batches, _lines = scene_key_index_buffers(buffer_set.data, self._selection_keys, include_lines=False)
+        indices, _batches, _lines = scene_key_index_buffers(
+            buffer_set.data,
+            self._selection_keys,
+            hidden_parts=self._hidden_parts,
+            include_lines=False,
+        )
         if not len(indices):
             return None
         vertices = np.unique(indices)
@@ -1570,15 +1840,133 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         for buffer_set in (self._regular_set, self._solid_set):
             if buffer_set is None:
                 continue
-            data_seen = True
+            by_count: dict[int, list[tuple[int, np.ndarray]]] = {}
+            fallback: list[tuple[np.ndarray, np.ndarray]] = []
             for key, matrix in deltas.items():
+                spans = buffer_set.data.key_vertex_spans.get(key, ())
+                if spans:
+                    for offset, count in spans:
+                        by_count.setdefault(count, []).append((offset, matrix))
+                    continue
                 rows = self._hover_vertices(buffer_set.data, key)
                 if len(rows):
-                    self._apply_gizmo_snapshot(buffer_set, {
-                        "indices": rows,
-                        "vertices": buffer_set.data.vertices[rows].copy(),
-                        "normals": buffer_set.data.normals[rows].copy() if buffer_set.data.normals is not None else None,
-                    }, matrix, current=made_current)
+                    fallback.append((rows, matrix))
+
+            changed_spans: list[tuple[int, int]] = []
+            for count, entries in by_count.items():
+                offsets = np.fromiter(
+                    (offset for offset, _matrix in entries),
+                    dtype=np.intp,
+                    count=len(entries),
+                )
+                rows = offsets[:, None] + np.arange(count, dtype=np.intp)
+                transforms = np.stack([matrix for _offset, matrix in entries])
+                linear = transforms[:, :3, :3]
+                translations = transforms[:, :3, 3]
+                vertices = buffer_set.data.vertices[rows]
+                buffer_set.data.vertices[rows] = (
+                    np.einsum("nvc,nkc->nvk", vertices, linear)
+                    + translations[:, None, :]
+                )
+                if buffer_set.data.normals is not None:
+                    normal_matrices = np.identity(3, dtype=np.float32)[None].repeat(
+                        len(entries),
+                        axis=0,
+                    )
+                    valid = np.abs(np.linalg.det(linear)) > 1e-8
+                    if np.any(valid):
+                        normal_matrices[valid] = np.linalg.inv(linear[valid]).transpose(
+                            0,
+                            2,
+                            1,
+                        )
+                    normals = buffer_set.data.normals[rows]
+                    buffer_set.data.normals[rows] = np.einsum(
+                        "nvc,nkc->nvk",
+                        normals,
+                        normal_matrices,
+                    )
+                changed_spans.extend((int(offset), count) for offset in offsets)
+
+            for rows, matrix in fallback:
+                buffer_set.data.vertices[rows] = transform_points(
+                    buffer_set.data.vertices[rows], matrix
+                )
+                if buffer_set.data.normals is not None:
+                    buffer_set.data.normals[rows] = transform_normals(
+                        buffer_set.data.normals[rows], matrix
+                    )
+                changed_spans.extend(
+                    (start, end - start)
+                    for start, end in self._index_ranges(rows)
+                )
+
+            if changed_spans:
+                data_seen = True
+                if made_current:
+                    self._upload_changed_spans(
+                        buffer_set,
+                        self._merged_spans(changed_spans),
+                    )
+        if made_current:
+            self.doneCurrent()
+        return data_seen
+
+    @staticmethod
+    def _merged_spans(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        merged: list[tuple[int, int]] = []
+        for offset, count in sorted(spans):
+            end = offset + count
+            if merged and offset <= merged[-1][0] + merged[-1][1]:
+                previous_offset, previous_count = merged[-1]
+                merged[-1] = (
+                    previous_offset,
+                    max(previous_offset + previous_count, end) - previous_offset,
+                )
+            else:
+                merged.append((offset, count))
+        return merged
+
+    def _apply_geometry_update(
+        self,
+        key: str,
+        vertices: np.ndarray,
+        normals: np.ndarray | None,
+    ) -> bool:
+        made_current = self.context() is not None
+        if made_current:
+            try:
+                self.makeCurrent()
+            except Exception:
+                return False
+        data_seen = False
+        for buffer_set in (self._regular_set, self._solid_set):
+            if buffer_set is None:
+                continue
+            spans = buffer_set.data.key_vertex_spans.get(key, ())
+            if not spans:
+                continue
+            total = sum(count for _offset, count in spans)
+            if total != len(vertices):
+                if made_current:
+                    self.doneCurrent()
+                raise ValueError(
+                    f"dynamic mesh {key!r} covers {total} buffered vertices; got {len(vertices)}"
+                )
+            data_seen = True
+            source_offset = 0
+            for offset, count in spans:
+                source_end = source_offset + count
+                buffer_set.data.vertices[offset : offset + count] = vertices[
+                    source_offset:source_end
+                ]
+                if normals is not None and buffer_set.data.normals is not None:
+                    buffer_set.data.normals[offset : offset + count] = normals[
+                        source_offset:source_end
+                    ]
+                source_offset = source_end
+            if made_current:
+                self._upload_changed_spans(buffer_set, spans)
         if made_current:
             self.doneCurrent()
         return data_seen
@@ -1930,6 +2318,22 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._delete_index_vbos(self._selection_solid_set, delete_gl=delete_gl)
         self._selection_regular_set = self._selection_solid_set = None
 
+    def _delete_skinned_draw_sets(self, *, delete_gl: bool = True) -> None:
+        for draw_set in self._skinned_draw_sets:
+            for _material, handle, _count in draw_set.batches:
+                self._dispose_vbo(handle, delete_gl=delete_gl)
+            self._dispose_vbo(
+                draw_set.line_indices_vbo,
+                delete_gl=delete_gl,
+            )
+        self._skinned_draw_sets.clear()
+        for draw_set in self._rigid_draw_sets:
+            self._delete_index_vbos(
+                draw_set.buffer_set,
+                delete_gl=delete_gl,
+            )
+        self._rigid_draw_sets.clear()
+
     def _delete_index_vbos(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
         if buffer_set is None:
             return
@@ -2120,8 +2524,28 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return np.zeros((0,), dtype=np.uint32)
         by_key = self._hover_vertex_cache.setdefault(id(buffer_set), {})
         if key not in by_key:
-            chunks = [idx for chunk_key, _material, idx in buffer_set.triangle_chunks if chunk_key == key]
-            by_key[key] = np.unique(np.concatenate(chunks)).astype(np.uint32, copy=False) if chunks else np.zeros((0,), dtype=np.uint32)
+            spans = buffer_set.key_vertex_spans.get(key, ())
+            if spans:
+                by_key[key] = np.concatenate([
+                    np.arange(offset, offset + count, dtype=np.uint32)
+                    for offset, count in spans
+                ])
+            else:
+                chunks = [
+                    chunk.indices
+                    for chunk in buffer_set.triangle_chunks
+                    if chunk.key == key
+                    and (
+                        chunk.part_index is None
+                        or chunk.part_index
+                        not in self._hidden_parts.get(key, ())
+                    )
+                ]
+                by_key[key] = (
+                    np.unique(np.concatenate(chunks)).astype(np.uint32, copy=False)
+                    if chunks
+                    else np.zeros((0,), dtype=np.uint32)
+                )
         return by_key[key]
 
     def _upload_buffer_set(self, data: SceneBufferSet | None) -> _GlBufferSet | None:
@@ -2149,9 +2573,113 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             uvs_vbo=source.uvs_vbo,
         )
         need_lines = self._needs_line_indices()
-        indices, batches, line_indices = scene_key_index_buffers(source.data, keys, include_lines=need_lines)
+        indices, batches, line_indices = scene_key_index_buffers(
+            source.data,
+            keys,
+            hidden_parts=self._hidden_parts,
+            include_lines=need_lines,
+        )
         self._set_index_buffers(view, indices, batches, line_indices, need_lines)
         return view
+
+    def _rebuild_skinned_draw_sets(self) -> None:
+        self._delete_skinned_draw_sets()
+        self._gpu_skinning.prepare()
+        mesh_by_key = {mesh.key: mesh for mesh in self._meshes}
+        for buffer_set, force_solid in (
+            (self._regular_set, False),
+            (self._solid_set, True),
+        ):
+            if buffer_set is None:
+                continue
+            for key in sorted(self._gpu_skinning.keys):
+                spans = tuple(buffer_set.data.key_vertex_spans.get(key, ()))
+                if not spans:
+                    continue
+                if len(spans) != 1:
+                    raise ValueError(
+                        f"skinned mesh {key!r} is not contiguous in scene buffers"
+                    )
+                vertex_offset, vertex_count = spans[0]
+                if vertex_count != self._gpu_skinning.vertex_count(key):
+                    raise ValueError(
+                        f"skinned mesh {key!r} covers {vertex_count} scene "
+                        f"vertices; expected {self._gpu_skinning.vertex_count(key)}"
+                    )
+                by_material: dict[str, list[np.ndarray]] = {}
+                all_indices = []
+                for chunk in buffer_set.data.triangle_chunks:
+                    if (
+                        chunk.key != key
+                        or chunk.part_index is not None
+                        and chunk.part_index in self._hidden_parts.get(key, ())
+                    ):
+                        continue
+                    local = chunk.indices.astype(np.int64) - vertex_offset
+                    if np.any((local < 0) | (local >= vertex_count)):
+                        raise ValueError(
+                            f"skinned mesh {key!r} has indices outside its vertex span"
+                        )
+                    local = local.astype(np.uint32, copy=False)
+                    by_material.setdefault(chunk.material_name, []).append(local)
+                    all_indices.append(local)
+                batches = [
+                    (
+                        material,
+                        self._element_vbo(np.concatenate(parts)),
+                        sum(len(part) for part in parts),
+                    )
+                    for material, parts in sorted(by_material.items())
+                ]
+                lines = (
+                    triangle_line_indices(np.concatenate(all_indices))
+                    if all_indices and self._needs_line_indices()
+                    else np.zeros((0,), dtype=np.uint32)
+                )
+                self._skinned_draw_sets.append(
+                    _GlSkinnedDrawSet(
+                        key,
+                        buffer_set,
+                        vertex_offset,
+                        np.asarray(
+                            mesh_by_key[key].transform_matrix
+                            if mesh_by_key[key].transform_matrix is not None
+                            else IDENTITY4,
+                            dtype=np.float32,
+                        ),
+                        force_solid,
+                        batches,
+                        self._element_vbo(lines) if len(lines) else None,
+                        len(lines),
+                    )
+                )
+        rigid_keys = set(self._mesh_draw_matrices) - self._gpu_skinning.keys
+        for source, force_solid in (
+            (self._regular_set, False),
+            (self._solid_set, True),
+        ):
+            for key in sorted(rigid_keys):
+                view = self._upload_index_view(source, {key})
+                if view is not None and view.index_count:
+                    self._rigid_draw_sets.append(
+                        _GlRigidDrawSet(key, view, force_solid)
+                    )
+        self._upload_index_vbos(self._regular_set)
+        self._upload_index_vbos(self._solid_set)
+        self._refresh_selection_buffer_sets(current=True)
+        self._skinned_draw_sets_dirty = False
+
+    def _push_draw_matrix(
+        self,
+        key: str,
+        base: np.ndarray | None = None,
+    ) -> None:
+        matrix = IDENTITY4 if base is None else base
+        delta = self._mesh_draw_matrices.get(key)
+        if delta is not None:
+            matrix = delta @ matrix
+        glPushMatrix()
+        glMultMatrixf(np.ascontiguousarray(matrix.T, dtype=np.float32))
 
     def _refresh_selection_buffer_sets(self, *, current: bool = False) -> None:
         if self.context() is None:
@@ -2160,7 +2688,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         self._delete_selection_buffer_sets()
         if not self._selection_is_whole_scene():
-            keys = self._selection_keys - self._hidden_keys
+            keys = (
+                self._selection_keys
+                - self._hidden_keys
+                - self._gpu_skinning.keys
+                - self._mesh_draw_matrices.keys()
+            )
             self._selection_regular_set = self._upload_index_view(self._regular_set, keys)
             self._selection_solid_set = self._upload_index_view(self._solid_set, keys)
         if not current:
@@ -2188,7 +2721,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         self._delete_index_vbos(buffer_set)
         need_lines = self._needs_line_indices()
-        indices, batches, line_indices = scene_index_buffers(buffer_set.data, self._active_hidden_keys(), include_lines=need_lines)
+        indices, batches, line_indices = scene_index_buffers(
+            buffer_set.data,
+            self._active_hidden_keys()
+            | self._gpu_skinning.keys
+            | self._mesh_draw_matrices.keys(),
+            hidden_parts=self._hidden_parts,
+            include_lines=need_lines,
+        )
         self._set_index_buffers(buffer_set, indices, batches, line_indices, need_lines)
 
     def _set_index_buffers(self, buffer_set: _GlBufferSet, indices: np.ndarray, batches, line_indices: np.ndarray, need_lines: bool) -> None:
@@ -2211,7 +2751,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _ensure_line_indices(self, buffer_set: _GlBufferSet | None):
         if buffer_set is None or buffer_set.lines_ready:
             return
-        _indices, _batches, line_indices = scene_index_buffers(buffer_set.data, self._active_hidden_keys(), include_lines=True)
+        _indices, _batches, line_indices = scene_index_buffers(
+            buffer_set.data,
+            self._active_hidden_keys()
+            | self._gpu_skinning.keys
+            | self._mesh_draw_matrices.keys(),
+            hidden_parts=self._hidden_parts,
+            include_lines=True,
+        )
         buffer_set.line_count = len(line_indices)
         buffer_set.line_indices_vbo = self._element_vbo(line_indices) if len(line_indices) else None
         buffer_set.lines_ready = True
@@ -2261,6 +2808,29 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         for handle, data in ((buffer_set.vertices_vbo, buffer_set.data.vertices), (buffer_set.normals_vbo, buffer_set.data.normals)):
             self._upload_changed_array(handle, data, vertices)
 
+    def _upload_changed_spans(
+        self,
+        buffer_set: _GlBufferSet,
+        spans: list[tuple[int, int]],
+    ) -> None:
+        for handle, data in (
+            (buffer_set.vertices_vbo, buffer_set.data.vertices),
+            (buffer_set.normals_vbo, buffer_set.data.normals),
+        ):
+            if handle is None or data is None:
+                continue
+            handle.bind()
+            stride = int(data.strides[0])
+            for offset, count in spans:
+                chunk = np.ascontiguousarray(data[offset : offset + count])
+                glBufferSubData(
+                    GL_ARRAY_BUFFER,
+                    offset * stride,
+                    chunk.nbytes,
+                    chunk,
+                )
+            glBindBuffer(GL_ARRAY_BUFFER, 0)
+
     def _upload_changed_array(self, handle, data: np.ndarray | None, rows: np.ndarray) -> None:
         if handle is None or data is None or not len(rows):
             return
@@ -2282,11 +2852,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not current and not self._make_current_or_queue_upload():
             return
         self._delete_selection_buffer_sets()
+        self._delete_skinned_draw_sets()
         self._delete_buffer_set(self._regular_set)
         self._delete_buffer_set(self._solid_set)
         self._regular_set = self._upload_buffer_set(self._regular_data)
         self._solid_set = self._upload_buffer_set(self._solid_data)
         self._refresh_selection_buffer_sets(current=True)
+        self._skinned_draw_sets_dirty = True
         self._colors_dirty = self._uses_probe_shading()
         if not current:
             self.doneCurrent()
@@ -2339,11 +2911,33 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                         glDeleteTextures([texture_id])
                     print(f"Texture upload failed: material={name!r}, path={source_path!r}: {exc}")
                     self._texture_upload_failures.add(name)
+                    self._record_material_upload_error(name, source_path, exc)
                     continue
                 self._texture_source_ids[source_path] = texture_id
             self._texture_ids[name] = texture_id
             self._texture_sources[name] = source_path
             self._texture_upload_failures.discard(name)
+            self._material_upload_errors.pop(name, None)
+
+    def _record_material_upload_error(
+        self,
+        image_name: str,
+        source_path: str,
+        error: Exception,
+    ) -> None:
+        material_name = image_name.partition("\x1f")[0]
+        if material_name not in self._material_effects:
+            return
+        message = (
+            f"{material_name}: required RigLogic texture "
+            f"{source_path!r} could not be uploaded: {error}"
+        )
+        value = material_name, message
+        if self._material_upload_errors.get(image_name) == value:
+            return
+        self._material_upload_errors[image_name] = value
+        self.texture_upload_status_changed.emit()
+        self.render_failure.emit(message)
 
     def _delete_unused_source_textures(self):
         active_sources = set(self._texture_sources.values())
@@ -2448,10 +3042,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 self.makeCurrent()
                 made_current = True
                 self._clear_gl_textures()
+        self._delete_skinned_draw_sets(delete_gl=made_current)
         self._delete_buffer_set(self._regular_set, delete_gl=made_current)
         self._delete_buffer_set(self._solid_set, delete_gl=made_current)
         self._delete_selection_buffer_sets(delete_gl=made_current)
         if made_current:
+            with suppress(Exception):
+                self._gpu_skinning.dispose_gl()
+            with suppress(Exception):
+                self._riglogic_material.dispose_gl()
             with suppress(Exception):
                 self._cleanup_extra_gl()
             with suppress(Exception):
@@ -2475,11 +3074,22 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._unlock_scene_cursor()
         self.freecam.clear_input()
         self._meshes.clear()
+        self._gpu_skinning.clear()
+        self._skinned_draw_sets.clear()
+        self._rigid_draw_sets.clear()
+        self._mesh_draw_matrices.clear()
+        self._skinned_draw_sets_dirty = False
         self._highlighted_keys.clear()
         self._selection_keys.clear()
         self._hidden_keys.clear()
+        self._hidden_parts.clear()
+        self._material_effects.clear()
         self._material_tints.clear()
         self._two_sided_materials.clear()
+        self._material_parameters.clear()
+        self._material_effect_errors.clear()
+        self._material_resource_errors.clear()
+        self._material_upload_errors.clear()
         self._pending_material_images.clear()
         self._texture_upload_failures.clear()
         self._texture_ids.clear()
@@ -2547,6 +3157,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._refresh_selection_buffer_sets(current=True)
         self._colors_dirty = self._uses_probe_shading()
         self._sync_gl_textures()
+        self._rebuild_skinned_draw_sets()
         self.texture_upload_status_changed.emit()
         self._needs_gl_upload = False
         self._after_gl_initialized()
@@ -2609,7 +3220,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glEnableClientState(GL_VERTEX_ARRAY)
         glVertexPointer(3, GL_FLOAT, 0, None)
 
-        if buffer_set.normals_vbo is not None and self.lighting_mode == "fixed":
+        if buffer_set.normals_vbo is not None:
             buffer_set.normals_vbo.bind()
             glEnableClientState(GL_NORMAL_ARRAY)
             glNormalPointer(GL_FLOAT, 0, None)
@@ -2656,17 +3267,31 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 for material_name, batch_vbo, count in buffer_set.batch_vbos:
                     tex_id = self._texture_ids.get(material_name)
                     tint = self._material_tints.get(material_name, (1.0, 1.0, 1.0, 1.0))
-                    glColor4f(tint[0], tint[1], tint[2], 1.0)
                     glDisable(GL_CULL_FACE) if material_name in self._two_sided_materials else glEnable(GL_CULL_FACE)
-                    if textured and tex_id:
+                    effect_bound = self._bind_material_effect(
+                        material_name,
+                        tint,
+                        enabled=use_textures,
+                        has_uvs=buffer_set.uvs_vbo is not None,
+                    )
+                    if effect_bound is None:
+                        continue
+                    if effect_bound:
+                        glColor4f(1.0, 1.0, 1.0, 1.0)
+                        glDisable(GL_TEXTURE_2D)
+                    elif textured and tex_id:
+                        glColor4f(tint[0], tint[1], tint[2], tint[3])
                         glEnable(GL_TEXTURE_2D)
                         glBindTexture(GL_TEXTURE_2D, tex_id)
                     else:
+                        glColor4f(tint[0], tint[1], tint[2], tint[3])
                         glBindTexture(GL_TEXTURE_2D, 0)
                         glDisable(GL_TEXTURE_2D)
                     batch_vbo.bind()
                     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+                    if effect_bound:
+                        self._riglogic_material.unbind()
                 glEnable(GL_CULL_FACE)
                 glColor4f(1.0, 1.0, 1.0, 1.0)
             else:
@@ -2679,6 +3304,218 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glBindTexture(GL_TEXTURE_2D, 0)
             glDisable(GL_TEXTURE_2D)
             self._unbind_arrays(buffer_set, textured=textured)
+
+    def _draw_skinned_triangles(
+        self,
+        *,
+        force_solid: bool,
+        use_textures: bool,
+    ) -> None:
+        if self._colors_dirty:
+            self._refresh_color_vbos()
+        for draw_set in self._skinned_draw_sets:
+            if (
+                draw_set.force_solid != force_solid
+                or draw_set.key in self._hidden_keys
+            ):
+                continue
+            self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
+            for material_name, indices_vbo, count in draw_set.batches:
+                tint = self._material_tints.get(
+                    material_name,
+                    (1.0, 1.0, 1.0, 1.0),
+                )
+                glDisable(GL_CULL_FACE) if material_name in self._two_sided_materials else glEnable(GL_CULL_FACE)
+                effect = self._material_effects.get(material_name)
+                effect_program = self._bind_material_effect(
+                    material_name,
+                    tint,
+                    enabled=use_textures,
+                    has_uvs=draw_set.source.uvs_vbo is not None,
+                    vertex_shader=(
+                        self._gpu_skinning.shader_variant(draw_set.key)
+                        if effect is not None
+                        else None
+                    ),
+                )
+                if effect_program is None:
+                    continue
+                self._gpu_skinning.bind(
+                    draw_set.key,
+                    uvs_vbo=draw_set.source.uvs_vbo,
+                    colors_vbo=draw_set.source.colors_vbo,
+                    vertex_offset=draw_set.vertex_offset,
+                    program=effect_program,
+                    tint=tint,
+                    ambient=self.ambient,
+                    diffuse=self.diffuse,
+                    lit=self.lighting_mode == "fixed",
+                )
+                tex_id = self._texture_ids.get(material_name)
+                if effect_program:
+                    glDisable(GL_TEXTURE_2D)
+                elif use_textures and tex_id:
+                    glEnable(GL_TEXTURE_2D)
+                    glBindTexture(GL_TEXTURE_2D, tex_id)
+                else:
+                    glBindTexture(GL_TEXTURE_2D, 0)
+                    glDisable(GL_TEXTURE_2D)
+                indices_vbo.bind()
+                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+                self._gpu_skinning.unbind()
+                if effect_program:
+                    self._riglogic_material.unbind()
+            glPopMatrix()
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+        glEnable(GL_CULL_FACE)
+        glColor4f(1.0, 1.0, 1.0, 1.0)
+
+    def _draw_rigid_triangles(
+        self,
+        *,
+        force_solid: bool,
+        use_textures: bool,
+    ) -> None:
+        for draw_set in self._rigid_draw_sets:
+            if (
+                draw_set.force_solid != force_solid
+                or draw_set.key in self._hidden_keys
+            ):
+                continue
+            self._push_draw_matrix(draw_set.key)
+            self._draw_triangles(
+                draw_set.buffer_set,
+                use_textures=use_textures,
+            )
+            glPopMatrix()
+
+    def _draw_skinned_lines(self, *, force_solid: bool, overlay: bool) -> None:
+        glDisable(GL_LIGHTING)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_CULL_FACE)
+        if overlay:
+            glDisable(GL_DEPTH_TEST)
+            glDepthMask(False)
+        glLineWidth(self.line_width if self._controls == "mesh" else 1.4)
+        for draw_set in self._skinned_draw_sets:
+            if (
+                draw_set.force_solid != force_solid
+                or draw_set.key in self._hidden_keys
+                or draw_set.line_indices_vbo is None
+            ):
+                continue
+            self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
+            scene_colors = self._controls != "mesh"
+            tint = (
+                (1.0, 1.0, 1.0, 1.0)
+                if scene_colors
+                else (0.2, 1.0, 0.3, 1.0)
+            )
+            self._gpu_skinning.bind(
+                draw_set.key,
+                colors_vbo=(
+                    draw_set.source.colors_vbo if scene_colors else None
+                ),
+                vertex_offset=draw_set.vertex_offset,
+                tint=tint,
+            )
+            draw_set.line_indices_vbo.bind()
+            glDrawElements(
+                GL_LINES,
+                draw_set.line_count,
+                GL_UNSIGNED_INT,
+                None,
+            )
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+            self._gpu_skinning.unbind()
+            glPopMatrix()
+        if overlay:
+            glDepthMask(True)
+            glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        if self.lighting_mode == "fixed":
+            glEnable(GL_LIGHTING)
+
+    def _draw_rigid_lines(self, *, force_solid: bool, overlay: bool) -> None:
+        for draw_set in self._rigid_draw_sets:
+            if (
+                draw_set.force_solid != force_solid
+                or draw_set.key in self._hidden_keys
+            ):
+                continue
+            self._push_draw_matrix(draw_set.key)
+            self._draw_lines(draw_set.buffer_set, overlay=overlay)
+            glPopMatrix()
+
+    def _draw_scene_triangles(self, buffer_set: _GlBufferSet | None, *, force_solid: bool, use_textures: bool) -> None:
+        self._draw_triangles(buffer_set, use_textures=use_textures)
+        self._draw_rigid_triangles(force_solid=force_solid, use_textures=use_textures)
+        self._draw_skinned_triangles(force_solid=force_solid, use_textures=use_textures)
+
+    def _draw_scene_lines(self, buffer_set: _GlBufferSet | None, *, force_solid: bool, overlay: bool) -> None:
+        self._draw_lines(buffer_set, overlay=overlay)
+        self._draw_rigid_lines(force_solid=force_solid, overlay=overlay)
+        self._draw_skinned_lines(force_solid=force_solid, overlay=overlay)
+
+    def _bind_material_effect(
+        self,
+        material_name: str,
+        tint: tuple[float, float, float, float],
+        *,
+        enabled: bool,
+        has_uvs: bool,
+        vertex_shader: tuple[str, str] | None = None,
+    ) -> int | None:
+        if not enabled:
+            return 0
+        if (
+            material_name in self._material_effect_errors
+            or material_name in self._material_resource_errors
+            or any(
+                material == material_name
+                for material, _message in self._material_upload_errors.values()
+            )
+        ):
+            return None
+        try:
+            effect = self._material_effects.get(material_name)
+            if effect is None:
+                return 0
+            if not has_uvs:
+                self._record_material_effect_error(
+                    material_name,
+                    f"{material_name}: RigLogic material has no UV coordinates",
+                )
+                return None
+            return self._riglogic_material.bind(
+                effect,
+                material_name,
+                self._texture_ids,
+                self._material_parameters.get(material_name, {}),
+                tint=tint,
+                ambient=self.ambient,
+                diffuse=self.diffuse,
+                lit=self.lighting_mode == "fixed",
+                vertex_shader=vertex_shader,
+            )
+        except (RuntimeError, ValueError) as exc:
+            message = f"{material_name}: {exc}"
+            self._record_material_effect_error(material_name, message)
+            return None
+
+    def _record_material_effect_error(
+        self,
+        material_name: str,
+        message: str,
+    ) -> None:
+        if self._material_effect_errors.get(material_name) == message:
+            return
+        self._material_effect_errors[material_name] = message
+        print(f"Material effect preview failed: {message}")
+        self.texture_upload_status_changed.emit()
+        self.render_failure.emit(message)
 
     def _draw_lines(self, buffer_set: _GlBufferSet | None, *, overlay: bool):
         if buffer_set is None:
@@ -2728,18 +3565,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if self.wireframe_mode == "polygon":
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glLineWidth(self.line_width)
-                self._draw_triangles(self._regular_set, use_textures=False)
+                self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=False)
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             else:
-                self._draw_triangles(self._regular_set)
+                self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=True)
             if self.wireframe_mode in ("lines_depth", "lines_overlay"):
-                self._draw_lines(self._regular_set, overlay=self.wireframe_mode == "lines_overlay")
+                self._draw_scene_lines(self._regular_set, force_solid=False, overlay=self.wireframe_mode == "lines_overlay")
             return
 
         if self.render_mode in {"solid", "hybrid"}:
-            self._draw_triangles(self._regular_set, use_textures=True)
+            self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=True)
         if self.render_mode in {"wire", "hybrid"}:
-            self._draw_lines(self._regular_set, overlay=False)
+            self._draw_scene_lines(self._regular_set, force_solid=False, overlay=False)
 
     def _draw_deferred_selection(self) -> bool:
         drag = self._gizmo_drag
@@ -2792,22 +3629,49 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glDisableClientState(GL_COLOR_ARRAY)
         glDisableClientState(GL_TEXTURE_COORD_ARRAY)
         glColor4f(*color)
+        skinned = self._gpu_skinning.keys
+        rigid = self._mesh_draw_matrices.keys() - skinned
+        dynamic = skinned | rigid
+        static_keys = None if keys is None else keys - dynamic
         for buffer_set in buffer_sets:
             if buffer_set is None or buffer_set.vertices_vbo is None:
                 continue
-            index_vbo = self._span_index_vbo(buffer_set) if keys else buffer_set.indices_vbo
+            if keys is not None and not static_keys:
+                continue
+            index_vbo = self._span_index_vbo(buffer_set) if static_keys else buffer_set.indices_vbo
             if index_vbo is None:
                 continue
             buffer_set.vertices_vbo.bind()
             glEnableClientState(GL_VERTEX_ARRAY)
             glVertexPointer(3, GL_FLOAT, 0, None)
             index_vbo.bind()
-            spans = (span for key in keys for span in buffer_set.data.key_spans.get(key, ())) if keys else ((0, buffer_set.index_count),)
+            spans = (
+                (
+                    span
+                    for key in static_keys
+                    for span in buffer_set.data.key_spans.get(key, ())
+                )
+                if static_keys is not None
+                else ((0, buffer_set.index_count),)
+            )
             for offset, count in spans:
-                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, c_void_p(offset * 4) if keys else None)
+                glDrawElements(
+                    GL_TRIANGLES,
+                    count,
+                    GL_UNSIGNED_INT,
+                    c_void_p(offset * 4) if static_keys is not None else None,
+                )
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
             glDisableClientState(GL_VERTEX_ARRAY)
             glBindBuffer(GL_ARRAY_BUFFER, 0)
+        self._draw_rigid_overlay(
+            color,
+            rigid if keys is None else keys & rigid,
+        )
+        self._draw_skinned_overlay(
+            color,
+            skinned if keys is None else keys & skinned,
+        )
         glDepthMask(True)
         glDisable(GL_BLEND)
         if through:
@@ -2817,8 +3681,60 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self.lighting_mode == "fixed":
             glEnable(GL_LIGHTING)
 
+    def _draw_rigid_overlay(
+        self,
+        color: tuple[float, float, float, float],
+        keys: set[str],
+    ) -> None:
+        glColor4f(*color)
+        for draw_set in self._rigid_draw_sets:
+            if draw_set.key not in keys or draw_set.key in self._hidden_keys:
+                continue
+            self._draw_rigid_flat(draw_set)
+
+    def _draw_skinned_overlay(
+        self,
+        color: tuple[float, float, float, float],
+        keys: set[str],
+    ) -> None:
+        for draw_set in self._skinned_draw_sets:
+            if draw_set.key not in keys or draw_set.key in self._hidden_keys:
+                continue
+            self._draw_skinned_flat(draw_set, color)
+
+    def _draw_rigid_flat(self, draw_set: _GlRigidDrawSet) -> None:
+        self._push_draw_matrix(draw_set.key)
+        buffer_set = draw_set.buffer_set
+        buffer_set.vertices_vbo.bind()
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glVertexPointer(3, GL_FLOAT, 0, None)
+        buffer_set.indices_vbo.bind()
+        glDrawElements(GL_TRIANGLES, buffer_set.index_count, GL_UNSIGNED_INT, None)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        glDisableClientState(GL_VERTEX_ARRAY)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glPopMatrix()
+
+    def _draw_skinned_flat(
+        self,
+        draw_set: _GlSkinnedDrawSet,
+        color: tuple[float, float, float, float],
+    ) -> None:
+        self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
+        self._gpu_skinning.bind(draw_set.key, tint=color, vertex_colors=False)
+        for _material, indices_vbo, count in draw_set.batches:
+            indices_vbo.bind()
+            glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+        self._gpu_skinning.unbind()
+        glPopMatrix()
+
     def _span_index_vbo(self, buffer_set: _GlBufferSet):
-        if not self._active_hidden_keys():
+        if (
+            not self._active_hidden_keys()
+            and not self._gpu_skinning.keys
+            and not self._mesh_draw_matrices
+        ):
             return buffer_set.indices_vbo
         if buffer_set.span_indices_vbo is None and len(buffer_set.data.indices):
             buffer_set.span_indices_vbo = self._element_vbo(buffer_set.data.indices)
@@ -2849,6 +3765,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
         for buffer_set in (self._regular_set, self._solid_set):
             self._draw_pick_buffer(buffer_set, key_ids)
+        self._draw_rigid_pick(key_ids)
+        self._draw_skinned_pick(key_ids)
         if scene_matrix is not None:
             glPopMatrix()
         rgba = np.frombuffer(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE), dtype=np.uint8, count=4)
@@ -2880,14 +3798,43 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glVertexPointer(3, GL_FLOAT, 0, None)
         index_vbo.bind()
         for key, spans in buffer_set.data.key_spans.items():
+            if (
+                key in self._gpu_skinning.keys
+                or key in self._mesh_draw_matrices
+            ):
+                continue
             if not (pick_id := key_ids.get(key)):
                 continue
-            glColor4f((pick_id & 255) / 255.0, ((pick_id >> 8) & 255) / 255.0, ((pick_id >> 16) & 255) / 255.0, 1.0)
+            glColor4f(*self._pick_color(pick_id))
             for offset, count in spans:
                 glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, c_void_p(offset * 4))
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
         glDisableClientState(GL_VERTEX_ARRAY)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+    def _draw_rigid_pick(self, key_ids: dict[str, int]) -> None:
+        for draw_set in self._rigid_draw_sets:
+            pick_id = key_ids.get(draw_set.key)
+            if not pick_id:
+                continue
+            glColor4f(*self._pick_color(pick_id))
+            self._draw_rigid_flat(draw_set)
+
+    def _draw_skinned_pick(self, key_ids: dict[str, int]) -> None:
+        for draw_set in self._skinned_draw_sets:
+            pick_id = key_ids.get(draw_set.key)
+            if not pick_id:
+                continue
+            self._draw_skinned_flat(draw_set, self._pick_color(pick_id))
+
+    @staticmethod
+    def _pick_color(pick_id: int) -> tuple[float, float, float, float]:
+        return (
+            (pick_id & 255) / 255.0,
+            ((pick_id >> 8) & 255) / 255.0,
+            ((pick_id >> 16) & 255) / 255.0,
+            1.0,
+        )
 
     def _finish_scene_pick(self, kind: str, key: str) -> None:
         if kind == "hover":
@@ -2922,6 +3869,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self._needs_gl_upload or missing_regular or missing_solid:
             self._upload_buffers(rebuild=False, current=True)
             self._sync_gl_textures()
+        if self._skinned_draw_sets_dirty:
+            self._rebuild_skinned_draw_sets()
 
     def paintGL(self):
         dpr = float(self.devicePixelRatioF())
@@ -2942,7 +3891,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             glPushMatrix()
             glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
         self._draw_regular_scene()
-        self._draw_triangles(self._solid_set, use_textures=False)
+        self._draw_scene_triangles(self._solid_set, force_solid=True, use_textures=False)
         if not self._draw_deferred_selection():
             self._draw_selection_glow()
         self._draw_hover_glow()
@@ -2953,13 +3902,29 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         glColorMask(True, True, True, True)
         self._after_scene_draw()
         self._record_frame()
+        if self._fps_limit == 0 and self.isVisible():
+            self._timer.start(0)
 
     def _update_timer_state(self):
+        self._timer.stop()
         if not self.isVisible():
-            self._timer.stop()
             return
-        interval = 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
-        self._timer.start(interval)
+        self._timer.start(self._frame_interval())
+
+    def _request_frame(self) -> None:
+        if self._fps_limit:
+            self._timer.start(self._frame_interval())
+        if self._frame_callback is not None:
+            self._frame_callback()
+        self.update()
+
+    def _frame_interval(self) -> int:
+        return 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
+
+    def set_frame_callback(self, callback) -> None:
+        if callback is not None and not callable(callback):
+            raise TypeError("frame callback must be callable")
+        self._frame_callback = callback
 
     def _update_after_camera_change(self) -> None:
         if self._fps_limit == 0:
@@ -2990,6 +3955,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if mode not in self.WIREFRAME_MODES:
             return
         self.wireframe_mode = mode
+        self._skinned_draw_sets_dirty = True
         self._save_view_setting("mesh_viewer_wireframe_mode", mode)
         self.update()
 

@@ -27,6 +27,8 @@ def _handler_classes():
     yield SoundHandler
     from file_handlers.clip.clip_handler import ClipHandler
     yield ClipHandler
+    from file_handlers.motion.motlist_handler import MotListHandler
+    yield MotListHandler
     from file_handlers.uvs.uvs_handler import UvsHandler
     yield UvsHandler
     from file_handlers.rcol.rcol_handler import RcolHandler

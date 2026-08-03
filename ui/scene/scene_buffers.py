@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import AbstractSet, Iterable, Mapping
 
 import numpy as np
 
 from .scene_model import SceneDrawBatch, SceneDrawMesh
+
+
+@dataclass(slots=True)
+class SceneTriangleChunk:
+    key: str
+    material_name: str
+    indices: np.ndarray
+    part_index: int | None = None
 
 
 @dataclass(slots=True)
@@ -16,8 +24,9 @@ class SceneBufferSet:
     uvs: np.ndarray | None
     indices: np.ndarray
     batches: list[tuple[str, np.ndarray]]
-    triangle_chunks: list[tuple[str, str, np.ndarray]]
+    triangle_chunks: list[SceneTriangleChunk]
     key_spans: dict[str, list[tuple[int, int]]]
+    key_vertex_spans: dict[str, list[tuple[int, int]]]
 
 
 def scene_bounds(meshes: Iterable[SceneDrawMesh]) -> tuple[np.ndarray, float]:
@@ -107,19 +116,51 @@ def build_scene_buffer_set(
     return _SceneBufferBuilder(highlighted_keys, show_only_highlighted, force_solid).build(meshes)
 
 
-def scene_index_buffers(buffer_set: SceneBufferSet, hidden_keys: set[str], *, include_lines: bool = True) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
-    if not hidden_keys:
+def scene_index_buffers(
+    buffer_set: SceneBufferSet,
+    hidden_keys: set[str],
+    *,
+    hidden_parts: Mapping[str, AbstractSet[int]] | None = None,
+    include_lines: bool = True,
+) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
+    if not hidden_keys and not hidden_parts:
         return buffer_set.indices, buffer_set.batches, triangle_line_indices(buffer_set.indices) if include_lines else np.zeros((0,), dtype=np.uint32)
     return _chunk_index_buffers(
-        ((material_name, indices) for key, material_name, indices in buffer_set.triangle_chunks if key not in hidden_keys),
+        (
+            (chunk.material_name, chunk.indices)
+            for chunk in buffer_set.triangle_chunks
+            if chunk.key not in hidden_keys
+            and not _part_hidden(chunk, hidden_parts)
+        ),
         include_lines=include_lines,
     )
 
 
-def scene_key_index_buffers(buffer_set: SceneBufferSet, keys: set[str], *, include_lines: bool = True) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
+def scene_key_index_buffers(
+    buffer_set: SceneBufferSet,
+    keys: set[str],
+    *,
+    hidden_parts: Mapping[str, AbstractSet[int]] | None = None,
+    include_lines: bool = True,
+) -> tuple[np.ndarray, list[tuple[str, np.ndarray]], np.ndarray]:
     return _chunk_index_buffers(
-        ((material_name, indices) for key, material_name, indices in buffer_set.triangle_chunks if key in keys),
+        (
+            (chunk.material_name, chunk.indices)
+            for chunk in buffer_set.triangle_chunks
+            if chunk.key in keys and not _part_hidden(chunk, hidden_parts)
+        ),
         include_lines=include_lines,
+    )
+
+
+def _part_hidden(
+    chunk: SceneTriangleChunk,
+    hidden_parts: Mapping[str, AbstractSet[int]] | None,
+) -> bool:
+    return bool(
+        hidden_parts
+        and chunk.part_index is not None
+        and chunk.part_index in hidden_parts.get(chunk.key, ())
     )
 
 
@@ -192,8 +233,9 @@ class _SceneBufferBuilder:
         self.uv_chunks: list[np.ndarray] = []
         self.index_chunks: list[np.ndarray] = []
         self.draw_batches: dict[str, list[np.ndarray]] = {}
-        self.triangle_chunks: list[tuple[str, str, np.ndarray]] = []
+        self.triangle_chunks: list[SceneTriangleChunk] = []
         self.key_spans: dict[str, list[tuple[int, int]]] = {}
+        self.key_vertex_spans: dict[str, list[tuple[int, int]]] = {}
         self.any_uvs = False
         self.base = self.index_base = 0
 
@@ -215,6 +257,7 @@ class _SceneBufferBuilder:
             batches=[(name, np.concatenate(chunks)) for name, chunks in self.draw_batches.items()],
             triangle_chunks=self.triangle_chunks,
             key_spans=self.key_spans,
+            key_vertex_spans=self.key_vertex_spans,
         )
 
     def _split_meshes(self, meshes: Iterable[SceneDrawMesh]) -> tuple[list[SceneDrawMesh], dict[str, list[SceneDrawMesh]]]:
@@ -241,14 +284,22 @@ class _SceneBufferBuilder:
     def _batches(mesh: SceneDrawMesh) -> list[SceneDrawBatch]:
         return list(mesh.batches) if mesh.batches else [SceneDrawBatch(indices=mesh.indices, material_name=mesh.material_name)]
 
-    def _valid_batches(self, mesh: SceneDrawMesh, vertex_count: int) -> list[tuple[str, np.ndarray]]:
+    def _valid_batches(
+        self,
+        mesh: SceneDrawMesh,
+        vertex_count: int,
+    ) -> list[tuple[str, int | None, np.ndarray]]:
         batches = []
         for batch in self._batches(mesh):
             indices = np.asarray(batch.indices, dtype=np.uint32).reshape(-1)
             triangles = indices[:(len(indices) // 3) * 3].reshape(-1, 3)
             valid = (triangles < vertex_count).all(axis=1) if len(triangles) else []
             if np.any(valid):
-                batches.append((batch.material_name, triangles[valid].reshape(-1)))
+                batches.append((
+                    batch.material_name,
+                    batch.part_index,
+                    triangles[valid].reshape(-1),
+                ))
         return batches
 
     @staticmethod
@@ -292,7 +343,10 @@ class _SceneBufferBuilder:
         if normals is not None:
             normals = _normalized_normals(transform_normals(normals, matrix)) if matrix is not None else _normalized_normals(normals)
         else:
-            normals = _computed_normals(vertices, np.concatenate([indices for _, indices in batches]))
+            normals = _computed_normals(
+                vertices,
+                np.concatenate([indices for _, _, indices in batches]),
+            )
         self._append(vertices, normals, self._source_colors(mesh, len(vertices)), self._source_uvs(mesh, len(vertices)), batches, mesh.key)
 
     def _append_group(self, group: list[SceneDrawMesh]) -> None:
@@ -309,16 +363,47 @@ class _SceneBufferBuilder:
         hom = np.concatenate([source_vertices, np.ones((vertex_count, 1), dtype=np.float32)], axis=1)
         vertices = (hom[np.newaxis, :, :] @ np.swapaxes(matrices, 1, 2))[:, :, :3].reshape(-1, 3)
         offsets = (np.arange(len(group), dtype=np.uint32) * np.uint32(vertex_count))[:, np.newaxis]
-        expanded = [(name, (idx[np.newaxis, :] + offsets).reshape(-1).astype(np.uint32, copy=False)) for name, idx in batches]
-        normals = self._expanded_normals(mesh, vertex_count, matrices, vertices, np.concatenate([idx for _, idx in expanded]))
+        expanded = [
+            (
+                name,
+                part_index,
+                (indices[np.newaxis, :] + offsets)
+                .reshape(-1)
+                .astype(np.uint32, copy=False),
+            )
+            for name, part_index, indices in batches
+        ]
+        normals = self._expanded_normals(
+            mesh,
+            vertex_count,
+            matrices,
+            vertices,
+            np.concatenate([indices for _, _, indices in expanded]),
+        )
         source_colors = self._source_colors(mesh, vertex_count)
         colors = np.tile(source_colors, (len(group), 1)) if source_colors is not None else None
         uvs = self._source_uvs(mesh, vertex_count)
+        vertex_base = self.base
         shifted = self._append(vertices, normals, colors, np.tile(uvs, (len(group), 1)) if uvs is not None else None, expanded)
         for group_index, item in enumerate(group):
-            for (material_name, indices, offset), (_, source_indices) in zip(shifted, batches):
+            self._add_key_vertex_span(
+                item.key,
+                vertex_base + group_index * vertex_count,
+                vertex_count,
+            )
+            for (
+                material_name,
+                part_index,
+                indices,
+                offset,
+            ), (_, _, source_indices) in zip(shifted, batches):
                 start = group_index * len(source_indices)
-                self.triangle_chunks.append((item.key, material_name, indices[start:start + len(source_indices)]))
+                self.triangle_chunks.append(SceneTriangleChunk(
+                    item.key,
+                    material_name,
+                    indices[start:start + len(source_indices)],
+                    part_index,
+                ))
                 self._add_key_span(item.key, offset + start, len(source_indices))
 
     def _expanded_normals(
@@ -345,23 +430,30 @@ class _SceneBufferBuilder:
         normals: np.ndarray,
         colors: np.ndarray | None,
         uvs: np.ndarray | None,
-        batches: list[tuple[str, np.ndarray]],
+        batches: list[tuple[str, int | None, np.ndarray]],
         key: str | None = None,
-    ) -> list[tuple[str, np.ndarray, int]]:
+    ) -> list[tuple[str, int | None, np.ndarray, int]]:
         self.vertex_chunks.append(vertices.astype(np.float32, copy=False))
         self.normal_chunks.append(normals.astype(np.float32, copy=False))
         self.color_chunks.append(colors.astype(np.float32, copy=False) if colors is not None else None)
         self.uv_chunks.append(uvs.astype(np.float32, copy=False) if uvs is not None else np.zeros((len(vertices), 2), dtype=np.float32))
         self.any_uvs |= uvs is not None
+        if key:
+            self._add_key_vertex_span(key, self.base, len(vertices))
         shifted_batches = []
-        for material_name, indices in batches:
+        for material_name, part_index, indices in batches:
             shifted = indices.astype(np.uint32, copy=False) + np.uint32(self.base)
             offset = self.index_base
             self.index_chunks.append(shifted)
             self.draw_batches.setdefault(material_name, []).append(shifted)
-            shifted_batches.append((material_name, shifted, offset))
+            shifted_batches.append((material_name, part_index, shifted, offset))
             if key:
-                self.triangle_chunks.append((key, material_name, shifted))
+                self.triangle_chunks.append(SceneTriangleChunk(
+                    key,
+                    material_name,
+                    shifted,
+                    part_index,
+                ))
                 self._add_key_span(key, offset, len(shifted))
             self.index_base += len(shifted)
         self.base += len(vertices)
@@ -370,6 +462,12 @@ class _SceneBufferBuilder:
     def _add_key_span(self, key: str, offset: int, count: int) -> None:
         if key and count:
             self.key_spans.setdefault(str(key), []).append((int(offset), int(count)))
+
+    def _add_key_vertex_span(self, key: str, offset: int, count: int) -> None:
+        if key and count:
+            self.key_vertex_spans.setdefault(str(key), []).append(
+                (int(offset), int(count))
+            )
 
     def _base_colors(self) -> np.ndarray | None:
         if not any(chunk is not None for chunk in self.color_chunks):

@@ -12,6 +12,7 @@ from .structures import (
     Key,
     Node,
     NoHermiteKey,
+    PathPoint3DValue,
     Property,
     SpeedPoint,
     Track,
@@ -40,7 +41,7 @@ class ParsedClip:
     hermite_nodes: list[tuple[float, float, float, float]]
     bezier3d_nodes: list[tuple[float, float, float, float, float, float, float, float]]
     user_data_assets: list[UserDataAssetInfo]
-    owords: list[tuple[float, float, float, float]]
+    owords: list[PathPoint3DValue]
     track_child_nodes: list[Node] = field(default_factory=list)
 
 
@@ -735,10 +736,29 @@ class ClipParser:
             ))
         return out
 
-    def _read_owords(self, r: Reader, h: ClipHeader) -> list[tuple[float, float, float, float]]:
+    def _read_owords(self, r: Reader, h: ClipHeader) -> list[PathPoint3DValue]:
         if h.oword_ptr == 0:
             return []
-        return self._read_f32_rows(r, h.oword_ptr, h.data_ptr or r.size, 4)
+        end = h.data_ptr or r.size
+        self._assert(h.oword_ptr <= end <= r.size, "PathPoint3D table bounds are invalid")
+        self._assert(h.oword_ptr % 8 == 0, "PathPoint3D table is not 8-byte aligned")
+        if h.data_ptr:
+            self._assert(end % 16 == 0, "CLIP data table is not 16-byte aligned")
+        trailing = (end - h.oword_ptr) % 0x10
+        self._assert(
+            trailing in ((0, 8) if h.data_ptr else (0,)),
+            "PathPoint3D table has invalid trailing alignment",
+        )
+        row_end = end - trailing
+        self._assert(
+            not trailing or r.bytes(row_end, trailing) == bytes(trailing),
+            "PathPoint3D trailing alignment padding is nonzero",
+        )
+        rows = []
+        for offset in range(h.oword_ptr, row_end, 0x10):
+            self._assert(r.u32(offset + 0xC) == 0, "PathPoint3D padding is nonzero")
+            rows.append((r.f32(offset), r.f32(offset + 4), r.f32(offset + 8)))
+        return rows
 
     def _validate_data_table(self, r: Reader, h: ClipHeader):
         if h.data_ptr == 0:
@@ -842,7 +862,8 @@ class ClipParser:
             if ptype == PropertyType.PATH_POINT3D:
                 for key_obj in self._iter_property_payload_keys(prop, include_last=True):
                     key_obj.oword_ref = None
-                    oword_idx = key_obj.raw0 & 0xFFFFFFFF
+                    self._assert(key_obj.raw1 == 0, "PathPoint3D OWord index upper dword is nonzero")
+                    oword_idx = key_obj.raw0
                     self._assert(0 <= oword_idx < len(parsed.owords), "PathPoint3D OWord index out of range")
                     key_obj.oword_ref = parsed.owords[oword_idx]
 

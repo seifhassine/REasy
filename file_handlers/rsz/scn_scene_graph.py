@@ -19,6 +19,7 @@ from file_handlers.rsz.rsz_data_types import (
     StructData,
 )
 from file_handlers.rsz.rsz_file import RszFile
+from utils.resource_file_utils import normalize_resource_path
 
 
 VIA_FOLDER = "via.Folder"
@@ -69,6 +70,9 @@ class ScnTransform:
     rotation: tuple[float, float, float, float]
     scale: tuple[float, float, float]
     local_matrix: np.ndarray
+    parent_joint: str = ""
+    same_joints_constraint: bool = False
+    absolute_scaling: bool = False
 
 
 @dataclass(slots=True)
@@ -97,6 +101,7 @@ class ScnSceneObject:
     transform: ScnTransform | None = None
     document_world_matrix: np.ndarray = field(default_factory=lambda: np.identity(4, dtype=np.float32))
     world_matrix: np.ndarray = field(default_factory=lambda: np.identity(4, dtype=np.float32))
+    draw_self: bool = True
 
 
 @dataclass(slots=True)
@@ -150,6 +155,8 @@ class ScnRenderableMesh:
     source_kind: str = "mesh"
     source_group_instance_id: int | None = None
     source_transform_instance_id: int | None = None
+    visible_by_default: bool = True
+    enabled_parts: tuple[bool, ...] | None = None
 
     @property
     def key(self) -> str:
@@ -293,10 +300,7 @@ ResourceResolver = Callable[[str, str | None], ScnResolvedResource | None]
 
 
 def normalize_scene_path(path: str) -> str:
-    value = (path or "").replace("\\", "/").strip().rstrip("\x00")
-    if value.startswith("@"):
-        value = value[1:]
-    return value.lstrip("/")
+    return normalize_resource_path(path)
 
 
 def normalize_document_id(path: str) -> str:
@@ -309,7 +313,7 @@ def normalize_document_id(path: str) -> str:
             value = str(p.resolve())
     except Exception:
         pass
-    return value.replace("\\", "/").lower()
+    return value.replace("\\", "/").casefold()
 
 
 def _identity() -> np.ndarray:
@@ -353,6 +357,36 @@ def make_trs_matrix(
     return matrix
 
 
+def compose_parented_transform(
+    parent_matrix: np.ndarray,
+    transform: ScnTransform,
+    joint_matrix: np.ndarray | None = None,
+) -> np.ndarray:
+    """Compose a column-vector scene transform, optionally below a parent joint."""
+    parent = np.asarray(parent_matrix, dtype=np.float32).reshape(4, 4)
+    if joint_matrix is not None:
+        joint = np.asarray(joint_matrix, dtype=np.float32).reshape(4, 4)
+        if not np.isfinite(joint).all():
+            raise ValueError("parent joint matrix is non-finite")
+        parent = parent @ joint
+    world = (parent @ transform.local_matrix).astype(np.float32)
+    if not transform.absolute_scaling:
+        return world
+
+    basis = world[:3, :3].astype(np.float64)
+    if not np.isfinite(basis).all():
+        raise ValueError("parented transform contains a non-finite basis")
+    left, _singular, right = np.linalg.svd(basis)
+    rotation = left @ right
+    if np.linalg.det(rotation) < 0.0:
+        left[:, -1] *= -1.0
+        rotation = left @ right
+    world[:3, :3] = (
+        rotation * np.asarray(transform.scale, dtype=np.float64)
+    ).astype(np.float32)
+    return world
+
+
 def _normalize_quaternion_values(values) -> tuple[float, float, float, float]:
     quat = tuple(float(v) for v in values)
     length = float(np.linalg.norm(np.asarray(quat, dtype=np.float32)))
@@ -386,6 +420,16 @@ def _numeric_field(fields: Mapping[str, object], name: str, default: float) -> f
     except (TypeError, ValueError):
         return float(default)
     return value if np.isfinite(value) else float(default)
+
+
+def _bool_field(fields: Mapping[str, object], name: str, default: bool) -> bool:
+    target = name.casefold()
+    field = next(
+        (value for key, value in fields.items() if key.casefold() == target),
+        None,
+    )
+    value = getattr(field, "value", field)
+    return value if type(value) is bool else default
 
 
 def _obb_fields(fields: Mapping[str, object]) -> list[ScnOrientedBox]:
@@ -534,6 +578,7 @@ class ScnSceneGraphBuilder:
             self._instance_type_id(scn, instance_id),
             self._type_name(scn, instance_id),
             fields,
+            draw_self=_bool_field(fields, "DrawSelf", True),
         )
         document.objects[object_id] = scene_object
         document.object_by_local_id[local_id] = object_id
@@ -617,7 +662,12 @@ class ScnSceneGraphBuilder:
             local_matrix = scene_object.transform.local_matrix if scene_object.transform else _identity()
             parent_object_id = document.object_by_local_id.get(scene_object.parent_id)
             if parent_object_id is not None and parent_object_id in document.objects:
-                scene_object.document_world_matrix = (compute(document.objects[parent_object_id]) @ local_matrix).astype(np.float32)
+                parent_world = compute(document.objects[parent_object_id])
+                scene_object.document_world_matrix = (
+                    compose_parented_transform(parent_world, scene_object.transform)
+                    if scene_object.transform is not None
+                    else parent_world.copy()
+                )
             else:
                 scene_object.document_world_matrix = local_matrix.copy()
             scene_object.world_matrix = scene_object.document_world_matrix.copy()
@@ -758,7 +808,9 @@ class ScnSceneGraphBuilder:
         )
 
     def _append_mesh_renderable(self, graph, document, source_object, component, document_instance_id) -> None:
-        mesh_path, mdf_path = self._mesh_paths_from_fields(component.fields)
+        mesh_path, mdf_path, enabled_parts = self._mesh_from_fields(
+            component.fields
+        )
         if not mesh_path:
             self._warn_component(
                 graph, "missing_mesh_path",
@@ -775,6 +827,12 @@ class ScnSceneGraphBuilder:
             mdf_path,
             source_object.document_world_matrix,
             source_object.world_matrix,
+            visible_by_default=self._renderable_visible(
+                document,
+                source_object,
+                component,
+            ),
+            enabled_parts=enabled_parts,
         )
 
     def _append_composite_mesh_renderables(self, graph, document, source_object, component, document_instance_id, base_world_matrix) -> None:
@@ -784,7 +842,9 @@ class ScnSceneGraphBuilder:
             VIA_RENDER_COMPOSITE_MESH_INSTANCE_GROUP,
         )
         for group_instance_id, group_fields in groups:
-            mesh_path, mdf_path = self._mesh_paths_from_fields(group_fields)
+            mesh_path, mdf_path, enabled_parts = self._mesh_from_fields(
+                group_fields
+            )
             if not mesh_path:
                 self._warn_component(
                     graph, "missing_mesh_path",
@@ -827,6 +887,12 @@ class ScnSceneGraphBuilder:
                     source_kind="composite_mesh",
                     source_group_instance_id=group_instance_id,
                     source_transform_instance_id=transform_instance_id,
+                    visible_by_default=self._renderable_visible(
+                        document,
+                        source_object,
+                        component,
+                    ),
+                    enabled_parts=enabled_parts,
                 )
 
     def _append_foliage_renderables(self, graph, document, source_object, component, document_instance_id, base_world_matrix) -> None:
@@ -881,7 +947,35 @@ class ScnSceneGraphBuilder:
                     source_kind="foliage",
                     source_group_instance_id=group.index,
                     source_transform_instance_id=transform_index,
+                    visible_by_default=self._renderable_visible(
+                        document,
+                        source_object,
+                        component,
+                    ),
                 )
+
+    @staticmethod
+    def _renderable_visible(
+        document: ScnSceneDocument,
+        source_object: ScnSceneObject,
+        component: ScnComponent,
+    ) -> bool:
+        if not _bool_field(component.fields, "Enabled", True):
+            return False
+        current = source_object
+        visited: set[ScnObjectId] = set()
+        while current.id not in visited:
+            visited.add(current.id)
+            if not current.draw_self:
+                return False
+            parent_id = document.object_by_local_id.get(current.parent_id)
+            if parent_id is None:
+                break
+            parent = document.objects.get(parent_id)
+            if parent is None:
+                break
+            current = parent
+        return True
 
     @staticmethod
     def _append_renderable(
@@ -897,19 +991,23 @@ class ScnSceneGraphBuilder:
         source_kind="mesh",
         source_group_instance_id=None,
         source_transform_instance_id=None,
+        visible_by_default=True,
+        enabled_parts=None,
     ) -> None:
         graph.renderables.append(
             ScnRenderableMesh(
-                document_instance_id,
-                source_object.id,
-                component.id,
-                mesh_path,
-                mdf_path,
-                document_world_matrix.copy(),
-                world_matrix.copy(),
-                source_kind,
-                source_group_instance_id,
-                source_transform_instance_id,
+                document_instance_id=document_instance_id,
+                source_object_id=source_object.id,
+                source_component_id=component.id,
+                mesh_path=mesh_path,
+                mdf_path=mdf_path,
+                document_world_matrix=document_world_matrix.copy(),
+                world_matrix=world_matrix.copy(),
+                source_kind=source_kind,
+                source_group_instance_id=source_group_instance_id,
+                source_transform_instance_id=source_transform_instance_id,
+                visible_by_default=visible_by_default,
+                enabled_parts=enabled_parts,
             )
         )
 
@@ -963,10 +1061,14 @@ class ScnSceneGraphBuilder:
         except ValueError:
             return None
 
-    def _mesh_paths_from_fields(self, fields: Mapping[str, object]) -> tuple[str, str]:
+    def _mesh_from_fields(
+        self,
+        fields: Mapping[str, object],
+    ) -> tuple[str, str, tuple[bool, ...] | None]:
         from .scn_scene_adapters import MeshAdapter
 
-        return MeshAdapter(fields).paths()
+        adapter = MeshAdapter(fields)
+        return (*adapter.paths(), adapter.enabled_parts())
 
     def _foliage_path(self, fields: Mapping[str, object]) -> str:
         values = [value for _name, value in _resource_string_fields(fields) if value]

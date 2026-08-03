@@ -6,7 +6,12 @@ from pathlib import Path
 from typing import Iterable
 
 from file_handlers.mdf.mdf_file import MatData, MdfFile, TexHeader
-from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
+from file_handlers.mmtr import (
+    DMC5_MMTR_PROFILE,
+    MmtrContractError,
+    parse_mmtr_skinning_contract,
+)
+from utils.resource_file_utils import resolve_handler_resource_data
 
 
 PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
@@ -22,12 +27,22 @@ PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
 
 
 @dataclass(slots=True)
+class MdfTextureProfile:
+    texture_type: str
+    texture_path: str
+
+
+@dataclass(slots=True)
 class MdfSurfaceProfile:
     material_name: str
+    game_version: str = ""
     tint: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
     two_sided: bool = False
+    mmtr_path: str = ""
     texture_type: str = ""
     texture_path: str = ""
+    textures: tuple[MdfTextureProfile, ...] = ()
+    parameter_names: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -52,31 +67,66 @@ _MDF_PARSE_POOL: ProcessPoolExecutor | None = None
 _TWO_SIDED_FLAGS = (1 << 0) | (1 << 8)
 
 
-def _extract_surface_profiles(mdf_data: bytes, actual_path: str) -> dict[str, MdfSurfaceProfile]:
+def _extract_surface_profiles(
+    mdf_data: bytes,
+    actual_path: str,
+    game_version: str = "",
+) -> dict[str, MdfSurfaceProfile]:
     mdf = MdfFile()
-    if not mdf.read(mdf_data, actual_path):
-        return {}
+    mdf.read(mdf_data, actual_path)
     resolved: dict[str, MdfSurfaceProfile] = {}
     for material in mdf.materials:
         texture = MeshMaterialResolver.pick_primary_texture(material)
         resolved[material.header.mat_name] = MdfSurfaceProfile(
             material_name=material.header.mat_name,
+            game_version=game_version,
             tint=MeshMaterialResolver.base_color(material),
             two_sided=bool(material.header.material_flags & _TWO_SIDED_FLAGS),
+            mmtr_path=material.header.mmtr_path,
             texture_type=texture.tex_type if texture else "",
             texture_path=texture.tex_path if texture else "",
+            textures=tuple(
+                MdfTextureProfile(item.tex_type, item.tex_path)
+                for item in material.textures
+                if item.tex_type and item.tex_path
+            ),
+            parameter_names=tuple(
+                parameter.name
+                for parameter in material.parameters
+                if parameter.name
+            ),
         )
     return resolved
 
 
 class MeshMaterialResolver:
     @staticmethod
-    def _project_resolution_context(handler):
+    def _normalized_resource_path(path: str) -> str:
+        return (path or "").replace("\\", "/").lstrip("@/").rstrip("\x00")
+
+    @staticmethod
+    def _handler_game_version(handler) -> str:
         app = getattr(handler, "app", None)
-        proj = getattr(app, "proj_dock", None) if app is not None else None
-        proj_mgr = getattr(app, "project_manager", None) if app is not None else None
-        game = str(getattr(proj_mgr, "current_game", "") or "")
-        return proj, get_path_prefix_for_game(game)
+        project = getattr(app, "proj_dock", None) if app is not None else None
+        manager = (
+            getattr(app, "project_manager", None)
+            if app is not None
+            else None
+        )
+        settings = getattr(app, "settings", {}) if app is not None else {}
+        return str(
+            getattr(handler, "game_version", "")
+            or getattr(getattr(handler, "resource_context", None), "game", "")
+            or getattr(manager, "current_game", "")
+            or getattr(project, "current_game", "")
+            or getattr(app, "current_game", "")
+            or (
+                settings.get("game_version", "")
+                if isinstance(settings, dict)
+                else ""
+            )
+            or ""
+        )
 
     @staticmethod
     def is_render_texture_path(path: str) -> bool:
@@ -175,21 +225,120 @@ class MeshMaterialResolver:
         *,
         parse_in_subprocess: bool = False,
     ) -> ResolvedMdf | None:
-        normalized = (mdf_path or "").replace("\\", "/").lstrip("@/").rstrip("\x00")
+        normalized = cls._normalized_resource_path(mdf_path)
         if not normalized:
             return None
-        return cls._read_mdf(cls._resolve_resource(handler, normalized), parse_in_subprocess=parse_in_subprocess)
+        return cls._read_mdf(
+            cls._resolve_resource(handler, normalized),
+            parse_in_subprocess=parse_in_subprocess,
+            game_version=cls._handler_game_version(handler),
+        )
 
     @classmethod
-    def _read_mdf(cls, resolved, *, parse_in_subprocess: bool = False) -> ResolvedMdf | None:
+    def resolve_dmc5_skinning_influences(
+        cls,
+        handler,
+        *,
+        explicit_mdf_path: str = "",
+    ) -> dict[str, int]:
+        """Resolve each mesh material's 4/8-weight vertex-shader contract."""
+        cache_key = (
+            DMC5_MMTR_PROFILE.name,
+            cls._normalized_resource_path(explicit_mdf_path).lower(),
+        )
+        material_cache = getattr(
+            handler,
+            "_material_skinning_cache",
+            None,
+        )
+        if material_cache is None:
+            material_cache = {}
+            handler._material_skinning_cache = material_cache
+        if cache_key in material_cache:
+            return material_cache[cache_key]
+
+        resolved_mdf = (
+            cls.resolve_mdf_path_for_handler(handler, explicit_mdf_path)
+            if explicit_mdf_path
+            else cls.resolve_mdf_for_handler(handler)
+        )
+        if resolved_mdf is None:
+            raise ValueError("DMC5 material skinning requires a resolvable MDF")
+
+        shader_cache = getattr(handler, "_mmtr_skinning_cache", None)
+        if shader_cache is None:
+            shader_cache = {}
+            handler._mmtr_skinning_cache = shader_cache
+
+        mesh = getattr(handler, "mesh", None)
+        material_names = list(getattr(mesh, "material_names", ()) or ())
+        influences: dict[str, int] = {}
+        for material_name in material_names:
+            surface = resolved_mdf.surfaces.get(material_name)
+            if surface is None:
+                raise ValueError(
+                    f"DMC5 MDF has no material named {material_name!r}"
+                )
+            mmtr_path = cls._normalized_resource_path(surface.mmtr_path)
+            if not mmtr_path:
+                raise ValueError(
+                    f"DMC5 material {material_name!r} has no MMTR path"
+                )
+            mmtr_key = (DMC5_MMTR_PROFILE.name, mmtr_path.lower())
+            influence_count = shader_cache.get(mmtr_key)
+            if influence_count is None:
+                resolved_mmtr = cls._resolve_resource(handler, mmtr_path)
+                if resolved_mmtr is None:
+                    raise ValueError(
+                        f"DMC5 material {material_name!r} MMTR was not found: "
+                        f"{mmtr_path}"
+                    )
+                actual_path, data = resolved_mmtr
+                try:
+                    contract = parse_mmtr_skinning_contract(
+                        data,
+                        DMC5_MMTR_PROFILE,
+                        label=actual_path,
+                    )
+                except MmtrContractError as exc:
+                    raise ValueError(
+                        f"DMC5 material {material_name!r} MMTR contract is "
+                        f"unsupported: {exc}"
+                    ) from exc
+                influence_count = contract.influence_count
+                shader_cache[mmtr_key] = influence_count
+            influences[material_name] = influence_count
+
+        material_cache[cache_key] = influences
+        return influences
+
+    @classmethod
+    def _read_mdf(
+        cls,
+        resolved,
+        *,
+        parse_in_subprocess: bool = False,
+        game_version: str = "",
+    ) -> ResolvedMdf | None:
         if resolved is None:
             return None
         actual_path, data = resolved
         try:
-            surfaces = cls._parse_mdf_surfaces(data, actual_path, parse_in_subprocess=parse_in_subprocess)
-        except Exception:
-            return None
-        return ResolvedMdf(path=actual_path, surfaces=surfaces) if surfaces else None
+            surfaces = cls._parse_mdf_surfaces(
+                data,
+                actual_path,
+                parse_in_subprocess=parse_in_subprocess,
+                game_version=game_version,
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"Failed to parse MDF resource {actual_path!r}: {exc}"
+            ) from exc
+        if not surfaces:
+            raise ValueError(
+                f"MDF resource {actual_path!r} contains no materials"
+            )
+        return ResolvedMdf(path=actual_path, surfaces=surfaces)
 
     @staticmethod
     def base_color(material: MatData) -> tuple[float, float, float, float]:
@@ -221,7 +370,11 @@ class MeshMaterialResolver:
     def resolve_mdf_for_handler(cls, handler, *, parse_in_subprocess: bool = False) -> ResolvedMdf | None:
         filepath = str(getattr(handler, "filepath", "") or "")
         for candidate in cls.iter_mdf_candidates(filepath):
-            if resolved := cls._read_mdf(cls._resolve_resource(handler, candidate), parse_in_subprocess=parse_in_subprocess):
+            if resolved := cls._read_mdf(
+                cls._resolve_resource(handler, candidate),
+                parse_in_subprocess=parse_in_subprocess,
+                game_version=cls._handler_game_version(handler),
+            ):
                 return resolved
         return None
 
@@ -232,11 +385,17 @@ class MeshMaterialResolver:
         actual_path: str,
         *,
         parse_in_subprocess: bool = False,
+        game_version: str = "",
     ) -> dict[str, MdfSurfaceProfile]:
         if not parse_in_subprocess:
-            return _extract_surface_profiles(data, actual_path)
+            return _extract_surface_profiles(data, actual_path, game_version)
         pool = cls._mdf_parse_pool()
-        future = pool.submit(_extract_surface_profiles, data, actual_path)
+        future = pool.submit(
+            _extract_surface_profiles,
+            data,
+            actual_path,
+            game_version,
+        )
         return future.result(timeout=5.0)
 
     @staticmethod
@@ -292,24 +451,13 @@ class MeshMaterialResolver:
 
     @classmethod
     def _resolve_resource(cls, handler, resource_path: str):
-        context = getattr(handler, "_resource_context", None)
-        if context:
-            hit = resolve_resource_data(resource_path, *context)
-            if hit is not None:
-                return hit
-
-        proj, path_prefix = cls._project_resolution_context(handler)
-
-        if proj is not None:
-            hit = resolve_resource_data(
-                resource_path,
-                getattr(proj, "project_dir", None),
-                getattr(proj, "unpacked_dir", None),
-                path_prefix,
-                getattr(proj, "_pak_cached_reader", None),
-            )
-            if hit is not None:
-                return hit
+        hit = resolve_handler_resource_data(
+            handler,
+            resource_path,
+            allow_selection_dialog=False,
+        )
+        if hit is not None:
+            return hit
 
         direct = cls._find_local_resource(Path(resource_path))
         if direct is not None:

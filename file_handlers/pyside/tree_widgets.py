@@ -89,8 +89,9 @@ class AdvancedTreeView(QTreeView):
     and supports expansions.
     """
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, viewer):
+        super().__init__(viewer)
+        self.viewer = viewer
         self.highlight_manager = None
         self.setItemDelegate(AdvancedStyledDelegate(self))
         self.setUniformRowHeights(False)
@@ -350,7 +351,7 @@ class AdvancedTreeView(QTreeView):
                 self._update_widget_highlight(index, True)
 
         if (
-            self.parent().handler.auto_resource_management
+            self.viewer.handler.auto_resource_management
             and node_type == "ResourceData"
         ):
             from file_handlers.pyside.value_widgets import StringInput
@@ -412,7 +413,7 @@ class AdvancedTreeView(QTreeView):
             return
 
         menu = QMenu(self)
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         has_go_clipboard = parent_widget.handler.has_gameobject_clipboard_data(self)
         has_component_clipboard = parent_widget.handler.has_component_clipboard_data(self)
 
@@ -424,7 +425,7 @@ class AdvancedTreeView(QTreeView):
             action = menu.exec_(QCursor.pos())
             if action == exp_act:
                 from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-                RszGameObjectClipboard.export_datablock(self.parent())
+                RszGameObjectClipboard.export_datablock(self.viewer)
             elif action == imp_act:
                 self._show_import_randomization_dialog(index)
             elif action == translate_all_act:
@@ -466,7 +467,7 @@ class AdvancedTreeView(QTreeView):
     def _handle_resources_section_menu(self, menu):
         add_action = menu.addAction(self.tr("Add New Resource"))
         rebuild_action = None
-        if(self.parent().handler.auto_resource_management):
+        if(self.viewer.handler.auto_resource_management):
             rebuild_action = menu.addAction(self.tr("Refresh Resources List"))
         action = menu.exec_(QCursor.pos())
         if action == add_action:
@@ -496,7 +497,7 @@ class AdvancedTreeView(QTreeView):
         menu.addAction(self.tr("Translate Name"))
         
         # Prefab handling
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         go_has_prefab = self._get_prefab_info(parent_widget, item_info, item)
         menu.addAction(self.tr("Modify Prefab Path") if go_has_prefab else self.tr("Associate with Prefab"))
         
@@ -552,7 +553,7 @@ class AdvancedTreeView(QTreeView):
             index, item_info['array_type'], item_info['data_obj'], item
         )
 
-        parent = self.parent()
+        parent = self.viewer
         clipboard = parent.handler.get_array_clipboard()
         if (clipboard.has_clipboard_data(self) and 
             clipboard.is_clipboard_compatible_with_array(self, item_info['array_type'])):
@@ -654,7 +655,7 @@ class AdvancedTreeView(QTreeView):
             actions[action]()
 
     def _process_object_reference_action(self, index, object_data, action: str):
-        parent = self.parent()
+        parent = self.viewer
         if not parent or not hasattr(parent, "object_operations"):
             return
 
@@ -713,7 +714,7 @@ class AdvancedTreeView(QTreeView):
         if not item or not isinstance(item.raw, dict):
             return
 
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         field_label = item.data[0].split(":", 1)[0].strip()
         embedded_context = item.raw.get("embedded_context")
         new_node = parent_widget._create_field_dict(field_label, object_data, embedded_context)
@@ -805,7 +806,7 @@ class AdvancedTreeView(QTreeView):
             
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
         go_object_id = -1
         for i, obj_id in enumerate(parent_widget.scn.object_table):
@@ -850,7 +851,7 @@ class AdvancedTreeView(QTreeView):
 
     def open_template_manager(self, index=None):
         """Open the template manager dialog"""
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         if not parent_widget:
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Parent widget not available")
@@ -891,7 +892,7 @@ class AdvancedTreeView(QTreeView):
         if hasattr(item, 'raw') and isinstance(item.raw, dict):
             instance_id = item.raw.get('instance_id')
             if instance_id:
-                for i, obj_id in enumerate(self.parent().scn.object_table):
+                for i, obj_id in enumerate(self.viewer.scn.object_table):
                     if obj_id == instance_id and i == object_id:
                         return start_index
         
@@ -954,7 +955,7 @@ class AdvancedTreeView(QTreeView):
         if reasy_id := raw.get("reasy_id"):
             result['is_component'] = True
             result['component_instance_id'] = (
-                self.parent().handler.id_manager.get_instance_id(reasy_id)
+                self.viewer.handler.id_manager.get_instance_id(reasy_id)
             )
 
     @staticmethod
@@ -1064,7 +1065,7 @@ class AdvancedTreeView(QTreeView):
     def add_array_element(self, index, array_type, data_obj, array_item):
         """Add a new element to an array"""
         element_type = AdvancedTreeView._get_element_type(array_type)
-        parent = self.parent()
+        parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
         creator, embedded_context = self._get_array_element_creator(
             parent, embedded_context
@@ -1192,7 +1193,7 @@ class AdvancedTreeView(QTreeView):
             return
         
         embedded_context = self._find_embedded_context(parent_array_item)
-        parent = self.parent()
+        parent = self.viewer
         success = False
 
         if embedded_context == "userdata_array_needs_embedded":
@@ -1218,7 +1219,7 @@ class AdvancedTreeView(QTreeView):
         return find_embedded_context(item)
 
     def _display_confirmation(self, message):
-        if(not self.parent().handler.confirmation_prompt):
+        if(not self.viewer.handler.confirmation_prompt):
             return True
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
@@ -1234,7 +1235,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
         
-        parent = self.parent()
+        parent = self.viewer
 
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
@@ -1282,7 +1283,7 @@ class AdvancedTreeView(QTreeView):
             
         folder_item = folder_index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
 
         folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not folder_instance_id:
@@ -1342,7 +1343,7 @@ class AdvancedTreeView(QTreeView):
             
         parent_item = parent_go_index.internalPointer()
         reasy_id = parent_item.raw.get("reasy_id")
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
         parent_object_id = -1
         for i, instance_id in enumerate(parent_widget.scn.object_table):
@@ -1397,7 +1398,7 @@ class AdvancedTreeView(QTreeView):
     def create_subfolder(self, parent_folder_index):
         folder_item = parent_folder_index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
 
         parent_object_id = next((i for i, x in enumerate(parent_widget.scn.object_table)
@@ -1413,7 +1414,7 @@ class AdvancedTreeView(QTreeView):
         self._create_folder_ui("New Folder", parent_object_id, parent_folder_index)
 
     def _create_folder_ui(self, name_default: str, parent_id: int, parent_index):
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         name, ok = QInputDialog.getText(self, self.tr("New Folder"), self.tr("Folder Name:"),
                                         QLineEdit.Normal, name_default)
         if not ok or not name:
@@ -1451,7 +1452,7 @@ class AdvancedTreeView(QTreeView):
             settings_node["children"].append(field_node)
 
     def add_folder_to_ui_direct(self, folder_data, parent_index=None):
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         model = self.model()
 
         parent_node = self._resolve_parent_node(parent_index, model)
@@ -1491,7 +1492,7 @@ class AdvancedTreeView(QTreeView):
     def create_root_gameobject(self, index):
         """Create a new GameObject at the root level"""
         # Get the parent widget/handler for GameObject creation
-        parent = self.parent()
+        parent = self.viewer
         # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(
             self,
@@ -1528,7 +1529,7 @@ class AdvancedTreeView(QTreeView):
             
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(
@@ -1576,7 +1577,7 @@ class AdvancedTreeView(QTreeView):
             
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         
         go_object_id = -1
@@ -1659,7 +1660,7 @@ class AdvancedTreeView(QTreeView):
             
         folder_item = index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         folder_object_id = -1
         for i, instance_id in enumerate(parent.scn.object_table):
@@ -1710,7 +1711,7 @@ class AdvancedTreeView(QTreeView):
 
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         go_object_id = next(
             (
@@ -1805,7 +1806,7 @@ class AdvancedTreeView(QTreeView):
             )
 
     def _rebuild_resources_list(self):
-        viewer  = self.parent()
+        viewer = self.viewer
         viewer.handler.rsz_file.rebuild_resources()
         model    = self.model()
         res_node = self._find_resources_node()
@@ -1835,7 +1836,7 @@ class AdvancedTreeView(QTreeView):
 
     def add_resource(self):
         """Add a new resource path directly in the tree view"""
-        parent = self.parent()
+        parent = self.viewer
         if not parent:
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Resource management not supported")
@@ -1921,7 +1922,7 @@ class AdvancedTreeView(QTreeView):
             )
             return
         
-        parent = self.parent()
+        parent = self.viewer
         if resource_index >= len(parent.scn.resource_infos):
             QMessageBox.warning(
                 self,
@@ -2020,7 +2021,7 @@ class AdvancedTreeView(QTreeView):
         ):
             return
         try:
-            parent = self.parent()
+            parent = self.viewer
             for ri in sorted(resource_indices, reverse=True):
                 if not parent.delete_resource(ri):
                     QMessageBox.warning(
@@ -2062,7 +2063,7 @@ class AdvancedTreeView(QTreeView):
 
     def _get_current_resource_path(self, resource_index):
         """Get the current path for a resource"""
-        parent = self.parent()
+        parent = self.viewer
         try:
             if (hasattr(parent.scn, 'is_pfb16') and parent.scn.is_pfb16 and 
                 hasattr(parent.scn, '_pfb16_direct_strings')):
@@ -2121,7 +2122,7 @@ class AdvancedTreeView(QTreeView):
                 self.add_gameobject_to_ui_direct(child_data, parent_index)
             return None
 
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         model = self.model()
         parent_node = self._resolve_parent_node(parent_index, model)
         
@@ -2358,7 +2359,7 @@ class AdvancedTreeView(QTreeView):
             component_data: Dictionary with component data from creation operation
         """
         go_item = go_index.internalPointer()
-        parent = self.parent()
+        parent = self.viewer
         model = self.model()
         
         def find_components_node(item):
@@ -2452,7 +2453,7 @@ class AdvancedTreeView(QTreeView):
     
     def copy_data_block(self):
         from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         ok = RszGameObjectClipboard.copy_datablock_to_clipboard(parent_widget)
         if ok:
             QMessageBox.information(
@@ -2467,7 +2468,7 @@ class AdvancedTreeView(QTreeView):
 
     def paste_data_block(self, parent_index):
         from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         pasted_nodes = RszGameObjectClipboard.paste_datablock_from_clipboard(parent_widget, parent_folder_id=-1, parent_index=parent_index, no_parent_folder=True)
         if pasted_nodes:
             QApplication.beep()
@@ -2498,7 +2499,7 @@ class AdvancedTreeView(QTreeView):
             
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
         
-        parent = self.parent()
+        parent = self.viewer
         try:
             clipboard = parent.handler.get_array_clipboard()
             success = clipboard.copy_multiple_to_clipboard(self, elements, array_type, embedded_context)
@@ -2524,7 +2525,7 @@ class AdvancedTreeView(QTreeView):
 
     def paste_array_elements(self, index, array_type, data_obj, array_item):
         """Paste multiple array elements from clipboard"""
-        parent = self.parent()
+        parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
         
         if embedded_context == "userdata_array_needs_embedded":
@@ -2577,7 +2578,7 @@ class AdvancedTreeView(QTreeView):
             show_translation_error(self, self.tr("No text to translate"))
             return
 
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         target_lang = parent_widget.handler.app.settings.get("translation_target_language", "en")
 
         original_id_part = item.data[0].replace(name_text, "") if " (ID:" in item.data[0] else ""
@@ -2675,7 +2676,7 @@ class AdvancedTreeView(QTreeView):
         if not model:
             return
 
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         if not parent_widget or not hasattr(parent_widget, "handler"):
             return
 
@@ -2836,7 +2837,7 @@ class AdvancedTreeView(QTreeView):
         element_indices = sorted(element_indices, reverse=True)
         
         embedded_context = self._find_embedded_context(parent_array_item)
-        parent = self.parent()
+        parent = self.viewer
         
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
@@ -2890,7 +2891,7 @@ class AdvancedTreeView(QTreeView):
         if count > 0:
             model.removeRows(0, count, array_index)
 
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         builder = getattr(parent_widget, "lazy_builder", None)
         if not builder:
             return
@@ -3000,7 +3001,7 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
         
-        parent = self.parent()
+        parent = self.viewer
         try:
             success = parent.handler.copy_component_to_clipboard(parent, component_instance_id)
             if success:
@@ -3027,7 +3028,7 @@ class AdvancedTreeView(QTreeView):
             
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         clipboard_data = parent.handler.get_component_clipboard_data(self)
         if not clipboard_data:
@@ -3062,7 +3063,7 @@ class AdvancedTreeView(QTreeView):
         """Copy a GameObject to clipboard"""
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         if not instance_id:
             QMessageBox.warning(
@@ -3119,7 +3120,7 @@ class AdvancedTreeView(QTreeView):
         """Paste a GameObject from clipboard into a folder"""
         folder_item = folder_index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
-        parent = self.parent()
+        parent = self.viewer
         folder_instance_id = parent.handler.id_manager.get_instance_id(reasy_id)
         folder_object_id = -1
         for i, instance_id in enumerate(parent.scn.object_table):
@@ -3146,7 +3147,7 @@ class AdvancedTreeView(QTreeView):
         parent_item = parent_go_index.internalPointer()
         # Get parent GameObject ID using reasy_id for stable reference
         reasy_id = parent_item.raw.get("reasy_id")
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
         parent_object_id = -1
         for i, instance_id in enumerate(parent_widget.scn.object_table):
@@ -3172,7 +3173,7 @@ class AdvancedTreeView(QTreeView):
             parent_object_id: Object table index of the parent (-1 for root)
             parent_index: QModelIndex of the parent node for UI updating (None for root)
         """
-        parent_widget = self.parent()
+        parent_widget = self.viewer
         
         clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
         if not clipboard_data:
@@ -3250,7 +3251,7 @@ class AdvancedTreeView(QTreeView):
         element = array_data.values[element_index]
         array_type = array_data.orig_type if hasattr(array_data, 'orig_type') else ""
 
-        parent = self.parent()
+        parent = self.viewer
         try:
             clipboard = parent.handler.get_array_clipboard()
             success = clipboard.copy_to_clipboard(self, element, array_type, embedded_context)
@@ -3295,7 +3296,7 @@ class AdvancedTreeView(QTreeView):
 
     def paste_array_element(self, index, data_obj, array_item):
         """Paste an element from clipboard to an array"""
-        parent = self.parent()
+        parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
         
         if embedded_context == "userdata_array_needs_embedded":
@@ -3370,7 +3371,7 @@ class AdvancedTreeView(QTreeView):
         if dialog.exec_() == QDialog.Accepted:
             from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
             result = RszGameObjectClipboard.import_datablock(
-                self.parent(),
+                self.viewer,
                 parent_folder_id=-1,
                 parent_index=parent_index,
                 randomize_ids=randomize_ids.isChecked()

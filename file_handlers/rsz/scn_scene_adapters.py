@@ -5,7 +5,7 @@ from typing import Mapping
 
 import numpy as np
 
-from file_handlers.rsz.rsz_data_types import ResourceData, StringData
+from file_handlers.rsz.rsz_data_types import ArrayData, ResourceData, StringData
 
 from .scn_scene_graph import ScnTransform, make_trs_matrix, normalize_scene_path
 
@@ -20,7 +20,18 @@ def decompose_trs(matrix: np.ndarray, reference: ScnTransform | None = None) -> 
         scale *= np.where(np.asarray(reference.scale, dtype=np.float32) < 0.0, -1.0, 1.0)
     basis /= scale
     rotation = _matrix_to_quat(basis)
-    return ScnTransform(position, rotation, tuple(float(v) for v in scale), make_trs_matrix(position, rotation, tuple(float(v) for v in scale)))
+    resolved_scale = tuple(float(v) for v in scale)
+    return ScnTransform(
+        position,
+        rotation,
+        resolved_scale,
+        make_trs_matrix(position, rotation, resolved_scale),
+        parent_joint=reference.parent_joint if reference is not None else "",
+        same_joints_constraint=(
+            reference.same_joints_constraint if reference is not None else False
+        ),
+        absolute_scaling=reference.absolute_scaling if reference is not None else False,
+    )
 
 
 def _matrix_to_quat(m: np.ndarray) -> tuple[float, float, float, float]:
@@ -48,7 +59,29 @@ class TransformAdapter:
     fields: Mapping[str, object]
 
     def read(self) -> ScnTransform:
-        return _read_transform(self.transform_fields())
+        transform = _read_transform(self.transform_fields())
+        transform.parent_joint = _strip(
+            getattr(_named_field(self.fields, "ParentJoint"), "value", "")
+        )
+        transform.same_joints_constraint = bool(
+            getattr(
+                _named_field(
+                    self.fields,
+                    "SameJointsContraint",
+                    "SameJointsConstraint",
+                ),
+                "value",
+                False,
+            )
+        )
+        transform.absolute_scaling = bool(
+            getattr(
+                _named_field(self.fields, "AbsoluteScaling"),
+                "value",
+                False,
+            )
+        )
+        return transform
 
     def write(self, transform: ScnTransform) -> None:
         _write_transform(self.transform_fields(), transform)
@@ -60,7 +93,22 @@ class TransformAdapter:
         return tuple(values[:3])
 
     def owns_field(self, value: object) -> bool:
-        return any(field is value for field in _values(self.fields)[:3])
+        return any(
+            field is value
+            for field in (*_values(self.fields)[:3], *self.attachment_fields())
+        )
+
+    def attachment_fields(self) -> tuple[object, ...]:
+        fields = (
+            _named_field(self.fields, "ParentJoint"),
+            _named_field(
+                self.fields,
+                "SameJointsContraint",
+                "SameJointsConstraint",
+            ),
+            _named_field(self.fields, "AbsoluteScaling"),
+        )
+        return tuple(field for field in fields if field is not None)
 
 
 @dataclass(slots=True)
@@ -73,6 +121,17 @@ class MeshAdapter:
         if mesh_index < 0:
             return "", ""
         return normalize_scene_path(values[mesh_index]), normalize_scene_path(values[mesh_index + 1]) if mesh_index + 1 < len(values) else ""
+
+    def enabled_parts(self) -> tuple[bool, ...] | None:
+        field = _named_field(self.fields, "PartsEnable")
+        if not isinstance(field, ArrayData):
+            return None
+        values = tuple(getattr(item, "value", item) for item in field.values)
+        return (
+            tuple(values)
+            if all(isinstance(value, bool) for value in values)
+            else None
+        )
 
 
 @dataclass(slots=True)
@@ -146,6 +205,14 @@ def _set_quat(value, data: tuple[float, float, float, float]) -> None:
 
 def _strip(value) -> str:
     return str(value or "").strip().rstrip("\x00").strip()
+
+
+def _named_field(fields: Mapping[str, object], *names: str) -> object | None:
+    by_name = {name.casefold(): value for name, value in fields.items()}
+    return next(
+        (by_name[name.casefold()] for name in names if name.casefold() in by_name),
+        None,
+    )
 
 
 def _resource_values(fields: Mapping[str, object]) -> list[str]:

@@ -1,8 +1,98 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Callable
+
 import numpy as np
 
 from .scene_model import SceneDrawBatch, SceneDrawMesh
+
+
+@dataclass(frozen=True, slots=True)
+class MeshScenePayload:
+    buffer_index: int
+    payload: object
+    vertex_count: int
+    vertex_base: int
+
+
+def mesh_lod0_submeshes(mesh) -> list[object]:
+    return [submesh for _part, submesh in mesh_lod0_parts(mesh)]
+
+
+def mesh_lod0_parts(mesh) -> list[tuple[int, object]]:
+    parts = []
+    for mesh_data in mesh.meshes:
+        if not mesh_data.lods:
+            continue
+        for group_index, group in enumerate(mesh_data.lods[0].mesh_groups):
+            part_index = int(getattr(group, "group_id", group_index))
+            parts.extend((part_index, submesh) for submesh in group.submeshes)
+    return parts
+
+
+def enabled_mesh_batches(
+    batches: list[SceneDrawBatch],
+    enabled_parts: tuple[bool, ...] | None,
+) -> list[SceneDrawBatch]:
+    if enabled_parts is None:
+        return list(batches)
+    return [
+        batch
+        for batch in batches
+        if batch.part_index is None
+        or batch.part_index >= len(enabled_parts)
+        or enabled_parts[batch.part_index]
+    ]
+
+
+def mesh_scene_payloads(
+    mesh,
+    submeshes: list[object] | None = None,
+) -> list[MeshScenePayload]:
+    mesh_buffer = getattr(mesh, "mesh_buffer", None)
+    if mesh_buffer is None:
+        return []
+    submeshes = mesh_lod0_submeshes(mesh) if submeshes is None else submeshes
+    vertex_counts: dict[int, int] = {}
+    for submesh in submeshes:
+        buffer_index = int(submesh.buffer_index)
+        payload = mesh_buffer.buffer_payloads.get(buffer_index)
+        if payload is None:
+            raise ValueError(f"Missing mesh buffer {buffer_index}")
+        available = len(payload.positions) // 3
+        base = int(submesh.verts_index_offset)
+        count = int(getattr(submesh, "vert_count", 0))
+        end = base + count if count > 0 else available
+        if base < 0 or end < base or end > available:
+            raise ValueError(
+                f"Invalid LOD0 vertex span [{base}, {end}) "
+                f"in mesh buffer {buffer_index}"
+            )
+        vertex_counts[buffer_index] = max(
+            vertex_counts.get(buffer_index, 0),
+            end,
+        )
+    records: list[MeshScenePayload] = []
+    vertex_base = 0
+    for buffer_index in sorted(vertex_counts):
+        if buffer_index not in mesh_buffer.buffer_payloads:
+            raise ValueError(f"Missing mesh buffer {buffer_index}")
+        payload = mesh_buffer.buffer_payloads[buffer_index]
+        positions = np.asarray(payload.positions, dtype=np.float32).reshape(-1)
+        if positions.size % 3:
+            raise ValueError(f"Malformed positions in mesh buffer {buffer_index}")
+        vertex_count = vertex_counts[buffer_index]
+        if not vertex_count:
+            continue
+        records.append(MeshScenePayload(
+            buffer_index,
+            payload,
+            vertex_count,
+            vertex_base,
+        ))
+        vertex_base += vertex_count
+    return records
 
 
 def _merge_attribute(records, name: str, width: int, dtype) -> np.ndarray | None:
@@ -14,9 +104,10 @@ def _merge_attribute(records, name: str, width: int, dtype) -> np.ndarray | None
             missing.append(buffer_index)
             continue
         data = np.asarray(values, dtype=dtype).reshape(-1)
-        if data.size != vertex_count * width:
+        required = vertex_count * width
+        if data.size < required:
             raise ValueError(f"Malformed {name} in mesh buffer {buffer_index}")
-        chunks.append(data.reshape(-1, width))
+        chunks.append(data[:required].reshape(-1, width))
     if not chunks:
         return None
     if missing:
@@ -32,38 +123,29 @@ def build_mesh_scene(
     force_solid: bool = False,
     ignore_highlight_filter: bool = False,
     include_vertex_colors: bool = True,
+    material_key: Callable[[str], str] | None = None,
 ) -> list[SceneDrawMesh]:
     mesh_buffer = getattr(mesh, "mesh_buffer", None)
     if mesh_buffer is None:
         return []
 
     payloads = mesh_buffer.buffer_payloads
-    submeshes = [
-        submesh
-        for mesh_data in mesh.meshes
-        if mesh_data.lods
-        for group in mesh_data.lods[0].mesh_groups
-        for submesh in group.submeshes
-    ]
+    parts = mesh_lod0_parts(mesh)
+    submeshes = [submesh for _part, submesh in parts]
     if not payloads or not submeshes:
         return []
     vertex_chunks: list[np.ndarray] = []
+    scene_payloads = mesh_scene_payloads(mesh, submeshes)
     records = []
-    payload_base: dict[int, int] = {}
-    running_base = 0
+    payload_base = {record.buffer_index: record.vertex_base for record in scene_payloads}
 
-    for buffer_index in sorted({submesh.buffer_index for submesh in submeshes}):
-        payload = payloads[buffer_index]
-        if not payload.positions:
-            continue
-        positions = np.asarray(payload.positions, dtype=np.float32).reshape(-1)
-        if positions.size % 3:
-            raise ValueError(f"Malformed positions in mesh buffer {buffer_index}")
-        verts = positions.reshape(-1, 3)
-        payload_base[buffer_index] = running_base
-        running_base += len(verts)
+    for record in scene_payloads:
+        buffer_index, payload = record.buffer_index, record.payload
+        verts = np.asarray(payload.positions, dtype=np.float32).reshape(-1, 3)[
+            : record.vertex_count
+        ]
         vertex_chunks.append(verts)
-        records.append((buffer_index, payload, len(verts)))
+        records.append((buffer_index, payload, record.vertex_count))
 
     if not vertex_chunks:
         return []
@@ -79,7 +161,7 @@ def build_mesh_scene(
     batches: list[SceneDrawBatch] = []
     material_names = mesh.material_names
 
-    for submesh in submeshes:
+    for part_index, submesh in parts:
         buffer_index = submesh.buffer_index
         payload = payloads[buffer_index]
         if buffer_index not in payload_base:
@@ -109,7 +191,15 @@ def build_mesh_scene(
             if 0 <= material_index < len(material_names)
             else ""
         )
-        batches.append(SceneDrawBatch(indices=batch_indices, material_name=material_name))
+        if material_key is not None:
+            material_name = material_key(material_name)
+        batches.append(
+            SceneDrawBatch(
+                indices=batch_indices,
+                material_name=material_name,
+                part_index=part_index,
+            )
+        )
 
     if not index_chunks:
         return []

@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 import struct
 from typing import List, Optional, Tuple
 
+import numpy as np
+
 from .mesh_file import MeshMainVersion
 
 
@@ -50,6 +52,16 @@ class BlendShapeChannel:
     index: int
     name_slot: int
     name: str = ""
+    segments: List["BlendShapeDeltaSegment"] = field(default_factory=list)
+
+
+@dataclass
+class BlendShapeDeltaSegment:
+    base_vertex_location: int
+    position_deltas: np.ndarray
+    position_w: Optional[np.ndarray] = None
+    target_normals: Optional[np.ndarray] = None
+    normal_w: Optional[np.ndarray] = None
 
 
 @dataclass
@@ -118,10 +130,13 @@ def _read_aabb(
 def _parse_legacy(
     data: bytes | bytearray,
     offset: int,
+    version: MeshMainVersion,
 ) -> BlendShapeData:
-    target_count, compression_type, _reserved, targets_offset, aabb_offset = (
+    target_count, compression_type, reserved, targets_offset, aabb_offset = (
         _unpack("<HHIqq", data, offset, "Legacy blendshape header")
     )
+    if version == MeshMainVersion.DMC5 and reserved:
+        raise ValueError("DMC5 blendshape header has nonzero reserved data")
     targets: List[BlendShapeTarget] = []
     payload_cursor = 0
     channel_cursor = 0
@@ -129,15 +144,23 @@ def _parse_legacy(
         (
             base_vertex_location,
             vertex_count,
-            _blend_ss_index,
+            blend_ss_index,
             channel_count,
-            _target_reserved,
+            target_reserved,
         ) = _unpack(
             "<IIHHI",
             data,
             targets_offset + target_index * 16,
             f"Legacy blendshape target {target_index}",
         )
+        if (
+            version == MeshMainVersion.DMC5
+            and (blend_ss_index or target_reserved)
+        ):
+            raise ValueError(
+                f"DMC5 blendshape target {target_index} uses unsupported "
+                "auxiliary channel data"
+            )
         aabb = (
             _read_aabb(data, aabb_offset, target_index)
             if aabb_offset > 0
@@ -161,6 +184,17 @@ def _parse_legacy(
         )
         payload_cursor += vertex_count * channel_count
         channel_cursor += channel_count
+    if version == MeshMainVersion.DMC5 and target_count:
+        auxiliary_offsets = _unpack(
+            "<ii",
+            data,
+            targets_offset + target_count * 16,
+            "DMC5 blendshape auxiliary offsets",
+        )
+        if any(auxiliary_offsets):
+            raise ValueError(
+                "DMC5 blendshape auxiliary channel tables are unsupported"
+            )
     return BlendShapeData(
         compression_type=compression_type,
         channel_offset=0,
@@ -447,7 +481,7 @@ def parse_blend_shapes(
     version: MeshMainVersion,
 ) -> BlendShapeData:
     result = (
-        _parse_legacy(data, offset)
+        _parse_legacy(data, offset, version)
         if version in (MeshMainVersion.RE7, MeshMainVersion.DMC5)
         else _parse_modern(data, offset, version)
     )
@@ -486,3 +520,144 @@ def read_blend_shape_name_indices(
         return []
     raw = _checked_slice(data, offset, index_count * 2, "Blendshape name indices")
     return list(struct.unpack(f"<{index_count}H", raw))
+
+
+def decode_dmc5_blend_shape_payload(
+    blend_shapes: BlendShapeData,
+    vertex_bytes: bytes,
+    payload_offset: int,
+    vertex_count: int,
+    *,
+    explicit_normals: bool,
+) -> None:
+    """Decode DMC5 Light/Standard payloads into offset-free channel segments."""
+
+    for channel in blend_shapes.channels:
+        channel.segments.clear()
+    position_stride = {0: 4, 1: 8}.get(blend_shapes.compression_type)
+    if position_stride is None:
+        raise ValueError(
+            "DMC5 blendshape visualization supports Light and Standard payloads; "
+            f"found compression type {blend_shapes.compression_type}"
+        )
+
+    channels = {channel.index: channel for channel in blend_shapes.channels}
+    entry_count = sum(
+        item.vertex_count * target.channel_count
+        for target in blend_shapes.targets
+        if target.is_blend_shape
+        for item in target.ranges
+    )
+    stride = position_stride + (4 if explicit_normals else 0)
+    required_size = entry_count * stride
+    if payload_offset <= 0 or payload_offset + required_size > len(vertex_bytes):
+        raise ValueError(
+            "DMC5 blendshape payload exceeds the resident vertex buffer"
+        )
+
+    payload = memoryview(vertex_bytes)[
+        payload_offset : payload_offset + required_size
+    ]
+    entry_cursor = 0
+    for target in blend_shapes.targets:
+        if not target.is_blend_shape:
+            continue
+        light_minimum = light_step = None
+        if blend_shapes.compression_type == 0:
+            if target.aabb is None:
+                raise ValueError(
+                    "DMC5 Light blendshape target has no quantization AABB"
+                )
+            light_minimum = np.asarray(target.aabb.minimum, dtype=np.float32)
+            light_step = (
+                np.asarray(target.aabb.maximum, dtype=np.float32) - light_minimum
+            ) / np.asarray((2047.0, 1023.0, 2047.0), dtype=np.float32)
+            if not (
+                np.isfinite(light_minimum).all()
+                and np.isfinite(light_step).all()
+            ):
+                raise ValueError(
+                    "DMC5 Light blendshape target has a nonfinite AABB"
+                )
+        for local_channel in range(target.channel_count):
+            channel_index = target.channel_location + local_channel
+            channel = channels.get(channel_index)
+            if channel is None:
+                raise ValueError(
+                    f"DMC5 blendshape channel {channel_index} has no name slot"
+                )
+            for item in target.ranges:
+                if (
+                    item.base_vertex_location < 0
+                    or item.vertex_count < 0
+                    or item.base_vertex_location + item.vertex_count > vertex_count
+                ):
+                    raise ValueError(
+                        f"DMC5 blendshape channel {channel_index} has an "
+                        "invalid destination vertex range"
+                    )
+                start = entry_cursor * stride
+                stop = start + item.vertex_count * stride
+                records = np.frombuffer(
+                    payload[start:stop],
+                    dtype=np.uint8,
+                ).reshape(item.vertex_count, stride)
+                position_w = None
+                if blend_shapes.compression_type == 0:
+                    packed = records[:, :4].copy().view("<u4").reshape(-1)
+                    quantized = np.column_stack(
+                        (
+                            packed & 0x7FF,
+                            (packed >> 11) & 0x3FF,
+                            (packed >> 21) & 0x7FF,
+                        )
+                    ).astype(np.float32)
+                    position_deltas = (
+                        light_minimum + (quantized + 0.5) * light_step
+                    )
+                else:
+                    half4 = (
+                        records[:, :8]
+                        .copy()
+                        .view("<f2")
+                        .reshape(item.vertex_count, 4)
+                    )
+                    position_deltas = half4[:, :3].astype(np.float32)
+                    position_w = half4[:, 3].astype(np.float32)
+                if not np.isfinite(position_deltas).all():
+                    raise ValueError(
+                        f"DMC5 blendshape channel {channel_index} contains "
+                        "a nonfinite position delta"
+                    )
+                packed_normal = (
+                    records[:, position_stride : position_stride + 4]
+                    .copy()
+                    .view(np.int8)
+                    if explicit_normals
+                    else None
+                )
+                target_normals = (
+                    np.maximum(
+                        packed_normal[:, :3].astype(np.float32) / 127.0,
+                        -1.0,
+                    )
+                    if packed_normal is not None
+                    else None
+                )
+                channel.segments.append(
+                    BlendShapeDeltaSegment(
+                        item.base_vertex_location,
+                        position_deltas,
+                        position_w,
+                        target_normals,
+                        (
+                            packed_normal[:, 3].copy()
+                            if packed_normal is not None
+                            else None
+                        ),
+                    )
+                )
+                entry_cursor += item.vertex_count
+
+    if entry_cursor != entry_count:
+        raise ValueError("DMC5 blendshape payload entry count is inconsistent")

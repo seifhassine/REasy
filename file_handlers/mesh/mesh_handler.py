@@ -4,7 +4,11 @@ from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
 from .mesh_file import MeshFile, MESH_MAGIC, MPLY_MAGIC
-from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
+from utils.resource_file_utils import (
+    ResourceResolutionContext,
+    resolve_handler_resource_data,
+    resource_context_for_app,
+)
 
 
 class MeshHandler(BaseFileHandler):
@@ -12,7 +16,13 @@ class MeshHandler(BaseFileHandler):
         super().__init__()
         self.mesh: Optional[MeshFile] = None
         self.filepath: str = ""
+        self.game_version: str = ""
         self._streaming_data_cache: dict[str, bytes | None] = {}
+        self._material_skinning_cache: dict[
+            tuple[str, str],
+            dict[str, int],
+        ] = {}
+        self._mmtr_skinning_cache: dict[tuple[str, str], int] = {}
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
@@ -20,6 +30,31 @@ class MeshHandler(BaseFileHandler):
             return False
         magic = struct.unpack_from('<I', data, 0)[0]
         return magic in (MESH_MAGIC, MPLY_MAGIC)
+
+    @classmethod
+    def from_bytes(
+        cls,
+        filepath: str,
+        data: bytes,
+        *,
+        app=None,
+        resource_context: ResourceResolutionContext | None = None,
+        game_version: str = "",
+    ) -> "MeshHandler":
+        handler = cls()
+        handler.filepath = filepath
+        handler.app = app
+        handler.resource_context = resource_context or resource_context_for_app(
+            app,
+            game=game_version,
+        )
+        handler.game_version = str(
+            game_version
+            or getattr(handler.resource_context, "game", "")
+            or ""
+        )
+        handler.read(data)
+        return handler
 
     def supports_editing(self) -> bool:
         return False
@@ -75,24 +110,11 @@ class MeshHandler(BaseFileHandler):
             return None
 
         resource_path = "/".join((*parts[natives_idx : natives_idx + 2], "streaming", *parts[natives_idx + 2 :]))
-        context = getattr(self, "_resource_context", None)
-        resolved = resolve_resource_data(resource_path, *context) if context else None
-        if resolved:
-            self._streaming_data_cache[self.filepath] = resolved[1]
-            return resolved[1]
-
-        app = getattr(self, "app", None)
-        proj = getattr(app, "proj_dock", None) if app is not None else None
-        proj_mgr = getattr(app, "project_manager", None) if app is not None else None
-        game = str(getattr(proj_mgr, "current_game", "") or "")
-        path_prefix = get_path_prefix_for_game(game)
-        resolved = resolve_resource_data(
+        resolved = resolve_handler_resource_data(
+            self,
             resource_path,
-            getattr(proj, "project_dir", None),
-            getattr(proj, "unpacked_dir", None),
-            path_prefix,
-            getattr(proj, "_pak_cached_reader", None),
-        ) if proj is not None else None
+            allow_selection_dialog=False,
+        )
         if resolved:
             self._streaming_data_cache[self.filepath] = resolved[1]
             return resolved[1]
@@ -100,6 +122,8 @@ class MeshHandler(BaseFileHandler):
         return None
 
     def read(self, data: bytes):
+        self._material_skinning_cache.clear()
+        self._mmtr_skinning_cache.clear()
         file_version = self._file_version_from_path(self.filepath)
 
         mf = MeshFile()

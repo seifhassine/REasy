@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 import os
 import uuid
@@ -47,11 +47,15 @@ from .shape_types import ShapeType, create_shape
 from .rcol_scene import SceneAttachment, build_scene_meshes
 from file_handlers.mesh.mesh_file import MeshFile
 from file_handlers.mesh.mesh_handler import MeshHandler
+from file_handlers.mesh.material_session import (
+    MeshMaterialCollection,
+    MeshMaterialSession,
+)
 from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawMesh
 from ui.scene.scene_preview import ScenePreviewWidget
 from utils.number_format import format_display_value
-from utils.resource_file_utils import get_path_prefix_for_game, resolve_resource_data
+from utils.resource_file_utils import resolve_handler_resource_data
 
 
 MESH_LOAD_FAILED_TITLE = QT_TRANSLATE_NOOP("RcolViewer", "Mesh Load Failed")
@@ -72,6 +76,7 @@ class NavPayload:
 
 @dataclass
 class MeshAttachmentEntry:
+    key: str
     filepath: str
     attachment: SceneAttachment
     enabled: bool = True
@@ -107,6 +112,7 @@ class RcolViewer(QWidget):
         self._headless_status: QLabel | None = None
         self._headless_body: QVBoxLayout | None = None
         self._scene_preview: ScenePreviewWidget | None = None
+        self._mesh_materials: MeshMaterialCollection | None = None
         self._preview_tabs: QTabWidget | None = None
         self._preview_dock: QDockWidget | None = None
         self._dock_attach_attempted = False
@@ -240,6 +246,13 @@ class RcolViewer(QWidget):
             settings=getattr(getattr(self.handler, "app", None), "settings", None),
         )
         self._scene_preview.setMinimumHeight(300)
+        self._mesh_materials = MeshMaterialCollection(
+            self._scene_preview,
+            parent=self,
+        )
+        self._scene_preview.texture_quality_changed.connect(
+            self._mesh_materials.set_texture_quality
+        )
         preview_layout.addWidget(self._scene_preview, 1)
         self._preview_tabs.addTab(preview_tab, "3D")
 
@@ -302,6 +315,10 @@ class RcolViewer(QWidget):
         self._on_preview_dock_top_level_changed(dock.isFloating())
 
     def cleanup(self):
+        materials, self._mesh_materials = self._mesh_materials, None
+        if materials is not None:
+            materials.clear()
+        self._attached_mesh_entries.clear()
         preview, self._scene_preview = self._scene_preview, None
         if preview is not None:
             preview.cleanup()
@@ -631,9 +648,7 @@ class RcolViewer(QWidget):
             return
 
         try:
-            mesh = self._load_mesh_via_handler(filepath)
-            attachment = self._build_attachment_scene(mesh, attachment_key=f"attached_mesh_{len(self._attached_mesh_entries)}")
-            self._attached_mesh_entries.append(MeshAttachmentEntry(filepath=filepath, attachment=attachment, enabled=True))
+            self._add_mesh_attachment(filepath)
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
@@ -665,13 +680,9 @@ class RcolViewer(QWidget):
             )
             return
 
-        path_prefix = get_path_prefix_for_game(str(getattr(app, "current_game", "") or ""))
-        resolved = resolve_resource_data(
+        resolved = resolve_handler_resource_data(
+            self.handler,
             resource_path,
-            getattr(proj, "project_dir", None),
-            getattr(proj, "unpacked_dir", None),
-            path_prefix,
-            getattr(proj, "_pak_cached_reader", None),
             self,
         )
         if not resolved:
@@ -684,9 +695,7 @@ class RcolViewer(QWidget):
 
         resolved_path, mesh_data = resolved
         try:
-            mesh = self._load_mesh_via_handler(resolved_path, mesh_data)
-            attachment = self._build_attachment_scene(mesh, attachment_key=f"attached_mesh_{len(self._attached_mesh_entries)}")
-            self._attached_mesh_entries.append(MeshAttachmentEntry(filepath=resolved_path, attachment=attachment, enabled=True))
+            self._add_mesh_attachment(resolved_path, mesh_data)
             self._rebuild_attached_mesh_list()
             self._refresh_scene_preview(self._current_payload())
         except Exception as exc:
@@ -715,7 +724,10 @@ class RcolViewer(QWidget):
         for idx in range(self._attached_mesh_list.count()):
             if idx >= len(self._attached_mesh_entries):
                 continue
-            self._attached_mesh_entries[idx].enabled = self._attached_mesh_list.item(idx).checkState() == Qt.Checked
+            entry = self._attached_mesh_entries[idx]
+            entry.enabled = self._attached_mesh_list.item(idx).checkState() == Qt.Checked
+            if self._mesh_materials is not None:
+                self._mesh_materials.set_enabled(entry.key, entry.enabled)
         self._refresh_scene_preview(self._current_payload())
 
     def _active_attachments(self) -> list[SceneAttachment]:
@@ -748,18 +760,9 @@ class RcolViewer(QWidget):
             return None
         if np.linalg.norm(translation_delta) < 1e-8:
             return mesh
-        return SceneDrawMesh(
-            key=mesh.key,
+        return replace(
+            mesh,
             vertices=(mesh.vertices + translation_delta).astype(np.float32, copy=False),
-            indices=mesh.indices,
-            color=mesh.color,
-            force_solid=mesh.force_solid,
-            ignore_highlight_filter=mesh.ignore_highlight_filter,
-            normals=mesh.normals,
-            uvs=mesh.uvs,
-            colors=mesh.colors,
-            material_name=mesh.material_name,
-            batches=mesh.batches,
         )
 
     def _offset_joint_map(self, transforms: dict[str, np.ndarray], translation_delta: np.ndarray) -> dict[str, np.ndarray]:
@@ -772,44 +775,79 @@ class RcolViewer(QWidget):
             aligned[name] = updated
         return aligned
 
-    def _load_mesh_via_handler(self, filepath: str, data: bytes | None = None) -> MeshFile:
-        handler = MeshHandler()
-        handler.filepath = filepath
-        handler.app = getattr(self.handler, "app", None)
+    def _load_mesh_via_handler(
+        self,
+        filepath: str,
+        data: bytes | None = None,
+    ) -> MeshHandler:
         if data is None:
             with open(filepath, "rb") as stream:
                 data = stream.read()
-        handler.read(data)
+        handler = MeshHandler.from_bytes(
+            filepath,
+            data,
+            app=getattr(self.handler, "app", None),
+            resource_context=getattr(self.handler, "resource_context", None),
+            game_version=getattr(self.handler, "game_version", ""),
+        )
         mesh = getattr(handler, "mesh", None)
         if mesh is None:
             raise ValueError(self.tr("Mesh handler did not produce a parsed mesh."))
-        return mesh
+        return handler
 
-    def _build_attachment_scene(self, mesh: MeshFile, attachment_key: str) -> SceneAttachment:
+    def _add_mesh_attachment(
+        self,
+        filepath: str,
+        data: bytes | None = None,
+    ) -> None:
+        if self._mesh_materials is None:
+            raise RuntimeError("RCOL mesh material collection is unavailable")
+        handler = self._load_mesh_via_handler(filepath, data)
+        mesh = handler.mesh
+        assert mesh is not None
+        key = f"attached_mesh_{len(self._attached_mesh_entries)}"
+        materials = MeshMaterialSession(
+            handler,
+            material_scope=key,
+            resource_scope=filepath,
+            texture_quality=self._mesh_materials.texture_quality,
+            parent=self._mesh_materials,
+        )
+        attachment = self._build_attachment_scene(
+            mesh,
+            attachment_key=key,
+            material_key=materials.material_key,
+        )
+        self._attached_mesh_entries.append(
+            MeshAttachmentEntry(key, filepath, attachment)
+        )
+        self._mesh_materials.add(key, materials)
+
+    def _build_attachment_scene(
+        self,
+        mesh: MeshFile,
+        attachment_key: str,
+        *,
+        material_key,
+    ) -> SceneAttachment:
         return SceneAttachment(
-            mesh=self._build_mesh_draw(mesh, attachment_key),
+            mesh=self._build_mesh_draw(mesh, attachment_key, material_key),
             joint_transforms=self._build_joint_transform_map(mesh),
         )
 
-    def _build_mesh_draw(self, mesh: MeshFile, key: str) -> SceneDrawMesh | None:
+    def _build_mesh_draw(
+        self,
+        mesh: MeshFile,
+        key: str,
+        material_key,
+    ) -> SceneDrawMesh | None:
         meshes = build_mesh_scene(
             mesh,
             key=key,
-            color=(0.35, 0.35, 0.38, 1.0),
-            force_solid=True,
             ignore_highlight_filter=True,
+            material_key=material_key,
         )
-        if not meshes:
-            return None
-        draw_mesh = meshes[0]
-        return SceneDrawMesh(
-            key=draw_mesh.key,
-            vertices=draw_mesh.vertices,
-            indices=draw_mesh.indices,
-            color=(0.35, 0.35, 0.38, 1.0),
-            force_solid=True,
-            ignore_highlight_filter=True,
-        )
+        return meshes[0] if meshes else None
 
     def _build_joint_transform_map(self, mesh: MeshFile) -> dict[str, np.ndarray]:
         names = list(getattr(mesh, "names", []) or [])

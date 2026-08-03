@@ -6,7 +6,15 @@ import numpy as np
 
 from .scn_document_store import ScnDocumentStore
 from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
-from .scn_scene_graph import VIA_TRANSFORM, ScnLightProbeBinding, ScnObjectId, ScnRenderableMesh, ScnSceneGraph, ScnTransform
+from .scn_scene_graph import (
+    VIA_TRANSFORM,
+    ScnLightProbeBinding,
+    ScnObjectId,
+    ScnRenderableMesh,
+    ScnSceneGraph,
+    ScnTransform,
+    compose_parented_transform,
+)
 
 
 def _identity() -> np.ndarray:
@@ -288,8 +296,11 @@ def _compute_worlds(document) -> None:
         visiting.add(scene_object.id)
         parent = document.object_by_local_id.get(scene_object.parent_id)
         parent_matrix = compute(document.objects[parent]) if parent in document.objects else _identity()
-        local = scene_object.transform.local_matrix if scene_object.transform else _identity()
-        scene_object.document_world_matrix = (parent_matrix @ local).astype(np.float32)
+        scene_object.document_world_matrix = (
+            compose_parented_transform(parent_matrix, scene_object.transform)
+            if scene_object.transform is not None
+            else parent_matrix.copy()
+        )
         visiting.discard(scene_object.id)
         visited.add(scene_object.id)
         return scene_object.document_world_matrix

@@ -13,13 +13,14 @@ from utils.native_build import ensure_fastmesh
 
 if TYPE_CHECKING:
     from .blend_shape import BlendShapeData
+    from .normal_recalc import NormalRecalcData
 
 
-ensure_fastmesh()
-from fastmesh import (
-    unpack_normals_tangents,
-    unpack_colors,
-)
+_fastmesh = ensure_fastmesh()
+if _fastmesh is None:
+    raise ImportError("fastmesh could not be loaded")
+unpack_normals_tangents = _fastmesh.unpack_normals_tangents
+unpack_colors = _fastmesh.unpack_colors
 
 MESH_MAGIC = 0x4853454D
 MPLY_MAGIC = 0x594C504D
@@ -262,6 +263,27 @@ class MeshBufferItemHeader:
     offset: int
 
 
+@dataclass(frozen=True)
+class SkinWeightBuffer:
+    """Decoded vertex influences from one RE Engine weight stream."""
+
+    influence_count: int
+    deform_indices: array
+    weights: array
+
+    def __post_init__(self) -> None:
+        if self.influence_count <= 0:
+            raise ValueError("skin-weight influence count must be positive")
+        if len(self.deform_indices) % self.influence_count:
+            raise ValueError("skin-weight indices do not form complete vertices")
+        if len(self.weights) != len(self.deform_indices):
+            raise ValueError("skin-weight values do not match their indices")
+
+    @property
+    def vertex_count(self) -> int:
+        return len(self.deform_indices) // self.influence_count
+
+
 @dataclass
 class MeshBufferPayload:
     vertex_bytes: bytes = b""
@@ -278,6 +300,8 @@ class MeshBufferPayload:
     colors: array = field(default_factory=lambda: array("B"))
     faces: array = field(default_factory=lambda: array("H"))
     integer_faces: Optional[array] = None
+    skin_weights: Optional[SkinWeightBuffer] = None
+    extra_skin_weights: Optional[SkinWeightBuffer] = None
 
 
 def _decode_position_payload(payload: MeshBufferPayload) -> int:
@@ -296,7 +320,59 @@ def _decode_position_payload(payload: MeshBufferPayload) -> int:
     return 0
 
 
-def _decode_vertex_attributes(payload: MeshBufferPayload, vert_count: int) -> None:
+def _skin_weight_influence_count(version: MeshMainVersion) -> int:
+    # These formats pack six 10-bit deform-bone indices into the first eight
+    # bytes. Other known formats store eight byte-sized indices there.
+    return 6 if version in {
+        MeshMainVersion.SF6,
+        MeshMainVersion.MHWILDS,
+        MeshMainVersion.PRAGMATA,
+    } else 8
+
+
+def _decode_skin_weights(
+    data: memoryview,
+    vertex_count: int,
+    version: MeshMainVersion,
+) -> SkinWeightBuffer:
+    influence_count = _skin_weight_influence_count(version)
+    expected_size = vertex_count * 16
+    if len(data) != expected_size:
+        raise ValueError(
+            f"Skin-weight stream has {len(data)} bytes; expected {expected_size}"
+        )
+    records = np.frombuffer(data, dtype=np.uint8).reshape(vertex_count, 16)
+    if influence_count == 8:
+        decoded_indices = records[:, :8].astype(np.uint16)
+    else:
+        packed = records[:, :8].copy().view("<u4").reshape(vertex_count, 2)
+        decoded_indices = np.empty((vertex_count, 6), dtype=np.uint16)
+        decoded_indices[:, 0] = packed[:, 0] & 0x3FF
+        decoded_indices[:, 1] = (packed[:, 0] >> 10) & 0x3FF
+        decoded_indices[:, 2] = (packed[:, 0] >> 20) & 0x3FF
+        decoded_indices[:, 3] = packed[:, 1] & 0x3FF
+        decoded_indices[:, 4] = (packed[:, 1] >> 10) & 0x3FF
+        decoded_indices[:, 5] = (packed[:, 1] >> 20) & 0x3FF
+    deform_indices = array("H")
+    deform_indices.frombytes(decoded_indices.astype("<u2", copy=False).tobytes())
+    decoded_weights = (
+        records[:, 8 : 8 + influence_count].astype(np.float32) / 255.0
+    )
+    if influence_count == 6:
+        # Six-index formats repurpose the two remaining bytes as a scale for
+        # the six usable weights.
+        scale = 1.0 + (records[:, 14].astype(np.float32) + records[:, 15]) / 255.0
+        decoded_weights *= scale[:, np.newaxis]
+    weights = array("f")
+    weights.frombytes(decoded_weights.astype("<f4", copy=False).tobytes())
+    return SkinWeightBuffer(influence_count, deform_indices, weights)
+
+
+def _decode_vertex_attributes(
+    payload: MeshBufferPayload,
+    vert_count: int,
+    version: MeshMainVersion,
+) -> None:
     for index, header in enumerate(payload.buffer_headers):
         if header.type == VertexBufferType.Position:
             continue
@@ -319,6 +395,10 @@ def _decode_vertex_attributes(payload: MeshBufferPayload, vert_count: int) -> No
             payload.uv2 = _unpack_raw_uvs(data)
         elif header.type == VertexBufferType.Colors:
             payload.colors = unpack_colors(data)
+        elif header.type == VertexBufferType.BoneWeights:
+            payload.skin_weights = _decode_skin_weights(data, vert_count, version)
+        elif header.type == VertexBufferType.ExtraWeights:
+            payload.extra_skin_weights = _decode_skin_weights(data, vert_count, version)
 
 
 @dataclass
@@ -379,7 +459,7 @@ class MeshBuffer:
         has_32bit_indices: bool = False,
     ) -> None:
         vert_count = _decode_position_payload(payload)
-        _decode_vertex_attributes(payload, vert_count)
+        _decode_vertex_attributes(payload, vert_count, self.version)
         if has_32bit_indices:
             payload.integer_faces = array("I")
             payload.integer_faces.frombytes(payload.face_bytes)
@@ -1243,7 +1323,6 @@ class MeshFile:
         self.shadow_lod_bytes: bytes = b""
         self.occluder_mesh_bytes: bytes = b""
         self.bones_bytes: bytes = b""
-        self.normal_recalc_bytes: bytes = b""
         self.blend_shape_bytes: bytes = b""
         self.bounds_bytes: bytes = b""
         self.float_bytes: bytes = b""
@@ -1257,7 +1336,7 @@ class MeshFile:
         self.bone_remap_count: int = 0
         self.blend_shape_indices: List[int] = []
         self.blend_shape_data: Optional["BlendShapeData"] = None
-        self.blend_shape_parse_error = ""
+        self.normal_recalc_data: Optional["NormalRecalcData"] = None
         self.streaming_data_loaded = False
         self.streaming_buffer_count = 0
         
@@ -1347,6 +1426,38 @@ class MeshFile:
         raw = _checked_slice(data, self.header.bone_indices_offset, size, "Bone indices")
         self.bone_indices = list(struct.unpack(f'<{self.joint_count}H', raw))
 
+    def _parse_normal_recalc(
+        self,
+        data: bytes,
+        sorted_offsets: List[int],
+    ) -> None:
+        self.normal_recalc_data = None
+        offset = self.header.normal_recalc_offset
+        if not offset or self.header.format_version != MeshMainVersion.DMC5:
+            return
+        if self.mesh_buffer is None or not self.meshes or not self.meshes[0].lods:
+            raise ValueError("DMC5 normal recalculation requires modeled LOD0 geometry")
+
+        from .normal_recalc import (
+            dmc5_normal_recalc_submeshes,
+            parse_dmc5_normal_recalc,
+        )
+
+        lod = self.meshes[0].lods[0]
+        vertex_count = sum(group.vertex_count for group in lod.mesh_groups)
+        submeshes = dmc5_normal_recalc_submeshes(self)
+
+        section_size = self._section_size(offset, sorted_offsets)
+        if section_size <= 0:
+            raise ValueError("DMC5 normal-recalculation section has no bounds")
+        self.normal_recalc_data = parse_dmc5_normal_recalc(
+            data,
+            offset,
+            offset + section_size,
+            vertex_count,
+            submeshes,
+        )
+
     def read(
         self,
         data: bytes,
@@ -1361,7 +1472,7 @@ class MeshFile:
         self.bone_remap_count = 0
         self.blend_shape_indices = []
         self.blend_shape_data = None
-        self.blend_shape_parse_error = ""
+        self.normal_recalc_data = None
         h = BinaryHandler(data, file_version=file_version)
         if not self.header.read(h, file_version=file_version):
             raise ValueError("Not a mesh file")
@@ -1393,6 +1504,7 @@ class MeshFile:
         sorted_offsets = self._collect_section_offsets()
         self._parse_bones(h)
         self._parse_bone_indices(data, sorted_offsets)
+        self._parse_normal_recalc(data, sorted_offsets)
 
         if self.header.blend_shapes_offset:
             try:
@@ -1402,7 +1514,10 @@ class MeshFile:
                     self.header.format_version,
                 )
             except (ValueError, struct.error, OverflowError) as exc:
-                self.blend_shape_parse_error = str(exc)
+                raise ValueError(
+                    f"Invalid {self.header.format_version.name} "
+                    f"blendshape metadata: {exc}"
+                ) from exc
 
         if self.header.blend_shape_indices_offset:
             size = self._section_size(
@@ -1430,10 +1545,6 @@ class MeshFile:
                 size = self._section_size(self.header.bones_offset, sorted_offsets)
                 h.seek(self.header.bones_offset)
                 self.bones_bytes = h.read_bytes(size)
-            if self.header.normal_recalc_offset:
-                size = self._section_size(self.header.normal_recalc_offset, sorted_offsets)
-                h.seek(self.header.normal_recalc_offset)
-                self.normal_recalc_bytes = h.read_bytes(size)
             if self.header.blend_shapes_offset:
                 size = self._section_size(self.header.blend_shapes_offset, sorted_offsets)
                 h.seek(self.header.blend_shapes_offset)
@@ -1466,5 +1577,31 @@ class MeshFile:
                 self.blend_shape_indices,
                 self.names,
             )
+            if self.header.format_version == MeshMainVersion.DMC5:
+                from .blend_shape import decode_dmc5_blend_shape_payload
+
+                if self.mesh_buffer is None:
+                    raise ValueError(
+                        "DMC5 blendshapes require a resident mesh buffer"
+                    )
+                payload = self.mesh_buffer.buffer_payloads.get(0)
+                if payload is None:
+                    raise ValueError(
+                        "DMC5 blendshapes require resident vertex data"
+                    )
+                try:
+                    decode_dmc5_blend_shape_payload(
+                        self.blend_shape_data,
+                        payload.vertex_bytes,
+                        self.mesh_buffer.blend_shape_offset,
+                        len(payload.positions) // 3,
+                        explicit_normals=not bool(
+                            self.header.normal_recalc_offset
+                        ),
+                    )
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(
+                        f"Unsupported DMC5 blendshape payload: {exc}"
+                    ) from exc
 
         return True

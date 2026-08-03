@@ -8,7 +8,15 @@ This file contains:
 
 import functools
 from PySide6.QtCore import Signal, QModelIndex
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QToolButton, QHBoxLayout, QMenu
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QMessageBox,
+    QToolButton,
+    QHBoxLayout,
+    QMenu,
+    QTabWidget,
+)
 
 from utils.enum_manager import EnumManager
 from utils.registry_manager import RegistryManager
@@ -188,6 +196,11 @@ class RszHandler(BaseFileHandler):
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer._initialize_editor_services()
         viewer.populate_tree()
+        from file_handlers.motion.preview.integration import create_pfb_motion_preview
+
+        motion_preview = create_pfb_motion_preview(self)
+        if motion_preview is not None:
+            viewer.add_preview_tab(motion_preview, viewer.tr("3D"))
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
         self._viewer = viewer
@@ -301,14 +314,31 @@ class RszViewer(QWidget):
         self._cleanup_pending = False
         self.tree = AdvancedTreeView(self)
         self.scene_button = None
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.tree)
-        layout.setContentsMargins(0, 0, 0, 0)
+        self._layout = QVBoxLayout(self)
+        self._layout.addWidget(self.tree)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._preview_tabs = None
+        self._raw_container = None
+        self._preview_widgets = []
         self.tree.installEventFilter(self)
         self.array_operations = None
         self.name_helper = None
         self.object_operations = None
         self.lazy_builder = None
+
+    def add_preview_tab(self, widget: QWidget, label: str) -> None:
+        """Add a format preview while keeping this viewer as the RSZ editor."""
+        if self._preview_tabs is None:
+            self._layout.removeWidget(self.tree)
+            self._preview_tabs = QTabWidget(self)
+            self._raw_container = QWidget(self._preview_tabs)
+            raw_layout = QVBoxLayout(self._raw_container)
+            raw_layout.setContentsMargins(0, 0, 0, 0)
+            raw_layout.addWidget(self.tree)
+            self._preview_tabs.addTab(self._raw_container, self.tr("RSZ"))
+            self._layout.addWidget(self._preview_tabs)
+        self._preview_tabs.addTab(widget, label)
+        self._preview_widgets.append(widget)
 
     def _initialize_editor_services(self):
         """Initialize helpers shared by handler-created and directly loaded viewers."""
@@ -348,6 +378,11 @@ class RszViewer(QWidget):
                 self.modified_changed.disconnect()
             except Exception as e:
                 print(f"Error disconnecting modified_changed signal: {e}")
+            for preview in self._preview_widgets:
+                cleanup = getattr(preview, "cleanup", None)
+                if callable(cleanup):
+                    cleanup()
+            self._preview_widgets.clear()
             if self.tree:
                 self.tree.setModel(None)
         except Exception as e:

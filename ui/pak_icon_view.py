@@ -10,11 +10,11 @@ from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QStyle
 
 from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mesh.material_resolver import MeshMaterialResolver
+from file_handlers.mesh.material_session import MeshMaterialSession
 from file_handlers.mesh.mesh_viewer import MeshThumbnailRenderer
-from file_handlers.tex.qt_image_utils import build_tex_preview_upload, decode_tex_bytes_to_qimage, parse_tex_bytes
-from file_handlers.tex.texture_quality import choose_texture_mip, texture_quality_profile
+from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
 from utils.app_paths import application_root
+from utils.resource_file_utils import ResourceResolutionContext
 
 
 THUMBNAIL_SIZE = 160
@@ -167,11 +167,12 @@ class _CachePruneTask(QRunnable):
 class _ThumbnailTask(QRunnable):
 	def __init__(
 		self, path, reader, cache_path, generation, texture_quality,
-		resource_cache, upload_cache, signals,
+		resource_context, resource_cache, upload_cache, signals,
 	):
 		super().__init__()
 		self.path, self.reader, self.cache_path = path, reader, cache_path
 		self.generation, self.texture_quality, self.signals = generation, texture_quality, signals
+		self.resource_context = resource_context
 		self.resource_cache, self.upload_cache = resource_cache, upload_cache
 
 	def run(self):
@@ -187,8 +188,8 @@ class _ThumbnailTask(QRunnable):
 				result = decoded if decoded is not None else QImage()
 			elif ext == "mesh":
 				result = _prepare_mesh_scene(
-					data, self.path, self.reader, self.texture_quality,
-					self.resource_cache, self.upload_cache,
+					data, self.path, self.texture_quality,
+					self.resource_context, self.resource_cache, self.upload_cache,
 				)
 			if isinstance(result, QImage) and not result.isNull():
 				result = result.scaled(
@@ -211,6 +212,7 @@ class PakThumbnailProvider(QObject):
 		self._settings = settings if isinstance(settings, dict) else {}
 		self._reader = None
 		self._source_reader = None
+		self._resource_context = None
 		self._signature = ""
 		self._generation = 0
 		self._icons: dict[str, QIcon] = {}
@@ -236,7 +238,13 @@ class PakThumbnailProvider(QObject):
 		placeholder.fill(Qt.transparent)
 		self._preview_placeholder = QIcon(placeholder)
 
-	def set_source(self, reader, pak_paths: list[str], known_paths=()):
+	def set_source(
+		self,
+		reader,
+		pak_paths: list[str],
+		known_paths=(),
+		resource_context: ResourceResolutionContext | None = None,
+	):
 		digest = hashlib.sha256()
 		for name in pak_paths:
 			try:
@@ -249,6 +257,13 @@ class PakThumbnailProvider(QObject):
 			"mesh_viewer_wireframe_mode", "mesh_viewer_lighting_mode",
 			"mesh_viewer_ambient", "mesh_viewer_diffuse",
 		)
+		if resource_context is not None:
+			digest.update(repr((
+				resource_context.project_dir,
+				resource_context.unpacked_dir,
+				resource_context.path_prefix,
+				resource_context.game,
+			)).encode())
 		digest.update(repr(tuple(self._settings.get(key) for key in keys)).encode())
 		signature = digest.hexdigest()
 		if reader is self._source_reader and signature == self._signature:
@@ -257,6 +272,8 @@ class PakThumbnailProvider(QObject):
 		if thumbnail_reader is not None:
 			thumbnail_reader.pak_file_priority = list(pak_paths)
 			thumbnail_reader.add_files(*known_paths)
+		resource_context = resource_context or ResourceResolutionContext()
+		self._resource_context = resource_context.with_pak_reader(thumbnail_reader)
 		self._source_reader, self._reader, self._signature = reader, thumbnail_reader, signature
 		self._generation += 1
 		self._pool.clear()
@@ -295,7 +312,8 @@ class PakThumbnailProvider(QObject):
 			_ThumbnailTask(
 				path, self._reader, cache_path, self._generation,
 				self._settings.get("renderer_texture_quality", "balanced"),
-				self._resource_cache, self._upload_cache, self._signals,
+				self._resource_context, self._resource_cache,
+				self._upload_cache, self._signals,
 			)
 		)
 
@@ -341,45 +359,31 @@ class PakThumbnailProvider(QObject):
 			self._failed.add(path)
 		self.ready.emit(path)
 
-def _add_thumbnail_upload(images, binding, quality, profile, upload_cache):
-	if not binding.resolved_texture_data or not binding.resolved_texture_path:
-		return
-	try:
-		key = quality, binding.resolved_texture_path
-		upload = upload_cache.get(key) if upload_cache is not None else None
-		if upload is None:
-			tex = parse_tex_bytes(binding.resolved_texture_data, raise_errors=True)
-			upload = build_tex_preview_upload(
-				tex, mip_selector=lambda parsed: choose_texture_mip(parsed, profile)
-			)
-			if upload_cache is not None:
-				upload_cache[key] = upload
-		images[binding.mesh_material_name] = (binding.resolved_texture_path, upload)
-	except Exception as exc:
-		print(f"PAK thumbnail texture failed for {binding.resolved_texture_path}: {exc}")
-
 
 def _prepare_mesh_scene(
-	data: bytes, path: str, reader, quality: str,
+	data: bytes, path: str, quality: str,
+	resource_context: ResourceResolutionContext,
 	resource_cache=None, upload_cache=None,
 ) -> MeshThumbnailScene:
-	handler = MeshHandler()
-	handler.filepath = path
-	handler._resource_context = (None, None, "natives/stm", reader)
-	handler.read(data)
-	profile = texture_quality_profile(quality)
-	_mdf, bindings = MeshMaterialResolver.resolve_for_handler(
-		handler, prefer_streaming=profile.prefer_streaming, resolve_textures=True,
-		resource_cache=resource_cache,
+	handler = MeshHandler.from_bytes(
+		path,
+		data,
+		resource_context=resource_context,
 	)
-	profiles = {
-		binding.mesh_material_name: binding.surface
-		for binding in bindings if binding.surface is not None
-	}
-	images = {}
-	for binding in bindings:
-		_add_thumbnail_upload(images, binding, quality, profile, upload_cache)
+	materials = MeshMaterialSession(
+		handler,
+		resource_scope="",
+		texture_quality=quality,
+		parse_in_subprocess=False,
+		resource_cache=resource_cache,
+		upload_cache=upload_cache,
+	)
+	materials.prepare_all()
 	for cache in (resource_cache, upload_cache):
 		while cache is not None and len(cache) > 32:
 			cache.popitem(last=False)
-	return MeshThumbnailScene(handler.mesh, profiles, images)
+	return MeshThumbnailScene(
+		handler.mesh,
+		dict(materials.profiles),
+		dict(materials.images),
+	)

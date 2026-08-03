@@ -60,12 +60,18 @@ from .structures import (
     Key,
     NoHermiteKey,
     Node,
+    PathPoint3DValue,
     Property,
     SpeedPoint,
     Track,
     UserDataAssetInfo,
 )
-from .value_adapters import apply_key_payload_text, key_payload_editable, key_payload_text
+from .value_adapters import (
+    apply_key_payload_text,
+    key_payload_editable,
+    key_payload_text,
+    parse_path_point3d_text,
+)
 from utils.number_format import format_display_value, format_float_sequence, format_full_float
 
 
@@ -225,17 +231,14 @@ def _row_background_color(selected: bool, hovered: bool, row_index: int) -> QCol
     return QColor("#25282c") if row_index % 2 else QColor("#202327")
 
 
-def _replace_oword_reference(parsed, index: int, new_values: tuple[float, ...]):
+def _replace_oword_reference(parsed, index: int, new_values: PathPoint3DValue):
     old_values = parsed.owords[index]
     parsed.owords[index] = new_values
     for prop in _iter_graph_properties(parsed):
         if _prop_type(prop) != PropertyType.PATH_POINT3D:
             continue
         for key in ClipGraphOperations.iter_property_payload_keys(prop, include_last=True):
-            if getattr(key, "oword_ref", None) is old_values or (
-                getattr(key, "raw0", -1) == index
-                and getattr(key, "oword_ref", None) == old_values
-            ):
+            if getattr(key, "oword_ref", None) is old_values:
                 key.oword_ref = new_values
 
 
@@ -1715,7 +1718,7 @@ class ClipViewer(QWidget):
         if obj is None:
             return ""
         if self.current and self.current.get("kind") == "oword":
-            return self.tr("OWords") + " > " + self._title(obj)
+            return self.tr("Path Points") + " > " + self._title(obj)
         path = self._object_path(obj)
         return " > ".join(path or [self._title(obj)])
 
@@ -1924,7 +1927,7 @@ class ClipViewer(QWidget):
             ("Nodes", len(nodes)),
             ("Properties", len(properties)),
             (self.tr(USER_DATA_ASSETS_LABEL), len(assets)),
-            ("OWords", len(oword_rows)),
+            ("Path Points", len(oword_rows)),
         ))
         self._related_section("Tracks")
         self._related(self.parsed.tracks, "track", owner_list=self.parsed.tracks)
@@ -1935,7 +1938,7 @@ class ClipViewer(QWidget):
             self._related_section(self.tr(USER_DATA_ASSETS_LABEL))
             self._related(assets, "user_data_asset")
         if oword_rows:
-            self._related_section("OWords")
+            self._related_section("Path Points")
             self._related_owords(oword_rows)
 
     def _show_oword(self, index: int):
@@ -1943,9 +1946,7 @@ class ClipViewer(QWidget):
         edit = QLineEdit(format_float_sequence(values))
         def commit():
             try:
-                new_values = tuple(float(part.strip()) for part in edit.text().split(","))
-                if len(new_values) != 4:
-                    raise ValueError("Expected four values")
+                new_values = parse_path_point3d_text(edit.text())
                 _replace_oword_reference(self.parsed, index, new_values)
                 edit.setStyleSheet("")
                 self._mark_modified()
@@ -2719,7 +2720,7 @@ class ClipViewer(QWidget):
 
     def _title(self, obj):
         if self.current and self.current.get("kind") == "oword":
-            return f"OWord {self.current.get('index', 0)}"
+            return f"Path Point {self.current.get('index', 0)}"
         if isinstance(obj, Track):
             return obj.group_name or obj.type_unicode or obj.type_ascii or "Track"
         if isinstance(obj, ClipInfo):

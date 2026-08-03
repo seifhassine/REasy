@@ -3,7 +3,16 @@ from __future__ import annotations
 import struct
 
 from .enums import PropertyType, property_type_or_unknown
-from .structures import ActionKey, BoolKey, Key, NoHermiteKey, Property, SpeedPoint
+from .structures import (
+    ActionKey,
+    BoolKey,
+    Key,
+    NoHermiteKey,
+    PathPoint3DValue,
+    Property,
+    SpeedPoint,
+    validate_path_point3d,
+)
 from utils.number_format import format_full_float
 
 
@@ -52,15 +61,18 @@ def apply_key_payload_text(prop: Property | None, key, text: str) -> bool:
     if asset is not None:
         return False
     if getattr(key, "oword_ref", None) is not None:
-        values = [float(part.strip()) for part in text.split(",")]
-        if len(values) != 4:
-            raise ValueError("Expected four values")
-        key.oword_ref = tuple(values)
+        key.oword_ref = parse_path_point3d_text(text)
         return True
     if isinstance(key, (Key, NoHermiteKey)) and ptype in _EDITABLE_SCALARS:
         key.raw0, key.raw1 = _encode_scalar(ptype, text)
         return True
     return False
+
+
+def parse_path_point3d_text(text: str) -> PathPoint3DValue:
+    values = tuple(float(part.strip()) for part in text.split(","))
+    validate_path_point3d(values)
+    return values
 
 
 def _ptype(prop: Property | None) -> PropertyType:
@@ -87,7 +99,7 @@ def _scalar_text(ptype: PropertyType, data: bytes) -> str:
         fmt = _FLOAT_SCALAR_FORMATS[ptype]
         return format_full_float(struct.unpack(fmt, data[:struct.calcsize(fmt)])[0])
     if ptype == PropertyType.PATH_POINT3D:
-        return f"OWord[{struct.unpack('<I', data[:4])[0]}]"
+        return f"PathPoint3D[{struct.unpack('<I', data[:4])[0]}]"
     return "Unmodeled payload"
 
 
