@@ -154,18 +154,21 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", self.tr("SCN scene viewing and editing, with synchronized previews and source-backed changes.")),
-            ("New", self.tr("Light-probe (LPRB/PRB) parsing and scene previews. Currently, only positional editing of the entire probe grid is supported.")),
-            ("New", self.tr("An icon view for the PAK Browser, including mesh thumbnails.")),
-            ("Updated", self.tr("A refreshed dark interface, welcome page, and default color scheme based on the REasy logo.")),
-            ("Updated", self.tr("Completed Simplified Chinese translation and improved localization throughout the application.")),
-            ("Updated", self.tr("RSZ dumps and file lists for RE9, MHST3, MHWilds, Pragmata, Onimusha WOTS, Kunitsu-Gami, RE2, RE4, RE8, SF6, and other games.")),
-            ("Improved", self.tr("Faster startup, scene and project tabs, GDeflate texture previews, and file-extension dumping.")),
-            ("Improved", self.tr("File-list generation with a new discovery mode and better texture, MDF, and mesh coverage.")),
-            ("Improved", self.tr("PAK and project browsing, including better list loading and support for edge-case RE2 PAK files.")),
-            ("Improved", self.tr("Scene and mesh previews with quality modes, vertex-color controls, and broader game compatibility.")),
-            ("Fixed", self.tr("CLIP compatibility across multiple versions and RSZ embedded-userdata edge cases in older games.")),
-            ("Fixed", self.tr("Mesh preview crashes, scene texture color issues, RCOL controls, Onimusha WOTS textures, and edited-file reloads.")),
+            ("New", self.tr("DMC5 MOTLIST and PFB 3D previews are now supported for viewing only.")),
+            ("New", self.tr("Added an AI assistant with project-management capabilities and support for updating and modding MDF, User, and MSG files. For now, it supports the DeepSeek API and local LLMs.")),
+            ("New", self.tr("Added Save All for modified files.")),
+            ("New", self.tr("Added PRB/LPRB support for all games, including scene previews.")),
+            ("New", self.tr("Multiple lightprobes can now be previewed in a single 3D scene.")),
+            ("New", self.tr("Files can now be opened directly by double-clicking them in the standalone PAK Browser.")),
+            ("Updated", self.tr("Updated the SF6 file list and RSZ dump.")),
+            ("Updated", self.tr("CRCs are now rewritten from the RSZ dump when saving RSZ files. This can update outdated mods by resaving them, but use it with care because it may cause corruption.")),
+            ("Updated", self.tr("Added automatic resource management for Pragmata RSZ files through an improved RSZ dump.")),
+            ("Improved", self.tr("DMC5 mesh blendshapes are now supported and can be previewed in MOTLIST/PFB 3D.")),
+            ("Improved", self.tr("Lightprobe rendering now uses full vertex shading instead of a vertex-budgeted approximation for more faithful in-game environments.")),
+            ("Fixed", self.tr("Miscellaneous UI fixes.")),
+            ("Fixed", self.tr('Fixed .msg files not being searched correctly during "Find in files" search.')),
+            ("Fixed", self.tr("Fixed unknown entries not appearing in the PAK Browser.")),
+            ("Fixed", self.tr("Fixed broken automatic file-list detection for Pragmata.")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)

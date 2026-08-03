@@ -1033,6 +1033,16 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <translation>已检查当前 REasy 工作区</translation>
     </message>
     <message>
+        <location filename="../../ui/ai/tools.py"/>
+        <source>Reading the file update report</source>
+        <translation>正在读取文件更新报告</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/tools.py"/>
+        <source>Read the file update report</source>
+        <translation>已读取文件更新报告</translation>
+    </message>
+    <message>
         <location filename="../../ui/ai/tools.py" line="838"/>
         <source>Loading the requested editor tools</source>
         <translation>正在加载所需的编辑器工具</translation>
@@ -1081,16 +1091,6 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <location filename="../../ui/ai/tools.py" line="935"/>
         <source>Added the PAK file to the project</source>
         <translation>已将 PAK 中的文件添加到项目</translation>
-    </message>
-    <message>
-        <location filename="../../ui/ai/tools.py" line="944"/>
-        <source>Opening the file picker</source>
-        <translation>正在打开文件选择器</translation>
-    </message>
-    <message>
-        <location filename="../../ui/ai/tools.py" line="945"/>
-        <source>Opened the file picker</source>
-        <translation>已打开文件选择器</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="954"/>
@@ -1831,6 +1831,21 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <translation>正在更新第 {current}/{total} 个模组文件：{item}</translation>
     </message>
     <message>
+        <location filename="../../ui/ai/chat_dock.py"/>
+        <source>Migrating file {current} of {total}: {item}</source>
+        <translation>正在迁移第 {current}/{total} 个文件：{item}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/chat_dock.py"/>
+        <source>Analyzing RSZ file {current} of {total}: {item}</source>
+        <translation>正在分析第 {current}/{total} 个 RSZ 文件：{item}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/chat_dock.py"/>
+        <source>Writing migrated file {current} of {total}: {item}</source>
+        <translation>正在写入第 {current}/{total} 个迁移文件：{item}</translation>
+    </message>
+    <message>
         <location filename="../../ui/ai/chat_dock.py" line="2408"/>
         <source>Stopped during planning after {completed} of {total}.</source>
         <translation>已停止；共 {total} 项，已规划 {completed} 项。</translation>
@@ -1844,6 +1859,11 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <location filename="../../ui/ai/chat_dock.py" line="2412"/>
         <source>Stopped after {completed} of {total}; no output was published.</source>
         <translation>已停止；共 {total} 项，已处理 {completed} 项。没有发布任何输出。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/chat_dock.py"/>
+        <source>Stopped after writing {completed} of {total} outputs.</source>
+        <translation>已停止；共 {total} 个输出，已写入 {completed} 个。</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="332"/>
@@ -1894,6 +1914,66 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <location filename="../../ui/ai/msg_tools.py" line="454"/>
         <source>Copied MSG values</source>
         <translation>已复制 MSG 值</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/msg_tools.py"/>
+        <source>Migrating MSG files</source>
+        <translation>正在迁移 MSG 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/msg_tools.py"/>
+        <source>Migrated MSG files</source>
+        <translation>已迁移 MSG 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/msg_tools.py"/>
+        <source>Updating the MSG mod folder</source>
+        <translation>正在更新 MSG 模组文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/msg_tools.py"/>
+        <source>Updated the MSG mod folder</source>
+        <translation>已更新 MSG 模组文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Migrating RSZ files</source>
+        <translation>正在迁移 RSZ 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Migrated RSZ files</source>
+        <translation>已迁移 RSZ 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Updating the RSZ mod folder</source>
+        <translation>正在更新 RSZ 模组文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Updated the RSZ mod folder</source>
+        <translation>已更新 RSZ 模组文件夹</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Analyzing the RSZ mod update</source>
+        <translation>正在分析 RSZ 模组更新</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Analyzed the RSZ mod update</source>
+        <translation>已分析 RSZ 模组更新</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Inspecting RSZ update analysis</source>
+        <translation>正在检查 RSZ 更新分析</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/rsz_tools.py"/>
+        <source>Inspected RSZ update analysis</source>
+        <translation>已检查 RSZ 更新分析</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="472"/>
@@ -2426,64 +2506,79 @@ material information on collision shapes for backward compatibility.</source>
         <translation>感谢更新！以下是本次亮点：</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="157"/>
-        <source>SCN scene viewing and editing, with synchronized previews and source-backed changes.</source>
-        <translation>SCN 场景查看与编辑，支持同步预览和基于源文件的修改。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>DMC5 MOTLIST and PFB 3D previews are now supported for viewing only.</source>
+        <translation>现已支持查看 DMC5 的 MOTLIST 和 PFB 3D 预览（暂仅支持查看）。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="158"/>
-        <source>Light-probe (LPRB/PRB) parsing and scene previews. Currently, only positional editing of the entire probe grid is supported.</source>
-        <translation>光照探针 (LPRB/PRB) 解析与场景预览。目前仅支持对整个探针网格进行位置编辑。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Added an AI assistant with project-management capabilities and support for updating and modding MDF, User, and MSG files. For now, it supports the DeepSeek API and local LLMs.</source>
+        <translation>新增 AI 助手，支持项目管理以及 MDF、User 和 MSG 文件的更新与修改。目前仅支持 DeepSeek API 和本地大语言模型。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="159"/>
-        <source>An icon view for the PAK Browser, including mesh thumbnails.</source>
-        <translation>PAK 浏览器新增图标视图，包括网格缩略图。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Added Save All for modified files.</source>
+        <translation>新增“全部保存”功能，可保存已修改的文件。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="160"/>
-        <source>A refreshed dark interface, welcome page, and default color scheme based on the REasy logo.</source>
-        <translation>焕新的深色界面和欢迎页，并采用基于 REasy 徽标的默认配色。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Added PRB/LPRB support for all games, including scene previews.</source>
+        <translation>新增所有游戏的 PRB/LPRB 支持，包括场景预览。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="161"/>
-        <source>Completed Simplified Chinese translation and improved localization throughout the application.</source>
-        <translation>完成了简体中文翻译，并改进了整个应用程序的本地化。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Multiple lightprobes can now be previewed in a single 3D scene.</source>
+        <translation>现在可以在同一个 3D 场景中预览多个光照探针。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="162"/>
-        <source>RSZ dumps and file lists for RE9, MHST3, MHWilds, Pragmata, Onimusha WOTS, Kunitsu-Gami, RE2, RE4, RE8, SF6, and other games.</source>
-        <translation>更新了 RE9、MHST3、MHWilds、Pragmata、Onimusha WOTS、Kunitsu-Gami、RE2、RE4、RE8、SF6 及其他游戏的 RSZ 转储和文件列表。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Files can now be opened directly by double-clicking them in the standalone PAK Browser.</source>
+        <translation>现在可以在独立 PAK 浏览器中双击文件直接打开。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="163"/>
-        <source>Faster startup, scene and project tabs, GDeflate texture previews, and file-extension dumping.</source>
-        <translation>提升了启动、场景和项目标签页、GDeflate 纹理预览以及文件扩展名转储的性能。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Updated the SF6 file list and RSZ dump.</source>
+        <translation>更新了 SF6 文件列表和 RSZ 转储。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="164"/>
-        <source>File-list generation with a new discovery mode and better texture, MDF, and mesh coverage.</source>
-        <translation>文件列表生成器新增发现模式，并提高了纹理、MDF 和网格的覆盖范围。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>CRCs are now rewritten from the RSZ dump when saving RSZ files. This can update outdated mods by resaving them, but use it with care because it may cause corruption.</source>
+        <translation>保存 RSZ 文件时，现在会根据 RSZ 转储重写 CRC。重新保存可以更新过时的模组，但请谨慎使用，否则可能导致数据损坏。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="165"/>
-        <source>PAK and project browsing, including better list loading and support for edge-case RE2 PAK files.</source>
-        <translation>改进了 PAK 和项目浏览，包括更好的列表加载以及对特殊 RE2 PAK 文件的支持。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Added automatic resource management for Pragmata RSZ files through an improved RSZ dump.</source>
+        <translation>通过改进的 RSZ 转储，为 Pragmata RSZ 文件新增自动资源管理。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="166"/>
-        <source>Scene and mesh previews with quality modes, vertex-color controls, and broader game compatibility.</source>
-        <translation>场景和网格预览新增质量模式、顶点颜色控制，并扩展了游戏兼容性。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>DMC5 mesh blendshapes are now supported and can be previewed in MOTLIST/PFB 3D.</source>
+        <translation>现已支持 DMC5 网格混合形状，并可在 MOTLIST/PFB 3D 中预览。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="167"/>
-        <source>CLIP compatibility across multiple versions and RSZ embedded-userdata edge cases in older games.</source>
-        <translation>修复了多个版本的 CLIP 兼容性问题，以及旧版游戏中的 RSZ 嵌入式用户数据特殊情况。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Lightprobe rendering now uses full vertex shading instead of a vertex-budgeted approximation for more faithful in-game environments.</source>
+        <translation>光照探针渲染现在使用完整顶点着色，而不是基于顶点预算的近似方式，从而更忠实地还原游戏内环境。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="168"/>
-        <source>Mesh preview crashes, scene texture color issues, RCOL controls, Onimusha WOTS textures, and edited-file reloads.</source>
-        <translation>修复了网格预览崩溃、场景纹理颜色、RCOL 控件、Onimusha WOTS 纹理以及已编辑文件重新加载等问题。</translation>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Miscellaneous UI fixes.</source>
+        <translation>修复了各种界面问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Fixed .msg files not being searched correctly during "Find in files" search.</source>
+        <translation>修复了在“文件中查找”搜索期间无法正确搜索 .msg 文件的问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Fixed unknown entries not appearing in the PAK Browser.</source>
+        <translation>修复了 PAK 浏览器中不显示未知条目的问题。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py"/>
+        <source>Fixed broken automatic file-list detection for Pragmata.</source>
+        <translation>修复了 Pragmata 自动文件列表检测失效的问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="178"/>
@@ -8864,6 +8959,21 @@ Output folder: {output_folder}</source>
         <location filename="../../ui/ai/msg_tools.py" line="2763"/>
         <source>Could not export MSG JSON {path}: {error}</source>
         <translation>无法导出 MSG JSON {path}：{error}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/tools.py"/>
+        <source>File update report was not found: {update_id}.</source>
+        <translation>找不到文件更新报告：{update_id}。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/tools.py"/>
+        <source>No completed RSZ or MSG file update report is available.</source>
+        <translation>没有可用的已完成 RSZ 或 MSG 文件更新报告。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/tools.py"/>
+        <source>Unknown file update report section: {section}</source>
+        <translation>未知的文件更新报告部分：{section}</translation>
     </message>
 </context>
 <context>
