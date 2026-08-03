@@ -217,6 +217,16 @@ class _GlRigidDrawSet:
     force_solid: bool
 
 
+@dataclass(slots=True)
+class _FullscreenRestore:
+    parent: QWidget | None
+    layout: object | None
+    index: int
+    window: QWidget
+    window_state: Qt.WindowState
+    host: QWidget | None
+
+
 GIZMO_AXES = np.identity(3, dtype=np.float32)
 GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))
 GIZMO_BOX_FACES = ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0))
@@ -458,43 +468,71 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         parent = self.parentWidget()
         layout = parent.layout() if parent is not None else None
         index = layout.indexOf(self) if layout is not None else -1
-        self._cleanup_gl()
-        if index >= 0:
-            layout.takeAt(index)
-        elif parent is not None and hasattr(parent, "indexOf"):
+        if index < 0 and parent is not None and hasattr(parent, "indexOf"):
             index = parent.indexOf(self)
-        self._fullscreen_restore = (parent, layout, index)
-        self.setParent(None)
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-        self.setWindowTitle(self.tr("Scene Preview"))
+        window = self.window()
+        window_state = window.windowState()
+
+        if window is self:
+            self._fullscreen_restore = _FullscreenRestore(parent, layout, index, window, window_state, None)
+            self.fullscreen_button.setText("x")
+            self.showFullScreen()
+            QTimer.singleShot(0, self, self._after_fullscreen_change)
+            return
+
+        # Keep the QOpenGLWidget under its existing top-level window. Moving it
+        # into a standalone fullscreen window can replace its context/backing
+        # FBO and leave the restored viewport black on some Windows drivers.
+        host = QWidget(window)
+        host.setObjectName("scenePreviewFullscreenHost")
+        host.setAttribute(Qt.WA_StyledBackground, True)
+        host.setStyleSheet("#scenePreviewFullscreenHost { background: black; }")
+        host.setGeometry(window.rect())
+        host_layout = QVBoxLayout(host)
+        host_layout.setContentsMargins(0, 0, 0, 0)
+        host_layout.setSpacing(0)
+
+        self._fullscreen_restore = _FullscreenRestore(parent, layout, index, window, window_state, host)
+        window.installEventFilter(self)
+        if layout is not None and layout.indexOf(self) >= 0:
+            layout.takeAt(layout.indexOf(self))
+        host_layout.addWidget(self)
         self.fullscreen_button.setText("x")
-        self.showFullScreen()
+        host.show()
+        host.raise_()
+        window.showFullScreen()
         QTimer.singleShot(0, self, self._after_fullscreen_change)
 
     def _leave_view_fullscreen(self):
         if self._fullscreen_restore is None:
             return
-        parent, layout, index = self._fullscreen_restore
+        restore = self._fullscreen_restore
         self._fullscreen_restore = None
-        self._cleanup_gl()
-        self.hide()
-        self.setWindowFlags(Qt.Widget)
-        if parent is not None and layout is not None and hasattr(layout, "insertWidget"):
-            layout.insertWidget(index if index >= 0 else layout.count(), self, 1)
-        elif parent is not None and hasattr(parent, "insertWidget"):
-            parent.insertWidget(index if index >= 0 else parent.count(), self)
-        elif parent is not None:
-            self.setParent(parent)
+        if restore.host is not None:
+            restore.window.removeEventFilter(self)
+            if restore.host.layout() is not None:
+                restore.host.layout().removeWidget(self)
+            if restore.parent is not None and restore.layout is not None and hasattr(restore.layout, "insertWidget"):
+                restore.layout.insertWidget(restore.index if restore.index >= 0 else restore.layout.count(), self, 1)
+            elif restore.parent is not None and hasattr(restore.parent, "insertWidget"):
+                restore.parent.insertWidget(restore.index if restore.index >= 0 else restore.parent.count(), self)
+            elif restore.parent is not None:
+                self.setParent(restore.parent)
+            restore.host.hide()
+            restore.host.deleteLater()
         self.fullscreen_button.setText("⛶")
         self.show()
+        restore.window.setWindowState(restore.window_state)
+        restore.window.show()
         QTimer.singleShot(0, self, self._after_fullscreen_change)
 
     def _after_fullscreen_change(self):
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
-        if self.isWindow():
-            self.raise_()
-            self.activateWindow()
+        self._resize_fullscreen_host()
+        if self._fullscreen_restore is not None:
+            self._fullscreen_restore.window.raise_()
+            self._fullscreen_restore.window.activateWindow()
         self.setFocus(Qt.OtherFocusReason)
         self._gizmo_projection = None
         missing_regular = self._regular_set is None and self._regular_data is not None
@@ -503,7 +541,21 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.place_viewport_overlays()
         self.update()
 
+    def _resize_fullscreen_host(self):
+        restore = self._fullscreen_restore
+        if restore is None or restore.host is None:
+            return
+        restore.host.setGeometry(restore.window.rect())
+        restore.host.raise_()
+
     def eventFilter(self, obj, event):
+        restore = self._fullscreen_restore
+        if restore is not None and obj is restore.window and event.type() in (
+            QEvent.Resize,
+            QEvent.Show,
+            QEvent.WindowStateChange,
+        ):
+            QTimer.singleShot(0, self, self._resize_fullscreen_host)
         handled = self._overlays.event_filter(obj, event)
         return super().eventFilter(obj, event) if handled is None else handled
 
