@@ -47,9 +47,10 @@ class ScnGameObjectVisibilityPanel(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(5)
+        layout.setSpacing(4)
 
         controls = QHBoxLayout()
+        controls.setSpacing(5)
         self.animated_only = QCheckBox(
             self.tr("Animation focus")
         )
@@ -77,7 +78,7 @@ class ScnGameObjectVisibilityPanel(QWidget):
         layout.addWidget(self.focus_status)
 
         self.filter_edit = QLineEdit()
-        self.filter_edit.setPlaceholderText(self.tr("Filter objects…"))
+        self.filter_edit.setPlaceholderText(self.tr("Filter…"))
         self.filter_edit.setClearButtonEnabled(True)
         self.filter_edit.textChanged.connect(self._apply_filter)
         layout.addWidget(self.filter_edit)

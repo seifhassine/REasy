@@ -4,7 +4,6 @@ from collections.abc import Sequence
 
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 from ui.editor_widgets import (
     EDITOR_META_ROLE,
     EDITOR_TITLE_ROLE,
+    EmbeddedPopupComboBox,
     EditorListItemDelegate,
 )
 from .entity_session import EntityMotionSession, ResolvedMotionTarget
@@ -38,14 +38,12 @@ class MotionEntryList(QWidget):
         self._entries: tuple[PreviewMotionEntry, ...] = ()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         search_row = QHBoxLayout()
         self.filter_edit = QLineEdit(self)
         self.filter_edit.setClearButtonEnabled(True)
-        self.filter_edit.setPlaceholderText(
-            self.tr("Search name, bank, ID, or source…")
-        )
+        self.filter_edit.setPlaceholderText(self.tr("Search animations…"))
         self.filter_edit.textChanged.connect(self._apply_filter)
         self.filter_edit.returnPressed.connect(self._focus_first_result)
         search_row.addWidget(self.filter_edit, 1)
@@ -195,13 +193,15 @@ class MotionAnimationBrowser(QWidget):
         self._targets: tuple[ResolvedMotionTarget, ...] = ()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
 
         self.target_row = QHBoxLayout()
-        self.target_label = QLabel(self.tr("Animation set"), self)
-        self.target_combo = QComboBox(self)
+        self.target_row.setSpacing(5)
+        self.target_label = QLabel(self.tr("Set"), self)
+        self.target_label.setToolTip(self.tr("Animation set"))
+        self.target_combo = EmbeddedPopupComboBox(self)
         self.target_combo.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+            EmbeddedPopupComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
         self.target_combo.setMinimumContentsLength(18)
         self.target_combo.currentIndexChanged.connect(self._on_target_changed)

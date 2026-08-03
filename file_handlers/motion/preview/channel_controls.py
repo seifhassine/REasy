@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import QSignalBlocker, Signal
+from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QFormLayout,
     QLabel,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
+
+from ui.editor_widgets import EmbeddedPopupComboBox
 
 from ..runtime import MotionChannelActivation, MotionChannelKind
 from .entity_session import (
@@ -26,7 +28,7 @@ from .entity_session import (
 class MotionChannelControl:
     channel: PreviewMotionChannel
     label: QLabel
-    combo: QComboBox
+    combo: EmbeddedPopupComboBox
 
 
 class MotionChannelPanel(QScrollArea):
@@ -38,8 +40,14 @@ class MotionChannelPanel(QScrollArea):
         super().__init__(parent)
         self._active = False
         self.setWidgetResizable(True)
+        self.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.setMinimumHeight(150)
         body = QWidget()
         layout = QVBoxLayout(body)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
         self.sync_normalized_time = QCheckBox(
             self.tr("Sync normalized layer time")
         )
@@ -56,6 +64,9 @@ class MotionChannelPanel(QScrollArea):
         self.form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
         )
+        self.form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        self.form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.form.setVerticalSpacing(3)
         layout.addLayout(self.form)
         self.setWidget(body)
         self.controls: list[MotionChannelControl] = []
@@ -91,7 +102,16 @@ class MotionChannelPanel(QScrollArea):
                     layer=layer,
                 )
             )
-            combo = QComboBox()
+            label.setWordWrap(True)
+            combo = EmbeddedPopupComboBox()
+            combo.setSizeAdjustPolicy(
+                combo.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+            )
+            combo.setMinimumContentsLength(12)
+            combo.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
             combo.addItem(self.tr("Not applied"), None)
             selected = 0
             for index, choice in enumerate(channel.choices):

@@ -11,7 +11,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import (
     QAbstractSpinBox,
-    QComboBox,
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
@@ -22,14 +21,20 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ui.editor_widgets import EmbeddedPopupComboBox
+
 from .controller import MotionPreviewController
 from .model import PreviewLoopMode, RootDisplayMode
 
 
 _FRAME_SLIDER_SCALE = 100
 _MAX_TICK_SECONDS = 0.25
-_TIMELINE_REFRESH_INTERVAL_MS = 16
+_TIMELINE_REFRESH_INTERVAL_MS = 50
 _NUMERIC_REFRESH_INTERVAL_MS = 100
+
+
+def _format_frame(value: float) -> str:
+    return f"{value:.2f}".rstrip("0").rstrip(".")
 
 
 class _MotionTimeline(QSlider):
@@ -80,9 +85,10 @@ class MotionPlaybackControls(QWidget):
         self._elapsed = QElapsedTimer()
         self._ui_elapsed = QElapsedTimer()
         self._ui_timer = QTimer(self)
-        self._ui_timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self._ui_timer.setTimerType(Qt.TimerType.CoarseTimer)
         self._ui_timer.setInterval(_TIMELINE_REFRESH_INTERVAL_MS)
         self._ui_timer.timeout.connect(self._refresh_playback_ui)
+        self._stop_on_hide = True
         self._build_ui()
         self.clear()
 
@@ -90,9 +96,10 @@ class MotionPlaybackControls(QWidget):
         self.setObjectName("motionPlaybackControls")
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(6)
+        root.setSpacing(4)
 
         timeline = QHBoxLayout()
+        timeline.setSpacing(5)
         self.frame_slider = _MotionTimeline()
         self.frame_slider.valueChanged.connect(self._on_slider_changed)
         timeline.addWidget(self.frame_slider, 1)
@@ -101,15 +108,16 @@ class MotionPlaybackControls(QWidget):
         self.frame_spin.setDecimals(2)
         self.frame_spin.setSingleStep(0.25)
         self.frame_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.frame_spin.setMaximumWidth(68)
+        self.frame_spin.setMaximumWidth(60)
         self.frame_spin.valueChanged.connect(self._on_frame_changed)
         timeline.addWidget(self.frame_spin)
-        self.frame_total_label = QLabel("/ 0.00")
+        self.frame_total_label = QLabel("/ 0")
         self.frame_total_label.setObjectName("motionFrameTotal")
         timeline.addWidget(self.frame_total_label)
         root.addLayout(timeline)
 
         playback = QHBoxLayout()
+        playback.setSpacing(5)
         self.restart_button = QToolButton()
         self.restart_button.setObjectName("motionRestartButton")
         self.restart_button.setIcon(
@@ -118,21 +126,23 @@ class MotionPlaybackControls(QWidget):
             )
         )
         self.restart_button.setToolTip(self.tr("Restart animation"))
+        self.restart_button.setFixedSize(24, 22)
         self.restart_button.clicked.connect(self.restart)
         playback.addWidget(self.restart_button)
         self.play_button = QToolButton()
         self.play_button.setObjectName("motionPlayButton")
+        self.play_button.setFixedSize(24, 22)
         self.play_button.clicked.connect(self.toggle)
         playback.addWidget(self.play_button)
 
-        playback.addWidget(QLabel(self.tr("Speed")))
         self.speed_spin = QDoubleSpinBox()
         self.speed_spin.setRange(0.01, 100.0)
         self.speed_spin.setSingleStep(0.05)
         self.speed_spin.setValue(1.0)
         self.speed_spin.setSuffix("×")
         self.speed_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.speed_spin.setMaximumWidth(66)
+        self.speed_spin.setMaximumWidth(58)
+        self.speed_spin.setToolTip(self.tr("Playback speed"))
         self.speed_spin.valueChanged.connect(self.controller.set_speed)
         playback.addWidget(self.speed_spin)
 
@@ -140,8 +150,9 @@ class MotionPlaybackControls(QWidget):
         root.addLayout(playback)
 
         options = QHBoxLayout()
-        options.addWidget(QLabel(self.tr("Playback")))
-        self.loop_combo = QComboBox()
+        options.setSpacing(5)
+        options.addWidget(QLabel(self.tr("Loop")))
+        self.loop_combo = EmbeddedPopupComboBox()
         for label, mode in (
             (self.tr("Authored"), PreviewLoopMode.SOURCE),
             (self.tr("Loop"), PreviewLoopMode.LOOP),
@@ -152,7 +163,7 @@ class MotionPlaybackControls(QWidget):
         options.addWidget(self.loop_combo, 1)
 
         options.addWidget(QLabel(self.tr("Root")))
-        self.root_combo = QComboBox()
+        self.root_combo = EmbeddedPopupComboBox()
         self.root_combo.addItem(self.tr("Authored"), RootDisplayMode.AUTHORED)
         self.root_combo.addItem(
             self.tr("Lock translation"),
@@ -175,7 +186,7 @@ class MotionPlaybackControls(QWidget):
         end = max(0.0, self.controller.end_frame)
         self.frame_slider.setRange(0, round(end * _FRAME_SLIDER_SCALE))
         self.frame_spin.setRange(0.0, end)
-        self.frame_total_label.setText(f"/ {end:.2f}")
+        self.frame_total_label.setText(f"/ {_format_frame(end)}")
         self._set_enabled(True)
         self._sync_frame_controls()
 
@@ -187,7 +198,7 @@ class MotionPlaybackControls(QWidget):
             self.frame_spin.setRange(0.0, 0.0)
             self.frame_slider.setValue(0)
             self.frame_spin.setValue(0.0)
-        self.frame_total_label.setText("/ 0.00")
+        self.frame_total_label.setText("/ 0")
 
     def toggle(self) -> None:
         if not self.controller.ready:
@@ -241,8 +252,12 @@ class MotionPlaybackControls(QWidget):
     def cleanup(self) -> None:
         self.stop()
 
+    def set_stop_on_hide(self, enabled: bool) -> None:
+        self._stop_on_hide = bool(enabled)
+
     def hideEvent(self, event) -> None:
-        self.stop()
+        if self._stop_on_hide:
+            self.stop()
         super().hideEvent(event)
 
     def _set_enabled(self, enabled: bool) -> None:

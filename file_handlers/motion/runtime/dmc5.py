@@ -200,6 +200,11 @@ class _Dmc5RuntimeAdapter:
                     "JointMapExpressionEnabled",
                     default=False,
                 ),
+                after_parent_animation=_bool(
+                    fields,
+                    "AfterParentAnimation",
+                    default=False,
+                ),
             )
             self.targets[target_id] = target
             self.targets_by_object.setdefault(owner_id, []).append(target_id)

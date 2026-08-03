@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
 from file_handlers.rsz.scn_scene_graph import (
@@ -138,14 +137,13 @@ def resolve_motion_display_scope(
 
 
 def resolve_same_joints_pose_targets(
-    session: EntityMotionSession,
     graph: ScnSceneGraph,
     renderables: Sequence[ScnRenderableMesh],
     source: ScnRenderableMesh,
     *,
     runtime_target: MotionTargetDefinition,
 ) -> tuple[ScnRenderableMesh, ...]:
-    """Resolve the meshes driven by one controller in a same-joints group."""
+    """Route one Motion using its authored parent-animation evaluation order."""
     if not renderables:
         raise ValueError("same-joints pose routing requires at least one mesh")
     document = graph.documents.get(source.source_object_id.document_id)
@@ -160,69 +158,33 @@ def resolve_same_joints_pose_targets(
             f"same-joints source {source.key!r} has no scene object"
         )
     source_id = source.source_object_id.local_object_id
-
-    if runtime_target.id.object_id != source_id:
-        descendants = tuple(
-            renderable
-            for renderable in renderables
-            if same_joints_descendant_depth(
-                document,
-                renderable.source_object_id,
-                runtime_target.id.object_id,
-            )
-            is not None
-        )
-        if not any(renderable.key == source.key for renderable in descendants):
-            raise ValueError(
-                f"Motion target {runtime_target.id.object_id} does not own "
-                f"same-joints source {source_object.name!r}"
-            )
-        return descendants
-
-    banks_by_object: dict[int, set[str]] = defaultdict(set)
-    for target in session.targets:
-        definition = target.definition
-        path = resource_path_key(definition.motion_bank_path)
-        if definition.enabled and path:
-            banks_by_object[definition.id.object_id].add(path)
-
-    member_ids = frozenset(
-        renderable.source_object_id.local_object_id
-        for renderable in renderables
-    )
-    if source_id not in member_ids:
+    if not any(renderable.key == source.key for renderable in renderables):
         raise ValueError(
             f"same-joints source {source_object.name!r} is outside its group"
         )
-    controllers = frozenset(
-        object_id for object_id in member_ids if banks_by_object.get(object_id)
-    )
-    parent_banks = banks_by_object.get(source_object.parent_id, set())
-    if parent_banks:
-        primary_candidates = {
-            object_id
-            for object_id in controllers
-            if banks_by_object.get(object_id, set()) & parent_banks
-        }
-    else:
-        primary_candidates = set(controllers)
-    if len(primary_candidates) != 1:
-        raise ValueError(
-            "same-joints motion routing requires exactly one primary "
-            f"controller; resolved {sorted(primary_candidates)}"
-        )
 
-    primary = next(iter(primary_candidates))
-    if source_id == primary:
-        target_ids = member_ids
-    elif source_id in controllers:
-        target_ids = (member_ids - controllers) | {source_id}
-    else:
-        target_ids = {source_id}
-    return tuple(
+    if (
+        runtime_target.id.object_id == source_id
+        and not runtime_target.after_parent_animation
+    ):
+        return tuple(renderables)
+
+    branch_root = runtime_target.id.object_id
+    descendants = tuple(
         renderable
         for renderable in renderables
-        if renderable.source_object_id.local_object_id in target_ids
+        if same_joints_descendant_depth(
+            document,
+            renderable.source_object_id,
+            branch_root,
+        )
+        is not None
     )
+    if not any(renderable.key == source.key for renderable in descendants):
+        raise ValueError(
+            f"Motion target {runtime_target.id.object_id} does not own "
+            f"same-joints source {source_object.name!r}"
+        )
+    return descendants
 
 

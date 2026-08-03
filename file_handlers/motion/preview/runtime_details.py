@@ -186,6 +186,8 @@ def _target_lines(
             f"      Playback: {target_definition.play_speed:g}× · "
             f"root motion {target_definition.root_motion_mode.label}"
         ),
+        f"      After parent animation: "
+        f"{'yes' if target_definition.after_parent_animation else 'no'}",
     ]
     if target.joint_map is not None:
         joint_map = target.joint_map

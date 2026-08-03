@@ -130,7 +130,6 @@ from PySide6.QtGui import QCursor, QImage
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDoubleSpinBox,
     QFrame,
     QHBoxLayout,
@@ -142,6 +141,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from file_handlers.mesh.material_effects import riglogic_material_effect
 from file_handlers.tex.qt_image_utils import TexPreviewUpload
 from file_handlers.tex.texture_quality import (
     DEFAULT_TEXTURE_QUALITY,
@@ -149,8 +149,8 @@ from file_handlers.tex.texture_quality import (
     normalize_texture_quality,
     texture_quality_profile,
 )
-from file_handlers.mesh.material_effects import riglogic_material_effect
 from settings import save_settings
+from ui.editor_widgets import EmbeddedPopupComboBox
 from ui.opengl_camera import OrbitCameraMixin
 from .opengl_setup import mesh_surface_format
 from .freecam_controller import FreecamController
@@ -219,12 +219,9 @@ class _GlRigidDrawSet:
 
 @dataclass(slots=True)
 class _FullscreenRestore:
-    parent: QWidget | None
-    layout: object | None
-    index: int
     window: QWidget
     window_state: Qt.WindowState
-    host: QWidget | None
+    hidden_widgets: tuple[QWidget, ...]
 
 
 GIZMO_AXES = np.identity(3, dtype=np.float32)
@@ -300,6 +297,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.center = np.zeros(3, dtype=np.float32)
         self.freecam = FreecamController()
         self._cursor_lock_pos = self._fullscreen_restore = None
+        self._fullscreen_content: QWidget | None = None
+        self._fullscreen_transition = False
 
         self._meshes: list[SceneDrawMesh] = []
         self._highlighted_keys: set[str] = set()
@@ -415,7 +414,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         layout.setSpacing(4)
         header = QHBoxLayout()
         self.fps_label = QLabel(self.tr("0 FPS"), self.overlay)
-        self.overlay_fold_button = self._overlay_button("v", self.tr("Fold panel"))
+        self.overlay_fold_button = self._overlay_button("▾", self.tr("Fold panel"))
         self.fullscreen_button = self._overlay_button(
             "⛶", self.tr("Fullscreen viewport"), self._toggle_view_fullscreen
         )
@@ -452,8 +451,20 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         button.setFocusPolicy(Qt.NoFocus)
         return button
 
-    def setup_viewport_overlay(self, widget: QWidget, body: QWidget | None = None, fold_button: QToolButton | None = None):
+    def setup_viewport_overlay(
+        self,
+        widget: QWidget,
+        body: QWidget | None = None,
+        fold_button: QToolButton | None = None,
+    ) -> None:
         self._overlays.setup(widget, body, fold_button)
+
+    def set_viewport_overlay_folded(self, widget: QWidget, folded: bool) -> None:
+        self._overlays.set_folded(widget, folded)
+
+    def set_fullscreen_content(self, widget: QWidget | None) -> None:
+        """Use a larger same-window container for structural fullscreen."""
+        self._fullscreen_content = widget
 
     def _toggle_view_fullscreen(self):
         owner = getattr(self, "_external_fullscreen_owner", None)
@@ -465,74 +476,66 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _enter_view_fullscreen(self):
         if self._fullscreen_restore is not None:
             return
-        parent = self.parentWidget()
-        layout = parent.layout() if parent is not None else None
-        index = layout.indexOf(self) if layout is not None else -1
-        if index < 0 and parent is not None and hasattr(parent, "indexOf"):
-            index = parent.indexOf(self)
-        window = self.window()
-        window_state = window.windowState()
-
-        if window is self:
-            self._fullscreen_restore = _FullscreenRestore(parent, layout, index, window, window_state, None)
-            self.fullscreen_button.setText("x")
-            self.showFullScreen()
-            QTimer.singleShot(0, self, self._after_fullscreen_change)
-            return
-
-        # Keep the QOpenGLWidget under its existing top-level window. Moving it
-        # into a standalone fullscreen window can replace its context/backing
-        # FBO and leave the restored viewport black on some Windows drivers.
-        host = QWidget(window)
-        host.setObjectName("scenePreviewFullscreenHost")
-        host.setAttribute(Qt.WA_StyledBackground, True)
-        host.setStyleSheet("#scenePreviewFullscreenHost { background: black; }")
-        host.setGeometry(window.rect())
-        host_layout = QVBoxLayout(host)
-        host_layout.setContentsMargins(0, 0, 0, 0)
-        host_layout.setSpacing(0)
-
-        self._fullscreen_restore = _FullscreenRestore(parent, layout, index, window, window_state, host)
-        window.installEventFilter(self)
-        if layout is not None and layout.indexOf(self) >= 0:
-            layout.takeAt(layout.indexOf(self))
-        host_layout.addWidget(self)
+        self._fullscreen_transition = True
+        content = self._fullscreen_content or self
+        window = content.window()
+        self._fullscreen_restore = _FullscreenRestore(
+            window,
+            window.windowState(),
+            self._visible_siblings_to_window(content, window),
+        )
+        for widget in self._fullscreen_restore.hidden_widgets:
+            widget.hide()
         self.fullscreen_button.setText("x")
-        host.show()
-        host.raise_()
         window.showFullScreen()
         QTimer.singleShot(0, self, self._after_fullscreen_change)
+
+    @staticmethod
+    def _visible_siblings_to_window(
+        content: QWidget,
+        window: QWidget,
+    ) -> tuple[QWidget, ...]:
+        """Return visible chrome outside content's branch, without reparenting it."""
+        hidden: list[QWidget] = []
+        branch = content
+        while branch is not window:
+            parent = branch.parentWidget()
+            if parent is None:
+                break
+            hidden.extend(
+                child
+                for child in parent.children()
+                if (
+                    isinstance(child, QWidget)
+                    and child is not branch
+                    and not child.isWindow()
+                    and child.isVisible()
+                )
+            )
+            branch = parent
+        return tuple(hidden)
 
     def _leave_view_fullscreen(self):
         if self._fullscreen_restore is None:
             return
+        self._fullscreen_transition = True
         restore = self._fullscreen_restore
         self._fullscreen_restore = None
-        if restore.host is not None:
-            restore.window.removeEventFilter(self)
-            if restore.host.layout() is not None:
-                restore.host.layout().removeWidget(self)
-            if restore.parent is not None and restore.layout is not None and hasattr(restore.layout, "insertWidget"):
-                restore.layout.insertWidget(restore.index if restore.index >= 0 else restore.layout.count(), self, 1)
-            elif restore.parent is not None and hasattr(restore.parent, "insertWidget"):
-                restore.parent.insertWidget(restore.index if restore.index >= 0 else restore.parent.count(), self)
-            elif restore.parent is not None:
-                self.setParent(restore.parent)
-            restore.host.hide()
-            restore.host.deleteLater()
         self.fullscreen_button.setText("⛶")
-        self.show()
-        restore.window.setWindowState(restore.window_state)
-        restore.window.show()
+        for widget in restore.hidden_widgets:
+            with suppress(RuntimeError):
+                widget.show()
+        if restore.window_state & Qt.WindowFullScreen:
+            restore.window.showFullScreen()
+        elif restore.window_state & Qt.WindowMaximized:
+            restore.window.showMaximized()
+        else:
+            restore.window.showNormal()
         QTimer.singleShot(0, self, self._after_fullscreen_change)
 
     def _after_fullscreen_change(self):
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
-        self._resize_fullscreen_host()
-        if self._fullscreen_restore is not None:
-            self._fullscreen_restore.window.raise_()
-            self._fullscreen_restore.window.activateWindow()
         self.setFocus(Qt.OtherFocusReason)
         self._gizmo_projection = None
         missing_regular = self._regular_set is None and self._regular_data is not None
@@ -540,22 +543,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._needs_gl_upload = self._needs_gl_upload or missing_regular or missing_solid
         self.place_viewport_overlays()
         self.update()
+        self._fullscreen_transition = False
+        QTimer.singleShot(50, self, self.place_viewport_overlays)
 
-    def _resize_fullscreen_host(self):
-        restore = self._fullscreen_restore
-        if restore is None or restore.host is None:
-            return
-        restore.host.setGeometry(restore.window.rect())
-        restore.host.raise_()
+    def is_fullscreen_transitioning(self) -> bool:
+        return self._fullscreen_transition
 
     def eventFilter(self, obj, event):
-        restore = self._fullscreen_restore
-        if restore is not None and obj is restore.window and event.type() in (
-            QEvent.Resize,
-            QEvent.Show,
-            QEvent.WindowStateChange,
-        ):
-            QTimer.singleShot(0, self, self._resize_fullscreen_host)
         handled = self._overlays.event_filter(obj, event)
         return super().eventFilter(obj, event) if handled is None else handled
 
@@ -708,8 +702,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         layout.addLayout(row)
         return row
 
-    def _data_combo(self, items, slot, current=None) -> QComboBox:
-        combo = QComboBox(self.overlay)
+    def _data_combo(self, items, slot, current=None) -> EmbeddedPopupComboBox:
+        combo = EmbeddedPopupComboBox(self.overlay)
         for label, data in items:
             combo.addItem(label, data)
         if current is not None and (index := combo.findData(current)) >= 0:
@@ -717,8 +711,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         combo.currentIndexChanged.connect(lambda _: slot(combo.currentData()))
         return combo
 
-    def _text_combo(self, items, current: str, slot) -> QComboBox:
-        combo = QComboBox(self.overlay)
+    def _text_combo(
+        self,
+        items,
+        current: str,
+        slot,
+    ) -> EmbeddedPopupComboBox:
+        combo = EmbeddedPopupComboBox(self.overlay)
         combo.addItems(items)
         combo.setCurrentText(current)
         combo.currentTextChanged.connect(slot)
@@ -3118,6 +3117,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._timer.stop()
         self._cancel_probe_shading()
         self._leave_view_fullscreen()
+        self._overlays.cleanup()
         self._cleanup_gl()
         self._clear_scene_memory()
 
@@ -3984,6 +3984,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
+        QTimer.singleShot(0, self, self.place_viewport_overlays)
         self._update_timer_state()
 
     def hideEvent(self, event):

@@ -1,28 +1,50 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QCoreApplication, QEvent, Qt
+from PySide6.QtCore import QCoreApplication, QEvent, QTimer, Qt
 from PySide6.QtWidgets import QLabel, QWidget
 
 
 class ViewportOverlayManager:
-    _blocked_drag_widgets = ("QAbstractButton", "QAbstractSpinBox", "QComboBox", "QAbstractItemView", "QTextEdit", "QScrollBar")
+    _blocked_drag_widgets = (
+        "QAbstractButton",
+        "QAbstractItemView",
+        "QAbstractSlider",
+        "QAbstractSpinBox",
+        "QComboBox",
+        "QLineEdit",
+        "QTextEdit",
+    )
+    _text_input_widgets = (
+        "QAbstractSpinBox",
+        "QComboBox",
+        "QLineEdit",
+        "QTextEdit",
+    )
 
     def __init__(self, view: QWidget, hover_key: Qt.Key | None = None):
         self.view = view
         self.hover_key = hover_key
         self.drag_overlay = self.drag_offset = self.resize_overlay = None
+        self._widgets: list[QWidget] = []
 
-    def setup(self, widget: QWidget, body: QWidget | None = None, fold_button=None) -> None:
+    def setup(
+        self,
+        widget: QWidget,
+        body: QWidget | None = None,
+        fold_button=None,
+    ) -> None:
+        if widget not in self._widgets:
+            self._widgets.append(widget)
         if body is not None:
             widget._viewport_body = body
         if fold_button is not None:
             widget._viewport_fold_button = fold_button
             fold_button.clicked.connect(lambda: self.toggle_fold(widget))
-        grip = QLabel("///", widget)
+        grip = QLabel("◢", widget)
         grip.setObjectName("overlayResizeGrip")
-        grip.setAlignment(Qt.AlignRight)
+        grip.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         grip.setCursor(Qt.SizeFDiagCursor)
-        grip.setFixedHeight(20)
+        grip.setFixedHeight(12)
         grip.setToolTip(QCoreApplication.translate("ViewportOverlay", "Resize panel"))
         grip._viewport_resize_overlay = widget
         if widget.layout() is not None:
@@ -30,13 +52,14 @@ class ViewportOverlayManager:
         for child in (widget, *widget.findChildren(QWidget)):
             child._viewport_drag_overlay = widget
             child.installEventFilter(self.view)
+        QTimer.singleShot(0, self.view, self.place)
 
     def event_filter(self, obj, event):
+        kind = event.type()
         overlay = getattr(obj, "_viewport_drag_overlay", None)
         if not overlay:
             return None
-        kind = event.type()
-        if self._forward_hover_key_event(kind, event):
+        if self._forward_hover_key_event(obj, kind, event):
             return True
         active = self._active_mode(overlay)
         if active and kind == QEvent.Type.MouseMove and event.buttons() & Qt.LeftButton:
@@ -51,12 +74,13 @@ class ViewportOverlayManager:
                 return True
         return None
 
-    def _forward_hover_key_event(self, kind, event) -> bool:
+    def _forward_hover_key_event(self, obj, kind, event) -> bool:
         if (
             kind not in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease)
             or self.hover_key is None
             or getattr(self.view, "_controls", "mesh") == "mesh"
             or event.key() != self.hover_key
+            or any(obj.inherits(name) for name in self._text_input_widgets)
         ):
             return False
         handler = self.view.keyPressEvent if kind == QEvent.Type.KeyPress else self.view.keyReleaseEvent
@@ -105,35 +129,78 @@ class ViewportOverlayManager:
     def resize_to(self, overlay: QWidget, global_pos) -> None:
         margin = 4
         local = overlay.mapFromGlobal(global_pos)
-        max_w = min(overlay.maximumWidth(), self.view.width() - overlay.x() - margin)
-        max_h = min(overlay.maximumHeight(), self.view.height() - overlay.y() - margin)
-        overlay.resize(max(overlay.minimumWidth(), min(local.x(), max_w)), max(overlay.minimumHeight(), min(local.y(), max_h)))
+        position = overlay.pos()
+        max_w = min(overlay.maximumWidth(), self.view.width() - position.x() - margin)
+        max_h = min(overlay.maximumHeight(), self.view.height() - position.y() - margin)
+        overlay.resize(
+            max(overlay.minimumWidth(), min(local.x(), max_w)),
+            max(overlay.minimumHeight(), min(local.y(), max_h)),
+        )
 
     def toggle_fold(self, overlay: QWidget) -> None:
         body = getattr(overlay, "_viewport_body", None)
         if body is None:
             return
-        body.setVisible(not body.isVisible())
+        folding = not body.isHidden()
+        if folding:
+            overlay._viewport_expanded_size = overlay.size()
+            overlay._viewport_expanded_minimum_size = overlay.minimumSize()
+            overlay.setMinimumSize(0, 0)
+        body.setVisible(not folding)
         if button := getattr(overlay, "_viewport_fold_button", None):
-            button.setText(">" if not body.isVisible() else "v")
-        overlay.resize(max(overlay.width(), overlay.sizeHint().width()), max(overlay.height(), overlay.sizeHint().height())) if body.isVisible() else overlay.adjustSize()
+            button.setText("▸" if folding else "▾")
+            button.setToolTip(
+                QCoreApplication.translate(
+                    "ViewportOverlay",
+                    "Expand panel" if folding else "Fold panel",
+                )
+            )
+        if folding:
+            overlay.adjustSize()
+        else:
+            minimum = getattr(overlay, "_viewport_expanded_minimum_size", None)
+            if minimum is not None:
+                overlay.setMinimumSize(minimum)
+            expanded = getattr(overlay, "_viewport_expanded_size", overlay.sizeHint())
+            overlay.resize(expanded.expandedTo(overlay.sizeHint()))
         self.place()
+
+    def set_folded(self, overlay: QWidget, folded: bool) -> None:
+        body = getattr(overlay, "_viewport_body", None)
+        if body is not None and body.isHidden() != bool(folded):
+            self.toggle_fold(overlay)
 
     def place(self) -> None:
         margin = 12
-        for widget in (self.view.overlay, *(child for child in self.view.children() if child is not self.view.overlay)):
-            if not isinstance(widget, QWidget):
-                continue
+        for widget in tuple(self._widgets):
             anchor = getattr(widget, "viewport_anchor", "")
             if widget is self.view.overlay:
                 widget.adjustSize()
             if anchor == "manual":
                 self.place_at(widget, widget.x(), widget.y(), margin)
-            elif anchor == "right":
-                width = min(max(widget.width(), widget.minimumWidth()), widget.maximumWidth(), self.view.width() - margin * 2)
-                height = min(max(widget.height(), widget.minimumHeight()), widget.maximumHeight(), self.view.height() - margin * 2)
-                widget.setGeometry(max(margin, self.view.width() - width - margin), margin, width, height)
+            elif anchor in ("left", "right"):
+                body = getattr(widget, "_viewport_body", None)
+                preferred = getattr(widget, "viewport_preferred_size", None)
+                target_width, target_height = (
+                    preferred
+                    if preferred is not None and (body is None or body.isVisible())
+                    else (widget.width(), widget.height())
+                )
+                width = min(
+                    max(target_width, widget.minimumWidth()),
+                    widget.maximumWidth(),
+                    self.view.width() - margin * 2,
+                )
+                height = min(
+                    max(target_height, widget.minimumHeight()),
+                    widget.maximumHeight(),
+                    self.view.height() - margin * 2,
+                )
+                x = margin if anchor == "left" else max(margin, self.view.width() - width - margin)
+                widget.setGeometry(x, margin, width, height)
                 widget.raise_()
+            elif anchor == "top":
+                self.place_at(widget, (self.view.width() - widget.width()) // 2, margin, margin)
             elif widget is self.view.overlay:
                 widget.move(margin, margin)
                 widget.raise_()
@@ -144,3 +211,6 @@ class ViewportOverlayManager:
             max(margin, min(y, max(margin, self.view.height() - widget.height() - margin))),
         )
         widget.raise_()
+
+    def cleanup(self) -> None:
+        self._widgets.clear()

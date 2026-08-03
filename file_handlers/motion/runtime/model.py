@@ -180,6 +180,7 @@ class MotionTargetDefinition:
     root_motion_mode: RuntimeRootMotionMode = RuntimeRootMotionMode.NONE
     stop_at_motion_end: bool = False
     joint_map_expression_enabled: bool = False
+    after_parent_animation: bool = False
 
     def layer(self, index: int) -> MotionLayerSlot | None:
         return next((item for item in self.layers if item.index == index), None)

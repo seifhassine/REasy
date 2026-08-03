@@ -7,9 +7,9 @@ import numpy as np
 from PySide6.QtCore import QSignalBlocker, QTimer, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QLabel,
     QPushButton,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -27,6 +27,7 @@ from file_handlers.rsz.scn_scene_preview import (
     ScnLoadedMesh,
     ScnScenePreviewWidget,
 )
+from ui.editor_widgets import EmbeddedPopupComboBox
 from ui.scene.scn_visibility_panel import ScnGameObjectVisibilityPanel
 
 from ..evaluation import DeformationTarget, Rig
@@ -147,6 +148,9 @@ class PfbMotionPreviewWidget(QWidget):
             frame_driver=self.scene.preview.set_frame_callback,
             parent=self,
         )
+        # A window-state transition must not stop playback; the containing
+        # preview owns the actual visible/hidden lifecycle.
+        self.playback.set_stop_on_hide(False)
         self.playback.render_requested.connect(self._render)
         self.scene.renderables_changed.connect(self._sync_mesh_targets)
         self.scene.preview.render_failure.connect(
@@ -159,6 +163,11 @@ class PfbMotionPreviewWidget(QWidget):
         super().showEvent(event)
         if self._auto_initialize and not self._initialized and not self._cleaned:
             QTimer.singleShot(0, self, self.initialize)
+
+    def hideEvent(self, event) -> None:
+        if not self.scene.preview.is_fullscreen_transitioning():
+            self.playback.stop()
+        super().hideEvent(event)
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
@@ -174,7 +183,7 @@ class PfbMotionPreviewWidget(QWidget):
 
         self.target_label = QLabel(self.tr("Model"))
         self.workspace.toolbar.addWidget(self.target_label)
-        self.target_combo = QComboBox()
+        self.target_combo = EmbeddedPopupComboBox()
         self.target_combo.setToolTip(
             self.tr(
                 "Alternative same-joints objects with equivalent motion-joint bindings."
@@ -214,8 +223,8 @@ class PfbMotionPreviewWidget(QWidget):
         self.notice_label.hide()
 
         self.animation_pane = MotionEditorPane(self.tr("Animations"), self)
-        self.animation_pane.setMinimumWidth(300)
-        self.animation_pane.setMaximumWidth(470)
+        self.animation_pane.setMinimumWidth(235)
+        self.animation_pane.setMaximumWidth(360)
         self.animation_browser = MotionAnimationBrowser()
         self.animation_browser.selection_changed.connect(
             self._on_animation_selected
@@ -232,8 +241,8 @@ class PfbMotionPreviewWidget(QWidget):
         self.viewport_pane.add_widget(self.scene, 1)
 
         self.scene_pane = MotionEditorPane(self.tr("Scene objects"), self)
-        self.scene_pane.setMinimumWidth(250)
-        self.scene_pane.setMaximumWidth(390)
+        self.scene_pane.setMinimumWidth(195)
+        self.scene_pane.setMaximumWidth(300)
         self.object_visibility = ScnGameObjectVisibilityPanel()
         self.object_visibility.visibility_changed.connect(
             self._on_object_visibility_changed
@@ -241,17 +250,36 @@ class PfbMotionPreviewWidget(QWidget):
         self.object_visibility.focus_keys_changed.connect(
             self.scene.set_focused_renderables
         )
-        self.scene_pane.add_widget(self.object_visibility, 1)
 
         self.channel_panel = MotionChannelPanel()
         self.channel_panel.changed.connect(self._load_animation)
         self.channel_panel.hide()
-        self.scene_pane.add_widget(self.channel_panel)
+        self.scene_details_splitter = QSplitter(
+            Qt.Orientation.Vertical,
+            self.scene_pane,
+        )
+        self.scene_details_splitter.setChildrenCollapsible(False)
+        self.scene_details_splitter.addWidget(self.object_visibility)
+        self.scene_details_splitter.addWidget(self.channel_panel)
+        self.scene_details_splitter.setStretchFactor(0, 3)
+        self.scene_details_splitter.setStretchFactor(1, 2)
+        self.scene_pane.add_widget(self.scene_details_splitter, 1)
 
         self.workspace.add_pane(self.animation_pane, 0)
         self.workspace.add_pane(self.viewport_pane, 1)
         self.workspace.add_pane(self.scene_pane, 0)
-        self.workspace.splitter.setSizes([330, 900, 290])
+        self.workspace.splitter.setSizes([250, 900, 210])
+        viewport = self.scene.preview
+        set_fullscreen_content = getattr(viewport, "set_fullscreen_content", None)
+        if callable(set_fullscreen_content):
+            set_fullscreen_content(self.workspace.splitter)
+        hud = getattr(viewport, "overlay", None)
+        if hud is not None:
+            hud.viewport_anchor = "top"
+            viewport.set_viewport_overlay_folded(hud, True)
+        place_overlays = getattr(viewport, "place_viewport_overlays", None)
+        if callable(place_overlays):
+            QTimer.singleShot(0, viewport, place_overlays)
 
     def initialize(self) -> None:
         if self._initialized or self._cleaned:
@@ -503,6 +531,15 @@ class PfbMotionPreviewWidget(QWidget):
     def _on_composition_toggled(self, enabled: bool) -> None:
         self.channel_panel.setVisible(enabled)
         self.channel_panel.set_active(enabled)
+        if enabled:
+            QTimer.singleShot(0, self._size_layer_composition_panel)
+
+    def _size_layer_composition_panel(self) -> None:
+        height = self.scene_details_splitter.height()
+        if self.channel_panel.isVisible() and height > 0:
+            self.scene_details_splitter.setSizes(
+                [height * 3 // 5, height * 2 // 5]
+            )
 
     def _on_mesh_changed(self, _index: int) -> None:
         binding = self.current_target
@@ -835,7 +872,6 @@ class PfbMotionPreviewWidget(QWidget):
             owner.asset.renderable,
         )
         pose_targets = resolve_same_joints_pose_targets(
-            self.session,
             graph,
             group,
             owner.asset.renderable,

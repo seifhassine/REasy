@@ -27,8 +27,8 @@ class MotionEditorPane(QFrame):
         header = QFrame(self)
         header.setObjectName("motionPaneHeader")
         self.header_layout = QHBoxLayout(header)
-        self.header_layout.setContentsMargins(10, 7, 8, 7)
-        self.header_layout.setSpacing(6)
+        self.header_layout.setContentsMargins(6, 3, 4, 3)
+        self.header_layout.setSpacing(3)
         self.title_label = QLabel(title.upper(), header)
         self.title_label.setObjectName("motionPaneTitle")
         self.header_layout.addWidget(self.title_label)
@@ -38,8 +38,8 @@ class MotionEditorPane(QFrame):
         self.body = QWidget(self)
         self.body.setObjectName("motionPaneBody")
         self.body_layout = QVBoxLayout(self.body)
-        self.body_layout.setContentsMargins(8, 8, 8, 8)
-        self.body_layout.setSpacing(7)
+        self.body_layout.setContentsMargins(4, 4, 4, 4)
+        self.body_layout.setSpacing(4)
         root.addWidget(self.body, 1)
 
     def add_widget(self, widget: QWidget, stretch: int = 0) -> None:
@@ -87,8 +87,8 @@ class MotionEditorWorkspace(QWidget):
 def _editor_stylesheet(settings: dict) -> str:
     colors = get_color_scheme(settings.get("tree_highlight_color"))
     background = QColor(colors["bg"])
-    panel = background.lighter(112).name()
-    header = background.lighter(120).name()
+    panel = background.lighter(120).name()
+    header = background.lighter(138).name()
     viewport = background.darker(118).name()
     border = colors["border"]
     input_bg = colors["input_bg"]
@@ -114,7 +114,7 @@ def _editor_stylesheet(settings: dict) -> str:
             background: {header}; border-bottom: 1px solid {border};
         }}
         QLabel#motionPaneTitle {{
-            color: rgba(255,255,255,180); font-size: 10px;
+            color: rgba(255,255,255,180); font-size: 9px;
             font-weight: 700; letter-spacing: 1px;
         }}
         QLabel#motionInspectorLabel {{
@@ -123,7 +123,7 @@ def _editor_stylesheet(settings: dict) -> str:
         }}
         QLabel#motionCountLabel {{
             color: rgba(255,255,255,170); background: {input_bg};
-            border-radius: 8px; padding: 2px 7px;
+            border-radius: 7px; padding: 1px 6px;
         }}
         QLabel#motionNotice {{
             background: rgba(219,154,57,35); color: rgba(255,235,205,230);
@@ -145,7 +145,7 @@ def _editor_stylesheet(settings: dict) -> str:
         QWidget#motionEditorWorkspace QComboBox,
         QWidget#motionEditorWorkspace QDoubleSpinBox {{
             background: {input_bg}; border: 1px solid {border};
-            border-radius: 3px; padding: 4px 6px; min-height: 20px;
+            border-radius: 3px; padding: 2px 4px; min-height: 16px;
         }}
         QWidget#motionEditorWorkspace QListWidget {{
             background: {background.name()}; border: 1px solid {border};
@@ -163,7 +163,8 @@ def _editor_stylesheet(settings: dict) -> str:
         QWidget#motionEditorWorkspace QPushButton,
         QWidget#motionEditorWorkspace QToolButton {{
             background: {input_bg}; border: 1px solid {border};
-            border-radius: 3px; padding: 4px 8px; min-height: 22px;
+            border-radius: 3px; padding: 2px 5px;
+            min-width: 0; min-height: 16px;
         }}
         QWidget#motionEditorWorkspace QPushButton:hover,
         QWidget#motionEditorWorkspace QToolButton:hover {{
@@ -174,7 +175,7 @@ def _editor_stylesheet(settings: dict) -> str:
             background: {highlight};
         }}
         QWidget#motionPlaybackControls {{
-            border-top: 1px solid {border}; padding-top: 7px;
+            border-top: 1px solid {border}; padding-top: 5px;
         }}
         QWidget#motionEditorWorkspace QSlider::groove:horizontal {{
             height: 4px; background: {input_bg}; border-radius: 2px;
@@ -183,7 +184,7 @@ def _editor_stylesheet(settings: dict) -> str:
             background: {highlight}; border-radius: 2px;
         }}
         QWidget#motionEditorWorkspace QSlider::handle:horizontal {{
-            width: 12px; margin: -5px 0; background: white;
-            border: 1px solid {border}; border-radius: 6px;
+            width: 10px; margin: -4px 0; background: white;
+            border: 1px solid {border}; border-radius: 5px;
         }}
     """
