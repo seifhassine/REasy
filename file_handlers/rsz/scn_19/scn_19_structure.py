@@ -437,6 +437,7 @@ def build_embedded_rsz(rui, type_registry=None):
                     filtered_instance_infos.append(info)
         
         mini_scn.instance_infos = filtered_instance_infos
+        mini_scn._refresh_instance_crcs()
         
         updated_object_table = []
         if hasattr(rui, 'embedded_object_table'):

@@ -906,6 +906,14 @@ class RszFile:
         for type_id in type_ids:
             cache[type_id] = type_registry.get_type_info(type_id)
 
+    def _refresh_instance_crcs(self):
+        if not self.type_registry:
+            return
+        for instance in self.instance_infos:
+            type_info = self.type_registry.get_type_info(instance.type_id)
+            if type_info:
+                instance.crc = int(type_info.get("crc", "0"), 16)
+
     def _parse_standard_rsz_userdata(self, data, rsz_base_offset=None):
         """Parse standard RSZ userdata entries (16 bytes each)"""
         base_offset = self.header.data_offset if rsz_base_offset is None else rsz_base_offset
@@ -1725,6 +1733,8 @@ class RszFile:
             self.set_resource_string(ri, resource_path)
 
     def build(self, special_align_enabled = False) -> bytes:
+        self._refresh_instance_crcs()
+
         if self.auto_resource_management:
             self.rebuild_resources()
 
@@ -2132,6 +2142,7 @@ class RszFile:
 
     def build_headless(self, special_align_enabled = False) -> bytes:
         """Build a headless RSZ payload (RSZ section only, no outer file header/tables)."""
+        self._refresh_instance_crcs()
         if self.rsz_header:
             self.rsz_header.object_count = len(self.object_table)
             self.rsz_header.instance_count = len(self.instance_infos)
