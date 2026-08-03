@@ -34,7 +34,7 @@ REasy GUI is currently available in English and Chinese.
 | UVAR      | ✅       | Most Titles  |
 | RCOL      | ✅    <sub><sup>[RE7, Wilds NOT SUPPORTED]</sup></sub>   | Most titles       |
 | SCN/PFB/User       | ✅       | Most titles       |
-| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      |  DD2, MHRise, DMC5, RE2, RE3, RE2RT, RE3RT, RE4, RE7RT, RE8, SF6      |
+| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      |  Most titles      |
 | MSG       | ✅       | Most titles      |
 | MESH (3D Viewing)       | ✅ <sub><sup>[RE7, KGPG NOT SUPPORTED]</sup></sub>       | Most titles      |
 | PAK       | ✅       | Most titles      |
