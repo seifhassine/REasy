@@ -907,7 +907,7 @@ class REasyEditorApp(QMainWindow):
             except RuntimeError:
                 pass
 
-    def add_tab(self, filename=None, data=None, pak_source_path=None, pak_project_dir=None):
+    def add_tab(self, filename=None, data=None, pak_source_path=None, pak_project_dir=None, resource_context=None):
         if self.scenes.route_owned_open(filename, pak_source_path, pak_project_dir):
             return None
         if filename:
@@ -944,6 +944,8 @@ class REasyEditorApp(QMainWindow):
         tab = None
         try:
             handler = get_handler_for_data(data, filename)
+            if resource_context is not None:
+                handler.resource_context = resource_context
             if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
                 if not self.settings.get("rcol_json_path"):
                     msg = QMessageBox(QMessageBox.Warning,

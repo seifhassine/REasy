@@ -121,6 +121,7 @@ class PakBrowserDialog(QDialog):
 		self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
 		self.tree.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
 		self.tree.viewport().customContextMenuRequested.connect(self._show_tree_context_menu)
+		self.tree.doubleClicked.connect(self._open_tree_entry)
 		self.icon_view = QListView(self)
 		self.icon_view.setViewMode(QListView.IconMode)
 		self.icon_view.setResizeMode(QListView.Adjust)
@@ -515,10 +516,51 @@ class PakBrowserDialog(QDialog):
 		self._schedule_visible_thumbnails()
 
 	def _open_icon_entry(self, index):
-		if not index.data(self._ITEM_IS_DIR_ROLE):
+		if not index.isValid():
 			return
-		self._icon_directory = index.data(self._ITEM_EXTRACT_PATH_ROLE) or ""
-		self._rebuild_icon_model()
+		path = index.data(self._ITEM_EXTRACT_PATH_ROLE) or ""
+		if index.data(self._ITEM_IS_DIR_ROLE):
+			self._icon_directory = path
+			self._rebuild_icon_model()
+		elif path:
+			self._open_file_entry(path)
+
+	def _open_tree_entry(self, index):
+		if not index.isValid() or index.data(self._ITEM_IS_DIR_ROLE):
+			return
+		model = self.tree.model()
+		if isinstance(model, (QSortFilterProxyModel, QStringListModel)):
+			path = index.data(Qt.DisplayRole)
+		else:
+			path = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		if isinstance(path, str) and path:
+			self._open_file_entry(path)
+
+	def _open_file_entry(self, path: str) -> bool:
+		try:
+			reader = self._current_reader()
+			if reader is None:
+				return False
+			context = resource_context_for_app(self.parent())
+			if context is not None:
+				context = context.with_pak_reader(reader)
+			entry = (
+				int(path.split("/", 1)[1], 16)
+				if path.startswith(UNKNOWN_PATH_PREFIX)
+				else path
+			)
+			stream = reader.get_file(entry)
+			if stream:
+				self.parent().add_tab(
+					path,
+					stream.read(),
+					pak_source_path=path,
+					resource_context=context,
+				)
+			return bool(stream)
+		except Exception as e:
+			QMessageBox.critical(self, self.tr("Open failed"), str(e))
+			return False
 
 	def _selected_paks(self) -> List[str]:
 		return [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
