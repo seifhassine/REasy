@@ -17,7 +17,7 @@ if /I "%GITHUB_ACTIONS%"=="true" (
   call "%~dp0prepare_env.bat" || exit /b 1
 )
 
-"%PY%" -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
+"%PY%" -c "import runpy, sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); runpy.run_module('PyInstaller', run_name='__main__')" --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --collect-submodules file_handlers ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
   --hidden-import fast_string_scan --collect-binaries fast_string_scan ^

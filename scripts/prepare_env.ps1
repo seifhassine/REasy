@@ -22,6 +22,13 @@ function OK($exe, [string[]] $argv) {
     $LASTEXITCODE -eq 0
 }
 function Clean { if (Test-Path $venv) { Remove-Item -LiteralPath $venv -Recurse -Force } }
+function Create-Venv($exe, [string[]] $prefix) {
+    # Prefer the unpacked stdlib so Windows launchers can be copied even when venv is also in pythonXY.zip.
+    $create = "import sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); import venv; venv.create(sys.argv[1], system_site_packages=True, **({'scm_ignore_files': {'git'}} if sys.version_info >= (3, 13) else {}))"
+    if (-not (OK $exe ($prefix + @("-c", $create, $venv)))) { Clean; return $false }
+    if (-not (Test-Path $py) -or -not (OK $py @("-c", $check))) { Clean; return $false }
+    return $true
+}
 function Uses-SystemSite {
     $cfg = Join-Path $venv "pyvenv.cfg"
     (Test-Path $cfg) -and ((Get-Content $cfg -Raw) -match "include-system-site-packages\s*=\s*true")
@@ -42,10 +49,10 @@ function Prep {
     return $true
 }
 function Try-Python($exe, [string[]] $prefix, $name) {
-    Write-Output "Trying $name..."
+    Write-Host "Trying $name..."
     if (-not (OK $exe ($prefix + @("-c", $check)))) { return $false }
     Clean
-    if (-not (OK $exe ($prefix + @("-m", "venv", "--system-site-packages", $venv)))) { return $false }
+    if (-not (Create-Venv $exe $prefix)) { return $false }
     if (Prep) { return $true }
     Clean
     return $false
@@ -127,12 +134,12 @@ $ready = ($UseCurrentPython -or ((Test-Path $py) -and (Uses-SystemSite))) -and (
 if (-not $ready) {
     if ($UseCurrentPython) { Write-Error "Python 3.12+ with dependencies is required."; exit 1 }
     Clean
+    $ready = Try-Python "python" ([string[]]@()) "python"
     $versions = @()
-    if (Get-Command py -ErrorAction SilentlyContinue) {
+    if (-not $ready -and (Get-Command py -ErrorAction SilentlyContinue)) {
         $versions = & py -0p 2>$null | ForEach-Object { if ($_ -match "^\s*(-V:3(?:\.\d+)?)\b") { $Matches[1] } }
     }
     foreach ($v in $versions) { if (Try-Python "py" ([string[]]@($v)) $v) { $ready = $true; break } }
-    if (-not $ready) { $ready = Try-Python "python" ([string[]]@()) "python" }
 }
 if (-not $ready) { Write-Error "Python 3.12+ with pip is required."; exit 1 }
 
