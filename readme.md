@@ -50,6 +50,7 @@ REasy GUI is currently available in English and Chinese.
 | WCC       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
 | CLIP/TML/UCURVE       | ✅       |    Most titles (up to Pragmata)  |
+| MOTLIST       | DMC5 Previewing Only       |    DMC5  |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
   
