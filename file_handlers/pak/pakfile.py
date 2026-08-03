@@ -1,6 +1,7 @@
 from __future__ import annotations
 import io
 import struct
+import threading
 from dataclasses import dataclass
 import zstandard as zstd
 from typing import Optional, BinaryIO, List, Sequence
@@ -24,6 +25,16 @@ _HEADER_SKIP_BY_FLAG = (
 CHUNK_SIZE_SHIFT = 10
 CHUNK_UNCOMPRESSED_SIZE = 512 * 1024
 CHUNKED_ATTRIBS = {0x1000000, 0x1000400}
+_ZSTD_THREAD_STATE = threading.local()
+
+
+def _get_thread_zstd_decompressor():
+    decompressor = getattr(_ZSTD_THREAD_STATE, "decompressor", None)
+    if decompressor is None:
+        decompressor = zstd.ZstdDecompressor()
+        _ZSTD_THREAD_STATE.decompressor = decompressor
+    return decompressor
+
 
 def _skip_optional_header_sections(f: BinaryIO, features: int) -> None:
     for flag, skip_len in _HEADER_SKIP_BY_FLAG:
@@ -393,11 +404,11 @@ def _read_entry_raw(
                 except zlib.error:
                     out_stream.seek(pos)
                     out_stream.truncate(pos)
-                    dctx = zstd_decompressor or _ZSTD_CTX or zstd.ZstdDecompressor()
+                    dctx = zstd_decompressor or _get_thread_zstd_decompressor()
                     dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
         elif entry.compression == 2:
             pos = out_stream.tell()
-            dctx = zstd_decompressor or _ZSTD_CTX or zstd.ZstdDecompressor()
+            dctx = zstd_decompressor or _get_thread_zstd_decompressor()
             try:
                 dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
             except Exception:
@@ -413,9 +424,3 @@ def _read_entry_raw(
             out_stream.write(comp_view.tobytes())
     finally:
         comp_view.release()
-
-try:
-    import zstandard as _zstd_mod
-    _ZSTD_CTX = _zstd_mod.ZstdDecompressor()
-except Exception:
-    _ZSTD_CTX = None
