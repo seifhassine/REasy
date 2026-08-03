@@ -1451,6 +1451,16 @@ Skipped: {count} (missing, invalid or oversized names)</source>
         <translation>配置的 DeepSeek 模型所使用的 API 密钥。除非启用“记住密钥”，否则密钥仅保留在内存中。也可以设置 DEEPSEEK_API_KEY 环境变量。</translation>
     </message>
     <message>
+        <location filename="../../ui/ai/chat_dock.py" line="1042"/>
+        <source>Set up DeepSeek</source>
+        <translation>设置 DeepSeek</translation>
+    </message>
+    <message>
+        <location filename="../../ui/ai/chat_dock.py" line="1054"/>
+        <source>1. &lt;a href="https://platform.deepseek.com/"&gt;Create or sign in to a DeepSeek account&lt;/a&gt;.&lt;br&gt;2. &lt;a href="https://platform.deepseek.com/account/balance"&gt;Top up your balance for API usage&lt;/a&gt;.&lt;br&gt;3. &lt;a href="https://platform.deepseek.com/api_keys"&gt;Create an API key&lt;/a&gt; and paste it above.</source>
+        <translation>1. &lt;a href="https://platform.deepseek.com/"&gt;创建或登录 DeepSeek 账户&lt;/a&gt;。&lt;br&gt;2. &lt;a href="https://platform.deepseek.com/account/balance"&gt;为 API 使用充值余额&lt;/a&gt;。&lt;br&gt;3. &lt;a href="https://platform.deepseek.com/api_keys"&gt;创建 API 密钥&lt;/a&gt;，然后粘贴到上方。</translation>
+    </message>
+    <message>
         <location filename="../../ui/ai/chat_dock.py" line="2497"/>
         <source>AI request timed out.</source>
         <translation>AI 请求超时。</translation>

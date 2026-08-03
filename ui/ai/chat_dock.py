@@ -1035,6 +1035,43 @@ acting on file state. Return only the compacted memory.
         connection_row.addWidget(self.remember_key_check)
         settings_layout.addLayout(connection_row)
 
+        self.api_key_help = QFrame(self.settings_panel)
+        self.api_key_help.setObjectName("assistantApiKeyHelp")
+        setup_layout = QVBoxLayout(self.api_key_help)
+        setup_layout.setContentsMargins(10, 8, 10, 8)
+        setup_layout.setSpacing(4)
+
+        setup_title = QLabel(
+            self.tr("Set up DeepSeek"),
+            self.api_key_help,
+        )
+        setup_title.setObjectName("assistantApiKeyHelpTitle")
+        setup_layout.addWidget(setup_title)
+
+        setup_text = QLabel(self.api_key_help)
+        setup_text.setObjectName("assistantApiKeyHelpText")
+        setup_text.setTextFormat(Qt.RichText)
+        setup_text.setText(
+            self.tr(
+                '1. <a href="https://platform.deepseek.com/">'
+                "Create or sign in to a DeepSeek account</a>.<br>"
+                '2. <a href="https://platform.deepseek.com/account/balance">'
+                "Top up your balance for API usage</a>.<br>"
+                '3. <a href="https://platform.deepseek.com/api_keys">'
+                "Create an API key</a> and paste it above."
+            )
+        )
+        setup_text.setOpenExternalLinks(True)
+        setup_text.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        setup_text.setWordWrap(True)
+        setup_text.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
+        setup_layout.addWidget(setup_text)
+        self.api_key_help.setSizePolicy(
+            QSizePolicy.Preferred,
+            QSizePolicy.Minimum,
+        )
+        settings_layout.addWidget(self.api_key_help)
+
         self._initialize_api_key_storage()
         self.api_key_edit.setVisible(configured_provider.requires_api_key)
         self.remember_key_check.setVisible(configured_provider.requires_api_key)
@@ -1053,6 +1090,8 @@ acting on file state. Return only the compacted memory.
         self.api_key_edit.editingFinished.connect(
             self._save_remembered_api_key_if_needed
         )
+        self.api_key_edit.textChanged.connect(self._refresh_api_key_help)
+        self._refresh_api_key_help()
 
         self.thinking_controls = QWidget(self.settings_panel)
         self.thinking_controls.setObjectName("thinkingControls")
@@ -1064,6 +1103,7 @@ acting on file state. Return only the compacted memory.
         thinking_label.setObjectName("thinkingModeLabel")
         thinking_label.setToolTip(self.tr("DeepSeek thinking mode"))
         thinking_label.setFixedWidth(56)
+        thinking_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         thinking_row.addWidget(thinking_label)
 
         self.thinking_combo = QComboBox(self.thinking_controls)
@@ -1088,6 +1128,9 @@ acting on file state. Return only the compacted memory.
         )
         self.reasoning_effort_label.setObjectName("reasoningEffortLabel")
         self.reasoning_effort_label.setToolTip(self.tr("Reasoning effort"))
+        self.reasoning_effort_label.setAlignment(
+            Qt.AlignLeft | Qt.AlignVCenter
+        )
         thinking_row.addWidget(self.reasoning_effort_label)
 
         self.reasoning_effort_combo = QComboBox(self.thinking_controls)
@@ -1107,16 +1150,19 @@ acting on file state. Return only the compacted memory.
         self.reasoning_effort_combo.currentIndexChanged.connect(
             self._save_reasoning_effort
         )
-        thinking_row.addWidget(self.reasoning_effort_combo, 1)
+        thinking_row.addWidget(self.reasoning_effort_combo)
+        thinking_row.addStretch(1)
         settings_layout.addWidget(self.thinking_controls)
         self._refresh_thinking_controls()
 
         context_row = QHBoxLayout()
+        context_row.setContentsMargins(2, 0, 2, 0)
         context_row.setSpacing(7)
         context_label = QLabel(self.tr("Context"), self.settings_panel)
         context_label.setObjectName("contextWindowLabel")
         context_label.setToolTip(self.tr("Context window"))
         context_label.setFixedWidth(56)
+        context_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         context_row.addWidget(context_label)
 
         self.context_combo = QComboBox(self.settings_panel)
@@ -1380,6 +1426,22 @@ acting on file state. Return only the compacted memory.
             }}
             QLabel#contextWindowHint {{
                 color: #77828f;
+                background-color: transparent;
+                font-size: 8pt;
+            }}
+            QFrame#assistantApiKeyHelp {{
+                background-color: #20262e;
+                border: 1px solid #35404c;
+                border-radius: 8px;
+            }}
+            QLabel#assistantApiKeyHelpTitle {{
+                color: #dce3ea;
+                background-color: transparent;
+                font-size: 8pt;
+                font-weight: 600;
+            }}
+            QLabel#assistantApiKeyHelpText {{
+                color: #9aa7b5;
                 background-color: transparent;
                 font-size: 8pt;
             }}
@@ -1764,6 +1826,7 @@ acting on file state. Return only the compacted memory.
         self.api_key_edit.setVisible(provider.requires_api_key)
         self.remember_key_check.setVisible(provider.requires_api_key)
         self.endpoint_edit.setVisible(provider.endpoint_setting is not None)
+        self._refresh_api_key_help()
         if hasattr(self, "privacy_note"):
             self.privacy_note.setText(self._privacy_text())
 
@@ -2105,6 +2168,12 @@ acting on file state. Return only the compacted memory.
             os.environ.get(environment_key, "").strip()
             if environment_key
             else ""
+        )
+
+    def _refresh_api_key_help(self):
+        provider = self._provider_config()
+        self.api_key_help.setVisible(
+            provider.requires_api_key and not self._api_key()
         )
 
     def _initialize_api_key_storage(self):
