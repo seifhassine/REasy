@@ -705,6 +705,7 @@ class ProjectManager(QDockWidget):
             "filter_text": self.pak_filter_edit.text(),
             "ignore_mods": self.pak_ignore_mods_cb.isChecked(),
             "index_dirty": self._pak_index_dirty,
+            "scroll_value": self.tree_pak.verticalScrollBar().value(),
             "signature": (self._path_key(self.pak_dir), signature),
         }
 
@@ -747,6 +748,14 @@ class ProjectManager(QDockWidget):
             self.tree_pak.setModel(
                 self._pak_filter_proxy if state.get("filter_text") else self._pak_tree_model
             )
+            scroll_value = state.get("scroll_value")
+            if scroll_value is not None:
+                self.tree_pak.doItemsLayout()
+                scroll_bar = self.tree_pak.verticalScrollBar()
+                scroll_bar.setValue(max(
+                    scroll_bar.minimum(),
+                    min(int(scroll_value), scroll_bar.maximum()),
+                ))
             self._pak_index_dirty = state.get("index_dirty", self._pak_tree_model is None)
             self._update_path_label()
             return True
