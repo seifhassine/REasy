@@ -253,9 +253,9 @@ class MeshMaterialSession(QObject):
     def preview_image(self, binding: MeshMaterialBinding) -> QImage | None:
         self.ensure_texture(binding)
         request = self._primary_requests.get(id(binding))
-        path = request.resolved_path if request is not None else ""
-        if not path:
+        if request is None or not request.resolved_path:
             return None
+        path = request.resolved_path
         if path in self._preview_cache:
             return self._preview_cache[path]
         parsed = self._parse_texture(path, request.resolved_data)

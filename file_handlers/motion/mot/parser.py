@@ -69,6 +69,7 @@ class MotV65Parser:
         loop_time = c.f32(base + 0x5C, "MOT loop time")
         if loop_time not in (-1.0, 0.0):
             raise MotionParseError(f"{c.label}: loop time must be -1 or 0")
+        looping = not loop_time
         raw_start = c.f32(base + 0x60, "MOT raw start")
         raw_end = c.f32(base + 0x64, "MOT raw end")
         joint_count = c.u16(base + 0x68, "MOT joint count")
@@ -155,7 +156,7 @@ class MotV65Parser:
         sync_offset = block(sync_stored, sync_count > 0, "sync data")
         if sync_offset is not None:
             sync_points, cursor_state[0] = self._parse_sync(
-                c, base, sync_offset, sync_count, end_frame, loop_time == 0.0
+                c, base, sync_offset, sync_count, end_frame, looping
             )
 
         expected_end = align_up(cursor_state[0], 16)
@@ -165,7 +166,7 @@ class MotV65Parser:
         result = Motion(
             name=name,
             end_frame=end_frame,
-            looping=loop_time == 0.0,
+            looping=looping,
             raw_start_frame=raw_start,
             raw_end_frame=raw_end,
             skeleton=skeleton,
@@ -195,7 +196,7 @@ class MotV65Parser:
             record = table + index * 0x50
             name_ptr = c.u64(record, "joint name pointer")
             name, _ = c.utf16_z(base + name_ptr, "joint name")
-            if c.f32(record + 0x2C, "joint translation pad") != 0.0 or c.u32(record + 0x4C):
+            if c.u32(record + 0x2C, "joint translation pad") or c.u32(record + 0x4C):
                 raise MotionParseError(f"{c.label}: invalid joint padding")
             if c.u32(record + 0x44) != murmur3_hash(name.encode("utf-16le")):
                 raise MotionParseError(f"{c.label}: joint name hash mismatch")

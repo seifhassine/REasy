@@ -115,7 +115,7 @@ class MeshBlendShapeDeformer:
         selected = []
         for name, value in weights:
             weight = float(value)
-            if name in self.channels and weight != 0.0:
+            if name in self.channels and weight:
                 selected.append((name, weight))
         selected = tuple(selected)
         if selected == self._weights:

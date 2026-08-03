@@ -98,7 +98,7 @@ class DeformationWeightEvaluator:
             for source in self.base.values()
         ) and all(
             not sources
-            or layer.weight == 0.0
+            or not layer.weight
             or (
                 layer.timing.constant_for_nonnegative_frames
                 and all(

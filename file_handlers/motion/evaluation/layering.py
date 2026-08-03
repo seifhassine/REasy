@@ -60,7 +60,7 @@ class LayerTiming:
     def weight_at(self, frame: float) -> float:
         if frame < self.start_frame:
             return 0.0
-        if self.fade_in_frames == 0.0:
+        if not self.fade_in_frames:
             return 1.0
         amount = min(1.0, (frame - self.start_frame) / self.fade_in_frames)
         if self.curve is LayerInterpolationCurve.LINEAR:
@@ -263,7 +263,7 @@ class LayeredPoseEvaluator:
             base_layer_key=base_layer_key,
         )
         self.time_invariant = base.time_invariant and all(
-            layer.source.weight == 0.0
+            not layer.source.weight
             or (
                 layer.evaluator.time_invariant
                 and layer.source.timing.constant_for_nonnegative_frames

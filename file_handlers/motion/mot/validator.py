@@ -244,13 +244,16 @@ class MotV65Validator:
         frames = grid.frames
         if not motion.looping:
             leading = 0
-            while leading < len(frames) and frames[leading] == 0.0:
+            while leading < len(frames) and not frames[leading]:
                 leading += 1
             start = leading - 1 if grid.block_count > 1 and leading > 0 else 0
             trailing = 0
             while (
                 trailing < len(frames)
-                and frames[len(frames) - trailing - 1] == motion.end_frame
+                and math.isclose(
+                    frames[len(frames) - trailing - 1],
+                    motion.end_frame,
+                )
             ):
                 trailing += 1
             end = (
@@ -263,11 +266,11 @@ class MotV65Validator:
             return start, end
         if len(frames) <= 1:
             return 0, 0
-        minimum = min(frames[:-1])
-        return (
-            max(index for index, frame in enumerate(frames[:-1]) if frame == minimum),
-            0,
+        phase = min(
+            range(len(frames) - 1),
+            key=lambda index: (frames[index], -index),
         )
+        return phase, 0
 
     @classmethod
     def expected_selector(cls, motion: Motion) -> int:

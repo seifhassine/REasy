@@ -15,7 +15,9 @@ def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3) -> Rig:
     """
     if motion.skeleton is None or not motion.skeleton.joints:
         raise ValueError("motion has no source skeleton")
-    if len(scale) != 3 or not all(math.isfinite(value) and value != 0.0 for value in scale):
+    if len(scale) != 3 or any(
+        not math.isfinite(value) or not value for value in scale
+    ):
         raise ValueError("source-rig scale must contain three finite nonzero values")
 
     joints = motion.skeleton.joints

@@ -128,7 +128,7 @@ def binding_reaches_dominant_branch(binding: MotionRigBinding) -> bool:
         return False
 
     source_ids = {id(joint) for joint in source_joints}
-    descendant_counts = {identity: 0 for identity in source_ids}
+    descendant_counts = dict.fromkeys(source_ids, 0)
     for node in motion.animation_nodes:
         joint = node.joint
         seen: set[int] = set()
