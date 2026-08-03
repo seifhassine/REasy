@@ -26,6 +26,7 @@ from PySide6.QtCore import (
     Qt,
     QTimer,
     QUrl,
+    QSize,
 )
 from PySide6.QtGui import (
     QIcon,
@@ -33,6 +34,9 @@ from PySide6.QtGui import (
     QKeySequence,
     QDesktopServices,
     QColor,
+    QPainter,
+    QPen,
+    QPixmap,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -49,6 +53,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QListWidget,
     QListWidgetItem,
+    QToolButton,
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
@@ -184,9 +189,14 @@ class REasyEditorApp(QMainWindow):
         self.project_workspace = ProjectWorkspaceController(self, self.notebook, self.tabs)
         self.ai_chat_dock = AiChatDock(self)
         self.addDockWidget(Qt.RightDockWidgetArea, self.ai_chat_dock)
-        ai_chat_action = self.ai_chat_dock.toggleViewAction()
+        self._ai_chat_visibility_tracking = False
+        ai_chat_visible = bool(self.settings.get("show_ai_chat", False))
+        ai_chat_action = QAction(self.tr("AI Assistant"), self)
+        self.ai_chat_action = ai_chat_action
         ai_chat_action.setText(self.tr("AI Assistant"))
         ai_chat_action.setObjectName("view_ai_chat")
+        ai_chat_action.setCheckable(True)
+        ai_chat_action.setChecked(ai_chat_visible)
         ai_chat_action.setShortcut(
             QKeySequence(
                 self.settings.get("keyboard_shortcuts", {}).get(
@@ -197,10 +207,40 @@ class REasyEditorApp(QMainWindow):
         )
         self.view_menu.addSeparator()
         self.view_menu.addAction(ai_chat_action)
-        self.ai_chat_dock.setVisible(self.settings.get("show_ai_chat", True))
-        # QAction.triggered only records an intentional menu/shortcut toggle;
-        # parent-window hide/show events must not overwrite the preference.
-        ai_chat_action.triggered.connect(self._on_ai_chat_visibility_changed)
+        self.ai_chat_dock.setVisible(ai_chat_visible)
+        ai_chat_action.triggered.connect(
+            self._on_ai_chat_action_triggered
+        )
+
+        self.ai_chat_button = QToolButton(self.menuBar())
+        self.ai_chat_button.setObjectName("aiAssistantMenuButton")
+        self.ai_chat_button.setText(self.tr("AI"))
+        self.ai_chat_button.setAccessibleName(self.tr("AI Assistant"))
+        self.ai_chat_button.setToolTip(
+            self.tr("Show or hide AI Assistant")
+        )
+        self.ai_chat_button.setCheckable(True)
+        self.ai_chat_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.ai_chat_button.setIconSize(QSize(12, 12))
+        self.ai_chat_button.setFixedHeight(18)
+        self.ai_chat_button.setChecked(ai_chat_visible)
+        self.ai_chat_button.clicked.connect(
+            lambda _checked=False: ai_chat_action.trigger()
+        )
+        self.ai_chat_dock.visibilityChanged.connect(
+            self._sync_ai_chat_controls
+        )
+        self.menuBar().setCornerWidget(
+            self.ai_chat_button,
+            Qt.TopRightCorner,
+        )
+        self._apply_ai_menu_button_style()
+        self._ai_chat_visibility_tracking = True
+        app = QApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(
+                self._stop_ai_chat_visibility_tracking
+            )
 
         if self.settings.get("show_debug_console", True):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
@@ -611,8 +651,79 @@ class REasyEditorApp(QMainWindow):
     def _apply_style(self, colors):
         self.setStyleSheet(get_main_stylesheet(colors))
         self.home_widget.set_theme(colors, self._theme_accent_color().name())
+        self._apply_ai_menu_button_style()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.apply_theme()
+
+    def _apply_ai_menu_button_style(self):
+        if not hasattr(self, "ai_chat_button"):
+            return
+        accent = self._theme_accent_color().name()
+        self.ai_chat_button.setIcon(self._make_ai_bot_icon(accent))
+        self.ai_chat_button.setStyleSheet(
+            f"""
+            QToolButton#aiAssistantMenuButton {{
+                background: transparent;
+                color: #c4c4c4;
+                border: 1px solid transparent;
+                border-radius: 6px;
+                padding: 0px 8px;
+                margin: 0px 6px 0px 4px;
+                min-height: 0px;
+                font-weight: 600;
+            }}
+            QToolButton#aiAssistantMenuButton:hover,
+            QToolButton#aiAssistantMenuButton:checked {{
+                background: {accent};
+                color: white;
+                border-color: {accent};
+            }}
+            """
+        )
+
+    @staticmethod
+    def _make_ai_bot_icon(accent: str) -> QIcon:
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        outline = QPen(QColor("#c4cdd8"), 1.2)
+        painter.setPen(outline)
+        painter.setBrush(QColor("#1f2b38"))
+        painter.drawRoundedRect(3, 5, 10, 8, 2, 2)
+        painter.drawLine(8, 2, 8, 5)
+        painter.drawEllipse(7, 1, 2, 2)
+        painter.drawLine(2, 9, 3, 9)
+        painter.drawLine(13, 9, 14, 9)
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(accent))
+        painter.drawEllipse(5, 8, 2, 2)
+        painter.drawEllipse(9, 8, 2, 2)
+        painter.end()
+        return QIcon(pixmap)
+
+    def _on_ai_chat_action_triggered(self, visible: bool):
+        visible = bool(visible)
+        self.ai_chat_dock.setVisible(visible)
+        self._sync_ai_chat_controls(visible)
+
+    def _sync_ai_chat_controls(self, visible: bool):
+        visible = bool(visible)
+        if self.ai_chat_button.isChecked() != visible:
+            self.ai_chat_button.setChecked(visible)
+        if self.ai_chat_action.isChecked() != visible:
+            self.ai_chat_action.setChecked(visible)
+        if (
+            self._ai_chat_visibility_tracking
+            and self.settings.get("show_ai_chat", False) != visible
+        ):
+            self.settings["show_ai_chat"] = visible
+            self.save_settings()
+
+    def _stop_ai_chat_visibility_tracking(self):
+        self._ai_chat_visibility_tracking = False
 
     def toggle_debug_console(self, show: bool):
         if hasattr(self, "console_widget"):
@@ -631,11 +742,6 @@ class REasyEditorApp(QMainWindow):
                     sys.stderr = sys.stderr.original_stream
 
             self.settings["show_debug_console"] = show
-            self.save_settings()
-
-    def _on_ai_chat_visibility_changed(self, visible: bool):
-        if self.settings.get("show_ai_chat", True) != bool(visible):
-            self.settings["show_ai_chat"] = bool(visible)
             self.save_settings()
 
     def save_settings(self):
@@ -657,6 +763,7 @@ class REasyEditorApp(QMainWindow):
         if not self._confirm_tabs_close(list(self.tabs.values())):
             event.ignore()
             return
+        self._stop_ai_chat_visibility_tracking()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.shutdown()
         for tab in list(self.tabs.values()):

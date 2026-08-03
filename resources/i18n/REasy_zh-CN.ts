@@ -7846,9 +7846,21 @@ Save before reopening?</source>
         <translation>PAK 浏览器</translation>
     </message>
     <message>
-        <location filename="../../ui/main_window.py" line="188"/>
+        <location filename="../../ui/main_window.py" line="194"/>
+        <location filename="../../ui/main_window.py" line="196"/>
+        <location filename="../../ui/main_window.py" line="218"/>
         <source>AI Assistant</source>
         <translation>AI 助手</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="217"/>
+        <source>AI</source>
+        <translation>AI</translation>
+    </message>
+    <message>
+        <location filename="../../ui/main_window.py" line="220"/>
+        <source>Show or hide AI Assistant</source>
+        <translation>显示或隐藏 AI 助手</translation>
     </message>
 </context>
 <context>
