@@ -21,6 +21,7 @@ from ui.scene.lightprobe_preview import SceneLightProbeInstance, SceneLightProbe
 from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
 from ui.scene.scene_preview import ScenePreviewWidget
+from utils.resource_file_utils import resource_version_from_path
 
 from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
 from .scn_document_store import ScnDocumentStore
@@ -32,6 +33,9 @@ from .scn_scene_graph import (
     ScnSceneGraph,
     normalize_scene_path,
 )
+
+
+_resource_version = resource_version_from_path
 
 
 @dataclass(slots=True)
@@ -49,16 +53,6 @@ class ScnLoadedMesh:
     @property
     def key(self) -> str:
         return self.renderable.key
-
-
-def _resource_version(path: str, extension: str) -> int | None:
-    suffixes = Path(normalize_scene_path(path)).suffixes
-    marker = f".{extension.lower()}"
-    for current, following in zip(suffixes, suffixes[1:]):
-        value = following.removeprefix(".")
-        if current.lower() == marker and value.isdecimal():
-            return int(value)
-    return None
 
 
 class ScnScenePreviewWidget(QWidget):

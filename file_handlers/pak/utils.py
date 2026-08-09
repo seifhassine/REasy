@@ -25,6 +25,15 @@ def guess_extension_from_header(header: bytes) -> str | None:
     if not header:
         return None
     h = header
+    if len(h) >= 8:
+        versioned_extension = {
+            b"GCFG": "gcf",
+            b"IFNT": "ift",
+        }.get(h[4:8])
+        if versioned_extension:
+            return versioned_extension
+    if h.startswith(b"FBFO"):
+        return "oft"
     try:
         ascii_bytes = []
         for b in h[:8]:

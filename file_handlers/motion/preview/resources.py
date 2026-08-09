@@ -4,6 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from utils.resource_file_utils import (
+    ResourceDataLoader,
     ResourceResolutionContext,
     normalize_resource_path,
     resource_context_for_app,
@@ -40,7 +41,7 @@ class MotionListResourceStore:
         anchor_path: str = "",
         selection_parent=None,
         resource_context: ResourceResolutionContext | None = None,
-        resource_data_loader=None,
+        resource_data_loader: ResourceDataLoader | None = None,
         catalog_reader: MotionListCatalogReader | None = None,
     ):
         self.codec = codec

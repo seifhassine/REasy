@@ -1,6 +1,8 @@
 import struct
 from typing import Optional
 
+from utils.resource_file_utils import resource_version_from_path
+
 from .tex_file import TexFile, TEX_MAGIC
 from .dds import build_dds_dx10
 from .texture_handler import TextureViewerHandler
@@ -22,14 +24,8 @@ class TexHandler(TextureViewerHandler):
     def read(self, data: bytes):
         self.raw_data = data
         tex = TexFile()
-        file_version = 0
         filepath = getattr(self, "filepath", "") or ""
-        try:
-            lowered = filepath.lower()
-            if ".tex." in lowered:
-                file_version = int(lowered.rsplit(".tex.", 1)[1])
-        except (TypeError, ValueError, IndexError):
-            file_version = 0
+        file_version = resource_version_from_path(filepath, "tex") or 0
 
         ok = tex.read(data, file_version=file_version)
 

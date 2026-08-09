@@ -1,7 +1,9 @@
 import struct
 from typing import Optional
-import os
+
 from file_handlers.base_handler import BaseFileHandler
+from utils.resource_file_utils import resource_version_from_path
+
 from .cfil_file import CfilFile, CFIL_MAGIC
 
 
@@ -23,7 +25,7 @@ class CfilHandler(BaseFileHandler):
 
     def read(self, data: bytes):
         f = CfilFile()
-        version = int(os.path.splitext(self.filepath.lower())[1][1:]) if self.filepath else 0
+        version = resource_version_from_path(self.filepath or "", "cfil") or 0
         if not f.read(data, version):
             raise ValueError("Failed to parse CFIL")
         self.cfil = f

@@ -8,6 +8,7 @@ from utils.resource_file_utils import (
     ResourceResolutionContext,
     resolve_handler_resource_data,
     resource_context_for_app,
+    resource_version_from_path,
 )
 
 
@@ -61,10 +62,12 @@ class MeshHandler(BaseFileHandler):
 
     @staticmethod
     def _file_version_from_path(filepath: str) -> int:
-        version = Path(filepath).suffix[1:]
-        if not version.isdecimal():
+        version = resource_version_from_path(filepath, "mesh")
+        if version is None:
+            version = resource_version_from_path(filepath, "mply")
+        if version is None:
             raise ValueError(f"Mesh filename needs a numeric version suffix: {filepath}")
-        return int(version)
+        return version
 
     def _find_streaming_mesh_path(self) -> Optional[Path]:
         if not self.filepath:

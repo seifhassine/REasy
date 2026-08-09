@@ -1,8 +1,8 @@
-import os
 import struct
 from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
+from utils.resource_file_utils import resource_version_from_path
 
 from .uvs_file import UVS_MAGIC, UvsFile
 
@@ -21,11 +21,8 @@ class UvsHandler(BaseFileHandler):
         return True
 
     def _detect_version(self) -> int:
-        if self.filepath:
-            suffix = os.path.splitext(self.filepath.lower())[1][1:]
-            if suffix.isdigit():
-                return int(suffix)
-        return 7
+        version = resource_version_from_path(self.filepath or "", "uvs")
+        return 7 if version is None else version
 
     def read(self, data: bytes):
         self.uvs = UvsFile()

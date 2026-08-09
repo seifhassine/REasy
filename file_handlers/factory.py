@@ -31,6 +31,12 @@ def _handler_classes():
     yield MotListHandler
     from file_handlers.uvs.uvs_handler import UvsHandler
     yield UvsHandler
+    from file_handlers.gcf.gcf_handler import GcfHandler
+    yield GcfHandler
+    from file_handlers.ift.ift_handler import IftHandler
+    yield IftHandler
+    from file_handlers.oft.oft_handler import OftHandler
+    yield OftHandler
     from file_handlers.rcol.rcol_handler import RcolHandler
     yield RcolHandler
     from file_handlers.fol.fol_handler import FolHandler

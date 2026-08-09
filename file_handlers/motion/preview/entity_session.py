@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable
 
-from utils.resource_file_utils import resource_path_key
+from utils.resource_file_utils import ResourceDataLoader, resource_path_key
 
 from ..evaluation import (
     LayerBlendMode,
@@ -37,7 +37,6 @@ from .resources import MotionListResourceStore
 from .support import EntityMotionSupport
 
 
-ResourceDataLoader = Callable[[str], tuple[str, bytes] | None]
 MotionListLoader = Callable[[str], MotionListDocument | None]
 _MotionListEntries = tuple[
     tuple[PreviewMotionEntry, ...],

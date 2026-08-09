@@ -1,7 +1,7 @@
-import os
 import struct
 
 from file_handlers.base_handler import BaseFileHandler
+from utils.resource_file_utils import resource_version_from_path
 from utils.registry_manager import RegistryManager
 
 from .rcol_file import RcolFile
@@ -31,13 +31,8 @@ class RcolHandler(BaseFileHandler):
             self.type_registry = RegistryManager.instance().get_registry(json_path)
 
     def _infer_file_version(self) -> int:
-        if not self.filepath:
-            return 25
-
-        ext = os.path.splitext(self.filepath)[1]
-        if ext and len(ext) > 1 and ext[1:].isdigit():
-            return int(ext[1:])
-        return 25
+        version = resource_version_from_path(self.filepath, "rcol")
+        return 25 if version is None else version
 
     def supports_editing(self) -> bool:
         return True

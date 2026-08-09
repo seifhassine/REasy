@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional
 
 from utils.binary_handler import BinaryHandler
 from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
+from utils.resource_file_utils import resource_version_from_path
 
 
 MDF_MAGIC = 0x0046444D
@@ -408,19 +409,13 @@ class MdfFile:
         if self.header.magic != MDF_MAGIC:
             raise ValueError("Not an MDF file")
 
-        if file_path:
-            lower = file_path.lower()
-            matched = False
-            idx = lower.rfind('.')
-            if idx != -1:
-                ver_str = lower[idx + 1:]
-                if ver_str.isdigit():
-                    self.file_version = int(ver_str)
-                    matched = True
-            if not matched:
-                raise ValueError("Could not determine MDF version from file name (expected .mdf2.<ver>)")
-        else:
-            raise ValueError("File path required to determine MDF version (expected .mdf2.<ver>)")
+        version = resource_version_from_path(file_path, self.EXTENSION)
+        if version is None:
+            raise ValueError(
+                "Could not determine MDF version from file name "
+                "(expected .mdf2.<ver>)"
+            )
+        self.file_version = version
 
         version = self.file_version
 

@@ -6,6 +6,7 @@ from weakref import WeakKeyDictionary
 
 _PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, str]]" = WeakKeyDictionary()
 _DIR_ENTRIES_CACHE: dict[str, tuple[str, ...]] = {}
+ResourceDataLoader = Callable[[str], Optional[Tuple[str, bytes]]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +46,35 @@ def normalize_resource_path(path: str) -> str:
     if s.startswith("@"):
         s = s[1:]
     return s.lstrip("/")
+
+
+def resource_version_from_path(path: str, extension: str) -> int | None:
+    """Return the numeric version after a resource extension.
+
+    Supports ordinary names (file.tex.11) and platform variants (file.oft.1.x64).
+    """
+
+    name = normalize_resource_path(path).rsplit("/", 1)[-1].casefold()
+    extension = extension.casefold().lstrip(".")
+    parts = name.split(".")
+    for index, part in enumerate(parts[:-1]):
+        if part == extension and parts[index + 1].isdecimal():
+            return int(parts[index + 1])
+    return None
+
+
+def resource_path_with_version(path: str, extension: str, version: int) -> str:
+    """Append a version unless the resource path already contains one."""
+
+    if resource_version_from_path(path, extension) is not None:
+        return path
+    name_parts = normalize_resource_path(path).rsplit("/", 1)[-1].split(".")
+    extension = extension.casefold().lstrip(".")
+    if len(name_parts) >= 2 and name_parts[-2].casefold() == extension:
+        if name_parts[-1].casefold() in {"stm", "x64"}:
+            suffix_at = path.rfind(".")
+            return f"{path[:suffix_at]}.{int(version)}{path[suffix_at:]}"
+    return f"{path}.{int(version)}"
 
 
 def resource_path_key(path: str) -> str:
