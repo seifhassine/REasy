@@ -272,10 +272,13 @@ class REasyEditorApp(QMainWindow):
     def _show_changelog_if_needed(self):
         last_seen = self.settings.get("last_seen_version", "")
         if last_seen != CURRENT_VERSION:
-            dlg = ChangelogDialog(self, CURRENT_VERSION)
-            dlg.exec()
-            self.settings["last_seen_version"] = CURRENT_VERSION
-            save_settings(self.settings)
+            self.show_changelog()
+
+    def show_changelog(self):
+        dialog = ChangelogDialog(self, CURRENT_VERSION)
+        dialog.exec()
+        self.settings["last_seen_version"] = CURRENT_VERSION
+        save_settings(self.settings)
 
     def dragEnterEvent(self, event):
         if self._internal_drag(event):
@@ -454,6 +457,7 @@ class REasyEditorApp(QMainWindow):
 
         help_menu = menubar.addMenu(self.tr("Help"))
         add_action(help_menu, self.tr("About"), self.show_about)
+        add_action(help_menu, self.tr("What's new?"), self.show_changelog)
         add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki)
 
         donate_menu = menubar.addMenu(self.tr("Donate"))

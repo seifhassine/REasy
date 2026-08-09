@@ -7921,6 +7921,11 @@ Save before reopening?</source>
         <translation>关于</translation>
     </message>
     <message>
+        <location filename="../../ui/main_window.py" line="460"/>
+        <source>What's new?</source>
+        <translation>有什么新功能？</translation>
+    </message>
+    <message>
         <location filename="../../ui/main_window.py" line="417"/>
         <source>REasy Wiki</source>
         <translation>REasy 维基</translation>
