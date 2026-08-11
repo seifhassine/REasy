@@ -18,7 +18,7 @@ Tested on *Resident Evil 2*, *Devil May Cry 5*, *Resident Evil 3*, *Resident Evi
 ## Usage
 
 ```powershell
-pwsh -NoProfile -File "D:\RE Modding\REasy\reversing\il2cpp_dumper\dump_il2cpp.ps1" `
+pwsh -NoProfile -File "dump_il2cpp.ps1" `
   -GamePath "D:\Path\To\Game.exe" `
   -OutputPath ".\il2cpp_dump.json" `
   -Force
