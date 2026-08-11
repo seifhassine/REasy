@@ -396,7 +396,7 @@ class SoundViewer(QWidget):
     def _vgmstream(self) -> str | None:
         settings = getattr(self.handler.app, "settings", {}) if self.handler.app else {}
         p = settings.get("vgmstream_cli_path", "").strip()
-        return p or shutil.which("vgmstream-cli") or shutil.which("vgmstream-cli.exe")
+        return shutil.which(p) or shutil.which("vgmstream-cli") or shutil.which("vgmstream-cli.exe")
 
     def _prompt_vgmstream_download(self) -> str | None:
         dl = _get_vgmstream_downloader()
@@ -490,7 +490,10 @@ class SoundViewer(QWidget):
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             si.wShowWindow = 0
             run_kwargs["startupinfo"] = si
-        return subprocess.run(args, **run_kwargs)
+        try:
+            return subprocess.run(args, **run_kwargs)
+        except OSError as e:
+            return subprocess.CompletedProcess(args, 1, stderr=str(e))
 
     def _decode_wem(self, wem_path: str) -> str | None:
         vgs = self._vgmstream()
