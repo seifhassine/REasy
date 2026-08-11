@@ -636,9 +636,9 @@ class RszFile:
         self.is_pfb16 = False
         
         self._path_lower = (self.filepath or "").lower()
-        self._is_16 = self._path_lower.endswith(".16")
-        self._is_18 = self._path_lower.endswith(".18")
-        self._is_19 = self._path_lower.endswith(".19")
+        self._is_16 = self._path_lower.endswith((".16", ".16.x64", ".16.stm"))
+        self._is_18 = self._path_lower.endswith((".18", ".18.x64", ".18.stm"))
+        self._is_19 = self._path_lower.endswith((".19", ".19.x64", ".19.stm"))
         self._is_scn_new = self._is_18 or self._is_19
         self.is_headless = False
 
@@ -694,7 +694,7 @@ class RszFile:
         self._parse_gameobjects(data)
         self._parse_gameobject_ref_infos(data)
         
-        if self.filepath.lower().endswith('.16'):
+        if self._is_16:
             from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
             self._current_offset = parse_pfb16_resources(self, data)
         else:
@@ -709,14 +709,14 @@ class RszFile:
         """Parse standard SCN file structure"""
         self._parse_gameobjects(data)
         self._parse_folder_infos(data)
-        if self.filepath.lower().endswith('.18'):
+        if self._is_18:
             _parse_scn_18_resource_infos(self)
         else:
             self._parse_resource_infos(data)
         
         self._parse_prefab_infos(data)
         # SCN.19 format doesn't have userdata_infos
-        if not (self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')):
+        if not self._is_scn_new:
             self._parse_userdata_infos(data)
         self._parse_blocks()
         self._parse_rsz_section(data, skip_data)
@@ -1708,7 +1708,7 @@ class RszFile:
                         getattr(rui, "embedded_userdata_infos", None),
                     )
 
-        if getattr(self, "is_scn", False) and (self.filepath.lower().endswith(".19") or self.filepath.lower().endswith('.18')):
+        if getattr(self, "is_scn", False) and self._is_scn_new:
             _collect_segment(self.parsed_elements, self.instance_infos, self.rsz_userdata_infos)
         else:
             _collect_segment(self.parsed_elements, self.instance_infos, None)
@@ -1741,13 +1741,13 @@ class RszFile:
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
-            if self.filepath.lower().endswith('.16'):
+            if self.is_pfb16:
                 return build_pfb_16(self, special_align_enabled)
             else:
                 return self._build_pfb(special_align_enabled)
-        elif self.filepath.lower().endswith('.19'):
-                    return build_scn_19(self, special_align_enabled)
-        elif self.filepath.lower().endswith('.18'):
+        elif self._is_19:
+            return build_scn_19(self, special_align_enabled)
+        elif self._is_18:
             return build_scn_18(self, special_align_enabled)
                 
         self.header.info_count = len(self.gameobjects)

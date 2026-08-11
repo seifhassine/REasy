@@ -3,68 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import IntEnum
 
+from file_handlers.clip.enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType
 
-class ClipPropertyType(IntEnum):
-    UNKNOWN = 0x00
-    BOOL = 0x01
-    S8 = 0x02
-    U8 = 0x03
-    S16 = 0x04
-    U16 = 0x05
-    S32 = 0x06
-    U32 = 0x07
-    S64 = 0x08
-    U64 = 0x09
-    F32 = 0x0A
-    F64 = 0x0B
-    STR8 = 0x0C
-    STR16 = 0x0D
-    ENUM = 0x0E
-    QUATERNION = 0x0F
-    ARRAY = 0x10
-    NATIVE_ARRAY = 0x11
-    CLASS = 0x12
-    NATIVE_CLASS = 0x13
-    STRUCT = 0x14
-    VEC2 = 0x15
-    VEC3 = 0x16
-    VEC4 = 0x17
-    COLOR = 0x18
-    RANGE = 0x19
-    FLOAT2 = 0x1A
-    FLOAT3 = 0x1B
-    FLOAT4 = 0x1C
-    RANGEI = 0x1D
-    POINT = 0x1E
-    SIZE = 0x1F
-    ASSET = 0x20
-    ACTION = 0x21
-    GUID = 0x22
-    UINT2 = 0x23
-    UINT3 = 0x24
-    UINT4 = 0x25
-    INT2 = 0x26
-    INT3 = 0x27
-    INT4 = 0x28
-    OBB = 0x29
-    MAT4 = 0x2A
-    RECT = 0x2B
-    PATH_POINT3D = 0x2C
-    PLANE = 0x2D
-    SPHERE = 0x2E
-    CAPSULE = 0x2F
-    AABB = 0x30
-    NULLABLE = 0x31
-    SFIX = 0x32
-    SFIX2 = 0x33
-    SFIX3 = 0x34
-    SFIX4 = 0x35
-    ANIMATION_CURVE = 0x36
-    KEY_FRAME = 0x37
-    GAME_OBJECT_REF = 0x38
-    POSITION = 0x39
-    USER_DATA_ASSET = 0x3A
-    RESOURCE_PATH = 0x3B
+ClipPropertyType = PropertyType
 
 
 class ClipInterpolation(IntEnum):
@@ -87,45 +28,20 @@ class ClipInterpolation(IntEnum):
     NONE = 16
 
 
-CONTAINER_PROPERTY_TYPES = frozenset(
+CONTAINER_PROPERTY_TYPES = frozenset(PROPERTY_TYPES_WITH_CHILDREN)
+
+ASCII_VALUE_PROPERTY_TYPES = frozenset(
+    {ClipPropertyType.STR8, ClipPropertyType.ENUM}
+)
+
+UTF16_VALUE_PROPERTY_TYPES = frozenset(
     {
-        ClipPropertyType.QUATERNION,
-        ClipPropertyType.ARRAY,
-        ClipPropertyType.NATIVE_ARRAY,
-        ClipPropertyType.CLASS,
-        ClipPropertyType.NATIVE_CLASS,
-        ClipPropertyType.STRUCT,
-        ClipPropertyType.VEC2,
-        ClipPropertyType.VEC3,
-        ClipPropertyType.VEC4,
-        ClipPropertyType.COLOR,
-        ClipPropertyType.RANGE,
-        ClipPropertyType.FLOAT2,
-        ClipPropertyType.FLOAT3,
-        ClipPropertyType.FLOAT4,
-        ClipPropertyType.RANGEI,
-        ClipPropertyType.POINT,
-        ClipPropertyType.SIZE,
-        ClipPropertyType.UINT2,
-        ClipPropertyType.UINT3,
-        ClipPropertyType.UINT4,
-        ClipPropertyType.INT2,
-        ClipPropertyType.INT3,
-        ClipPropertyType.INT4,
-        ClipPropertyType.OBB,
-        ClipPropertyType.MAT4,
-        ClipPropertyType.RECT,
-        ClipPropertyType.PLANE,
-        ClipPropertyType.SPHERE,
-        ClipPropertyType.CAPSULE,
-        ClipPropertyType.AABB,
-        ClipPropertyType.NULLABLE,
-        ClipPropertyType.SFIX2,
-        ClipPropertyType.SFIX3,
-        ClipPropertyType.SFIX4,
-        ClipPropertyType.ANIMATION_CURVE,
-        ClipPropertyType.KEY_FRAME,
-        ClipPropertyType.POSITION,
+        ClipPropertyType.STR16,
+        ClipPropertyType.ASSET,
+        ClipPropertyType.GUID,
+        ClipPropertyType.GAME_OBJECT_REF,
+        ClipPropertyType.USER_DATA_ASSET,
+        ClipPropertyType.RESOURCE_PATH,
     }
 )
 

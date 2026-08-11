@@ -22,14 +22,27 @@ class CompactMotClipV27Validator:
     _SUPPORTED_KEYED_TYPES = frozenset(
         {
             ClipPropertyType.BOOL,
+            ClipPropertyType.S8,
+            ClipPropertyType.U8,
+            ClipPropertyType.S16,
+            ClipPropertyType.U16,
             ClipPropertyType.S32,
             ClipPropertyType.U32,
+            ClipPropertyType.S64,
+            ClipPropertyType.U64,
             ClipPropertyType.F32,
+            ClipPropertyType.F64,
+            ClipPropertyType.STR8,
             ClipPropertyType.STR16,
             ClipPropertyType.ENUM,
+            ClipPropertyType.ASSET,
             ClipPropertyType.GUID,
+            ClipPropertyType.GAME_OBJECT_REF,
+            ClipPropertyType.USER_DATA_ASSET,
+            ClipPropertyType.RESOURCE_PATH,
             ClipPropertyType.ACTION,
             ClipPropertyType.PATH_POINT3D,
+            ClipPropertyType.UNKNOWN,
         }
     )
 
@@ -37,7 +50,12 @@ class CompactMotClipV27Validator:
         profile.require_versions(mot_clip=27)
         self.profile = profile
 
-    def validate(self, clip: CompactMotClip) -> None:
+    def validate(
+        self,
+        clip: CompactMotClip,
+        *,
+        ascii_value_interpolations: frozenset[ClipInterpolation] = frozenset(),
+    ) -> None:
         self._f32(clip.total_frame, "total_frame")
         nodes = [clip.root, *clip.root.children]
         self._count(len(nodes), 0xFFFFFFFF, "node", "u32")
@@ -91,10 +109,13 @@ class CompactMotClipV27Validator:
                 if key.interpolation not in ClipInterpolation:
                     self._fail("unknown key interpolation")
                 if (
-                    key.interpolation == ClipInterpolation.HERMITE
+                    key.interpolation in (
+                        ClipInterpolation.HERMITE,
+                        ClipInterpolation.BEZIER,
+                    )
                     and not isinstance(key.curve, HermiteCurve)
                 ):
-                    self._fail("Hermite key requires a HermiteCurve")
+                    self._fail("Hermite/Bezier key requires a HermiteCurve")
                 if (
                     key.interpolation == ClipInterpolation.BEZIER_3D
                     and not isinstance(key.curve, Bezier3DCurve)
@@ -102,10 +123,14 @@ class CompactMotClipV27Validator:
                     self._fail("Bezier key requires a Bezier3DCurve")
                 if key.interpolation not in (
                     ClipInterpolation.HERMITE,
+                    ClipInterpolation.BEZIER,
                     ClipInterpolation.BEZIER_3D,
                 ) and key.curve is not None:
                     self._fail("non-curve key cannot reference a curve")
-                self._validate_value(prop.property_type, key.value)
+                if key.interpolation in ascii_value_interpolations:
+                    self._ascii(key.value, "owner-specific ASCII key value")
+                else:
+                    self._validate_value(prop.property_type, key.value)
                 all_keys.append(key)
                 if key.curve is not None:
                     curves.append(key.curve)
@@ -115,10 +140,15 @@ class CompactMotClipV27Validator:
                 if point.interpolation not in ClipInterpolation:
                     self._fail("unknown speed-point interpolation")
                 if (
-                    point.interpolation == ClipInterpolation.HERMITE
+                    point.interpolation in (
+                        ClipInterpolation.HERMITE,
+                        ClipInterpolation.BEZIER,
+                    )
                     and not isinstance(point.curve, HermiteCurve)
                 ):
-                    self._fail("Hermite speed point requires a HermiteCurve")
+                    self._fail(
+                        "Hermite/Bezier speed point requires a HermiteCurve"
+                    )
                 if (
                     point.interpolation == ClipInterpolation.BEZIER_3D
                     and not isinstance(point.curve, Bezier3DCurve)
@@ -126,6 +156,7 @@ class CompactMotClipV27Validator:
                     self._fail("Bezier speed point requires a Bezier3DCurve")
                 if point.interpolation not in (
                     ClipInterpolation.HERMITE,
+                    ClipInterpolation.BEZIER,
                     ClipInterpolation.BEZIER_3D,
                 ) and point.curve is not None:
                     self._fail("non-curve speed point cannot reference a curve")
@@ -193,26 +224,58 @@ class CompactMotClipV27Validator:
     def _validate_value(cls, property_type: ClipPropertyType, value) -> None:
         if property_type == ClipPropertyType.BOOL and type(value) is not bool:
             cls._fail("Bool key value must be bool")
-        elif property_type == ClipPropertyType.S32 and (
-            type(value) is not int or not -0x80000000 <= value <= 0x7FFFFFFF
-        ):
-            cls._fail("S32 key value exceeds i32")
-        elif property_type == ClipPropertyType.U32 and (
-            type(value) is not int or not 0 <= value <= 0xFFFFFFFF
-        ):
-            cls._fail("U32 key value exceeds u32")
-        elif property_type == ClipPropertyType.F32:
+        elif property_type in {
+            ClipPropertyType.S8,
+            ClipPropertyType.S16,
+            ClipPropertyType.S32,
+            ClipPropertyType.S64,
+        }:
+            bits = {
+                ClipPropertyType.S8: 8,
+                ClipPropertyType.S16: 16,
+                ClipPropertyType.S32: 32,
+                ClipPropertyType.S64: 64,
+            }[property_type]
+            minimum, maximum = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+            if type(value) is not int or not minimum <= value <= maximum:
+                cls._fail(f"{property_type.name} key value exceeds i{bits}")
+        elif property_type in {
+            ClipPropertyType.U8,
+            ClipPropertyType.U16,
+            ClipPropertyType.U32,
+            ClipPropertyType.U64,
+        }:
+            bits = {
+                ClipPropertyType.U8: 8,
+                ClipPropertyType.U16: 16,
+                ClipPropertyType.U32: 32,
+                ClipPropertyType.U64: 64,
+            }[property_type]
+            if type(value) is not int or not 0 <= value < 1 << bits:
+                cls._fail(f"{property_type.name} key value exceeds u{bits}")
+        elif property_type in (ClipPropertyType.F32, ClipPropertyType.F64):
             if type(value) not in (int, float):
-                cls._fail("F32 key value must be numeric")
+                cls._fail(f"{property_type.name} key value must be numeric")
             try:
                 struct.pack("<d", value)
             except (OverflowError, struct.error):
-                cls._fail("F32 key value is not representable as binary64")
-        elif property_type in (ClipPropertyType.STR16, ClipPropertyType.ENUM, ClipPropertyType.GUID):
+                cls._fail(
+                    f"{property_type.name} key value is not representable as binary64"
+                )
+        elif property_type in {
+            ClipPropertyType.STR8,
+            ClipPropertyType.STR16,
+            ClipPropertyType.ENUM,
+            ClipPropertyType.ASSET,
+            ClipPropertyType.GUID,
+            ClipPropertyType.GAME_OBJECT_REF,
+            ClipPropertyType.USER_DATA_ASSET,
+            ClipPropertyType.RESOURCE_PATH,
+        }:
             if not isinstance(value, str):
                 cls._fail("string key value must be str")
-            if property_type == ClipPropertyType.ENUM:
-                cls._ascii(value, "Enum value")
+            if property_type in (ClipPropertyType.STR8, ClipPropertyType.ENUM):
+                cls._ascii(value, f"{property_type.name} value")
         elif property_type == ClipPropertyType.ACTION and value is not None:
             cls._fail("Action key value must be None")
         elif property_type == ClipPropertyType.PATH_POINT3D:
@@ -220,6 +283,8 @@ class CompactMotClipV27Validator:
                 cls._fail("PathPoint3D key value must be a three-float tuple")
             for component in value:
                 cls._f32(component, "PathPoint3D component")
+        elif property_type == ClipPropertyType.UNKNOWN and value is not None:
+            cls._fail("Unknown key value must be None")
 
     @classmethod
     def _f32(cls, value, what: str) -> None:

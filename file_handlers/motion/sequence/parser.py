@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..binary import ReadContext
 from ..errors import MotionParseError
-from ..mot_clip.parser import CompactMotClipV27Parser
+from ..mot_clip.parser import CompactClipV27Parser
 from ..profiles import MotionFormatProfile
 from .model import SequenceCategory, SequenceData, SequenceTrack
 from .validator import SequenceV65Validator
@@ -12,7 +12,7 @@ class SequenceV65Parser:
     def __init__(self, profile: MotionFormatProfile):
         profile.require_versions(mot=65, mot_clip=27)
         self.profile = profile
-        self.clip_parser = CompactMotClipV27Parser(profile)
+        self.clip_parser = CompactClipV27Parser(profile)
         self.validator = SequenceV65Validator(profile)
 
     def parse(
@@ -49,7 +49,13 @@ class SequenceV65Parser:
             clip_offset,
             "SequenceData-to-MotClip padding",
         )
-        clip = self.clip_parser.parse(c, clip_offset, tracks_offset, pointer_base=pointer_base)
+        clip = self.clip_parser.parse(
+            c,
+            clip_offset,
+            tracks_offset,
+            pointer_base=pointer_base,
+            following_data_name="TracksData",
+        )
         c.require(tracks_offset, count * layout.tracks_data_size, "TracksData table")
         tracks = [
             SequenceTrack(

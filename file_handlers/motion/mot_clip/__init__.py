@@ -10,7 +10,14 @@ from .model import (
     HermiteCurve,
     SpeedPoint,
 )
-from .parser import CompactMotClipV27Parser
+from .parser import (
+    CompactClipKeyRecord,
+    CompactClipNodeRecord,
+    CompactClipPropertyRecord,
+    CompactClipSpeedRecord,
+    CompactClipV27ParseResult,
+    CompactClipV27Parser,
+)
 from .validator import CompactMotClipV27Validator
 from .writer import CompactMotClipV27Writer
 
@@ -22,8 +29,13 @@ __all__ = [
     "ClipKey",
     "ClipNode",
     "ClipProperty",
+    "CompactClipKeyRecord",
+    "CompactClipNodeRecord",
+    "CompactClipPropertyRecord",
+    "CompactClipSpeedRecord",
+    "CompactClipV27ParseResult",
+    "CompactClipV27Parser",
     "CompactMotClip",
-    "CompactMotClipV27Parser",
     "CompactMotClipV27Validator",
     "CompactMotClipV27Writer",
     "HermiteCurve",
