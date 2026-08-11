@@ -947,7 +947,7 @@ class MdfViewer(QWidget):
 		item = QTableWidgetItem("")
 		name = (parameter.name or "").lower()
 		is_color = (
-			name.endswith(("color", "color1", "color2", "color3"))
+			"color" in name
 			and parameter.component_count in (3, 4)
 		)
 		if not is_color:
@@ -1330,7 +1330,7 @@ class MdfViewer(QWidget):
 			arr[idx] = float(val)
 			p.parameter = tuple(arr)
 			name_lower = (p.name or "").lower()
-			if name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4):
+			if "color" in name_lower and p.component_count in (3, 4):
 				table.blockSignals(True)
 				self._populate_param_row_in_table(table, pi, p)
 				table.blockSignals(False)
@@ -1426,7 +1426,7 @@ class MdfViewer(QWidget):
 		p = md.parameters[pi]
 		name_lower = (p.name or "").lower()
 		is_layer = name_lower.startswith("layercolor_")
-		is_normal_color = name_lower.endswith(("color", "color1", "color2", "color3")) and p.component_count in (3, 4)
+		is_normal_color = "color" in name_lower and p.component_count in (3, 4)
 
 		if is_normal_color and not is_layer:
 			x, y, z, w = p.parameter
