@@ -112,8 +112,8 @@ class RszHandler(BaseFileHandler):
         """Initialize type registry using shared registry manager"""
         if hasattr(self, 'app') and self.app:
             json_path = self.app.settings.get("rcol_json_path")
-            if json_path:
-                self.type_registry = RegistryManager.instance().get_registry(json_path)
+            if (registry := getattr(self.app, "_rsz_type_registry_override", None)) or json_path:
+                self.type_registry = registry or RegistryManager.instance().get_registry(json_path)
                 if self.type_registry and (self.type_registry.registry.get("metadata", {}).get("complete", False) or self.type_registry.registry.get("metadata", {}).get("resources_identified", False)):
                     self.auto_resource_management = True
 

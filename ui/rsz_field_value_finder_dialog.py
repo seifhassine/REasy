@@ -226,10 +226,12 @@ class RszFieldValueFinderDialog(QDialog):
         self.file_tree.setHeaderLabels([self.tr("File"), self.tr("Instances Found")])
         self.file_tree.itemExpanded.connect(self.on_file_expanded)
         self.file_tree.itemClicked.connect(self.on_item_selected)
+        self.file_tree.itemDoubleClicked.connect(self.open_result_item)
         splitter.addWidget(self.file_tree)
         
         self.details_tree = QTreeWidget()
         self.details_tree.setHeaderLabels([self.tr("Field"), self.tr("Value")])
+        self.details_tree.itemDoubleClicked.connect(self.open_result_item)
         splitter.addWidget(self.details_tree)
         
         splitter.setSizes([300, 200])
@@ -663,8 +665,14 @@ class RszFieldValueFinderDialog(QDialog):
                     field_item = QTreeWidgetItem(self.details_tree)
                     field_item.setText(0, field_name)
                     field_item.setText(1, format_value(value))
-                        
+                    field_item.setData(0, Qt.UserRole, data)
+
         self.details_tree.resizeColumnToContents(0)
+
+    def open_result_item(self, item, column):
+        data = item.data(0, Qt.UserRole)
+        if isinstance(data, tuple):
+            self.parent().open_rsz_instance(*data, self.search_thread.type_registry)
         
     def _close_progress_dialog(self):
         dialog = self.progress_dialog

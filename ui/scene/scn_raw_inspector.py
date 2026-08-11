@@ -9,6 +9,7 @@ from file_handlers.rsz.rsz_array_operations import RszArrayOperations
 from file_handlers.rsz.rsz_handler import RszViewer
 from file_handlers.rsz.rsz_lazy_loading import RszLazyNodeBuilder
 from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+from file_handlers.rsz.rsz_data_types import is_reference_type
 from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
 from ui.styles import get_color_scheme, get_tree_stylesheet
 
@@ -129,17 +130,21 @@ def select_instance_in_tree(tree, instance_id: int, cache: dict[int, QPersistent
     tree.scrollTo(index)
 
 
-def _find_instance_index(model, instance_id: int, parent=QModelIndex()) -> QModelIndex:
+def _find_instance_index(model, instance_id: int, parent=QModelIndex(), visited=None) -> QModelIndex:
+    visited = visited if visited is not None else set()
     needle = f"(ID: {instance_id})"
-    parent_item = model.rootItem if not parent.isValid() else parent.internalPointer()
-    if getattr(parent_item, "_deferred_builder", None) and not getattr(parent_item, "_children_built", False):
-        return QModelIndex()
-    for row in range(len(getattr(parent_item, "_raw_children", []) or [])):
+    for row in range(model.rowCount(parent)):
         index = model.index(row, 0, parent)
-        item = index.internalPointer()
-        raw = getattr(item, "raw", {}) or {}
-        if raw.get("instance_id") == instance_id or needle in str(model.data(index) or ""):
+        if str(model.data(index) or "") == "Advanced Information":
+            continue
+        raw = getattr(index.internalPointer(), "raw", {}) or {}
+        obj = raw.get("obj")
+        node_id = obj.value if is_reference_type(obj) else raw.get("instance_id")
+        if node_id == instance_id or needle in str(model.data(index) or ""):
             return index
-        if (hit := _find_instance_index(model, instance_id, index)).isValid():
+        if node_id is not None and node_id in visited:
+            continue
+        visited.add(node_id)
+        if (hit := _find_instance_index(model, instance_id, index, visited)).isValid():
             return hit
     return QModelIndex()

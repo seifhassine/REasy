@@ -849,6 +849,32 @@ class REasyEditorApp(QMainWindow):
             lambda: RszFieldValueFinderDialog(self, self.settings),
         )
 
+    def open_rsz_instance(self, filepath, instance_id, type_registry):
+        """Open or activate a file and reveal one RSZ instance in its editor."""
+        from ui.scene.scn_raw_inspector import select_instance_in_tree
+
+        key = os.path.normcase(os.path.abspath(filepath))
+        tab = next((tab for tab in self.tabs.values() if getattr(tab, "filename", None)
+                    and os.path.normcase(os.path.abspath(tab.filename)) == key), None)
+        if tab:
+            self.project_workspace.focus_open_tab(tab)
+
+        self._rsz_type_registry_override = type_registry
+        try:
+            if tab and getattr(getattr(tab, "handler", None), "type_registry", None) is not type_registry:
+                tab.reload_file()
+            elif not tab and self._open_path(os.fspath(filepath)):
+                tab = self.get_active_tab()
+        finally:
+            self._rsz_type_registry_override = None
+
+        if not tab or getattr(getattr(tab, "handler", None), "type_registry", None) is not type_registry:
+            return
+        viewer = getattr(tab, "viewer", None)
+        if preview_tabs := getattr(viewer, "_preview_tabs", None):
+            preview_tabs.setCurrentIndex(0)
+        select_instance_in_tree(getattr(viewer, "tree", None), instance_id)
+
     def open_find_dialog(self):
         active = self.get_active_tab()
         if not active:
@@ -951,7 +977,7 @@ class REasyEditorApp(QMainWindow):
             if resource_context is not None:
                 handler.resource_context = resource_context
             if hasattr(handler, 'needs_json_path') and handler.needs_json_path():
-                if not self.settings.get("rcol_json_path"):
+                if not self.settings.get("rcol_json_path") and not getattr(self, "_rsz_type_registry_override", None):
                     msg = QMessageBox(QMessageBox.Warning,
                         self.tr("JSON Path Not Set"),
                         self.tr("RSZ type registry JSON path is not set.\nWould you like to set it now?"),
