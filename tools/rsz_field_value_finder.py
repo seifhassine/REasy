@@ -8,12 +8,21 @@ of instances with a given type ID.
 import os
 import sys
 import argparse
+import re
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
+from file_handlers.rsz.rsz_data_types import _ValueData
+from services.backup_store import create_backup
 from utils.type_registry import TypeRegistry
 from utils.number_format import format_display_value, format_float_sequence
+
+RSZ_EXTENSIONS = {'.scn', '.pfb', '.user'}
+
+
+def is_rsz_path(path):
+    return any(suffix.lower() in RSZ_EXTENSIONS for suffix in Path(path).suffixes)
 
 
 def _registered_field_name(field_identifier, type_info):
@@ -24,20 +33,19 @@ def _registered_field_name(field_identifier, type_info):
 
 
 def scan_file(filepath, type_id, field_identifier, type_registry, failures):
-    if not os.path.isfile(filepath):
-        return []
-        
-    if not os.path.getsize(filepath):
+    path = Path(filepath)
+    if not path.is_file():
         return []
 
     try:
-        with open(filepath, 'rb') as f:
-            data = f.read()
-    except Exception:
+        data = path.read_bytes()
+    except OSError:
+        failures.append(filepath)
         return []
 
     valid_signatures = [b"SCN\x00", b"USR\x00", b"PFB\x00"]
     if len(data) < 4 or data[:4] not in valid_signatures:
+        failures.append(filepath)
         return []
 
     from file_handlers.rsz.rsz_file import RszFile
@@ -55,16 +63,16 @@ def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     found_values = []
     
     type_info = type_registry.get_type_info(type_id)
-    
+
     for idx, instance in enumerate(rsz_file.instance_infos):
         if instance.type_id != type_id or idx not in rsz_file.parsed_elements:
             continue
         fields = rsz_file.parsed_elements[idx]
         if field_identifier is None:
-            for field in type_info.get("fields", []) if type_info else []:
-                field_name = field["name"]
-                if field_name in fields:
-                    found_values.append((filepath, idx, field_name, fields[field_name]))
+            found_values.extend(
+                (filepath, idx, field_name, value)
+                for field_name, value in fields.items()
+            )
             continue
 
         field_name = _registered_field_name(field_identifier, type_info)
@@ -74,6 +82,67 @@ def scan_file(filepath, type_id, field_identifier, type_registry, failures):
             found_values.append((filepath, idx, field_name, fields[field_name]))
     
     return found_values
+
+
+def value_matches(data, text):
+    if not text or not isinstance(data, _ValueData):
+        return False
+    value = data.value
+    return (
+        text.casefold() in value.casefold()
+        if isinstance(value, str)
+        else format_display_value(value).casefold() == text.casefold()
+    )
+
+
+def _replace_scalar(data, find, replacement):
+    if not value_matches(data, find):
+        return False
+    value = data.value
+    if isinstance(value, str):
+        data.value = re.sub(re.escape(find), lambda _match: replacement, value, flags=re.I)
+    elif isinstance(value, bool):
+        values = {'true': True, '1': True, 'false': False, '0': False}
+        if replacement.casefold() not in values:
+            raise ValueError("Boolean replacements must be true, false, 1, or 0")
+        data.value = values[replacement.casefold()]
+    elif isinstance(value, (int, float)):
+        data.value = type(value)(replacement)
+    else:
+        return False
+    return data.value != value
+
+
+def replace_file_values(
+    filepath, type_id, field_name, find, replacement, type_registry, instance_ids
+):
+    from file_handlers.rsz.rsz_file import RszFile
+
+    path = Path(filepath)
+    original = path.read_bytes()
+    rsz_file = RszFile()
+    rsz_file.type_registry = type_registry
+    rsz_file.filepath = str(path)
+    rsz_file.read(original)
+    metadata = type_registry.registry.get("metadata", {})
+    rsz_file.auto_resource_management = any(
+        metadata.get(key) for key in ("complete", "resources_identified")
+    )
+
+    replaced = 0
+    infos = rsz_file.instance_infos
+    for instance_id in instance_ids:
+        if instance_id >= len(infos) or infos[instance_id].type_id != type_id:
+            continue
+        field = rsz_file.parsed_elements.get(instance_id, {}).get(field_name)
+        replaced += bool(field and _replace_scalar(field, find, replacement))
+
+    if replaced:
+        rebuilt = rsz_file.build()
+        create_backup(path, original)
+        path.write_bytes(rebuilt)
+    return replaced
+
 
 def scan_directory(directory, type_id, field_identifier, type_registry, recursive=True):
     if not os.path.isdir(directory):
@@ -87,12 +156,8 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
     try:
         file_iter = path.rglob('*') if recursive else path.glob('*')
         for filepath in file_iter:
-            if filepath.is_file():
-                filename = filepath.name.lower()
-                is_match = any(filename.endswith(ext) or ('.' + filename.split('.')[-2]) == ext 
-                              for ext in ['.scn', '.pfb', '.user'])
-                if is_match:
-                    candidate_files.append(filepath)
+            if filepath.is_file() and is_rsz_path(filepath):
+                candidate_files.append(filepath)
     except Exception:
         return []
     

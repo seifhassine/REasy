@@ -17,7 +17,10 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFileDialog,
+    QFormLayout,
+    QGridLayout,
     QGroupBox,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -27,13 +30,26 @@ from PySide6.QtWidgets import (
     QProgressDialog,
     QPushButton,
     QSplitter,
+    QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
 
-from tools.rsz_field_value_finder import format_value, scan_file
+from tools.rsz_field_value_finder import (
+    format_value,
+    is_rsz_path,
+    replace_file_values,
+    scan_file,
+    value_matches,
+)
 from utils.type_registry import TypeRegistry
+
+
+def _path_key(path):
+    return os.path.normcase(os.path.abspath(os.fspath(path)))
+
 
 class SearchWorkerThread(QThread):
     progress_update = Signal(int, int)
@@ -48,6 +64,8 @@ class SearchWorkerThread(QThread):
         self.type_registry = type_registry
         self.recursive = recursive
         self.cancelled = False
+        self.files_scanned = 0
+        self.failures = []
         
     def cancel(self):
         self.cancelled = True
@@ -55,32 +73,22 @@ class SearchWorkerThread(QThread):
     def run(self):
         try:
             path = Path(self.directory)
-            candidate_files = []
-            
             file_iter = path.rglob('*') if self.recursive else path.glob('*')
-            for filepath in file_iter:
-                if filepath.is_file():
-                    filename = filepath.name.lower()
-                    is_match = any(filename.endswith(ext) or ('.' + filename.split('.')[-2]) == ext 
-                                  for ext in ['.scn', '.pfb', '.user'])
-                    if is_match:
-                        candidate_files.append(filepath)
-            
-            total_files = len(candidate_files)
-            failures = []
+            candidate_files = [file for file in file_iter if file.is_file() and is_rsz_path(file)]
+            self.files_scanned = len(candidate_files)
             
             for idx, filepath in enumerate(candidate_files):
                 if self.cancelled:
                     break
                     
-                self.progress_update.emit(idx + 1, total_files)
+                self.progress_update.emit(idx + 1, self.files_scanned)
                 
                 results = scan_file(
                     filepath,
                     self.type_id,
                     None,
                     self.type_registry,
-                    failures,
+                    self.failures,
                 )
 
                 if results:
@@ -90,6 +98,8 @@ class SearchWorkerThread(QThread):
             
         except Exception as e:
             self.error_occurred.emit(str(e))
+
+
 class RszFieldValueFinderDialog(QDialog):
     
     def __init__(self, parent=None, settings=None):
@@ -102,151 +112,142 @@ class RszFieldValueFinderDialog(QDialog):
         self.last_selected_item = None
         self.progress_dialog: Optional[QProgressDialog] = None
 
-        self.setWindowTitle(self.tr("Find RSZ Field Value"))
-        self.setMinimumSize(900, 700)
+        self.setWindowTitle(self.tr("Find/Replace RSZ Field Value"))
+        self.setMinimumSize(850, 560)
+        self.resize(1000, 650)
         self.setup_ui()
         if self.json_path_edit.text():
             self.load_type_registry()
         
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        
-        json_group = QGroupBox(self.tr("Type Data Source"))
-        json_layout = QHBoxLayout()
-        
-        self.json_path_edit = QLineEdit()
-        json_layout.addWidget(QLabel(self.tr("JSON Path:")))
-        json_layout.addWidget(self.json_path_edit)
-        
-        browse_btn = QPushButton(self.tr("Browse..."))
-        browse_btn.clicked.connect(self.browse_json_path)
-        json_layout.addWidget(browse_btn)
-        
-        reload_btn = QPushButton(self.tr("Reload Types"))
-        reload_btn.clicked.connect(self.load_type_registry)
-        json_layout.addWidget(reload_btn)
-        
-        json_group.setLayout(json_layout)
-        layout.addWidget(json_group)
-        
-        search_group = QGroupBox(self.tr("Search Configuration"))
-        search_layout = QVBoxLayout()
-        
-        dir_layout = QHBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+
+        search_group = QGroupBox(self.tr("Search"))
+        search_layout = QGridLayout(search_group)
+        search_layout.setColumnStretch(1, 1)
+
+        self.json_path_edit = QLineEdit(self.settings.get("rcol_json_path", ""))
+        search_layout.addWidget(QLabel(self.tr("Type Registry:")), 0, 0)
+        search_layout.addWidget(self.json_path_edit, 0, 1)
+        search_layout.addWidget(
+            QPushButton(self.tr("Browse..."), clicked=self.browse_json_path), 0, 2
+        )
+        search_layout.addWidget(
+            QPushButton(self.tr("Reload"), clicked=self.load_type_registry), 0, 3
+        )
+
         self.dir_edit = QLineEdit()
-        dir_layout.addWidget(QLabel(self.tr("Search Directory:")))
-        dir_layout.addWidget(self.dir_edit)
-        
-        dir_browse_btn = QPushButton(self.tr("Browse..."))
-        dir_browse_btn.clicked.connect(self.browse_directory)
-        dir_layout.addWidget(dir_browse_btn)
-        
+        search_layout.addWidget(QLabel(self.tr("Directory:")), 1, 0)
+        search_layout.addWidget(self.dir_edit, 1, 1)
+        search_layout.addWidget(
+            QPushButton(self.tr("Browse..."), clicked=self.browse_directory), 1, 2
+        )
         self.recursive_check = QCheckBox(self.tr("Recursive"))
         self.recursive_check.setChecked(True)
-        dir_layout.addWidget(self.recursive_check)
-        
-        search_layout.addLayout(dir_layout)
-        
-        type_layout = QHBoxLayout()
-        type_layout.addWidget(QLabel(self.tr("Type:")))
-        
+        search_layout.addWidget(self.recursive_check, 1, 3)
+
         self.type_combo = QComboBox()
         self.type_combo.setEditable(True)
         self.type_combo.currentTextChanged.connect(self.on_type_changed)
-        type_layout.addWidget(self.type_combo, 1)
-        
+        search_layout.addWidget(QLabel(self.tr("Type:")), 2, 0)
+        search_layout.addWidget(self.type_combo, 2, 1)
         self.type_id_label = QLabel(self.tr("ID: -"))
-        type_layout.addWidget(self.type_id_label)
-        
-        search_layout.addLayout(type_layout)
-        
-
-        
-        search_group.setLayout(search_layout)
+        search_layout.addWidget(self.type_id_label, 2, 2)
+        search_button = QPushButton(self.tr("Search"), clicked=self.start_search)
+        search_button.setDefault(True)
+        search_layout.addWidget(search_button, 2, 3)
         layout.addWidget(search_group)
-        
-        search_btn = QPushButton(self.tr("Search"))
-        search_btn.clicked.connect(self.start_search)
-        layout.addWidget(search_btn)
-        
-        display_group = QGroupBox(self.tr("Fields to Display"))
-        display_layout = QVBoxLayout()
-        
-        display_info = QLabel(self.tr(
-            "Select fields to display in results (search fetches all fields):"
-        ))
-        display_layout.addWidget(display_info)
-        
+
+        options_tabs = QTabWidget()
+        options_tabs.setMinimumWidth(290)
+        options_tabs.setMaximumWidth(340)
+
+        fields_page = QWidget()
+        fields_layout = QVBoxLayout(fields_page)
+        fields_layout.setContentsMargins(8, 8, 8, 8)
         self.fields_list = QListWidget()
-        self.fields_list.setSelectionMode(QListWidget.MultiSelection)
+        self.fields_list.setSelectionMode(QListWidget.NoSelection)
         self.fields_list.itemChanged.connect(self.on_display_fields_changed)
-        display_layout.addWidget(self.fields_list)
-        
-        display_group.setLayout(display_layout)
-        layout.addWidget(display_group)
-        
-        constraint_group = QGroupBox(self.tr("Field Constraints (Optional)"))
-        constraint_layout = QVBoxLayout()
-        
-        constraint_info = QLabel(self.tr("Add constraints to filter results:"))
-        constraint_layout.addWidget(constraint_info)
-        
-        self.constraints_list = QListWidget()
-        self.constraints_list.setMaximumHeight(100)
-        constraint_layout.addWidget(self.constraints_list)
-        
-        add_constraint_layout = QHBoxLayout()
-        add_constraint_layout.addWidget(QLabel(self.tr("Field:")))
+        self.fields_list.setToolTip(self.tr("Checked fields are shown in the details pane."))
+        fields_layout.addWidget(self.fields_list)
+        options_tabs.addTab(fields_page, self.tr("Fields"))
+
+        filters_page = QWidget()
+        filters_layout = QVBoxLayout(filters_page)
+        filters_layout.setContentsMargins(8, 8, 8, 8)
+
         self.constraint_field_combo = QComboBox()
-        add_constraint_layout.addWidget(self.constraint_field_combo)
-        
-        add_constraint_layout.addWidget(QLabel(self.tr("Contains:")))
         self.constraint_value_edit = QLineEdit()
-        add_constraint_layout.addWidget(self.constraint_value_edit)
-        
-        add_btn = QPushButton(self.tr("Add"))
-        add_btn.clicked.connect(self.add_constraint)
-        add_constraint_layout.addWidget(add_btn)
-        
-        remove_btn = QPushButton(self.tr("Remove Selected"))
-        remove_btn.clicked.connect(self.remove_constraint)
-        add_constraint_layout.addWidget(remove_btn)
-        
-        constraint_layout.addLayout(add_constraint_layout)
-        
-        constraint_group.setLayout(constraint_layout)
-        layout.addWidget(constraint_group)
-        
-        results_group = QGroupBox(self.tr("Search Results"))
-        results_layout = QVBoxLayout()
-        
-        splitter = QSplitter(Qt.Vertical)
-        
+        self.constraint_value_edit.setPlaceholderText(self.tr("Text to match"))
+        self.replace_value_edit = QLineEdit()
+        filter_form = QFormLayout()
+        filter_form.addRow(self.tr("Field:"), self.constraint_field_combo)
+        filter_form.addRow(self.tr("Find:"), self.constraint_value_edit)
+        filter_form.addRow(self.tr("Replace:"), self.replace_value_edit)
+        filters_layout.addLayout(filter_form)
+
+        filter_actions = QHBoxLayout()
+        filter_actions.addWidget(
+            QPushButton(self.tr("Add Filter"), clicked=self.add_constraint)
+        )
+        filter_actions.addWidget(
+            QPushButton(self.tr("Replace All"), clicked=self.replace_all)
+        )
+        filters_layout.addLayout(filter_actions)
+
+        self.constraints_list = QListWidget()
+        filters_layout.addWidget(self.constraints_list, 1)
+        filters_layout.addWidget(
+            QPushButton(self.tr("Remove Filter"), clicked=self.remove_constraint)
+        )
+        options_tabs.addTab(filters_page, self.tr("Find / Replace"))
+
+        results_group = QGroupBox(self.tr("Results"))
+        results_layout = QVBoxLayout(results_group)
+        self.results_splitter = QSplitter(Qt.Vertical)
+        self.results_splitter.setChildrenCollapsible(False)
+
         self.file_tree = QTreeWidget()
-        self.file_tree.setHeaderLabels([self.tr("File"), self.tr("Instances Found")])
+        self.file_tree.setHeaderLabels([self.tr("File"), self.tr("Instances")])
+        self.file_tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.file_tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.file_tree.setAlternatingRowColors(True)
         self.file_tree.itemExpanded.connect(self.on_file_expanded)
         self.file_tree.itemClicked.connect(self.on_item_selected)
         self.file_tree.itemDoubleClicked.connect(self.open_result_item)
-        splitter.addWidget(self.file_tree)
-        
+        self.results_splitter.addWidget(self.file_tree)
+
         self.details_tree = QTreeWidget()
         self.details_tree.setHeaderLabels([self.tr("Field"), self.tr("Value")])
+        self.details_tree.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.details_tree.header().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.details_tree.setAlternatingRowColors(True)
         self.details_tree.itemDoubleClicked.connect(self.open_result_item)
-        splitter.addWidget(self.details_tree)
-        
-        splitter.setSizes([300, 200])
-        results_layout.addWidget(splitter)
-        
-        results_group.setLayout(results_layout)
-        layout.addWidget(results_group)
-        
+        self.results_splitter.addWidget(self.details_tree)
+        self.results_splitter.setStretchFactor(0, 3)
+        self.results_splitter.setStretchFactor(1, 2)
+        self.results_splitter.setSizes([360, 220])
+        results_layout.addWidget(self.results_splitter)
+
+        self.main_splitter = QSplitter(Qt.Horizontal)
+        self.main_splitter.setChildrenCollapsible(False)
+        self.main_splitter.addWidget(options_tabs)
+        self.main_splitter.addWidget(results_group)
+        self.main_splitter.setStretchFactor(0, 0)
+        self.main_splitter.setStretchFactor(1, 1)
+        self.main_splitter.setSizes([300, 700])
+        layout.addWidget(self.main_splitter, 1)
+
+        footer = QHBoxLayout()
         self.status_bar = QLabel(self.tr("Ready"))
         self.status_bar.setStyleSheet("QLabel { color: gray; }")
-        layout.addWidget(self.status_bar)
-        
+        footer.addWidget(self.status_bar, 1)
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        footer.addWidget(button_box)
+        layout.addLayout(footer)
         
     def browse_json_path(self):
         current_path = self.json_path_edit.text()
@@ -278,7 +279,7 @@ class RszFieldValueFinderDialog(QDialog):
                 self, self.tr("Warning"), self.tr("Please specify a JSON path")
             )
             return
-            
+
         if os.path.isdir(json_path):
             possible_files = ['rsz.json', 'type_data.json', 'types.json']
             json_file = None
@@ -305,11 +306,16 @@ class RszFieldValueFinderDialog(QDialog):
                 self.tr("Path does not exist: {path}").format(path=json_path),
             )
             return
-            
+
+        json_path = os.path.abspath(json_path)
         try:
             self.type_registry = TypeRegistry(json_path)
+            self.json_path_edit.setText(json_path)
             self.populate_type_combo()
         except Exception as e:
+            self.type_registry = None
+            self.type_combo.clear()
+            self.fields_list.clear()
             QMessageBox.critical(
                 self, self.tr("Error"),
                 self.tr("Failed to load type registry: {error}").format(error=e),
@@ -427,9 +433,7 @@ class RszFieldValueFinderDialog(QDialog):
         item = QListWidgetItem(constraint_text)
         item.setData(Qt.UserRole, (field, value))
         self.constraints_list.addItem(item)
-        
-        self.constraint_value_edit.clear()
-        
+
         if self.all_results:
             self.apply_filters()
     
@@ -441,6 +445,85 @@ class RszFieldValueFinderDialog(QDialog):
             
             if self.all_results:
                 self.apply_filters()
+
+    def replace_all(self):
+        field = self.constraint_field_combo.currentData()
+        find = self.constraint_value_edit.text()
+        replacement = self.replace_value_edit.text()
+        if not self.all_results or not field or not find:
+            message = (
+                self.tr("Run a search first.") if not self.all_results
+                else self.tr("Select a field and enter a value to find.")
+            )
+            QMessageBox.warning(self, self.tr("Replace"), message)
+            return
+
+        targets = {
+            filepath: {
+                iid for _, iid, name, value in results
+                if name == field and value_matches(value, find)
+            }
+            for filepath, results in self.results.items()
+        }
+        targets = {filepath: ids for filepath, ids in targets.items() if ids}
+        if not targets:
+            QMessageBox.information(self, self.tr("Replace"), self.tr("No scalar values match."))
+            return
+
+        open_paths = {
+            _path_key(tab.filename) for tab in getattr(self.parent(), "tabs", {}).values()
+            if getattr(tab, "filename", None)
+        }
+        if open_paths & {_path_key(filepath) for filepath in targets}:
+            QMessageBox.warning(
+                self, self.tr("Replace"),
+                self.tr("Close matching files in the editor before replacing their values."),
+            )
+            return
+
+        count = sum(map(len, targets.values()))
+        prompt = self.tr(
+            "Replace {count} values across {files} files? Backups will be created."
+        ).format(count=count, files=len(targets))
+        if QMessageBox.question(
+            self, self.tr("Confirm Replace"), prompt,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        ) != QMessageBox.Yes:
+            return
+
+        progress = QProgressDialog(
+            self.tr("Replacing values..."), self.tr("Cancel"), 0, len(targets), self
+        )
+        progress.setWindowModality(Qt.WindowModal)
+        replaced, errors = 0, []
+        for index, (filepath, instance_ids) in enumerate(targets.items(), 1):
+            if progress.wasCanceled():
+                break
+            try:
+                replaced += replace_file_values(
+                    filepath, self.search_thread.type_id, field, find, replacement,
+                    self.search_thread.type_registry, instance_ids,
+                )
+            except ValueError:
+                errors.append(self.tr("Invalid replacement for {file}.").format(
+                    file=Path(filepath).name
+                ))
+            except Exception as exc:
+                errors.append(f"{Path(filepath).name}: {exc}")
+            progress.setValue(index)
+            QApplication.processEvents()
+        progress.close()
+
+        message = self.tr("Replaced {count} values. Backups were created.").format(
+            count=replaced
+        ) if replaced else self.tr("No values were replaced.")
+        if errors:
+            message += "\n\n" + "\n".join(errors[:5])
+        show_message = QMessageBox.warning if errors else QMessageBox.information
+        show_message(self, self.tr("Replace Complete"), message)
+        if replaced:
+            self.start_search()
     
     def get_constraints(self):
         constraints = []
@@ -532,12 +615,25 @@ class RszFieldValueFinderDialog(QDialog):
             ).format(instances=total_instances, files=len(self.results)))
         
     def start_search(self):
-        if not self.dir_edit.text():
+        directory = self.dir_edit.text().strip()
+        if not os.path.isdir(directory):
             QMessageBox.warning(
-                self, self.tr("Warning"), self.tr("Please select a directory to search")
+                self, self.tr("Warning"), self.tr("Please select a valid directory to search")
             )
             return
-            
+
+        registry_path = self.json_path_edit.text().strip()
+        loaded_path = getattr(self.type_registry, "json_path", "")
+        if registry_path and _path_key(registry_path) != _path_key(loaded_path):
+            self.load_type_registry()
+            registry_path = self.json_path_edit.text().strip()
+            loaded_path = getattr(self.type_registry, "json_path", "")
+        if not self.type_registry or _path_key(registry_path) != _path_key(loaded_path):
+            QMessageBox.warning(
+                self, self.tr("Warning"), self.tr("Please load the selected type registry")
+            )
+            return
+
         if not self.type_combo.currentText():
             QMessageBox.warning(
                 self, self.tr("Warning"), self.tr("Please select a type")
@@ -560,7 +656,7 @@ class RszFieldValueFinderDialog(QDialog):
         self.last_selected_item = None
         
         self.search_thread = SearchWorkerThread(
-            self.dir_edit.text(),
+            directory,
             type_id,
             self.type_registry,
             self.recursive_check.isChecked()
@@ -688,6 +784,10 @@ class RszFieldValueFinderDialog(QDialog):
     def search_complete(self):
         self._close_progress_dialog()
 
+        if self.search_thread.cancelled:
+            self.status_bar.setText(self.tr("Search canceled"))
+            return
+
         constraints = self.get_constraints()
         result_source = self.results if constraints else self.all_results
 
@@ -712,8 +812,20 @@ class RszFieldValueFinderDialog(QDialog):
         if total_files == 0:
             if constraints and self.all_results:
                 message = self.tr("No matches found for the current constraints.")
+            elif self.search_thread.files_scanned == 0:
+                message = self.tr("No SCN, PFB, or USER files were found in the selected directory.")
+            elif len(self.search_thread.failures) == self.search_thread.files_scanned:
+                message = self.tr(
+                    "None of the {count} files could be parsed. Check that the selected type registry matches these files."
+                ).format(count=self.search_thread.files_scanned)
             else:
-                message = self.tr("No matching instances found.")
+                message = self.tr(
+                    "No matching instances found in {count} files."
+                ).format(count=self.search_thread.files_scanned)
+                if self.search_thread.failures:
+                    message += self.tr(" {count} files could not be parsed.").format(
+                        count=len(self.search_thread.failures)
+                    )
             QMessageBox.information(self, self.tr("Search Complete"), message)
         
     def search_error(self, error_msg):

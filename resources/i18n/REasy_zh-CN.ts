@@ -7592,8 +7592,8 @@ This will permanently remove:
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="371"/>
-        <source>Find RSZ Field Value</source>
-        <translation>查找 RSZ 字段值</translation>
+        <source>Find/Replace RSZ Field Value</source>
+        <translation>查找/替换 RSZ 字段值</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="376"/>
@@ -9741,9 +9741,141 @@ Expected SCN, PFB, or USR header.</source>
 <context>
     <name>RszFieldValueFinderDialog</name>
     <message>
+        <source>Type Registry:</source>
+        <translation>类型注册表：</translation>
+    </message>
+    <message>
+        <source>Reload</source>
+        <translation>重新加载</translation>
+    </message>
+    <message>
+        <source>Directory:</source>
+        <translation>目录：</translation>
+    </message>
+    <message>
+        <source>Checked fields are shown in the details pane.</source>
+        <translation>选中的字段会显示在详细信息窗格中。</translation>
+    </message>
+    <message>
+        <source>Fields</source>
+        <translation>字段</translation>
+    </message>
+    <message>
+        <source>Text to match</source>
+        <translation>要匹配的文本</translation>
+    </message>
+    <message>
+        <source>Find:</source>
+        <translation>查找：</translation>
+    </message>
+    <message>
+        <source>Replace:</source>
+        <translation>替换为：</translation>
+    </message>
+    <message>
+        <source>Add Filter</source>
+        <translation>添加筛选条件</translation>
+    </message>
+    <message>
+        <source>Replace All</source>
+        <translation>全部替换</translation>
+    </message>
+    <message>
+        <source>Remove Filter</source>
+        <translation>移除筛选条件</translation>
+    </message>
+    <message>
+        <source>Find / Replace</source>
+        <translation>查找/替换</translation>
+    </message>
+    <message>
+        <source>Results</source>
+        <translation>结果</translation>
+    </message>
+    <message>
+        <source>Instances</source>
+        <translation>实例数</translation>
+    </message>
+    <message>
+        <source>Run a search first.</source>
+        <translation>请先运行搜索。</translation>
+    </message>
+    <message>
+        <source>Select a field and enter a value to find.</source>
+        <translation>请选择字段并输入要查找的值。</translation>
+    </message>
+    <message>
+        <source>Replace</source>
+        <translation>替换</translation>
+    </message>
+    <message>
+        <source>No scalar values match.</source>
+        <translation>没有匹配的标量值。</translation>
+    </message>
+    <message>
+        <source>Close matching files in the editor before replacing their values.</source>
+        <translation>替换值前，请关闭编辑器中匹配的文件。</translation>
+    </message>
+    <message>
+        <source>Replace {count} values across {files} files? Backups will be created.</source>
+        <translation>要替换 {files} 个文件中的 {count} 个值吗？将创建备份。</translation>
+    </message>
+    <message>
+        <source>Confirm Replace</source>
+        <translation>确认替换</translation>
+    </message>
+    <message>
+        <source>Replacing values...</source>
+        <translation>正在替换值...</translation>
+    </message>
+    <message>
+        <source>Replaced {count} values. Backups were created.</source>
+        <translation>已替换 {count} 个值并创建备份。</translation>
+    </message>
+    <message>
+        <source>No values were replaced.</source>
+        <translation>未替换任何值。</translation>
+    </message>
+    <message>
+        <source>Replace Complete</source>
+        <translation>替换完成</translation>
+    </message>
+    <message>
+        <source>Invalid replacement for {file}.</source>
+        <translation>{file} 的替换值无效。</translation>
+    </message>
+    <message>
+        <source>Please select a valid directory to search</source>
+        <translation>请选择有效的搜索目录</translation>
+    </message>
+    <message>
+        <source>Please load the selected type registry</source>
+        <translation>请加载所选的类型注册表</translation>
+    </message>
+    <message>
+        <source>Search canceled</source>
+        <translation>搜索已取消</translation>
+    </message>
+    <message>
+        <source>No SCN, PFB, or USER files were found in the selected directory.</source>
+        <translation>所选目录中未找到 SCN、PFB 或 USER 文件。</translation>
+    </message>
+    <message>
+        <source>None of the {count} files could be parsed. Check that the selected type registry matches these files.</source>
+        <translation>无法解析这 {count} 个文件。请检查所选类型注册表是否与这些文件匹配。</translation>
+    </message>
+    <message>
+        <source>No matching instances found in {count} files.</source>
+        <translation>在 {count} 个文件中未找到匹配的实例。</translation>
+    </message>
+    <message>
+        <source> {count} files could not be parsed.</source>
+        <translation> 有 {count} 个文件无法解析。</translation>
+    </message>
+    <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="105"/>
-        <source>Find RSZ Field Value</source>
-        <translation>查找 RSZ 字段值</translation>
+        <source>Find/Replace RSZ Field Value</source>
+        <translation>查找/替换 RSZ 字段值</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="114"/>

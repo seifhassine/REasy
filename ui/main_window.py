@@ -411,7 +411,7 @@ class REasyEditorApp(QMainWindow):
         )
         add_action(
             find_menu,
-            self.tr("Find RSZ Field Value"),
+            self.tr("Find/Replace RSZ Field Value"),
             self.open_rsz_field_value_finder,
             "find_rsz_field_value",
         )
