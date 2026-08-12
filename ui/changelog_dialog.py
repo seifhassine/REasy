@@ -154,21 +154,16 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", self.tr("DMC5 MOTLIST and PFB 3D previews are now supported for viewing only.")),
-            ("New", self.tr("Added an AI assistant with project-management capabilities and support for updating and modding MDF, User, and MSG files. For now, it supports the DeepSeek API and local LLMs.")),
-            ("New", self.tr("Added Save All for modified files.")),
-            ("New", self.tr("Added PRB/LPRB support for all games, including scene previews.")),
-            ("New", self.tr("Multiple lightprobes can now be previewed in a single 3D scene.")),
-            ("New", self.tr("Files can now be opened directly by double-clicking them in the standalone PAK Browser.")),
-            ("Updated", self.tr("Updated the SF6 file list and RSZ dump.")),
-            ("Updated", self.tr("CRCs are now rewritten from the RSZ dump when saving RSZ files. This can update outdated mods by resaving them, but use it with care because it may cause corruption.")),
-            ("Updated", self.tr("Added automatic resource management for Pragmata RSZ files through an improved RSZ dump.")),
-            ("Improved", self.tr("DMC5 mesh blendshapes are now supported and can be previewed in MOTLIST/PFB 3D.")),
-            ("Improved", self.tr("Lightprobe rendering now uses full vertex shading instead of a vertex-budgeted approximation for more faithful in-game environments.")),
-            ("Fixed", self.tr("Miscellaneous UI fixes.")),
-            ("Fixed", self.tr('Fixed .msg files not being searched correctly during "Find in files" search.')),
-            ("Fixed", self.tr("Fixed unknown entries not appearing in the PAK Browser.")),
-            ("Fixed", self.tr("Fixed broken automatic file-list detection for Pragmata.")),
+            ("New", self.tr("Added support for DMC5 .gui files.")),
+            ("New", self.tr('Added the ability to view the changelog in "About".')),
+            ("New", self.tr("Added replace mode to the RSZ value finder, plus the ability to jump to found instances by double-clicking them. The UI has also been reworked.")),
+            ("Updated", self.tr("Updated the MHWilds file list and RSZ dump.")),
+            ("Improved", self.tr("Added color previews to more MDF parameters.")),
+            ("Improved", self.tr("Improved the look and behavior of tabs (hold to drag).")),
+            ("Improved", self.tr("Fixed some issues with the AI assistant and improved its file management capabilities.")),
+            ("Fixed", self.tr("Fixed occasional failures when opening a file from PAK Browser (concurrency issue).")),
+            ("Fixed", self.tr("Fixed sound playback failures when certain conditions are met.")),
+            ("Fixed", self.tr("Fixed RCOL views breaking REasy's workspace view.")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)

@@ -2507,78 +2507,53 @@ material information on collision shapes for backward compatibility.</source>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>DMC5 MOTLIST and PFB 3D previews are now supported for viewing only.</source>
-        <translation>现已支持查看 DMC5 的 MOTLIST 和 PFB 3D 预览（暂仅支持查看）。</translation>
+        <source>Added support for DMC5 .gui files.</source>
+        <translation>新增 DMC5 .gui 文件支持。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added an AI assistant with project-management capabilities and support for updating and modding MDF, User, and MSG files. For now, it supports the DeepSeek API and local LLMs.</source>
-        <translation>新增 AI 助手，支持项目管理以及 MDF、User 和 MSG 文件的更新与修改。目前仅支持 DeepSeek API 和本地大语言模型。</translation>
+        <source>Added the ability to view the changelog in "About".</source>
+        <translation>现在可以在“关于”中查看更新日志。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added Save All for modified files.</source>
-        <translation>新增“全部保存”功能，可保存已修改的文件。</translation>
+        <source>Added replace mode to the RSZ value finder, plus the ability to jump to found instances by double-clicking them. The UI has also been reworked.</source>
+        <translation>为 RSZ 值查找器新增替换模式，并支持双击找到的实例跳转到对应位置。查找器界面也已重新设计。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added PRB/LPRB support for all games, including scene previews.</source>
-        <translation>新增所有游戏的 PRB/LPRB 支持，包括场景预览。</translation>
+        <source>Updated the MHWilds file list and RSZ dump.</source>
+        <translation>更新了 MHWilds 文件列表和 RSZ 转储。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Multiple lightprobes can now be previewed in a single 3D scene.</source>
-        <translation>现在可以在同一个 3D 场景中预览多个光照探针。</translation>
+        <source>Added color previews to more MDF parameters.</source>
+        <translation>为更多 MDF 参数新增颜色预览。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Files can now be opened directly by double-clicking them in the standalone PAK Browser.</source>
-        <translation>现在可以在独立 PAK 浏览器中双击文件直接打开。</translation>
+        <source>Improved the look and behavior of tabs (hold to drag).</source>
+        <translation>改进了标签页的外观和行为（按住即可拖动）。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Updated the SF6 file list and RSZ dump.</source>
-        <translation>更新了 SF6 文件列表和 RSZ 转储。</translation>
+        <source>Fixed some issues with the AI assistant and improved its file management capabilities.</source>
+        <translation>修复了 AI 助手的一些问题，并改进了其文件管理能力。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>CRCs are now rewritten from the RSZ dump when saving RSZ files. This can update outdated mods by resaving them, but use it with care because it may cause corruption.</source>
-        <translation>保存 RSZ 文件时，现在会根据 RSZ 转储重写 CRC。重新保存可以更新过时的模组，但请谨慎使用，否则可能导致数据损坏。</translation>
+        <source>Fixed occasional failures when opening a file from PAK Browser (concurrency issue).</source>
+        <translation>修复了从 PAK 浏览器打开文件时偶发失败的问题（并发问题）。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added automatic resource management for Pragmata RSZ files through an improved RSZ dump.</source>
-        <translation>通过改进的 RSZ 转储，为 Pragmata RSZ 文件新增自动资源管理。</translation>
+        <source>Fixed sound playback failures when certain conditions are met.</source>
+        <translation>修复了特定条件下声音播放失败的问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py"/>
-        <source>DMC5 mesh blendshapes are now supported and can be previewed in MOTLIST/PFB 3D.</source>
-        <translation>现已支持 DMC5 网格混合形状，并可在 MOTLIST/PFB 3D 中预览。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Lightprobe rendering now uses full vertex shading instead of a vertex-budgeted approximation for more faithful in-game environments.</source>
-        <translation>光照探针渲染现在使用完整顶点着色，而不是基于顶点预算的近似方式，从而更忠实地还原游戏内环境。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Miscellaneous UI fixes.</source>
-        <translation>修复了各种界面问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed .msg files not being searched correctly during "Find in files" search.</source>
-        <translation>修复了在“文件中查找”搜索期间无法正确搜索 .msg 文件的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed unknown entries not appearing in the PAK Browser.</source>
-        <translation>修复了 PAK 浏览器中不显示未知条目的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed broken automatic file-list detection for Pragmata.</source>
-        <translation>修复了 Pragmata 自动文件列表检测失效的问题。</translation>
+        <source>Fixed RCOL views breaking REasy's workspace view.</source>
+        <translation>修复了 RCOL 视图导致 REasy 工作区视图损坏的问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="178"/>
