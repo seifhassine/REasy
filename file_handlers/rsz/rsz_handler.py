@@ -27,7 +27,6 @@ from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     ObjectData,
     UserDataData,
-    RawBytesData,
     is_reference_type,
     is_array_type,
 )
@@ -47,6 +46,7 @@ from .rsz_array_clipboard import RszArrayClipboard
 from .rsz_gameobject_clipboard import RszGameObjectClipboard
 from .rsz_component_clipboard import RszComponentClipboard
 from .utils.rsz_field_utils import (
+    create_default_field_value,
     create_field_from_definition,
     iter_field_references,
     update_references_with_mapping,
@@ -1513,19 +1513,15 @@ class RszViewer(QWidget):
 
     def _create_default_field(self, data_class, original_type, is_array=False, field_size=1):
         try:
-            if is_array:
-                return ArrayData([], data_class, original_type)
-            if data_class == ObjectData:
-                return ObjectData(0, original_type)
-            if data_class == UserDataData:
-                if hasattr(self.scn, 'has_embedded_rsz') and self.scn.has_embedded_rsz:
-                    userdata = UserDataData(0, "", original_type)
-                    userdata._needs_embedded_rsz = True
-                    return userdata
-                return UserDataData(0, "", original_type)
-            if data_class == RawBytesData:
-                return RawBytesData(bytes(field_size), field_size, original_type)
-            return data_class()
+            return create_default_field_value(
+                data_class,
+                original_type,
+                is_array,
+                field_size,
+                has_embedded_rsz=bool(
+                    getattr(self.scn, "has_embedded_rsz", False)
+                ),
+            )
         except Exception as e:
             print(f"Error creating field: {str(e)}")
             return None

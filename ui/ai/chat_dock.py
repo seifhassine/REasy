@@ -67,6 +67,7 @@ from services.ai.credential_store import (
     CredentialStoreError,
     DeepSeekCredentialStore,
 )
+from settings import AI_FILE_ACTION_MODES
 from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
 
 
@@ -1204,6 +1205,86 @@ acting on file state. Return only the compacted memory.
         context_row.addWidget(self.context_combo)
         context_row.addStretch(1)
         settings_layout.addLayout(context_row)
+
+        file_actions_row = QHBoxLayout()
+        file_actions_row.setContentsMargins(2, 0, 2, 0)
+        file_actions_row.setSpacing(7)
+        file_actions_label = QLabel(
+            self.tr("File actions"),
+            self.settings_panel,
+        )
+        file_actions_label.setObjectName("assistantFileActionModeLabel")
+        file_actions_label.setToolTip(
+            self.tr("Confirmation policy for scoped local file operations")
+        )
+        file_actions_label.setFixedWidth(72)
+        file_actions_row.addWidget(file_actions_label)
+
+        self.file_action_mode_combo = QComboBox(self.settings_panel)
+        self.file_action_mode_combo.setObjectName("assistantFileActionMode")
+        self.file_action_mode_combo.setAccessibleName(
+            self.tr("Assistant file action mode")
+        )
+        self.file_action_mode_combo.addItem(
+            self.tr("Review each plan"),
+            "review",
+        )
+        self.file_action_mode_combo.addItem(
+            self.tr("Ask once per folder"),
+            "request",
+        )
+        self.file_action_mode_combo.addItem(
+            self.tr("Scoped autopilot"),
+            "scoped_autopilot",
+        )
+        configured_file_mode = str(
+            self.app_window.settings.get("ai_file_action_mode", "review")
+        ).strip().casefold()
+        configured_file_index = self.file_action_mode_combo.findData(
+            configured_file_mode
+        )
+        self.file_action_mode_combo.setCurrentIndex(
+            max(0, configured_file_index)
+        )
+        self.file_action_mode_combo.setToolTip(
+            self.tr(
+                "Scoped autopilot skips prompts only for copy, move, and rename "
+                "inside the exact folder supplied in the current request. Ask "
+                "once remembers each approved folder until that request ends."
+            )
+        )
+        self.file_action_mode_combo.currentIndexChanged.connect(
+            self._save_file_action_mode
+        )
+        file_actions_row.addWidget(self.file_action_mode_combo, 1)
+        settings_layout.addLayout(file_actions_row)
+
+        self.file_autopilot_trash_check = QCheckBox(
+            self.tr("Allow Recycle Bin operations in scoped autopilot"),
+            self.settings_panel,
+        )
+        self.file_autopilot_trash_check.setObjectName(
+            "assistantFileAutopilotTrash"
+        )
+        self.file_autopilot_trash_check.setChecked(
+            bool(
+                self.app_window.settings.get(
+                    "ai_file_autopilot_trash",
+                    False,
+                )
+            )
+        )
+        self.file_autopilot_trash_check.setToolTip(
+            self.tr(
+                "Advanced: skip the final confirmation for files sent to the "
+                "operating system Recycle Bin. Permanent deletion remains unavailable."
+            )
+        )
+        self.file_autopilot_trash_check.toggled.connect(
+            self._save_file_autopilot_trash
+        )
+        settings_layout.addWidget(self.file_autopilot_trash_check)
+        self._refresh_file_action_controls()
         header_layout.addWidget(self.settings_panel)
 
         self.settings_toggle.toggled.connect(
@@ -1388,6 +1469,7 @@ acting on file state. Return only the compacted memory.
             QLineEdit#assistantApiKey, QLineEdit#assistantEndpoint,
             QComboBox#assistantProvider, QComboBox#assistantModel,
             QComboBox#assistantContextWindow,
+            QComboBox#assistantFileActionMode,
             QComboBox#assistantThinkingMode,
             QComboBox#assistantReasoningEffort {{
                 color: #dce3ea;
@@ -1400,6 +1482,7 @@ acting on file state. Return only the compacted memory.
             QLineEdit#assistantApiKey:focus, QLineEdit#assistantEndpoint:focus,
             QComboBox#assistantProvider:focus, QComboBox#assistantModel:focus,
             QComboBox#assistantContextWindow:focus,
+            QComboBox#assistantFileActionMode:focus,
             QComboBox#assistantThinkingMode:focus,
             QComboBox#assistantReasoningEffort:focus {{
                 border-color: {accent_hex};
@@ -1407,6 +1490,7 @@ acting on file state. Return only the compacted memory.
             QComboBox#assistantProvider::drop-down,
             QComboBox#assistantModel::drop-down,
             QComboBox#assistantContextWindow::drop-down,
+            QComboBox#assistantFileActionMode::drop-down,
             QComboBox#assistantThinkingMode::drop-down,
             QComboBox#assistantReasoningEffort::drop-down {{
                 border: none;
@@ -1415,6 +1499,7 @@ acting on file state. Return only the compacted memory.
             QComboBox#assistantProvider QAbstractItemView,
             QComboBox#assistantModel QAbstractItemView,
             QComboBox#assistantContextWindow QAbstractItemView,
+            QComboBox#assistantFileActionMode QAbstractItemView,
             QComboBox#assistantThinkingMode QAbstractItemView,
             QComboBox#assistantReasoningEffort QAbstractItemView {{
                 color: #edf2f7;
@@ -1427,7 +1512,8 @@ acting on file state. Return only the compacted memory.
                 background: transparent;
             }}
             QLabel#contextWindowLabel, QLabel#thinkingModeLabel,
-            QLabel#reasoningEffortLabel {{
+            QLabel#reasoningEffortLabel,
+            QLabel#assistantFileActionModeLabel {{
                 color: #aeb8c4;
                 background-color: transparent;
                 font-size: 8.5pt;
@@ -1453,24 +1539,28 @@ acting on file state. Return only the compacted memory.
                 background-color: transparent;
                 font-size: 8pt;
             }}
-            QCheckBox#rememberApiKey {{
+            QCheckBox#rememberApiKey,
+            QCheckBox#assistantFileAutopilotTrash {{
                 color: #aeb8c4;
                 background: transparent;
                 spacing: 6px;
                 font-size: 8pt;
             }}
-            QCheckBox#rememberApiKey::indicator {{
+            QCheckBox#rememberApiKey::indicator,
+            QCheckBox#assistantFileAutopilotTrash::indicator {{
                 width: 13px;
                 height: 13px;
                 border: 1px solid #46505d;
                 border-radius: 4px;
                 background-color: #171a20;
             }}
-            QCheckBox#rememberApiKey::indicator:checked {{
+            QCheckBox#rememberApiKey::indicator:checked,
+            QCheckBox#assistantFileAutopilotTrash::indicator:checked {{
                 background-color: {accent_hex};
                 border-color: {accent_hex};
             }}
-            QCheckBox#rememberApiKey:disabled {{
+            QCheckBox#rememberApiKey:disabled,
+            QCheckBox#assistantFileAutopilotTrash:disabled {{
                 color: #69737f;
             }}
             QScrollArea#mdfAssistantTranscript {{
@@ -1821,8 +1911,8 @@ acting on file state. Return only the compacted memory.
             else self.tr("Requested REasy context is sent to DeepSeek.")
         )
         return self.tr(
-            "Changes made by the assistant stay unsaved until you request a "
-            "save. {}"
+            "Editor changes stay unsaved until you request a save. Scoped file "
+            "operations follow the File actions policy above. {}"
         ).format(destination)
 
     def _provider_changed(self, _index: int):
@@ -2006,6 +2096,27 @@ acting on file state. Return only the compacted memory.
         self.app_window.settings[key] = max(0, tokens)
         self.app_window.save_settings()
         self._refresh_context_window_ui()
+
+    def _refresh_file_action_controls(self):
+        if not hasattr(self, "file_action_mode_combo"):
+            return
+        scoped = self.file_action_mode_combo.currentData() == "scoped_autopilot"
+        self.file_autopilot_trash_check.setEnabled(scoped)
+
+    def _save_file_action_mode(self, _index: int):
+        mode = self.file_action_mode_combo.currentData()
+        if mode not in AI_FILE_ACTION_MODES:
+            return
+        self._refresh_file_action_controls()
+        if self.app_window.settings.get("ai_file_action_mode") != mode:
+            self.app_window.settings["ai_file_action_mode"] = mode
+            self.app_window.save_settings()
+
+    def _save_file_autopilot_trash(self, checked: bool):
+        checked = bool(checked)
+        if self.app_window.settings.get("ai_file_autopilot_trash") != checked:
+            self.app_window.settings["ai_file_autopilot_trash"] = checked
+            self.app_window.save_settings()
 
     def _save_model(self, *_args):
         model = self.model_combo.currentText().strip()

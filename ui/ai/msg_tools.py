@@ -14,7 +14,9 @@ from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
 from file_handlers.msg.msg_handler import MsgHandler
 from file_handlers.msg.msg_viewer import MsgViewer
 from ui.ai.file_migration import (
+    migration_confirmation_details,
     migration_job_schema,
+    migration_publish_schema_properties,
 )
 from ui.ai.msg_migration import (
     MsgMigrationStrategy,
@@ -59,9 +61,10 @@ before applying changes. An opened PAK-backed MSG is a valid unsaved in-memory
 destination and does not need to be extracted first.
 
 Use migrate_msg_files for one or many external outdated/latest pairs. It keeps
-each latest MSG as the structural base and writes a separate output file; do
-not open every pair first. Before it can run, the user must open the relevant
-game project and load that game's PAK files in the Project Browser.
+each latest MSG as the structural base. It writes separate outputs by default,
+or can explicitly replace an input only after staging every result and retaining
+backups. Do not open every pair first. Before it can run, the user must open the
+relevant game project and load that game's PAK files in the Project Browser.
 
 When the user supplies a mod folder and asks to update all MSG files, call
 update_msg_mod_folder once. It discovers them recursively, matches versioned
@@ -485,19 +488,24 @@ def msg_tool_definitions() -> tuple[AiToolDefinition, ...]:
         tool(
             "migrate_msg_files",
             "Migrate one or many MSG files on disk. Use only when explicit "
-            "outdated/latest/output file paths are already known; use "
+            "outdated/latest file paths (and any separate output path) are known; use "
             "update_msg_mod_folder for a mod directory. Each latest file "
             "remains the structural and format-version base; entries match by UUID, "
             "languages by code, and attributes by name and compatible type. "
-            "Outputs are written separately and atomically. Requires the user "
+            "Outputs are written atomically; explicit protected replacement "
+            "modes retain backups. Requires the user "
             "to first open the relevant game project with its PAK files loaded.",
             {
                 "jobs": {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 256,
-                    "items": migration_job_schema("msg"),
+                    "items": migration_job_schema(
+                        "msg",
+                        allow_protected_replace=True,
+                    ),
                 },
+                **migration_publish_schema_properties(),
                 "include_source_only": {
                     "type": "boolean",
                     "description": (
@@ -2512,15 +2520,24 @@ class MsgAssistantToolMixin:
         self,
         jobs: list[dict[str, Any]],
         include_source_only: bool = False,
+        publish_mode: str = "separate",
+        backup_folder: str = "",
     ) -> dict[str, Any]:
         return self._run_incremental_steps(
-            self._migrate_msg_files_steps(jobs, include_source_only)
+            self._migrate_msg_files_steps(
+                jobs,
+                include_source_only,
+                publish_mode,
+                backup_folder,
+            )
         )
 
     def _migrate_msg_files_steps(
         self,
         jobs: list[dict[str, Any]],
         include_source_only: bool = False,
+        publish_mode: str = "separate",
+        backup_folder: str = "",
     ):
         project_context = self._require_update_project_paks()
         strategy = MsgMigrationStrategy(
@@ -2534,6 +2551,8 @@ class MsgAssistantToolMixin:
                 jobs,
                 strategy,
                 project_context,
+                publish_mode=publish_mode,
+                backup_folder=backup_folder,
             )
         )
 
@@ -2541,20 +2560,7 @@ class MsgAssistantToolMixin:
     def _summarize_migrate_msg_files(
         arguments: dict[str, Any],
     ) -> tuple[str, str]:
-        jobs = arguments.get("jobs")
-        count = len(jobs) if isinstance(jobs, list) else 0
-        outputs = [
-            str(job.get("output_file", ""))
-            for job in (jobs or [])[:5]
-            if isinstance(job, dict)
-        ]
-        details = _tr("Jobs: {count}", count=count)
-        if outputs:
-            details += "\n" + _tr(
-                "Output files: {paths}",
-                paths=", ".join(outputs),
-            )
-        return _tr("Migrate MSG files"), details
+        return _tr("Migrate MSG files"), migration_confirmation_details(arguments)
 
     def _update_msg_mod_folder(
         self,

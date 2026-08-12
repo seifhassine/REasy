@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QDesktopServices, QPainter, QPen, QColor
 from tools.pak_exporter import packer_status, _EXE_PATH, _ensure_packer, run_packer
+from services.file_operations import FileOperationError, FolderFileOperations
 
 from .constants  import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate   import _ActionsDelegate, _PakActionsDelegate
@@ -1373,28 +1374,15 @@ class ProjectManager(QDockWidget):
         except Exception as e:
             QMessageBox.critical(self, self.tr("Copy failed"), str(e))
 
-    def _prune_empty_dirs(self, start_path: str) -> bool:
-        removed = False
-        p = start_path
-        while (p and p.startswith(self.project_dir)
-            and p != self.project_dir
-            and os.path.isdir(p) and not os.listdir(p)):
-            try:
-                os.rmdir(p)
-                removed = True
-            except OSError:
-                break       
-            p = os.path.dirname(p)
-        return removed
-
     def _remove_from_project(self, path: str):
+        if not self.project_dir:
+            return
         try:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                os.remove(path)
-                self._prune_empty_dirs(os.path.dirname(path))
-        except Exception as e:
+            service = FolderFileOperations(self.project_dir)
+            target = Path(os.path.abspath(path))
+            relative = target.relative_to(service.root).as_posix()
+            service.trash_entry(relative)
+        except (FileOperationError, OSError, ValueError) as e:
             QMessageBox.critical(self, self.tr("Remove failed"), str(e))
             return
 

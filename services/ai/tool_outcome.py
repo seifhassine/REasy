@@ -24,6 +24,7 @@ _FAILED_STATUSES = {"failed", "aborted"}
 _NO_CHANGE_STATUSES = {"already_up_to_date", "no_changes"}
 _DETAIL_KEYS = (
     "results",
+    "operations",
     "jobs",
     "failures",
     "applied_changes",
@@ -61,7 +62,13 @@ def _text(value: Any) -> str:
 def _detail_text(value: Any) -> str:
     if not isinstance(value, dict):
         return _text(value)
+    source = value.get("source") or ""
+    destination = value.get("destination") or ""
     target = (
+        f"{source} → {destination}"
+        if source and destination
+        else source
+    ) or (
         value.get("destination_file")
         or value.get("file")
         or value.get("requested_tab")
@@ -97,6 +104,8 @@ def summarize_tool_result(
         ("source", "source_file"),
         ("destination", "destination_file"),
         ("output", "output_folder"),
+        ("folder", "root"),
+        ("backup", "backup_folder"),
     ):
         value = _text(result.get(source_key))
         if value:
@@ -109,18 +118,26 @@ def summarize_tool_result(
         ):
             fields.append(("target", target_text))
 
-    requested = _count(result.get("requested_count"))
-    applied = _count(result.get("applied_count"))
+    requested = max(
+        _count(result.get("requested_count")),
+        _count(result.get("operation_count")),
+    )
+    applied = max(
+        _count(result.get("applied_count")),
+        _count(result.get("completed_count")),
+    )
     jobs = _count(result.get("jobs_processed"))
     files = max(
         _count(result.get("files_modified")),
         _count(result.get("mdf_files_updated")),
         _count(result.get("saved_count")),
+        _count(result.get("files_written")),
     )
     changes = _count(result.get("changes_applied"))
     planned = _count(result.get("changes_planned"))
     failures = max(
         _count(result.get("failed_count")),
+        _count(result.get("failure_count")),
         _count(result.get("failures")),
     )
     conflicts = _count(result.get("conflicts"))

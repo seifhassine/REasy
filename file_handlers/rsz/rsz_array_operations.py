@@ -5,12 +5,18 @@ This file contains operations for adding and removing elements from arrays in RS
 """
 
 from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import ObjectData, ArrayData, UserDataData, ResourceData, is_reference_type
+from file_handlers.rsz.rsz_data_types import (
+    ArrayData,
+    ObjectData,
+    UserDataData,
+    is_reference_type,
+)
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
 from file_handlers.rsz.utils.rsz_field_utils import (
     create_field_from_definition,
     get_reference_id_and_type,
+    is_type_assignable,
     iter_field_reference_entries,
 )
 
@@ -48,12 +54,23 @@ class RszArrayOperations:
             return None
             
         type_info, type_id = self.type_registry.find_type_by_name(element_type)
-        if not type_info and array_data.element_class != ResourceData:
+        reference_array = element_class in {ObjectData, UserDataData}
+        if reference_array and not type_info:
             if notify:
                 QMessageBox.warning(
                     self.viewer,
                     "Error",
                     f"Type not found in registry: {element_type}",
+                )
+            return None
+        if reference_array and array_data.orig_type and not is_type_assignable(
+            self.type_registry, element_type, array_data.orig_type
+        ):
+            if notify:
+                QMessageBox.warning(
+                    self.viewer,
+                    "Error",
+                    f"Type {element_type} is not assignable to {array_data.orig_type}",
                 )
             return None
         

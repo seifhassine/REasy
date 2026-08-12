@@ -953,18 +953,26 @@ class RszFile:
         self._parse_rsz_section_core(data, 0, skip_data)
         self._parse_instances(data, skip_data)
 
-    def _validate_instance_types_against_registry(self):
+    def _validate_instance_types_against_registry(
+        self,
+        instance_infos=None,
+        *,
+        label="Instance",
+    ):
         """Validate read instance type IDs/CRCs against the active type registry."""
         if not self._registry_validation_enabled or not self.type_registry:
             return
 
+        instance_infos = self.instance_infos if instance_infos is None else instance_infos
         issues = []
         type_cache = self._type_info_cache
         get_type_info = self.type_registry.get_type_info
 
-        for index, instance in enumerate(self.instance_infos):
+        for index, instance in enumerate(instance_infos):
+            if index == 0 or instance is None:
+                continue
             type_id = instance.type_id
-            if index == 0 or not type_id:
+            if not type_id:
                 continue
 
             type_info = type_cache.get(type_id)
@@ -972,7 +980,9 @@ class RszFile:
                 type_info = get_type_info(type_id)
                 type_cache[type_id] = type_info
             if not type_info:
-                issues.append(f"Instance {index}: type 0x{type_id:08X} is missing from the type registry")
+                issues.append(
+                    f"{label} {index}: type 0x{type_id:08X} is missing from the type registry"
+                )
                 continue
 
             try:
@@ -985,12 +995,42 @@ class RszFile:
                 continue
 
             issues.append(
-                f"Instance {index}: type 0x{type_id:08X} ({type_info.get('name', '<unnamed>')}) CRC mismatch "
+                f"{label} {index}: type 0x{type_id:08X} ({type_info.get('name', '<unnamed>')}) CRC mismatch "
                 f"(file=0x{file_crc:08X}, registry=0x{registry_crc:08X})"
             )
 
         if issues:
             raise TypeRegistryValidationError(issues)
+
+    def validate_type_registry_state(self):
+        """Strictly validate current main and embedded instance metadata."""
+        previous = self._registry_validation_enabled
+        self._registry_validation_enabled = True
+        try:
+            self._validate_instance_types_against_registry()
+            pending = [
+                (f"userdata[{index}]", userdata)
+                for index, userdata in enumerate(self.rsz_userdata_infos)
+            ]
+            while pending:
+                path, userdata = pending.pop()
+                embedded_infos = getattr(userdata, "embedded_instance_infos", None)
+                if embedded_infos is not None:
+                    self._validate_instance_types_against_registry(
+                        embedded_infos,
+                        label=f"Embedded {path} instance",
+                    )
+                pending.extend(
+                    (
+                        f"{path}/userdata[{index}]",
+                        nested,
+                    )
+                    for index, nested in enumerate(
+                        getattr(userdata, "embedded_userdata_infos", ()) or ()
+                    )
+                )
+        finally:
+            self._registry_validation_enabled = previous
         
     def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
@@ -1656,7 +1696,8 @@ class RszFile:
                 _collect_from_field(data_obj, field_def)
 
         def _collect_from_field(data_obj, field_def):
-            if field_def["type"] == "Resource":
+            field_type = str(field_def.get("type", "")).casefold()
+            if field_type == "resource":
                 if not field_def.get("array", False):
                     _add_resource(data_obj.value)
                 else:
@@ -1664,7 +1705,7 @@ class RszFile:
                         _add_resource(elem.value)
                 return
 
-            if field_def["type"] == "Struct" and isinstance(data_obj, StructData):
+            if field_type == "struct" and isinstance(data_obj, StructData):
                 struct_type_name = field_def.get("original_type") or getattr(data_obj, "orig_type", "")
                 if struct_type_name and self.type_registry:
                     struct_info, _ = self.type_registry.find_type_by_name(struct_type_name)
@@ -1683,23 +1724,24 @@ class RszFile:
                 if fields is not None:
                     inst_info = instance_infos[instance_id]
                     type_info = self.type_registry.get_type_info(inst_info.type_id)
-                    name = type_info.get("name", [])
-                    fields_def = type_info.get("fields", [])
+                    if type_info:
+                        name = type_info.get("name", [])
+                        fields_def = type_info.get("fields", [])
 
-                    if name == "via.Prefab" or name == "app.global.ResourcePrefab":
-                        f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
-                        if fields[f0].value:
-                            val = fields[f1].value.rstrip("\0")
-                            if val and val not in resources:
-                                resources.append(val)
+                        if name == "via.Prefab" or name == "app.global.ResourcePrefab":
+                            f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
+                            if fields[f0].value:
+                                val = fields[f1].value.rstrip("\0")
+                                if val and val not in resources:
+                                    resources.append(val)
 
-                    elif name == "via.Folder":
-                        f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
-                        if fields[f4].value:
-                            _add_resource(fields[f5].value)
+                        elif name == "via.Folder":
+                            f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
+                            if fields[f4].value:
+                                _add_resource(fields[f5].value)
 
-                    else:
-                        _collect_from_fields(fields, fields_def)
+                        else:
+                            _collect_from_fields(fields, fields_def)
 
                 for rui in by_instance.get(instance_id, []):
                     _collect_segment(
@@ -2151,6 +2193,45 @@ class RszFile:
         out = bytearray()
         self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
         return bytes(out)
+
+    def build_validated(self, special_align_enabled=False) -> bytes:
+        """Build and strictly verify a stable parse/build round trip."""
+        self.validate_type_registry_state()
+        is_headless = self.header is None
+        modified_states = []
+        pending_userdata = list(self.rsz_userdata_infos)
+        while pending_userdata:
+            userdata = pending_userdata.pop()
+            if hasattr(userdata, "modified"):
+                modified_states.append((userdata, bool(userdata.modified)))
+            pending_userdata.extend(
+                getattr(userdata, "embedded_userdata_infos", ()) or ()
+            )
+
+        try:
+            output = (
+                self.build_headless(special_align_enabled)
+                if is_headless
+                else self.build(special_align_enabled)
+            )
+        finally:
+            for userdata, modified in modified_states:
+                userdata.modified = modified
+
+        verified = RszFile()
+        verified.type_registry = self.type_registry
+        verified.game_version = self.game_version
+        verified.filepath = self.filepath
+        verified.auto_resource_management = self.auto_resource_management
+        if is_headless:
+            verified.read_headless(output, validate_type_registry=True)
+            rebuilt = verified.build_headless(special_align_enabled)
+        else:
+            verified.read(output, validate_type_registry=True)
+            rebuilt = verified.build(special_align_enabled)
+        if rebuilt != output:
+            raise ValueError("RSZ validation failed: rebuilt bytes are not stable.")
+        return output
     
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""

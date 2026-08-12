@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import copy
 import json
-import math
 import re
 import uuid
 from collections import Counter, deque
 from dataclasses import dataclass
 from itertools import islice
-from typing import Any, Iterable
+from typing import Any
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
@@ -21,11 +20,19 @@ from file_handlers.rsz.rsz_data_types import (
     ResourceData,
     StructData,
     UserDataData,
-    get_type_class,
+)
+from file_handlers.rsz.utils.rsz_field_utils import (
+    VALUE_COMPONENTS as _COMPONENTS,
+    coerce_field_value,
+    contains_resource_value,
+    is_type_assignable,
+    new_collection_element,
 )
 from file_handlers.rsz.rsz_file import RszFile
 from ui.ai.file_migration import (
+    migration_confirmation_details,
     migration_job_schema,
+    migration_publish_schema_properties,
 )
 from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
 from ui.ai.rsz_migration import RszMigrationStrategy, load_type_registry
@@ -61,15 +68,21 @@ them only when that source is within the user's request.
 RSZ_EDIT_ASSISTANT_CAPABILITY_PROMPT = """\
 RSZ edit tools are enabled. edit_rsz performs typed edits against exact segment,
 instance, and field paths returned by inspect_rsz. Prefer small targeted actions.
-Use initialize_reference or delete_owned_reference only when the user asked for
-a structural graph change; these reuse REasy's instance-ID remapping logic and
-must be issued alone. Ordinary set/insert/delete/clear actions are atomic and do
-not delete referenced instances unless delete_owned=true is explicit.
+Use initialize_reference or delete_owned_reference only when the user asked for a
+structural graph change. Reference creation/deletion and every array mutation go
+through REasy's normal editor operations; structural actions must be issued alone.
+Existing-ID reference rewiring, raw-byte edits, whole-collection replacement, and
+struct-array shape edits are intentionally unavailable. Resource dependencies are
+rebuilt in handler-managed mode, and parsed files must pass a build/reparse check.
 
 migrate_rsz_files is a low-level mechanical overlay for explicit file pairs;
 use it only when the user specifically asks to transfer every compatible old
 value without semantic AI selection. It cannot distinguish mod intent from an
 obsolete vanilla default. Both registry JSON paths remain mandatory.
+When the user wants to avoid manually renaming a migrated result, use
+replace_outdated_with_backup with output_file set to the new latest-version
+name beside outdated_file; this retains the old file as a backup and publishes
+the whole batch transactionally.
 
 When the user supplies a mod folder and asks to update all RSZ files, call
 analyze_rsz_mod_folder_update first. It recursively discovers USER, SCN, PFB,
@@ -138,7 +151,7 @@ def _edit_action_schema() -> dict[str, Any]:
                 "description": "Exact field path, for example Settings.Speed or Entries[2].Value.",
             },
             "value": {
-                "description": "Typed JSON value for set/insert, or an existing instance ID for a reference.",
+                "description": "Typed JSON value for a scalar set or primitive-array insert.",
             },
             "index": {
                 "type": "integer",
@@ -155,13 +168,6 @@ def _edit_action_schema() -> dict[str, Any]:
             "userdata_string": {
                 "type": "string",
                 "description": "Optional userdata string when creating normal RSZ userdata; defaults to type_name.",
-            },
-            "delete_owned": {
-                "type": "boolean",
-                "description": (
-                    "For array delete only: also delete an exclusively owned "
-                    "referenced instance and remap IDs."
-                ),
             },
         },
         "required": ["operation", "instance_id", "path"],
@@ -339,16 +345,21 @@ def rsz_tool_definitions() -> tuple[AiToolDefinition, ...]:
             "The outdated and latest registries are both mandatory and are "
             "applied independently. The latest file remains the structural "
             "base; compatible values are transferred by type/graph identity "
-            "and reference instance IDs are remapped. Outputs are separate "
-            "and atomically written. Requires the user to first open the "
+            "and reference instance IDs are remapped. Outputs are atomically "
+            "written. Explicit protected replacement modes "
+            "retain backups and roll back as a batch. Requires the user to first open the "
             "relevant game project with its PAK files loaded.",
             {
                 "jobs": {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 256,
-                    "items": migration_job_schema("rsz"),
+                    "items": migration_job_schema(
+                        "rsz",
+                        allow_protected_replace=True,
+                    ),
                 },
+                **migration_publish_schema_properties(),
                 "outdated_registry": {
                     "type": "string",
                     "description": (
@@ -697,31 +708,6 @@ def _enum_payload(data_obj) -> dict[str, Any] | None:
         "name": match.get("name") if match else None,
         "known": match is not None,
     }
-
-
-_COMPONENTS = {
-    "Vec2Data": ("x", "y"),
-    "Float2Data": ("x", "y"),
-    "PointData": ("x", "y"),
-    "Int2Data": ("x", "y"),
-    "Uint2Data": ("x", "y"),
-    "Vec3Data": ("x", "y", "z"),
-    "Vec3ColorData": ("x", "y", "z"),
-    "Float3Data": ("x", "y", "z"),
-    "PositionData": ("x", "y", "z"),
-    "Int3Data": ("x", "y", "z"),
-    "Uint3Data": ("x", "y", "z"),
-    "Vec4Data": ("x", "y", "z", "w"),
-    "Float4Data": ("x", "y", "z", "w"),
-    "QuaternionData": ("x", "y", "z", "w"),
-    "Int4Data": ("x", "y", "z", "w"),
-    "Int4ColorData": ("x", "y", "z", "w"),
-    "ColorData": ("r", "g", "b", "a"),
-    "RangeData": ("min", "max"),
-    "RangeIData": ("min", "max"),
-    "SizeData": ("width", "height"),
-    "RectData": ("min_x", "min_y", "max_x", "max_y"),
-}
 
 
 def _clean_string(value: Any) -> tuple[str, bool]:
@@ -1203,281 +1189,28 @@ def _owner_instance_id(document: _RszDocument, segment_id: str, target) -> int |
     )
 
 
-_INTEGER_BOUNDS = {
-    "S8Data": (-0x80, 0x7F),
-    "U8Data": (0, 0xFF),
-    "S16Data": (-0x8000, 0x7FFF),
-    "U16Data": (0, 0xFFFF),
-    "S32Data": (-0x80000000, 0x7FFFFFFF),
-    "U32Data": (0, 0xFFFFFFFF),
-    "S64Data": (-0x8000000000000000, 0x7FFFFFFFFFFFFFFF),
-    "U64Data": (0, 0xFFFFFFFFFFFFFFFF),
-}
-
-
-def _integer_value(value: Any, label: str, bounds: tuple[int, int]) -> int:
-    if isinstance(value, bool):
-        raise AssistantToolError(_tr("{field} must be an integer.", field=label))
+def _coerce_value(
+    template,
+    value: Any,
+    segment: _RszSegment,
+    registry,
+    label: str,
+    *,
+    allow_references: bool = False,
+):
     try:
-        parsed = int(value, 0) if isinstance(value, str) else int(value)
-    except (TypeError, ValueError) as exc:
-        raise AssistantToolError(
-            _tr("{field} must be an integer.", field=label)
-        ) from exc
-    if not bounds[0] <= parsed <= bounds[1]:
-        raise AssistantToolError(
-            _tr("{field} is outside its supported numeric range.", field=label)
+        return coerce_field_value(
+            template,
+            value,
+            instance_infos=segment.instance_infos,
+            userdata_strings=segment.userdata_strings,
+            registry=registry,
+            label=label,
+            context=segment.context,
+            allow_references=allow_references,
         )
-    return parsed
-
-
-def _float_value(value: Any, label: str) -> float:
-    if isinstance(value, bool):
-        raise AssistantToolError(_tr("{field} must be numeric.", field=label))
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError) as exc:
-        raise AssistantToolError(_tr("{field} must be numeric.", field=label)) from exc
-    if not math.isfinite(parsed):
-        raise AssistantToolError(_tr("{field} must be finite.", field=label))
-    return parsed
-
-
-def _enum_value(data_obj, value: Any) -> Any:
-    if not isinstance(value, str) or not getattr(data_obj, "orig_type", ""):
-        return value
-    members = EnumManager.instance().get_enum_values(data_obj.orig_type)
-    matches = [
-        member
-        for member in members
-        if str(member.get("name", "")).casefold() == value.casefold()
-    ]
-    if len(matches) == 1:
-        return matches[0].get("value")
-    return value
-
-
-def _sequence(value: Any, names: Iterable[str], label: str) -> dict[str, Any]:
-    names = tuple(names)
-    if isinstance(value, dict):
-        if set(value) != set(names):
-            raise AssistantToolError(
-                _tr(
-                    "{field} must provide exactly: {names}",
-                    field=label,
-                    names=", ".join(names),
-                )
-            )
-        return {name: value[name] for name in names}
-    if not isinstance(value, list) or len(value) != len(names):
-        raise AssistantToolError(
-            _tr("{field} must contain {count} values.", field=label, count=len(names))
-        )
-    return dict(zip(names, value))
-
-
-def _coerce_value(template, value: Any, segment: _RszSegment, registry, label: str):
-    memo = (
-        {id(segment.context): segment.context} if segment.context is not None else None
-    )
-    clone = copy.deepcopy(template, memo)
-    class_name = clone.__class__.__name__
-    if isinstance(clone, ObjectData):
-        clone.value = _integer_value(
-            value, label, (0, max(0, len(segment.instance_infos) - 1))
-        )
-        return clone
-    if isinstance(clone, UserDataData):
-        instance_value = value.get("instance_id") if isinstance(value, dict) else value
-        if isinstance(value, dict) and set(value) != {"instance_id"}:
-            raise AssistantToolError(
-                _tr(
-                    "{field} can only rewire to an existing instance ID. Use "
-                    "initialize_reference to change userdata type or path.",
-                    field=label,
-                )
-            )
-        clone.value = _integer_value(
-            instance_value,
-            label,
-            (0, max(0, len(segment.instance_infos) - 1)),
-        )
-        if clone.value and clone.value not in segment.userdata_strings:
-            raise AssistantToolError(
-                _tr(
-                    "{field} must reference an existing userdata instance.",
-                    field=label,
-                )
-            )
-        clone.string = segment.userdata_strings.get(clone.value, "")
-        return clone
-    if isinstance(clone, (GuidData, GameObjectRefData)):
-        try:
-            parsed = uuid.UUID(str(value))
-        except (ValueError, AttributeError) as exc:
-            raise AssistantToolError(
-                _tr("{field} must be a GUID.", field=label)
-            ) from exc
-        clone.guid_str = str(parsed)
-        clone.raw_bytes = parsed.bytes_le
-        return clone
-    if isinstance(clone, RawBytesData):
-        try:
-            raw = bytes.fromhex(value) if isinstance(value, str) else bytes(value)
-        except (TypeError, ValueError) as exc:
-            raise AssistantToolError(
-                _tr("{field} must be hexadecimal bytes.", field=label)
-            ) from exc
-        if len(raw) != clone.field_size:
-            raise AssistantToolError(
-                _tr(
-                    "{field} must contain exactly {count} bytes.",
-                    field=label,
-                    count=clone.field_size,
-                )
-            )
-        clone.raw_bytes = raw
-        return clone
-    if isinstance(clone, (ArrayData, StructData)):
-        if not isinstance(value, list):
-            raise AssistantToolError(_tr("{field} must be an array.", field=label))
-        clone.values = [
-            _new_collection_element(clone, item, segment, registry, f"{label}[{index}]")
-            for index, item in enumerate(value)
-        ]
-        return clone
-    if isinstance(clone, dict):
-        if not isinstance(value, dict) or set(value) != set(clone):
-            raise AssistantToolError(
-                _tr("{field} must provide every struct field.", field=label)
-            )
-        return {
-            name: _coerce_value(
-                child, value[name], segment, registry, f"{label}.{name}"
-            )
-            for name, child in clone.items()
-        }
-    if isinstance(clone, ResourceData) or class_name in {
-        "StringData",
-        "RuntimeTypeData",
-    }:
-        if not isinstance(value, str):
-            raise AssistantToolError(_tr("{field} must be text.", field=label))
-        clone.value = value
-        return clone
-    if class_name == "BoolData":
-        if not isinstance(value, bool):
-            raise AssistantToolError(_tr("{field} must be true or false.", field=label))
-        clone.value = value
-        return clone
-    if class_name in _INTEGER_BOUNDS:
-        clone.value = _integer_value(
-            _enum_value(clone, value), label, _INTEGER_BOUNDS[class_name]
-        )
-        return clone
-    if class_name in {"F32Data", "F64Data"}:
-        clone.value = _float_value(value, label)
-        return clone
-    components = _COMPONENTS.get(class_name)
-    if components:
-        values = _sequence(value, components, label)
-        integer = class_name.startswith(("Int", "Uint")) or class_name in {
-            "ColorData",
-            "RangeIData",
-        }
-        for name in components:
-            if integer:
-                if class_name == "ColorData":
-                    bounds = (0, 0xFF)
-                elif class_name.startswith("Uint"):
-                    bounds = (0, 0xFFFFFFFF)
-                else:
-                    bounds = (-0x80000000, 0x7FFFFFFF)
-                setattr(
-                    clone, name, _integer_value(values[name], f"{label}.{name}", bounds)
-                )
-            else:
-                setattr(clone, name, _float_value(values[name], f"{label}.{name}"))
-        return clone
-    if class_name in {"Mat4Data", "OBBData"}:
-        expected = len(clone.values)
-        if not isinstance(value, list) or len(value) != expected:
-            raise AssistantToolError(
-                _tr("{field} must contain {count} values.", field=label, count=expected)
-            )
-        clone.values = [_float_value(item, label) for item in value]
-        return clone
-    if class_name == "AABBData":
-        if not isinstance(value, dict) or set(value) != {"min", "max"}:
-            raise AssistantToolError(
-                _tr("{field} must provide min and max.", field=label)
-            )
-        for bound in ("min", "max"):
-            values = _sequence(value[bound], ("x", "y", "z"), f"{label}.{bound}")
-            target = getattr(clone, bound)
-            for name, item in values.items():
-                setattr(target, name, _float_value(item, f"{label}.{bound}.{name}"))
-        return clone
-    if class_name == "CapsuleData":
-        if not isinstance(value, dict) or set(value) != {"start", "end", "radius"}:
-            raise AssistantToolError(
-                _tr("{field} must provide start, end, and radius.", field=label)
-            )
-        for endpoint in ("start", "end"):
-            values = _sequence(value[endpoint], ("x", "y", "z"), f"{label}.{endpoint}")
-            target = getattr(clone, endpoint)
-            for name, item in values.items():
-                setattr(target, name, _float_value(item, f"{label}.{endpoint}.{name}"))
-        clone.radius = _float_value(value["radius"], f"{label}.radius")
-        return clone
-    if class_name in {"AreaData", "AreaDataOld"}:
-        names = {"p0", "p1", "p2", "p3", "height", "bottom"}
-        if not isinstance(value, dict) or set(value) != names:
-            raise AssistantToolError(
-                _tr(
-                    "{field} must provide four points, height, and bottom.", field=label
-                )
-            )
-        for point in ("p0", "p1", "p2", "p3"):
-            values = _sequence(value[point], ("x", "y"), f"{label}.{point}")
-            target = getattr(clone, point)
-            target.x = _float_value(values["x"], f"{label}.{point}.x")
-            target.y = _float_value(values["y"], f"{label}.{point}.y")
-        clone.height = _float_value(value["height"], f"{label}.height")
-        clone.bottom = _float_value(value["bottom"], f"{label}.bottom")
-        return clone
-    raise AssistantToolError(
-        _tr(
-            "RSZ storage type is not editable through the assistant: {type}",
-            type=class_name,
-        )
-    )
-
-
-def _default_field(field_def: dict[str, Any]):
-    field_class = get_type_class(
-        str(field_def.get("type", "unknown")).lower(),
-        int(field_def.get("size", 4)),
-        bool(field_def.get("native", False)),
-        bool(field_def.get("array", False)),
-        int(field_def.get("align", 4) or 4),
-        str(field_def.get("original_type", "") or ""),
-        str(field_def.get("name", "") or ""),
-    )
-    original = str(field_def.get("original_type", "") or "")
-    if field_def.get("array", False):
-        return ArrayData([], field_class, original)
-    if field_class is ObjectData:
-        return ObjectData(0, original)
-    if field_class is UserDataData:
-        return UserDataData(0, "", original)
-    if field_class is RawBytesData:
-        size = int(field_def.get("size", 1))
-        return RawBytesData(bytes(size), size, original)
-    try:
-        return field_class(orig_type=original)
-    except TypeError:
-        return field_class()
+    except ValueError as exc:
+        raise AssistantToolError(str(exc)) from exc
 
 
 def _new_collection_element(
@@ -1486,44 +1219,23 @@ def _new_collection_element(
     segment: _RszSegment,
     registry,
     label: str,
+    *,
+    allow_references: bool = False,
 ):
-    if isinstance(collection, StructData):
-        type_info, _ = (
-            registry.find_type_by_name(collection.orig_type)
-            if registry
-            else (None, None)
+    try:
+        return new_collection_element(
+            collection,
+            value,
+            instance_infos=segment.instance_infos,
+            userdata_strings=segment.userdata_strings,
+            registry=registry,
+            label=label,
+            context=segment.context,
+            allow_references=allow_references,
+            has_embedded_rsz=segment.context is not None,
         )
-        if not type_info:
-            raise AssistantToolError(
-                _tr("RSZ struct type was not found: {type}", type=collection.orig_type)
-            )
-        template = {
-            field["name"]: _default_field(field)
-            for field in type_info.get("fields", ())
-            if field.get("name")
-        }
-    else:
-        element_class = getattr(collection, "element_class", None)
-        if element_class is None:
-            raise AssistantToolError(
-                _tr("RSZ array has no element type: {field}", field=label)
-            )
-        if element_class is ObjectData:
-            template = ObjectData(0, collection.orig_type)
-        elif element_class is UserDataData:
-            template = UserDataData(0, "", collection.orig_type)
-        elif element_class is RawBytesData:
-            raise AssistantToolError(
-                _tr(
-                    "Raw-byte array insertion requires replacing the complete array field."
-                )
-            )
-        else:
-            try:
-                template = element_class(orig_type=collection.orig_type)
-            except TypeError:
-                template = element_class()
-    return _coerce_value(template, value, segment, registry, label)
+    except ValueError as exc:
+        raise AssistantToolError(str(exc)) from exc
 
 
 def _refresh_collection_metadata(collection, segment: _RszSegment) -> None:
@@ -1553,6 +1265,63 @@ def _refresh_segment_metadata(segment: _RszSegment) -> None:
                 _refresh_collection_metadata(value, segment)
 
 
+def _touches_resource_dependency(target) -> bool:
+    if isinstance(target, ResourceData):
+        return True
+    if isinstance(target, ArrayData) and target.element_class is ResourceData:
+        return True
+    return contains_resource_value(target)
+
+
+def _restore_rsz_snapshot(
+    document: _RszDocument,
+    snapshot: bytes,
+    *,
+    was_headless: bool,
+) -> None:
+    rsz = document.rsz
+    restored = RszFile()
+    restored.type_registry = rsz.type_registry
+    restored.game_version = rsz.game_version
+    restored.filepath = rsz.filepath
+    restored.auto_resource_management = rsz.auto_resource_management
+    if was_headless:
+        restored.read_headless(snapshot, validate_type_registry=True)
+    else:
+        restored.read(snapshot, validate_type_registry=True)
+    rsz.__dict__.clear()
+    rsz.__dict__.update(restored.__dict__)
+
+
+def _modified_state(document: _RszDocument) -> dict[str, Any]:
+    owners = []
+    seen = set()
+    for owner in (document.tab, document.owner_viewer, document.editor_viewer):
+        if owner is None or id(owner) in seen or not hasattr(owner, "modified"):
+            continue
+        seen.add(id(owner))
+        owners.append((owner, bool(owner.modified)))
+    contexts = {
+        segment.id: bool(segment.context.modified)
+        for segment in _segments(document.rsz)
+        if segment.context is not None and hasattr(segment.context, "modified")
+    }
+    return {"owners": owners, "contexts": contexts}
+
+
+def _restore_modified_state(document: _RszDocument, state: dict[str, Any]) -> None:
+    for owner, modified in state["owners"]:
+        owner.modified = modified
+    contexts = state["contexts"]
+    for segment in _segments(document.rsz):
+        if (
+            segment.id in contexts
+            and segment.context is not None
+            and hasattr(segment.context, "modified")
+        ):
+            segment.context.modified = contexts[segment.id]
+
+
 def _reference_children(
     segments: list[_RszSegment],
 ) -> dict[tuple[str, int], _RszSegment]:
@@ -1572,6 +1341,8 @@ class RszAssistantToolMixin:
         outdated_registry: str,
         latest_registry: str,
         include_source_only: bool = False,
+        publish_mode: str = "separate",
+        backup_folder: str = "",
     ) -> dict[str, Any]:
         return self._run_incremental_steps(
             self._migrate_rsz_files_steps(
@@ -1579,6 +1350,8 @@ class RszAssistantToolMixin:
                 outdated_registry,
                 latest_registry,
                 include_source_only,
+                publish_mode,
+                backup_folder,
             )
         )
 
@@ -1588,6 +1361,8 @@ class RszAssistantToolMixin:
         outdated_registry: str,
         latest_registry: str,
         include_source_only: bool = False,
+        publish_mode: str = "separate",
+        backup_folder: str = "",
     ):
         project_context = self._require_update_project_paks()
         outdated_path, outdated_types = load_type_registry(
@@ -1613,6 +1388,8 @@ class RszAssistantToolMixin:
                 jobs,
                 strategy,
                 project_context,
+                publish_mode=publish_mode,
+                backup_folder=backup_folder,
             )
         )
 
@@ -1620,24 +1397,19 @@ class RszAssistantToolMixin:
     def _summarize_migrate_rsz_files(
         arguments: dict[str, Any],
     ) -> tuple[str, str]:
-        jobs = arguments.get("jobs")
-        count = len(jobs) if isinstance(jobs, list) else 0
-        details = _tr(
-            "Jobs: {count}\nOutdated registry: {old}\nLatest registry: {new}",
-            count=count,
-            old=arguments.get("outdated_registry", ""),
-            new=arguments.get("latest_registry", ""),
+        details = migration_confirmation_details(
+            arguments,
+            extra_lines=(
+                _tr(
+                    "Outdated registry: {path}",
+                    path=arguments.get("outdated_registry", ""),
+                ),
+                _tr(
+                    "Latest registry: {path}",
+                    path=arguments.get("latest_registry", ""),
+                ),
+            ),
         )
-        outputs = [
-            str(job.get("output_file", ""))
-            for job in (jobs or [])[:5]
-            if isinstance(job, dict)
-        ]
-        if outputs:
-            details += "\n" + _tr(
-                "Output files: {paths}",
-                paths=", ".join(outputs),
-            )
         return _tr("Migrate RSZ files"), details
 
     def _analysis_by_id(self, analysis_id: str) -> RszUpdateAnalysis:
@@ -2556,7 +2328,6 @@ class RszAssistantToolMixin:
             "index",
             "type_name",
             "userdata_string",
-            "delete_owned",
         }
         unknown = set(action) - allowed
         if unknown:
@@ -2592,11 +2363,11 @@ class RszAssistantToolMixin:
             raise AssistantToolError(
                 _tr("RSZ {operation} requires value.", operation=operation)
             )
-        if "delete_owned" in action and not isinstance(action["delete_owned"], bool):
-            raise AssistantToolError(_tr("delete_owned must be true or false."))
-        if action.get("delete_owned") and operation != "delete":
+        if operation == "initialize_reference" and not str(
+            action.get("type_name") or ""
+        ).strip():
             raise AssistantToolError(
-                _tr("delete_owned is supported only by array delete actions.")
+                _tr("initialize_reference requires type_name.")
             )
         return {**action, "operation": operation}
 
@@ -2632,7 +2403,7 @@ class RszAssistantToolMixin:
                         raise AssistantToolError(
                             _tr(
                                 "Headless RSZ userdata creation has no outer userdata "
-                                "table; rewire to an existing userdata instance instead."
+                                "table and is unavailable through the normal editor workflow."
                             )
                         )
                     if not type_name:
@@ -2644,6 +2415,16 @@ class RszAssistantToolMixin:
                         raise AssistantToolError(
                             _tr("RSZ type was not found: {type}", type=type_name)
                         )
+                    if target.orig_type and not is_type_assignable(
+                        document.registry, type_name, target.orig_type
+                    ):
+                        raise AssistantToolError(
+                            _tr(
+                                "RSZ type {actual} is not assignable to {expected}.",
+                                actual=type_name,
+                                expected=target.orig_type,
+                            )
+                        )
                     userdata_string = str(action.get("userdata_string") or type_name)
                     success = viewer.object_operations.modify_userdata_field(
                         target,
@@ -2651,20 +2432,7 @@ class RszAssistantToolMixin:
                         type_name,
                     )
                 else:
-                    old_instance_id = int(target.value)
-                    target.value = 0
-                    target.string = ""
-                    cleanup = getattr(
-                        viewer.object_operations,
-                        "_try_cleanup_unused_userdata_instance",
-                        None,
-                    )
-                    success = (
-                        bool(cleanup(old_instance_id)) if callable(cleanup) else True
-                    )
-                    if not success:
-                        success = True
-                    viewer.mark_modified()
+                    success = viewer.object_operations.delete_userdata_field(target)
                 if not success:
                     raise AssistantToolError(
                         _tr(
@@ -2691,6 +2459,16 @@ class RszAssistantToolMixin:
                 if not type_info or not type_id:
                     raise AssistantToolError(
                         _tr("RSZ type was not found: {type}", type=type_name)
+                    )
+                if target.orig_type and not is_type_assignable(
+                    document.registry, type_name, target.orig_type
+                ):
+                    raise AssistantToolError(
+                        _tr(
+                            "RSZ type {actual} is not assignable to {expected}.",
+                            actual=type_name,
+                            expected=target.orig_type,
+                        )
                     )
                 mode = "change" if target.value else "initialize"
                 success = viewer.object_operations.modify_object_field(
@@ -2729,6 +2507,16 @@ class RszAssistantToolMixin:
                 raise AssistantToolError(
                     _tr("RSZ type was not found: {type}", type=type_name)
                 )
+            if collection.orig_type and not is_type_assignable(
+                document.registry, type_name, collection.orig_type
+            ):
+                raise AssistantToolError(
+                    _tr(
+                        "RSZ type {actual} is not assignable to {expected}.",
+                        actual=type_name,
+                        expected=collection.orig_type,
+                    )
+                )
             insert_at = (
                 len(collection.values)
                 if index is None
@@ -2760,16 +2548,20 @@ class RszAssistantToolMixin:
                 "target_instance_id": int(created.value),
             }
         delete_at = self._integer(index, "index", 0, len(collection.values) - 1)
-        removed_instance_id = int(collection.values[delete_at].value)
+        removed = collection.values[delete_at]
+        if not isinstance(removed, (ObjectData, UserDataData)):
+            raise AssistantToolError(
+                _tr("{path}[{index}] is not an RSZ reference.", path=path, index=delete_at)
+            )
+        removed_instance_id = int(removed.value)
         if not viewer.delete_array_element(collection, delete_at):
             raise AssistantToolError(
-                _tr("REasy could not delete the owned array element.")
+                _tr("REasy could not delete the referenced array element.")
             )
         return {
             "operation": operation,
             "path": path,
             "index": delete_at,
-            "delete_owned": True,
             "owner_instance_id": _owner_instance_id(document, segment.id, collection),
             "deleted_instance_id_before_remap": removed_instance_id,
         }
@@ -2786,51 +2578,76 @@ class RszAssistantToolMixin:
         parent, token, target = _resolve_path(fields, path)
         before = _json_value(target, segment, document.registry, 4096)
         if operation == "set":
+            if isinstance(target, RawBytesData):
+                raise AssistantToolError(
+                    _tr("Raw-byte RSZ fields are not editable through the assistant.")
+                )
+            if isinstance(target, (ArrayData, StructData, dict)):
+                raise AssistantToolError(
+                    _tr(
+                        "Whole RSZ collections cannot be replaced. Edit a scalar child "
+                        "or use the normal array operations."
+                    )
+                )
             replacement = _coerce_value(
                 target, action["value"], segment, document.registry, path
             )
             after = _json_value(replacement, segment, document.registry, 4096)
-            collection_edit = isinstance(target, (ArrayData, StructData, dict))
-            if not collection_edit and before == after:
+            if before == after:
                 return {
                     "operation": operation,
                     "path": path,
                     "before": before,
                     "after": after,
                 }, False
-            if isinstance(target, (ArrayData, StructData)):
-                context = getattr(target, "_owning_context", None) or segment.context
-                counters = getattr(context, "_array_counters", None)
-                if isinstance(counters, dict):
-                    counters.pop(id(target), None)
             _replace_child(parent, token, replacement)
-            if isinstance(replacement, (ArrayData, StructData)):
-                _refresh_collection_metadata(replacement, segment)
             return {
                 "operation": operation,
                 "path": path,
                 "before": before,
                 "after": after,
-            }, collection_edit or before != after
+            }, True
         if not isinstance(target, (ArrayData, StructData)):
             raise AssistantToolError(
                 _tr("{path} is not an RSZ array or struct collection.", path=path)
             )
+        if isinstance(target, StructData):
+            raise AssistantToolError(
+                _tr(
+                    "Struct-array shape edits are not available through the normal "
+                    "RSZ editor workflow. Scalar fields inside existing elements remain editable."
+                )
+            )
+        if target.element_class in {ObjectData, UserDataData}:
+            raise AssistantToolError(
+                _tr("Referenced arrays require an isolated structural edit.")
+            )
+        if target.element_class is RawBytesData:
+            raise AssistantToolError(
+                _tr("Raw-byte RSZ arrays are not editable through the assistant.")
+            )
+        viewer = document.editor_viewer
+        create_element = getattr(viewer, "create_array_element", None)
+        delete_element = getattr(viewer, "delete_array_element", None)
+        if not callable(delete_element) or (
+            operation == "insert" and not callable(create_element)
+        ):
+            raise AssistantToolError(
+                _tr("This RSZ container has no normal array editor workflow available.")
+            )
         if operation == "clear":
             changed = bool(target.values)
             count = len(target.values)
-            retained = [
-                int(item.value)
-                for item in target.values
-                if isinstance(item, (ObjectData, UserDataData)) and item.value > 0
-            ]
-            target.values.clear()
+            for index in range(count - 1, -1, -1):
+                if not delete_element(target, index):
+                    raise AssistantToolError(
+                        _tr("REasy could not delete {path}[{index}].", path=path, index=index)
+                    )
             _refresh_collection_metadata(target, segment)
             return {
                 "operation": operation,
                 "path": path,
                 "removed_count": count,
-                "referenced_instances_retained": retained,
             }, changed
         if operation == "insert":
             index = action.get("index")
@@ -2839,14 +2656,26 @@ class RszAssistantToolMixin:
                 if index is None
                 else self._integer(index, "index", 0, len(target.values))
             )
-            element = _new_collection_element(
-                target,
-                action["value"],
-                segment,
-                document.registry,
-                f"{path}[{insert_at}]",
-            )
-            target.values.insert(insert_at, element)
+            created = create_element(target.orig_type, target, notify=False)
+            if created is None or not target.values or target.values[-1] is not created:
+                raise AssistantToolError(
+                    _tr("REasy could not create the array element at {path}.", path=path)
+                )
+            appended_index = len(target.values) - 1
+            try:
+                element = _coerce_value(
+                    created,
+                    action["value"],
+                    segment,
+                    document.registry,
+                    f"{path}[{insert_at}]",
+                )
+            except Exception:
+                delete_element(target, appended_index)
+                raise
+            target.values[appended_index] = element
+            if insert_at != appended_index:
+                target.values.insert(insert_at, target.values.pop())
             _refresh_collection_metadata(target, segment)
             return {
                 "operation": operation,
@@ -2858,17 +2687,19 @@ class RszAssistantToolMixin:
             index = self._integer(
                 action.get("index"), "index", 0, len(target.values) - 1
             )
-            removed = target.values.pop(index)
+            removed = _json_value(
+                target.values[index], segment, document.registry, 64
+            )
+            if not delete_element(target, index):
+                raise AssistantToolError(
+                    _tr("REasy could not delete {path}[{index}].", path=path, index=index)
+                )
             _refresh_collection_metadata(target, segment)
             return {
                 "operation": operation,
                 "path": path,
                 "index": index,
-                "removed": _json_value(removed, segment, document.registry, 64),
-                "referenced_instance_retained": isinstance(
-                    removed, (ObjectData, UserDataData)
-                )
-                and bool(removed.value),
+                "removed": removed,
             }, True
         raise AssistantToolError(
             _tr("Unsupported safe RSZ edit operation: {operation}", operation=operation)
@@ -2884,6 +2715,7 @@ class RszAssistantToolMixin:
         normalized = [self._validate_edit_action(action) for action in actions]
         resolved = []
         structural = []
+        resource_dependency_touched = False
         for index, action in enumerate(normalized):
             segment = _segment_by_id(document, str(action.get("segment") or "main"))
             instance_id = self._integer(
@@ -2899,49 +2731,180 @@ class RszAssistantToolMixin:
                     )
                 )
             _parent, _token, target = _resolve_path(fields, str(action["path"]))
-            owned_array_delete = False
-            if (
-                action["operation"] == "delete"
-                and bool(action.get("delete_owned"))
-                and isinstance(target, ArrayData)
-            ):
-                delete_index = self._integer(
-                    action.get("index"),
-                    "index",
-                    0,
-                    len(target.values) - 1,
-                )
-                owned_array_delete = isinstance(
-                    target.values[delete_index],
-                    (ObjectData, UserDataData),
+            operation = action["operation"]
+            if operation == "set":
+                if isinstance(target, (ObjectData, UserDataData)):
+                    raise AssistantToolError(
+                        _tr(
+                            "{path} is an RSZ reference and must use the normal "
+                            "structural editor workflow.",
+                            path=action["path"],
+                        )
+                    )
+                if isinstance(target, RawBytesData):
+                    raise AssistantToolError(
+                        _tr("Raw-byte RSZ fields are not editable through the assistant.")
+                    )
+                if isinstance(target, (ArrayData, StructData, dict)):
+                    raise AssistantToolError(
+                        _tr(
+                            "Whole RSZ collections cannot be replaced. Edit a scalar "
+                            "child or use the normal array operations."
+                        )
+                    )
+            elif operation in {"insert", "delete", "clear"}:
+                if not isinstance(target, (ArrayData, StructData)):
+                    raise AssistantToolError(
+                        _tr(
+                            "{path} is not an RSZ array or struct collection.",
+                            path=action["path"],
+                        )
+                    )
+                if isinstance(target, StructData):
+                    raise AssistantToolError(
+                        _tr(
+                            "Struct-array shape edits are not available through the normal "
+                            "RSZ editor workflow. Scalar fields inside existing elements remain editable."
+                        )
+                    )
+                if target.element_class is RawBytesData:
+                    raise AssistantToolError(
+                        _tr("Raw-byte RSZ arrays are not editable through the assistant.")
+                    )
+            reference_array = (
+                isinstance(target, ArrayData)
+                and target.element_class in {ObjectData, UserDataData}
+            )
+            if operation == "insert":
+                if reference_array and not str(action.get("type_name") or "").strip():
+                    raise AssistantToolError(
+                        _tr("Referenced array insertion requires type_name.")
+                    )
+                if not reference_array and "value" not in action:
+                    raise AssistantToolError(
+                        _tr("Primitive RSZ array insertion requires value.")
+                    )
+            if operation == "clear" and reference_array:
+                raise AssistantToolError(
+                    _tr(
+                        "Referenced arrays cannot be cleared in bulk. Delete one element "
+                        "at a time so REasy can apply its normal ownership/remapping workflow."
+                    )
                 )
             is_structural = (
-                action["operation"]
+                operation
                 in {
                     "initialize_reference",
                     "delete_owned_reference",
                 }
                 or (
-                    action["operation"] == "insert"
-                    and isinstance(target, ArrayData)
-                    and target.element_class in {ObjectData, UserDataData}
-                    and bool(action.get("type_name"))
+                    operation in {"insert", "delete"}
+                    and reference_array
                 )
-                or owned_array_delete
             )
+            if is_structural and document.editor_viewer is None:
+                raise AssistantToolError(
+                    _tr("This RSZ container has no structural editor available.")
+                )
+            if operation in {"insert", "delete", "clear"} and not reference_array:
+                viewer = document.editor_viewer
+                if not callable(getattr(viewer, "delete_array_element", None)) or (
+                    operation == "insert"
+                    and not callable(getattr(viewer, "create_array_element", None))
+                ):
+                    raise AssistantToolError(
+                        _tr(
+                            "This RSZ container has no normal array editor workflow available."
+                        )
+                    )
             record = (index, action, segment, instance_id, fields, target)
             resolved.append(record)
+            resource_dependency_touched = (
+                resource_dependency_touched or _touches_resource_dependency(target)
+            )
             if is_structural:
                 structural.append(record)
-        if structural:
-            if len(actions) != 1:
+        if (
+            resource_dependency_touched
+            and document.kind != "headless"
+            and not document.rsz.auto_resource_management
+        ):
+            raise AssistantToolError(
+                _tr(
+                    "Resource edits require handler-managed dependency rebuilding. "
+                    "The active registry does not identify resources completely, so no edit was applied."
+                )
+            )
+        if structural and len(actions) != 1:
+            raise AssistantToolError(
+                _tr(
+                    "Structural RSZ edits must be issued alone because instance IDs can move."
+                )
+            )
+
+        modified_before = _modified_state(document)
+        binary_snapshot = None
+        was_headless = document.rsz.header is None
+        if bool(document.rsz.full_data):
+            try:
+                binary_snapshot = document.rsz.build_validated()
+            except Exception as exc:
+                _restore_modified_state(document, modified_before)
+                issues = getattr(exc, "issues", None)
+                error = "; ".join(str(issue) for issue in issues[:5]) if issues else str(exc)
                 raise AssistantToolError(
                     _tr(
-                        "Structural RSZ edits must be issued alone because instance IDs can move."
+                        "The current RSZ cannot pass a strict build/reparse check, "
+                        "so the assistant did not edit it: {error}",
+                        error=error,
                     )
-                )
+                ) from exc
+
+        editor_handler = getattr(document.editor_viewer, "handler", None)
+        id_manager = getattr(editor_handler, "id_manager", None)
+        id_manager_state = (
+            copy.deepcopy(id_manager.__dict__) if id_manager is not None else None
+        )
+        if structural:
             _index, action, segment, _instance_id, _fields, target = structural[0]
-            change = self._structural_edit(document, segment, action, target)
+            try:
+                change = self._structural_edit(document, segment, action, target)
+                if (
+                    resource_dependency_touched
+                    and document.kind != "headless"
+                    and document.rsz.auto_resource_management
+                ):
+                    document.rsz.rebuild_resources()
+                if binary_snapshot is not None:
+                    document.rsz.build_validated()
+            except Exception as exc:
+                if binary_snapshot is not None:
+                    try:
+                        _restore_rsz_snapshot(
+                            document,
+                            binary_snapshot,
+                            was_headless=was_headless,
+                        )
+                    except Exception as rollback_exc:
+                        raise AssistantToolError(
+                            _tr(
+                                "The RSZ edit failed and its validated rollback also failed: {error}",
+                                error=str(rollback_exc),
+                            )
+                        ) from exc
+                if id_manager is not None and id_manager_state is not None:
+                    id_manager.__dict__.clear()
+                    id_manager.__dict__.update(id_manager_state)
+                _restore_modified_state(document, modified_before)
+                document.refresh()
+                if isinstance(exc, AssistantToolError):
+                    raise
+                raise AssistantToolError(
+                    _tr(
+                        "The RSZ structural edit failed and was rolled back: {error}",
+                        error=str(exc),
+                    )
+                ) from exc
             document.mark_modified(segment)
             document.refresh()
             self._action_feedback.pulse_widget(
@@ -2952,7 +2915,8 @@ class RszAssistantToolMixin:
                 "changes_applied": 1,
                 "changes": [change],
                 "structural": True,
-                "atomic": False,
+                "atomic": binary_snapshot is not None,
+                "output_validated": binary_snapshot is not None,
                 "instance_ids_may_have_changed": True,
             }
 
@@ -2970,6 +2934,14 @@ class RszAssistantToolMixin:
             key = (segment.id, instance_id)
             if key not in backups:
                 backups[key] = copy.deepcopy(fields, contexts.copy())
+        resource_state = copy.deepcopy(
+            {
+                "infos": document.rsz.resource_infos,
+                "strings": document.rsz._resource_str_map,
+                "direct": getattr(document.rsz, "_pfb16_direct_strings", None),
+                "has_direct": hasattr(document.rsz, "_pfb16_direct_strings"),
+            }
+        )
         changes = []
         changed_count = 0
         changed_segments: dict[str, _RszSegment] = {}
@@ -2990,18 +2962,54 @@ class RszAssistantToolMixin:
                 changed_count += int(changed)
                 if changed:
                     changed_segments[segment.id] = segment
-        except Exception:
-            for (segment_id, instance_id), fields in backups.items():
-                current = segment_map[segment_id].instances.get(instance_id)
-                if isinstance(current, dict):
-                    current.clear()
-                    current.update(fields)
-                else:
-                    segment_map[segment_id].instances[instance_id] = fields
-            for segment in segment_map.values():
-                _refresh_segment_metadata(segment)
+            if changed_count:
+                if (
+                    resource_dependency_touched
+                    and document.kind != "headless"
+                    and document.rsz.auto_resource_management
+                ):
+                    document.rsz.rebuild_resources()
+                if binary_snapshot is not None:
+                    document.rsz.build_validated()
+        except Exception as exc:
+            if binary_snapshot is not None:
+                try:
+                    _restore_rsz_snapshot(
+                        document,
+                        binary_snapshot,
+                        was_headless=was_headless,
+                    )
+                except Exception as rollback_exc:
+                    raise AssistantToolError(
+                        _tr(
+                            "The RSZ edit failed and its validated rollback also failed: {error}",
+                            error=str(rollback_exc),
+                        )
+                    ) from exc
+            else:
+                for (segment_id, instance_id), fields in backups.items():
+                    current = segment_map[segment_id].instances.get(instance_id)
+                    if isinstance(current, dict):
+                        current.clear()
+                        current.update(fields)
+                    else:
+                        segment_map[segment_id].instances[instance_id] = fields
+                document.rsz.resource_infos = resource_state["infos"]
+                document.rsz._resource_str_map = resource_state["strings"]
+                if resource_state["has_direct"]:
+                    document.rsz._pfb16_direct_strings = resource_state["direct"]
+                for segment in segment_map.values():
+                    _refresh_segment_metadata(segment)
+            _restore_modified_state(document, modified_before)
             document.refresh()
-            raise
+            if isinstance(exc, AssistantToolError):
+                raise
+            raise AssistantToolError(
+                _tr(
+                    "The RSZ edit failed and was rolled back: {error}",
+                    error=str(exc),
+                )
+            ) from exc
         if changed_count:
             for segment in changed_segments.values():
                 document.mark_modified(segment)
@@ -3015,4 +3023,5 @@ class RszAssistantToolMixin:
             "changes": changes,
             "structural": False,
             "atomic": True,
+            "output_validated": binary_snapshot is not None,
         }

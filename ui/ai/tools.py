@@ -26,6 +26,13 @@ from ui.ai.action_policy import (
     AiChangeDecision,
 )
 from ui.ai.file_migration import migrate_file_jobs_steps
+from ui.ai.file_tools import (
+    FILE_MANAGEMENT_ASSISTANT_PROMPT,
+    FILE_MANAGEMENT_CAPABILITY,
+    FolderAssistantToolMixin,
+    file_management_prompt_matches,
+    file_tool_definitions,
+)
 from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
@@ -111,6 +118,13 @@ Use get_reasy_context when you need workspace or navigation details that another
 tool result did not already provide. It reports every open project and tab,
 including modified in-memory files. Prefer activate_open_tab over reopening a
 path so unsaved editor state is preserved.
+
+When the user explicitly supplies an absolute folder and asks to discover,
+copy, move, rename, or delete local files, enable capability="file_management"
+if its tools are not already available. The supplied folder is the complete
+authorization boundary: never invent a root, broaden it to a parent, or treat a
+read-only inspection request as permission to mutate. File deletion means the
+OS Recycle Bin and never permanent removal.
 
 Completed RSZ and MSG disk or mod-folder update attempts retain an exact,
 paginated post-update report. When the user later asks what was imported into
@@ -246,6 +260,7 @@ _CAPABILITY_PROMPTS = {
     RSZ_CAPABILITY: RSZ_ASSISTANT_CAPABILITY_PROMPT,
     RSZ_EDIT_CAPABILITY: RSZ_EDIT_ASSISTANT_CAPABILITY_PROMPT,
     PAK_CAPABILITY: PAK_ASSISTANT_CAPABILITY_PROMPT,
+    FILE_MANAGEMENT_CAPABILITY: FILE_MANAGEMENT_ASSISTANT_PROMPT,
 }
 
 
@@ -604,7 +619,11 @@ _INDEX = {
 }
 
 
-class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
+class ReasyAssistantTools(
+    FolderAssistantToolMixin,
+    RszAssistantToolMixin,
+    MsgAssistantToolMixin,
+):
     """Expose constrained REasy and format-editor operations to chat model."""
 
     _tool_definitions_cache: tuple[AiToolDefinition, ...] | None = None
@@ -633,12 +652,14 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
         self._confirm_tool_action = (
             confirm_tool_action or self._show_tool_action_confirmation
         )
+        self._uses_default_tool_confirmation = confirm_tool_action is None
         self._next_tab_id = 1
         self._enabled_capabilities: set[str] = set()
         self._blocked_capabilities: set[str] = set()
         self._update_waiting_for_user_project = False
         self._rsz_update_analyses: dict[str, Any] = {}
         self._file_update_reports: dict[str, FileUpdateReport] = {}
+        self._initialize_file_tools()
 
     def _pulse_open_tab(self, tab):
         sessions = getattr(
@@ -782,6 +803,8 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
             inferred.add(RSZ_EDIT_CAPABILITY)
         if _pak_source_requested(prompt):
             inferred.add(PAK_CAPABILITY)
+        if file_management_prompt_matches(prompt):
+            inferred.add(FILE_MANAGEMENT_CAPABILITY)
         return inferred
 
     def begin_request(self, prompt: str = "") -> frozenset[str]:
@@ -789,6 +812,7 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
 
         self._action_policy.begin_request()
         prompt = str(prompt or "")
+        self._begin_file_request(prompt)
         self._update_waiting_for_user_project = bool(
             not getattr(self.app, "current_project", None)
             and _file_update_requested(prompt)
@@ -846,6 +870,7 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
         self._blocked_capabilities.clear()
         self._update_waiting_for_user_project = False
         self._action_policy.reset()
+        self._reset_file_tools()
 
     @staticmethod
     def _boolean(value: Any, field: str) -> bool:
@@ -1681,7 +1706,12 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
                 mutation=True,
             ),
         )
-        return (*definitions, *msg_tool_definitions(), *rsz_tool_definitions())
+        return (
+            *definitions,
+            *file_tool_definitions(),
+            *msg_tool_definitions(),
+            *rsz_tool_definitions(),
+        )
 
     @classmethod
     def tool_definitions(cls) -> tuple[AiToolDefinition, ...]:
@@ -1871,6 +1901,8 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
         if definition is None or not definition.persistent:
             return True
         arguments = self._decode_tool_arguments(arguments_json)
+        if name == "apply_file_operations":
+            return self._authorize_file_operation_plan(arguments)
         if name in _UPDATE_PROJECT_TOOL_NAMES:
             self._require_update_project_paks()
         return self._action_policy.request(
@@ -2036,12 +2068,45 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
         jobs: list[dict[str, Any]],
         strategy,
         project_context: dict[str, Any],
+        *,
+        publish_mode: str = "separate",
+        backup_folder: str = "",
     ):
+        open_files = self._open_disk_files()
+        target_fields = {
+            "separate": ("output_file",),
+            "replace_outdated_with_backup": (
+                "outdated_file",
+                "output_file",
+            ),
+            "replace_latest_with_backup": ("latest_file",),
+        }.get(str(publish_mode or "separate").strip().casefold(), ())
+        for job in jobs if isinstance(jobs, list) else ():
+            if not isinstance(job, dict):
+                continue
+            for field in ("outdated_file", "latest_file", "output_file"):
+                raw_path = str(job.get(field) or "").strip()
+                if not raw_path:
+                    continue
+                opened = open_files.get(self._disk_path_key(raw_path))
+                if opened is not None and (
+                    field in target_fields or opened.get("modified")
+                ):
+                    state = "modified" if opened.get("modified") else "open"
+                    raise AssistantToolError(
+                        _tr(
+                            "Migration refuses to use an {state} editor file for this disk operation: {path}",
+                            state=state,
+                            path=raw_path,
+                        )
+                    )
         collector = self._new_file_update_report_collector()
         result = yield from migrate_file_jobs_steps(
             jobs,
             strategy,
             report_sink=collector,
+            publish_mode=publish_mode,
+            backup_folder=backup_folder,
         )
         format_name = str(strategy.format_name).casefold()
         format_label = format_name.upper()
@@ -2051,9 +2116,10 @@ class ReasyAssistantTools(RszAssistantToolMixin, MsgAssistantToolMixin):
             if single_job
             else f"{len(jobs)} explicit {format_label} files"
         )
+        published_jobs = result.get("jobs") or []
         output = (
-            str(jobs[0].get("output_file", ""))
-            if single_job
+            str(published_jobs[0].get("output_file", ""))
+            if len(published_jobs) == 1
             else f"{len(collector.files)} output {format_label} files"
         )
         return self._attach_file_update_report(

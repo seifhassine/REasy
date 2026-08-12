@@ -19,7 +19,10 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     initialize_scn19_userdata_runtime,
     shift_embedded_instances_for_insertion,
 )
-from file_handlers.rsz.utils.rsz_field_utils import collect_userdata_reference_values
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_userdata_reference_values,
+    is_type_assignable,
+)
 from file_handlers.rsz.utils.rsz_gameobject_utils import (
     add_guid_to_settings,
     create_gameobject_entry,
@@ -630,6 +633,15 @@ class RszObjectOperations:
         if not selected_type:
             return False
 
+        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
+        if not type_info or not type_id:
+            return False
+        expected_type = str(getattr(object_field, "orig_type", "") or "")
+        if expected_type and not is_type_assignable(
+            self.type_registry, selected_type, expected_type
+        ):
+            return False
+
         if (
             action == "change"
             and current_instance_id > 0
@@ -650,10 +662,6 @@ class RszObjectOperations:
         insertion_index = self._compute_object_insertion_index(
             parent_instance_id, parent_field_name, is_array, element_index
         )
-
-        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
-        if not type_info or not type_id:
-            return False
 
         new_id = self._create_object_instance_with_nested_objects(
             type_info, type_id, insertion_index, parent_instance_id
@@ -731,6 +739,21 @@ class RszObjectOperations:
             self.viewer.handler.id_manager.update_all_mappings(id_mapping, {instance_id})
         return True
 
+    def delete_userdata_field(self, userdata_field) -> bool:
+        """Clear a normal UserDataData field and clean up an unshared instance."""
+        if not isinstance(userdata_field, UserDataData):
+            return False
+        if getattr(self.scn, "has_embedded_rsz", False):
+            return False
+
+        old_instance_id = int(getattr(userdata_field, "value", 0) or 0)
+        userdata_field.value = 0
+        userdata_field.string = ""
+        if old_instance_id > 0:
+            self._try_cleanup_unused_userdata_instance(old_instance_id)
+        self.viewer.mark_modified()
+        return True
+
     def modify_userdata_field(self, userdata_field, new_string: str, selected_type: str) -> bool:
         """Modify a UserDataData field in normal RSZ files according to sharing rules.
         Returns True on success, False otherwise.
@@ -774,20 +797,26 @@ class RszObjectOperations:
                 string_is_shared = occurrences > 1
 
         type_info, type_id = self.type_registry.find_type_by_name(selected_type)
-        if type_id:
-            for rui in self.scn.rsz_userdata_infos:
-                existing_str = self.scn._rsz_userdata_str_map.get(rui, None)
-                if existing_str == new_string:
-                    target_inst = rui.instance_id
-                    if 0 <= target_inst < len(self.scn.instance_infos):
-                        if self.scn.instance_infos[target_inst].type_id == type_id:
-                            old_instance_id = current_instance_id
-                            userdata_field.value = target_inst
-                            userdata_field.string = new_string
-                            self._update_header_userdata_string_for_rui(rui, new_string)
-                            self.viewer.mark_modified()
-                            self._try_cleanup_unused_userdata_instance(old_instance_id)
-                            return True
+        if not type_info or not type_id:
+            return False
+        expected_type = str(getattr(userdata_field, "orig_type", "") or "")
+        if expected_type and not is_type_assignable(
+            self.type_registry, selected_type, expected_type
+        ):
+            return False
+        for rui in self.scn.rsz_userdata_infos:
+            existing_str = self.scn._rsz_userdata_str_map.get(rui, None)
+            if existing_str == new_string:
+                target_inst = rui.instance_id
+                if 0 <= target_inst < len(self.scn.instance_infos):
+                    if self.scn.instance_infos[target_inst].type_id == type_id:
+                        old_instance_id = current_instance_id
+                        userdata_field.value = target_inst
+                        userdata_field.string = new_string
+                        self._update_header_userdata_string_for_rui(rui, new_string)
+                        self.viewer.mark_modified()
+                        self._try_cleanup_unused_userdata_instance(old_instance_id)
+                        return True
 
         if current_instance_id == 0:
             created_id = self._create_userdata_instance_for_field(selected_type, insertion_index, new_string)
@@ -817,10 +846,6 @@ class RszObjectOperations:
             self._try_cleanup_unused_userdata_instance(old_instance_id)
             return True
 
-        type_info, type_id = self.type_registry.find_type_by_name(selected_type)
-        if not type_info or not type_id:
-            return False
-        
         new_crc = int(type_info.get("crc", "0"), 16)
         
         cur_type_id = self.scn.instance_infos[current_instance_id].type_id

@@ -13,7 +13,7 @@ _ALLOW_THIS_CHANGE = QT_TRANSLATE_NOOP(
 )
 _ALLOW_ALL_PROMPT_CHANGES = QT_TRANSLATE_NOOP(
     "AiActionPolicy",
-    "Allow all for this prompt",
+    "Allow all changes for this prompt",
 )
 _CANCEL = QT_TRANSLATE_NOOP(
     "AiActionPolicy",
@@ -66,6 +66,8 @@ class AiActionPolicy:
         self,
         title: str,
         message: str,
+        *,
+        allow_prompt: bool = True,
     ) -> AiChangeDecision:
         dialog = QMessageBox(self.parent)
         dialog.setIcon(QMessageBox.Icon.Question)
@@ -75,9 +77,13 @@ class AiActionPolicy:
             _tr(_ALLOW_THIS_CHANGE),
             QMessageBox.ButtonRole.AcceptRole,
         )
-        allow_prompt = dialog.addButton(
-            _tr(_ALLOW_ALL_PROMPT_CHANGES),
-            QMessageBox.ButtonRole.ApplyRole,
+        allow_prompt_button = (
+            dialog.addButton(
+                _tr(_ALLOW_ALL_PROMPT_CHANGES),
+                QMessageBox.ButtonRole.ApplyRole,
+            )
+            if allow_prompt
+            else None
         )
         cancel = dialog.addButton(
             _tr(_CANCEL),
@@ -90,6 +96,6 @@ class AiActionPolicy:
         clicked = dialog.clickedButton()
         if clicked is allow_once:
             return AiChangeDecision.ALLOW_ONCE
-        if clicked is allow_prompt:
+        if allow_prompt_button is not None and clicked is allow_prompt_button:
             return AiChangeDecision.ALLOW_PROMPT
         return AiChangeDecision.CANCEL

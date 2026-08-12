@@ -12,6 +12,7 @@ from services.ai.chat_service import (
 )
 
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
+AI_FILE_ACTION_MODES = frozenset({"review", "request", "scoped_autopilot"})
 DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
     "show_debug_console": True,
@@ -24,6 +25,8 @@ DEFAULT_SETTINGS = {
     "local_ai_endpoint": LOCAL_PROVIDER.default_endpoint,
     "local_ai_model": LOCAL_PROVIDER.default_model,
     "local_ai_context_window_tokens": 0,
+    "ai_file_action_mode": "review",
+    "ai_file_autopilot_trash": False,
     "show_rsz_advanced": True,
     "game_version": "RE4",  # Default game version
     "backup_on_save": True,
@@ -126,6 +129,17 @@ def normalize_settings(settings=None):
                 continue
             value = str(normalized.get(key, "")).strip().casefold()
             normalized[key] = value if value in allowed else fallback
+    file_action_mode = str(
+        normalized.get("ai_file_action_mode", "review")
+    ).strip().casefold()
+    normalized["ai_file_action_mode"] = (
+        file_action_mode
+        if file_action_mode in AI_FILE_ACTION_MODES
+        else "review"
+    )
+    normalized["ai_file_autopilot_trash"] = (
+        normalized.get("ai_file_autopilot_trash") is True
+    )
     return normalized
 
 

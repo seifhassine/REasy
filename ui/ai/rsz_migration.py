@@ -699,6 +699,7 @@ def _overlay_value(
                     destination_segment,
                     latest_registry,
                     item_path,
+                    allow_references=True,
                 )
                 destination_value.values.append(element)
                 report.changed(change)
@@ -785,6 +786,7 @@ def _overlay_value(
             destination_segment,
             latest_registry,
             path,
+            allow_references=True,
         )
         new = model._json_value(replacement, destination_segment, latest_registry, 64)
     except Exception as exc:
