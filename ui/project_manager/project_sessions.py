@@ -82,6 +82,11 @@ class ProjectSessionManager:
     def add_global_tab(self, tab: Any) -> None:
         self._scratch.tabs.append(tab)
 
+    def capture_active_order(self, *_signal_args) -> None:
+        """Persist the live tab-bar order without recreating any page widgets."""
+        if (session := self.get(self.active_key)) is not None:
+            self._capture_session(session)
+
     def remove_tab(self, tab: Any) -> None:
         for session in [self._scratch, *self._sessions.values()]:
             if tab in session.tabs:

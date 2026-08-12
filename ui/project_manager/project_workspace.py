@@ -14,6 +14,7 @@ class ProjectWorkspaceController:
         self.host = host
         self.sessions = ProjectSessionManager(notebook, tab_lookup)
         self._scene_icon = self._make_scene_icon()
+        self._tab_order = []
 
         self.toolbar = QToolBar(self.tr("Projects"), host)
         self.toolbar.setObjectName("projectWorkspaceBar")
@@ -24,32 +25,42 @@ class ProjectWorkspaceController:
 
         self.tab_bar = QTabBar(self.toolbar)
         self.tab_bar.setObjectName("projectWorkspaceTabs")
-        self.tab_bar.setExpanding(True)
+        self.tab_bar.setDocumentMode(True)
+        self.tab_bar.setDrawBase(False)
+        self.tab_bar.setMovable(True)
+        self.tab_bar.setExpanding(False)
         self.tab_bar.setElideMode(Qt.ElideMiddle)
+        self.tab_bar.setUsesScrollButtons(True)
+        self.tab_bar.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
         self.tab_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.tab_bar.setMinimumHeight(36)
+        self.tab_bar.setMinimumHeight(32)
         self.tab_bar.currentChanged.connect(self._on_tab_changed)
+        self.tab_bar.tabMoved.connect(self._on_tab_moved)
         self.toolbar.addWidget(self.tab_bar)
         self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
         notebook.currentChanged.connect(lambda _index: self._sync_tabs())
+        notebook.tabBar().tabMoved.connect(self.sessions.capture_active_order)
+        notebook.tabReattached.connect(self.sessions.capture_active_order)
         self.apply_style()
 
     def apply_style(self):
         accent = self.host._theme_accent_color().name()
-        bar_bg, tab_bg, hover_bg = "#242424", "#343434", "#3f3f3f"
-        foreground, muted, border = "#f2f2f2", "#c4c4c4", "#505050"
+        bar_bg, tab_bg, hover_bg = "#191a1d", "#2b2d32", "#24262a"
+        foreground, muted = "#f2f2f2", "#b9bbc0"
         self.toolbar.setStyleSheet(f"""
             QToolBar#projectWorkspaceBar {{ background: {bar_bg}; border: none;
-                border-bottom: 1px solid {border}; padding: 0; spacing: 0; }}
-            QTabBar#projectWorkspaceTabs {{ background: {bar_bg}; border: none; }}
+                border-bottom: 1px solid #35373c; padding: 0px 4px; spacing: 0; }}
+            QTabBar#projectWorkspaceTabs {{ background: {bar_bg}; border: none; padding-left: 2px; }}
             QTabBar#projectWorkspaceTabs::tab {{ background: transparent; color: {muted};
-                border: none; border-right: 1px solid {border}; padding: 8px 14px; min-width: 120px; }}
+                border: 1px solid transparent; padding: 4px 10px;
+                min-width: 120px; max-width: 250px; min-height: 16px;
+                margin: 2px 1px 2px 0px; border-radius: 7px; }}
             QTabBar#projectWorkspaceTabs::tab:hover:!selected {{ background: {hover_bg}; color: {foreground}; }}
             QTabBar#projectWorkspaceTabs::tab:selected {{ background: {tab_bg}; color: {foreground};
-                border-bottom: 3px solid {accent}; font-weight: 600; }}
+                border-color: #484a50; border-left: 2px solid {accent}; font-weight: 600; }}
             QToolButton#projectTabClose {{ background: transparent; color: {muted}; border: none;
-                border-radius: 3px; font-size: 16px; font-weight: 600; }}
-            QToolButton#projectTabClose:hover {{ background: #d32f2f; color: white; }}
+                border-radius: 7px; font-size: 15px; font-weight: 500; }}
+            QToolButton#projectTabClose:hover {{ background: #44454a; color: white; }}
         """)
 
     def _close_button(self, callback, tip):
@@ -57,7 +68,7 @@ class ProjectWorkspaceController:
         button.setObjectName("projectTabClose")
         button.setText("×")
         button.setToolTip(tip)
-        button.setFixedSize(20, 20)
+        button.setFixedSize(18, 18)
         button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, self.toolbar, callback))
         return button
 
@@ -230,17 +241,30 @@ class ProjectWorkspaceController:
     def _tab_index(self, data) -> int:
         return next((i for i in range(self.tab_bar.count()) if self.tab_bar.tabData(i) == data), -1)
 
+    def _ordered_entries(self, entries):
+        by_data = {entry[0]: entry for entry in entries}
+        order = [data for data in self._tab_order if data in by_data]
+        order.extend(data for data in by_data if data not in order)
+        self._tab_order = order
+        return [by_data[data] for data in order]
+
+    def _on_tab_moved(self, _from: int, _to: int) -> None:
+        self._tab_order = [
+            self.tab_bar.tabData(index)
+            for index in range(self.tab_bar.count())
+        ]
+
     def _sync_tabs(self):
         scenes = getattr(self.host, "scenes", None)
         scene_tabs = scenes.tabs() if scenes else ()
         project_icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
-        entries = [
+        entries = self._ordered_entries([
             (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), self.tr("Close project"))
             for session in self.sessions.project_sessions()
         ] + [
             (("scene", scene), self._scene_icon, scene.title, scene.title, lambda scene=scene: self.host.scenes.close_scene(scene), self.tr("Close scene"))
             for scene in scene_tabs
-        ]
+        ])
         current = self.host.tabs.get(self.sessions.notebook.currentWidget())
         active_data = ("scene", current) if current in scene_tabs else self.sessions.active_key
 

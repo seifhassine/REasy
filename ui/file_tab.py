@@ -123,6 +123,12 @@ class FileTab:
         else:
             title = base_title
 
+        if callable(set_page_title := getattr(
+            self.parent_notebook, "set_page_title", None
+        )):
+            set_page_title(self.notebook_widget, title)
+            return
+
         index = self.parent_notebook.indexOf(self.notebook_widget)
         if index != -1:
             self.parent_notebook.setTabText(index, title)

@@ -114,9 +114,8 @@ class RcolViewer(QWidget):
         self._scene_preview: ScenePreviewWidget | None = None
         self._mesh_materials: MeshMaterialCollection | None = None
         self._preview_tabs: QTabWidget | None = None
+        self._dock_host: QMainWindow | None = None
         self._preview_dock: QDockWidget | None = None
-        self._dock_attach_attempted = False
-        self._root_layout: QVBoxLayout | None = None
         self._preview_hint: QLabel | None = None
         self._load_mesh_button: QPushButton | None = None
         self._load_mesh_from_pak_button: QPushButton | None = None
@@ -143,8 +142,15 @@ class RcolViewer(QWidget):
 
     # ---------- UI ----------
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        self._root_layout = layout
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        self._dock_host = QMainWindow(self)
+        self._dock_host.setWindowFlags(Qt.Widget)
+        outer_layout.addWidget(self._dock_host)
+
+        content = QWidget(self._dock_host)
+        self._dock_host.setCentralWidget(content)
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
 
@@ -213,7 +219,6 @@ class RcolViewer(QWidget):
 
         self._preview_tabs = QTabWidget()
         self._preview_tabs.setDocumentMode(True)
-        layout.addWidget(self._preview_tabs, 3)
 
         preview_tab = QFrame()
         preview_layout = QVBoxLayout(preview_tab)
@@ -278,27 +283,14 @@ class RcolViewer(QWidget):
             QLabel#rcolPath { color: palette(mid); }
             """
         )
-
-    def showEvent(self, event):
-        super().showEvent(event)
         self._ensure_preview_dock()
 
     def _ensure_preview_dock(self):
-        if self._dock_attach_attempted or self._preview_tabs is None:
+        if self._preview_dock is not None or self._preview_tabs is None:
             return
-        self._dock_attach_attempted = True
-
-        host_window = self.window()
-        if not isinstance(host_window, QMainWindow):
+        host_window = self._dock_host
+        if host_window is None:
             return
-
-        for stale_dock in host_window.findChildren(QDockWidget, "rcolPreviewDock"):
-            if stale_dock is self._preview_dock:
-                continue
-            stale_dock.deleteLater()
-
-        if self._root_layout is not None:
-            self._root_layout.removeWidget(self._preview_tabs)
 
         dock = QDockWidget(self.tr("RCOL 3D/RSZ"), host_window)
         dock.setObjectName("rcolPreviewDock")
@@ -322,9 +314,12 @@ class RcolViewer(QWidget):
         preview, self._scene_preview = self._scene_preview, None
         if preview is not None:
             preview.cleanup()
-        if self._preview_dock is not None:
-            self._preview_dock.deleteLater()
-            self._preview_dock = None
+        dock, self._preview_dock = self._preview_dock, None
+        if dock is not None:
+            dock.hide()
+            if self._dock_host is not None:
+                self._dock_host.removeDockWidget(dock)
+            dock.deleteLater()
 
     def _on_preview_dock_top_level_changed(self, is_floating: bool):
         if self._preview_dock is None:

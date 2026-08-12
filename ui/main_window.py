@@ -1003,7 +1003,9 @@ class REasyEditorApp(QMainWindow):
                 RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
             tab.parent_notebook = self.notebook
             tab_label = os.path.basename(filename) if filename else self.tr("Untitled")
-            _ = self.notebook.addTab(tab.notebook_widget, tab_label)
+            tab.notebook_widget._reasy_tab_tooltip = filename or tab_label
+            index = self.notebook.addTab(tab.notebook_widget, tab_label)
+            self.notebook.setTabToolTip(index, filename or tab_label)
             self.tabs[tab.notebook_widget] = tab
             self.project_workspace.sessions.add_tab(tab)
             self.notebook.setCurrentWidget(tab.notebook_widget)
