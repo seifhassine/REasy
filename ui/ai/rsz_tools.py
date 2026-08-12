@@ -63,6 +63,12 @@ definitions and enum meanings, search_rsz to locate types/fields/values, and
 trace_rsz_references to explain object graphs and external file dependencies.
 Resource results are exact RE Engine paths: use project or PAK tools to follow
 them only when that source is within the user's request.
+
+For semantic research, consider related supported formats instead of assuming
+the RSZ graph is self-explanatory. In particular, search likely project MSG
+files when localized names, labels, descriptions, or dialogue could identify an
+RSZ type, ID, enum, resource, or behavior. Inspect only plausible matches and
+keep every result tied to its exact containing file path.
 """
 
 RSZ_EDIT_ASSISTANT_CAPABILITY_PROMPT = """\
@@ -263,7 +269,7 @@ def rsz_tool_definitions() -> tuple[AiToolDefinition, ...]:
             "search_rsz",
             "Search open RSZ documents across segment-local type names, field "
             "paths, original types, exact values, references, and external "
-            "resource paths.",
+            "resource paths. Every match includes the exact containing file path.",
             {
                 "query": {
                     "type": "string",
@@ -1900,9 +1906,7 @@ class RszAssistantToolMixin:
             rsz_header = document.rsz.rsz_header
             payload = {
                 "tab_id": tab_payload.get("id"),
-                "file": tab_payload.get("source_path")
-                or tab_payload.get("path")
-                or tab_payload.get("title"),
+                "file": self._file_result_path(tab_payload),
                 "format": document.kind,
                 "headless": document.kind == "headless",
                 "modified": bool(tab_payload.get("modified")),
@@ -2032,11 +2036,7 @@ class RszAssistantToolMixin:
                 results.append(record)
 
         for document, tab_payload in self._resolve_rsz_targets(tabs, all_open):
-            file_name = (
-                tab_payload.get("source_path")
-                or tab_payload.get("path")
-                or tab_payload.get("title")
-            )
+            file_name = self._file_result_path(tab_payload)
             external, truncated = _external_references(
                 document, max_items=max_array_items
             )

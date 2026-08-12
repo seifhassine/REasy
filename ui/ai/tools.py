@@ -84,6 +84,15 @@ when they explicitly request an external-folder mod rebuild. Use
 capability="pak" only to browse, open, or add files from game PAK archives. Do
 not call a capability when the needed tools are already supplied.
 
+Read-only research may cross file formats. Do not assume the active editor is
+the only relevant source: use the active project's file listing to discover
+likely MDF, MSG, and RSZ evidence, then inspect only the files that can answer
+the question. MSG localized text can provide names, labels, descriptions, and
+dialogue that explain otherwise opaque RSZ values. Do not bulk-open unrelated
+files, and do not treat research as permission to edit. Preserve exact file
+paths from tool results when correlating or reporting evidence. Disk-backed
+results use absolute paths; PAK-backed results use exact archive-internal paths.
+
 You may find and directly open existing projects, list or open project files,
 open project settings, and start Fluffy ZIP or PAK export workflows. Prefer
 list_projects followed by open_project when the user asks to find or open an
@@ -154,8 +163,7 @@ MDF_ASSISTANT_CAPABILITY_PROMPT = """\
 MDF read tools are enabled. Inspect an MDF when its contents are not already
 known. When a request is ambiguous about a material or value, ask a concise
 question instead of guessing. Use list_project_files with query=".mdf2" for
-project MDF searches, then use open_project_file on the selected project-relative
-path.
+project MDF searches, then use open_project_file on the selected result path.
 
 Minimize tool calls and reuse facts already returned during the current request.
 For an exact comparison of two MDFs, use compare_mdf_files. It checks supported
@@ -296,6 +304,18 @@ MAX_MIGRATION_JOB_PAYLOAD_BYTES = 256_000
 _VERSIONED_MDF_RE = re.compile(r"\.mdf2\.\d+$", re.IGNORECASE)
 _MDF_PROMPT_HINT_RE = re.compile(
     r"(?:\bmdf(?:s|2)?\b|\.mdf2(?:\.\d+)?)",
+    re.IGNORECASE,
+)
+_CROSS_FORMAT_RESEARCH_PROMPT_HINT_RE = re.compile(
+    r"(?:"
+    r"\b(?:research(?:ed|ing)?|investigat(?:e[ds]?|ing|ion)|"
+    r"analy(?:sis|[sz](?:e[ds]?|ing))|examin(?:e[ds]?|ing)|stud(?:y|ied|ying)|"
+    r"understand(?:ing)?|determin(?:e[ds]?|ing)|identif(?:y|ied|ying)|"
+    r"explain(?:ed|ing)?|trac(?:e[ds]?|ing))\b"
+    r"|\b(?:look|dig)\s+into\b"
+    r"|\b(?:figure|find)\s+out\b"
+    r"|(?:研究|调查|分析|查明|弄清|理解)"
+    r")",
     re.IGNORECASE,
 )
 _EDIT_PROMPT_HINT_RE = re.compile(
@@ -729,6 +749,9 @@ class ReasyAssistantTools(
     def _inferred_capabilities(self, prompt: str = "") -> set[str]:
         inferred = set()
         prompt = str(prompt or "")
+        cross_format_research = bool(
+            _CROSS_FORMAT_RESEARCH_PROMPT_HINT_RE.search(prompt)
+        )
         active_mdf = False
         active_msg = False
         active_rsz = False
@@ -767,16 +790,17 @@ class ReasyAssistantTools(
         normal_migration_request = bool(
             _MDF_NORMAL_MIGRATION_PROMPT_HINT_RE.search(prompt)
         ) and not (three_way_request or folder_update_request)
-        mdf_request = bool(
+        mdf_format_request = bool(
             active_mdf
             or three_way_request
             or folder_update_request
             or normal_migration_request
             or _MDF_PROMPT_HINT_RE.search(prompt)
         )
+        mdf_request = mdf_format_request or cross_format_research
         if mdf_request:
             inferred.add(MDF_CAPABILITY)
-        if mdf_request and (
+        if mdf_format_request and (
             normal_migration_request
             or _EDIT_PROMPT_HINT_RE.search(prompt)
         ):
@@ -785,18 +809,20 @@ class ReasyAssistantTools(
             inferred.add(MDF_THREE_WAY_CAPABILITY)
         if folder_update_request:
             inferred.add(MDF_FOLDER_UPDATE_CAPABILITY)
-        msg_request = bool(active_msg or msg_prompt_matches(prompt))
+        msg_format_request = bool(active_msg or msg_prompt_matches(prompt))
+        msg_request = msg_format_request or cross_format_research
         if msg_request:
             inferred.add(MSG_CAPABILITY)
-        if msg_request and (
+        if msg_format_request and (
             _EDIT_PROMPT_HINT_RE.search(prompt)
             or _FORMAT_MIGRATION_PROMPT_HINT_RE.search(prompt)
         ):
             inferred.add(MSG_EDIT_CAPABILITY)
-        rsz_request = bool(active_rsz or rsz_prompt_matches(prompt))
+        rsz_format_request = bool(active_rsz or rsz_prompt_matches(prompt))
+        rsz_request = rsz_format_request or cross_format_research
         if rsz_request:
             inferred.add(RSZ_CAPABILITY)
-        if rsz_request and (
+        if rsz_format_request and (
             _EDIT_PROMPT_HINT_RE.search(prompt)
             or _FORMAT_MIGRATION_PROMPT_HINT_RE.search(prompt)
         ):
@@ -1053,7 +1079,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "list_project_files",
-                "List files of any type in the active REasy project without a dialog. Search here first when the user requests a file from or in their project.",
+                "List files of any type in the active REasy project without a dialog. Search here first when the user requests a file from or in their project. Every match includes its absolute disk path and complete project-relative path.",
                 {
                     "query": {
                         "type": "string",
@@ -1077,11 +1103,11 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "open_project_file",
-                "Open a project-relative file directly without a dialog. Use this, not a PAK opener, when the user requested the project copy.",
+                "Open an exact file from the active project directly without a dialog. Use this, not a PAK opener, when the user requested the project copy.",
                 {
                     "path": {
                         "type": "string",
-                        "description": "Relative path returned by list_project_files.",
+                        "description": "Exact absolute path or project_relative_path returned by list_project_files.",
                     }
                 },
                 ["path"],
@@ -1993,11 +2019,7 @@ class ReasyAssistantTools(
         payload = self._tab_target_payload(self.app.get_active_tab())
         result["target"] = {
             "tab_id": payload["id"],
-            "file": (
-                payload.get("source_path")
-                or payload.get("path")
-                or payload.get("title")
-            ),
+            "file": self._file_result_path(payload),
             "pak_backed": bool(payload.get("pak_backed")),
         }
         return result
@@ -2311,6 +2333,38 @@ class ReasyAssistantTools(
         filename = str(getattr(tab, "filename", "") or "").strip()
         return title or (Path(filename).name if filename else "Untitled")
 
+    @staticmethod
+    def _resolved_disk_file_path(
+        filename: str,
+        *,
+        project: str | None = None,
+        pak_backed: bool = False,
+    ) -> str | None:
+        """Return an absolute disk path without inventing one for a PAK entry."""
+
+        raw = str(filename or "").strip()
+        if not raw:
+            return None
+        candidate = Path(os.path.expandvars(os.path.expanduser(raw)))
+        if pak_backed and not candidate.is_absolute():
+            return None
+        if not candidate.is_absolute() and project:
+            candidate = Path(project) / candidate
+        try:
+            return str(candidate.resolve())
+        except (OSError, RuntimeError):
+            return str(candidate.absolute())
+
+    @staticmethod
+    def _file_result_path(payload: dict[str, Any]) -> str | None:
+        """Return the exact usable identity for a disk or PAK-backed file."""
+
+        return (
+            payload.get("source_path")
+            or payload.get("path")
+            or payload.get("title")
+        )
+
     def _open_tab_records(self):
         manager = self.app.project_workspace.sessions
         scratch = manager.get(None)
@@ -2339,6 +2393,11 @@ class ReasyAssistantTools(
             hidden = bool(getattr(tab, "_workspace_hidden", False))
             pak_backed = bool(source_path)
             project = getattr(session, "path", None)
+            disk_path = self._resolved_disk_file_path(
+                filename,
+                project=project,
+                pak_backed=pak_backed,
+            )
             game = (
                 getattr(session, "game", None)
                 or getattr(handler, "game_version", None)
@@ -2347,7 +2406,7 @@ class ReasyAssistantTools(
             payload = {
                 "id": self._tab_id(tab),
                 "title": self._tab_title(tab),
-                "path": filename or None,
+                "path": disk_path,
                 "source_path": source_path or None,
                 "editor": editor,
                 "modified": bool(getattr(tab, "modified", False)),
@@ -2737,11 +2796,11 @@ class ReasyAssistantTools(
         *,
         extension: str = "",
         limit: int,
-    ) -> tuple[Path, list[str], bool]:
+    ) -> tuple[Path, list[dict[str, str]], bool]:
         root = self._active_project_root()
         needle = str(query or "").strip().casefold()
         suffix = str(extension or "").strip().casefold()
-        files: list[str] = []
+        files: list[dict[str, str]] = []
         truncated = False
         try:
             for path in root.rglob("*"):
@@ -2758,7 +2817,12 @@ class ReasyAssistantTools(
                 if len(files) >= limit:
                     truncated = True
                     break
-                files.append(relative)
+                files.append(
+                    {
+                        "path": str(path),
+                        "project_relative_path": relative,
+                    }
+                )
         except OSError as exc:
             raise AssistantToolError(
                 _tr(
@@ -2766,7 +2830,7 @@ class ReasyAssistantTools(
                     error=exc,
                 )
             ) from exc
-        files.sort(key=str.casefold)
+        files.sort(key=lambda item: item["project_relative_path"].casefold())
         return root, files, truncated
 
     def _open_project_file(self, path: str) -> dict[str, Any]:
@@ -2774,7 +2838,10 @@ class ReasyAssistantTools(
         requested = str(path or "").strip()
         if not requested:
             raise AssistantToolError(_tr("path must not be empty."))
-        target = (root / requested).resolve()
+        candidate = Path(os.path.expandvars(os.path.expanduser(requested)))
+        target = (
+            candidate if candidate.is_absolute() else root / candidate
+        ).resolve()
         if not target.is_relative_to(root):
             raise AssistantToolError(
                 _tr("Project file paths must stay inside the active project.")
@@ -3307,10 +3374,14 @@ class ReasyAssistantTools(
         if record is not None:
             return record
         pak_backed = bool(getattr(tab, "pak_source_path", None))
+        disk_path = self._resolved_disk_file_path(
+            str(getattr(tab, "filename", "") or ""),
+            pak_backed=pak_backed,
+        )
         payload = {
             "id": self._tab_id(tab),
             "title": self._tab_title(tab),
-            "path": str(getattr(tab, "filename", "") or "") or None,
+            "path": disk_path,
             "source_path": getattr(tab, "pak_source_path", None),
             "editable_in_memory": True,
             "pak_backed": pak_backed,
@@ -3326,11 +3397,11 @@ class ReasyAssistantTools(
             payload["can_write_back_to_pak"] = False
         return payload
 
-    @staticmethod
-    def _comparison_file_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    def _comparison_file_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {
             "tab_id": payload["id"],
             "title": payload["title"],
+            "file": self._file_result_path(payload),
             "path": payload.get("path"),
             "source_path": payload.get("source_path"),
             "modified": bool(payload.get("modified")),
@@ -3436,6 +3507,7 @@ class ReasyAssistantTools(
         for tab, viewer, target in targets:
             result = {
                 **self._inspect_mdf_header(tab, viewer),
+                "file": self._file_result_path(target),
                 "tab_id": target["id"],
                 "title": target["title"],
                 "source_path": target.get("source_path"),

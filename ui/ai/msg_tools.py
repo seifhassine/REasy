@@ -83,7 +83,9 @@ confirmation.
 
 _MSG_PROMPT_HINT_RE = re.compile(
     r"(?:\bmsgs?\b|\.msg(?:\.\d+)?\b|\bmessage\s+files?\b|"
-    r"\blocali[sz]ation\s+files?\b|(?:消息文件|本地化文件|翻译文件))",
+    r"\blocali[sz]ation\s+files?\b|\blocali[sz]ed\s+text\b|"
+    r"\bin[- ]game\s+texts?\b|\b(?:dialogue|subtitles?|translations?)\b|"
+    r"(?:消息文件|本地化文件|翻译文件|游戏文本|对话|字幕))",
     re.IGNORECASE,
 )
 
