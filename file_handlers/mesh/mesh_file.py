@@ -940,6 +940,8 @@ class MPLYChunk:
     uv1: List[Tuple[float, float]]
     uv2: List[Tuple[float, float]]
     colors: List[int]
+    material_id: int = 0
+    part_id: int = 0
 
 
 @dataclass
@@ -948,6 +950,7 @@ class MPLYClusterHeader:
     index_count: int
     material_id: int
     index_offset_bytes: int
+    part_id: int = 0
 
 
 class MPLYParser:
@@ -1099,7 +1102,8 @@ class MPLYParser:
         center = tuple(self.h.read_vec3())
         vert_count = self.h.read_uint8()
         face_count = self.h.read_uint8()
-        self.h.skip(2)
+        material_id = self.h.read_uint8()
+        part_id = self.h.read_uint8()
         relative_aabb = [self.h.read_uint16() for _ in range(6)]
         flags = MPLYChunkFlags.read(self.h.read_uint32(), self.header.format_version)
 
@@ -1142,7 +1146,18 @@ class MPLYParser:
         if self.h.tell > end:
             raise ValueError(f"MPLY chunk data exceeds its boundary at {end}")
         self.h.seek(end)
-        return MPLYChunk(vert_count, positions, faces, normals, uv0, uv1, uv2, colors)
+        return MPLYChunk(
+            vert_count,
+            positions,
+            faces,
+            normals,
+            uv0,
+            uv1,
+            uv2,
+            colors,
+            material_id,
+            part_id,
+        )
 
     def _read_cluster_headers(self) -> List[List[MPLYClusterHeader]]:
         if not self.header.meshlet_bvh_offset:
@@ -1165,14 +1180,17 @@ class MPLYParser:
                 self.h.seek(gpu_cluster_headers + cluster_offsets[lod_index])
                 for _ in range(count):
                     word0 = self.h.read_uint32()
-                    self.h.read_uint32()
+                    word1 = self.h.read_uint32()
                     self.h.read_uint32()
                     index_offset = self.h.read_uint32()
                     headers.append(MPLYClusterHeader(
                         vertex_count=word0 & 0xFF,
                         index_count=(word0 >> 8) & 0x1FF,
-                        material_id=(word0 >> 24) & 0xFF,
+                        # Bit 22 is reserved; the 8-bit material field is
+                        # stored in bits 23-30.
+                        material_id=(word0 >> 23) & 0xFF,
                         index_offset_bytes=index_offset,
+                        part_id=word1 & 0xFF,
                     ))
             lod_headers.append(headers)
         return lod_headers
@@ -1244,6 +1262,16 @@ class MPLYParser:
                     raise ValueError(
                         f"MPLY LOD {lod_index} chunk {chunk_index}: "
                         f"{chunk.vert_count}/{cluster_header.vertex_count} vertices"
+                    )
+                if chunk.material_id != cluster_header.material_id:
+                    raise ValueError(
+                        f"MPLY LOD {lod_index} chunk {chunk_index}: "
+                        f"material IDs {chunk.material_id}/{cluster_header.material_id}"
+                    )
+                if chunk.part_id != cluster_header.part_id:
+                    raise ValueError(
+                        f"MPLY LOD {lod_index} chunk {chunk_index}: "
+                        f"part IDs {chunk.part_id}/{cluster_header.part_id}"
                     )
                 streaming_faces = self._read_streaming_faces(cluster_header)
                 if streaming_faces is not None:
