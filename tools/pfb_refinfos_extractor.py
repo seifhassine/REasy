@@ -12,6 +12,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from file_handlers.rsz.rsz_file import RszFile
+from utils.app_paths import resolve_cli_path
 from utils.type_registry import TypeRegistry
 
 
@@ -96,9 +97,9 @@ def aggregate(root: str, registry_json: str):
 
 def main():
     parser = argparse.ArgumentParser(description='Map PFB GameObjectRefInfo property IDs to component type names and list file occurrences.')
-    parser.add_argument('path', help='Directory to scan or a single PFB file')
-    parser.add_argument('--registry', '-r', help='Path to RSZ type registry JSON for type name resolution')
-    parser.add_argument('--output', '-o', help='Output JSON file; if omitted, prints to stdout')
+    parser.add_argument('path', type=resolve_cli_path, help='Directory to scan or a single PFB file')
+    parser.add_argument('--registry', '-r', type=resolve_cli_path, help='Path to RSZ type registry JSON for type name resolution')
+    parser.add_argument('--output', '-o', type=resolve_cli_path, help='Output JSON file; if omitted, prints to stdout')
     parser.add_argument('--pretty', action='store_true', help='Pretty-print JSON')
 
     args = parser.parse_args()

@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from file_handlers.rsz.rsz_data_types import _ValueData
 from services.backup_store import create_backup
+from utils.app_paths import resolve_cli_path
 from utils.type_registry import TypeRegistry
 from utils.number_format import format_display_value, format_float_sequence
 
@@ -252,13 +253,13 @@ def format_value(value):
 
 def main():
     parser = argparse.ArgumentParser(description='Find all possible values of a specific field in RSZ files')
-    parser.add_argument('--dir', '-d', required=True, help='Directory to scan')
+    parser.add_argument('--dir', '-d', type=resolve_cli_path, required=True, help='Directory to scan')
     parser.add_argument('--type-id', '-t', required=True, help='Type ID to search for (hex or decimal)')
     parser.add_argument('--field', '-f', help='Field name or index to extract (if not specified, will scan all fields)')
-    parser.add_argument('--json-dir', '-j', help='Path to JSON type data (file or directory)', default='res/type_data')
+    parser.add_argument('--json-dir', '-j', type=resolve_cli_path, help='Path to JSON type data (file or directory)', default='res/type_data')
     parser.add_argument('--recursive', '-r', action='store_true', help='Scan directories recursively')
     parser.add_argument('--limit', '-l', type=int, default=10, help='Maximum examples to show for each value')
-    parser.add_argument('--output', '-o', help='Output file for results (default: stdout)')
+    parser.add_argument('--output', '-o', type=resolve_cli_path, help='Output file for results (default: stdout)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed information')
     
     args = parser.parse_args()

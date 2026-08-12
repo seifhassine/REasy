@@ -24,5 +24,13 @@ def resource_path(relative_path: str | os.PathLike[str], *, required: bool = Fal
     return candidates[0]
 
 
+def resolve_cli_path(path: str | os.PathLike[str]) -> Path:
+    """Resolve a CLI path without allowing it to escape the working directory."""
+    root, resolved = Path.cwd().resolve(), Path(path).resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"path {path!r} is outside the working directory")
+    return resolved
+
+
 def backups_directory() -> Path:
     return application_root() / "backups"

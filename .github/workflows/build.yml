@@ -14,15 +14,12 @@ on:
   release:
     types: [published]
 
-permissions:
-  id-token: write     
-  attestations: write   
-  contents: write      
-
 jobs:
   tests:
     name: tests (${{ matrix.game }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     env:
       SKIP_TESTS: ${{ github.event.inputs.skip_tests }}
@@ -133,6 +130,10 @@ jobs:
     needs: tests                 
     runs-on: windows-latest
     environment: REasy ENV
+    permissions:
+      id-token: write
+      attestations: write
+      contents: write
 
     steps:
     - name: Checkout repository
