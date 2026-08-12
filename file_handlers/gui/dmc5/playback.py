@@ -1148,7 +1148,7 @@ def _native_hermite_parameter(
         return 1.0
     parameter = _fdiv(_fsub(target, x0), _fsub(x1, x0))
     coefficient_a = _fadd(_fadd(_fsub(_f32(x0 * 2.0), _f32(x1 * 2.0)), tangent0), tangent1)
-    if coefficient_a == 0.0 or math.isnan(coefficient_a):
+    if not coefficient_a or math.isnan(coefficient_a):
         return parameter
     coefficient_b = _fsub(_fsub(_fsub(_f32(x1 * 3.0), _f32(x0 * 3.0)), _f32(tangent0 * 2.0)), tangent1)
     b_over_a = _fdiv(coefficient_b, coefficient_a)
@@ -1156,7 +1156,7 @@ def _native_hermite_parameter(
     constant = _fdiv(_fsub(x0, target), coefficient_a)
     denominator = _fadd(_f32(_f32(parameter * 3.0) * parameter), _f32(_f32(b_over_a * 2.0) * parameter))
     denominator = _fadd(denominator, c_over_a)
-    if denominator != 0.0 and not math.isnan(denominator):
+    if denominator and not math.isnan(denominator):
         tolerance = _f32(1.0e-5)
         for _ in range(100):
             previous = parameter
@@ -1191,7 +1191,7 @@ def _native_bezier_value(start: ClipKey, end: ClipKey, frame: float) -> float:
         raise GuiSceneError("Bezier animation key has no Hermite curve")
     _out_x, out_y, _in_x, in_y = curve.values
     span = _fsub(end.frame, start.frame)
-    parameter = _fdiv(_fsub(frame, start.frame), span) if math.isnan(span) or span != 0.0 else 0.0
+    parameter = _fdiv(_fsub(frame, start.frame), span) if span else 0.0
     squared = _f32(parameter * parameter)
     cubed = _f32(squared * parameter)
     basis0 = _fadd(_fadd(_fsub(_f32(cubed * -1.0), _f32(squared * -3.0)), _f32(parameter * -3.0)), 1.0)

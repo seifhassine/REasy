@@ -64,6 +64,14 @@ _CONTAINERS = {
 }
 _DMC5_SELECT_BAR_MMTR = "ui/mastermaterial/guimesh_selectbar.mmtr"
 _FLOAT32_EPSILON = float(np.finfo(np.float32).eps)
+
+
+def _is_neutral_saturation(value: float) -> bool:
+    return math.isclose(
+        float(value), 1.0, rel_tol=0.0, abs_tol=_FLOAT32_EPSILON
+    )
+
+
 # DMC5 action indices consumed by the three SimpleList InputType listeners.
 # The physical virtual keys remain external and come from keyboard_bindings.
 _DMC5_LIST_INPUT_ACTIONS = {
@@ -1119,8 +1127,9 @@ class Dmc5GuiCanvas(QWidget):
     ) -> tuple[QPixmap, float]:
         colors = self._vertex_colors(node, apply_saturation=False)
         alphas = tuple(color.alpha() for color in colors)
-        opacity = alphas[0] / 255.0 if len(set(alphas)) == 1 else 1.0
-        if opacity != 1.0:
+        uniform_alpha = alphas[0] if len(set(alphas)) == 1 else 255
+        opacity = uniform_alpha / 255.0
+        if uniform_alpha < 255:
             colors = tuple(
                 QColor(color.red(), color.green(), color.blue(), 255)
                 for color in colors
@@ -1140,7 +1149,8 @@ class Dmc5GuiCanvas(QWidget):
             return cached, opacity
 
         identity = all(color.getRgb() == (255, 255, 255, 255) for color in colors)
-        if identity and saturation == 1.0 and not mirror_x and not mirror_y:
+        neutral_saturation = _is_neutral_saturation(saturation)
+        if identity and neutral_saturation and not mirror_x and not mirror_y:
             return pixmap, opacity
 
         image = pixmap.toImage().convertToFormat(QImage.Format.Format_RGBA8888)
@@ -1165,7 +1175,7 @@ class Dmc5GuiCanvas(QWidget):
         # transformed vertex colors as linear RGBA8.  QImage/QPainter do not,
         # so perform the shader-side color math explicitly before encoding the
         # result back to display sRGB.
-        if saturation == 1.0:
+        if neutral_saturation:
             table = _srgb_multiply_table()
             tint_bytes = np.asarray(tint[..., :3], dtype=np.uint8)
             if tint_bytes.ndim == 1:
@@ -2195,9 +2205,10 @@ class Dmc5GuiCanvas(QWidget):
         # display transform. Qt paints directly into the display image, so the
         # two transfer steps cancel here rather than leaving the preview dark.
         colors = colors * np.asarray(node.color_scale[:3]) + np.asarray(node.color_offset) / 255.0
-        if node.saturation != 1.0:
+        saturation = float(node.saturation)
+        if not _is_neutral_saturation(saturation):
             luminance = colors @ np.asarray((0.2126, 0.7152, 0.0722))
-            colors = luminance[:, None] + (colors - luminance[:, None]) * node.saturation
+            colors = luminance[:, None] + (colors - luminance[:, None]) * saturation
         colors = np.clip(colors, 0.0, 1.0)
 
         rgba = np.zeros((height, width, 4), dtype=np.uint8)

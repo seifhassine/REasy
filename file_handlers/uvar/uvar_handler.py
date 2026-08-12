@@ -79,6 +79,23 @@ _INVALID_RELATION_TITLE = QT_TRANSLATE_NOOP(
 )
 
 
+def _trailing_decimal_digits(value: str) -> str:
+
+    suffix_start = len(value)
+    while suffix_start > 0 and value[suffix_start - 1].isdecimal():
+        suffix_start -= 1
+    return value[suffix_start:]
+
+
+def _split_numeric_suffix(value: str) -> tuple[str, str] | None:
+
+    suffix = _trailing_decimal_digits(value)
+    if not suffix or len(value) < 2:
+        return None
+    suffix_start = max(1, len(value) - len(suffix))
+    return value[:suffix_start], value[suffix_start:]
+
+
 class LazyTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -871,7 +888,6 @@ class UvarHandler(BaseFileHandler):
                 tree.viewport().update()
                     
     def _add_many_variables(self, tree: QTreeWidget, item: QTreeWidgetItem, meta: Dict):
-        import re
         file = meta["file"]
         
         count, ok = QInputDialog.getInt(
@@ -903,18 +919,14 @@ class UvarHandler(BaseFileHandler):
         if file.variables:
             last_var = file.variables[-1]
             if last_var.name:
-                match = re.match(r'^(.+?)(\d+)$', last_var.name)
-                if match:
-                    auto_base_name = match.group(1)
-                    auto_start_num = int(match.group(2)) + 1
+                name_parts = _split_numeric_suffix(last_var.name)
+                if name_parts:
+                    prefix, numeric_suffix = name_parts
+                    auto_base_name = prefix
+                    auto_start_num = int(numeric_suffix) + 1
                 else:
-                    match = re.match(r'^(.+_)(\d+)$', last_var.name)
-                    if match:
-                        auto_base_name = match.group(1)
-                        auto_start_num = int(match.group(2)) + 1
-                    else:
-                        auto_base_name = last_var.name + "_"
-                        auto_start_num = 0
+                    auto_base_name = last_var.name + "_"
+                    auto_start_num = 0
         
         suggested_name = f"{auto_base_name}{auto_start_num}"
         base_name_input, ok = QInputDialog.getText(
@@ -927,10 +939,10 @@ class UvarHandler(BaseFileHandler):
             return
         
         if base_name_input:
-            match = re.match(r'^(.+?)(\d+)$', base_name_input)
-            if match:
-                base_name = match.group(1)
-                start_num = int(match.group(2))
+            name_parts = _split_numeric_suffix(base_name_input)
+            if name_parts:
+                base_name, numeric_suffix = name_parts
+                start_num = int(numeric_suffix)
             else:
                 base_name = base_name_input
                 if not base_name.endswith('_'):
@@ -942,15 +954,11 @@ class UvarHandler(BaseFileHandler):
         
         for i in range(count):
             num = start_num + i
-            if start_num > 0 or (file.variables and re.search(r'\d+$', file.variables[-1].name or "")):
-                if file.variables and file.variables[-1].name:
-                    last_num_match = re.search(r'(\d+)$', file.variables[-1].name)
-                    if last_num_match:
-                        padding = len(last_num_match.group(1))
-                    else:
-                        padding = len(str(start_num + count - 1))
-                else:
-                    padding = len(str(count))
+            last_name = file.variables[-1].name if file.variables else ""
+            numeric_suffix = _trailing_decimal_digits(last_name or "")
+            if start_num > 0 or numeric_suffix:
+                upper_bound = start_num + count - 1 if last_name else count
+                padding = len(numeric_suffix) if numeric_suffix else len(str(upper_bound))
                 name = f"{base_name}{str(num).zfill(padding)}"
             else:
                 name = f"{base_name}{num}"

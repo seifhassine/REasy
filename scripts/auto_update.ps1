@@ -11,8 +11,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 function Write-Log { param([string]$Message) Write-Host $Message }
+function Invoke-BestEffort {
+    param([string]$Action, [scriptblock]$Operation)
+    try { & $Operation } catch { Write-Log ("Warning: could not {0}: {1}" -f $Action, $_.Exception.Message) }
+}
 
-try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
+Invoke-BestEffort 'enable TLS 1.2' {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+}
 
 $RepoOwner = 'seifhassine'
 $RepoName  = 'REasy'
@@ -33,7 +39,11 @@ if ($Apply) {
     if (-not (Test-Path -LiteralPath $Staged)) { throw "Staged path not found: $Staged" }
     if (-not (Test-Path -LiteralPath $Target)) { throw "Target path not found: $Target" }
 
-    if ($AppPid -gt 0) { try { Wait-Process -Id $AppPid -ErrorAction SilentlyContinue } catch {} }
+    if ($AppPid -gt 0) {
+        Invoke-BestEffort ("wait for process {0}" -f $AppPid) {
+            Wait-Process -Id $AppPid -ErrorAction SilentlyContinue
+        }
+    }
 
     $exePath = Join-Path $Target $ExeName
     $waitUntil = (Get-Date).AddMinutes(5)
@@ -44,12 +54,12 @@ if ($Apply) {
         param([string]$Source,[string]$Destination,[switch]$Mirror)
         $qSource = '"' + $Source + '"'
         $qDest = '"' + $Destination + '"'
-        $args = @($qSource, $qDest)
+        $roboCopyArgs = @($qSource, $qDest)
         # copy-only, create dirs; avoid /MIR to prevent delete-related issues
-        $args += '/E'
+        $roboCopyArgs += '/E'
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = 'robocopy'
-        $psi.Arguments = [string]::Join(' ', $args)
+        $psi.Arguments = [string]::Join(' ', $roboCopyArgs)
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
         $psi.UseShellExecute = $false
@@ -76,10 +86,18 @@ if ($Apply) {
     $code = Invoke-RoboCopy -Source $Staged -Destination $Target -Mirror
     if ($code -ge 8) { throw "Update failed with robocopy code $code" }
 
-    try { Unblock-File -Path (Join-Path $Target '*') -Recurse -ErrorAction SilentlyContinue } catch {}
-    try { $exe = Join-Path $Target $ExeName; if (Test-Path $exe) { Unblock-File -Path $exe -ErrorAction SilentlyContinue } } catch {}
+    Invoke-BestEffort 'unblock every updated file' {
+        Get-ChildItem -LiteralPath $Target -File -Recurse -ErrorAction Stop |
+            Unblock-File -ErrorAction Stop
+    }
+    Invoke-BestEffort ("unblock {0}" -f $ExeName) {
+        $exe = Join-Path $Target $ExeName
+        if (Test-Path -LiteralPath $exe) {
+            Unblock-File -LiteralPath $exe -ErrorAction Stop
+        }
+    }
 
-    try {
+    Invoke-BestEffort 'verify the updated executable size' {
         $stagedExe = Join-Path $Staged $ExeName
         $targetExe = Join-Path $Target $ExeName
         if ((Test-Path -LiteralPath $stagedExe) -and (Test-Path -LiteralPath $targetExe)) {
@@ -91,13 +109,13 @@ if ($Apply) {
                 Start-Sleep -Milliseconds 200
             }
         }
-    } catch {}
+    }
 
-    try {
+    Invoke-BestEffort 'remove staged update files' {
         if (Test-Path -LiteralPath $Staged) {
-            Remove-Item -LiteralPath $Staged -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $Staged -Recurse -Force -ErrorAction Stop
         }
-    } catch {}
+    }
 
     Write-Log "Update complete."
     if ($Relaunch) {

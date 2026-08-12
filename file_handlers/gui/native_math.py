@@ -31,8 +31,8 @@ def fdiv(numerator: float, denominator: float) -> float:
     numerator, denominator = f32(numerator), f32(denominator)
     if math.isnan(numerator) or math.isnan(denominator):
         return math.nan
-    if denominator == 0.0:
-        if numerator == 0.0:
+    if not denominator:
+        if not numerator:
             return math.nan
         negative = math.copysign(1.0, numerator) != math.copysign(
             1.0,

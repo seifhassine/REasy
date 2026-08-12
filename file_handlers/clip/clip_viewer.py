@@ -1341,7 +1341,8 @@ class ClipTimelineCanvas(QWidget):
             return obj.frame_in, obj.frame_out
         if isinstance(obj, (Node, Property)):
             return obj.begin_frame, obj.end_frame
-        return (getattr(obj, "frame", 0.0),)
+        frame = getattr(obj, "frame", 0.0)
+        return frame, frame
 
     def _set_range_values(self, item, start: float, end: float):
         obj = item["obj"]

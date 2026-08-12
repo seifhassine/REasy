@@ -367,7 +367,7 @@ def project_gui_point(point, matrix: Matrix4) -> tuple[float, float, float]:
         )
         for column in range(4)
     )
-    if result[3] == 0.0:
+    if not result[3]:
         return 0.0, 0.0, 0.0
     inverse = _fdiv(1.0, result[3])
     return tuple(_fmul(value, inverse) for value in result[:3])
@@ -394,7 +394,7 @@ def _resolution_project(point, matrix: Matrix4) -> tuple[float, float, float]:
                 matrix[3][column],
             )
         )
-    inverse = 0.0 if result[3] == 0.0 else _fdiv(1.0, result[3])
+    inverse = 0.0 if not result[3] else _fdiv(1.0, result[3])
     return tuple(_fmul(value, inverse) for value in result[:3])
 
 
