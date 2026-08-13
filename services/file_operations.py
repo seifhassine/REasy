@@ -28,6 +28,18 @@ class FileOperationError(ValueError):
     """A safe file operation could not be planned or completed."""
 
 
+def _move_to_recycle_bin(target: Path) -> None:
+    qt_file = QFile(str(target))
+    if qt_file.moveToTrash():
+        return
+    detail = str(qt_file.errorString() or "").strip()
+    if "0x80270027" in detail.casefold():
+        detail = "The item is in use; close it in REasy and other programs, then retry."
+    elif detail.casefold().rstrip(".") in {"", "unknown error", "unspecified error"}:
+        detail = "The Trash is unavailable or does not support this item."
+    raise FileOperationError(f"Could not move the item to the operating system Trash. {detail}")
+
+
 @dataclass(frozen=True)
 class PlannedFileOperation:
     operation: str
@@ -507,8 +519,7 @@ class FolderFileOperations:
                         or file_fingerprint(item.source) != item.fingerprint
                     ):
                         raise FileOperationError("Source changed after planning.")
-                    if not QFile.moveToTrash(str(item.source)):
-                        raise FileOperationError("The operating system rejected the Recycle Bin operation.")
+                    _move_to_recycle_bin(item.source)
                     completed.append(item.payload())
                 except Exception as exc:
                     failures.append({**item.payload(), "error": str(exc)})
@@ -589,5 +600,4 @@ class FolderFileOperations:
         target = self._existing_member(relative_path, "path")
         if not (target.is_file() or target.is_dir()):
             raise FileOperationError("Only files and directories can be moved to the Recycle Bin.")
-        if not QFile.moveToTrash(str(target)):
-            raise FileOperationError("The operating system rejected the Recycle Bin operation.")
+        _move_to_recycle_bin(target)
