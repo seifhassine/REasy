@@ -170,7 +170,11 @@ This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Pytho
 For more information, see:  
 - [Qt Licensing Information](https://www.qt.io/licensing/)  
 - [LGPL v3 License Text](https://www.gnu.org/licenses/lgpl-3.0.html)
-  
+
+## Explicit Content Attribution
+
+If REasy is used to create or modify sexually explicit, pornographic, or otherwise NSFW content, the resulting mod or content must not credit, attribute, or otherwise identify REasy as a tool used in its creation.
+
 ## Sponsors
 <table>
  <tbody>
