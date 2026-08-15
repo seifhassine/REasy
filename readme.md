@@ -43,7 +43,7 @@ REasy GUI is currently available in English and Chinese.
 | MCAMBANK       | ✅       | Most titles      |
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
-| BNK/PCK       | ✅       |    Most titles   |
+| BNK/PCK       | ✅       |Main titles moddable, rest are read-only|
 | WEL       | ✅       |    Most titles|
 | WCC       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
