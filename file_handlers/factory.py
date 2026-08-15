@@ -53,6 +53,9 @@ def get_handler_for_data(data: bytes, filename: str = ""):
     if re.search(r"\.wel\.\d+(?:\.[^.]+)*$", fn):
         from file_handlers.wel.wel_handler import WelHandler
         return WelHandler()
+    if re.search(r"\.mov\.\d+(?:\.[^.]+)*$", fn):
+        from file_handlers.mov.mov_handler import MovHandler
+        return MovHandler()
     if ".wcc" in fn:
         from file_handlers.wcc.wcc_handler import WccHandler
         return WccHandler()

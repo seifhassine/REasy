@@ -39,6 +39,10 @@ class BaseFileHandler(QObject):
         """Return whether the generic tree editor may call validate_edit/handle_edit."""
         return False
 
+    def open_externally(self, filename=None, data=None, pak_source_path=None) -> bool:
+        """Open this format with the OS default app instead of an editor tab."""
+        return False
+
     def create_viewer(self):
         """Create and return a viewer instance - override in subclasses"""
         raise NotImplementedError()
