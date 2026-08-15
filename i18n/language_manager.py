@@ -23,6 +23,7 @@ class LanguageManager:
     SUPPORTED_LANGUAGES: ClassVar[dict[str, LanguageInfo]] = {
         "en": LanguageInfo(code="en", name="English", qt_locale="en"),
         "zh-CN": LanguageInfo(code="zh-CN", name="中文（简体）", qt_locale="zh_CN"),
+        "ru": LanguageInfo(code="ru", name="Русский", qt_locale="ru"),
     }
 
     def __init__(self) -> None:
