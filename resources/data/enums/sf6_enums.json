@@ -6999,12 +6999,20 @@
 			"value": 7
 		},
 		{
+			"name": "StampCategory8",
+			"value": 8
+		},
+		{
+			"name": "StampCategory9",
+			"value": 9
+		},
+		{
 			"name": "StampCategoryMaxValue",
-			"value": 7
+			"value": 9
 		},
 		{
 			"name": "StampCategoryMaxCount",
-			"value": 8
+			"value": 10
 		}
 	],
 	"app.worldtour.avatar.PlayerChairLoopCheck.CheckType": [
@@ -12953,6 +12961,20 @@
 		{
 			"name": "InviteSession",
 			"value": 10
+		}
+	],
+	"CharacterAsset.EKind_SRT": [
+		{
+			"name": "Scale",
+			"value": 0
+		},
+		{
+			"name": "Translation",
+			"value": 1
+		},
+		{
+			"name": "Rotation",
+			"value": 2
 		}
 	],
 	"via.render.E2DStretchMode": [
@@ -20343,12 +20365,36 @@
 			"value": 835
 		},
 		{
+			"name": "GuideDescriptionMessage836",
+			"value": 836
+		},
+		{
+			"name": "GuideDescriptionMessage837",
+			"value": 837
+		},
+		{
+			"name": "GuideDescriptionMessage838",
+			"value": 838
+		},
+		{
+			"name": "GuideDescriptionMessage839",
+			"value": 839
+		},
+		{
+			"name": "GuideDescriptionMessage840",
+			"value": 840
+		},
+		{
+			"name": "GuideDescriptionMessage841",
+			"value": 841
+		},
+		{
 			"name": "GuideDescriptionMessageMaxValue",
-			"value": 835
+			"value": 841
 		},
 		{
 			"name": "GuideDescriptionMessageMaxCount",
-			"value": 728
+			"value": 734
 		}
 	],
 	"app.UIStateType": [
@@ -36472,6 +36518,10 @@
 			"value": 32
 		},
 		{
+			"name": "ESF_033",
+			"value": 33
+		},
+		{
 			"name": "GMNP",
 			"value": 60
 		},
@@ -38114,12 +38164,28 @@
 			"value": 151
 		},
 		{
+			"name": "FGAvatarArcadePointMaxMaster33",
+			"value": 152
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster34",
+			"value": 153
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster35",
+			"value": 154
+		},
+		{
+			"name": "FGAvatarArcadePointMaxMaster36",
+			"value": 155
+		},
+		{
 			"name": "ChallengeMissionMaxValue",
-			"value": 151
+			"value": 155
 		},
 		{
 			"name": "ChallengeMissionMaxCount",
-			"value": 152
+			"value": 156
 		}
 	],
 	"app.UIPartsCrossBar.INPUT_DIR_TYPE": [
@@ -44034,12 +44100,16 @@
 			"value": 47
 		},
 		{
+			"name": "CollaboEvent48",
+			"value": 48
+		},
+		{
 			"name": "CollaboEventMaxValue",
-			"value": 47
+			"value": 48
 		},
 		{
 			"name": "CollaboEventMaxCount",
-			"value": 48
+			"value": 49
 		}
 	],
 	"via.render.LightShaft.LightShaftType": [
@@ -44644,6 +44714,16 @@
 		{
 			"name": "EDriveParry",
 			"value": 4
+		}
+	],
+	"app.network.api.Enum.ModelPlaybackIsPlayback": [
+		{
+			"name": "EReproduction",
+			"value": 1
+		},
+		{
+			"name": "ENotPlayed",
+			"value": 2
 		}
 	],
 	"app.EConfigDownCount": [
@@ -45816,8 +45896,12 @@
 			"value": 2
 		},
 		{
-			"name": "Max",
+			"name": "SetList_Emote",
 			"value": 3
+		},
+		{
+			"name": "Max",
+			"value": 4
 		}
 	],
 	"ZXing.BarcodeFormat": [
@@ -62621,6 +62705,16 @@
 			"value": 3
 		}
 	],
+	"app.network.api.Enum.ModelPlaybackMode": [
+		{
+			"name": "EGenerally",
+			"value": 1
+		},
+		{
+			"name": "E05XSpeed",
+			"value": 2
+		}
+	],
 	"app.ReGameGuideSettings.eDisplayPoint": [
 		{
 			"name": "MainMenu",
@@ -79158,6 +79252,20 @@
 			"value": 8
 		}
 	],
+	"app.UIFlowWTDeviceEmoteShortCut.eSetListStatePattern": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Cheer",
+			"value": 1
+		},
+		{
+			"name": "Emote",
+			"value": 2
+		}
+	],
 	"app.network.api.Enum.TeamVersusCharacterLocalTeamSide": [
 		{
 			"name": "ERed",
@@ -81334,8 +81442,48 @@
 			"value": 14
 		},
 		{
-			"name": "Num",
+			"name": "Parts_11",
 			"value": 15
+		},
+		{
+			"name": "Parts_12",
+			"value": 16
+		},
+		{
+			"name": "Parts_13",
+			"value": 17
+		},
+		{
+			"name": "Parts_14",
+			"value": 18
+		},
+		{
+			"name": "Parts_15",
+			"value": 19
+		},
+		{
+			"name": "Parts_16",
+			"value": 20
+		},
+		{
+			"name": "Parts_17",
+			"value": 21
+		},
+		{
+			"name": "Parts_18",
+			"value": 22
+		},
+		{
+			"name": "Parts_19",
+			"value": 23
+		},
+		{
+			"name": "Parts_20",
+			"value": 24
+		},
+		{
+			"name": "Num",
+			"value": 25
 		},
 		{
 			"name": "Parts_Start",
@@ -81343,7 +81491,7 @@
 		},
 		{
 			"name": "Parts_End",
-			"value": 14
+			"value": 24
 		}
 	],
 	"app.UICFNReplayTopTabListBase.SortType": [
@@ -87330,12 +87478,24 @@
 			"value": 210
 		},
 		{
+			"name": "AttachmentIDs211",
+			"value": 211
+		},
+		{
+			"name": "AttachmentIDs212",
+			"value": 212
+		},
+		{
+			"name": "AttachmentIDs213",
+			"value": 213
+		},
+		{
 			"name": "AttachmentIDsMaxValue",
-			"value": 210
+			"value": 213
 		},
 		{
 			"name": "AttachmentIDsMaxCount",
-			"value": 203
+			"value": 206
 		}
 	],
 	"app.error.ErrorCategory": [
@@ -99620,364 +99780,400 @@
 			"value": 247
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_003_4",
 			"value": 248
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020",
 			"value": 249
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_0",
 			"value": 250
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_1",
 			"value": 251
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_020_2",
 			"value": 252
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0",
 			"value": 253
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_0",
 			"value": 254
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_1",
 			"value": 255
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_2",
 			"value": 256
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_3",
 			"value": 257
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_5",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_4",
 			"value": 258
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_6",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_5",
 			"value": 259
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_028_0_6",
 			"value": 260
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0",
 			"value": 261
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_0",
 			"value": 262
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_1",
 			"value": 263
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_030_0_2",
 			"value": 264
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0",
 			"value": 265
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_0",
 			"value": 266
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_2",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_1",
 			"value": 267
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_3",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_2",
 			"value": 268
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_4",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_3",
 			"value": 269
 		},
 		{
-			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_5",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_4",
 			"value": 270
 		},
 		{
-			"name": "DISP_ATTACK_ALL",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_032_0_5",
 			"value": 271
 		},
 		{
-			"name": "DISP_ATTACK_ALL_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_0",
 			"value": 272
 		},
 		{
-			"name": "DISP_ATTACK_ALL_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_0_0",
 			"value": 273
 		},
 		{
-			"name": "DISP_DAMAGE",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_0_1",
 			"value": 274
 		},
 		{
-			"name": "DISP_DAMAGE_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_0_2",
 			"value": 275
 		},
 		{
-			"name": "DISP_DAMAGE_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_1",
 			"value": 276
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_1_0",
 			"value": 277
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION_0",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_1_1",
 			"value": 278
 		},
 		{
-			"name": "DISP_DAMAGE_CORRECTION_1",
+			"name": "PARAMETER_UNIQUE_GAUGE_TYPE_033_1_2",
 			"value": 279
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE",
+			"name": "DISP_ATTACK_ALL",
 			"value": 280
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE_0",
+			"name": "DISP_ATTACK_ALL_0",
 			"value": 281
 		},
 		{
-			"name": "DISP_DAMAGE_COMBODAMAGE_1",
+			"name": "DISP_ATTACK_ALL_1",
 			"value": 282
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE",
+			"name": "DISP_DAMAGE",
 			"value": 283
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_0",
+			"name": "DISP_DAMAGE_0",
 			"value": 284
 		},
 		{
-			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_1",
+			"name": "DISP_DAMAGE_1",
 			"value": 285
 		},
 		{
-			"name": "DISP_ATKINFO",
+			"name": "DISP_DAMAGE_CORRECTION",
 			"value": 286
 		},
 		{
-			"name": "DISP_ATKINFO_0",
+			"name": "DISP_DAMAGE_CORRECTION_0",
 			"value": 287
 		},
 		{
-			"name": "DISP_ATKINFO_1",
+			"name": "DISP_DAMAGE_CORRECTION_1",
 			"value": 288
 		},
 		{
-			"name": "DISP_FRAMEMETER",
+			"name": "DISP_DAMAGE_COMBODAMAGE",
 			"value": 289
 		},
 		{
-			"name": "DISP_FRAMEMETER_0",
+			"name": "DISP_DAMAGE_COMBODAMAGE_0",
 			"value": 290
 		},
 		{
-			"name": "DISP_FRAMEMETER_1",
+			"name": "DISP_DAMAGE_COMBODAMAGE_1",
 			"value": 291
 		},
 		{
-			"name": "DISP_KEYDISP",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE",
 			"value": 292
 		},
 		{
-			"name": "DISP_KEYDISP_0",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_0",
 			"value": 293
 		},
 		{
-			"name": "DISP_KEYDISP_1",
+			"name": "DISP_DAMAGE_COMBOMAXDAMAGE_1",
 			"value": 294
 		},
 		{
-			"name": "DISP_KEYDISP_2",
+			"name": "DISP_ATKINFO",
 			"value": 295
 		},
 		{
-			"name": "DISP_KEYDISP_3",
+			"name": "DISP_ATKINFO_0",
 			"value": 296
 		},
 		{
-			"name": "DISP_COMMAND",
+			"name": "DISP_ATKINFO_1",
 			"value": 297
 		},
 		{
-			"name": "DISP_COMMAND_0",
+			"name": "DISP_FRAMEMETER",
 			"value": 298
 		},
 		{
-			"name": "DISP_COMMAND_1",
+			"name": "DISP_FRAMEMETER_0",
 			"value": 299
 		},
 		{
-			"name": "DISP_SUPPORT",
+			"name": "DISP_FRAMEMETER_1",
 			"value": 300
 		},
 		{
-			"name": "DISP_SUPPORT_0",
+			"name": "DISP_KEYDISP",
 			"value": 301
 		},
 		{
-			"name": "DISP_SUPPORT_1",
+			"name": "DISP_KEYDISP_0",
 			"value": 302
 		},
 		{
-			"name": "DISP_SUPPORT_2",
+			"name": "DISP_KEYDISP_1",
 			"value": 303
 		},
 		{
-			"name": "DISP_CANCELTIMING",
+			"name": "DISP_KEYDISP_2",
 			"value": 304
 		},
 		{
-			"name": "DISP_CANCELTIMING_0",
+			"name": "DISP_KEYDISP_3",
 			"value": 305
 		},
 		{
-			"name": "DISP_CANCELTIMING_1",
+			"name": "DISP_COMMAND",
 			"value": 306
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER",
+			"name": "DISP_COMMAND_0",
 			"value": 307
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_0",
+			"name": "DISP_COMMAND_1",
 			"value": 308
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_1",
+			"name": "DISP_SUPPORT",
 			"value": 309
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_2",
+			"name": "DISP_SUPPORT_0",
 			"value": 310
 		},
 		{
-			"name": "DISP_VIRTUALCONTROLLER_3",
+			"name": "DISP_SUPPORT_1",
 			"value": 311
 		},
 		{
-			"name": "DISP_HUD_SETTING",
+			"name": "DISP_SUPPORT_2",
 			"value": 312
 		},
 		{
-			"name": "DISP_DAMAGE_COMBO_RESET",
+			"name": "DISP_CANCELTIMING",
 			"value": 313
 		},
 		{
-			"name": "EASY_SETTING_0",
+			"name": "DISP_CANCELTIMING_0",
 			"value": 314
 		},
 		{
-			"name": "EASY_SETTING_1",
+			"name": "DISP_CANCELTIMING_1",
 			"value": 315
 		},
 		{
-			"name": "EASY_SETTING_2",
+			"name": "DISP_VIRTUALCONTROLLER",
 			"value": 316
 		},
 		{
-			"name": "EASY_SETTING_3",
+			"name": "DISP_VIRTUALCONTROLLER_0",
 			"value": 317
 		},
 		{
-			"name": "EASY_SETTING_4",
+			"name": "DISP_VIRTUALCONTROLLER_1",
 			"value": 318
 		},
 		{
-			"name": "EASY_SETTING_5",
+			"name": "DISP_VIRTUALCONTROLLER_2",
 			"value": 319
 		},
 		{
-			"name": "EASY_SETTING_6",
+			"name": "DISP_VIRTUALCONTROLLER_3",
 			"value": 320
 		},
 		{
-			"name": "EASY_SETTING_7",
+			"name": "DISP_HUD_SETTING",
 			"value": 321
 		},
 		{
-			"name": "EASY_SETTING_8",
+			"name": "DISP_DAMAGE_COMBO_RESET",
 			"value": 322
 		},
 		{
-			"name": "EASY_SETTING_9",
+			"name": "EASY_SETTING_0",
 			"value": 323
 		},
 		{
-			"name": "EASY_SETTING_10",
+			"name": "EASY_SETTING_1",
 			"value": 324
 		},
 		{
-			"name": "EASY_SAVE_MENU",
+			"name": "EASY_SETTING_2",
 			"value": 325
 		},
 		{
-			"name": "EASY_SAVE_MENU_SLOT",
+			"name": "EASY_SETTING_3",
 			"value": 326
 		},
 		{
-			"name": "EASY_LOAD_MENU",
+			"name": "EASY_SETTING_4",
 			"value": 327
 		},
 		{
-			"name": "DUMMY_BODY_SIZE",
+			"name": "EASY_SETTING_5",
 			"value": 328
 		},
 		{
-			"name": "DUMMY_BODY_SIZE_SMALL",
+			"name": "EASY_SETTING_6",
 			"value": 329
 		},
 		{
-			"name": "DUMMY_BODY_SIZE_MEDIUM",
+			"name": "EASY_SETTING_7",
 			"value": 330
 		},
 		{
-			"name": "DUMMY_BODY_SIZE_LARGE",
+			"name": "EASY_SETTING_8",
 			"value": 331
 		},
 		{
-			"name": "DUMMY_INPUT_TYPE",
+			"name": "EASY_SETTING_9",
 			"value": 332
 		},
 		{
-			"name": "DUMMY_INPUT_TYPE_CASUAL",
+			"name": "EASY_SETTING_10",
 			"value": 333
 		},
 		{
-			"name": "DUMMY_INPUT_TYPE_NORMAL",
+			"name": "EASY_SAVE_MENU",
 			"value": 334
 		},
 		{
-			"name": "DUMMY_STATUS_SETTING",
+			"name": "EASY_SAVE_MENU_SLOT",
 			"value": 335
 		},
 		{
-			"name": "DYNAMIC",
+			"name": "EASY_LOAD_MENU",
 			"value": 336
 		},
 		{
-			"name": "MAX",
+			"name": "DUMMY_BODY_SIZE",
 			"value": 337
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_SMALL",
+			"value": 338
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_MEDIUM",
+			"value": 339
+		},
+		{
+			"name": "DUMMY_BODY_SIZE_LARGE",
+			"value": 340
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE",
+			"value": 341
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE_CASUAL",
+			"value": 342
+		},
+		{
+			"name": "DUMMY_INPUT_TYPE_NORMAL",
+			"value": 343
+		},
+		{
+			"name": "DUMMY_STATUS_SETTING",
+			"value": 344
+		},
+		{
+			"name": "DYNAMIC",
+			"value": 345
+		},
+		{
+			"name": "MAX",
+			"value": 346
 		}
 	],
 	"app.UIPartsMatchingSettingBattle.MainListFocusType": [
@@ -103214,6 +103410,16 @@
 		},
 		{
 			"name": "ThrowTarget",
+			"value": 1
+		}
+	],
+	"CharacterAsset.EApplyMode": [
+		{
+			"name": "Overwrite",
+			"value": 0
+		},
+		{
+			"name": "Additive",
 			"value": 1
 		}
 	],
@@ -112434,12 +112640,152 @@
 			"value": 11319
 		},
 		{
+			"name": "TitleplateId11320",
+			"value": 11320
+		},
+		{
+			"name": "TitleplateId11321",
+			"value": 11321
+		},
+		{
+			"name": "TitleplateId11322",
+			"value": 11322
+		},
+		{
+			"name": "TitleplateId11323",
+			"value": 11323
+		},
+		{
+			"name": "TitleplateId11324",
+			"value": 11324
+		},
+		{
+			"name": "TitleplateId11325",
+			"value": 11325
+		},
+		{
+			"name": "TitleplateId11326",
+			"value": 11326
+		},
+		{
+			"name": "TitleplateId11327",
+			"value": 11327
+		},
+		{
+			"name": "TitleplateId11328",
+			"value": 11328
+		},
+		{
+			"name": "TitleplateId11329",
+			"value": 11329
+		},
+		{
+			"name": "TitleplateId11330",
+			"value": 11330
+		},
+		{
+			"name": "TitleplateId11331",
+			"value": 11331
+		},
+		{
+			"name": "TitleplateId11332",
+			"value": 11332
+		},
+		{
+			"name": "TitleplateId11333",
+			"value": 11333
+		},
+		{
+			"name": "TitleplateId11334",
+			"value": 11334
+		},
+		{
+			"name": "TitleplateId11335",
+			"value": 11335
+		},
+		{
+			"name": "TitleplateId11336",
+			"value": 11336
+		},
+		{
+			"name": "TitleplateId11337",
+			"value": 11337
+		},
+		{
+			"name": "TitleplateId11338",
+			"value": 11338
+		},
+		{
+			"name": "TitleplateId11339",
+			"value": 11339
+		},
+		{
+			"name": "TitleplateId11340",
+			"value": 11340
+		},
+		{
+			"name": "TitleplateId11341",
+			"value": 11341
+		},
+		{
+			"name": "TitleplateId11342",
+			"value": 11342
+		},
+		{
+			"name": "TitleplateId11343",
+			"value": 11343
+		},
+		{
+			"name": "TitleplateId11344",
+			"value": 11344
+		},
+		{
+			"name": "TitleplateId11345",
+			"value": 11345
+		},
+		{
+			"name": "TitleplateId11346",
+			"value": 11346
+		},
+		{
+			"name": "TitleplateId11347",
+			"value": 11347
+		},
+		{
+			"name": "TitleplateId11348",
+			"value": 11348
+		},
+		{
+			"name": "TitleplateId11349",
+			"value": 11349
+		},
+		{
+			"name": "TitleplateId11350",
+			"value": 11350
+		},
+		{
+			"name": "TitleplateId11351",
+			"value": 11351
+		},
+		{
+			"name": "TitleplateId11352",
+			"value": 11352
+		},
+		{
+			"name": "TitleplateId11353",
+			"value": 11353
+		},
+		{
+			"name": "TitleplateId11354",
+			"value": 11354
+		},
+		{
 			"name": "TitleplateIdMaxValue",
-			"value": 11319
+			"value": 11354
 		},
 		{
 			"name": "TitleplateIdMaxCount",
-			"value": 1305
+			"value": 1340
 		}
 	],
 	"via.gui.FreePolygonUpdateArg.ParamType": [
@@ -120758,6 +121104,10 @@
 		{
 			"name": "RESET_COMBO_ID",
 			"value": 16
+		},
+		{
+			"name": "DUMMY_OBJECT",
+			"value": 64
 		}
 	],
 	"app.training.PLAY_TYPE": [
@@ -121504,6 +121854,36 @@
 		{
 			"name": "Custom",
 			"value": 2
+		}
+	],
+	"app.worldtour.WTDefine.EquipEmoteCategory": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "EquipEmoteCategory1",
+			"value": 1
+		},
+		{
+			"name": "EquipEmoteCategory5",
+			"value": 5
+		},
+		{
+			"name": "EquipEmoteCategory7",
+			"value": 7
+		},
+		{
+			"name": "EquipEmoteCategory11",
+			"value": 11
+		},
+		{
+			"name": "EquipEmoteCategoryMaxValue",
+			"value": 11
+		},
+		{
+			"name": "EquipEmoteCategoryMaxCount",
+			"value": 5
 		}
 	],
 	"app.UIFlowShop.DialogUI.eGroupFocus": [
@@ -123277,8 +123657,12 @@
 			"value": 4
 		},
 		{
-			"name": "Max",
+			"name": "Frame",
 			"value": 5
+		},
+		{
+			"name": "Max",
+			"value": 6
 		},
 		{
 			"name": "Start",
@@ -144328,6 +144712,10 @@
 		{
 			"name": "ResetComboID",
 			"value": 4
+		},
+		{
+			"name": "DummyObject",
+			"value": 6
 		}
 	],
 	"app.commentator.CommentTypeSettingData.SelfConditionType": [
@@ -171482,6 +171870,16 @@
 			"value": 7
 		}
 	],
+	"app.UIFlowAvatarRandomMatchRanking.DeptMenuItem": [
+		{
+			"name": "PLATFORM",
+			"value": 0
+		},
+		{
+			"name": "NUM",
+			"value": 1
+		}
+	],
 	"app.UIPartsSpin.eInputVariableType": [
 		{
 			"name": "Fluctuate",
@@ -186907,12 +187305,8 @@
 			"value": 1
 		},
 		{
-			"name": "Frame",
-			"value": 2
-		},
-		{
 			"name": "Max",
-			"value": 3
+			"value": 2
 		}
 	],
 	"app.UIPartsRivalAiRecord.RifenAdviceType": [
@@ -193992,12 +194386,16 @@
 			"value": 32
 		},
 		{
+			"name": "BattlePass33",
+			"value": 33
+		},
+		{
 			"name": "BattlePassMaxValue",
-			"value": 32
+			"value": 33
 		},
 		{
 			"name": "BattlePassMaxCount",
-			"value": 33
+			"value": 34
 		}
 	],
 	"via.mame.KeyConfig.InputSequenceType": [
@@ -202512,8 +202910,12 @@
 			"value": 20
 		},
 		{
-			"name": "Max",
+			"name": "BgmNew",
 			"value": 21
+		},
+		{
+			"name": "Max",
+			"value": 22
 		},
 		{
 			"name": "Start",
@@ -202521,7 +202923,7 @@
 		},
 		{
 			"name": "End",
-			"value": 20
+			"value": 21
 		}
 	],
 	"ZXing.QrCode.Internal.Mode.Names": [
@@ -214292,20 +214694,28 @@
 			"value": 275
 		},
 		{
-			"name": "UNIQUE_WTF_276",
+			"name": "UNIQUE_WTF033_0",
 			"value": 276
 		},
 		{
-			"name": "UNIQUE_WTF_277",
+			"name": "UNIQUE_WTF033_1",
 			"value": 277
 		},
 		{
-			"name": "UNIQUE_WTF_278",
+			"name": "UNIQUE_WTF033_2",
 			"value": 278
 		},
 		{
-			"name": "UNIQUE_WTF_279",
+			"name": "UNIQUE_WTF033_3",
 			"value": 279
+		},
+		{
+			"name": "UNIQUE_WTF020_3",
+			"value": 280
+		},
+		{
+			"name": "UNIQUE_WTF029_1",
+			"value": 281
 		}
 	],
 	"app.worldtour.mg.WTMiniGameUtility02.DroneUniqueParamIndex": [
@@ -216992,6 +217402,36 @@
 			"value": 9
 		}
 	],
+	"app.AppDefine.DeviceCameraFrameCategory": [
+		{
+			"name": "Invalid",
+			"value": 0
+		},
+		{
+			"name": "DeviceCameraFrameCategory1",
+			"value": 1
+		},
+		{
+			"name": "DeviceCameraFrameCategory2",
+			"value": 2
+		},
+		{
+			"name": "DeviceCameraFrameCategory3",
+			"value": 3
+		},
+		{
+			"name": "DeviceCameraFrameCategory4",
+			"value": 4
+		},
+		{
+			"name": "DeviceCameraFrameCategoryMaxValue",
+			"value": 4
+		},
+		{
+			"name": "DeviceCameraFrameCategoryMaxCount",
+			"value": 5
+		}
+	],
 	"FAB.HIT.IMMUNE": [
 		{
 			"name": "VS_STAND",
@@ -217428,20 +217868,24 @@
 			"value": 51
 		},
 		{
-			"name": "D_STEER",
+			"name": "MOTION_DATA",
 			"value": 52
 		},
 		{
-			"name": "D_SE",
+			"name": "D_STEER",
 			"value": 53
 		},
 		{
-			"name": "D_VOICE",
+			"name": "D_SE",
 			"value": 54
 		},
 		{
-			"name": "NUM",
+			"name": "D_VOICE",
 			"value": 55
+		},
+		{
+			"name": "NUM",
+			"value": 56
 		}
 	],
 	"CommonSessionRpc.BATTLE_RESULT": [

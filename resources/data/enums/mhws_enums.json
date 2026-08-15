@@ -1351,6 +1351,10 @@
 		{
 			"name": "NEAREST",
 			"value": 3
+		},
+		{
+			"name": "NEAREST_H",
+			"value": 4
 		}
 	],
 	"app.DialogueEyeMoveMotionDef.EYE_BALL_DIALOGUE_ACT_TYPE": [
@@ -6488,7 +6492,6 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.CombatEmData": [],
 	"app.Hit.DAMAGE_LV_QUAKE": [
 		{
 			"name": "SS",
@@ -12243,7 +12246,6 @@
 			"value": 8
 		}
 	],
-	"app.RELogId.Dump": [],
 	"via.hid.textInput.TextInputKeyboardMode": [
 		{
 			"name": "Full",
@@ -15250,36 +15252,32 @@
 	],
 	"via.render.layer.PreDeferredLighting.Segment": [
 		{
-			"name": "EarlyGIPointCloud",
+			"name": "SSAO_CompressDepthNormal",
 			"value": 0
 		},
 		{
-			"name": "SSAO_CompressDepthNormal",
+			"name": "GeometryAO",
 			"value": 1
 		},
 		{
-			"name": "GeometryAO",
+			"name": "SSAO_Process",
 			"value": 2
 		},
 		{
-			"name": "SSAO_Process",
+			"name": "SSAO_Resolve",
 			"value": 3
 		},
 		{
-			"name": "SSAO_Resolve",
+			"name": "DPGIProbe",
 			"value": 4
 		},
 		{
-			"name": "DPGIProbe",
+			"name": "IndirectIllumination",
 			"value": 5
 		},
 		{
-			"name": "IndirectIllumination",
-			"value": 6
-		},
-		{
 			"name": "SDFShadow",
-			"value": 7
+			"value": 6
 		},
 		{
 			"name": "LegacyParticleDepthOperation",
@@ -23413,6 +23411,10 @@
 		{
 			"name": "Distance",
 			"value": 1
+		},
+		{
+			"name": "Clamp",
+			"value": 2
 		}
 	],
 	"via.motion.RetargetFourLegRig.ChainCalcAxis": [
@@ -24489,6 +24491,28 @@
 		}
 	],
 	"app.Em5205Def.WEAK_POINT": [],
+	"app.RELogId.Enemy_Zone": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"via.effect.PrimitiveMaterial.ShaderTypeInstancing": [
 		{
 			"name": "None",
@@ -33082,6 +33106,10 @@
 			"value": 7
 		},
 		{
+			"name": "VER_1042_00_00",
+			"value": 11
+		},
+		{
 			"name": "VER_9999_99_99",
 			"value": 8
 		}
@@ -35582,6 +35610,36 @@
 		{
 			"name": "st503_01_01",
 			"value": 161
+		}
+	],
+	"via.render.DefaultPostProcessBaseResolution": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "res1280x720",
+			"value": 1
+		},
+		{
+			"name": "res1920x1080",
+			"value": 2
+		},
+		{
+			"name": "res2560x1440",
+			"value": 3
+		},
+		{
+			"name": "res3840x2160",
+			"value": 4
+		},
+		{
+			"name": "Legacy",
+			"value": 5
+		},
+		{
+			"name": "Max",
+			"value": 6
 		}
 	],
 	"app.HunterBadConditions.cFrenzy.CLEAN_BAD_COND_TYPE": [
@@ -39086,6 +39144,28 @@
 		{
 			"name": "MAX",
 			"value": 2
+		}
+	],
+	"app.RELogId.Enemy_ActionLog": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.btable.Em0151_00BTableCommand.cCheckQuicksandAvailableArg.GIMMICK_SIZE": [
@@ -43523,7 +43603,28 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.Otomo_Warp": [],
+	"app.RELogId.Otomo_Warp": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		}
+	],
 	"app.PorterCommonAction.GROUP_MOT_SET_TYPE": [
 		{
 			"name": "STANCE",
@@ -43974,6 +44075,28 @@
 		{
 			"name": "HUNTER_PROFILE",
 			"value": 1
+		}
+	],
+	"app.RELogId.Enemy_CogJoint": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"via.autoplay.action.AutoButton.Unit": [
@@ -47476,6 +47599,28 @@
 		{
 			"name": "WING_DAMAGE_FALL_DOWN",
 			"value": 0
+		}
+	],
+	"app.RELogId.Enemy_Create": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.characteredit.Definition.INNER_STYLE_Fixed": [
@@ -55964,6 +56109,10 @@
 			"value": 2439
 		},
 		{
+			"name": "Render2446",
+			"value": 2446
+		},
+		{
 			"name": "ResizeLayerOutputTrace",
 			"value": 2441
 		},
@@ -56002,6 +56151,22 @@
 		{
 			"name": "Render2472",
 			"value": 2472
+		},
+		{
+			"name": "RedundantStreamingTextureLoad",
+			"value": 2476
+		},
+		{
+			"name": "RenderResourceDebugTrack",
+			"value": 2481
+		},
+		{
+			"name": "RenderResourceDebugTrackEnd",
+			"value": 2482
+		},
+		{
+			"name": "Render2487",
+			"value": 2487
 		}
 	],
 	"app.user_data.CharaEditItemData.cData.ItemType": [
@@ -62121,7 +62286,6 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.Force": [],
 	"via.motion.interpolation.WalkMatchSolver.State": [
 		{
 			"name": "Start",
@@ -62531,6 +62695,28 @@
 		{
 			"name": "Multiply",
 			"value": 1
+		}
+	],
+	"app.RELogId.Enemy_Predator": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.cEm5005Extend.ACT_ATTR": [
@@ -64220,11 +64406,11 @@
 			"value": 369
 		},
 		{
-			"name": "FREE_370",
+			"name": "DIST_CORR",
 			"value": 370
 		},
 		{
-			"name": "FREE_371",
+			"name": "GRAPHICS_SETTING_02",
 			"value": 371
 		},
 		{
@@ -67392,6 +67578,28 @@
 		{
 			"name": "MAX",
 			"value": 4
+		}
+	],
+	"app.RELogId.Enemy_Net": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"via.landscape.road.LogId": [
@@ -72344,6 +72552,22 @@
 			"value": 110003
 		},
 		{
+			"name": "LOCAL_PASSWORD_VALID_CHECK_FAILED",
+			"value": 110004
+		},
+		{
+			"name": "LOCAL_HUNTER_PROFILE_TIME_OUT",
+			"value": 110005
+		},
+		{
+			"name": "LOCAL_HUNTER_PROFILE_DECODE_FAILED",
+			"value": 110006
+		},
+		{
+			"name": "LOCAL_HUNTER_PROFILE_TARGET_FAIL",
+			"value": 110007
+		},
+		{
 			"name": "SERVER_AUTH_LOGIN",
 			"value": 200001
 		},
@@ -73566,6 +73790,26 @@
 		{
 			"name": "SERVER_INVITATION_DIFFERENT_CROSSPLAY_SETTING",
 			"value": 226001
+		},
+		{
+			"name": "SERVER_CRASHREPORT_GET_AUTH_HEADER_FAILED",
+			"value": 227001
+		},
+		{
+			"name": "SERVER_CRASHREPORT_INVALID_AUTH_HEADER",
+			"value": 227002
+		},
+		{
+			"name": "SERVER_CRASHREPORT_CREATE_METADATA_FAILED",
+			"value": 227003
+		},
+		{
+			"name": "SERVER_CRASHREPORT_CREATE_UPLOAD_URL_FAILED",
+			"value": 227004
+		},
+		{
+			"name": "SERVER_CRASHREPORT_UPLOAD_STATUS_FAILED",
+			"value": 227005
 		}
 	],
 	"app.btable.EmCommonCommand.cCheckAngleArg.BASE_TYPE": [
@@ -73752,6 +73996,14 @@
 		{
 			"name": "DisableCoarseSCG",
 			"value": 21
+		},
+		{
+			"name": "EnableRepresentativeFragmentTest",
+			"value": 22
+		},
+		{
+			"name": "DisableRepresentativeFragmentTest",
+			"value": 23
 		}
 	],
 	"app.mcEvFieldIntro.TYPE": [
@@ -77990,6 +78242,24 @@
 			"value": 2
 		}
 	],
+	"app.GUIFlowPrefabLoad.FLAG": [
+		{
+			"name": "NONE",
+			"value": 0
+		},
+		{
+			"name": "INSTANTIATE_PRELOAD_PREFAB",
+			"value": 1
+		},
+		{
+			"name": "INSTANTIATE_PREFAB",
+			"value": 2
+		},
+		{
+			"name": "LOADED",
+			"value": 4
+		}
+	],
 	"via.network.error.MethodProtocol": [
 		{
 			"name": "Update",
@@ -80140,6 +80410,12 @@
 		{
 			"name": "LEG_R",
 			"value": 2
+		}
+	],
+	"app.RELogId.ExPop": [
+		{
+			"name": "PopEm",
+			"value": 1
 		}
 	],
 	"app.cGUIPartsQuantityCore.TEXT_INDEX": [
@@ -85399,7 +85675,6 @@
 			"value": 261
 		}
 	],
-	"app.RELogId.Chara": [],
 	"app.cEmDecoPointDataUniqueInfo.order": [
 		{
 			"name": "begin",
@@ -89580,6 +89855,16 @@
 			"value": 4
 		}
 	],
+	"app.SaveDataManager.APP_SAVE_TRANSFERRING": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "STORY_TRIAL",
+			"value": 2
+		}
+	],
 	"app.PlayerCommonAction.cDamageStandUpBase.PHASE": [
 		{
 			"name": "START",
@@ -92388,7 +92673,6 @@
 			"value": 1822875392
 		}
 	],
-	"app.RELogId.Zone": [],
 	"app.NpcDef.AI_GOAL_MOVE_HUMAN_FIELD": [
 		{
 			"name": "FSM_WORLD_POINT",
@@ -99796,7 +100080,40 @@
 			"value": 4
 		}
 	],
-	"app.RELogId.Otomo_Navigation": [],
+	"app.RELogId.Otomo_Navigation": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		}
+	],
 	"app.NpcDef.ACTING_GIMMICK_COMMAND": [
 		{
 			"name": "EFFECT_0",
@@ -103091,6 +103408,16 @@
 		}
 	],
 	"app.RELogId.NPC_Chara_MotionPack": [],
+	"app.net_session_manager.SessionManager.BroadCastInfo.BroadCastType": [
+		{
+			"name": "LATEJOIN",
+			"value": 0
+		},
+		{
+			"name": "LOCAL_HUNTER_PROFILE",
+			"value": 1
+		}
+	],
 	"ace.JointDef.INTERPOLATION_MODE": [
 		{
 			"name": "TIME",
@@ -112790,6 +113117,28 @@
 			"value": 4
 		}
 	],
+	"app.Net_DeflateService.DELIVERY_COMPRESS_STATE": [
+		{
+			"name": "IDLE",
+			"value": 0
+		},
+		{
+			"name": "WAIT_COMPRESS",
+			"value": 1
+		},
+		{
+			"name": "COMPLETE",
+			"value": 2
+		},
+		{
+			"name": "FINISH",
+			"value": 3
+		},
+		{
+			"name": "ERROR",
+			"value": 4
+		}
+	],
 	"app.NpcDef.CASTING_LAYOUT_ID_Fixed": [
 		{
 			"name": "INVALID",
@@ -113960,7 +114309,6 @@
 			"value": 22
 		}
 	],
-	"app.RELogId.SaveData": [],
 	"app.Em0071Def.UNIQUE_STATE": [
 		{
 			"name": "SIX_LEG",
@@ -117422,6 +117770,28 @@
 		{
 			"name": "ESW_000",
 			"value": 1635952640
+		}
+	],
+	"app.RELogId.Enemy_CombatEmData": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.NpcDef.OIL_FES_RESULT_Fixed": [
@@ -124028,6 +124398,10 @@
 		{
 			"name": "Method2",
 			"value": 2
+		},
+		{
+			"name": "Method3",
+			"value": 3
 		}
 	],
 	"via.reflection.detail.Stage": [
@@ -138415,7 +138789,6 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.Manager": [],
 	"app.GroundEditID.ID_Fixed": [
 		{
 			"name": "INVALID",
@@ -146154,6 +146527,28 @@
 			"value": 7
 		}
 	],
+	"app.RELogId.Enemy_Other": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"app.BarterDef.ID": [
 		{
 			"name": "BARTER_000",
@@ -151187,7 +151582,28 @@
 			"value": 0
 		}
 	],
-	"app.RELogId.Otomo_Grill": [],
+	"app.RELogId.Otomo_Grill": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		}
+	],
 	"via.landscape.LandformPipelineStateType": [
 		{
 			"name": "Draw3D",
@@ -157365,6 +157781,14 @@
 		{
 			"name": "LOG_0273",
 			"value": 276
+		},
+		{
+			"name": "LOG_0274",
+			"value": 277
+		},
+		{
+			"name": "LOG_0275",
+			"value": 278
 		},
 		{
 			"name": "MAX",
@@ -171775,6 +172199,28 @@
 			"value": 1
 		}
 	],
+	"app.RELogId.Enemy_Manager": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"via.navigation.Navigation.AdjustPositionType": [
 		{
 			"name": "CurrentPosition",
@@ -175661,8 +176107,20 @@
 			"value": 278
 		},
 		{
-			"name": "MAX",
+			"name": "COLLECTIONPACK00",
 			"value": 279
+		},
+		{
+			"name": "DLCEXTRAPACK0000",
+			"value": 280
+		},
+		{
+			"name": "MHWILDSCOLLPACK0",
+			"value": 281
+		},
+		{
+			"name": "MAX",
+			"value": 282
 		}
 	],
 	"app.RELogId.NPC_Jack_Context": [],
@@ -179622,7 +180080,6 @@
 			"value": 3
 		}
 	],
-	"app.RELogId.ActionLog": [],
 	"app.Ms740025_GimmickTag.TYPE_Fixed": [
 		{
 			"name": "GM579_00",
@@ -186940,6 +187397,20 @@
 			"value": 7
 		}
 	],
+	"ace.GraphicsUtil.NSW2_DISPLAY_MODE_HANDHELD": [
+		{
+			"name": "RESOLUTION_720",
+			"value": 0
+		},
+		{
+			"name": "RESOLUTION_810",
+			"value": 1
+		},
+		{
+			"name": "RESOLUTION_864",
+			"value": 2
+		}
+	],
 	"via.motion.IkLizard.InterpolationType": [
 		{
 			"name": "Bezier",
@@ -189109,6 +189580,10 @@
 		{
 			"name": "ID284",
 			"value": 284
+		},
+		{
+			"name": "Zivart0285",
+			"value": 285
 		}
 	],
 	"app.btable.PlCommand.cPorterStatusCategoryCheck.CATEGORY": [
@@ -192990,6 +193465,20 @@
 			"value": 1821412864
 		}
 	],
+	"via.render.GIPointCloudCubemap.ResolutionType": [
+		{
+			"name": "ResolutionType_32x32",
+			"value": 0
+		},
+		{
+			"name": "ResolutionType_64x64",
+			"value": 1
+		},
+		{
+			"name": "ResolutionType_128x128",
+			"value": 2
+		}
+	],
 	"ace.btable.VariableArgSetting.TYPE": [
 		{
 			"name": "BOOL",
@@ -193448,6 +193937,16 @@
 		{
 			"name": "Max",
 			"value": 4
+		}
+	],
+	"via.render.GIPRadianceVolumeFormat": [
+		{
+			"name": "R32Uintx4",
+			"value": 0
+		},
+		{
+			"name": "R16G16Floatx2",
+			"value": 1
 		}
 	],
 	"app.Em0161_00Shell.FixedID": [
@@ -212969,356 +213468,372 @@
 			"value": 117
 		},
 		{
-			"name": "LOGINING",
+			"name": "SWITCH_LOCAL_NETWORK",
 			"value": 118
 		},
 		{
-			"name": "LOGIN_CONNECTING_MS",
+			"name": "SWITCH_NETWORK",
 			"value": 119
 		},
 		{
-			"name": "WAITING",
+			"name": "LOGINING",
 			"value": 120
 		},
 		{
-			"name": "SEARCHING",
+			"name": "LOGIN_CONNECTING_MS",
 			"value": 121
 		},
 		{
-			"name": "CREATING",
+			"name": "WAITING",
 			"value": 122
 		},
 		{
-			"name": "JOINING",
+			"name": "SEARCHING",
 			"value": 123
 		},
 		{
-			"name": "ACCEPT_WAITING_INVITE_LINKPARTY_SYNC_GOQUEST",
+			"name": "CREATING",
 			"value": 124
 		},
 		{
-			"name": "UPDATING_SESSION",
+			"name": "JOINING",
 			"value": 125
 		},
 		{
-			"name": "PT_ACCEPTING",
+			"name": "ACCEPT_WAITING_INVITE_LINKPARTY_SYNC_GOQUEST",
 			"value": 126
 		},
 		{
-			"name": "CREATING_RESCURE",
+			"name": "UPDATING_SESSION",
 			"value": 127
 		},
 		{
-			"name": "DELETING_RESCURE",
+			"name": "PT_ACCEPTING",
 			"value": 128
 		},
 		{
-			"name": "GETTING_TOPMENU_INFO",
+			"name": "CREATING_RESCURE",
 			"value": 129
 		},
 		{
-			"name": "CREATING_CIRCLE",
+			"name": "DELETING_RESCURE",
 			"value": 130
 		},
 		{
-			"name": "LEAVING_CIRCLE",
+			"name": "GETTING_TOPMENU_INFO",
 			"value": 131
 		},
 		{
-			"name": "SEARCHING_CIRCLE",
+			"name": "CREATING_CIRCLE",
 			"value": 132
 		},
 		{
-			"name": "JOINING_CIRCLE",
+			"name": "LEAVING_CIRCLE",
 			"value": 133
 		},
 		{
-			"name": "DELETING_CIRCLE",
+			"name": "SEARCHING_CIRCLE",
 			"value": 134
 		},
 		{
-			"name": "GETING_DATACIRCLE",
+			"name": "JOINING_CIRCLE",
 			"value": 135
 		},
 		{
-			"name": "POSTING_BBSCIRCLE",
+			"name": "DELETING_CIRCLE",
 			"value": 136
 		},
 		{
-			"name": "GETTING_BBSCIRCLE",
+			"name": "GETING_DATACIRCLE",
 			"value": 137
 		},
 		{
-			"name": "POSTING_ITEMBOXCIRCLE",
+			"name": "POSTING_BBSCIRCLE",
 			"value": 138
 		},
 		{
-			"name": "CREATING_MATCHMAKECIRCLE",
+			"name": "GETTING_BBSCIRCLE",
 			"value": 139
 		},
 		{
-			"name": "GETTING_MATCHMAKECIRCLE",
+			"name": "POSTING_ITEMBOXCIRCLE",
 			"value": 140
 		},
 		{
-			"name": "DELETING_MATCHMAKECIRCLE",
+			"name": "CREATING_MATCHMAKECIRCLE",
 			"value": 141
 		},
 		{
-			"name": "CIRCLE_MATCHMAKE_REGISTINGDB",
+			"name": "GETTING_MATCHMAKECIRCLE",
 			"value": 142
 		},
 		{
-			"name": "CIRCLE_MATCHMAKE_DELETINGDB",
+			"name": "DELETING_MATCHMAKECIRCLE",
 			"value": 143
 		},
 		{
-			"name": "SETTING_ACTIVE_CIRCLE",
+			"name": "CIRCLE_MATCHMAKE_REGISTINGDB",
 			"value": 144
 		},
 		{
-			"name": "GETTING_CIRCLE_SETTING",
+			"name": "CIRCLE_MATCHMAKE_DELETINGDB",
 			"value": 145
 		},
 		{
-			"name": "SETTING_CIRCLE_SETTING",
+			"name": "SETTING_ACTIVE_CIRCLE",
 			"value": 146
 		},
 		{
-			"name": "SETTING_CIRCLE_INTRODUCE",
+			"name": "GETTING_CIRCLE_SETTING",
 			"value": 147
 		},
 		{
-			"name": "GETTING_CIRCLE_MEMBER",
+			"name": "SETTING_CIRCLE_SETTING",
 			"value": 148
 		},
 		{
-			"name": "POSTING_CIRCLENAME",
+			"name": "SETTING_CIRCLE_INTRODUCE",
 			"value": 149
 		},
 		{
-			"name": "INVITING_CIRCLE",
+			"name": "GETTING_CIRCLE_MEMBER",
 			"value": 150
 		},
 		{
-			"name": "GETTING_INVITECIRCLE",
+			"name": "POSTING_CIRCLENAME",
 			"value": 151
 		},
 		{
-			"name": "RESPONDING_INVITYE",
+			"name": "INVITING_CIRCLE",
 			"value": 152
 		},
 		{
-			"name": "GETTING_CIRCLEINVITELIST",
+			"name": "GETTING_INVITECIRCLE",
 			"value": 153
 		},
 		{
-			"name": "CANCELING_INVITECIRCLE",
+			"name": "RESPONDING_INVITYE",
 			"value": 154
 		},
 		{
-			"name": "APPLYING_JOINCIRCLE",
+			"name": "GETTING_CIRCLEINVITELIST",
 			"value": 155
 		},
 		{
-			"name": "GETTING_CIRCLEJOINLIST",
+			"name": "CANCELING_INVITECIRCLE",
 			"value": 156
 		},
 		{
-			"name": "CANCELING_CIRCLEJOIN",
+			"name": "APPLYING_JOINCIRCLE",
 			"value": 157
 		},
 		{
-			"name": "GETTING_CIRCLEJOINREQUEST",
+			"name": "GETTING_CIRCLEJOINLIST",
 			"value": 158
 		},
 		{
-			"name": "RESPONDING_CIRLCEJOIN",
+			"name": "CANCELING_CIRCLEJOIN",
 			"value": 159
 		},
 		{
-			"name": "KICKING_CIRCLEMEMBER",
+			"name": "GETTING_CIRCLEJOINREQUEST",
 			"value": 160
 		},
 		{
-			"name": "CHANGING_CIRLCLELEADER",
+			"name": "RESPONDING_CIRLCEJOIN",
 			"value": 161
 		},
 		{
-			"name": "GETTING_CIRCLELEADER",
+			"name": "KICKING_CIRCLEMEMBER",
 			"value": 162
 		},
 		{
-			"name": "CHANGING_CIRCLEMEMBERROLE",
+			"name": "CHANGING_CIRLCLELEADER",
 			"value": 163
 		},
 		{
-			"name": "POSTING_CIRCLENEWLEADERCONFIRM",
+			"name": "GETTING_CIRCLELEADER",
 			"value": 164
 		},
 		{
-			"name": "OPERATING_BBS",
+			"name": "CHANGING_CIRCLEMEMBERROLE",
 			"value": 165
 		},
 		{
-			"name": "GETTING_CIRCLE_CHATLOG",
+			"name": "POSTING_CIRCLENEWLEADERCONFIRM",
 			"value": 166
 		},
 		{
-			"name": "GETTING_JOINEDCIRCLELOBBYINFOLIST",
+			"name": "OPERATING_BBS",
 			"value": 167
 		},
 		{
-			"name": "GETTING_LOGINCIRCLEINFO",
+			"name": "GETTING_CIRCLE_CHATLOG",
 			"value": 168
 		},
 		{
-			"name": "UPDATING_LIST_FRIEND",
+			"name": "GETTING_JOINEDCIRCLELOBBYINFOLIST",
 			"value": 169
 		},
 		{
-			"name": "UPDATING_REQUESTLIST_FRIEND",
+			"name": "GETTING_LOGINCIRCLEINFO",
 			"value": 170
 		},
 		{
-			"name": "UPDATING_SENDREQUESTLIST_FRIEND",
+			"name": "UPDATING_LIST_FRIEND",
 			"value": 171
 		},
 		{
-			"name": "POSTING_REQUEST_FRIEND",
+			"name": "UPDATING_REQUESTLIST_FRIEND",
 			"value": 172
 		},
 		{
-			"name": "ACCEPTING_REQUEST_FRIEND",
+			"name": "UPDATING_SENDREQUESTLIST_FRIEND",
 			"value": 173
 		},
 		{
-			"name": "REJECTING_REQUEST_FRIEND",
+			"name": "POSTING_REQUEST_FRIEND",
 			"value": 174
 		},
 		{
-			"name": "CANCELING_REQUEST_FRIEND",
+			"name": "ACCEPTING_REQUEST_FRIEND",
 			"value": 175
 		},
 		{
-			"name": "DELETING_FRIEND",
+			"name": "REJECTING_REQUEST_FRIEND",
 			"value": 176
 		},
 		{
-			"name": "UPDATING_LIST_FOLLOW",
+			"name": "CANCELING_REQUEST_FRIEND",
 			"value": 177
 		},
 		{
-			"name": "UPDATING_FOLLOWER_LIST_FOLLOW",
+			"name": "DELETING_FRIEND",
 			"value": 178
 		},
 		{
-			"name": "FOLLOWING_FOLLOW",
+			"name": "UPDATING_LIST_FOLLOW",
 			"value": 179
 		},
 		{
-			"name": "DELETING_FOLLOW",
+			"name": "UPDATING_FOLLOWER_LIST_FOLLOW",
 			"value": 180
 		},
 		{
-			"name": "GETTING_HISTORY",
+			"name": "FOLLOWING_FOLLOW",
 			"value": 181
 		},
 		{
-			"name": "OPEN_STORE_WAIT",
+			"name": "DELETING_FOLLOW",
 			"value": 182
 		},
 		{
-			"name": "GET_PRODUCT_LIST_WAIT",
+			"name": "GETTING_HISTORY",
 			"value": 183
 		},
 		{
-			"name": "UPDATING_DELIVERY_DATA",
+			"name": "OPEN_STORE_WAIT",
 			"value": 184
 		},
 		{
-			"name": "LOGINBONUS_GETTING",
+			"name": "GET_PRODUCT_LIST_WAIT",
 			"value": 185
 		},
 		{
-			"name": "LOGINBONUS_SAVECHEKING",
+			"name": "UPDATING_DELIVERY_DATA",
 			"value": 186
 		},
 		{
-			"name": "PRESENT_LIST_GETTING",
+			"name": "LOGINBONUS_GETTING",
 			"value": 187
 		},
 		{
-			"name": "PRESENT_RECEIVEING",
+			"name": "LOGINBONUS_SAVECHEKING",
 			"value": 188
 		},
 		{
-			"name": "GETTING_ACTIVITY_RANKINGINFO",
+			"name": "PRESENT_LIST_GETTING",
 			"value": 189
 		},
 		{
-			"name": "GETTING_SOLICIT_NOTIFY",
+			"name": "PRESENT_RECEIVEING",
 			"value": 190
 		},
 		{
-			"name": "GETTING_SOLICITED_NOTIFY",
+			"name": "GETTING_ACTIVITY_RANKINGINFO",
 			"value": 191
 		},
 		{
-			"name": "GETTING_OFFLINE_NOTIFY",
+			"name": "GETTING_SOLICIT_NOTIFY",
 			"value": 192
 		},
 		{
-			"name": "PF_INVITATION_CREATE_WAIT",
+			"name": "GETTING_SOLICITED_NOTIFY",
 			"value": 193
 		},
 		{
-			"name": "PF_INVITATION_JOIN_WAIT",
+			"name": "GETTING_OFFLINE_NOTIFY",
 			"value": 194
 		},
 		{
-			"name": "LINK_RECRUIT_UPDATE_WAIT",
+			"name": "PF_INVITATION_CREATE_WAIT",
 			"value": 195
 		},
 		{
-			"name": "LINK_RECRUIT_DELETE_WAIT",
+			"name": "PF_INVITATION_JOIN_WAIT",
 			"value": 196
 		},
 		{
-			"name": "LINK_RECRUIT_JOIN_WAIT",
+			"name": "LINK_RECRUIT_UPDATE_WAIT",
 			"value": 197
 		},
 		{
-			"name": "BLOCKLIST_PROCESSING",
+			"name": "LINK_RECRUIT_DELETE_WAIT",
 			"value": 198
 		},
 		{
-			"name": "RANKING_EXECUTE_WAIT",
+			"name": "LINK_RECRUIT_JOIN_WAIT",
 			"value": 199
 		},
 		{
-			"name": "REPORT_EXECUTE_WAIT",
+			"name": "BLOCKLIST_PROCESSING",
 			"value": 200
 		},
 		{
-			"name": "POST_OBT_INFO_WAIT",
+			"name": "RANKING_EXECUTE_WAIT",
 			"value": 201
 		},
 		{
-			"name": "GET_OBT_INFO_WAIT",
+			"name": "REPORT_EXECUTE_WAIT",
 			"value": 202
 		},
 		{
-			"name": "SET_OBT_REWARDINFO_WAIT",
+			"name": "POST_OBT_INFO_WAIT",
 			"value": 203
 		},
 		{
-			"name": "SET_HIDDEN_STATUS_WAIT",
+			"name": "GET_OBT_INFO_WAIT",
 			"value": 204
 		},
 		{
-			"name": "END",
+			"name": "SET_OBT_REWARDINFO_WAIT",
 			"value": 205
+		},
+		{
+			"name": "SET_HIDDEN_STATUS_WAIT",
+			"value": 206
+		},
+		{
+			"name": "SWITCH_LOCAL_NETWORK_WAIT",
+			"value": 207
+		},
+		{
+			"name": "SWITCH_NETWORK_WAIT",
+			"value": 208
+		},
+		{
+			"name": "END",
+			"value": 209
 		}
 	],
 	"app.OptionParamDef.MONSTER_QUALITY": [
@@ -219898,6 +220413,18 @@
 		{
 			"name": "CHARM00_00000054",
 			"value": 4638
+		},
+		{
+			"name": "COLLECTIONPACK00",
+			"value": 8310
+		},
+		{
+			"name": "DLCEXTRAPACK0000",
+			"value": 2709
+		},
+		{
+			"name": "MHWILDSCOLLPACK0",
+			"value": 28705
 		}
 	],
 	"app.MeshSetting.MATERIAL_LOD": [
@@ -223226,6 +223753,14 @@
 		{
 			"name": "SET_HIDDEN_STATUS",
 			"value": 129
+		},
+		{
+			"name": "SWITCH_LOCAL_NETWORK",
+			"value": 130
+		},
+		{
+			"name": "SWITCH_NETWORK",
+			"value": 131
 		}
 	],
 	"app.RewardDef.REWARD_ADD_LOT_TYPE": [
@@ -228594,7 +229129,6 @@
 			"value": 4
 		}
 	],
-	"app.RELogId.Research": [],
 	"app.ExFieldUtil.GIMMICK_FIND_TYPE": [
 		{
 			"name": "ALL",
@@ -228789,7 +229323,108 @@
 			"value": 3
 		}
 	],
-	"app.RELogId.Otomo_System": [],
+	"app.RELogId.Otomo_System": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		},
+		{
+			"name": "ID0009",
+			"value": 9
+		},
+		{
+			"name": "ID0010",
+			"value": 10
+		},
+		{
+			"name": "ID0011",
+			"value": 11
+		},
+		{
+			"name": "ID0012",
+			"value": 12
+		},
+		{
+			"name": "ID0013",
+			"value": 13
+		},
+		{
+			"name": "ID0014",
+			"value": 14
+		},
+		{
+			"name": "ID0015",
+			"value": 15
+		},
+		{
+			"name": "ID0016",
+			"value": 16
+		},
+		{
+			"name": "ID0017",
+			"value": 17
+		},
+		{
+			"name": "ID0018",
+			"value": 18
+		},
+		{
+			"name": "ID0019",
+			"value": 19
+		},
+		{
+			"name": "ID0020",
+			"value": 20
+		},
+		{
+			"name": "ID0021",
+			"value": 21
+		},
+		{
+			"name": "ID0022",
+			"value": 22
+		},
+		{
+			"name": "ID0023",
+			"value": 23
+		},
+		{
+			"name": "ID0024",
+			"value": 24
+		},
+		{
+			"name": "ID0025",
+			"value": 25
+		}
+	],
 	"app.WeaponCharm.WP_CHARM_ATTACH_TYPE": [
 		{
 			"name": "MAIN",
@@ -230266,7 +230901,12 @@
 			"value": 8
 		}
 	],
-	"app.RELogId.Otomo_Fishing": [],
+	"app.RELogId.Otomo_Fishing": [
+		{
+			"name": "ID0001",
+			"value": 1
+		}
+	],
 	"app.HitDef.HIT_EFFECT_TYPE_PL_Fixed": [
 		{
 			"name": "NONE",
@@ -231718,6 +232358,10 @@
 		{
 			"name": "ID267",
 			"value": 267
+		},
+		{
+			"name": "ID268",
+			"value": 268
 		}
 	],
 	"app.EnemyDef.CREATE_OPTION_BIT": [
@@ -234377,6 +235021,10 @@
 		{
 			"name": "GraphicsFeatures_PixelShaderStencilRef",
 			"value": 8589934592
+		},
+		{
+			"name": "GraphicsFeatures_AmplificationShader",
+			"value": 17179869184
 		}
 	],
 	"app.cGUIQuestOrderHelper.ORDER_TYPE": [
@@ -237282,7 +237930,6 @@
 			"value": 9
 		}
 	],
-	"app.RELogId.Predator": [],
 	"app.EnemyDef.INTERACT_CATEGORY": [
 		{
 			"name": "COLLECT",
@@ -237724,6 +238371,14 @@
 		{
 			"name": "BALLOON_CHARM_01",
 			"value": 31
+		},
+		{
+			"name": "COLLECTIONPACK00",
+			"value": 32
+		},
+		{
+			"name": "DLCEXTRAPACK0000",
+			"value": 33
 		},
 		{
 			"name": "MAX",
@@ -244433,6 +245088,14 @@
 		{
 			"name": "IMG_241",
 			"value": 241
+		},
+		{
+			"name": "IMG_242",
+			"value": 242
+		},
+		{
+			"name": "IMG_243",
+			"value": 243
 		}
 	],
 	"app.Wp05Def.SHELL_PARAM_TYPE": [
@@ -244892,6 +245555,28 @@
 		{
 			"name": "MAX",
 			"value": 26
+		}
+	],
+	"app.RELogId.Enemy_Chara": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.Net_CircleService.BBSTHREADOPERATE": [
@@ -249674,8 +250359,12 @@
 			"value": 9
 		},
 		{
-			"name": "VER_9999_99_99",
+			"name": "VER_1042_00_00",
 			"value": 10
+		},
+		{
+			"name": "VER_9999_99_99",
+			"value": 11
 		}
 	],
 	"app.PlayerCommonAction.cPorterRideQuestClearMemo.PHASE": [
@@ -253504,8 +254193,16 @@
 			"value": 30
 		},
 		{
-			"name": "MAX",
+			"name": "COLLECTIONPACK00",
 			"value": 31
+		},
+		{
+			"name": "DLCEXTRAPACK0000",
+			"value": 32
+		},
+		{
+			"name": "MAX",
+			"value": 33
 		}
 	],
 	"via.hid.camera.PlayStationCameraCaptureMemoryType": [
@@ -259045,6 +259742,28 @@
 			"value": 1
 		}
 	],
+	"app.RELogId.Enemy_SaveData": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"app.snd_user_data.SoundMusicGameFlowSettings.TITLE_FLOW": [
 		{
 			"name": "LOAD_SYSTEM_SAVE_DATA",
@@ -259786,7 +260505,12 @@
 			"value": 4
 		}
 	],
-	"app.RELogId.Otomo_Network": [],
+	"app.RELogId.Otomo_Network": [
+		{
+			"name": "ID0001",
+			"value": 1
+		}
+	],
 	"app.PressController.PRESS_TYPE": [
 		{
 			"name": "TOTAL",
@@ -269871,6 +270595,32 @@
 			"value": 3
 		}
 	],
+	"via.motion.exprgraph.RbfKernelType": [
+		{
+			"name": "Linear",
+			"value": 0
+		},
+		{
+			"name": "Gaussian1",
+			"value": 1
+		},
+		{
+			"name": "Gaussian2",
+			"value": 2
+		},
+		{
+			"name": "ThinPlateSpline",
+			"value": 3
+		},
+		{
+			"name": "MultiQuadricBiharmonic",
+			"value": 4
+		},
+		{
+			"name": "InverseMultiQuadricBiharmonic",
+			"value": 5
+		}
+	],
 	"via.render.ShallowWaterTessellationType": [
 		{
 			"name": "HW",
@@ -274554,23 +275304,23 @@
 			"value": 666
 		},
 		{
-			"name": "DUMMY_0112",
+			"name": "NewTrialText_DLG_00",
 			"value": 667
 		},
 		{
-			"name": "DUMMY_0113",
+			"name": "NewTrialData_Convert_00",
 			"value": 668
 		},
 		{
-			"name": "DUMMY_0114",
+			"name": "NewTrialData_Convert_01",
 			"value": 669
 		},
 		{
-			"name": "DUMMY_0115",
+			"name": "NewTrialData_Convert_02",
 			"value": 670
 		},
 		{
-			"name": "DUMMY_0116",
+			"name": "NewTrialData_Convert_03",
 			"value": 671
 		},
 		{
@@ -284017,7 +284767,7 @@
 		},
 		{
 			"name": "BaseSettings",
-			"value": 5
+			"value": 6
 		}
 	],
 	"app.EnemyDef.MODEL_SIZE_CHANGER_PRIORITY": [
@@ -284220,7 +284970,6 @@
 			"value": 1
 		}
 	],
-	"app.RELogId.Scar": [],
 	"app.NpcDef.FIELD_UNIT_PHASE_UT502_01": [
 		{
 			"name": "WORK",
@@ -284303,7 +285052,6 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.Repop": [],
 	"app.EnemyLayoutTag_St401_Zako.TagBit": [
 		{
 			"name": "Ms640001_Set",
@@ -289012,6 +289760,10 @@
 		{
 			"name": "ID830",
 			"value": 830
+		},
+		{
+			"name": "Motion0860",
+			"value": 860
 		}
 	],
 	"app.EnemyDef.AI_TARGET_STATE_CATEGORY": [
@@ -292578,7 +293330,6 @@
 			"value": 4
 		}
 	],
-	"app.RELogId.Group": [],
 	"via.motion.AxisDirection": [
 		{
 			"name": "Undef",
@@ -292971,6 +293722,28 @@
 		{
 			"name": "MAX",
 			"value": 13
+		}
+	],
+	"app.RELogId.Enemy_PointGraph": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.PorterNavSettingType.TYPE": [
@@ -297105,7 +297878,6 @@
 			"value": 1834507392
 		}
 	],
-	"app.RELogId.Other": [],
 	"app.accessory.Def.TAG": [
 		{
 			"name": "VISIBLE",
@@ -298432,7 +299204,24 @@
 			"value": 2
 		}
 	],
-	"app.RELogId.Otomo_Motion": [],
+	"app.RELogId.Otomo_Motion": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		}
+	],
 	"app.Em5204Def.PARTS_BREAK": [],
 	"app.motion_track.Em0100_51MotionTrack.ChangeWingsTrack.WINGS_STATE": [
 		{
@@ -299099,7 +299888,7 @@
 			"value": 3
 		},
 		{
-			"name": "MENU_SYSTEM",
+			"name": "MASK_000",
 			"value": 4
 		},
 		{
@@ -305974,6 +306763,14 @@
 		{
 			"name": "IMG_241",
 			"value": 242
+		},
+		{
+			"name": "IMG_242",
+			"value": 244
+		},
+		{
+			"name": "IMG_243",
+			"value": 245
 		}
 	],
 	"app.PlayerCommonAction.cTentStatus.CHANGE_EQUIP_PHASE": [
@@ -312207,6 +313004,20 @@
 		{
 			"name": "MAX",
 			"value": 2
+		}
+	],
+	"app.RELogId.Otomo_FreeAct": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
 		}
 	],
 	"app.NpcDef.COMBINATION_TYPE_Fixed": [
@@ -318816,6 +319627,112 @@
 			"value": 6
 		}
 	],
+	"app.RELogId.Otomo_Default": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		},
+		{
+			"name": "ID0009",
+			"value": 9
+		},
+		{
+			"name": "ID0010",
+			"value": 10
+		},
+		{
+			"name": "ID0011",
+			"value": 11
+		},
+		{
+			"name": "ID0012",
+			"value": 12
+		},
+		{
+			"name": "ID0013",
+			"value": 13
+		},
+		{
+			"name": "ID0014",
+			"value": 14
+		},
+		{
+			"name": "ID0015",
+			"value": 15
+		},
+		{
+			"name": "ID0016",
+			"value": 16
+		},
+		{
+			"name": "ID0017",
+			"value": 17
+		},
+		{
+			"name": "ID0018",
+			"value": 18
+		},
+		{
+			"name": "ID0019",
+			"value": 19
+		},
+		{
+			"name": "ID0020",
+			"value": 20
+		},
+		{
+			"name": "ID0021",
+			"value": 21
+		},
+		{
+			"name": "ID0022",
+			"value": 22
+		},
+		{
+			"name": "ID0023",
+			"value": 23
+		},
+		{
+			"name": "ID0024",
+			"value": 24
+		},
+		{
+			"name": "ID0025",
+			"value": 25
+		},
+		{
+			"name": "ID0026",
+			"value": 26
+		}
+	],
 	"app.mcConstrainObject.cMeshConstrain.STATE": [
 		{
 			"name": "CASTRAY",
@@ -324697,6 +325614,16 @@
 			"value": 2
 		}
 	],
+	"via.motion.exprgraph.RbfDistanceType": [
+		{
+			"name": "Euclidean",
+			"value": 0
+		},
+		{
+			"name": "Angle",
+			"value": 1
+		}
+	],
 	"app.DialogueDef.ACTOR_TYPE_Fixed": [
 		{
 			"name": "PL",
@@ -326282,7 +327209,88 @@
 			"value": 1
 		}
 	],
-	"app.RELogId.Otomo_Move": [],
+	"app.RELogId.Otomo_Move": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		},
+		{
+			"name": "ID0009",
+			"value": 9
+		},
+		{
+			"name": "ID0010",
+			"value": 10
+		},
+		{
+			"name": "ID0011",
+			"value": 11
+		},
+		{
+			"name": "ID0012",
+			"value": 12
+		},
+		{
+			"name": "ID0013",
+			"value": 13
+		},
+		{
+			"name": "ID0014",
+			"value": 14
+		},
+		{
+			"name": "ID0015",
+			"value": 15
+		},
+		{
+			"name": "ID0016",
+			"value": 16
+		},
+		{
+			"name": "ID0017",
+			"value": 17
+		},
+		{
+			"name": "ID0018",
+			"value": 18
+		},
+		{
+			"name": "ID0019",
+			"value": 19
+		},
+		{
+			"name": "ID0020",
+			"value": 20
+		}
+	],
 	"app.EX_FIELD_EVENT_TYPE": [
 		{
 			"name": "INVALID",
@@ -329630,7 +330638,6 @@
 			"value": 5
 		}
 	],
-	"app.RELogId.Net": [],
 	"app.cAppGraphicsSettingController.ChangeGIState": [
 		{
 			"name": "Wait",
@@ -371316,8 +372323,12 @@
 			"value": 24
 		},
 		{
-			"name": "MAX",
+			"name": "LOCAL_NETWORK",
 			"value": 25
+		},
+		{
+			"name": "MAX",
+			"value": 26
 		}
 	],
 	"via.motion.JointRemapValue.RemapValueItem.Axis": [
@@ -373430,6 +374441,14 @@
 		{
 			"name": "DualLayerCompression",
 			"value": 1
+		},
+		{
+			"name": "DualLayerCompressionFallBack_MAX",
+			"value": 2
+		},
+		{
+			"name": "SpotLightCompression_MAX",
+			"value": 3
 		}
 	],
 	"app.Wp05Action.cBattleRideFinishAttack.PHASE": [
@@ -375662,88 +376681,92 @@
 	],
 	"via.render.layer.Environment.Segment": [
 		{
-			"name": "Atmosphere_PreUpdate",
+			"name": "EarlyGIPointCloud",
 			"value": 0
 		},
 		{
-			"name": "DrawSkyBGBegin",
+			"name": "LateIndirectIllumination",
 			"value": 1
 		},
 		{
-			"name": "Star",
+			"name": "Atmosphere_PreUpdate",
 			"value": 2
 		},
 		{
-			"name": "Sun",
+			"name": "DrawSkyBGBegin",
 			"value": 3
 		},
 		{
-			"name": "Moon",
+			"name": "Star",
 			"value": 4
 		},
 		{
-			"name": "Atmosphere",
+			"name": "Sun",
 			"value": 5
 		},
 		{
-			"name": "DrawSkyBGEnd",
+			"name": "Moon",
 			"value": 6
 		},
 		{
-			"name": "EarlyGIPointCloud",
+			"name": "Atmosphere",
 			"value": 7
 		},
 		{
-			"name": "DynamicProbeGIProbe",
+			"name": "DrawSkyBGEnd",
 			"value": 8
 		},
 		{
+			"name": "DynamicProbeGIProbe",
+			"value": 9
+		},
+		{
 			"name": "VolumetricFogBegin",
-			"value": 9
-		},
-		{
-			"name": "VolumetricParticle",
-			"value": 9
-		},
-		{
-			"name": "VolumetricParticleDraw",
 			"value": 10
 		},
 		{
-			"name": "VolumetricFogUpdateCustomMaterial",
+			"name": "VolumetricParticle",
+			"value": 10
+		},
+		{
+			"name": "VolumetricParticleDraw",
 			"value": 11
 		},
 		{
-			"name": "IndirectIlluminationWait",
+			"name": "VolumetricFogUpdateCustomMaterial",
 			"value": 12
 		},
 		{
-			"name": "VolumetricFogSimulate",
+			"name": "IndirectIlluminationWait",
 			"value": 13
 		},
 		{
+			"name": "VolumetricFogSimulate",
+			"value": 14
+		},
+		{
 			"name": "VolumetricFogFinish",
-			"value": 14
-		},
-		{
-			"name": "FogIsAvailable",
-			"value": 14
-		},
-		{
-			"name": "EffectVertexLighting",
 			"value": 15
 		},
 		{
-			"name": "Cloudscape",
+			"name": "FogIsAvailable",
+			"value": 15
+		},
+		{
+			"name": "EffectVertexLighting",
 			"value": 16
 		},
 		{
-			"name": "DynamicProbeGI",
+			"name": "Cloudscape",
 			"value": 17
 		},
 		{
-			"name": "DefaultGIPointCloud",
+			"name": "DynamicProbeGI",
 			"value": 18
+		},
+		{
+			"name": "DefaultGIPointCloud",
+			"value": 19
 		}
 	],
 	"app.EnemyDef.EM5214_ACTION_DICTIONARY_EXTEND_CONDITION_Fixed": [
@@ -376881,6 +377904,20 @@
 		},
 		{
 			"name": "MAX",
+			"value": 2
+		}
+	],
+	"app.cEnvBABUpdater_MaterialParam.TIME_STATE": [
+		{
+			"name": "NORMAL",
+			"value": 0
+		},
+		{
+			"name": "ONSTOP",
+			"value": 1
+		},
+		{
+			"name": "STOP",
 			"value": 2
 		}
 	],
@@ -379557,7 +380594,28 @@
 			"value": 5
 		}
 	],
-	"app.RELogId.Otomo_GoaTree": [],
+	"app.RELogId.Otomo_GoaTree": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		}
+	],
 	"via.path.PathKind": [
 		{
 			"name": "RelativeOrAbsolute",
@@ -382321,7 +383379,68 @@
 			"value": 9
 		}
 	],
-	"app.RELogId.Otomo_Emote": [],
+	"app.RELogId.Otomo_Emote": [
+		{
+			"name": "ID0001",
+			"value": 1
+		},
+		{
+			"name": "ID0002",
+			"value": 2
+		},
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		},
+		{
+			"name": "ID0009",
+			"value": 9
+		},
+		{
+			"name": "ID0010",
+			"value": 10
+		},
+		{
+			"name": "ID0011",
+			"value": 11
+		},
+		{
+			"name": "ID0012",
+			"value": 12
+		},
+		{
+			"name": "ID0013",
+			"value": 13
+		},
+		{
+			"name": "ID0014",
+			"value": 14
+		},
+		{
+			"name": "ID0015",
+			"value": 15
+		}
+	],
 	"app.GUI020030.NOTICE_STATE": [
 		{
 			"name": "DEFAULT",
@@ -392297,23 +393416,23 @@
 			"value": 642
 		},
 		{
-			"name": "DUMMY_0112",
+			"name": "NewTrialText_DLG_00",
 			"value": 643
 		},
 		{
-			"name": "DUMMY_0113",
+			"name": "NewTrialData_Convert_00",
 			"value": 644
 		},
 		{
-			"name": "DUMMY_0114",
+			"name": "NewTrialData_Convert_01",
 			"value": 645
 		},
 		{
-			"name": "DUMMY_0115",
+			"name": "NewTrialData_Convert_02",
 			"value": 646
 		},
 		{
-			"name": "DUMMY_0116",
+			"name": "NewTrialData_Convert_03",
 			"value": 647
 		},
 		{
@@ -397052,11 +398171,11 @@
 			"value": 621
 		},
 		{
-			"name": "MISSION_633006",
+			"name": "MISSION_661001",
 			"value": 622
 		},
 		{
-			"name": "MISSION_633007",
+			"name": "MISSION_661002",
 			"value": 623
 		},
 		{
@@ -401126,7 +402245,6 @@
 			"value": 1
 		}
 	],
-	"app.RELogId.Create": [],
 	"app.EnemyDef.ACT_ATTR": [
 		{
 			"name": "CONTINUE_BTABLE",
@@ -403239,6 +404357,28 @@
 		{
 			"name": "Max",
 			"value": 1
+		}
+	],
+	"app.RELogId.Enemy_Dump": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.Em0100_51_Def.PARTS_BREAK": [
@@ -411629,28 +412769,32 @@
 			"value": 4
 		},
 		{
-			"name": "Volume",
+			"name": "RadianceForceUpdate",
 			"value": 5
 		},
 		{
-			"name": "GSDFClipmap",
+			"name": "Volume",
 			"value": 6
 		},
 		{
-			"name": "Init",
+			"name": "GSDFClipmap",
 			"value": 7
 		},
 		{
-			"name": "GSDFUpdate",
+			"name": "Init",
 			"value": 8
 		},
 		{
-			"name": "Type",
+			"name": "RadianceInit",
 			"value": 9
 		},
 		{
 			"name": "GSDFOut",
 			"value": 10
+		},
+		{
+			"name": "Round",
+			"value": 11
 		}
 	],
 	"app.Wp07Def.WP_GIMMICK_MOT_TYPE": [
@@ -411844,6 +412988,20 @@
 		}
 	],
 	"app.RELogId.NPC_Chara_GameMessage": [],
+	"via.landscape.GroundClipmapResolutionType": [
+		{
+			"name": "Auto",
+			"value": 0
+		},
+		{
+			"name": "k1024",
+			"value": 1
+		},
+		{
+			"name": "k2048",
+			"value": 2
+		}
+	],
 	"via.hid.hmd.MorpheusDevice.StartResult": [
 		{
 			"name": "OK",
@@ -423683,32 +424841,6 @@
 			"value": 0
 		}
 	],
-	"via.render.DefaultDOFBaseResolution": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "res1280x720",
-			"value": 1
-		},
-		{
-			"name": "res1920x1080",
-			"value": 2
-		},
-		{
-			"name": "res2560x1440",
-			"value": 3
-		},
-		{
-			"name": "res3840x2160",
-			"value": 4
-		},
-		{
-			"name": "Max",
-			"value": 5
-		}
-	],
 	"app.SlingerRopeController.MINICOMP_LATE_UPDATE": [
 		{
 			"name": "ROPE",
@@ -426085,6 +427217,40 @@
 		{
 			"name": "JAB_LASER",
 			"value": 3
+		}
+	],
+	"via.render.StreamingTextureDebugInfoResolution": [
+		{
+			"name": "StreamingTextureDebugInfoResolution_8192",
+			"value": 0
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_4096",
+			"value": 1
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_2048",
+			"value": 2
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_1024",
+			"value": 3
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_512",
+			"value": 4
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_256",
+			"value": 5
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_128",
+			"value": 6
+		},
+		{
+			"name": "StreamingTextureDebugInfoResolution_64",
+			"value": 7
 		}
 	],
 	"via.hid.VrTrackerResultData.Status": [
@@ -446680,8 +447846,16 @@
 			"value": 273
 		},
 		{
-			"name": "MAX",
+			"name": "LOG_0274",
 			"value": 274
+		},
+		{
+			"name": "LOG_0275",
+			"value": 275
+		},
+		{
+			"name": "MAX",
+			"value": 276
 		}
 	],
 	"app.EnemyDef.EM0070_00_CONSTRAINT_ASSIST_TYPE": [
@@ -450346,6 +451520,36 @@
 			"value": 8
 		}
 	],
+	"via.render.Outline.OutlineBaseResolution": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "res1280x720",
+			"value": 1
+		},
+		{
+			"name": "res1920x1080",
+			"value": 2
+		},
+		{
+			"name": "res2560x1440",
+			"value": 3
+		},
+		{
+			"name": "res3840x2160",
+			"value": 4
+		},
+		{
+			"name": "Legacy",
+			"value": 5
+		},
+		{
+			"name": "BaseSettings",
+			"value": 6
+		}
+	],
 	"via.render.command.MetalExtension.ExtensionType": [
 		{
 			"name": "MetalFXSpatialScaling",
@@ -452441,8 +453645,20 @@
 			"value": 10
 		},
 		{
-			"name": "MAX",
+			"name": "TARGET_40_LOW",
 			"value": 11
+		},
+		{
+			"name": "TARGET_30_LOW_D",
+			"value": 12
+		},
+		{
+			"name": "TARGET_30_LOW_900p",
+			"value": 13
+		},
+		{
+			"name": "MAX",
+			"value": 14
 		}
 	],
 	"app.Em5226Def.OPTION_TAGBit": [
@@ -453841,6 +455057,20 @@
 		},
 		{
 			"name": "LEFT_CENTER",
+			"value": 2
+		}
+	],
+	"via.render.DynamicProbeGI.SceneRadianceCache": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Default",
+			"value": 1
+		},
+		{
+			"name": "Default_NoIBL",
 			"value": 2
 		}
 	],
@@ -456964,6 +458194,10 @@
 		{
 			"name": "PHOTO",
 			"value": 1
+		},
+		{
+			"name": "STORY_TRIAL",
+			"value": 2
 		}
 	],
 	"via.hid.NpadStyle": [
@@ -467913,6 +469147,14 @@
 	],
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_1K",
+			"value": 1
+		},
+		{
+			"name": "SparseShadowTreeResolution_2K",
+			"value": 2
+		},
+		{
 			"name": "SparseShadowTreeResolution_4K",
 			"value": 4
 		},
@@ -472517,6 +473759,46 @@
 		{
 			"name": "Core1199",
 			"value": 1199
+		},
+		{
+			"name": "Core1200",
+			"value": 1200
+		},
+		{
+			"name": "Core1201",
+			"value": 1201
+		},
+		{
+			"name": "Core1202",
+			"value": 1202
+		},
+		{
+			"name": "Core1203",
+			"value": 1203
+		},
+		{
+			"name": "Core1204",
+			"value": 1204
+		},
+		{
+			"name": "Core1205",
+			"value": 1205
+		},
+		{
+			"name": "Core1206",
+			"value": 1206
+		},
+		{
+			"name": "Core1207",
+			"value": 1207
+		},
+		{
+			"name": "Core1208",
+			"value": 1208
+		},
+		{
+			"name": "TransformSetupLockedScene",
+			"value": 1209
 		}
 	],
 	"app.cGUI3DMapStageModelController.PHASE": [
@@ -517145,6 +518427,20 @@
 			"value": 524288
 		}
 	],
+	"app.ShadowCastType.TYPE": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Fur",
+			"value": 1
+		},
+		{
+			"name": "MAX",
+			"value": 2
+		}
+	],
 	"app.NpcPartnerDef.AI_INTERRUPT_ID": [
 		{
 			"name": "ENTER",
@@ -520640,6 +521936,28 @@
 			"value": 1
 		}
 	],
+	"app.RELogId.Enemy_Scar": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"app.NpcStreakEffects.cDismountPorter_Action.ACTION_STATE": [
 		{
 			"name": "STOP_PORTER",
@@ -521219,6 +522537,28 @@
 		{
 			"name": "START",
 			"value": 1
+		}
+	],
+	"app.RELogId.Enemy_Group": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"via.render.RenderTargetTextureResource.ImageQualityRateRecieveSetting": [
@@ -528253,6 +529593,116 @@
 			"value": 6
 		}
 	],
+	"app.RELogId.Otomo_SupportAction": [
+		{
+			"name": "ID0003",
+			"value": 3
+		},
+		{
+			"name": "ID0004",
+			"value": 4
+		},
+		{
+			"name": "ID0005",
+			"value": 5
+		},
+		{
+			"name": "ID0006",
+			"value": 6
+		},
+		{
+			"name": "ID0007",
+			"value": 7
+		},
+		{
+			"name": "ID0008",
+			"value": 8
+		},
+		{
+			"name": "ID0009",
+			"value": 9
+		},
+		{
+			"name": "ID0010",
+			"value": 10
+		},
+		{
+			"name": "ID0011",
+			"value": 11
+		},
+		{
+			"name": "ID0012",
+			"value": 12
+		},
+		{
+			"name": "ID0013",
+			"value": 13
+		},
+		{
+			"name": "ID0014",
+			"value": 14
+		},
+		{
+			"name": "ID0015",
+			"value": 15
+		},
+		{
+			"name": "ID0016",
+			"value": 16
+		},
+		{
+			"name": "ID0017",
+			"value": 17
+		},
+		{
+			"name": "ID0018",
+			"value": 18
+		},
+		{
+			"name": "ID0019",
+			"value": 19
+		},
+		{
+			"name": "ID0020",
+			"value": 20
+		},
+		{
+			"name": "ID0021",
+			"value": 21
+		},
+		{
+			"name": "ID0022",
+			"value": 22
+		},
+		{
+			"name": "ID0023",
+			"value": 23
+		},
+		{
+			"name": "ID0024",
+			"value": 24
+		},
+		{
+			"name": "ID0025",
+			"value": 25
+		},
+		{
+			"name": "ID0026",
+			"value": 26
+		},
+		{
+			"name": "ID0027",
+			"value": 27
+		},
+		{
+			"name": "ID0028",
+			"value": 28
+		},
+		{
+			"name": "ID0029",
+			"value": 29
+		}
+	],
 	"via.hid.gamePlayer.PlayerOtherDeviceHandling": [
 		{
 			"name": "UseFirstSelected",
@@ -528572,7 +530022,6 @@
 		}
 	],
 	"app.Em5205Def.SCAR_POINT": [],
-	"app.RELogId.PointGraph": [],
 	"app.EquipAppearanceHunterOverviewPartsBase.EQUIP_TYPE": [
 		{
 			"name": "WEAPON",
@@ -528967,6 +530416,28 @@
 		{
 			"name": "EffectCustomPreviewIsLanding",
 			"value": 6
+		}
+	],
+	"app.RELogId.Enemy_AreaMove": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.mcNpcJackAccessoryController.PHASE": [
@@ -535163,7 +536634,6 @@
 			"value": 3
 		}
 	],
-	"app.RELogId.AreaMove": [],
 	"app.HunterDef.RETARGET_DYNAMIC_FEATURE_TYPE": [
 		{
 			"name": "ARM_SPREAD",
@@ -539036,7 +540506,6 @@
 			"value": 6
 		}
 	],
-	"app.RELogId.Grapple": [],
 	"via.gui.GUILight.LightType": [
 		{
 			"name": "None",
@@ -540471,6 +541940,28 @@
 		{
 			"name": "IGNITE",
 			"value": 1
+		}
+	],
+	"app.RELogId.Enemy_Research": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"via.hid.detail.log.keyboard.LogId": [
@@ -542217,11 +543708,11 @@
 			"value": 369
 		},
 		{
-			"name": "FREE_370",
+			"name": "DIST_CORR",
 			"value": 370
 		},
 		{
-			"name": "FREE_371",
+			"name": "GRAPHICS_SETTING_02",
 			"value": 371
 		},
 		{
@@ -549364,11 +550855,11 @@
 			"value": 28955
 		},
 		{
-			"name": "MISSION_633006",
+			"name": "MISSION_661001",
 			"value": 3350
 		},
 		{
-			"name": "MISSION_633007",
+			"name": "MISSION_661002",
 			"value": 15104
 		},
 		{
@@ -559997,6 +561488,20 @@
 			"value": 128
 		}
 	],
+	"ace.GraphicsUtil.NSW2_DISPLAY_MODE_DOCK": [
+		{
+			"name": "RESOLUTION_1080",
+			"value": 0
+		},
+		{
+			"name": "RESOLUTION_1260",
+			"value": 1
+		},
+		{
+			"name": "RESOLUTION_1440",
+			"value": 2
+		}
+	],
 	"via.navigation.PathfindSummary.NodeFindType": [
 		{
 			"name": "FindNodeType_Default",
@@ -560067,6 +561572,28 @@
 		{
 			"name": "TYPE_02",
 			"value": 2
+		}
+	],
+	"app.RELogId.Enemy_Entrance": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.cGUIPartsEnemyReportBossGuidance.WEAK_PARTS": [
@@ -560189,7 +561716,6 @@
 			"value": 17
 		}
 	],
-	"app.RELogId.Entrance": [],
 	"app.Em0160_00_Def.WEAK_POINT": [
 		{
 			"name": "WING_BR_WEAK_POINT",
@@ -566543,7 +568069,7 @@
 			"value": 4
 		},
 		{
-			"name": "MENU_SYSTEM",
+			"name": "MASK_000",
 			"value": 5
 		},
 		{
@@ -574744,7 +576270,12 @@
 			"value": 1
 		}
 	],
-	"app.RELogId.Otomo_QuestClear": [],
+	"app.RELogId.Otomo_QuestClear": [
+		{
+			"name": "ID0001",
+			"value": 1
+		}
+	],
 	"via.effect.detail.Rotate90": [
 		{
 			"name": "None",
@@ -596949,6 +598480,20 @@
 			"value": 148127808
 		}
 	],
+	"app.ShadowCastType.TYPE_Fixed": [
+		{
+			"name": "Default",
+			"value": 0
+		},
+		{
+			"name": "Fur",
+			"value": 1
+		},
+		{
+			"name": "MAX",
+			"value": 2
+		}
+	],
 	"via.network.session.CompOperator": [
 		{
 			"name": "None",
@@ -601318,6 +602863,28 @@
 			"value": 16
 		}
 	],
+	"app.RELogId.Enemy_Grapple": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
+		}
+	],
 	"app.btable.PlCommand.cPorterItemReplenishStartJudge.RESULT": [
 		{
 			"name": "FAILURE",
@@ -603664,7 +605231,6 @@
 			"value": 3
 		}
 	],
-	"app.RELogId.CogJoint": [],
 	"app.NpcDef.FIELD_UNIT_PHASE_UT000_01_Fixed": [
 		{
 			"name": "WORK",
@@ -603853,6 +605419,52 @@
 		{
 			"name": "Deferred",
 			"value": 4
+		}
+	],
+	"via.render.DPGIDebugSceneRadianceCacheParam.DebugSceneRadianceCache": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "Radiance",
+			"value": 1
+		},
+		{
+			"name": "Albedo",
+			"value": 2
+		},
+		{
+			"name": "Normal",
+			"value": 3
+		},
+		{
+			"name": "Emissive",
+			"value": 4
+		},
+		{
+			"name": "IBLRadiance",
+			"value": 5
+		},
+		{
+			"name": "IBLApertureRate",
+			"value": 6
+		},
+		{
+			"name": "IBLOcclusionTrace",
+			"value": 7
+		},
+		{
+			"name": "IBLDominant",
+			"value": 8
+		},
+		{
+			"name": "Exist",
+			"value": 9
+		},
+		{
+			"name": "HashNotFound",
+			"value": 10
 		}
 	],
 	"app.cOtomoActionLoopEnd.STATE": [
@@ -612570,6 +614182,18 @@
 		{
 			"name": "ID373",
 			"value": 373
+		},
+		{
+			"name": "LSM_Destructor",
+			"value": 386
+		},
+		{
+			"name": "LSM_IOError",
+			"value": 387
+		},
+		{
+			"name": "LSM_Inplay",
+			"value": 388
 		}
 	],
 	"app.cHunterArmIk.STATE": [
@@ -612969,6 +614593,28 @@
 		{
 			"name": "LINK_PARTY_FT",
 			"value": 6
+		}
+	],
+	"app.RELogId.Enemy_Repop": [
+		{
+			"name": "Debug",
+			"value": 1
+		},
+		{
+			"name": "Info",
+			"value": 2
+		},
+		{
+			"name": "Warn",
+			"value": 3
+		},
+		{
+			"name": "Error",
+			"value": 4
+		},
+		{
+			"name": "Fatal",
+			"value": 5
 		}
 	],
 	"app.PlayerCommonAction.cExEmote02Gesture_Success.PHASE": [
@@ -615232,6 +616878,28 @@
 		},
 		{
 			"name": "NONE",
+			"value": 4
+		}
+	],
+	"app.Net_NSOPremiumChecker.CHECK_STATE": [
+		{
+			"name": "WAIT",
+			"value": 0
+		},
+		{
+			"name": "REQUEST",
+			"value": 1
+		},
+		{
+			"name": "CHECKING",
+			"value": 2
+		},
+		{
+			"name": "END",
+			"value": 3
+		},
+		{
+			"name": "SHOW_UI",
 			"value": 4
 		}
 	],
