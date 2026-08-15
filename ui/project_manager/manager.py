@@ -1377,27 +1377,24 @@ class ProjectManager(QDockWidget):
     def _remove_from_project(self, path: str):
         if not self.project_dir:
             return
+        self.model_proj.setOption(QFileSystemModel.DontWatchForChanges, True)
+        failure = None
         try:
             service = FolderFileOperations(self.project_dir)
             target = Path(os.path.abspath(path))
             relative = target.relative_to(service.root).as_posix()
             service.trash_entry(relative)
         except (FileOperationError, OSError, ValueError) as e:
-            QMessageBox.critical(self, self.tr("Remove failed"), str(e))
-            return
+            failure = e
 
-        parent = os.path.dirname(path)
-        while parent and parent.startswith(self.project_dir):
-            idx = self.model_proj.index(parent)
-            if idx.isValid() and self.model_proj.rowCount(idx) == 0:
-                self.tree_proj.collapse(idx)
-            parent = os.path.dirname(parent)
-        self.tree_proj.setModel(self.model_proj)
-        self.model_proj.setRootPath(self.project_dir or "")
-        if self.project_dir:
-            self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
+        self._refresh_proj()
+        if failure is not None:
+            QMessageBox.critical(self, self.tr("Remove failed"), str(failure))
 
     def _refresh_proj(self):
+        old_model = self.model_proj
+        old_model.setOption(QFileSystemModel.DontWatchForChanges, True)
+
         self.model_proj = QFileSystemModel()
         self.model_proj.setRootPath(self.project_dir or "")
         
@@ -1413,6 +1410,7 @@ class ProjectManager(QDockWidget):
         self.tree_proj.header().setMinimumSectionSize(100)
         if self.project_dir:
             self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
+        old_model.deleteLater()
 
     def _open_in_editor(self, path, *, warn_project_copy: bool = False):
         actual_mesh_path = _actual_mesh_path(os.fspath(path))
