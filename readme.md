@@ -173,7 +173,7 @@ For more information, see:
 
 ## Explicit Content Attribution
 
-If REasy is used to create or modify sexually explicit, pornographic, or otherwise NSFW content, the resulting mod or content must not credit, attribute, or otherwise identify REasy as a tool used in its creation.
+REasy requests that it not be credited, attributed, or otherwise identified as a tool used to create sexually explicit, pornographic, or otherwise NSFW content.
 
 ## Sponsors
 <table>
