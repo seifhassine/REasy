@@ -2506,54 +2506,24 @@ material information on collision shapes for backward compatibility.</source>
         <translation>感谢更新！以下是本次亮点：</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added support for DMC5 .gui files.</source>
-        <translation>新增 DMC5 .gui 文件支持。</translation>
+        <location filename="../../ui/changelog_dialog.py" line="157"/>
+        <source>Full sound modding support for Pragmata, RE2/3 non-RT, RE4/8/9, SF6, MHWilds/Rise and DMC5.&#10;&gt; Please make sure you install the correct Wwise version for each game. Using wrong versions might lead to unexpected issues.&#10;&gt; FFMPEG is no longer used and can be safely removed from the downloads folder.</source>
+        <translation>全面支持 Pragmata、RE2/3 非光追版、RE4/8/9、SF6、MHWilds/Rise 和 DMC5 的音频模组制作。&#10;&gt; 请确保为每款游戏安装正确版本的 Wwise。使用错误的版本可能会导致意外问题。&#10;&gt; FFMPEG 已不再使用，可以安全地从 downloads 文件夹中删除。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added the ability to view the changelog in "About".</source>
-        <translation>现在可以在“关于”中查看更新日志。</translation>
+        <location filename="ui/changelog_dialog.py" line="161"/>
+        <source>Updated MHWilds and SF6 enums.</source>
+        <translation>更新了 MHWilds 和 SF6 的枚举。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added replace mode to the RSZ value finder, plus the ability to jump to found instances by double-clicking them. The UI has also been reworked.</source>
-        <translation>为 RSZ 值查找器新增替换模式，并支持双击找到的实例跳转到对应位置。查找器界面也已重新设计。</translation>
+        <location filename="ui/changelog_dialog.py" line="166"/>
+        <source>Fixed MPLY material ID decoding for modern meshes.</source>
+        <translation>修复了现代 Mesh 中 MPLY 材质 ID 的解码问题。</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Updated the MHWilds file list and RSZ dump.</source>
-        <translation>更新了 MHWilds 文件列表和 RSZ 转储。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Added color previews to more MDF parameters.</source>
-        <translation>为更多 MDF 参数新增颜色预览。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Improved the look and behavior of tabs (hold to drag).</source>
-        <translation>改进了标签页的外观和行为（按住即可拖动）。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed some issues with the AI assistant and improved its file management capabilities.</source>
-        <translation>修复了 AI 助手的一些问题，并改进了其文件管理能力。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed occasional failures when opening a file from PAK Browser (concurrency issue).</source>
-        <translation>修复了从 PAK 浏览器打开文件时偶发失败的问题（并发问题）。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed sound playback failures when certain conditions are met.</source>
-        <translation>修复了特定条件下声音播放失败的问题。</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py"/>
-        <source>Fixed RCOL views breaking REasy's workspace view.</source>
-        <translation>修复了 RCOL 视图导致 REasy 工作区视图损坏的问题。</translation>
+        <location filename="ui/changelog_dialog.py" line="167"/>
+        <source>Fixed freeze issues during project file deletion.</source>
+        <translation>修复了删除项目文件时可能出现的卡死问题。</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="178"/>

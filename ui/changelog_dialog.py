@@ -154,16 +154,17 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", self.tr("Added support for DMC5 .gui files.")),
-            ("New", self.tr('Added the ability to view the changelog in "About".')),
-            ("New", self.tr("Added replace mode to the RSZ value finder, plus the ability to jump to found instances by double-clicking them. The UI has also been reworked.")),
-            ("Updated", self.tr("Updated the MHWilds file list and RSZ dump.")),
-            ("Improved", self.tr("Added color previews to more MDF parameters.")),
-            ("Improved", self.tr("Improved the look and behavior of tabs (hold to drag).")),
-            ("Improved", self.tr("Fixed some issues with the AI assistant and improved its file management capabilities.")),
-            ("Fixed", self.tr("Fixed occasional failures when opening a file from PAK Browser (concurrency issue).")),
-            ("Fixed", self.tr("Fixed sound playback failures when certain conditions are met.")),
-            ("Fixed", self.tr("Fixed RCOL views breaking REasy's workspace view.")),
+            ("New", self.tr("Full sound modding support for Pragmata, RE2/3 non-RT, RE4/8/9, SF6, MHWilds/Rise and DMC5.\n" \
+            "> Please make sure you install the correct Wwise version for each game. Using wrong versions might lead to unexpected issues.\n"
+            "> FFMPEG is no longer used and can be safely removed from the downloads folder.")),
+
+            ("Updated", self.tr("Updated MHWilds and SF6 enums.")),
+
+
+          #  ("Improved", self.tr(".")),
+
+            ("Fixed", self.tr("Fixed MPLY material ID decoding for modern meshes.")),
+            ("Fixed", self.tr("Fixed freeze issues during project file deletion.")),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
