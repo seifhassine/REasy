@@ -7,6 +7,7 @@ requests
 firebase-admin
 #NodeGraphQt
 zstandard
+mmh3
 texture2ddecoder
 PyOpenGL
 PyOpenGL_accelerate

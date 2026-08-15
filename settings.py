@@ -173,21 +173,3 @@ def save_settings(settings):
     except IOError as e:
         print("Error saving settings:", e)
 
-
-def ensure_json_path(self) -> bool:
-    # Retrieve the JSON path from the settings (which may be the default if file not present)
-    settings = getattr(self, "settings", None) or (self.app.settings if hasattr(self, "app") else None)
-    if not settings:
-        return False
-        
-    json_path = settings.get("rcol_json_path")
-    if not json_path or not os.path.exists(json_path):
-        # Notify the main app to prompt the user
-        app = self if not hasattr(self, "app") else self.app
-        new_path = app.handle_missing_json()
-        if not new_path or not os.path.exists(new_path):
-            return False
-        settings["rcol_json_path"] = new_path
-        settings["enum_prompt_checked_json_path"] = ""
-        save_settings(settings)
-    return True
