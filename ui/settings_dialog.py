@@ -25,7 +25,11 @@ from PySide6.QtWidgets import (
 from app_config import GAMES
 from i18n.language_manager import LanguageManager
 from settings import DEFAULT_SETTINGS
-from tools.ffmpeg_downloader import ensure_ffmpeg, ffmpeg_status
+from tools.wwise_toolchain import (
+    suggested_wwise_browse_path,
+    validate_wwise_installation,
+    wwise_profile_for_game,
+)
 from ui.keyboard_shortcuts import create_shortcuts_tab
 
 
@@ -56,6 +60,9 @@ class SettingsDialog(QDialog):
             DEFAULT_SETTINGS["tree_highlight_color"],
         )
         self.shortcuts = self.settings.get("keyboard_shortcuts", {}).copy()
+        paths = self.settings.get("wwise_install_paths", {})
+        self._wwise_paths = dict(paths) if isinstance(paths, dict) else {}
+        self.wwise_game = ""
 
         self.setWindowTitle(self.tr("Settings"))
         self.resize(500, 400)
@@ -90,16 +97,6 @@ class SettingsDialog(QDialog):
         vgmstream_layout.addWidget(self.vgmstream_browse_button)
         general_layout.addLayout(vgmstream_layout)
 
-        ffmpeg_layout = QHBoxLayout()
-        ffmpeg_layout.setContentsMargins(0, 0, 0, 0)
-        ffmpeg_layout.addWidget(QLabel(self.tr("FFmpeg (Auto-download):")))
-        self.ffmpeg_status_label = QLabel("")
-        ffmpeg_layout.addWidget(self.ffmpeg_status_label)
-        ffmpeg_layout.addStretch()
-        self.ffmpeg_download_button = QPushButton(self.tr("Download"))
-        ffmpeg_layout.addWidget(self.ffmpeg_download_button)
-        general_layout.addLayout(ffmpeg_layout)
-
         game_version_layout = QHBoxLayout()
         game_version_layout.setContentsMargins(0, 0, 0, 0)
         game_version_layout.addWidget(QLabel(self.tr("Game Version (Reload Required):")))
@@ -108,6 +105,17 @@ class SettingsDialog(QDialog):
         self.game_version_combo.setCurrentText(self.settings.get("game_version", "RE4"))
         game_version_layout.addWidget(self.game_version_combo)
         general_layout.addLayout(game_version_layout)
+
+        self.wwise_label = QLabel()
+        general_layout.addWidget(self.wwise_label, 0, Qt.AlignBottom)
+        wwise_layout = QHBoxLayout()
+        wwise_layout.setContentsMargins(0, 0, 0, 0)
+        self.wwise_entry = QLineEdit()
+        self.wwise_browse_button = QPushButton(self.tr("Browse..."))
+        wwise_layout.addWidget(self.wwise_entry)
+        wwise_layout.addWidget(self.wwise_browse_button)
+        general_layout.addLayout(wwise_layout)
+        self._on_wwise_game_changed(self.game_version_combo.currentText())
 
         translation_layout = QHBoxLayout()
         translation_layout.setContentsMargins(0, 0, 0, 0)
@@ -204,9 +212,11 @@ class SettingsDialog(QDialog):
         buttons.rejected.connect(self.reject)
         self.json_browse_button.clicked.connect(self._browse_json)
         self.vgmstream_browse_button.clicked.connect(self._browse_vgmstream)
-        self.ffmpeg_download_button.clicked.connect(self._download_ffmpeg)
+        self.wwise_browse_button.clicked.connect(self._browse_wwise)
+        self.game_version_combo.currentTextChanged.connect(
+            self._on_wwise_game_changed
+        )
         self.theme_color_button.clicked.connect(self._choose_theme_color)
-        self._refresh_ffmpeg_status()
 
     def _update_theme_color_button(self):
         color_value = self.selected_theme_color
@@ -251,23 +261,74 @@ class SettingsDialog(QDialog):
         if file_path:
             self.vgmstream_entry.setText(file_path)
 
-    def _refresh_ffmpeg_status(self):
-        need_download, _ = ffmpeg_status()
-        self.ffmpeg_status_label.setText(
-            self.tr("Not downloaded") if need_download else self.tr("Installed")
-        )
+    def _remember_wwise_path(self):
+        if not self.wwise_game:
+            return
+        value = self.wwise_entry.text().strip()
+        if value:
+            self._wwise_paths[self.wwise_game] = value
+        else:
+            self._wwise_paths.pop(self.wwise_game, None)
 
-    def _download_ffmpeg(self):
-        try:
-            ensure_ffmpeg(auto_download=True, parent_window=self)
-            self._refresh_ffmpeg_status()
-            QMessageBox.information(self, "FFmpeg", self.tr("FFmpeg download complete."))
-        except Exception as exc:
-            QMessageBox.critical(
-                self,
-                "FFmpeg",
-                self.tr("Failed to download FFmpeg\n{}").format(exc),
+    def _on_wwise_game_changed(self, game):
+        self._remember_wwise_path()
+        profile = wwise_profile_for_game(game)
+        self.wwise_game = profile.game if profile else ""
+        enabled = profile is not None
+        self.wwise_entry.setEnabled(enabled)
+        self.wwise_browse_button.setEnabled(enabled)
+        if not profile:
+            self.wwise_label.setText(
+                self.tr("Wwise authoring — no sound profile for {game}").format(
+                    game=game
+                )
             )
+            self.wwise_entry.clear()
+            self.wwise_entry.setPlaceholderText(
+                self.tr("Add a sound profile to enable WAV authoring")
+            )
+            return
+        self.wwise_label.setText(
+            self.tr("Wwise for {game} — required {required}:").format(
+                game=profile.display_name,
+                required=profile.required_version_text,
+            )
+        )
+        self.wwise_entry.setPlaceholderText(
+            self.tr("Select Wwise {version} installation").format(
+                version=profile.required_version_text
+            )
+        )
+        self.wwise_entry.setText(self._wwise_paths.get(profile.game, ""))
+
+    def _browse_wwise(self):
+        profile = wwise_profile_for_game(self.wwise_game)
+        if profile is None:
+            return
+        selected = QFileDialog.getExistingDirectory(
+            self,
+            self.tr(
+                "{game}: select Wwise {required} (recommended {recommended})"
+            ).format(
+                required=profile.required_version_text,
+                game=profile.display_name,
+                recommended=profile.recommended_version,
+            ),
+            suggested_wwise_browse_path(self.wwise_entry.text().strip()),
+            QFileDialog.Option.ShowDirsOnly,
+        )
+        if not selected:
+            return
+        try:
+            installation = validate_wwise_installation(selected, profile.game)
+        except ValueError as exc:
+            QMessageBox.warning(
+                self,
+                self.tr("Incompatible Wwise Installation"),
+                str(exc),
+            )
+            return
+        self.wwise_entry.setText(str(installation.root))
 
     def _apply_and_accept(self):
         new_json_path = self.json_entry.text().strip()
@@ -302,6 +363,24 @@ class SettingsDialog(QDialog):
         app = self.app_window
         app.set_rsz_json_path(new_json_path, save=False)
         self.settings["vgmstream_cli_path"] = self.vgmstream_entry.text().strip()
+        self._remember_wwise_path()
+        for game, path in tuple(self._wwise_paths.items()):
+            profile = wwise_profile_for_game(game)
+            if profile is None or not path:
+                continue
+            try:
+                installation = validate_wwise_installation(path, profile.game)
+            except ValueError as exc:
+                QMessageBox.critical(
+                    self,
+                    self.tr("Incompatible Wwise Installation"),
+                    str(exc),
+                )
+                return
+            self._wwise_paths[profile.game] = str(installation.root)
+        self.settings["wwise_install_paths"] = {
+            game: path for game, path in self._wwise_paths.items() if path
+        }
         self.settings["show_debug_console"] = self.debug_box.isChecked()
         self.settings["show_rsz_advanced"] = self.rsz_advanced_box.isChecked()
         self.settings["backup_on_save"] = self.backup_box.isChecked()

@@ -1,6 +1,7 @@
 """Per-file editor tab and its handler/viewer lifecycle."""
 
 import os
+import tempfile
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
@@ -393,11 +394,43 @@ class FileTab:
             if not data:
                 raise ValueError(self.tr("No rebuild method available"))
 
-            if self.app and self.app.settings.get("backup_on_save", True):
-                self.create_backup(file_path, data)
+            related = {}
+            related_outputs = getattr(self.handler, "related_output_targets", None)
+            if callable(related_outputs):
+                related = related_outputs()
+            outputs = {os.path.abspath(file_path): bytes(data)}
+            outputs.update({os.path.abspath(path): bytes(blob) for path, blob in related.items()})
 
-            with open(file_path, "wb") as f:
-                f.write(data)
+            if self.app and self.app.settings.get("backup_on_save", True):
+                for path, blob in outputs.items():
+                    self.create_backup(path, blob)
+
+            if related:
+                temporary = {}
+                try:
+                    for path, blob in outputs.items():
+                        directory = os.path.dirname(path) or os.curdir
+                        os.makedirs(directory, exist_ok=True)
+                        descriptor, temp_path = tempfile.mkstemp(prefix=".reasy-save-", dir=directory)
+                        temporary[path] = temp_path
+                        with os.fdopen(descriptor, "wb") as stream:
+                            stream.write(blob)
+                    for path, temp_path in temporary.items():
+                        os.replace(temp_path, path)
+                    temporary.clear()
+                finally:
+                    for temp_path in temporary.values():
+                        try:
+                            os.remove(temp_path)
+                        except OSError:
+                            pass
+            else:
+                with open(file_path, "wb") as stream:
+                    stream.write(data)
+
+            mark_saved = getattr(self.handler, "mark_related_outputs_saved", None)
+            if callable(mark_saved):
+                mark_saved()
 
             self.filename = file_path
             self.pak_source_path = None
@@ -410,18 +443,31 @@ class FileTab:
 
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(
-                    self.tr("Saved: {path}").format(path=file_path), 3000
+                    self.tr("Saved {count} sound file(s). ").format(count=len(outputs))
+                    + self.tr("Primary: {path}").format(path=file_path)
+                    if len(outputs) > 1 else self.tr("Saved: {path}").format(path=file_path),
+                    3000,
                 )
 
             return True
 
         except Exception as e:
+            pending = getattr(self.handler, "pending_related_outputs", lambda: {})()
+            if pending:
+                self.modified = True
+                self.handler.modified = True
+                if self.viewer is not None and hasattr(self.viewer, "modified"):
+                    self.viewer.modified = True
+                self.update_tab_title()
             QMessageBox.critical(None, self.tr("Save Error"), str(e))
             return False
 
     def discard_changes(self):
         if self.app and hasattr(self.app, "scenes") and self.handler:
             self.app.scenes.document_store.discard_handler(self.handler)
+        discard_related = getattr(self.handler, "discard_related_outputs", None)
+        if callable(discard_related):
+            discard_related()
         self.modified = False
         if self.viewer and hasattr(self.viewer, "modified"):
             self.viewer.modified = False

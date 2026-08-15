@@ -1,3 +1,6 @@
+import re
+
+
 def is_handler_type(handler, class_name: str) -> bool:
     return any(cls.__name__ == class_name for cls in type(handler).__mro__)
 
@@ -47,7 +50,7 @@ def _handler_classes():
 
 def get_handler_for_data(data: bytes, filename: str = ""):
     fn = filename.lower()
-    if fn.endswith(".wel.11"):
+    if re.search(r"\.wel\.\d+(?:\.[^.]+)*$", fn):
         from file_handlers.wel.wel_handler import WelHandler
         return WelHandler()
     if ".wcc" in fn:

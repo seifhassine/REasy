@@ -34,6 +34,7 @@ DEFAULT_SETTINGS = {
     "translation_target_language": "en",
     "tree_highlight_color": "#00aaff",
     "vgmstream_cli_path": "",
+    "wwise_install_paths": {},
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",
         "file_save": "Ctrl+S",
@@ -78,6 +79,17 @@ def normalize_settings(settings=None):
 
     for key, value in settings.items():
         if key == "dark_mode":
+            continue
+        if key == "wwise_install_paths":
+            normalized[key] = (
+                {
+                    str(game).strip().upper(): str(path).strip()
+                    for game, path in value.items()
+                    if str(game).strip() and str(path).strip()
+                }
+                if isinstance(value, dict)
+                else {}
+            )
             continue
         if key == "keyboard_shortcuts" and isinstance(value, dict):
             normalized[key].update(

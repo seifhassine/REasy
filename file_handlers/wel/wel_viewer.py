@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -19,6 +20,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from file_handlers.sound.sound_metadata import SoundMetadata
+from file_handlers.sound.sound_profile import sound_profile_for_handler
 from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
 
 
@@ -33,6 +36,15 @@ class WelViewer(QWidget):
     def __init__(self, handler):
         super().__init__()
         self.handler = handler
+        source = (
+            handler.wel.bank_path
+            if getattr(handler, "wel", None) else getattr(handler, "filepath", "")
+        )
+        self._sound_profile = sound_profile_for_handler(handler)
+        self._metadata = (
+            self._sound_profile.metadata(source)
+            if self._sound_profile else SoundMetadata()
+        )
         self._syncing = False
 
         root_layout = QVBoxLayout(self)
@@ -104,8 +116,15 @@ class WelViewer(QWidget):
         self.event_id = self._create_number_edit()
         self.joint_hash = self._create_number_edit()
         self.game_object_hash = self._create_number_edit()
+        self.recovered_name = QLabel(self.tr("unresolved"))
+        self.recovered_name.setWordWrap(True)
         core_form.addRow("Trigger Id", self.trigger_id)
         core_form.addRow("Event Id", self.event_id)
+        game = self._sound_profile.display_name if self._sound_profile else self.tr("game")
+        core_form.addRow(
+            self.tr("Recovered {game} name").format(game=game),
+            self.recovered_name,
+        )
         core_form.addRow("Joint Hash", self.joint_hash)
         core_form.addRow("Game Object Hash", self.game_object_hash)
         content_layout.addWidget(core_box)
@@ -159,15 +178,30 @@ class WelViewer(QWidget):
         priority_form.addRow("Release Time (i16)", self.release_time)
         content_layout.addWidget(priority_box)
 
-        free_area_box = QGroupBox(self.tr("Free Area"))
-        free_area_form = QFormLayout(free_area_box)
-        free_area_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
-        self.free_0to7 = self._create_number_edit()
-        self.free_8_0 = self._create_number_edit()
-        self.free_12_0 = self._create_number_edit()
-        free_area_form.addRow("Free 0..7 (u32)", self.free_0to7)
-        free_area_form.addRow("Free 8..11 (u32)", self.free_8_0)
-        free_area_form.addRow("Free 12..15 (int64)", self.free_12_0)
+        free_area_box = QGroupBox(self.tr("Game-side slots (partially understood)"))
+        free_area_layout = QVBoxLayout(free_area_box)
+        help_text = QLabel(self.tr(
+            "These are 16 packed game-side slots (0–7: 4-bit, 8–11: 8-bit, "
+            "12–15: signed 16-bit). Their exact meanings are not proven, so "
+            "REasy preserves every value."
+        ))
+        help_text.setWordWrap(True)
+        help_text.setStyleSheet("color: palette(mid);")
+        free_area_layout.addWidget(help_text)
+        free_grid = QGridLayout()
+        self.free_slots = []
+        for index in range(16):
+            edit = self._create_number_edit()
+            edit.setFixedWidth(96)
+            edit.setPlaceholderText(
+                "0..15" if index < 8 else "0..255" if index < 12 else "-32768..32767"
+            )
+            self.free_slots.append(edit)
+            column = (index % 4) * 2
+            row = index // 4
+            free_grid.addWidget(QLabel(self.tr("Slot {index}").format(index=index)), row, column)
+            free_grid.addWidget(edit, row, column + 1)
+        free_area_layout.addLayout(free_grid)
         content_layout.addWidget(free_area_box)
 
         content_layout.addStretch(1)
@@ -220,9 +254,7 @@ class WelViewer(QWidget):
             self.limit,
             self.priority,
             self.release_time,
-            self.free_0to7,
-            self.free_8_0,
-            self.free_12_0,
+            *self.free_slots,
         ):
             edit.textEdited.connect(self._on_detail_widget_changed)
 
@@ -259,6 +291,8 @@ class WelViewer(QWidget):
             self.detail_title.setText(self.tr("Editing event {index}").format(index=row))
             self.trigger_id.setText(str(event.mTriggerId))
             self.event_id.setText(str(event.mEventId))
+            names = self._event_names(event)
+            self.recovered_name.setText(" / ".join(names) or self.tr("unresolved"))
             self.joint_hash.setText(str(event.mJointHash))
             self.game_object_hash.setText(str(event.mGameObjectHash))
             self.tracking.setChecked(bool(event.mTracking))
@@ -281,14 +315,21 @@ class WelViewer(QWidget):
             self._set_mode_value(event.mPriority.mMode)
             self.release_time.setText(str(event.mPriority.mReleaseTime))
 
-            self.free_0to7.setText(str(event.mFreeArea.mFreeArea0to7))
-            self.free_8_0.setText(str(event.mFreeArea.mFreeArea8to11))
-            self.free_12_0.setText(str(event.mFreeArea.mFreeArea12to15))
+            for edit, value in zip(self.free_slots, event.mFreeArea.slots):
+                edit.setText(str(value))
         finally:
             self._syncing = False
 
     def _event_title(self, index: int, event: WELEventEntry) -> str:
-        return f"{index}: trigger={event.mTriggerId} event={event.mEventId}"
+        names = self._event_names(event)
+        prefix = f"{' / '.join(names)} · " if names else ""
+        return f"{index}: {prefix}trigger={event.mTriggerId} event={event.mEventId}"
+
+    def _event_names(self, event: WELEventEntry) -> tuple[str, ...]:
+        return (
+            self._metadata.names("trigger", event.mTriggerId)
+            or self._metadata.event_names(event.mEventId)
+        )
 
     def _set_detail_enabled(self, enabled: bool):
         for widget in (
@@ -314,9 +355,7 @@ class WelViewer(QWidget):
             self.priority,
             self.mode,
             self.release_time,
-            self.free_0to7,
-            self.free_8_0,
-            self.free_12_0,
+            *self.free_slots,
         ):
             widget.setEnabled(enabled)
 
@@ -381,12 +420,17 @@ class WelViewer(QWidget):
                 mMode=self._mode_value(),
                 mReleaseTime=self._parse_int(self.release_time.text(), "release_time", -32768, 32767),
             )
-            event.mFreeArea = WELFreeArea(
-                mFreeArea0to7=self._parse_int(self.free_0to7.text(), "free_0to7", 0, 0xFFFFFFFF),
-                mFreeArea8to11=self._parse_int(self.free_8_0.text(), "free_8_0", 0, 0xFFFFFFFF),
-                mFreeArea12to15=self._parse_int(self.free_12_0.text(), "free_12_0", -(1 << 63), (1 << 63) - 1),
+            event.mFreeArea = WELFreeArea.from_slots(
+                self._parse_int(
+                    edit.text(), f"free_slot_{index}",
+                    0 if index < 12 else -32768,
+                    15 if index < 8 else 255 if index < 12 else 32767,
+                )
+                for index, edit in enumerate(self.free_slots)
             )
             wel.events[row] = event
+            names = self._event_names(event)
+            self.recovered_name.setText(" / ".join(names) or self.tr("unresolved"))
             self.event_list.item(row).setText(self._event_title(row, event))
             self._set_modified(True)
         except ValueError:

@@ -28,6 +28,37 @@ class WELFreeArea:
     mFreeArea8to11: int = 0
     mFreeArea12to15: int = 0
 
+    @property
+    def slots(self) -> tuple[int, ...]:
+        """ Capcom's 16 logical slots ."""
+
+        low = tuple((self.mFreeArea0to7 >> (index * 4)) & 0xF for index in range(8))
+        middle = tuple((self.mFreeArea8to11 >> (index * 8)) & 0xFF for index in range(4))
+        raw = self.mFreeArea12to15 & 0xFFFFFFFFFFFFFFFF
+        high = tuple(
+            value - 0x10000 if value & 0x8000 else value
+            for value in ((raw >> (index * 16)) & 0xFFFF for index in range(4))
+        )
+        return low + middle + high
+
+    @classmethod
+    def from_slots(cls, values) -> "WELFreeArea":
+        values = tuple(map(int, values))
+        if len(values) != 16:
+            raise ValueError("WEL free area requires exactly 16 slots")
+        if any(not 0 <= value <= 0xF for value in values[:8]):
+            raise ValueError("WEL free slots 0..7 must be between 0 and 15")
+        if any(not 0 <= value <= 0xFF for value in values[8:12]):
+            raise ValueError("WEL free slots 8..11 must be between 0 and 255")
+        if any(not -0x8000 <= value <= 0x7FFF for value in values[12:]):
+            raise ValueError("WEL free slots 12..15 must be signed 16-bit values")
+        packed_low = sum(value << (index * 4) for index, value in enumerate(values[:8]))
+        packed_middle = sum(value << (index * 8) for index, value in enumerate(values[8:12]))
+        packed_high = sum((value & 0xFFFF) << (index * 16) for index, value in enumerate(values[12:]))
+        if packed_high >= 1 << 63:
+            packed_high -= 1 << 64
+        return cls(packed_low, packed_middle, packed_high)
+
 
 @dataclass
 class WELEventEntry:

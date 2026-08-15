@@ -1,6 +1,8 @@
 from typing import Any
 
 from file_handlers.base_handler import BaseFileHandler
+from file_handlers.sound.sound_profile import sound_profile_for_handler
+from utils.resource_file_utils import resource_version_from_path
 from .wel_file import WELFile, WELEventEntry
 from PySide6.QtGui import QStandardItem
 
@@ -20,8 +22,13 @@ class WelHandler(BaseFileHandler):
         return True
 
     def read(self, data: bytes):
-        if not self.filepath.lower().endswith(".wel.11"):
-            raise ValueError("WEL files are only supported for .wel.11 extension")
+        profile = sound_profile_for_handler(self)
+        version = resource_version_from_path(self.filepath, "wel")
+        if profile is None or version not in profile.wel_versions:
+            game = profile.display_name if profile else "this game"
+            raise ValueError(
+                f"WEL version {version or 'unknown'} is not supported for {game}"
+            )
 
         parsed = WELFile()
         if not parsed.read(data):
@@ -107,10 +114,10 @@ class WelHandler(BaseFileHandler):
         ):
             add(field, getattr(event, field))
 
-        free_area_item = QStandardItem("mFreeArea")
+        free_area_item = QStandardItem("mFreeArea (16 game-side slots)")
         parent.appendRow([free_area_item, QStandardItem("")])
-        for field in ("mFreeArea0to7", "mFreeArea8to11", "mFreeArea12to15"):
-            free_area_item.appendRow([QStandardItem(field), QStandardItem(str(getattr(event.mFreeArea, field)))])
+        for index, value in enumerate(event.mFreeArea.slots):
+            free_area_item.appendRow([QStandardItem(f"slot[{index}]"), QStandardItem(str(value))])
 
     def create_viewer(self):
         from .wel_viewer import WelViewer
