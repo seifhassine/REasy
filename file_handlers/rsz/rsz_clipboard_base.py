@@ -13,7 +13,6 @@ from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
     collect_userdata_reference_values,
     iter_field_references,
-    update_references_of_type,
 )
 
 
@@ -64,12 +63,6 @@ class RszClipboardBase(ABC):
             traceback.print_exc()
             return False
 
-    def create_instance_mappings(self) -> Tuple[Dict[int, int], Dict[int, int], Dict[bytes, bytes]]:
-        """Create empty mappings for instance IDs, userdata IDs, and GUIDs"""
-        instance_mapping = {}
-        userdata_mapping = {}
-        guid_mapping = {}
-        return instance_mapping, userdata_mapping, guid_mapping
     
     def serialize_hierarchy(self, viewer, root_instances: List[int], additional_instances: Set[int] = None, 
                           embedded_context=None) -> Dict[str, Any]:
@@ -968,9 +961,6 @@ class RszClipboardBase(ABC):
                     
         return new_array
     
-    def update_userdata_references(self, fields, userdata_mapping):
-        """Update UserDataData references with correct userdata mapping"""
-        update_references_of_type(fields, userdata_mapping, UserDataData)
     
     def _collect_embedded_rsz_instances(self, rui, viewer):
         """Recursively collect all instance IDs from embedded RSZ structures"""

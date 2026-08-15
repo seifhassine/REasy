@@ -108,17 +108,6 @@ class PfbRuntimeGraph:
             if self.is_a(component.type_name, base_type)
         )
 
-    def components_on(
-        self,
-        object_id: int,
-        base_type: str,
-    ) -> tuple[int, ...]:
-        return tuple(
-            instance_id
-            for instance_id in self.components_by_object.get(object_id, ())
-            if self.is_a(self.components[instance_id].type_name, base_type)
-        )
-
     def owner_of(self, component_instance_id: int) -> int | None:
         component = self.components.get(component_instance_id)
         return component.owner_object_id if component is not None else None

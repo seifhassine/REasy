@@ -1,4 +1,4 @@
-from typing import List, Optional, TYPE_CHECKING, Any
+from typing import List, TYPE_CHECKING, Any
 import uuid
 
 if TYPE_CHECKING:
@@ -367,18 +367,6 @@ class UVarFile(BaseModel):
             del self.variables[index]
             return True
         return False
-        
-    def find_variable_by_name(self, name: str) -> Optional[Variable]:
-        for var in self.variables:
-            if var.name == name:
-                return var
-        return None
-        
-    def find_variable_by_guid(self, guid: uuid.UUID) -> Optional[Variable]:
-        for var in self.variables:
-            if var.guid == guid:
-                return var
-        return None
         
     def __repr__(self) -> str:
         return f"UVarFile(name='{self.header.name}', vars={len(self.variables)}, embeds={len(self.embedded_uvars)})"

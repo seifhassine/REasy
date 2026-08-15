@@ -506,17 +506,6 @@ class AdvancedTreeView(QTreeView):
         if(action): 
             self._process_gameobject_action(action, index)
 
-    def _handle_folder_menu(self, menu, index, has_go_clipboard):
-        menu.addAction(self.tr("Create GameObject"))
-        if has_go_clipboard:
-            menu.addAction(self.tr("Paste GameObject"))
-        menu.addAction(self.tr("Template Manager"))
-        menu.addAction(self.tr("Delete Folder"))
-        menu.addAction(self.tr("Translate Name"))
-        action = menu.exec_(QCursor.pos())
-        if(action): 
-            self._process_folder_action(action, index)
-
     def _handle_root_menu(self, menu, index, has_go_clipboard):
         menu.addAction(self.tr("Create GameObject"))
         if has_go_clipboard:
@@ -1637,24 +1626,6 @@ class AdvancedTreeView(QTreeView):
                 self, self.tr("Error"), self.tr("Failed to delete GameObject")
             )
 
-    def _is_valid_parent_for_go(self, index):
-        """Check if index is a valid parent for a GameObject node"""
-        if not index.isValid():
-            return False
-        
-        item = index.internalPointer()
-        if not item or not hasattr(item, 'data') or not item.data:
-            return False
-        
-        # Valid parents are "Game Objects", "Children" nodes, or folders
-        if item.data[0] == "Game Objects" or item.data[0] == "Children":
-            return True
-        
-        if hasattr(item, 'raw') and isinstance(item.raw, dict) and item.raw.get("type") == "folder":
-            return True
-        
-        return False
-
     def delete_folder(self, index):
         """Delete a folder and all GameObjects and sub-folders within it"""
             
@@ -2078,29 +2049,10 @@ class AdvancedTreeView(QTreeView):
             print(f"Error getting current resource path: {e}")
         return "[Unknown]"
 
-    def _confirm_resource_deletion(self, resource_path):
-        """Show confirmation dialog for resource deletion"""
-        return self._display_confirmation(
-            self.tr("Delete resource '{path}'?").format(path=resource_path)
-        )
-    
-    def _update_resources_ui(self, success_message):
-        """Update resources UI with success message"""
-        QMessageBox.information(self, self.tr("Success"), success_message)
-
     def _handle_resource_error(self, message, error):
         """Handle resource operation error"""
         QMessageBox.critical(self, self.tr("Error"), message.format(error))
         print(f"Exception details: {traceback.format_exc()}")
-        
-    def _find_resource_row(self, children, resource_index):
-        """Find the row index for a resource by its resource_index"""
-        for i, child in enumerate(children):
-            if (hasattr(child, 'raw') and isinstance(child.raw, dict) and 
-                child.raw.get("type") == "resource" and 
-                child.raw.get("resource_index") == resource_index):
-                return i
-        return -1
         
     def _update_remaining_resource_indices(self, resources_node, deleted_index):
         """Update indices for remaining resources after deletion"""
@@ -2451,32 +2403,6 @@ class AdvancedTreeView(QTreeView):
         
         return False
     
-    def copy_data_block(self):
-        from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-        parent_widget = self.viewer
-        ok = RszGameObjectClipboard.copy_datablock_to_clipboard(parent_widget)
-        if ok:
-            QMessageBox.information(
-                self,
-                self.tr("Success"),
-                self.tr("Copied Data Block to clipboard folder"),
-            )
-        else:
-            QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Failed to copy Data Block")
-            )
-
-    def paste_data_block(self, parent_index):
-        from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-        parent_widget = self.viewer
-        pasted_nodes = RszGameObjectClipboard.paste_datablock_from_clipboard(parent_widget, parent_folder_id=-1, parent_index=parent_index, no_parent_folder=True)
-        if pasted_nodes:
-            QApplication.beep()
-        else:
-            QMessageBox.warning(
-                self, self.tr("Error"), self.tr("Failed to paste Data Block")
-            )
-
     def copy_array_elements(self, parent_array_item, element_indices, index):
         """Copy multiple array elements to clipboard"""
         embedded_context = self._find_embedded_context(parent_array_item)

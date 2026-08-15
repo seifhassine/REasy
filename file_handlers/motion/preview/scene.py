@@ -247,10 +247,3 @@ class SkeletonScene:
         transforms = dict(zip(self._bone_keys, bone_matrices, strict=True))
         transforms.update(zip(self._joint_keys, joint_matrices, strict=True))
         return transforms
-
-
-def build_skeleton_scene(
-    snapshot: MotionPreviewSnapshot,
-    style: SkeletonSceneStyle = SkeletonSceneStyle(),
-) -> list[SceneDrawMesh]:
-    return SkeletonScene(snapshot, style).meshes

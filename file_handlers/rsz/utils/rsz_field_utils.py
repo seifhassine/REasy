@@ -496,18 +496,6 @@ def update_field_references(fields, reference_updater):
         reference_updater(ref_obj)
 
 
-def collect_field_references(fields, reference_collector):
-    """
-    Collect all references from fields using the provided collector function.
-    
-    Args:
-        fields: Dictionary of field_name -> field_data
-        reference_collector: Function that takes (field_data) and collects its references
-    """
-    for ref_obj in iter_field_references(fields):
-        reference_collector(ref_obj)
-
-
 def collect_reference_values(fields, reference_type=None, positive_only=True):
     """
     Collect reference values from fields.
@@ -589,38 +577,3 @@ def shift_references_above_threshold(fields, threshold, offset=1):
     update_field_references(fields, updater)
 
 
-def process_array_elements(array_data, element_processor):
-    """
-    Process all elements in an ArrayData object.
-    
-    Args:
-        array_data: ArrayData object to process
-        element_processor: Function that takes (element, index) and processes it
-    """
-    if is_array_type(array_data):
-        for i, element in enumerate(array_data.values):
-            element_processor(element, i)
-
-
-def count_reference_types_in_array(array_data):
-    """
-    Count reference type elements (ObjectData/UserDataData) in an array.
-    
-    Args:
-        array_data: ArrayData object to analyze
-        
-    Returns:
-        dict: {'object': count, 'userdata': count}
-    """
-    counts = {'object': 0, 'userdata': 0}
-    
-    def counter(element, index):
-        if hasattr(element, '__class__'):
-            class_name = element.__class__.__name__
-            if class_name == 'ObjectData':
-                counts['object'] += 1
-            elif class_name == 'UserDataData':
-                counts['userdata'] += 1
-    
-    process_array_elements(array_data, counter)
-    return counts

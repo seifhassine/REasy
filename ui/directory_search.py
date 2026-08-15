@@ -1,6 +1,5 @@
 import os
 import queue
-import re
 import threading
 import mmap
 from typing import Callable
@@ -37,11 +36,6 @@ from file_handlers.msg.msg_handler import MsgHandler
 from utils.binary_search import create_binary_matcher, create_search_patterns
 
 PAK_SEARCH_TITLE = QT_TRANSLATE_NOOP("DirectorySearch", "PAK Search")
-
-
-def _is_msg_filename(source_name) -> bool:
-    filename = os.path.basename(os.fspath(source_name or ""))
-    return bool(re.search(r"\.msg(?:\.[^.\\/]+)?$", filename, re.IGNORECASE))
 
 
 def _prepare_msg_search_data(data):

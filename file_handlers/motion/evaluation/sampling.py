@@ -185,9 +185,6 @@ class MotionEvaluator:
             default_wrap_looping=self.policy.wrap_looping,
         )
 
-    def sample_seconds(self, seconds: float, *, wrap_looping: bool | None = None) -> EvaluatedPose:
-        return self.sample_frame(seconds * self.policy.frames_per_second, wrap_looping=wrap_looping)
-
     def sample_local_frame(
         self,
         frame: float,

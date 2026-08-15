@@ -824,8 +824,3 @@ def is_reference_type(obj):
 
 def is_array_type(obj):
     return isinstance(obj, ArrayData)
-
-def get_reference_value(obj):
-    if is_reference_type(obj):
-        return obj.value
-    return 0

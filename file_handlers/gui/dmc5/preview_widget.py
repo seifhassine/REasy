@@ -408,11 +408,6 @@ class Dmc5GuiCanvas(QWidget):
         self._timer.timeout.connect(self._tick)
         self._clock = QElapsedTimer()
 
-    @property
-    def semantic_scene(self) -> Dmc5GuiScene:
-        assert self._scene is not None
-        return self._scene
-
     def set_document(self, scene: Dmc5GuiScene) -> None:
         self._scene = scene
         self.playback = Dmc5GuiPlayback(scene)
@@ -481,12 +476,6 @@ class Dmc5GuiCanvas(QWidget):
         })
         self._interaction_frames = 0.0
         self._apply_layout()
-
-    def set_input_context(self, context: Dmc5IconInputContext | None) -> None:
-        """Install the runtime input state used by DMC5 ``<ICON>`` aliases."""
-
-        self._icon_context = context or Dmc5IconInputContext()
-        self.update()
 
     def set_preview_enabled(self, enabled: bool) -> None:
         self._preview = bool(enabled)
@@ -3345,20 +3334,6 @@ def _native_color_channel(value: int, scale: float, offset: float) -> int:
     if math.isnan(transformed):
         return 0
     return int(min(255.0, max(0.0, transformed)))
-
-
-def _native_linear_rgba(node: GuiSceneNode, source: QColor) -> tuple[int, int, int, int]:
-    rgba = source.getRgb()
-    rgb = tuple(
-        _native_color_channel(
-            _native_srgb8_to_linear8(rgba[index]),
-            node.color_scale[index],
-            node.color_offset[index],
-        )
-        for index in range(3)
-    )
-    alpha = _native_color_channel(rgba[3], node.color_scale[3], 0.0)
-    return rgb + (alpha,)
 
 
 @lru_cache(maxsize=16_384)

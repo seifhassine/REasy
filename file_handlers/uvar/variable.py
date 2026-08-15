@@ -20,32 +20,6 @@ TYPE_FORMATS = {
     TypeKind.Double: '<d',
 }
 
-def get_type_size(type_kind: TypeKind) -> int:
-    size_map = {
-        TypeKind.Boolean: 1,
-        TypeKind.Int8: 1,
-        TypeKind.Uint8: 1,
-        TypeKind.Int16: 2,
-        TypeKind.Uint16: 2,
-        TypeKind.Int32: 4,
-        TypeKind.Uint32: 4,
-        TypeKind.Int64: 8,
-        TypeKind.Uint64: 8,
-        TypeKind.Single: 4,
-        TypeKind.Double: 8,
-        TypeKind.C8: 8,
-        TypeKind.C16: 8,
-        TypeKind.String: 0,
-        TypeKind.Trigger: 0,
-        TypeKind.Vec2: 8,
-        TypeKind.Vec3: 12,
-        TypeKind.Vec4: 16,
-        TypeKind.Matrix: 64,
-        TypeKind.GUID: 16,
-        TypeKind.Enum: 4,
-    }
-    return size_map.get(type_kind, 0)
-
 def _read_three(handler: FileHandler, fmt: str):
     return [handler.read(fmt) for _ in range(3)]
 

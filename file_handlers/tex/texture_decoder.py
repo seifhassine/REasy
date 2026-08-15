@@ -33,7 +33,6 @@ from .dxgi import (
     DXGI_FORMAT_R16G16B16A16_FLOAT,
     DXGI_FORMAT_R16G16B16A16_TYPELESS,
     DXGI_FORMAT_R16G16B16A16_UNORM,
-    is_block_compressed,
     top_mip_size_bytes,
 )
 

@@ -45,10 +45,6 @@ class SharedRigPoseMapper:
         self._owner_roots = owner_rig.root_indices
         self._display_roots = self._mapped_root_indices()
 
-    @property
-    def mapped_joint_count(self) -> int:
-        return sum(index is not None for index in self._owner_indices)
-
     def world_matrices(
         self,
         owner_world_matrices: Sequence[Matrix4],

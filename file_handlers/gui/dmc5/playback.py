@@ -349,15 +349,6 @@ class Dmc5GuiPlayback:
         self.controllers.clear()
         self.rebuild()
 
-    def apply_runtime_state(
-        self,
-        path: str,
-        values: dict[str, object],
-    ) -> bool:
-        """Apply one captured Control snapshot through recovered setters."""
-
-        return self.apply_runtime_snapshot({path: values}) == 1
-
     def apply_runtime_snapshot(
         self,
         values_by_path: dict[str, dict[str, object]],
@@ -460,14 +451,6 @@ class Dmc5GuiPlayback:
                 "runtime scenario",
             ))
 
-    def available_states(self, path: str) -> tuple[str, ...]:
-        """Return the authored states for one instantiated control."""
-
-        controller = self.controllers.get(path)
-        if controller is None:
-            return ()
-        return tuple(dict.fromkeys(item.name for item in controller.symbol.animations))
-
     def play_state(
         self,
         path: str,
@@ -486,46 +469,6 @@ class Dmc5GuiPlayback:
         )
         return valid
 
-    def set_state_pattern(self, path: str, pattern: int) -> bool:
-        controller = self.controllers.get(path)
-        if controller is None:
-            return False
-        self._run_mutation(
-            lambda events, assignments, stack: self._set_pattern(
-                controller, int(pattern), events, assignments, stack
-            )
-        )
-        return True
-
-    def set_play_frame(self, path: str, frame: float) -> bool:
-        """Invoke DMC5's reflected ``Control.PlayFrame`` setter."""
-
-        controller = self.controllers.get(path)
-        if controller is None or controller.animation is None:
-            return False
-        self._run_mutation(
-            lambda events, assignments, stack: self._set_frame(
-                controller, float(frame), events, assignments, stack
-            )
-        )
-        return True
-
-    def set_completion_callback(
-        self,
-        path: str,
-        callback: Callable[["Dmc5GuiPlayback", GuiCompletionEvent], None] | None,
-    ) -> None:
-        try:
-            self.controllers[path].completion_callback = callback
-        except KeyError as exc:
-            raise GuiSceneError(f"path has no animation controller: {path}") from exc
-
-    def state_duration(self, path: str) -> float:
-        controller = self.controllers.get(path)
-        if controller is None or controller.animation is None:
-            return 0.0
-        return max(0.0, float(controller.animation.clip.total_frame))
-
     def state_remaining(self, path: str) -> float:
         controller = self.controllers.get(path)
         if controller is None or controller.animation is None:
@@ -534,23 +477,6 @@ class Dmc5GuiPlayback:
             0.0,
             float(controller.animation.clip.total_frame) - controller.frame,
         )
-
-    def finish_state(self, path: str) -> bool:
-        """Evaluate the active state at its authored final frame."""
-
-        controller = self.controllers.get(path)
-        if controller is None or controller.animation is None:
-            return False
-        self._run_mutation(
-            lambda events, assignments, stack: self._set_frame(
-                controller,
-                float(controller.animation.clip.total_frame),
-                events,
-                assignments,
-                stack,
-            )
-        )
-        return True
 
     def advance(self, delta_frames: float) -> None:
         def step(events, assignments, stack) -> None:

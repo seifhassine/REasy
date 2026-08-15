@@ -86,13 +86,3 @@ def enum_text(value: int, names: dict[int, str]) -> str:
     return names.get(value, f"0x{value:X}")
 
 
-def flags_text(value: int, names: dict[int, str]) -> str:
-    value = int(value)
-    labels = [name for bit, name in names.items() if value & bit]
-    known = 0
-    for bit in names:
-        known |= bit
-    unknown = value & ~known
-    if unknown:
-        labels.append(f"0x{unknown:X}")
-    return ", ".join(labels) if labels else "None"

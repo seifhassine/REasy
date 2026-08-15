@@ -31,21 +31,6 @@ def mesh_lod0_parts(mesh) -> list[tuple[int, object]]:
     return parts
 
 
-def enabled_mesh_batches(
-    batches: list[SceneDrawBatch],
-    enabled_parts: tuple[bool, ...] | None,
-) -> list[SceneDrawBatch]:
-    if enabled_parts is None:
-        return list(batches)
-    return [
-        batch
-        for batch in batches
-        if batch.part_index is None
-        or batch.part_index >= len(enabled_parts)
-        or enabled_parts[batch.part_index]
-    ]
-
-
 def mesh_scene_payloads(
     mesh,
     submeshes: list[object] | None = None,

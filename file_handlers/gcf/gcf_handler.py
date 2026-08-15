@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
 
 from file_handlers.base_handler import BaseFileHandler
 from utils.resource_file_utils import resolve_handler_resource_data
 
 from .gcf_file import GcfFile
 from .model import GcfData
-
-if TYPE_CHECKING:
-    from file_handlers.font.catalog import GuiFontCatalog
-    from file_handlers.ift.catalog import IconFontCatalog
-
 
 class GcfHandler(BaseFileHandler):
     def __init__(self) -> None:
@@ -35,20 +29,6 @@ class GcfHandler(BaseFileHandler):
 
     def supports_editing(self) -> bool:
         return True
-
-    def create_font_catalog(self, **kwargs: Any) -> "GuiFontCatalog":
-        from file_handlers.font.catalog import GuiFontCatalog
-
-        return GuiFontCatalog(self.gcf_data, self.resolve_resource, **kwargs)
-
-    def create_icon_font_catalog(self, **kwargs: Any) -> "IconFontCatalog":
-        from file_handlers.ift.catalog import IconFontCatalog
-
-        return IconFontCatalog.from_gcf(
-            self.gcf_data,
-            self.resolve_resource,
-            **kwargs,
-        )
 
     def resolve_resource(self, resource_path: str) -> tuple[str, bytes] | None:
         return resolve_handler_resource_data(

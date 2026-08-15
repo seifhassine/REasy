@@ -158,10 +158,6 @@ class _AiEditingGlow(QWidget):
         self._hide_timer.timeout.connect(self._hide_if_idle)
         host.installEventFilter(self)
 
-    @property
-    def requested_active(self) -> bool:
-        return self._requested_active
-
     def set_active(
         self,
         active: bool,
@@ -384,13 +380,6 @@ class AiActionFeedback:
                 pass
         effect.start()
         return True
-
-    @property
-    def editing_active(self) -> bool:
-        return bool(
-            self._editing_glow
-            and self._editing_glow.requested_active
-        )
 
     def set_editing_active(
         self,

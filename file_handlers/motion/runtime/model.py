@@ -350,12 +350,6 @@ class MotionRuntimeScene:
             return None
         return next((item for item in self.targets if item.id == target_id), None)
 
-    def channels_for(
-        self,
-        target_id: MotionTargetId,
-    ) -> tuple[MotionChannelDefinition, ...]:
-        return tuple(item for item in self.channels if item.target_id == target_id)
-
     def observers_for(
         self,
         target_id: MotionTargetId,

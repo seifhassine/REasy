@@ -279,22 +279,6 @@ class TreeWidgetFactory:
         return widget
 
     @staticmethod
-    def should_create_widget(item):
-        """Check if we should create a widget for this item"""
-        if not isinstance(item.raw, dict):
-            return True
-            
-        # Skip array nodes and array elements
-        if item.raw.get("type") == "array" or item.raw.get("type") == "struct":
-            return False
-            
-        parent = item.parent
-        if parent and isinstance(parent.raw, dict) and parent.raw.get("type") in ("array", "struct"):
-            return False
-            
-        return True
-
-    @staticmethod
     def should_skip_widget(item):
         """Only create widgets for editable data objects"""
         if not isinstance(item.raw, dict):

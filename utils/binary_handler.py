@@ -6,7 +6,6 @@ by different file format handlers to avoid code duplication.
 """
 
 import struct
-import uuid
 from typing import Any, List, Tuple
 from contextlib import contextmanager
 
@@ -103,9 +102,6 @@ class BinaryHandler:
     def read_uint8(self) -> int:
         return self.read('<B')
     
-    def read_int8(self) -> int:
-        return self.read('<b')
-    
     def read_uint16(self) -> int:
         return self.read('<H')
     
@@ -127,18 +123,6 @@ class BinaryHandler:
     def read_float(self) -> float:
         return self.read('<f')
     
-    def read_double(self) -> float:
-        return self.read('<d')
-    
-    def write_uint8(self, value: int):
-        self.write('<B', value)
-    
-    def write_int8(self, value: int):
-        self.write('<b', value)
-    
-    def write_uint16(self, value: int):
-        self.write('<H', value)
-    
     def write_int16(self, value: int):
         self.write('<h', value)
     
@@ -156,9 +140,6 @@ class BinaryHandler:
     
     def write_float(self, value: float):
         self.write('<f', value)
-    
-    def write_double(self, value: float):
-        self.write('<d', value)
     
     def read_string(self, encoding: str = 'utf-8', null_terminated: bool = True) -> str:
         if null_terminated:
@@ -248,36 +229,6 @@ class BinaryHandler:
     def read_matrix4x4(self) -> List[float]:
         return list(self.read('<16f'))
     
-    def write_matrix4x4(self, matrix: List[float]):
-        if len(matrix) != 16:
-            raise ValueError(f"Matrix must have 16 elements, got {len(matrix)}")
-        self.write('<16f', *matrix)
-    
-    # Additional methods for compatibility
-    def read_byte(self) -> int:
-        return self.read_uint8()
-    
-    def read_bool(self) -> bool:
-        return self.read('<?')
-    
-    def read_short(self) -> int:
-        return self.read_int16()
-    
-    def read_ushort(self) -> int:
-        return self.read_uint16()
-    
-    def write_byte(self, value: int):
-        self.write_uint8(value)
-    
-    def write_bool(self, value: bool):
-        self.write('<?', value)
-    
-    def write_short(self, value: int):
-        self.write_int16(value)
-    
-    def write_ushort(self, value: int):
-        self.write_uint16(value)
-    
     def read_at(self, offset: int, fmt: str) -> Any:
         saved_pos = self.position
         self.seek(offset)
@@ -303,18 +254,6 @@ class BinaryHandler:
                 lst.append(item)
             else:
                 lst.append(self.read_guid())
-    
-    def write_list(self, lst: List):
-        for item in lst:
-            if isinstance(item, uuid.UUID):
-                self.write_guid(item.bytes_le)
-            elif hasattr(item, 'write'):
-                item.write(self)
-            else:
-                self.write_int32(item)
-    
-    def offset_content_table_add(self, writer_func):
-        self.offset_content_table.append((self.tell, writer_func))
     
     def string_table_flush(self, dedup: bool = True):
         sorted_entries = sorted(self.string_table_offsets, key=lambda x: x[0])

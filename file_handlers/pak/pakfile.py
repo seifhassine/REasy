@@ -172,10 +172,6 @@ class PakFile:
                     e.path = p
                 self.entries.append(e)
 
-    def read_entry(self, entry: PakEntry, out_stream: BinaryIO) -> None:
-        if self._fs is None:
-            self._fs = open(self.filepath, "rb")
-        _read_entry_raw(entry, self._fs, out_stream, chunk_table=self.chunk_table)
 
 
 def _read_chunk_table(f: BinaryIO) -> tuple[PakChunkEntry, ...]:

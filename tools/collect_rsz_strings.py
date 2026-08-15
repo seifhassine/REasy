@@ -1,10 +1,7 @@
 import os
 import argparse
 import time
-import sys
-import traceback
 import json
-from pathlib import Path
 
 # RSZ-specific import no longer required for new mode; keep for compatibility (can remove later)
 # from file_handlers.rsz.rsz_file import RszFile
@@ -64,14 +61,6 @@ def _build_extension_variants(ext_json_path, verbose=False):
     if verbose:
         print(f"Loaded {len(result)} extensions from JSON ({ext_json_path})")
     return result
-
-def _looks_extended(s, ext_variants):
-    """Return True if s already contains .ext.version for any known ext (prevents re-expansion)."""
-    for ext, data in ext_variants.items():
-        token = f".{ext}.{data['version']}"
-        if token in s:
-            return True
-    return False
 
 def _expand_all_extensions(strings, ext_variants):
     """

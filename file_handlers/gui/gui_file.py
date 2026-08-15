@@ -168,8 +168,6 @@ class GuiFile:
         self._redo.clear()
         return True
 
-    def set_attribute(self, label: str, target: object, attribute: str, value: Any) -> bool:
-        return self.edit(label, lambda _document, edit: edit.set(target, attribute, value))
 
     def undo(self) -> bool:
         if not self._undo:

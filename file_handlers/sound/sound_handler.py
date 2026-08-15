@@ -6,7 +6,6 @@ from pathlib import Path
 from file_handlers.base_handler import FileHandler
 from .bnk_parser import rewrite_soundbank
 from .sound_resources import (
-    matching_sound_companion_path as matching_sound_companion_path,
     resource_key,
 )
 
@@ -153,9 +152,6 @@ class SoundHandler(FileHandler):
         self._deleted_event_ids.add(event_id)
         self.modified = True
 
-    def set_action_target(self, action_id: int, target_id: int):
-        self._action_targets[int(action_id) & 0xFFFFFFFF] = int(target_id) & 0xFFFFFFFF
-        self.modified = True
 
     def upsert_hirc_object(self, type_id: int, object_id: int, payload: bytes):
         object_id = int(object_id) & 0xFFFFFFFF

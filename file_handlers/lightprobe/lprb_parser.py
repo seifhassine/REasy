@@ -38,24 +38,6 @@ def parse_lprb(data: bytes, *, version: int | None = None) -> LprbData:
     )
 
 
-def parse_lprb_v3(data: bytes) -> LprbData:
-    """Parse direct 24-byte records ordered +X, +Z, +Y, -X, -Z, -Y."""
-    return parse_lprb(data, version=3)
-
-
-def parse_lprb_v4(data: bytes) -> LprbData:
-    """Parse direct 48-byte records containing 12 icosahedral terms."""
-    return parse_lprb(data, version=4)
-
-
-def parse_lprb_v6(data: bytes) -> LprbData:
-    return parse_lprb(data, version=6)
-
-
-def parse_lprb_v8(data: bytes) -> LprbData:
-    return parse_lprb(data, version=8)
-
-
 def _detect_version(data: bytes) -> int:
     probe_count, probe_data_size = _read_header_prefix(data)
     if len(data) == _V8_HEADER_SIZE + probe_data_size:
@@ -156,6 +138,3 @@ def _decode_packed_probe_words(words: np.ndarray) -> np.ndarray:
     return half_bits.view(np.float16).astype(np.float32)
 
 
-def _decode_packed_probe_rgb(packed: int) -> tuple[float, float, float]:
-    decoded = _decode_packed_probe_words(np.asarray(packed, dtype=np.uint32))
-    return tuple(float(component) for component in decoded)

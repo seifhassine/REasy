@@ -139,30 +139,3 @@ def get_tree_stylesheet(colors: dict) -> str:
         }}
     """
 
-def get_notebook_stylesheet(colors: dict) -> str:
-    """Generate notebook stylesheet"""
-    return f"""
-        QTabWidget {{
-            background-color: {colors['bg']};
-        }}
-        QTabWidget::pane {{ 
-            border: none;
-            margin: 0px;
-            padding: 0px;
-        }}
-        QTabWidget::tab-bar {{
-            left: 0px;
-        }}
-    """
-
-def get_status_bar_stylesheet() -> str:
-    """Generate status bar stylesheet"""
-    return """
-        QStatusBar {
-            padding: 0;
-            margin: 0;
-            border: none;
-            min-height: 1px;
-            max-height: 1px;
-        }
-    """

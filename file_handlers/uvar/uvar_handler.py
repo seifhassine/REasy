@@ -1,6 +1,6 @@
 import struct
 import uuid
-from typing import Optional, Any, Dict
+from typing import Optional, Dict
 
 from PySide6.QtWidgets import (
     QMenu, QInputDialog, QMessageBox, 
@@ -11,8 +11,7 @@ from PySide6.QtGui import QAction, QBrush, QColor
 
 from file_handlers.base_handler import FileHandler as BaseFileHandler
 from file_handlers.uvar import (
-    UVarFile, Variable, TypeKind, UvarFlags, 
-    FileHandler as BinaryHandler, UVAR_MAGIC
+    UVarFile, Variable, TypeKind, UVAR_MAGIC
 )
 from utils.number_format import format_float_sequence, format_full_float
 
@@ -816,10 +815,6 @@ class UvarHandler(BaseFileHandler):
             
         return menu if menu.actions() else None
         
-    def add_variables(self, target: Any, prefix: str, count: int):
-        if isinstance(target, UVarFile):
-            self.modified = True
-            
     def update_strings(self):
         if self.uvar_file:
             self.uvar_file.update_strings()

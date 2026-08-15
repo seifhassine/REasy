@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any, Iterator
+from dataclasses import dataclass, field
+from typing import Iterator
 
 
 @dataclass
@@ -117,5 +117,3 @@ class GcfData:
                     asset_language_slot=asset.slot,
                 )
 
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)

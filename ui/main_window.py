@@ -1065,15 +1065,6 @@ class REasyEditorApp(QMainWindow):
                 return tab
         return None
 
-    def get_active_tree(self):
-        active_tab = self.get_active_tab()
-        if not active_tab:
-            return None
-
-        if active_tab.viewer and hasattr(active_tab.viewer, "tree"):
-            return active_tab.viewer.tree
-        return active_tab.tree
-
     def on_open(self):
         fn, _ = QFileDialog.getOpenFileName(
             self,

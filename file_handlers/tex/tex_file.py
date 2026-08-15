@@ -4,7 +4,6 @@ import struct
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from utils.binary_handler import BinaryHandler
 from .dxgi import get_bits_per_pixel, is_block_compressed, get_block_size_bytes
 from .gdeflate import decompress_gdeflate, gdeflate_uncompressed_size, is_gdeflate_payload
 
@@ -30,15 +29,6 @@ _VERSION_SERIALIZER_LOOKUP = {
     250813143: SERIALIZER_MHWILDS,
     251111100: SERIALIZER_MHWILDS,
 }
-
-
-def get_internal_version(version: int) -> int:
-    serializer = get_serializer_version(version)
-    if serializer == SERIALIZER_RE7:
-        return 10
-    if serializer == SERIALIZER_MHRISE:
-        return 28
-    return 241106027
 
 
 def _lookup_serializer_version(version: int, file_version: int = 0) -> int | None:
@@ -135,14 +125,6 @@ class TexFile:
         if not self.mips:
             return 0
         return self.mips[0].offset + (len(self.packed_mips) * 8)
-
-    @property
-    def _mip_span_size(self) -> int:
-        if not self.mips:
-            return 0
-        first = self.mips[0]
-        last = self.mips[-1]
-        return (last.offset + last.size) - first.offset
 
     def read(self, data: bytes, file_version: int = 0) -> bool:
         self._data = data
@@ -264,25 +246,6 @@ class TexFile:
             return decompress_gdeflate(chunk, expected_size)[: mh.size]
         return chunk[: mh.size]
 
-    def export_header_dict(self) -> dict:
-        h = self.header
-        return {
-            'version': h.version,
-            'width': h.width,
-            'height': h.height,
-            'depth': h.depth,
-            'imageCount': h.image_count,
-            'mipCount': h.mip_count,
-            'format': h.format,
-            'swizzleControl': h.swizzle_control,
-            'cubemapMarker': h.cubemap_marker,
-            'flags': h.flags,
-            'swizzleHeightDepth': h.swizzle_height_depth,
-            'swizzleWidth': h.swizzle_width,
-            'null1': h.null1,
-            'seven': h.seven,
-            'one': h.one,
-        }
 
     def get_mip_map_data(self, level: int, image_index: int = 0):
         idx = image_index * self.header.mip_count + level
@@ -342,106 +305,3 @@ class TexFile:
             return b"", w, h
 
         return self._read_mip_with_pitch(self._read_mip_bytes(idx, self.mips[idx]), w, h, self.mips[idx].pitch), w, h
-
-    @staticmethod
-    def build_tex_bytes_from_dds(
-        dxgi_format: int,
-        width: int,
-        height: int,
-        mip_datas: List[bytes],
-        pitches_override: List[int] | None = None,
-        version_override: int | None = None,
-        depth: int = 1,
-        array_size: int = 1,
-        misc_flags: int = 0,
-    ) -> bytes:
-        version = int(version_override) if version_override is not None else 28
-        
-        image_count = max(1, array_size)
-        depth = max(1, depth)
-        swizzle_control = -1
-        
-        D3D11_RESOURCE_MISC_TEXTURECUBE = 0x4
-        cubemap_marker = 1 if (misc_flags & D3D11_RESOURCE_MISC_TEXTURECUBE) else 0
-        
-        internal_version = get_internal_version(version)
-        if internal_version <= 20:
-            flags = 0x0001
-        else:
-            if is_block_compressed(dxgi_format):
-                flags = 0x0580
-            else:
-                flags = 0x0080
-        swizzle_height_depth = 0
-        swizzle_width = 0
-        null1 = 0
-        seven = 0
-        one = 0
-
-        mip_count = len(mip_datas)
-        mip_header_size = mip_count * 16
-
-        pitches: List[int] = []
-        sizes: List[int] = []
-        for level, data in enumerate(mip_datas):
-            if pitches_override and level < len(pitches_override) and pitches_override[level] > 0:
-                real_pitch = int(pitches_override[level])
-            else:
-                w = max(1, width >> level)
-                block_size = get_block_size_bytes(dxgi_format)
-                if block_size:
-                    blocks_w = (w + 3) // 4
-                    real_pitch = blocks_w * block_size
-                else:
-                    bpp = get_bits_per_pixel(dxgi_format) // 8
-                    real_pitch = w * bpp
-            pitches.append(real_pitch)
-            sizes.append(len(data))
-
-        bh = BinaryHandler(bytearray())
-        if version < -2147483648 or version > 2147483647:
-            raise ValueError(f"TEX version out of 32-bit signed range: {version}")
-        if width < -32768 or width > 32767 or height < -32768 or height > 32767:
-            raise ValueError(f"TEX dimensions out of 16-bit signed range: {width}x{height}")
-        bh.write_uint32(TEX_MAGIC)
-        bh.write_int32(version)
-        bh.write_int16(width)
-        bh.write_int16(height)
-        bh.write_int16(depth)
-
-        internal_version = get_internal_version(version)
-        if internal_version > 20:
-            bh.write_uint8(image_count)
-            bh.write_uint8(mip_header_size)
-        else:
-            bh.write_uint8(mip_count)
-            bh.write_uint8(image_count)
-
-        bh.write_int32(dxgi_format)
-        bh.write_int32(swizzle_control)
-        bh.write_uint32(cubemap_marker)
-        bh.write_int32(flags)
-
-        if internal_version > 27:
-            bh.write_uint8(swizzle_height_depth)
-            bh.write_uint8(swizzle_width)
-            bh.write_uint16(null1)
-            bh.write_uint16(seven)
-            bh.write_uint16(one)
-
-        mip_header_pos: List[int] = []
-        for i in range(mip_count):
-            mip_header_pos.append(bh.tell)
-            bh.write_int64(0) 
-            bh.write_int32(pitches[i])
-            bh.write_int32(sizes[i])
-
-        offsets: List[int] = []
-        for i in range(mip_count):
-            offsets.append(bh.tell)
-            bh.write_bytes(mip_datas[i])
-
-        for i in range(mip_count):
-            bh.write_at(mip_header_pos[i], '<q', offsets[i])
-
-        return bh.get_all_bytes()

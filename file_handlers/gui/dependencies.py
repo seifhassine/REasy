@@ -12,7 +12,6 @@ from file_handlers.msg.msg_handler import MsgHandler
 from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
 
 from .assets import GuiAssetCatalog
-from .errors import GuiAssetError
 from .profiles import GuiFormatProfile
 
 
@@ -171,23 +170,11 @@ class GuiDependencyCatalog:
         message = self._messages.get(str(message_id).casefold())
         return message.text(language) if message is not None else ""
 
-    def resolve_message(self, message_id: str | None, language: int = 1) -> str:
-        if not message_id:
-            return ""
-        self.load_messages()
-        return self.cached_message(message_id, language)
-
     def cached_named_message(self, name: str | None, language: int = 1) -> str:
         if not name:
             return ""
         message = self._messages_by_name.get(str(name).casefold())
         return message.text(language) if message is not None else ""
-
-    def resolve_named_message(self, name: str | None, language: int = 1) -> str:
-        if not name:
-            return ""
-        self.load_messages()
-        return self.cached_named_message(name, language)
 
     def message_name(self, message_id: str | None) -> str:
         if not message_id:
@@ -195,8 +182,3 @@ class GuiDependencyCatalog:
         self.load_messages()
         message = self._messages.get(str(message_id).casefold())
         return message.name if message is not None else ""
-
-    def require_assets(self) -> GuiAssetCatalog:
-        if self.resource_data_loader is None:
-            raise GuiAssetError("GUI resource loader is unavailable")
-        return self.assets

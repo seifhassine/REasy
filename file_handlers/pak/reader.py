@@ -9,8 +9,8 @@ import zlib
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple
-from concurrent.futures import ThreadPoolExecutor, wait, as_completed
+from typing import Dict, Iterable, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .utils import filepath_hash, guess_extension_from_header
 from utils.native_build import ensure_fast_pakresolve
@@ -54,18 +54,6 @@ def _normalize_for_hash(path: str) -> str:
 
 
 @dataclass
-class _ChunkBase:
-    file: PakFile
-    start: int
-    end: int
-    file_count: int = 0
-    finished: bool = False
-    found_hashes: Optional[List[int]] = None
-
-    def __post_init__(self) -> None:
-        self.found_hashes = []
-
-
 class PakReader:
     def __init__(self) -> None:
         self.pak_file_priority: List[str] = []
@@ -88,169 +76,7 @@ class PakReader:
             self._searched_paths[h] = p
             self._path_to_hashes.setdefault(p, []).append(h)
 
-    def add_files_from_list_stream(self, fp: io.TextIOBase) -> None:
-        for line in fp:
-            line = line.strip()
-            if not line:
-                continue
-            if self.filter and not self.filter.search(line):
-                continue
-            h = filepath_hash(line)
-            self._searched_paths[h] = line
-            self._path_to_hashes.setdefault(line, []).append(h)
 
-    def find_files(self) -> Iterator[Tuple[str, io.BytesIO]]:
-        pak = PakFile()
-        for pakpath in self._enumerate_temp_paks_with_searched_files(pak):
-            ctx = _ChunkBase(pak, 0, len(pak.entries))
-            for entry, data in self._read_entries_in_chunk_to_memory(ctx):
-                data.seek(0)
-                yield entry.path or f"__Unknown/{entry.combined_hash:016X}", data
-
-            for h in ctx.found_hashes:
-                self._searched_paths.pop(h, None)
-            if self.enable_console_logging:
-                print(f"Finished searching {pakpath}")
-            if not self._searched_paths:
-                break
-
-    def unpack_files_to(self, output_directory: str, missing_files: Optional[List[str]] = None) -> int:
-
-
-        def _calc_threads(entry_count: int) -> int:
-            if self.max_threads <= 1:
-                return 1
-
-            return max(min(self.max_threads, max(1, entry_count // 64)), 1)
-
-        def _partition_chunks(entry_count: int, chunks: int) -> List[tuple[int, int]]:
-            parts: List[tuple[int, int]] = []
-            for k in range(chunks):
-                start = int(entry_count * (k / chunks))
-                end = int(entry_count * ((k + 1) / chunks))
-                if end > start:
-                    parts.append((start, end))
-            return parts
-
-        def _extract_chunk(ctx: _ChunkBase, outdir: str, indices: List[int], created_dirs: set[str]) -> None:
-
-            with open(ctx.file.filepath, "rb") as fs:
-                for i in indices:
-                    e = ctx.file.entries[i]
-                    h = e.combined_hash
-
-                    if h not in self._searched_paths:
-                        continue
-                    rel = self._searched_paths.get(h) or f"__Unknown/{h:016X}"
-                    dest = Path(outdir) / rel
-                    parent = str(dest.parent)
-                    if parent not in created_dirs:
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-                        created_dirs.add(parent)
-                    with open(dest, "wb") as f:
-                        _read_entry_raw(e, fs, f, chunk_table=ctx.file.chunk_table)
-                    ctx.found_hashes.append(h)
-                    ctx.file_count += 1
-
-        unpacked = 0
-        pak = PakFile()
-        for pakpath in self._enumerate_temp_paks_with_searched_files(pak):
-            entries = pak.entries
-            matched: List[tuple[int, int]] = []
-            sp = self._searched_paths
-            for idx, e in enumerate(entries):
-                if e.combined_hash in sp:
-                    matched.append((int(e.offset), idx))
-            if not matched:
-                if self.enable_console_logging:
-                    print(f"Finished unpacking {pakpath}")
-                continue
-
-            matched.sort(key=lambda t: t[0])
-            matched_indices = [i for _, i in matched]
-
-            threads = _calc_threads(len(matched_indices))
-            created_dirs: set[str] = set()
-            if threads == 1:
-                ctx = _ChunkBase(pak, 0, len(matched_indices))
-                _extract_chunk(ctx, output_directory, matched_indices, created_dirs)
-                unpacked += ctx.file_count
-
-                for h in ctx.found_hashes:
-                    p = self._searched_paths.get(h)
-                    if p is None:
-                        continue
-                    for k in self._path_to_hashes.get(p, []):
-                        self._searched_paths.pop(k, None)
-                    self._path_to_hashes.pop(p, None)
-            else:
-
-                parts = _partition_chunks(len(matched_indices), threads)
-                contexts = [_ChunkBase(pak, s, e) for (s, e) in parts]
-                with ThreadPoolExecutor(max_workers=threads) as ex:
-                    futures = [
-                        ex.submit(
-                            _extract_chunk,
-                            ctx,
-                            output_directory,
-                            matched_indices[ctx.start : ctx.end],
-                            created_dirs,
-                        )
-                        for ctx in contexts
-                    ]
-                    wait(futures)
-                for ctx in contexts:
-                    unpacked += ctx.file_count
-                    for h in ctx.found_hashes:
-                        p = self._searched_paths.get(h)
-                        if p is None:
-                            continue
-                        for k in self._path_to_hashes.get(p, []):
-                            self._searched_paths.pop(k, None)
-                        self._path_to_hashes.pop(p, None)
-
-            if self.enable_console_logging:
-                print(f"Finished unpacking {pakpath}")
-            if not self._searched_paths:
-                break
-
-        if missing_files is not None:
-
-            missing_files.extend(self._searched_paths.values())
-        return unpacked
-
-
-    def _enumerate_temp_paks_with_searched_files(self, pak: PakFile) -> Iterable[str]:
-        for i in range(len(self.pak_file_priority) - 1, -1, -1):
-            pakfile = self.pak_file_priority[i]
-            try:
-                if os.path.getsize(pakfile) <= 16:
-                    continue
-            except FileNotFoundError:
-                continue
-            pak.filepath = pakfile
-            with open(pakfile, "rb") as f:
-                pak.read_contents(f, self._searched_paths)
-            if pak.entries:
-                yield pakfile
-
-    def _read_entries_in_chunk_to_memory(self, ctx: _ChunkBase) -> Iterator[Tuple[PakEntry, io.BytesIO]]:
-        with open(ctx.file.filepath, "rb") as fs:
-            for i in range(ctx.start, ctx.end):
-                e = ctx.file.entries[i]
-                h = e.combined_hash
-                if h not in self._searched_paths:
-                    continue
-
-                if e.compressed_size > (1 << 31) or e.decompressed_size > (1 << 31):
-                    raise RuntimeError("PAK entry size exceeds int range")
-                buf = io.BytesIO()
-
-                _read_entry_raw(e, fs, buf, chunk_table=ctx.file.chunk_table)
-
-                ctx.found_hashes.append(h)
-                ctx.file_count += 1
-                yield e, buf
 
 
 class CachedPakReader(PakReader):

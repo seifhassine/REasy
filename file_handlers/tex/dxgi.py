@@ -28,21 +28,12 @@ DXGI_FORMAT_B5G6R5_UNORM = 85
 DXGI_FORMAT_B5G5R5A1_UNORM = 86
 DXGI_FORMAT_B8G8R8A8_UNORM = 87
 DXGI_FORMAT_B8G8R8A8_UNORM_SRGB = 91
-DXGI_FORMAT_VIAEXTENSION = 0x400
-DXGI_FORMAT_FORCE_UINT = 0x7FFFFFFF
-
 _BC8BPP = {DXGI_FORMAT_BC2_UNORM, DXGI_FORMAT_BC2_UNORM_SRGB, DXGI_FORMAT_BC3_UNORM, DXGI_FORMAT_BC3_UNORM_SRGB, DXGI_FORMAT_BC5_UNORM, DXGI_FORMAT_BC5_SNORM, DXGI_FORMAT_BC6H_UF16, DXGI_FORMAT_BC6H_SF16, DXGI_FORMAT_BC7_UNORM, DXGI_FORMAT_BC7_UNORM_SRGB}
 _BC4BPP = {DXGI_FORMAT_BC1_UNORM, DXGI_FORMAT_BC1_UNORM_SRGB, DXGI_FORMAT_BC4_UNORM, DXGI_FORMAT_BC4_SNORM}
 _BC_ALL = _BC8BPP | _BC4BPP
 
-def is_astc_format(dxgi_format: int) -> bool:
-    return (dxgi_format & DXGI_FORMAT_VIAEXTENSION) != 0 and dxgi_format != DXGI_FORMAT_FORCE_UINT
-
 def is_block_compressed(dxgi_format: int) -> bool:
     return dxgi_format in _BC_ALL
-
-def is_rgb_format(dxgi_format: int) -> bool:
-    return not is_astc_format(dxgi_format) and not is_block_compressed(dxgi_format) and dxgi_format != DXGI_FORMAT_FORCE_UINT
 
 def get_bits_per_pixel(dxgi_format: int) -> int:
     if dxgi_format in _BC4BPP:
@@ -122,25 +113,4 @@ def describe_format(dxgi_format: int) -> dict:
     bs = get_block_size_bytes(dxgi_format) if comp else 0
     return {'name': dxgi_name(dxgi_format), 'compressed': comp, 'bits_per_pixel': bpp, 'block_size': bs}
 
-def get_pil_compatible_format(dxgi_format: int) -> int:
-    format_mapping = {
-        DXGI_FORMAT_BC1_UNORM_SRGB: DXGI_FORMAT_BC1_UNORM,
-        DXGI_FORMAT_BC2_UNORM_SRGB: DXGI_FORMAT_BC2_UNORM,
-        DXGI_FORMAT_BC3_UNORM_SRGB: DXGI_FORMAT_BC3_UNORM,
-        DXGI_FORMAT_BC7_UNORM_SRGB: DXGI_FORMAT_BC7_UNORM,
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_BC4_SNORM: DXGI_FORMAT_BC4_UNORM,
-        DXGI_FORMAT_B8G8R8A8_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_B5G6R5_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_B5G5R5A1_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R16G16B16A16_FLOAT: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R16G16B16A16_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R10G10B10A2_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R8G8_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R8_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_A8_UNORM: DXGI_FORMAT_R8G8B8A8_UNORM,
-    }
-    
-    return format_mapping.get(dxgi_format, dxgi_format)
 

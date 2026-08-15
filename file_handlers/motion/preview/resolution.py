@@ -91,10 +91,6 @@ class PreviewMotionEntry:
             return self.motion._value
         return self.motion
 
-    @property
-    def is_loaded(self) -> bool:
-        return self.loaded_motion is not None
-
 
 @dataclass(frozen=True, slots=True)
 class MotionResolutionDiagnostic:

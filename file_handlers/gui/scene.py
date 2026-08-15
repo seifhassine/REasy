@@ -7,12 +7,11 @@ import re
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterator
 
 from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
 
-from .codec import parse_gui, parse_gui_file
+from .codec import parse_gui
 from .errors import GuiFormatError, GuiSceneError
 from .model import (
     ZERO_GUID,
@@ -154,36 +153,6 @@ class GuiWorkspace:
         result = cls(resources, root_key, selected)
         result.missing_dependencies = missing
         return result
-
-    @classmethod
-    def from_root(
-        cls,
-        root: str | Path,
-        *,
-        profile: GuiFormatProfile | None = None,
-    ) -> "GuiWorkspace":
-        root = Path(root)
-        resources = []
-        selected = profile
-        for path in sorted(root.rglob("*.gui.*")):
-            try:
-                document = parse_gui_file(path, profile=selected)
-                key = normalize_gui_resource_path(path.relative_to(root).as_posix())
-            except (GuiFormatError, GuiSceneError):
-                raise
-            document_profile = gui_profile(document.version)
-            if selected is None:
-                selected = document_profile
-            elif document_profile != selected:
-                raise GuiSceneError(
-                    f"mixed GUI profiles below {root}: "
-                    f"{selected.name!r} and {document_profile.name!r}"
-                )
-            resources.append(GuiResource(key, str(path), document))
-        if not resources:
-            raise GuiSceneError(f"no supported GUI files below {root}")
-        assert selected is not None
-        return cls(resources, resources[0].key, selected)
 
     def _resolve_symbol(
         self,

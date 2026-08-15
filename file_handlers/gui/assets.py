@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Iterable
 
 from file_handlers.mdf.mdf_file import MdfFile
 from file_handlers.mesh.mesh_file import MeshFile
@@ -19,10 +18,6 @@ from utils.resource_file_utils import (
 
 from .errors import GuiAssetError
 from .profiles import GuiFormatProfile
-
-
-def _resource_key(value: str) -> str:
-    return normalize_resource_path(value).casefold()
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,15 +42,6 @@ class ResolvedUvPattern:
     @property
     def mirrored_y(self) -> bool:
         return self.uv_bounds[3] < self.uv_bounds[1]
-
-
-@dataclass(frozen=True, slots=True)
-class ResolvedTexture:
-    reference: str
-    resource: str
-    resource_kind: str
-    size: tuple[int, int] | None = None
-    format: int | None = None
 
 
 class GuiAssetCatalog:
@@ -223,47 +209,3 @@ class GuiAssetCatalog:
             texture_size=(texture.header.width, texture.header.height),
             texture_format=texture.header.format,
         )
-
-    def resolve_texture(self, reference: str) -> ResolvedTexture:
-        normalized = _resource_key(reference)
-        if normalized.endswith(".rtex"):
-            resolved = self.resource_data_loader(reference)
-            if resolved is None:
-                raise GuiAssetError(
-                    f"unable to resolve runtime texture resource {reference!r}"
-                )
-            return ResolvedTexture(reference, str(resolved[0]), "runtime_texture")
-        if not normalized.endswith(".tex") and ".tex." not in normalized:
-            raise GuiAssetError(f"not a GUI texture reference: {reference!r}")
-        source, texture = self.load_tex(reference)
-        return ResolvedTexture(
-            reference,
-            source,
-            "tex",
-            (texture.header.width, texture.header.height),
-            texture.header.format,
-        )
-
-
-def iter_gui_uv_pairs(
-    obj,
-    properties: dict[str, object],
-) -> Iterable[tuple[str, int, int]]:
-    """Yield every static UVS pair consumed by one serialized GUI object."""
-
-    reference = properties.get("UVSequence")
-    if not isinstance(reference, str) or not reference:
-        return
-    payload = getattr(obj, "special_data", None)
-    if hasattr(payload, "entries"):
-        for entry in payload.entries:
-            yield reference, int(entry.sequence), int(entry.pattern)
-        return
-    if hasattr(payload, "cells"):
-        for cell in payload.cells:
-            yield reference, int(cell.sequence), int(cell.pattern)
-        return
-    if properties.get("AssetType") == "Texture":
-        return
-    if "UVSequenceNo" in properties and "UVPatternNo" in properties:
-        yield reference, int(properties["UVSequenceNo"]), int(properties["UVPatternNo"])

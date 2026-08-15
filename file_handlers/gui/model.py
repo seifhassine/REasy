@@ -226,11 +226,6 @@ class GuiDocument:
                 result.append(animation)
         return result
 
-    @property
-    def unowned_objects(self) -> list[GuiObject]:
-        owned = {id(item) for item in self._owned_objects()}
-        return [item for item in self.objects if id(item) not in owned]
-
     def symbol(self, guid: uuid.UUID) -> GuiSymbol | None:
         return next((item for item in self.symbols if item.guid == guid), None)
 
@@ -259,33 +254,6 @@ class GuiDocument:
             if len({id(item) for item in symbol.animations}) != len(symbol.animations):
                 raise ValueError(f"symbol {symbol.name!r} contains a duplicate animation")
 
-    def set_property(
-        self,
-        recorder: ChangeRecorder,
-        obj: GuiObject,
-        prop: GuiProperty,
-        value: GuiValue,
-    ) -> None:
-        if prop not in obj.properties and prop not in obj.animation_defaults:
-            raise ValueError("property is not owned by the selected object")
-        if prop.name == "Name" and isinstance(value, str):
-            self.rename_object(recorder, obj, value)
-        else:
-            recorder.set(prop, "value", _copy(value))
-
-    def set_effective_property(
-        self,
-        recorder: ChangeRecorder,
-        obj: GuiObject,
-        name: str,
-        value: GuiValue,
-    ) -> None:
-        """Set a displayed value while preserving its component-mask layering."""
-
-        if name == "Name" and isinstance(value, str):
-            self.rename_object(recorder, obj, value)
-            return
-        self.set_effective_records(recorder, obj.properties, name, value)
 
     def set_effective_records(
         self,
@@ -380,56 +348,6 @@ class GuiDocument:
                 result.append((binding, chain))
         return result
 
-    def set_object_guid(
-        self,
-        recorder: ChangeRecorder,
-        obj: GuiObject,
-        guid: uuid.UUID,
-    ) -> None:
-        if any(item is not obj and item.instance_guid == guid for item in self.objects):
-            raise ValueError(f"object GUID {guid} is already in use")
-        old, new = obj.instance_guid.bytes_le, guid.bytes_le
-        recorder.set(obj, "instance_guid", guid)
-        self._retarget_clip_guid(recorder, old, new)
-
-    def set_symbol_guid(
-        self,
-        recorder: ChangeRecorder,
-        symbol: GuiSymbol,
-        guid: uuid.UUID,
-    ) -> None:
-        if any(item is not symbol and item.guid == guid for item in self.symbols):
-            raise ValueError(f"symbol GUID {guid} is already in use")
-        old = symbol.guid
-        recorder.set(symbol, "guid", guid)
-        for obj in self.objects:
-            if obj.prototype_guid == old:
-                recorder.set(obj, "prototype_guid", guid)
-
-    def set_animation_guid(
-        self,
-        recorder: ChangeRecorder,
-        animation: GuiAnimation,
-        guid: uuid.UUID,
-    ) -> None:
-        if any(item is not animation and item.guid == guid for item in self.animations):
-            raise ValueError(f"animation GUID {guid} is already in use")
-        old, new = animation.guid.bytes_le, guid.bytes_le
-        recorder.set(animation, "guid", guid)
-        self._retarget_clip_guid(recorder, old, new)
-
-    def _retarget_clip_guid(
-        self,
-        recorder: ChangeRecorder,
-        old: bytes,
-        new: bytes,
-    ) -> None:
-        for owner in self.animations:
-            for node in iter_clip_nodes(owner.clip.root):
-                if node.root_guid == old:
-                    recorder.set(node, "root_guid", new)
-                if node.extra_guid == old:
-                    recorder.set(node, "extra_guid", new)
 
     def summary(self) -> dict[str, int | str]:
         properties = [item for obj in self.objects for item in obj.properties]

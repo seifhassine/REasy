@@ -60,13 +60,6 @@ class GlyphFallbackPolicy:
                 )
         return GlyphResolution(int(codepoint), None, 0, None, None, None)
 
-    def missing_advance(self, codepoint: int, base_dimension: float) -> float:
-        if codepoint == 0x0009:
-            return float(base_dimension) * self.tab_advance_scale
-        if codepoint == 0x0020:
-            return float(base_dimension) * self.space_advance_scale
-        return float(base_dimension)
-
 
 # Recovered from DMC5's GUI text path. The policy is explicit so a newer game
 # can register a different chain without changing the SFNT or catalog code.

@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from .mesh_file import MeshMainVersion
+from .mesh_file import MeshMainVersion, _checked_slice
 
 
 @dataclass(frozen=True)
@@ -15,15 +15,6 @@ class BlendShapeAABB:
     maximum: Tuple[float, float, float]
     minimum_w: float = 0.0
     maximum_w: float = 0.0
-
-    @property
-    def minimum4(self) -> Tuple[float, float, float, float]:
-        return (*self.minimum, self.minimum_w)
-
-    @property
-    def maximum4(self) -> Tuple[float, float, float, float]:
-        return (*self.maximum, self.maximum_w)
-
 
 @dataclass(frozen=True)
 class BlendShapeTargetRange:
@@ -89,18 +80,6 @@ class BlendShapeData:
             name_index = name_indices[channel.name_slot]
             if 0 <= name_index < len(names):
                 channel.name = names[name_index]
-
-
-def _checked_slice(
-    data: bytes | bytearray,
-    start: int,
-    size: int,
-    label: str,
-) -> bytes:
-    end = start + size
-    if start < 0 or size < 0 or end > len(data):
-        raise ValueError(f"{label} range [{start}, {end}) exceeds {len(data)} bytes")
-    return bytes(memoryview(data)[start:end])
 
 
 def _unpack(fmt: str, data: bytes | bytearray, offset: int, label: str):

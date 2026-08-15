@@ -286,23 +286,6 @@ def resolve_resource_data(
     return None
 
 
-def resolve_app_resource_data(
-    app,
-    resource_path: str,
-    selection_parent=None,
-    *,
-    allow_selection_dialog: bool = True,
-) -> Optional[Tuple[str, bytes]]:
-    context = resource_context_for_app(app)
-    return (
-        context.resolve(
-            resource_path,
-            selection_parent,
-            allow_selection_dialog=allow_selection_dialog,
-        )
-        if context is not None
-        else None
-    )
 
 
 def resource_context_for_app(
@@ -378,17 +361,6 @@ def resolve_handler_resource_data(
     )
 
 
-def find_resource_in_paks(resource_path: str, pak_cached_reader, selection_parent=None) -> Optional[Tuple[str, bytes]]:
-    match = find_matching_pak_path(pak_cached_reader, _resource_path_candidates(resource_path), selection_parent)
-    return _read_pak_path(match, pak_cached_reader) if match else None
-
-
-def find_resource_in_filesystem(resource_path: str, unpacked_dir: str, path_prefix: str) -> Optional[Tuple[str, bytes]]:
-    for c in _resource_path_candidates(resource_path):
-        hit = _find_resource_in_root(c, unpacked_dir, path_prefix)
-        if hit:
-            return hit
-    return None
 
 
 def _resolve_destination_relative_path(resource_path: str, source_path: str | None, unpacked_dir: str, path_prefix: str) -> str:

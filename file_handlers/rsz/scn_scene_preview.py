@@ -306,19 +306,6 @@ class ScnScenePreviewWidget(QWidget):
             recompute_bounds=False,
         )
 
-    def restore_mesh_transforms(self, keys: set[str]) -> None:
-        if not keys:
-            return
-        matrices = {
-            renderable.key: renderable.world_matrix
-            for graph in self.graphs
-            for renderable in graph.renderables
-            if renderable.key in keys
-        }
-        self.preview.update_mesh_transforms(
-            matrices,
-            recompute_bounds=False,
-        )
 
     def _sync_preview_materials(self) -> None:
         self._materials.refresh()

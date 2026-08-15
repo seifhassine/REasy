@@ -32,7 +32,6 @@ from file_handlers.rsz.rsz_data_types import (
 )
 from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError
-from utils.type_registry import TypeRegistry
 from ui.styles import get_color_scheme, get_tree_stylesheet
 from ..pyside.tree_model import DataTreeBuilder
 from ..pyside.tree_core import DeferredChildBuilder
@@ -49,7 +48,6 @@ from .utils.rsz_field_utils import (
     create_default_field_value,
     create_field_from_definition,
     iter_field_references,
-    update_references_with_mapping,
     shift_references_above_threshold,
 )
 from .utils.rsz_guid_utils import create_guid_data
@@ -234,30 +232,16 @@ class RszHandler(BaseFileHandler):
         """Get the array clipboard instance"""
         return RszArrayClipboard
     
-    def get_gameobject_clipboard(self):
-        """Get the GameObject clipboard instance"""
-        if not self.gameobject_clipboard:
-            self.gameobject_clipboard = RszGameObjectClipboard()
-        return self.gameobject_clipboard
-
     def get_component_clipboard(self):
         """Get the component clipboard instance."""
         if not self.component_clipboard:
             self.component_clipboard = RszComponentClipboard()
         return self.component_clipboard
         
-    def copy_array_element_to_clipboard(self, widget, element, array_type, embedded_context=None):
-        """Copy an array element to clipboard through the handler"""
-        return self.get_array_clipboard().copy_to_clipboard(widget, element, array_type, embedded_context)
-    
     def copy_gameobject_to_clipboard(self, widget, gameobject_id, embedded_context=None):
         """Copy a GameObject to clipboard through the handler"""
         return RszGameObjectClipboard.copy_gameobject_to_clipboard(widget, gameobject_id, embedded_context)
         
-    def paste_array_element_from_clipboard(self, widget, array_operations, array_data, array_item, embedded_context=None):
-        """Paste an array element from clipboard through the handler"""
-        return self.get_array_clipboard().paste_from_clipboard(widget, array_operations, array_data, array_item, embedded_context)
-    
     def paste_gameobject_from_clipboard(self, viewer=None, parent_id=-1, new_name=None, clipboard_data=None):
         """Paste a GameObject from clipboard through the handler"""
         actual_viewer = viewer if viewer is not None else self
@@ -274,10 +258,6 @@ class RszHandler(BaseFileHandler):
         """Get GameObject clipboard data through the handler"""
         return RszGameObjectClipboard.get_clipboard_data(widget)
         
-    def is_clipboard_compatible(self, target_type, source_type):
-        """Check if clipboard data is compatible with target type through the handler"""
-        return self.get_array_clipboard().is_compatible(target_type, source_type)
-
     def has_gameobject_clipboard_data(self, widget):
         """Check if GameObject clipboard data exists without loading it"""
         return RszGameObjectClipboard.has_clipboard_data(widget)
@@ -393,15 +373,6 @@ class RszViewer(QWidget):
         """Handle cleanup before closing"""
         self.cleanup()
         super().closeEvent(event)
-
-    def load_scn(self, data: bytes, type_registry: TypeRegistry):
-        """Load SCN data and populate tree"""
-        self.type_registry = type_registry
-        self.scn.type_registry = type_registry
-        self.scn.debug = False
-        self.scn.read(data)
-        self._initialize_editor_services()
-        self.populate_tree()
 
     def supports_editing(self) -> bool:
         return True
@@ -1399,21 +1370,6 @@ class RszViewer(QWidget):
         """Build hierarchy structure from object references in embedded instances"""
         return RszInstanceOperations.build_reference_hierarchy(embedded_instances)
 
-    def _consolidate_root_nodes(self, hierarchy):
-        RszInstanceOperations.consolidate_reference_roots(hierarchy)
-
-    def _process_reference_for_hierarchy(self, instance_id, field_data, hierarchy):
-        from .utils.rsz_field_utils import collect_field_references
-
-        def process_object_ref(ref_obj):
-            if isinstance(ref_obj, ObjectData) and ref_obj.value in hierarchy:
-                child_id = ref_obj.value
-                if child_id != instance_id:
-                    hierarchy[instance_id]["children"].append(child_id)
-                    hierarchy[child_id]["parent"] = instance_id
-
-        collect_field_references({field_data: field_data}, process_object_ref)
-
     def _count_all_children(self, node_id, hierarchy, visited=None):
         if visited is None:
             visited = set()
@@ -1705,10 +1661,6 @@ class RszViewer(QWidget):
         for ui in self.scn._userdata_str_map.keys():
             if ui not in self.scn.userdata_infos:
                 del self.scn._userdata_str_map[ui]
-
-    def _update_fields_after_deletion(self, fields, deleted_ids, id_mapping):
-        update_references_with_mapping(fields, id_mapping, deleted_ids)
-        return fields
 
     def _initialize_new_instance(self, type_id, type_info):
         """Create a new instance from type info with proper CRC"""

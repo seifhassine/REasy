@@ -15,12 +15,6 @@ AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
 def is_windows() -> bool:
     return os.name == "nt"
 
-def windows_version_str() -> str:
-    if not is_windows():
-        return ""
-    v = sys.getwindowsversion()
-    return f"{v.major}.{v.minor}.{v.build}"
-
 class UpdateNotificationManager:
     def __init__(self, main_window, current_version):
         self.main_window = main_window

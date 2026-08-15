@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, replace
 
 from .pck_codec import (
     PckEntry,
+    _safe_slice,
     export_non_streaming_pck as export_non_streaming_pck,
     parse_pck_layout,
     rewrite_pck,
@@ -715,11 +716,6 @@ def extract_embedded_wem(data: bytes, track: BnkTrack) -> bytes:
     return _safe_slice(chunk, track.offset, track.length) if chunk else b""
 
 
-def extract_embedded_wem_from_data_chunk(data_chunk: bytes, track: BnkTrack) -> bytes:
-    if not track.available:
-        return b""
-    return _safe_slice(data_chunk, track.offset, track.length)
-
 
 def parse_wem_metadata(data: bytes, plugin_id: int | None = None) -> WemMetadata:
     kind = detect_media_kind(data, plugin_id)
@@ -823,11 +819,6 @@ def wwise_id_from_name(name: str) -> int:
     for byte in name.lower().encode("utf-8"):
         value = ((value * 16777619) ^ byte) & 0xFFFFFFFF
     return value
-
-
-def _safe_slice(data: bytes, offset: int, length: int) -> bytes:
-    end = offset + length
-    return b"" if offset < 0 or length < 0 or end > len(data) else data[offset:end]
 
 
 def _split_chunk_records(data: bytes) -> tuple[list[ChunkRecord], bytes]:
@@ -2123,33 +2114,6 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
     return bytes(out)
 
 
-def set_action_settings(
-    obj: HircObject,
-    *,
-    fade_curve: int,
-    bank_id: int | None = None,
-    apply_to_state_transitions: bool | None = None,
-    apply_to_dynamic_sequences: bool | None = None,
-) -> bytes:
-    """Compatibility helper for common legacy Play/Stop action fields."""
-
-    settings = obj.action_settings
-    if settings is None:
-        raise ValueError(f"Action-specific settings were not decoded for object {obj.object_id}")
-    updated = replace(settings, fade_curve=int(fade_curve))
-    if settings.kind == "play":
-        updated = replace(
-            updated,
-            bank_id=settings.bank_id if bank_id is None else bank_id,
-        )
-    elif settings.kind in {"stop", "pause", "resume"}:
-        flags = settings.stop_flags or 0
-        if apply_to_state_transitions is not None:
-            flags = (flags & ~0x02) | (int(bool(apply_to_state_transitions)) << 1)
-        if apply_to_dynamic_sequences is not None:
-            flags = (flags & ~0x04) | (int(bool(apply_to_dynamic_sequences)) << 2)
-        updated = replace(updated, stop_flags=flags)
-    return set_action_specific(obj, updated)
 
 
 def set_attenuation(obj: HircObject, settings: BnkAttenuation) -> bytes:

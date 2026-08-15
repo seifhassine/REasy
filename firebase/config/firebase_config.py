@@ -1,6 +1,5 @@
 """Firebase configuration for REasy community template sharing functionality."""
 
-import os
 
 
 class FirebaseConfig:

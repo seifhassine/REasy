@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-import struct
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -28,8 +26,6 @@ OBSERVED_ENCODINGS = {
         {0x21, 0x22, 0x23, 0x30, 0x31, 0x32, 0x33, 0x70, 0xB0}
     ),
 }
-
-_F32 = struct.Struct("<f")
 
 
 def bytes_per_key(family: TrackFamily, compression: int) -> int:
@@ -92,31 +88,6 @@ def parameter_count(family: TrackFamily, compression: int) -> int:
     raise MotionParseError(
         f"unsupported v65 parameter layout for {family.name}/0x{compression:02X}"
     )
-
-
-def _f32(value: float) -> float:
-    return _F32.unpack(_F32.pack(value))[0]
-
-
-def _sub(left: float, right: float) -> float:
-    return _f32(_f32(left) - _f32(right))
-
-
-def _mul(left: float, right: float) -> float:
-    return _f32(_f32(left) * _f32(right))
-
-
-def _sqrt(value: float) -> float:
-    return _f32(math.sqrt(max(0.0, _f32(value))))
-
-
-def canonical_quaternion_w(x: float, y: float, z: float) -> float:
-    """Reconstruct v65's nonnegative W with explicit float32 rounding."""
-
-    remaining = _sub(1.0, _mul(x, x))
-    remaining = _sub(remaining, _mul(y, y))
-    remaining = _sub(remaining, _mul(z, z))
-    return _sqrt(remaining)
 
 
 def decode_track_values(

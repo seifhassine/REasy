@@ -247,24 +247,6 @@ def find_embedded_context(item):
     return None
 
 
-def get_embedded_context_info(embedded_context):
-    """Get information about an embedded context."""
-    if not embedded_context:
-        return {
-            'domain_id': 0,
-            'has_instances': False,
-            'has_userdata': False,
-            'instance_count': 0,
-            'userdata_count': 0
-        }
-    
-    return {
-        'domain_id': getattr(embedded_context, 'instance_id', 0),
-        'has_instances': hasattr(embedded_context, 'embedded_instances'),
-        'has_userdata': hasattr(embedded_context, 'embedded_userdata_infos'),
-        'instance_count': len(getattr(embedded_context, 'embedded_instances', {})),
-        'userdata_count': len(getattr(embedded_context, 'embedded_userdata_infos', []))
-    }
 
 
 def mark_parent_chain_modified(rui, viewer=None):

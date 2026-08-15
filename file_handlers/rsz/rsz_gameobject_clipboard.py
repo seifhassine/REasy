@@ -126,18 +126,6 @@ class _GameObjectHelper:
                 return True
         return False
     
-    @staticmethod
-    def create_gameobject_result(gameobject, instance_id, name, parent_id, viewer):
-        """Create a standardized result dictionary for a GameObject"""
-        return {
-            "go_id": gameobject.id,
-            "instance_id": instance_id,
-            "name": name,
-            "parent_id": parent_id,
-            "reasy_id": viewer.handler.id_manager.get_reasy_id_for_instance(instance_id),
-            "component_count": gameobject.component_count,
-            "children": []
-        }
 
 
 class RszGameObjectClipboard(RszClipboardBase):
@@ -678,20 +666,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             "hierarchy":   hierarchy
         }
 
-    @staticmethod
-    def _paste_folder_from_json(viewer, folder_json, parent_index):
-        """Paste a folder from JSON data as a child of parent_index"""
-        name = folder_json.get("name", f"Folder_{folder_json.get('id', 0)}")
-        parent_id = folder_json.get("parent_id", -1)
-        if hasattr(viewer, "object_operations"):
-            folder_data = viewer.object_operations.create_folder(name, parent_id)
-        else:
-            folder_data = None
-        if not (folder_data and folder_data.get("success")):
-            return None
-        if hasattr(viewer.tree, "add_folder_to_ui_direct"):
-            return viewer.tree.add_folder_to_ui_direct(folder_data, parent_index)
-        return None
 
     @staticmethod
     def _paste_folder_with_fields(viewer, folder_data, parent_id, randomize_ids=True):
@@ -874,71 +848,7 @@ class RszGameObjectClipboard(RszClipboardBase):
         
         return child_results
 
-    @staticmethod
-    def _paste_gameobject_from_json(viewer, go_json, parent_index):
-        """Paste a GameObject from JSON data as a child of parent_index"""
-        clipboard_data = {
-            "name": go_json.get("name"),
-            "object_id": go_json.get("id"),
-            "instance_id": go_json.get("instance_id"),
-            "component_count": go_json.get("component_count"),
-            "components": go_json.get("components"),
-            "guid": go_json.get("guid"),
-            "prefab_path": go_json.get("prefab_path"),
-            "hierarchy": {}
-        }
-        result = RszGameObjectClipboard.paste_gameobject_from_clipboard(
-            viewer, parent_id=-1, new_name=go_json.get("name"), cached_clipboard_data=clipboard_data
-        )
-        if hasattr(viewer.tree, "add_gameobject_to_ui_direct") and result:
-            return viewer.tree.add_gameobject_to_ui_direct(result, parent_index)
-        return None
 
-    @staticmethod
-    def copy_folder_to_clipboard(viewer, folder_id):
-        if folder_id < 0 or folder_id >= len(viewer.scn.folder_infos):
-            print(f"Invalid Folder ID: {folder_id}")
-            return False
-            
-        source_folder = next((f for f in viewer.scn.folder_infos if f.id == folder_id), None)
-        if source_folder is None:
-            print(f"Folder with ID {folder_id} not found")
-            return False
-            
-        source_instance_id = RszGameObjectClipboard._get_instance_id(viewer, folder_id)
-        if source_instance_id <= 0:
-            print(f"Invalid instance ID for Folder {folder_id}")
-            return False
-            
-        source_name = get_instance_name_from_fields(
-            viewer.scn.parsed_elements.get(source_instance_id, {}),
-            RszGameObjectClipboard.DEFAULT_GO_NAME,
-        )
-        
-        child_gameobjects = RszGameObjectClipboard._collect_child_gameobjects(viewer, folder_id)
-        
-        if child_gameobjects:
-            hierarchy = RszGameObjectClipboard._serialize_folder_hierarchy_without_root(
-                viewer, folder_id, child_gameobjects
-            )
-        else:
-            hierarchy = RszGameObjectClipboard._serialize_gameobject_hierarchy(
-                viewer, folder_id, [], child_gameobjects
-            )
-        
-        folder_data = {
-            "name": source_name,
-            "id": folder_id,
-            "instance_id": source_instance_id,
-            "children": [child.id for child in child_gameobjects],
-            "hierarchy": hierarchy
-        }
-        
-        instance = RszGameObjectClipboard.get_instance()
-        instance.save_clipboard_data(viewer, folder_data)
-            
-        print(f"Copied Folder '{source_name}' (ID: {folder_id}) to clipboard with {len(child_gameobjects)} children")
-        return True
         
     @staticmethod
     def paste_gameobject_from_clipboard(viewer, parent_id=-1, new_name=None, cached_clipboard_data=None):
@@ -948,13 +858,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             is_folder=False, create_prefab=True, randomize_ids=True
         )
 
-    @staticmethod
-    def paste_folder_from_clipboard(viewer, parent_id=-1, new_name=None, cached_clipboard_data=None):
-        """Paste a Folder from clipboard"""
-        return RszGameObjectClipboard._paste_hierarchy_from_clipboard(
-            viewer, parent_id, new_name, cached_clipboard_data, 
-            is_folder=True, create_prefab=False
-        )
     _export_override_dir = None
 
     @staticmethod

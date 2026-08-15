@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional, Any
+from typing import List, Optional
 from .base_model import BaseModel, FileHandler
 from .shape_types import ShapeType, read_shape, write_shape
 from utils.hash_util import murmur3_hash

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
 from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
@@ -65,48 +65,6 @@ class MatHeader:
     _pos: int = field(default=0, init=False, repr=False)
     _orig_param_count: int = field(default=0, init=False, repr=False)
     _orig_params_size: int = field(default=0, init=False, repr=False)
-
-    def get_flags1(self) -> int:
-        return self.material_flags & 0x03FF
-
-    def set_flags1(self, value: int):
-        self.material_flags = (self.material_flags & ~0x03FF) | (value & 0x03FF)
-
-    def get_transparent_zpostpass(self, version: int) -> bool:
-        if version >= 31:
-            return bool((self.material_flags >> 10) & 1)
-        return False
-
-    def set_transparent_zpostpass(self, value: bool, version: int):
-        if version >= 31:
-            if value:
-                self.material_flags |= (1 << 10)
-            else:
-                self.material_flags &= ~(1 << 10)
-
-    def get_tessellation(self, version: int = 0) -> int:
-        if version >= 31:
-            return (self.material_flags >> 11) & 0x1F
-        else:
-            return (self.material_flags >> 10) & 0x3F
-
-    def set_tessellation(self, value: int, version: int = 0):
-        if version >= 31:
-            self.material_flags = (self.material_flags & ~0xF800) | ((value & 0x1F) << 11)
-        else:
-            self.material_flags = (self.material_flags & ~0xFC00) | ((value & 0x3F) << 10)
-
-    def get_phong(self) -> int:
-        return (self.material_flags >> 16) & 0xFF
-
-    def set_phong(self, value: int):
-        self.material_flags = (self.material_flags & ~0xFF0000) | ((value & 0xFF) << 16)
-
-    def get_flags2(self) -> int:
-        return (self.material_flags >> 24) & 0xFF
-
-    def set_flags2(self, value: int):
-        self.material_flags = (self.material_flags & ~0xFF000000) | ((value & 0xFF) << 24)
 
     def read(self, h: BinaryHandler, version: int):
         self._pos = h.tell
@@ -615,37 +573,3 @@ class MdfFile:
                     mat.header.rewrite(h, version)
 
         return h.get_all_bytes()
-
-    @staticmethod
-    def _in_range(val: int, size: int) -> bool:
-        return 0 <= val < size
-
-    def _mat_header_is_plausible(self, mh: MatHeader, version: int, size: int) -> bool:
-        if version >= 19 and mh.gpbf_name_count != mh.gpbf_data_count:
-            return False
-        for off in [mh.tex_header_offset, mh.param_header_offset, mh.gpbf_offset if version >= 19 else 0]:
-            if off != 0 and not self._in_range(off, size):
-                return False
-        if mh.tex_header_offset and mh.tex_count >= 0:
-            per = 32 if version >= 13 else 24
-            end = mh.tex_header_offset + per * mh.tex_count
-            if end > size:
-                return False
-        if mh.param_header_offset and mh.param_count >= 0:
-            per = 24
-            end = mh.param_header_offset + per * mh.param_count
-            if end > size:
-                return False
-        if mh.params_size >= 0:
-            if mh.param_count == 0 and mh.params_size == 0:
-                if not (0 <= mh.params_offset <= size):
-                    return False
-            else:
-                if not self._in_range(mh.params_offset, size):
-                    return False
-                end = mh.params_offset + mh.params_size
-                if end > size:
-                    return False
-        if mh.mat_name and mh.mat_name_hash == 0:
-            return False
-        return True

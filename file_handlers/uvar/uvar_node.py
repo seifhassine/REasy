@@ -1,5 +1,4 @@
 from typing import List
-import struct
 
 from .base_model import BaseModel, FileHandler
 from .node_parameter import NodeParameter
@@ -60,19 +59,6 @@ class UvarNode(BaseModel):
         handler.write('<h', self.value_count)
         handler.write('<I', self.ukn_count)
         return True
-        
-    def flush_data(self, handler: FileHandler):
-        if self.name:
-            name_pos = handler.tell
-            handler.write_at(self.start_offset + 0, '<Q', name_pos)
-            handler.write_string(self.name, 'ascii')
-            handler.align(16)
-        if self.parameters:
-            data_pos = handler.tell
-            handler.write_at(self.start_offset + 8, '<Q', data_pos)
-            for p in self.parameters:
-                p.write(handler)
-            handler.align_write(16)
         
     def __repr__(self) -> str:
         return f"UvarNode(id={self.node_id}, name='{self.name}', values={self.value_count})"

@@ -1,4 +1,3 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtGui import QColor, QPainter, QPixmap, QPen, QBrush
 
@@ -26,26 +25,6 @@ def _paint_checkerboard(painter, rect):
     painter.restore()
 
 
-def create_color_preview_pixmap(r, g, b, a=255, width=24, height=24):
-    pixmap = QPixmap(width, height)
-    pixmap.fill(Qt.transparent)
-    
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing, False)
-    
-    color = QColor(int(r), int(g), int(b), int(a))
-    rect = pixmap.rect()
-    
-    if a < 255:
-        _paint_checkerboard(painter, rect)
-    
-    painter.fillRect(rect, color)
-    
-    painter.setPen(QPen(QColor(136, 136, 136), 1))
-    painter.drawRect(rect.adjusted(0, 0, -1, -1))
-    
-    painter.end()
-    return pixmap
 
 
 def get_color_preview_brush(r, g, b, a=255, size=24):

@@ -631,18 +631,6 @@ class FileTab:
             )
             return False
 
-    def replace_viewer(self, viewer):
-        """Replace the active viewer while preserving the tab's tree fallback."""
-        self._cleanup_viewer()
-        layout = self.notebook_widget.layout()
-        self._cleanup_layout(layout)
-        self.viewer = viewer
-        if viewer:
-            layout.addWidget(viewer)
-            viewer.modified_changed.connect(self._on_viewer_modified)
-        else:
-            layout.addWidget(self.tree)
-
     def _cleanup_viewer(self, viewer=None, handler=None):
         target = viewer if viewer is not None else self.viewer
         owner = handler if handler is not None else self.handler

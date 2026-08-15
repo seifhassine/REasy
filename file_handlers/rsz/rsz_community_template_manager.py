@@ -241,9 +241,6 @@ class RszCommunityTemplateManager:
             return {"success": False, "message": f"Storage upload failed: {msg}"}
         return {"success": True, "meta": r.json()}
     
-    @classmethod
-    def _get_session_with_retry(cls):
-        return cls._session()
     
     @classmethod
     def get_api_base_url(cls) -> str:

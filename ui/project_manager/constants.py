@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-import re
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui  import QPainter, QColor, QPixmap
 
@@ -15,10 +14,6 @@ PROJECTS_ROOT = BASE_DIR / "projects"
 
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
-
-def slug(text: str) -> str:
-    """Filesystem‑friendly name."""
-    return re.sub(r"[^\w\- ]", "", text).strip()
 
 def ensure_projects_root() -> None:
     ensure_dir(PROJECTS_ROOT)

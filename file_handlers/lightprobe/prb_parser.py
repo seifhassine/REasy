@@ -208,15 +208,3 @@ def _grid_dimensions(
         linear_x_stride // linear_y_stride,
         linear_y_stride,
     )
-
-
-def parse_prb_v9(data: bytes) -> PrbData:
-    return parse_prb(data, version=9)
-
-
-def parse_prb_v10(data: bytes) -> PrbData:
-    return parse_prb(data, version=10)
-
-
-def parse_prb_v11(data: bytes) -> PrbData:
-    return parse_prb(data, version=11)

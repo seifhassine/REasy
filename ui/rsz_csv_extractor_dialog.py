@@ -382,15 +382,7 @@ class RszCsvExtractorDialog(QDialog):
         if path:
             self.root_dir_edit.setText(path)
 
-    def _get_or_cache_registry(self, json_path: str) -> TypeRegistry:
-        reg = _REGISTRY_CACHE.get(json_path)
-        if reg is None:
-            reg = TypeRegistry(json_path)
-            _REGISTRY_CACHE[json_path] = reg
-        return reg
 
-    def _ensure_registry_loaded(self):
-        return
 
     def _load_types(self):
         json_path = self.json_path_edit.text().strip()

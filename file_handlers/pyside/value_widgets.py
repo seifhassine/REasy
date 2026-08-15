@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
-                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
+                              QGridLayout, QLabel, QComboBox, QCheckBox, QSizePolicy,
                               QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import (

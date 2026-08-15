@@ -268,14 +268,6 @@ def validate_game_executable(exe_path):
     return True, None
 
 
-def validate_list_file(list_path):
-    if not list_path:
-        return False, "No list file path provided"
-    if not os.path.exists(list_path):
-        return False, f"File does not exist: {list_path}"
-    if not os.path.isfile(list_path):
-        return False, f"Path is not a file: {list_path}"
-    return True, None
 
 
 class ExePathExtractor:
@@ -395,8 +387,6 @@ class ExePathExtractor:
 
         return True, None, len(self.collected_paths)
 
-    def extract_paths_from_exe(self, exe_path, progress_callback=None):
-        return self.extract_paths_from_binary_file(exe_path, progress_callback, source_label="executable")
     
     def export_to_file(self, output_path):
         try:
@@ -1058,35 +1048,6 @@ class PathCollector:
         except Exception as e:
             return False, f"Failed to process list file: {e}"
     
-    def generate_improved_paths_from_list(self, list_file_path, progress_callback=None, override_prefix=False):
-        if not os.path.exists(list_file_path):
-            return False, f"List file not found: {list_file_path}", 0, 0
-
-        try:
-            entries = sorted(self._collect_improver_entries(list_file_path, override_prefix=override_prefix))
-
-            if not entries:
-                return False, "No valid list entries found to improve", 0, 0
-
-            self.collected_paths.clear()
-
-            for idx, (stem, extension) in enumerate(entries, 1):
-                if progress_callback:
-                    should_stop = progress_callback(
-                        f"Generating combinations for list entry {idx}/{len(entries)}", idx, len(entries)
-                    )
-                    if should_stop:
-                        break
-
-                for suffix in self._iter_extension_suffixes(extension):
-                    self.collected_paths.add(f"{stem}.{suffix}".lower())
-
-            if progress_callback:
-                progress_callback("List improver combination generation complete", len(entries), len(entries))
-
-            return True, None, len(entries), len(self.collected_paths)
-        except Exception as e:
-            return False, f"Failed to build improved list combinations: {e}", 0, 0
 
     def _collect_pak_hashes(self, pak_directory, progress_callback=None):
         from file_handlers.pak import scan_pak_files, PakFile

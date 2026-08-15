@@ -43,6 +43,3 @@ class HighlightManager(QObject):
     
     def is_item_highlighted(self, item_id):
         return item_id in self._highlighted_items
-    
-    def clear_highlights(self):
-        self._highlighted_items.clear()

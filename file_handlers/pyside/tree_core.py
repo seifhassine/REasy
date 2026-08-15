@@ -3,8 +3,7 @@ Consolidated tree infrastructure that handles both eager and lazy-loading approa
 """
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
-from PySide6.QtWidgets import QAbstractItemView, QStyledItemDelegate
-from typing import Callable, Optional, Any
+from typing import Callable, Any
 from utils.number_format import format_display_value
 
 class DeferredChildBuilder:
@@ -21,9 +20,6 @@ class DeferredChildBuilder:
             self._children = self.builder_func(self.context) if self.context else self.builder_func()
             self._built = True
         return self._children or []
-    
-    def is_built(self) -> bool:
-        return self._built
     
     def reset(self):
         self._built = False
@@ -240,30 +236,3 @@ class TreeModel(QAbstractItemModel):
         self.endRemoveRows()
         return True
 
-class TreeStyleDelegate(QStyledItemDelegate):
-    """Style delegate for tree items"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.default_row_height = 24 
-        
-    def sizeHint(self, option, index):
-        """Ensure consistent row height for all items"""
-        size = super().sizeHint(option, index)
-        
-        # Get the tree view if available
-        tree_view = self.parent()
-        if tree_view and hasattr(tree_view, 'default_row_height'):
-            self.default_row_height = tree_view.default_row_height
-            
-        size.setHeight(self.default_row_height)
-        return size
-
-
-class AdvancedTreeDelegate(QAbstractItemView):
-    """Base delegate for more advanced tree rendering"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._model = None
-
-    def sizeHintForRow(self, row):
-        return 24

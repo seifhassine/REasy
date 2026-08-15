@@ -1,5 +1,4 @@
 from enum import IntEnum
-from typing import List, Tuple
 
 from utils.number_format import format_display_value, format_float_sequence
 

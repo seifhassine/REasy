@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from file_handlers.gcf.model import FontSlotMapping, GcfData
 from file_handlers.oft.oft_file import OftFile
 from utils.resource_file_utils import (
     ResourceDataLoader,
-    ResourceResolutionContext,
 )
 
-from .glyphs import DMC5_GUI_GLYPH_POLICY, GlyphFallbackPolicy, GlyphResolution
-from .sfnt import SfntFont, SfntGlyphMetric, SfntLineMetrics
+from .glyphs import DMC5_GUI_GLYPH_POLICY, GlyphFallbackPolicy
+from .sfnt import SfntFont, SfntGlyphMetric
 
 
 class FontCatalogError(ValueError):
@@ -82,52 +80,11 @@ class FontFaceAsset:
             / self.font.units_per_em
         )
 
-    def scaled_line_metrics(
-        self, em_size: float, *, vertical: bool = False
-    ) -> tuple[float, float, float]:
-        metrics: SfntLineMetrics | None = (
-            self.font.vertical_line_metrics
-            if vertical
-            else self.font.horizontal_line_metrics
-        )
-        metrics = metrics or self.font.horizontal_line_metrics
-        if metrics is None:
-            raise FontCatalogError(f"font {self.asset_path!r} has no line metrics")
-        scale = float(em_size) * self.adjustment_scale / self.font.units_per_em
-        return (
-            metrics.ascender * scale,
-            metrics.descender * scale,
-            metrics.line_gap * scale,
-        )
-
 
 @dataclass(frozen=True, slots=True)
 class FontSlotFaces:
     mapping: FontSlotMapping
     faces: tuple[FontFaceAsset, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class CatalogGlyph:
-    resolution: GlyphResolution
-    face: FontFaceAsset | None
-    rendered_glyph_id: int
-    metric: SfntGlyphMetric | None
-    vertical: bool
-
-    @property
-    def missing(self) -> bool:
-        return self.face is None or self.rendered_glyph_id == 0
-
-    def advance(self, em_size: float) -> float:
-        if self.face is None or self.metric is None:
-            return 0.0
-        return (
-            float(self.metric.advance)
-            * float(em_size)
-            * self.face.adjustment_scale
-            / self.face.font.units_per_em
-        )
 
 
 class GuiFontCatalog:
@@ -147,27 +104,6 @@ class GuiFontCatalog:
         self.strict = bool(strict)
         self._font_cache: dict[str, SfntFont] = {}
         self._slot_cache: dict[tuple[int, int], FontSlotFaces] = {}
-
-    @classmethod
-    def from_asset_root(
-        cls,
-        config: GcfData,
-        root: str | Path,
-        *,
-        profile: FontCatalogProfile | None = None,
-        strict: bool = True,
-    ) -> "GuiFontCatalog":
-        selected_profile = profile or font_catalog_profile(config.version)
-        context = ResourceResolutionContext(
-            unpacked_dir=str(root),
-            path_prefix=f"natives/{selected_profile.platform_suffix}",
-        )
-        return cls(
-            config,
-            lambda path: context.resolve(path, allow_selection_dialog=False),
-            profile=selected_profile,
-            strict=strict,
-        )
 
     def _candidate_paths(self, asset_path: str) -> tuple[str, ...]:
         normalized, platform_variant = normalize_font_resource_path(asset_path)
@@ -234,71 +170,3 @@ class GuiFontCatalog:
         result = FontSlotFaces(mapping, tuple(faces))
         self._slot_cache[key] = result
         return result
-
-    def resolve_glyph(
-        self,
-        language: int,
-        slot: int,
-        codepoint: int,
-        *,
-        vertical: bool = False,
-    ) -> CatalogGlyph:
-        faces = self.slot_faces(language, slot).faces
-        vertical_maps = (
-            tuple(face.font.vertical_substitutions for face in faces)
-            if vertical
-            else None
-        )
-        resolution = self.profile.glyph_policy.resolve(
-            int(codepoint),
-            tuple(face.font.best_cmap for face in faces),
-            vertical_substitutions=vertical_maps,
-        )
-        if resolution.face_index is None:
-            return CatalogGlyph(resolution, None, 0, None, bool(vertical))
-        face = faces[resolution.face_index]
-        rendered_glyph = (
-            int(resolution.vertical_glyph_id)
-            if vertical and resolution.vertical_glyph_id is not None
-            else int(resolution.glyph_id)
-        )
-        return CatalogGlyph(
-            resolution,
-            face,
-            rendered_glyph,
-            face.font.glyph_metric(rendered_glyph, vertical=vertical),
-            bool(vertical),
-        )
-
-    def preload_configured_faces(self) -> tuple[FontFaceAsset, ...]:
-        loaded: dict[str, FontFaceAsset] = {}
-        for language in range(self.config.language_count):
-            for slot in range(self.config.font_slot_count):
-                for face in self.slot_faces(language, slot).faces:
-                    loaded.setdefault(face.resource_name.casefold(), face)
-        return tuple(loaded[key] for key in sorted(loaded))
-
-    def inventory(self) -> dict[str, Any]:
-        faces = self.preload_configured_faces()
-        return {
-            "profile": self.profile.name,
-            "configured_slot_count": sum(
-                bool(self.slot_faces(language, slot).faces)
-                for language in range(self.config.language_count)
-                for slot in range(self.config.font_slot_count)
-            ),
-            "unique_face_files": len(faces),
-            "platform_variant_files": sum(face.platform_variant for face in faces),
-            "faces": [
-                {
-                    "asset_path": face.asset_path,
-                    "resource_name": face.resource_name,
-                    "platform_variant": face.platform_variant,
-                    "family_name": face.font.family_name,
-                    "full_name": face.font.full_name,
-                    "units_per_em": face.font.units_per_em,
-                    "glyph_count": face.font.glyph_count,
-                }
-                for face in faces
-            ],
-        }

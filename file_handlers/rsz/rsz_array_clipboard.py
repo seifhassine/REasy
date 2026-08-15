@@ -519,16 +519,6 @@ class RszArrayClipboard:
         
         return result
     
-    @staticmethod
-    def _serialize_instance_info(viewer, instance_id, relative_id_mapping):
-        """Serialize instance info with relative ID mapping - delegates to base class unified method"""
-        from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-        
-        temp_instance = type('TempClipboard', (RszClipboardBase,), {
-            'get_clipboard_type': lambda self: 'temp'
-        })()
-        
-        return temp_instance.serialize_instance_data(viewer, instance_id, relative_id_mapping)
     
     @staticmethod
     def _paste_single_element(viewer, elem_data, array_data, array_item, embedded_context=None):
@@ -1421,12 +1411,6 @@ class RszArrayClipboard:
         return element
 
     
-    @staticmethod
-    def _collect_nested_objects(viewer, root_id):
-        from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-        return RszInstanceOperations.collect_all_nested_objects(
-            viewer.scn.parsed_elements, root_id, viewer.scn.object_table
-        )
 
     @staticmethod
     def _serialize_field_with_mapping(field_data, id_mapping, nested_ids, external_refs, embedded_context=None):
@@ -1494,39 +1478,6 @@ class RszArrayClipboard:
             
         return RszArrayClipboard._serialize_element(field_data)
 
-    @staticmethod
-    def _serialize_field(field_data, nested_ids=None):
-        if isinstance(field_data, ObjectData):
-            result = RszArrayClipboard._serialize_element(field_data)
-            if nested_ids and field_data.value in nested_ids:
-                result["in_graph"] = True
-            return result
-
-        if isinstance(field_data, ArrayData):
-            values = []
-            for element in field_data.values:
-                if (
-                    isinstance(element, ObjectData)
-                    and nested_ids
-                    and element.value in nested_ids
-                ):
-                    result = RszArrayClipboard._serialize_element(element)
-                    result["in_graph"] = True
-                    values.append(result)
-                else:
-                    values.append(RszArrayClipboard._serialize_element(element))
-            return {
-                "type": "ArrayData",
-                "values": values,
-                "orig_type": field_data.orig_type,
-                "element_type": (
-                    field_data.element_class.__name__
-                    if field_data.element_class
-                    else ""
-                ),
-            }
-
-        return RszArrayClipboard._serialize_element(field_data)
 
     @staticmethod
     def _serialize_area_element(element, type_name):
@@ -1794,17 +1745,6 @@ class RszArrayClipboard:
         return added[0] if len(added) == 1 else added
     
     @staticmethod
-    def paste_from_clipboard(widget, array_operations, array_data,
-                            array_item, embedded_context=None):
-        result = RszArrayClipboard.paste_elements_from_clipboard(
-            widget, array_operations, array_data, array_item, embedded_context
-        )
-        if not isinstance(result, list):
-            return result
-        else:
-            return result[0] if result else None
-    
-    @staticmethod
     def copy_multiple_to_clipboard(widget, elements, array_type, embedded_context=None):
         parent_viewer = widget.parent()
         serialised_items = []
@@ -1840,12 +1780,6 @@ class RszArrayClipboard:
         )
         return True
 
-    @staticmethod
-    def paste_multiple_from_clipboard(widget, array_operations, array_data,
-                                    array_item, embedded_context=None):
-        return RszArrayClipboard.paste_elements_from_clipboard(
-            widget, array_operations, array_data, array_item, embedded_context
-        )
             
     @staticmethod
     def has_clipboard_data(widget):
@@ -2349,30 +2283,6 @@ class RszArrayClipboard:
             child_index_from_row=True,
         )
 
-    @staticmethod
-    def _serialize_fields_for_userdata(fields, viewer):
-        """Serialize instance fields, handling nested references"""
-        serialised_fields = {}
-        
-        for field_name, field_value in fields.items():
-            if is_reference_type(field_value):
-                serialised = RszArrayClipboard._serialize_element(field_value)
-                serialised["field_type"] = "reference"
-                serialised_fields[field_name] = serialised
-            elif isinstance(field_value, ArrayData):
-                serialised = {
-                    "type": "ArrayData",
-                    "values": [],
-                    "orig_type": field_value.orig_type,
-                    "element_type": field_value.element_class.__name__ if field_value.element_class else ""
-                }
-                for element in field_value.values:
-                    serialised["values"].append(RszArrayClipboard._serialize_element(element))
-                serialised_fields[field_name] = serialised
-            else:
-                serialised_fields[field_name] = RszArrayClipboard._serialize_element(field_value)
-        
-        return serialised_fields
 
     @staticmethod
     def _convert_object_graph_to_embedded_data(userdata_info, object_graph):

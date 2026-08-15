@@ -123,21 +123,6 @@ class ReadContext:
         self.require(offset, size, what)
         return bytes(self.data[offset : offset + size])
 
-    def resolve_pointer(
-        self,
-        stored: int,
-        *,
-        base: str,
-        size: int = 0,
-        what: str = "pointer",
-        nullable: bool = False,
-    ) -> int | None:
-        if stored == 0 and nullable:
-            return None
-        resolved = self.bases.resolve(base, stored)
-        self.require(resolved, size, what)
-        return resolved
-
     def subcontext(
         self,
         start: int,

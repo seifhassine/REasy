@@ -11,7 +11,7 @@ specific tag, ruby, fallback, and Japanese line-breaking policy.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from bisect import bisect_right
 from dataclasses import dataclass
 from enum import Enum, IntEnum
@@ -24,7 +24,6 @@ from file_handlers.ift.model import IconGlyph
 
 DMC5_ARABIC_LANGUAGE_INDEX = 21
 DMC5_DEFAULT_RUBY_SIZE_RATIO = 0.375
-DMC5_MISSING_GLYPH_FALLBACKS = (0x303C, 0x25A1, 0x002A)
 
 # Exact output of DMC5's embedded Unicode property trie at RVA 0x27F9610.
 # Keeping the compact positive ranges makes preview behavior independent from
@@ -183,16 +182,6 @@ class Dmc5TextProgram:
     page_timings: tuple[PageTiming, ...]
     final_ruby_state: RubyState
     direction: Dmc5TextDirection
-
-
-@dataclass(frozen=True)
-class GlyphResolution:
-    requested_codepoint: int
-    resolved_codepoint: int | None
-    glyph_id: int
-    face_index: int | None
-    fallback_index: int | None
-    vertical_glyph_id: int | None
 
 
 @dataclass(frozen=True)
@@ -519,10 +508,6 @@ def scan_dmc5_markup(text: str) -> MarkupScan:
             )
         )
     return MarkupScan(tuple(tokens), tuple(diagnostics))
-
-
-def tokenize_dmc5_markup(text: str) -> tuple[MarkupToken, ...]:
-    return scan_dmc5_markup(text).tokens
 
 
 def _parse_float_prefix(text: str) -> float:
@@ -1183,48 +1168,6 @@ def find_dmc5_wrap_break(
             return candidate
         previous = codepoint
     return None
-
-
-def resolve_dmc5_glyph(
-    codepoint: int,
-    face_cmaps: Sequence[Mapping[int, int]],
-    *,
-    vertical_substitutions: Sequence[Mapping[int, int]] | None = None,
-) -> GlyphResolution:
-    """Apply DMC5's two-face order and exact missing-glyph fallback chain."""
-
-    if vertical_substitutions is not None and len(vertical_substitutions) != len(
-        face_cmaps
-    ):
-        raise ValueError("vertical_substitutions must match face_cmaps")
-    candidates = (codepoint, *DMC5_MISSING_GLYPH_FALLBACKS)
-    for fallback_index, candidate in enumerate(candidates):
-        for face_index, cmap in enumerate(face_cmaps):
-            glyph_id = int(cmap.get(candidate, 0))
-            if not glyph_id:
-                continue
-            vertical_id = glyph_id
-            if vertical_substitutions is not None:
-                vertical_id = int(
-                    vertical_substitutions[face_index].get(glyph_id, glyph_id)
-                )
-            return GlyphResolution(
-                codepoint,
-                candidate,
-                glyph_id,
-                face_index,
-                fallback_index,
-                vertical_id,
-            )
-    return GlyphResolution(codepoint, None, 0, None, None, None)
-
-
-def dmc5_missing_glyph_advance(codepoint: int, base_dimension: float) -> float:
-    if codepoint == 0x0009:
-        return base_dimension * 2.0
-    if codepoint == 0x0020:
-        return base_dimension * 0.5
-    return base_dimension
 
 
 def ruby_layout_plan(

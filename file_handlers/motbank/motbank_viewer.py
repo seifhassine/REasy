@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from .motbank_file import MotlistItem
 
 

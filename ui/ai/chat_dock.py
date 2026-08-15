@@ -197,10 +197,6 @@ class _ContextUsageRing(QWidget):
 
     displayRatio = Property(float, _get_display_ratio, _set_display_ratio)
 
-    @property
-    def target_ratio(self) -> float:
-        return self._target_ratio
-
     def set_accent(self, accent: QColor):
         self._accent = QColor(accent)
         self.update()

@@ -576,10 +576,6 @@ class ProjectManager(QDockWidget):
         root = _safe_path(root)
         return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
 
-    def check_unpacked_folder(self, root: str, game: str | None = None) -> bool:
-        exp = EXPECTED_NATIVE.get(game or (self.current_game or ""), ())
-        root = _safe_path(root)
-        return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
 
     def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
         return EXPECTED_NATIVE.get(game or (self.current_game or ""), ())
@@ -1107,9 +1103,6 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setModel(model)
         self._pak_tree_model = model
 
-    def _apply_pak_filter(self):
-        """Immediate application for external triggers; debounced during typing."""
-        self._apply_pak_filter_now()
 
     def _on_pak_filter_text_changed(self, _=None):
         self._pak_filter_timer.start(120)
@@ -1166,24 +1159,6 @@ class ProjectManager(QDockWidget):
         for row in range(rows):
             self._collect_pak_leaf_paths(model, model.index(row, 0, index), paths)
 
-    def _extract_folder_by_index(self, index):
-        if not self._pak_tree_model or not index.isValid():
-            return
-        model = self._pak_tree_model
-        to_add: list[str] = []
-        def collect_desc(idx):
-            rows = model.rowCount(idx)
-            if rows == 0:
-                p = idx.data(Qt.UserRole + 1)
-                if isinstance(p, str) and p:
-                    to_add.append(p)
-                return
-            for i in range(rows):
-                child = model.index(i, 0, idx)
-                collect_desc(child)
-        collect_desc(index)
-        if to_add:
-            self._extract_from_paks_to_project(sorted(set(to_add)))
 
     def _extract_folder_by_prefix(self, folder_prefix: str):
         if not self._pak_selected_paks:

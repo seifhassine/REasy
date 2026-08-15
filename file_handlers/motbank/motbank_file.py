@@ -1,5 +1,5 @@
 import struct
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 
 from utils.binary_handler import BinaryHandler

@@ -49,24 +49,6 @@ class MotionSemanticNames:
     append_properties: tuple[tuple[int, str], ...] = ()
     motion_properties: tuple[tuple[int, str], ...] = ()
 
-    def append_class(self, name_hash: int) -> str | None:
-        return next(
-            (name for value, name in self.append_classes if value == name_hash),
-            None,
-        )
-
-    def append_property(self, name_hash: int) -> str | None:
-        return next(
-            (name for value, name in self.append_properties if value == name_hash),
-            None,
-        )
-
-    def motion_property(self, name_hash: int) -> str | None:
-        return next(
-            (name for value, name in self.motion_properties if value == name_hash),
-            None,
-        )
-
 
 @dataclass(frozen=True, slots=True)
 class MotionFormatProfile:

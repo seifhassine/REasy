@@ -2,7 +2,7 @@
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-    QPushButton, QCheckBox, QSpinBox, QDoubleSpinBox,
+    QCheckBox,
     QDialogButtonBox, QWidget
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt

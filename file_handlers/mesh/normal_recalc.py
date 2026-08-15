@@ -302,14 +302,6 @@ def dmc5_normal_recalc_profile(
     return _validate_topology(data, submeshes)
 
 
-def validate_dmc5_normal_recalc(
-    data: NormalRecalcData,
-    submeshes: Sequence[NormalRecalcSubmesh],
-) -> None:
-    profile = dmc5_normal_recalc_profile(data, submeshes)
-    _derive_dmc5_normal_indices(data, submeshes, profile)
-
-
 def _pack_dmc5_normal_indices(
     canonical: Sequence[int],
     slot_values: Sequence[int],
@@ -582,67 +574,3 @@ def parse_dmc5_normal_recalc(
     return data
 
 
-def serialize_dmc5_normal_recalc(
-    data: NormalRecalcData,
-    submeshes: Sequence[NormalRecalcSubmesh],
-    *,
-    section_offset: int = 0,
-) -> bytes:
-    if type(section_offset) is not int or section_offset < 0:
-        raise NormalRecalcError("normal-recalculation section offset is invalid")
-    profile = dmc5_normal_recalc_profile(data, submeshes)
-    packed_indices = _derive_dmc5_normal_indices(
-        data,
-        submeshes,
-        profile,
-    )
-    page_plane = (
-        _derive_large_dmc5_page_plane(submeshes)
-        if profile is Dmc5NormalRecalcProfile.TWO_PAGE_16BIT
-        else ()
-    )
-
-    redirects_offset = _align(section_offset + 16)
-    redirects_end = redirects_offset + len(data.redirects) * 4
-    indices_offset = _align(redirects_end)
-    indices_end = indices_offset + len(packed_indices) * 4
-    section_end = (
-        indices_end + len(page_plane) * 4
-        if profile is Dmc5NormalRecalcProfile.TWO_PAGE_16BIT
-        else _align(indices_end)
-    )
-    output = bytearray(section_end - section_offset)
-    struct.pack_into(
-        "<QQ",
-        output,
-        0,
-        redirects_offset,
-        indices_offset,
-    )
-    redirect_words = tuple(
-        redirect.target_vertex
-        | (REDIRECT_ANNOTATION_MASK if redirect.annotation else 0)
-        for redirect in data.redirects
-    )
-    if redirect_words:
-        struct.pack_into(
-            f"<{len(redirect_words)}I",
-            output,
-            redirects_offset - section_offset,
-            *redirect_words,
-        )
-    if packed_indices:
-        struct.pack_into(
-            f"<{len(packed_indices)}I",
-            output,
-            indices_offset - section_offset,
-            *packed_indices,
-        )
-    if page_plane:
-        struct.pack_into(
-            f"<{len(page_plane)}I",
-            output,
-            indices_end - section_offset,
-            *page_plane,
-        )
-    return bytes(output)

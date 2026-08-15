@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Tuple
 
-from tools.github_downloader import GitHubToolDownloader, _get_base_dir, _http_json  # noqa: F401
+from tools.github_downloader import GitHubToolDownloader
 
 _OWNER_REPO = "seifhassine/REE.PAK.Tool"
 
@@ -23,7 +23,6 @@ _downloader = GitHubToolDownloader(
     display_name="REE.Packer",
 )
 
-CACHE_DIR     = _downloader.cache_dir
 _EXE_PATH     = _downloader.exe_path
 _VERSION_FILE = _downloader._version_file
 

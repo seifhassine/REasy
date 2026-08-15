@@ -306,12 +306,6 @@ class SfntFont:
             tables[tag] = SfntTableRecord(tag, checksum, offset, length)
         return version, tables
 
-    def table_data(self, tag: str) -> bytes | None:
-        record = self.tables.get(tag)
-        if record is None:
-            return None
-        return self.data[record.offset : record.offset + record.length]
-
     def _table(self, tag: str, minimum: int = 0) -> SfntTableRecord:
         record = self.tables.get(tag)
         if record is None:
@@ -581,9 +575,6 @@ class SfntFont:
 
     def glyph_index(self, codepoint: int) -> int:
         return self.best_cmap.glyph_index(codepoint)
-
-    def has_codepoint(self, codepoint: int) -> bool:
-        return self.glyph_index(codepoint) != 0
 
     def glyph_metric(self, glyph_index: int, *, vertical: bool = False) -> SfntGlyphMetric:
         if glyph_index < 0 or glyph_index >= self.glyph_count:
@@ -1091,12 +1082,6 @@ class SfntFont:
     def vertical_substitutions(self) -> Mapping[int, int]:
         feature = "vrt2" if "vrt2" in self.gsub_features else "vert"
         return self.feature_substitutions(feature)
-
-    def vertical_glyph(self, glyph: int) -> int:
-        # OpenType specifies vrt2 as the preferred, comprehensive vertical
-        # feature; vert is used when vrt2 is absent.
-        feature = "vrt2" if "vrt2" in self.gsub_features else "vert"
-        return self.substitute_glyph(glyph, feature)
 
     @property
     def table_tags(self) -> tuple[str, ...]:

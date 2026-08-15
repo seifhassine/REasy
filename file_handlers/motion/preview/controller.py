@@ -17,7 +17,7 @@ from ..evaluation.model import (
     Vector3,
 )
 from ..evaluation.profiles import MotionEvaluationProfile
-from ..evaluation.sampling import MotionEvaluator, RotationInterpolation
+from ..evaluation.sampling import MotionEvaluator
 from ..mot.model import Motion
 from ..runtime.model import RuntimeRootMotionMode
 from .model import (
@@ -177,15 +177,6 @@ class MotionPreviewController:
             for index, joint in enumerate(self.binding.rig.joints)
             if joint.parent_index is None
         }
-
-    def set_rotation_interpolation(self, interpolation: RotationInterpolation) -> None:
-        if interpolation is self.sampling_policy.rotation_interpolation:
-            return
-        self.sampling_policy = replace(
-            self.sampling_policy,
-            rotation_interpolation=interpolation,
-        )
-        self._rebuild_evaluator()
 
     def set_deformation_enabled(self, enabled: bool) -> None:
         enabled = bool(enabled)

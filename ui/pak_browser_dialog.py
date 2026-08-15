@@ -573,10 +573,6 @@ class PakBrowserDialog(QDialog):
 			return []
 		return CachedPakReader.read_manifest(paks)
 
-	def _update_from_cache(self):
-		if not self._cached_reader:
-			return
-		self._recompute_display()
 
 	def _current_reader(self) -> CachedPakReader | None:
 		paks = self._selected_paks()

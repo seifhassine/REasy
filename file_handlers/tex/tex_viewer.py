@@ -5,7 +5,7 @@ import numpy as np
 from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QScrollArea,
-    QFileDialog, QMessageBox, QInputDialog, QSlider
+    QFileDialog, QMessageBox, QSlider
 )
 
 from .texture_decoder import decode_dds_mip, decode_tex_mip
@@ -346,76 +346,3 @@ class TexViewer(QWidget):
         with open(path, 'wb') as f:
             f.write(dds)
 
-    def _export_tex(self):
-        try:
-            if hasattr(self.handler, 'tex') and self.handler.tex:
-                return
-
-            from .dds import DDS_MAGIC
-            if hasattr(self.handler, 'raw_data') and self.handler.raw_data[:4] == DDS_MAGIC.to_bytes(4, 'little'):
-                from .tex_file import TexFile
-                dds_bytes = getattr(self.handler, 'raw_data', b"")
-                if not dds_bytes:
-                    QMessageBox.warning(self, self.tr(_EXPORT_TEX_TITLE), self.tr("No DDS data loaded."))
-                    return
-                import struct as _st
-                height = _st.unpack_from('<I', dds_bytes, 12)[0]
-                width = _st.unpack_from('<I', dds_bytes, 16)[0]
-                mip_count = _st.unpack_from('<I', dds_bytes, 28)[0]
-                fmt = _st.unpack_from('<I', dds_bytes, 128)[0]
-
-                data = dds_bytes[148:]
-                levels = []
-                w = width
-                h = height
-                for _ in range(mip_count):
-                    if w == 0 or h == 0:
-                        break
-                    from .dxgi import top_mip_size_bytes
-                    lvl_size = top_mip_size_bytes(fmt, w, h)
-                    levels.append(data[:lvl_size])
-                    data = data[lvl_size:]
-                    w = max(1, w >> 1)
-                    h = max(1, h >> 1)
-
-                pitches = []
-                w = width
-                for i in range(len(levels)):
-                    from .dxgi import get_block_size_bytes, get_bits_per_pixel
-                    bs = get_block_size_bytes(fmt)
-                    if bs:
-                        blocks_w = (w + 3) // 4
-                        pitches.append(blocks_w * bs)
-                    else:
-                        pitches.append(w * (get_bits_per_pixel(fmt) // 8))
-                    w = max(1, w >> 1)
-
-                version, ok = QInputDialog.getInt(
-                    self,
-                    self.tr("TEX Version"),
-                    self.tr("Enter TEX version (e.g., 190820018 for RE3):"),
-                    28,
-                    1,
-                    2000000000,
-                    1,
-                )
-                if not ok:
-                    return
-                tex_bytes = TexFile.build_tex_bytes_from_dds(
-                    fmt,
-                    width,
-                    height,
-                    levels,
-                    pitches_override=pitches,
-                    version_override=version,
-                )
-                path, _ = QFileDialog.getSaveFileName(self, self.tr("Save TEX"), "", "TEX files (*.tex)")
-                if path:
-                    with open(path, 'wb') as f:
-                        f.write(tex_bytes)
-                else:
-                    QMessageBox.information(self, self.tr(_EXPORT_TEX_TITLE), self.tr("Save cancelled."))
-            else:
-                QMessageBox.warning(self, self.tr(_EXPORT_TEX_TITLE), self.tr("Open a DDS file first."))
-        except Exception as e:
-            QMessageBox.critical(self, self.tr("Export TEX failed"), str(e))

@@ -460,27 +460,6 @@ class RszInstanceOperations:
         )
         
     @staticmethod
-    def collect_all_nested_objects(parsed_elements, root_instance_id, object_table=None):
-        """
-        Collect ALL nested objects that are owned exclusively by the given instance.
-        Uses hierarchical ownership rules to identify true nested objects.
-        
-        Args:
-            parsed_elements: Dictionary of all parsed elements
-            root_instance_id: The root instance ID to collect nested objects for
-            object_table: Optional object table to exclude IDs from
-            
-        Returns:
-            set: Set of nested object instance IDs
-        """
-        return RszInstanceOperations.collect_owned_instances(
-            parsed_elements,
-            root_instance_id,
-            object_table=object_table,
-            include_positional=True,
-        )
-        
-    @staticmethod
     def find_object_references(fields):
         """
         Find all object references in a set of fields
@@ -493,37 +472,3 @@ class RszInstanceOperations:
         """
         return collect_object_reference_values(fields)
     
-    @staticmethod
-    def topological_sort(dependency_graph):
-        """
-        Perform topological sort on a dependency graph.
-        
-        Args:
-            dependency_graph: Dictionary mapping node -> set of dependent nodes
-            
-        Returns:
-            list: Nodes in topological order (dependencies first)
-        """
-        visited = set()
-        temp = set()
-        order = []
-        
-        def visit(node):
-            if node in temp:
-                print(f"Cyclic dependency detected at node {node}")
-                return
-            if node in visited:
-                return
-            
-            temp.add(node)
-            for neighbor in dependency_graph.get(node, set()):
-                visit(neighbor)
-            temp.remove(node)
-            visited.add(node)
-            order.append(node)
-        
-        for node in dependency_graph:
-            if node not in visited:
-                visit(node)
-                
-        return order

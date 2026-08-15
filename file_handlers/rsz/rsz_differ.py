@@ -140,11 +140,6 @@ class RszDiffer:
             return name_helper.get_gameobject_name(instance_id, default_name)
         return default_name
 
-    def get_all_instances(self, rsz_file: RszFile) -> Dict[int, Any]:
-        if hasattr(rsz_file, 'parsed_elements'):
-            return rsz_file.parsed_elements
-        return {}
-
     def get_gameobject_instances(self, rsz_file: RszFile, gameobject: RszGameObject) -> List[Tuple[int, Any]]:
         instances = []
         if not hasattr(rsz_file, 'parsed_elements') or not hasattr(rsz_file, 'instance_infos'):
@@ -476,97 +471,6 @@ class RszDiffer:
 
         return changes
 
-    def compare_embedded_instances_data(self, emb1, emb2, rsz1: RszFile, rsz2: RszFile, prefix: str) -> List[str]:
-
-        changes = []
-
-        if isinstance(emb1, dict) and isinstance(emb2, dict):
-            all_keys = set(emb1.keys()) | set(emb2.keys())
-
-            for key in sorted(all_keys):
-                if key not in emb1:
-                    changes.append(f"{prefix}.inst[{key}] added in file 2")
-                elif key not in emb2:
-                    changes.append(f"{prefix}.inst[{key}] removed in file 2")
-                else:
-                    inst1 = emb1[key]
-                    inst2 = emb2[key]
-                    inst_changes = self.compare_single_embedded_instance(inst1, inst2, rsz1, rsz2, f"{prefix}.inst[{key}]")
-                    changes.extend(inst_changes)
-
-        elif isinstance(emb1, list) and isinstance(emb2, list):
-            if len(emb1) != len(emb2):
-                changes.append(f"{prefix} instance count: {len(emb1)} → {len(emb2)}")
-
-            for i, (inst1, inst2) in enumerate(zip(emb1, emb2)):
-                inst_changes = self.compare_single_embedded_instance(inst1, inst2, rsz1, rsz2, f"{prefix}.inst[{i}]")
-                changes.extend(inst_changes)
-
-        return changes
-
-    def compare_single_embedded_instance(self, inst1, inst2, rsz1: RszFile, rsz2: RszFile, prefix: str) -> List[str]:
-
-        changes = []
-
-        type1 = getattr(inst1, 'type_id', None)
-        type2 = getattr(inst2, 'type_id', None)
-
-        if type1 != type2:
-            changes.append(f"{prefix} type: {type1} → {type2}")
-            return changes
-
-        data1 = None
-        data2 = None
-
-        if hasattr(inst1, 'data'):
-            data1 = inst1.data
-        if hasattr(inst2, 'data'):
-            data2 = inst2.data
-
-        if data1 is None and hasattr(inst1, 'instance_id'):
-            inst_id = inst1.instance_id
-            if inst_id and inst_id >= 0:
-                data1 = rsz1.parsed_elements.get(inst_id)
-
-        if data2 is None and hasattr(inst2, 'instance_id'):
-            inst_id = inst2.instance_id
-            if inst_id and inst_id >= 0:
-                data2 = rsz2.parsed_elements.get(inst_id)
-
-        if data1 is None and hasattr(inst1, 'fields'):
-            data1 = inst1.fields
-        if data2 is None and hasattr(inst2, 'fields'):
-            data2 = inst2.fields
-
-        if data1 is None and hasattr(inst1, '__dict__'):
-            data1 = {k: v for k, v in inst1.__dict__.items()
-                    if not k.startswith('_') and k not in ['type_id', 'instance_id']}
-        if data2 is None and hasattr(inst2, '__dict__'):
-            data2 = {k: v for k, v in inst2.__dict__.items()
-                    if not k.startswith('_') and k not in ['type_id', 'instance_id']}
-
-        if data1 and data2:
-            if isinstance(data1, dict) and isinstance(data2, dict):
-                field_changes = self.compare_parsed_data(data1, data2, prefix, 0, max_changes=10, in_embedded=True)
-                if field_changes:
-                    type_name = f"Type_{type1}" if type1 else "Unknown"
-                    if rsz1.type_registry and type1:
-                        type_info = rsz1.type_registry.get_type_info(type1)
-                        if type_info:
-                            type_name = type_info.get('name', type_name)
-
-                    changes.append(f"{prefix} ({type_name}):")
-                    for fc in field_changes[:5]:
-                        changes.append(f"  • {fc}")
-            else:
-                if data1 != data2:
-                    changes.append(f"{prefix} data changed")
-        elif data1 and not data2:
-            changes.append(f"{prefix} data removed in file 2")
-        elif not data1 and data2:
-            changes.append(f"{prefix} data added in file 2")
-
-        return changes
 
     def instance_has_embedded_data(self, data: dict) -> bool:
 
@@ -587,30 +491,6 @@ class RszDiffer:
                     return True
 
         return False
-
-    def compare_embedded_instance_fields(self, data1: dict, data2: dict, inst_id: int, rsz1: RszFile, rsz2: RszFile) -> List[str]:
-
-        changes = []
-        inst_name = self.get_instance_name(rsz1, inst_id)
-
-        for field_name in data1.keys() | data2.keys():
-            if 'embedded' in field_name.lower() or 'userdata' in field_name.lower():
-                val1 = data1.get(field_name)
-                val2 = data2.get(field_name)
-
-                if val1 != val2:
-                    if val1 is None:
-                        changes.append(f"[{inst_name}] {field_name} added in file 2")
-                    elif val2 is None:
-                        changes.append(f"[{inst_name}] {field_name} removed in file 2")
-                    else:
-                        field_changes = self.compare_field_values(val1, val2, field_name, 0, in_embedded=True)
-                        if field_changes:
-                            changes.append(f"[{inst_name}] {field_name}:")
-                            for fc in field_changes[:3]:
-                                changes.append(f"  • {fc}")
-
-        return changes
 
     def get_nested_embedded_instance_changes(self, ud1, ud2, rsz1: RszFile, rsz2: RszFile) -> Dict:
 
@@ -840,41 +720,6 @@ class RszDiffer:
 
         return changes
 
-    def compare_embedded_instance_data(self, userdata_list1, userdata_list2, rsz1, rsz2, parent_inst_id: int) -> List[str]:
-
-        changes = []
-
-        for i, (ud1, ud2) in enumerate(zip(userdata_list1, userdata_list2)):
-
-            if hasattr(ud1, 'hash') and hasattr(ud2, 'hash'):
-                if ud1.hash != ud2.hash:
-                    changes.append(f"embedded[{i}] hash changed")
-
-            str1 = rsz1._rsz_userdata_str_map.get(ud1, "") if hasattr(rsz1, '_rsz_userdata_str_map') else ""
-            str2 = rsz2._rsz_userdata_str_map.get(ud2, "") if hasattr(rsz2, '_rsz_userdata_str_map') else ""
-
-            if str1 != str2:
-                if len(str1) > 30 or len(str2) > 30:
-                    changes.append(f"embedded[{i}] data changed")
-                else:
-                    changes.append(f"embedded[{i}]: '{str1}' → '{str2}'")
-
-            if hasattr(ud1, 'referenced_instance_id') and hasattr(ud2, 'referenced_instance_id'):
-                ref_id1 = ud1.referenced_instance_id
-                ref_id2 = ud2.referenced_instance_id
-
-                if ref_id1 != ref_id2:
-                    changes.append(f"embedded[{i}] references different instance: {ref_id1} → {ref_id2}")
-                elif ref_id1 >= 0:
-                    data1 = rsz1.parsed_elements.get(ref_id1, {})
-                    data2 = rsz2.parsed_elements.get(ref_id2, {})
-
-                    if data1 and data2:
-                        field_changes = self.compare_parsed_data(data1, data2, f"embedded[{i}]", 0, max_changes=2)
-                        changes.extend(field_changes)
-
-        return changes
-
     def compare_all_instances(self, rsz1: RszFile, rsz2: RszFile) -> List[Dict]:
         instance_diffs = []
 
@@ -1010,51 +855,6 @@ class RszDiffer:
 
         return changes[:max_changes]
 
-    def compare_instances(self, inst1, inst2, path: str, depth: int = 0, max_depth: int = 5) -> List[str]:
-        changes = []
-
-        if depth > max_depth:
-            return changes
-
-        type_name1 = inst1.type_info.name if hasattr(inst1, 'type_info') else 'Unknown'
-        type_name2 = inst2.type_info.name if hasattr(inst2, 'type_info') else 'Unknown'
-
-        if type_name1 != type_name2:
-            changes.append(f"{path} type: {type_name1} → {type_name2}")
-            return changes[:10]
-
-        if hasattr(inst1, 'data') and hasattr(inst2, 'data'):
-            field_changes = self.compare_data_fields(inst1.data, inst2.data, path, depth)
-            changes.extend(field_changes)
-
-        return changes[:20]
-
-    def compare_data_fields(self, data1, data2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
-        changes = []
-
-        if hasattr(data1, 'fields') and hasattr(data2, 'fields'):
-            fields1 = data1.fields
-            fields2 = data2.fields
-
-            all_fields = set(fields1.keys()) | set(fields2.keys())
-
-            for field in sorted(all_fields):
-                if field in ['m_GameObject', 'm_Transform', 'm_Parent', 'm_Children']:
-                    continue
-
-                field_path = f"{path}.{field}"
-                val1 = fields1.get(field)
-                val2 = fields2.get(field)
-
-                if field not in fields1:
-                    changes.append(f"{field_path}: [missing] → {self.get_field_value_string(val2)}")
-                elif field not in fields2:
-                    changes.append(f"{field_path}: {self.get_field_value_string(val1)} → [missing]")
-                else:
-                    field_changes = self.compare_field_values(val1, val2, field_path, depth + 1, in_embedded)
-                    changes.extend(field_changes)
-
-        return changes
 
     def compare_field_values(self, val1, val2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
         changes = []
@@ -1222,24 +1022,6 @@ class RszDiffer:
             val2_str = self.get_field_value_string(val2)
             if val1_str != val2_str:
                 changes.append(f"{path}: {val1_str} → {val2_str}")
-
-        return changes
-
-    def compare_arrays(self, arr1, arr2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
-        changes = []
-
-        len1 = len(arr1) if hasattr(arr1, '__len__') else 0
-        len2 = len(arr2) if hasattr(arr2, '__len__') else 0
-
-        if len1 != len2:
-            changes.append(f"{path}: array size {len1} → {len2}")
-
-        min_len = min(len1, len2, 5)
-        for i in range(min_len):
-            item1 = arr1[i] if i < len1 else None
-            item2 = arr2[i] if i < len2 else None
-            item_changes = self.compare_field_values(item1, item2, f"{path}[{i}]", depth + 1, in_embedded)
-            changes.extend(item_changes)
 
         return changes
 

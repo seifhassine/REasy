@@ -181,9 +181,6 @@ class _NonArrayFieldParser:
         self._align_in_place(align or self.field_align or 1)
         return self.pos
 
-    def _slice_bytes(self, start, end):
-        return self.data[start:end]
-
     def read_value(self, unpack_func, size, align=None):
         pos = self.pos
         if align and align > 1:
@@ -2249,9 +2246,6 @@ class RszFile:
     
     def get_prefab_string(self, pi):
         return self._prefab_str_map.get(pi, "")
-    
-    def get_userdata_string(self, ui):
-        return self._userdata_str_map.get(ui, "")
     
     def set_resource_string(self, ri, new_string: str):
         """Set resource string with special handling for PFB.16 format"""

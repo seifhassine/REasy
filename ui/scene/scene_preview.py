@@ -711,18 +711,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         combo.currentIndexChanged.connect(lambda _: slot(combo.currentData()))
         return combo
 
-    def _text_combo(
-        self,
-        items,
-        current: str,
-        slot,
-    ) -> EmbeddedPopupComboBox:
-        combo = EmbeddedPopupComboBox(self.overlay)
-        combo.addItems(items)
-        combo.setCurrentText(current)
-        combo.currentTextChanged.connect(slot)
-        return combo
-
     def _float_spin(self, minimum: float, maximum: float, step: float, value: float, slot) -> QDoubleSpinBox:
         spin = QDoubleSpinBox(self.overlay)
         spin.setRange(minimum, maximum)

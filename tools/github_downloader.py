@@ -112,38 +112,3 @@ class GitHubToolDownloader:
             self.exe_path.chmod(self.exe_path.stat().st_mode | 0o755)
         self._version_file.write_text(tag or "latest")
         return self.exe_path
-
-
-class StaticToolDownloader:
-    def __init__(self, *, asset_url: str, cache_subdir: str, exe_name: str, display_name: str = ""):
-        self.asset_url = asset_url
-        self.display_name = display_name or exe_name
-        self.cache_dir = application_root() / "downloads" / cache_subdir
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.exe_name = exe_name
-
-    @property
-    def exe_path(self) -> Path:
-        direct = self.cache_dir / self.exe_name
-        if direct.exists():
-            return direct
-        for p in self.cache_dir.rglob(self.exe_name):
-            if p.is_file():
-                return p
-        return direct
-
-    def status(self) -> Tuple[bool, Optional[str]]:
-        return (not self.exe_path.exists(), None)
-
-    def ensure(self, *, auto_download: bool = True, parent_window=None) -> Path:
-        if self.exe_path.exists():
-            return self.exe_path
-        if not auto_download:
-            raise RuntimeError(f"{self.display_name} is not present")
-        _download_and_extract_archive(self.asset_url, self.cache_dir, self.display_name, parent_window=parent_window)
-        exe = self.exe_path
-        if not exe.exists():
-            raise RuntimeError(f"{self.display_name} download completed but executable was not found")
-        if os.name != "nt":
-            exe.chmod(exe.stat().st_mode | 0o755)
-        return exe
