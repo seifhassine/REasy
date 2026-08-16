@@ -155,6 +155,8 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @NSACloud for the MPLY flags on MHWILDS+ 
 
+@brewedenhell for contributions to the [Wiki](https://github.com/seifhassine/REasy-Wiki/tree/main)
+
 ## Support REasy:
 
 If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
