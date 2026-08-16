@@ -117,7 +117,8 @@ can move, and only save when the user explicitly asks.
 _RSZ_PROMPT_HINT_RE = re.compile(
     r"(?:"
     r"\.user(?:\.\d+)?\b|\.scn(?:\.\d+)?\b|\.pfb(?:\.\d+)?\b|"
-    r"\.rcol(?:\.\d+)?\b|\.wcc(?:\.\d+)?\b|"
+    r"\.rcol(?:\.\d+)?\b|\.wcc(?:\.\d+)?\b|\.wcp(?:\.\d+)?\b|"
+    r"\.wcst(?:\.\d+)?\b|\.wgs(?:\.\d+)?\b|\.wss(?:\.\d+)?\b|"
     r"\b(?:rsz|usr|scn|pfb|rcol|headless\s+rsz)\b"
     r")",
     re.IGNORECASE,
