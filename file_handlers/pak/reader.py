@@ -7,7 +7,6 @@ import threading
 import zstandard as zstd
 import zlib
 import traceback
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -53,7 +52,6 @@ def _normalize_for_hash(path: str) -> str:
     return s
 
 
-@dataclass
 class PakReader:
     def __init__(self) -> None:
         self.pak_file_priority: List[str] = []
