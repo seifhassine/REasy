@@ -340,7 +340,7 @@ class SoundViewer(QWidget):
         self.event_panel.setMaximumWidth(340)
         event_layout = QVBoxLayout(self.event_panel)
         self.event_search = QLineEdit()
-        self.event_search.setPlaceholderText(self.tr("Find event name or ShortID"))
+        self.event_search.setPlaceholderText(self.tr("Find event name, ShortID, or source ID"))
         self.event_search.textChanged.connect(self._on_event_search_changed)
         event_layout.addWidget(self.event_search)
         self.event_list = QListWidget()
@@ -519,7 +519,7 @@ class SoundViewer(QWidget):
         self.bank_type_filter.currentIndexChanged.connect(self._populate_bank_objects)
         browser_layout.addWidget(self.bank_type_filter)
         self.bank_search = QLineEdit()
-        self.bank_search.setPlaceholderText(self.tr("Find type, ShortID, or capability"))
+        self.bank_search.setPlaceholderText(self.tr("Find type, ShortID, source ID, or capability"))
         self.bank_search.textChanged.connect(self._populate_bank_objects)
         browser_layout.addWidget(self.bank_search)
         self.bank_object_list = QListWidget()
@@ -2021,6 +2021,12 @@ class SoundViewer(QWidget):
                 self._action_summary(obj) if obj.type_id == 0x03 else
                 self._playback_summary(obj)
             )
+            source_line = ", ".join(
+                f"{source.source_id} (0x{source.source_id:08X})"
+                for source in obj.sources
+            )
+            if source_line:
+                recovered = f"{recovered}\nSources: {source_line}"
             haystack = f"{obj.type_name} {obj.object_id} 0x{obj.object_id:08X} {edit_level} {recovered}".casefold()
             if needle and needle not in haystack:
                 continue
@@ -2686,7 +2692,8 @@ class SoundViewer(QWidget):
             event for event in result.events
             if not needle or needle in (
                 f"{event.object_id} 0x{event.object_id:08x} "
-                f"{self._sound_metadata.search_text('event', event.object_id, event=True)}"
+                f"{self._sound_metadata.search_text('event', event.object_id, event=True)} "
+                f"{' '.join(f'{sid} 0x{sid:08x}' for sid in event.source_ids)}"
             ).casefold()
         ]
         self.event_list.blockSignals(True)
@@ -2716,6 +2723,12 @@ class SoundViewer(QWidget):
                 tooltip.append(self.tr("WEL: {path}").format(path=self._sound_metadata.live_wel_path))
             tooltip.extend(bindings)
             tooltip.extend(context)
+            if event.source_ids:
+                tooltip.append(self.tr("Sources: {ids}").format(
+                    ids=", ".join(
+                        f"{sid} (0x{sid:08X})" for sid in event.source_ids
+                    )
+                ))
             item.setToolTip("\n".join(tooltip))
             self.event_list.addItem(item)
             if event.object_id == wanted:
