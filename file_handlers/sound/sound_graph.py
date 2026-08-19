@@ -19,6 +19,7 @@ class EventFlowGraph(QGraphicsView):
         "event": ("#67459b", "#a78ad0"),
         "action": ("#1769aa", "#69afe5"),
         "object": ("#455a64", "#90a4ae"),
+        "any": ("#3b4252", "#7b8496"),
         "ready": ("#2e7d4f", "#72c095"),
         "partial": ("#9a6200", "#e0ad4d"),
         "missing": ("#8f3232", "#dc7373"),

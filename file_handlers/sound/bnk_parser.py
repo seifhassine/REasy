@@ -58,6 +58,20 @@ _BNK = "bnk"
 _PCK = "pck"
 _DIDX_ENTRY_FMT = "<III"
 
+# Bus references that Wwise routinely keeps in a separate init/master-bus bank,
+# so a bank is allowed to reference them without resolving them locally.
+_CROSS_BANK_BUS_ROLES = frozenset({
+    "auxiliary bus",
+    "reflections bus",
+    "output bus",
+    "ducked bus",
+})
+
+# Wwise music transition rules use 0xFFFFFFFF as the "Any" source/destination
+# wildcard. It is a valid sentinel value, not a broken object reference, so
+# consumers must treat it as "Any" rather than as a missing object.
+WWISE_ANY_OBJECT_ID = 0xFFFFFFFF
+
 
 @dataclass(slots=True)
 class ChunkRecord:
@@ -315,6 +329,11 @@ _PLAYBACK_TARGET_TYPES = frozenset({
 _ACTOR_CHILD_TYPES = frozenset({0x02, 0x05, 0x06, 0x07, 0x09})
 _ACTOR_PARENT_TYPES = frozenset({0x05, 0x06, 0x07, 0x09})
 _MUSIC_HIERARCHY_TYPES = frozenset({0x0A, 0x0C, 0x0D})
+# Music Switch Containers may nest, so they accept Segments, Random/Sequence
+# Containers, and other Switch Containers as children. Music Random/Sequence
+# Containers accept only Segments.
+_MUSIC_SWITCH_CHILD_TYPES = frozenset({0x0A, 0x0C, 0x0D})
+_MUSIC_RANSEQ_CHILD_TYPES = frozenset({0x0A})
 
 
 def compatible_hirc_reference_types(
@@ -350,7 +369,12 @@ def compatible_hirc_reference_types(
         return effects
     if role in {"auxiliary bus", "reflections bus"}:
         return auxiliary_buses
-    if role in {"output bus", "ducked bus"}:
+    if role == "output bus":
+        # Some RE9 nodes route their output bus directly to an Audio Device
+        # (e.g. 0xE611314A in init), so a device is a valid output target in
+        # addition to the bus types.
+        return frozenset(bus_types) | devices
+    if role == "ducked bus":
         return frozenset(bus_types)
     if role == "audio device":
         return devices
@@ -382,14 +406,24 @@ def compatible_hirc_reference_types(
             return frozenset({0x0B})
         if owner.type_id in _ACTOR_PARENT_TYPES:
             return _ACTOR_CHILD_TYPES
+        if owner.type_id == 0x0C:
+            return _MUSIC_SWITCH_CHILD_TYPES
+        if owner.type_id == 0x0D:
+            return _MUSIC_RANSEQ_CHILD_TYPES
         return frozenset()
     if role == "parent":
         if owner.type_id == 0x0B:
             return frozenset({0x0A})
         if owner.type_id in _ACTOR_CHILD_TYPES:
             return _ACTOR_PARENT_TYPES
-        if owner.type_id in _MUSIC_HIERARCHY_TYPES:
+        if owner.type_id == 0x0A:
             return frozenset({0x0C, 0x0D})
+        if owner.type_id == 0x0D:
+            return frozenset({0x0C})
+        if owner.type_id == 0x0C:
+            # Nested Music Switch Containers are the only valid parent for a
+            # Music Switch Container (a Segment/RanSeq never parents a Switch).
+            return frozenset({0x0C})
         if owner.type_id in bus_types:
             return frozenset(bus_types)
     return frozenset()
@@ -1975,6 +2009,12 @@ def _validate_hirc_reference_target(
     """Reject ambiguous or type-incompatible local HIRC retargeting."""
 
     target_id = _object_id(target_id)
+    if (
+        target_id == WWISE_ANY_OBJECT_ID
+        and field.role in {"transition source", "transition destination"}
+    ):
+        # The "Any" wildcard is only meaningful for music transition rules.
+        return
     allowed = compatible_hirc_reference_types(owner, field)
     if not allowed:
         raise ValueError(
@@ -1982,9 +2022,13 @@ def _validate_hirc_reference_target(
             "safely typed HIRC reference"
         )
     matches = [obj for obj in objects if obj.object_id == target_id]
-    if not matches and field.target_kind == "event":
-        # Event Actions may intentionally call an Event in another loaded bank;
-        # the field's compiled Action family still guarantees Event semantics.
+    if not matches and (
+        field.target_kind == "event"
+        or field.role in _CROSS_BANK_BUS_ROLES
+    ):
+        # Event Actions may intentionally call an Event in another loaded bank,
+        # and buses (output/auxiliary/reflections/ducked) conventionally live in
+        # a separate init/master-bus bank, so both are valid cross-bank links.
         return
     if len(matches) != 1:
         state = "missing" if not matches else f"ambiguous ({len(matches)} objects)"
@@ -2843,6 +2887,73 @@ def _edit_hirc_chunk(
     return _pack_hirc(rewritten, parsed.trailing)
 
 
+def _hirc_source_map(payload: bytes, bank_version: int) -> dict[int, tuple[BnkSource, ...]]:
+    """Decode every HIRC object that carries bank source records."""
+
+    parsed = _read_hirc_objects(payload, bank_version=bank_version)
+    _decode_hirc_objects(parsed.objects, bank_version)
+    return {
+        obj.object_id: tuple(obj.sources)
+        for obj in parsed.objects
+        if obj.sources
+    }
+
+
+def _source_id_renames(
+    before: dict[int, tuple[BnkSource, ...]],
+    after: dict[int, tuple[BnkSource, ...]],
+) -> dict[int, int]:
+    """Return source IDs retargeted in place on an unchanged HIRC object."""
+
+    renames: dict[int, int] = {}
+    still_in_use = {
+        source.source_id for sources in after.values() for source in sources
+    }
+    for object_id, old_sources in before.items():
+        new_sources = after.get(object_id)
+        if not new_sources or len(old_sources) != len(new_sources):
+            continue
+        for old, new in zip(old_sources, new_sources):
+            if old.source_id == new.source_id:
+                continue
+            if (old.plugin_id & 0x0F) != (new.plugin_id & 0x0F):
+                continue
+            if old.stream_type != new.stream_type:
+                continue
+            if old.source_id in still_in_use:
+                # Another object still uses it; leave the shared media entry.
+                continue
+            renames[old.source_id] = new.source_id
+    return renames
+
+
+def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
+    """Re-point embedded-media entries whose source ID was retargeted."""
+
+    if not renames:
+        return
+    index = next(
+        (i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"DIDX"), None
+    )
+    if index is None:
+        return
+    entries = _read_didx(chunks[index].payload)
+    if not any(entry.source_id in renames for entry in entries):
+        return
+    # Process unchanged entries first so they keep their media if a rename
+    # collides with an existing ID; later renames to an already-claimed target
+    # are dropped to avoid duplicate DIDX rows.
+    claimed: set[int] = set()
+    payload = bytearray()
+    for entry in sorted(entries, key=lambda item: item.source_id in renames):
+        target = renames.get(entry.source_id, entry.source_id)
+        if target in claimed:
+            continue
+        claimed.add(target)
+        payload += struct.pack(_DIDX_ENTRY_FMT, target, entry.offset, entry.length)
+    chunks[index] = ChunkRecord(b"DIDX", bytes(payload))
+
+
 def _rewrite_bnk(
     data: bytes,
     replacements: dict[int, bytes],
@@ -2888,6 +2999,7 @@ def _rewrite_bnk(
         hirc_index = next((i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"HIRC"), None)
         if hirc_index is None:
             raise ValueError("BNK has no HIRC chunk")
+        sources_before = _hirc_source_map(chunks[hirc_index].payload, bank_version)
         chunks[hirc_index] = ChunkRecord(
             chunk_id=b"HIRC",
             payload=_edit_hirc_chunk(
@@ -2901,6 +3013,8 @@ def _rewrite_bnk(
                 reference_targets=reference_targets,
             ),
         )
+        sources_after = _hirc_source_map(chunks[hirc_index].payload, bank_version)
+        _rekey_didx(chunks, _source_id_renames(sources_before, sources_after))
 
     if replacements:
         _rewrite_bnk_media(chunks, replacements, bank_version)
@@ -2928,7 +3042,7 @@ def _rewrite_bnk_media(
         raise ValueError("BNK has only one of DIDX/DATA; refusing to rebuild media")
     entries = _read_didx(chunks[didx_index].payload) if didx_index is not None else []
     existing_ids = {entry.source_id for entry in entries}
-    media_target_ids = set(replacements) & (existing_ids | embedded_ids)
+    media_target_ids = set(replacements) & (existing_ids | embedded_ids | prefetch_ids)
     hirc_target_ids = set(replacements) & (embedded_ids | prefetch_ids)
     if not media_target_ids and not hirc_target_ids:
         return

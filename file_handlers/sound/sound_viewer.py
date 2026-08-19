@@ -68,6 +68,7 @@ from tools.wwise_toolchain import (
 )
 
 from .bnk_parser import (
+    WWISE_ANY_OBJECT_ID,
     can_edit_hirc_children,
     clone_hirc_payload,
     compatible_hirc_reference_targets,
@@ -1685,6 +1686,16 @@ class SoundViewer(QWidget):
     def _on_add_pck_source(self):
         if not self._parse_result or self._parse_result.container_type.lower() != "pck":
             return
+        if export_non_streaming_pck(self.handler.raw_data) == self.handler.raw_data:
+            QMessageBox.warning(
+                self,
+                self.tr("Add PCK Source"),
+                self.tr(
+                    "This is the index-only PCK. Open the full streaming PCK "
+                    "before adding a source; REasy will keep its index in sync."
+                ),
+            )
+            return
         source_id = self._prompt_new_hirc_id(self.tr("Add PCK Source"))
         if source_id is None:
             return
@@ -1719,6 +1730,7 @@ class SoundViewer(QWidget):
                 return
             self.handler.replace_track_data(source_id, data)
             if self._refresh_tracks():
+                self._stage_pck_index()
                 self._select_source_id(source_id)
                 self.status.setText(
                     self.tr("Added streamed PCK source {id} from {file}.").format(
@@ -1727,6 +1739,19 @@ class SoundViewer(QWidget):
                 )
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Add PCK Source"), str(exc))
+
+    def _stage_pck_index(self):
+        """Regenerate the header-only index PCK for the rewritten streaming PCK."""
+
+        if self._sound_profile is None:
+            return
+        paths = self._sound_profile.related_paths(
+            str(self.handler.filepath or self.handler.filename)
+        )
+        if paths is None:
+            return
+        index = export_non_streaming_pck(self.handler.raw_data)
+        self.handler.apply_replacement_outputs({paths.index_pck: index})
 
     def _on_bulk_replace(self):
         directory = QFileDialog.getExistingDirectory(self, self.tr("Select Replacement Folder"), "")
@@ -2301,9 +2326,21 @@ class SoundViewer(QWidget):
                 edges.append((root, key))
             if targets:
                 continue
+            key = ("external_object", target_id)
+            if target_id == WWISE_ANY_OBJECT_ID:
+                nodes[key] = {
+                    "key": key,
+                    "kind": "external",
+                    "object_id": target_id,
+                    "title": self.tr("Any"),
+                    "detail": ", ".join(dict.fromkeys(roles)),
+                    "tone": "any",
+                    "depth": 2,
+                }
+                edges.append((root, key))
+                continue
             external = self._sound_metadata.external_object(target_id)
             banks = external.get("banks", ()) if external else ()
-            key = ("external_object", target_id)
             nodes[key] = {
                 "key": key,
                 "kind": "external",
@@ -2425,7 +2462,9 @@ class SoundViewer(QWidget):
             self.bank_detail.setText(self.tr("Audio source {id}; edit its media on Sound Graph.").format(id=object_id))
         elif kind == "external":
             self.bank_detail.setText(
-                self._sound_metadata.external_object_label(object_id)
+                self.tr("Any — matches any music object in a transition rule.")
+                if object_id == WWISE_ANY_OBJECT_ID
+                else self._sound_metadata.external_object_label(object_id)
             )
 
     def _on_bank_graph_node_activated(self, kind, object_id):
