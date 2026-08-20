@@ -1,4 +1,4 @@
-"""Resident Evil 3 legacy/DX11 integration policy for the sound editor."""
+"""Resident Evil 3 sound-editor profiles."""
 
 from .indexed_sound_metadata import IndexedSoundMetadata, STANDARD_CUE_FALLBACKS
 from .re_engine_profile import ReEngineSoundProfile
@@ -26,7 +26,31 @@ class Re3SoundProfile(ReEngineSoundProfile):
     metadata_type = Re3SoundMetadata
 
 
+class Re3RtSoundMetadata(Re3SoundMetadata):
+    index_resource = "resources/data/sound/re3rt.json.gz"
+    game_name = "RE3 RT"
+
+
+class Re3RtSoundProfile(Re3SoundProfile):
+    game = "RE3RT"
+    display_name = "Resident Evil 3 (ray tracing/RT)"
+    aliases = ("RE3 RT", "Resident Evil 3 RT", "Resident Evil 3 (RT)")
+    bank_versions = frozenset({135})
+    required_year = 2019
+    required_major = 2
+    recommended_version = "2019.2.15.7667"
+    metadata_type = Re3RtSoundMetadata
+
+
 RE3_SOUND_PROFILE = register_sound_profile(Re3SoundProfile())
+RE3RT_SOUND_PROFILE = register_sound_profile(Re3RtSoundProfile())
 
 
-__all__ = ["RE3_SOUND_PROFILE", "Re3SoundMetadata", "Re3SoundProfile"]
+__all__ = [
+    "RE3_SOUND_PROFILE",
+    "RE3RT_SOUND_PROFILE",
+    "Re3SoundMetadata",
+    "Re3SoundProfile",
+    "Re3RtSoundMetadata",
+    "Re3RtSoundProfile",
+]

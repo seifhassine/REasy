@@ -16,7 +16,7 @@ from .mhrise_profile import MHRISE_SOUND_PROFILE
 from .mhwilds_profile import MHWILDS_SOUND_PROFILE
 from .pragmata_profile import PRAGMATA_SOUND_PROFILE
 from .re2_profile import RE2_SOUND_PROFILE
-from .re3_profile import RE3_SOUND_PROFILE
+from .re3_profile import RE3_SOUND_PROFILE, RE3RT_SOUND_PROFILE
 from .re4_profile import RE4_SOUND_PROFILE
 from .re8_profile import RE8_SOUND_PROFILE
 from .re9_profile import RE9_SOUND_PROFILE
@@ -31,6 +31,7 @@ __all__ = [
     "PRAGMATA_SOUND_PROFILE",
     "RE2_SOUND_PROFILE",
     "RE3_SOUND_PROFILE",
+    "RE3RT_SOUND_PROFILE",
     "RE4_SOUND_PROFILE",
     "RE8_SOUND_PROFILE",
     "RE9_SOUND_PROFILE",
