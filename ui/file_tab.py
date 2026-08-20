@@ -383,8 +383,87 @@ class FileTab:
             )
             item.setData(str(meta.get("original_value", "")), Qt.UserRole)
 
+    @staticmethod
+    def _path_key(path) -> str:
+        return os.path.normcase(os.path.abspath(os.fspath(path))) if path else ""
+
+    def _open_output_tabs(self, output_paths):
+        targets = {
+            self._path_key(path): os.path.abspath(os.fspath(path))
+            for path in output_paths if path
+        }
+        if not self.app:
+            return []
+
+        matches = []
+        for tab in self.app.project_workspace.sessions.all_tabs():
+            if tab is self:
+                continue
+            candidate = tab.filename
+            if tab.pak_source_path and tab.pak_project_dir:
+                candidate = os.path.join(
+                    tab.pak_project_dir, tab.pak_source_path.lstrip("/\\")
+                )
+            target = targets.get(self._path_key(candidate))
+            if target:
+                matches.append((tab, target))
+        return matches
+
+    def _confirm_open_output_tabs(self, matches):
+        if not matches:
+            return True
+        dirty = any(
+            tab.modified or getattr(tab.handler, "modified", False)
+            for tab, _target in matches
+        )
+        message = self.tr(
+            "This save will overwrite open related sound files:\n\n{files}\n\n"
+            "Close those tabs yourself and try again, or save now and reload them."
+        ).format(files="\n".join(os.path.basename(path) for _tab, path in matches))
+        if dirty:
+            message += "\n\n" + self.tr(
+                "One or more tabs have unsaved changes; reloading will discard them."
+            )
+        save, cancel = QMessageBox.StandardButton.Save, QMessageBox.StandardButton.Cancel
+        dialog = QMessageBox(
+            QMessageBox.Icon.Warning,
+            self.tr("Related Sound Files Are Open"),
+            message,
+            save | cancel,
+            self.notebook_widget,
+        )
+        dialog.button(save).setText(self.tr("Save and Reload Tabs"))
+        dialog.setDefaultButton(cancel if dirty else save)
+        return dialog.exec() == save
+
+    def _reload_from_data(self, data: bytes, filename: str | None = None) -> bool:
+        if not self.load_file(
+            filename or self.filename, data, replace_scene_document=True
+        ):
+            return False
+        if filename is not None:
+            self.pak_source_path = self.pak_data_loader = None
+        self.modified = False
+        if self.viewer is not None and hasattr(self.viewer, "modified"):
+            self.viewer.modified = False
+        self.update_tab_title()
+        if self.app and hasattr(self.app, "scenes"):
+            self.app.scenes.sync_tab(self, reloaded=True)
+        return True
+
     def handle_file_save(self, file_path):
+        was_modified = bool(
+            self.modified or getattr(self.handler, "modified", False)
+        )
         try:
+            related = {}
+            related_outputs = getattr(self.handler, "related_output_targets", None)
+            if callable(related_outputs):
+                related = related_outputs()
+            reload_tabs = self._open_output_tabs((file_path, *related)) if related else ()
+            if not self._confirm_open_output_tabs(reload_tabs):
+                return False
+
             data = None
             if hasattr(self.handler, "rebuild"):
                 data = self.handler.rebuild()
@@ -394,10 +473,6 @@ class FileTab:
             if not data:
                 raise ValueError(self.tr("No rebuild method available"))
 
-            related = {}
-            related_outputs = getattr(self.handler, "related_output_targets", None)
-            if callable(related_outputs):
-                related = related_outputs()
             outputs = {os.path.abspath(file_path): bytes(data)}
             outputs.update({os.path.abspath(path): bytes(blob) for path, blob in related.items()})
 
@@ -441,6 +516,9 @@ class FileTab:
                 self.app.scenes.document_store.clear_handler(self.handler)
                 self.app.scenes.refresh_dirty_flags()
 
+            for tab, target in reload_tabs:
+                tab._reload_from_data(outputs[target], target)
+
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(
                     self.tr("Saved {count} sound file(s). ").format(count=len(outputs))
@@ -453,7 +531,7 @@ class FileTab:
 
         except Exception as e:
             pending = getattr(self.handler, "pending_related_outputs", lambda: {})()
-            if pending:
+            if was_modified or pending:
                 self.modified = True
                 self.handler.modified = True
                 if self.viewer is not None and hasattr(self.viewer, "modified"):
@@ -540,19 +618,11 @@ class FileTab:
                     "Unable to read source data for: {path}"
                 ).format(path=self.filename))
 
-            success = self.load_file(self.filename, data, replace_scene_document=True)
+            success = self._reload_from_data(data)
             if success and self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(
                     self.tr("Reloaded: {path}").format(path=self.filename), 2000
                 )
-
-            self.modified = False
-            if self.viewer and hasattr(self.viewer, "modified"):
-                self.viewer.modified = False
-            self.update_tab_title()
-            if self.app and hasattr(self.app, "scenes"):
-                self.app.scenes.sync_tab(self, reloaded=True)
-
 
         except Exception as e:
             QMessageBox.critical(
