@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, replace
 
 from .bnk_parser import (
     BnkParseResult,
     BnkTrack,
     export_non_streaming_pck,
     extract_embedded_wem,
+    music_clip_source_ids,
+    music_duration_upserts,
     parse_soundbank,
+    parse_wem_metadata,
     rewrite_soundbank,
 )
 from .sound_resources import (
@@ -51,8 +55,12 @@ class SoundReplacementPlan:
     banks: tuple[BankMedia, ...]
     packages: tuple[PckPair, ...]
 
-    def build_outputs(self, wem_data: bytes) -> dict[str, bytes]:
-        return build_sound_replacement_outputs((self,), {self.source_id: wem_data})
+    def build_outputs(
+        self, wem_data: bytes, *, report_changes: bool = False
+    ) -> dict[str, bytes] | tuple[dict[str, bytes], tuple[str, ...]]:
+        return build_sound_replacement_outputs(
+            (self,), {self.source_id: wem_data}, report_changes=report_changes
+        )
 
     def output_roles(self) -> tuple[tuple[str, str], ...]:
         values = [(bank.asset.path, bank.asset.role) for bank in self.banks]
@@ -221,7 +229,7 @@ def _resolve_prefetch_banks(handler, metadata, current: str, source_id: int):
         if asset is None:
             continue
         track = _track(parse_soundbank(asset.data), source_id)
-        if track is not None and track.available and track.payload_complete:
+        if track is not None and track.available:
             matches.append(BankMedia(asset, 1, track.length))
     return tuple({item.asset.path: item for item in matches}.values())
 
@@ -286,6 +294,15 @@ def resolve_sound_replacement(
             )
             if linked:
                 banks.extend(BankMedia(asset, 0) for asset, _track in linked)
+                if source_id in music_clip_source_ids(result):
+                    banks.append(BankMedia(
+                        SoundAsset(
+                            current,
+                            bytes(handler.raw_data),
+                            "BNK music timeline",
+                        ),
+                        2,
+                    ))
                 original = extract_embedded_wem(linked[0][0].data, linked[0][1])
                 return SoundReplacementPlan(
                     source_id, current, original, tuple(banks), ()
@@ -304,6 +321,10 @@ def resolve_sound_replacement(
                 banks.extend(_resolve_prefetch_banks(
                     handler, metadata, current, source_id
                 ))
+            elif track.stream_type == 2 and source_id in music_clip_source_ids(result):
+                banks.append(BankMedia(SoundAsset(
+                    current, bytes(handler.raw_data), "BNK music timeline"
+                ), 2))
     else:
         paths = profile.related_paths(current)
         record = {
@@ -323,11 +344,23 @@ def resolve_sound_replacement(
             bank = _read_asset(handler, bank_path, "BNK prefetch")
             if bank is None:
                 continue
-            bank_track = _track(parse_soundbank(bank.data), source_id)
-            if bank_track is not None and bank_track.stream_type == 1:
+            bank_result = parse_soundbank(bank.data)
+            stream_types = {
+                source.stream_type
+                for obj in bank_result.objects
+                for source in obj.sources
+                if source.source_id == source_id
+            }
+            if not stream_types:
+                continue
+            if 1 in stream_types:
                 banks.append(BankMedia(bank, 1))
                 banks.extend(_resolve_prefetch_banks(
                     handler, metadata, bank_path, source_id
+                ))
+            elif 2 in stream_types and source_id in music_clip_source_ids(bank_result):
+                banks.append(BankMedia(
+                    replace(bank, role="BNK music timeline"), 2
                 ))
 
     media_track = _track(parse_soundbank(packages[0].media.data), source_id)
@@ -358,11 +391,35 @@ def resolve_sound_replacement(
     )
 
 
-def build_sound_replacement_outputs(plans, replacements: dict[int, bytes]) -> dict[str, bytes]:
-    """Rebuild each shared BNK/PCK once, then derive its header-only PCK."""
+def _replacement_duration(old_wem: bytes, new_wem: bytes) -> float | None:
+    """Return the replacement's duration in ms, or None when it is unchanged/unknown."""
+
+    if not old_wem:
+        return None
+    old = parse_wem_metadata(old_wem).duration_seconds
+    new = parse_wem_metadata(new_wem).duration_seconds
+    if old is None or new is None:
+        return None
+    old_ms, new_ms = old * 1000.0, new * 1000.0
+    if not math.isfinite(old_ms) or not math.isfinite(new_ms) or abs(new_ms - old_ms) < 1.0:
+        return None
+    return new_ms
+
+
+def build_sound_replacement_outputs(
+    plans, replacements: dict[int, bytes], *, report_changes: bool = False
+) -> dict[str, bytes] | tuple[dict[str, bytes], tuple[str, ...]]:
+    """Rebuild each shared BNK/PCK once, then derive its header-only PCK.
+
+    Music Track clips and owning Segment durations are adjusted for replaced
+    sources whose duration changed. When ``report_changes`` is true the return
+    value is ``(outputs, change_lines)``.
+    """
 
     plans = tuple(plans)
+    active = tuple(plan for plan in plans if plan.source_id in replacements)
     outputs: dict[str, bytes] = {}
+    changes: list[str] = []
     banks = {
         bank.asset.path: bank
         for plan in plans for bank in plan.banks
@@ -373,30 +430,47 @@ def build_sound_replacement_outputs(plans, replacements: dict[int, bytes]) -> di
     }
     for path, bank in banks.items():
         media = {}
-        for plan in plans:
-            if plan.source_id not in replacements:
-                continue
+        for plan in active:
             target = next((
                 item for item in plan.banks if item.asset.path == path
             ), None)
-            if target is None:
+            if target is None or target.stream_type not in (0, 1):
                 continue
             payload = replacements[plan.source_id]
             if target.prefetch_size is not None:
                 payload = payload[:target.prefetch_size]
             media[plan.source_id] = payload
-        outputs[path] = rewrite_soundbank(bank.asset.data, media)
+        hirc_upserts: dict[int | tuple[int, int], tuple[int, bytes]] = {}
+        durations = {
+            plan.source_id: new_ms
+            for plan in active
+            if any(item.asset.path == path for item in plan.banks)
+            and (new_ms := _replacement_duration(
+                plan.original_wem, replacements[plan.source_id]
+            )) is not None
+        }
+        if durations:
+            hirc_upserts, bank_changes = music_duration_upserts(
+                bank.asset.data, durations
+            )
+            changes.extend(bank_changes)
+        rebuilt = rewrite_soundbank(
+            bank.asset.data, media, hirc_upserts=hirc_upserts
+        )
+        if rebuilt != bank.asset.data:
+            outputs[path] = rebuilt
     for path, package in packages.items():
         media = {
             plan.source_id: replacements[plan.source_id]
-            for plan in plans
-            if plan.source_id in replacements
-            and any(item.media.path == path for item in plan.packages)
+            for plan in active
+            if any(item.media.path == path for item in plan.packages)
         }
         full = rewrite_soundbank(package.media.data, media)
         outputs[path] = full
         if package.index is not None:
             outputs[package.index.path] = export_non_streaming_pck(full)
+    if report_changes:
+        return outputs, tuple(changes)
     return outputs
 
 

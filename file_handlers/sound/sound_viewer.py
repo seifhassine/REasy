@@ -1170,13 +1170,14 @@ class SoundViewer(QWidget):
             verified = read_riff_metadata(authored)
             if verified.loops != edited.loops or verified.markers != edited.markers:
                 raise ValueError(self.tr("Wwise did not preserve the requested loop/cue metadata."))
-            count = self._apply_replacement_plan(plan, authored)
+            count, changes = self._apply_replacement_plan(plan, authored)
             self.status.setText(
                 self.tr("Updated {loops} loop(s) and {markers} marker(s) in source {id} across {count} verified file(s).").format(
                     loops=len(edited.loops), markers=len(edited.markers),
                     id=track.source_id, count=count,
                 )
             )
+            self.status.setText("\n".join((self.status.text(), *changes)))
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Loop / Markers"), str(exc))
         finally:
@@ -1534,11 +1535,11 @@ class SoundViewer(QWidget):
         ) == QMessageBox.Yes
 
     def _apply_replacement_plan(self, plan, wem_data):
-        outputs = plan.build_outputs(wem_data)
+        outputs, changes = plan.build_outputs(wem_data, report_changes=True)
         self.handler.apply_replacement_outputs(outputs)
         self._apply_result(parse_soundbank(self.handler.raw_data))
         self.modified = True
-        return len(outputs)
+        return len(outputs), changes
 
     def _confirm_replacement_scope(self, source_ids):
         selected = set(source_ids)
@@ -1656,7 +1657,7 @@ class SoundViewer(QWidget):
                 )
             if not data:
                 return
-            count = self._apply_replacement_plan(plan, data)
+            count, changes = self._apply_replacement_plan(plan, data)
             authoring = wwise_profile_for_game(self._wwise_game())
             authored_codec = authoring.wem_codec(codec) if authoring else None
             encoding = authored_codec.name if authored_codec else {
@@ -1680,6 +1681,7 @@ class SoundViewer(QWidget):
                     ),
                 )
             )
+            self.status.setText("\n".join((self.status.text(), *changes)))
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Replace Error"), str(exc))
 
@@ -1743,15 +1745,11 @@ class SoundViewer(QWidget):
     def _stage_pck_index(self):
         """Regenerate the header-only index PCK for the rewritten streaming PCK."""
 
-        if self._sound_profile is None:
-            return
-        paths = self._sound_profile.related_paths(
-            str(self.handler.filepath or self.handler.filename)
-        )
-        if paths is None:
-            return
-        index = export_non_streaming_pck(self.handler.raw_data)
-        self.handler.apply_replacement_outputs({paths.index_pck: index})
+        path = str(self.handler.filepath or self.handler.filename)
+        if self._sound_profile and (paths := self._sound_profile.related_paths(path)):
+            self.handler.apply_replacement_outputs({
+                paths.index_pck: export_non_streaming_pck(self.handler.raw_data)
+            })
 
     def _on_bulk_replace(self):
         directory = QFileDialog.getExistingDirectory(self, self.tr("Select Replacement Folder"), "")
@@ -2328,29 +2326,25 @@ class SoundViewer(QWidget):
                 continue
             key = ("external_object", target_id)
             if target_id == WWISE_ANY_OBJECT_ID:
-                nodes[key] = {
-                    "key": key,
-                    "kind": "external",
-                    "object_id": target_id,
-                    "title": self.tr("Any"),
-                    "detail": ", ".join(dict.fromkeys(roles)),
-                    "tone": "any",
-                    "depth": 2,
-                }
-                edges.append((root, key))
-                continue
-            external = self._sound_metadata.external_object(target_id)
-            banks = external.get("banks", ()) if external else ()
+                title = self.tr("Any")
+                detail = ", ".join(dict.fromkeys(roles))
+                tone = "any"
+            else:
+                external = self._sound_metadata.external_object(target_id)
+                banks = external.get("banks", ()) if external else ()
+                title = (
+                    self.tr("Cross-bank Wwise object")
+                    if banks else self.tr("Unavailable compiled Wwise object")
+                )
+                detail = self._sound_metadata.external_object_label(target_id)
+                tone = "external" if banks else "missing"
             nodes[key] = {
                 "key": key,
                 "kind": "external",
                 "object_id": target_id,
-                "title": (
-                    self.tr("Cross-bank Wwise object")
-                    if banks else self.tr("Unavailable compiled Wwise object")
-                ),
-                "detail": self._sound_metadata.external_object_label(target_id),
-                "tone": "external" if banks else "missing",
+                "title": title,
+                "detail": detail,
+                "tone": tone,
                 "depth": 2,
             }
             edges.append((root, key))

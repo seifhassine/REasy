@@ -71,6 +71,7 @@ _CROSS_BANK_BUS_ROLES = frozenset({
 # wildcard. It is a valid sentinel value, not a broken object reference, so
 # consumers must treat it as "Any" rather than as a missing object.
 WWISE_ANY_OBJECT_ID = 0xFFFFFFFF
+_WWISE_EXIT_CUE_ID = 1_539_036_744
 
 
 @dataclass(slots=True)
@@ -189,6 +190,15 @@ class BnkMusicTrack:
     subtrack_count: int
     playlist_offset: int
     playlist_end: int
+
+
+@dataclass(slots=True, frozen=True)
+class BnkClipAutomation:
+    """Clip automation with ``(seconds, value, curve)`` control points."""
+
+    clip_index: int
+    automation_type: int
+    points: tuple[tuple[float, float, int], ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -329,11 +339,17 @@ _PLAYBACK_TARGET_TYPES = frozenset({
 _ACTOR_CHILD_TYPES = frozenset({0x02, 0x05, 0x06, 0x07, 0x09})
 _ACTOR_PARENT_TYPES = frozenset({0x05, 0x06, 0x07, 0x09})
 _MUSIC_HIERARCHY_TYPES = frozenset({0x0A, 0x0C, 0x0D})
-# Music Switch Containers may nest, so they accept Segments, Random/Sequence
-# Containers, and other Switch Containers as children. Music Random/Sequence
-# Containers accept only Segments.
-_MUSIC_SWITCH_CHILD_TYPES = frozenset({0x0A, 0x0C, 0x0D})
-_MUSIC_RANSEQ_CHILD_TYPES = frozenset({0x0A})
+_MUSIC_CHILD_TYPES = {
+    0x0A: frozenset({0x0B}),
+    0x0C: _MUSIC_HIERARCHY_TYPES,
+    0x0D: frozenset({0x0A}),
+}
+_MUSIC_PARENT_TYPES = {
+    0x0A: frozenset({0x0C, 0x0D}),
+    0x0B: frozenset({0x0A}),
+    0x0C: frozenset({0x0C}),
+    0x0D: frozenset({0x0C}),
+}
 
 
 def compatible_hirc_reference_types(
@@ -402,28 +418,14 @@ def compatible_hirc_reference_types(
             return frozenset()
         return frozenset(bus_types) if is_bus else _PLAYBACK_TARGET_TYPES
     if role == "child":
-        if owner.type_id == 0x0A:
-            return frozenset({0x0B})
         if owner.type_id in _ACTOR_PARENT_TYPES:
             return _ACTOR_CHILD_TYPES
-        if owner.type_id == 0x0C:
-            return _MUSIC_SWITCH_CHILD_TYPES
-        if owner.type_id == 0x0D:
-            return _MUSIC_RANSEQ_CHILD_TYPES
-        return frozenset()
+        return _MUSIC_CHILD_TYPES.get(owner.type_id, frozenset())
     if role == "parent":
-        if owner.type_id == 0x0B:
-            return frozenset({0x0A})
         if owner.type_id in _ACTOR_CHILD_TYPES:
             return _ACTOR_PARENT_TYPES
-        if owner.type_id == 0x0A:
-            return frozenset({0x0C, 0x0D})
-        if owner.type_id == 0x0D:
-            return frozenset({0x0C})
-        if owner.type_id == 0x0C:
-            # Nested Music Switch Containers are the only valid parent for a
-            # Music Switch Container (a Segment/RanSeq never parents a Switch).
-            return frozenset({0x0C})
+        if owner.type_id in _MUSIC_PARENT_TYPES:
+            return _MUSIC_PARENT_TYPES[owner.type_id]
         if owner.type_id in bus_types:
             return frozenset(bus_types)
     return frozenset()
@@ -2158,8 +2160,6 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
     return bytes(out)
 
 
-
-
 def set_attenuation(obj: HircObject, settings: BnkAttenuation) -> bytes:
     """Replace a decoded attenuation cone/curve block and preserve RTPC data."""
 
@@ -2532,10 +2532,57 @@ def set_music_segment(
     return bytes(out)
 
 
+def _read_clip_automations(
+    payload: bytes, offset: int
+) -> tuple[tuple[BnkClipAutomation, ...], int] | None:
+    """Parse the Music Track clip-automation section at ``offset``.
+
+    Returns ``(automations, end_offset)`` or ``None`` when truncated/malformed.
+    """
+
+    if offset + 4 > len(payload):
+        return None
+    count = struct.unpack_from("<I", payload, offset)[0]
+    pos = offset + 4
+    if count > 0x10000:
+        return None
+    items = []
+    for _ in range(count):
+        if pos + 12 > len(payload):
+            return None
+        clip_index, automation_type, point_count = struct.unpack_from(
+            "<III", payload, pos
+        )
+        pos += 12
+        if point_count > 0x10000 or pos + point_count * 12 > len(payload):
+            return None
+        points = tuple(
+            struct.unpack_from("<ffI", payload, pos + index * 12)
+            for index in range(point_count)
+        )
+        pos += point_count * 12
+        items.append(BnkClipAutomation(clip_index, automation_type, points))
+    return tuple(items), pos
+
+
+def _write_clip_automations(automations: tuple[BnkClipAutomation, ...]) -> bytes:
+    out = bytearray(struct.pack("<I", len(automations)))
+    for item in automations:
+        out += struct.pack(
+            "<III", item.clip_index, item.automation_type, len(item.points)
+        )
+        for position, value, curve in item.points:
+            out += struct.pack("<ffI", float(position), float(value), int(curve))
+    return bytes(out)
+
+
 def set_music_track_clips(
     obj: HircObject,
     clips: tuple[BnkMusicClip, ...] | list[BnkMusicClip],
     subtrack_count: int,
+    *,
+    automations: tuple[BnkClipAutomation, ...] | None = None,
+    automation_end: int | None = None,
 ) -> bytes:
     track, clips = obj.music_track, tuple(clips)
     if track is None:
@@ -2561,7 +2608,7 @@ def set_music_track_clips(
             out += struct.pack(
                 "<IIIdddd",
                 _u32(clip.track_id, "Track ID"),
-                _object_id(clip.source_id),
+                _object_id(clip.source_id, allow_zero=True),
                 _object_id(clip.event_id, allow_zero=True),
                 *times,
             )
@@ -2569,13 +2616,356 @@ def set_music_track_clips(
             out += struct.pack(
                 "<IIdddd",
                 _u32(clip.track_id, "Track ID"),
-                _object_id(clip.source_id),
+                _object_id(clip.source_id, allow_zero=True),
                 *times,
             )
     if clips:
         out += struct.pack("<I", subtrack_count)
-    out += obj.payload[track.playlist_end :]
+    if automations is not None and automation_end is not None:
+        out += _write_clip_automations(automations)
+        out += obj.payload[automation_end :]
+    else:
+        out += obj.payload[track.playlist_end :]
     return bytes(out)
+
+
+def music_clip_source_ids(result) -> frozenset[int]:
+    """Return Source IDs referenced by Music Track clips in a parsed bank."""
+
+    return frozenset(
+        clip.source_id
+        for obj in result.objects
+        if obj.music_track is not None
+        for clip in obj.music_track.clips
+        if clip.source_id
+    )
+
+
+def _retarget_track_clips(
+    clips: tuple[BnkMusicClip, ...],
+    durations: dict[int, float],
+) -> tuple[BnkMusicClip, ...]:
+    """Rebuild a track's clips for replaced sources.
+
+    A source used by one clip plays the full replacement from the same audible
+    start. If a source is deliberately repeated or sliced across several clips,
+    the complete layout scales proportionally around its earliest audible start.
+    This preserves clip order, gaps, overlaps, and trimmed source regions without
+    guessing which overlapping clip might be a loop tail.
+    """
+
+    source_counts: Counter[int] = Counter()
+    timeline_origins: dict[int, float] = {}
+    for clip in clips:
+        if clip.source_id not in durations:
+            continue
+        source_counts[clip.source_id] += 1
+        start = clip.play_at_ms + clip.begin_trim_ms
+        timeline_origins[clip.source_id] = min(
+            start, timeline_origins.get(clip.source_id, start)
+        )
+    rebuilt: list[BnkMusicClip] = []
+    for clip in clips:
+        duration = durations.get(clip.source_id)
+        if duration is None or duration == clip.source_duration_ms:
+            rebuilt.append(clip)
+            continue
+        start = clip.play_at_ms + clip.begin_trim_ms
+        if source_counts[clip.source_id] == 1:
+            new_clip = replace(
+                clip,
+                play_at_ms=start,
+                source_duration_ms=duration,
+                begin_trim_ms=0.0,
+                end_trim_ms=0.0,
+            )
+        elif clip.source_duration_ms <= 0.0:
+            new_clip = replace(clip, source_duration_ms=duration)
+        else:
+            ratio = duration / clip.source_duration_ms
+            begin_trim = clip.begin_trim_ms * ratio
+            origin = timeline_origins[clip.source_id]
+            start = origin + (start - origin) * ratio
+            new_clip = replace(
+                clip,
+                play_at_ms=start - begin_trim,
+                begin_trim_ms=begin_trim,
+                end_trim_ms=clip.end_trim_ms * ratio,
+                source_duration_ms=duration,
+            )
+        rebuilt.append(new_clip)
+    return tuple(rebuilt)
+
+
+_AUTOMATION_NAMES = {
+    0: "Volume",
+    1: "LPF",
+    2: "HPF",
+    3: "Fade in",
+    4: "Fade out",
+}
+_AUTOMATION_FADE_IN = 3
+
+
+def _adapt_automation_points(
+    automation_type: int,
+    points: tuple[tuple[float, float, int], ...],
+    old_seconds: float,
+    new_seconds: float,
+    *,
+    proportional: bool = False,
+) -> tuple[tuple[float, float, int], ...]:
+    if not points or automation_type not in _AUTOMATION_NAMES:
+        return points
+
+    origin = shift = 0.0
+    preserve_nonpositive = False
+    if proportional or automation_type < _AUTOMATION_FADE_IN:
+        factor = new_seconds / old_seconds
+    elif automation_type == _AUTOMATION_FADE_IN:
+        # Start-anchored, compressed only when it no longer fits.
+        fade_end = max(position for position, _, _ in points)
+        factor = new_seconds / fade_end if fade_end > new_seconds else 1.0
+    else:
+        # Keep a fade attached to the clip's end. If a shorter replacement
+        # cannot fit the old fade, compress the active part instead of clamping
+        # its inner curve points at time zero.
+        shift = new_seconds - old_seconds
+        positive = [position for position, _, _ in points if position > 0.0]
+        fade_start = min(positive, default=0.0)
+        fade_end = max(positive, default=0.0)
+        if positive and fade_start + shift < 0.0 and fade_end > fade_start:
+            factor = new_seconds / (fade_end - fade_start)
+            origin, shift = fade_start, 0.0
+        else:
+            factor = 1.0
+            preserve_nonpositive = True
+
+    def adjust(position: float) -> float:
+        if preserve_nonpositive and position <= 0.0:
+            return position
+        return min(max((position - origin) * factor + shift, 0.0), new_seconds)
+
+    return tuple(
+        (adjust(position), value, curve)
+        for position, value, curve in points
+    )
+
+
+def _adapt_clip_automations(
+    automations: tuple[BnkClipAutomation, ...],
+    old_clips: tuple[BnkMusicClip, ...],
+    new_clips: tuple[BnkMusicClip, ...],
+) -> tuple[BnkClipAutomation, ...]:
+    if not automations:
+        return automations
+    source_counts = Counter(clip.source_id for clip in old_clips)
+    adapted = []
+    for item in automations:
+        if not 0 <= item.clip_index < len(old_clips):
+            adapted.append(item)
+            continue
+        old_clip = old_clips[item.clip_index]
+        new_clip = new_clips[item.clip_index]
+        if old_clip == new_clip:
+            adapted.append(item)
+            continue
+        old_seconds, new_seconds = (
+            (clip.source_duration_ms + clip.end_trim_ms - clip.begin_trim_ms)
+            / 1000.0
+            for clip in (old_clip, new_clip)
+        )
+        if old_seconds <= 0.0 or new_seconds < 0.0:
+            adapted.append(item)
+            continue
+        adapted.append(
+            replace(
+                item,
+                points=_adapt_automation_points(
+                    item.automation_type,
+                    item.points,
+                    old_seconds,
+                    new_seconds,
+                    proportional=source_counts[old_clip.source_id] > 1,
+                ),
+            )
+        )
+    return tuple(adapted)
+
+
+def music_duration_upserts(
+    data: bytes,
+    durations: dict[int, float],
+) -> tuple[dict[int | tuple[int, int], tuple[int, bytes]], list[str]]:
+    """Rebuild Music Track clips and owning Segment durations for replaced sources.
+
+    ``durations`` maps a replaced Source ID to its new duration in milliseconds.
+    A source used once plays in full; repeated or sliced uses are scaled as one
+    layout. The owning Music Segment's end follows its clips' end positions, and
+    its standard Exit Cue moves while custom cues and any authored post-exit tail
+    are preserved.
+
+    Returns HIRC upserts and human-readable change lines. Upserts use a typed
+    ``(object_id, type_id)`` key only when a ShortID is shared across types.
+    """
+
+    if not durations or data[:4] == _PCK_MAGIC:
+        return {}, []
+    durations = {
+        source_id: duration
+        for source_id, duration in durations.items()
+        if math.isfinite(duration) and duration >= 0.0
+    }
+    if not durations:
+        return {}, []
+    parsed = parse_bnk(data)
+    objects = parsed.objects
+    id_counts = Counter(obj.object_id for obj in objects)
+    track_counts = Counter(
+        obj.object_id for obj in objects if obj.type_id == 0x0B
+    )
+    tracks_by_id = {
+        obj.object_id: obj for obj in objects
+        if obj.type_id == 0x0B and track_counts[obj.object_id] == 1
+    }
+    segments_by_id: dict[int, HircObject] = {}
+    segments_by_track: dict[int, HircObject] = {}
+    for segment in (obj for obj in objects if obj.type_id == 0x0A):
+        segments_by_id.setdefault(segment.object_id, segment)
+        for track_id in segment.child_ids:
+            segments_by_track.setdefault(track_id, segment)
+    upserts: dict[int | tuple[int, int], tuple[int, bytes]] = {}
+    changes: list[str] = []
+    segment_tracks: dict[
+        int, tuple[HircObject, dict[int, tuple[BnkMusicClip, ...]]]
+    ] = {}
+
+    def upsert_key(obj: HircObject) -> int | tuple[int, int]:
+        return (
+            (obj.object_id, obj.type_id)
+            if id_counts[obj.object_id] > 1
+            else obj.object_id
+        )
+
+    for obj in objects:
+        track = obj.music_track
+        if track is None:
+            continue
+        new_clips = _retarget_track_clips(track.clips, durations)
+        if new_clips == track.clips:
+            continue
+        automation_section = _read_clip_automations(obj.payload, track.playlist_end)
+        automations, automation_end = (
+            automation_section if automation_section is not None else (None, None)
+        )
+        if automations is not None:
+            automations = _adapt_clip_automations(
+                automations, track.clips, new_clips
+            )
+        upserts[upsert_key(obj)] = (
+            0x0B,
+            set_music_track_clips(
+                obj, new_clips, track.subtrack_count,
+                automations=automations, automation_end=automation_end,
+            ),
+        )
+        for old, new in zip(track.clips, new_clips):
+            if old == new:
+                continue
+            line = (
+                f"Music Track {obj.object_id}: clip source {old.source_id} "
+                f"duration {old.source_duration_ms:g} ms → {new.source_duration_ms:g} ms"
+            )
+            if (old.begin_trim_ms, old.end_trim_ms) != (
+                new.begin_trim_ms, new.end_trim_ms
+            ):
+                line += (
+                    f", trims {old.begin_trim_ms:g}/{old.end_trim_ms:g} → "
+                    f"{new.begin_trim_ms:g}/{new.end_trim_ms:g}"
+                )
+            if old.play_at_ms != new.play_at_ms:
+                line += (
+                    f", play at {old.play_at_ms:g} ms → {new.play_at_ms:g} ms"
+                )
+            changes.append(line)
+        if automations is not None:
+            for old_item, new_item in zip(automation_section[0], automations):
+                if old_item.points != new_item.points:
+                    changes.append(
+                        f"Music Track {obj.object_id}: clip[{new_item.clip_index}] "
+                        f"{_AUTOMATION_NAMES[new_item.automation_type]} "
+                        "adjusted to the new clip length"
+                    )
+        segment = (
+            segments_by_id.get(obj.parent_id)
+            or segments_by_track.get(obj.object_id)
+        )
+        if segment is not None:
+            segment_tracks.setdefault(
+                segment.index, (segment, {})
+            )[1][obj.object_id] = new_clips
+
+    for segment, new_by_track in segment_tracks.values():
+        if segment.music_segment is None:
+            continue
+        clip_ends = (
+            clip.play_at_ms + clip.source_duration_ms + clip.end_trim_ms
+            for track_id in set(segment.child_ids) | set(new_by_track)
+            if (track := tracks_by_id.get(track_id)) is not None
+            and track.music_track is not None
+            for clip in new_by_track.get(track_id, track.music_track.clips)
+        )
+        clip_end = max(clip_ends, default=None)
+        if clip_end is None or not math.isfinite(clip_end):
+            continue
+        clip_end = max(0.0, clip_end)
+        old_duration = segment.music_segment.duration_ms
+        old_markers = segment.music_segment.markers
+        custom_cue_end = max(
+            (marker.position_ms for marker in old_markers
+             if marker.marker_id != _WWISE_EXIT_CUE_ID),
+            default=0.0,
+        )
+        exit_cue = next(
+            (marker for marker in reversed(old_markers)
+             if marker.marker_id == _WWISE_EXIT_CUE_ID),
+            None,
+        )
+        if exit_cue is not None:
+            post_exit = max(0.0, old_duration - exit_cue.position_ms)
+            new_exit = max(custom_cue_end, clip_end - post_exit)
+            new_duration = max(clip_end, new_exit + post_exit)
+            markers = tuple(
+                replace(marker, position_ms=new_exit)
+                if marker.marker_id == _WWISE_EXIT_CUE_ID else marker
+                for marker in old_markers
+            )
+        else:
+            new_duration = max(clip_end, custom_cue_end)
+            markers = old_markers
+        duration_changed = abs(new_duration - old_duration) >= 0.5
+        moved_exits = tuple(
+            (old, new)
+            for old, new in zip(old_markers, markers)
+            if old.position_ms != new.position_ms
+        )
+        if not duration_changed and not moved_exits:
+            continue
+        upserts[upsert_key(segment)] = (
+            0x0A,
+            set_music_segment(segment, new_duration, markers),
+        )
+        if duration_changed:
+            changes.append(
+                f"Music Segment {segment.object_id}: duration "
+                f"{old_duration:g} ms → {new_duration:g} ms"
+            )
+        for old, new in moved_exits:
+            changes.append(
+                f"Music Segment {segment.object_id}: exit cue {old.marker_id} "
+                f"{old.position_ms:g} ms → {new.position_ms:g} ms"
+            )
+    return upserts, changes
 
 
 def _pack_id_list(values: tuple[int, ...]) -> bytes:
@@ -2887,44 +3277,53 @@ def _edit_hirc_chunk(
     return _pack_hirc(rewritten, parsed.trailing)
 
 
-def _hirc_source_map(payload: bytes, bank_version: int) -> dict[int, tuple[BnkSource, ...]]:
+def _hirc_source_map(
+    payload: bytes, bank_version: int
+) -> dict[tuple[int, int, int], tuple[BnkSource, ...]]:
     """Decode every HIRC object that carries bank source records."""
 
     parsed = _read_hirc_objects(payload, bank_version=bank_version)
     _decode_hirc_objects(parsed.objects, bank_version)
-    return {
-        obj.object_id: tuple(obj.sources)
-        for obj in parsed.objects
-        if obj.sources
-    }
+    occurrences: Counter[tuple[int, int]] = Counter()
+    result = {}
+    for obj in parsed.objects:
+        identity = obj.object_id, obj.type_id
+        occurrence = occurrences[identity]
+        occurrences[identity] += 1
+        if obj.sources:
+            result[(*identity, occurrence)] = tuple(obj.sources)
+    return result
 
 
 def _source_id_renames(
-    before: dict[int, tuple[BnkSource, ...]],
-    after: dict[int, tuple[BnkSource, ...]],
+    before: dict[tuple[int, int, int], tuple[BnkSource, ...]],
+    after: dict[tuple[int, int, int], tuple[BnkSource, ...]],
 ) -> dict[int, int]:
     """Return source IDs retargeted in place on an unchanged HIRC object."""
 
-    renames: dict[int, int] = {}
+    candidates: dict[int, set[int]] = {}
     still_in_use = {
         source.source_id for sources in after.values() for source in sources
     }
-    for object_id, old_sources in before.items():
-        new_sources = after.get(object_id)
+    for object_key, old_sources in before.items():
+        new_sources = after.get(object_key)
         if not new_sources or len(old_sources) != len(new_sources):
             continue
         for old, new in zip(old_sources, new_sources):
-            if old.source_id == new.source_id:
+            # Leave shared media and changes that are not an in-place retarget.
+            if (
+                old.source_id == new.source_id
+                or (old.plugin_id & 0x0F) != (new.plugin_id & 0x0F)
+                or old.stream_type != new.stream_type
+                or old.source_id in still_in_use
+            ):
                 continue
-            if (old.plugin_id & 0x0F) != (new.plugin_id & 0x0F):
-                continue
-            if old.stream_type != new.stream_type:
-                continue
-            if old.source_id in still_in_use:
-                # Another object still uses it; leave the shared media entry.
-                continue
-            renames[old.source_id] = new.source_id
-    return renames
+            candidates.setdefault(old.source_id, set()).add(new.source_id)
+    return {
+        old_id: next(iter(new_ids))
+        for old_id, new_ids in candidates.items()
+        if len(new_ids) == 1
+    }
 
 
 def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
@@ -2940,17 +3339,26 @@ def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
     entries = _read_didx(chunks[index].payload)
     if not any(entry.source_id in renames for entry in entries):
         return
-    # Process unchanged entries first so they keep their media if a rename
-    # collides with an existing ID; later renames to an already-claimed target
-    # are dropped to avoid duplicate DIDX rows.
-    claimed: set[int] = set()
+    # Preserve the original order and any pre-existing duplicate rows. A
+    # retargeted row is dropped only when its new ID is already represented by
+    # unchanged media or by an earlier retargeted row.
+    unchanged_ids = {
+        entry.source_id for entry in entries if entry.source_id not in renames
+    }
+    renamed_ids: set[int] = set()
     payload = bytearray()
-    for entry in sorted(entries, key=lambda item: item.source_id in renames):
-        target = renames.get(entry.source_id, entry.source_id)
-        if target in claimed:
-            continue
-        claimed.add(target)
-        payload += struct.pack(_DIDX_ENTRY_FMT, target, entry.offset, entry.length)
+    for entry in entries:
+        target = renames.get(entry.source_id)
+        if target is not None:
+            if target in unchanged_ids or target in renamed_ids:
+                continue
+            renamed_ids.add(target)
+        payload += struct.pack(
+            _DIDX_ENTRY_FMT,
+            entry.source_id if target is None else target,
+            entry.offset,
+            entry.length,
+        )
     chunks[index] = ChunkRecord(b"DIDX", bytes(payload))
 
 
@@ -3046,6 +3454,8 @@ def _rewrite_bnk_media(
     hirc_target_ids = set(replacements) & (embedded_ids | prefetch_ids)
     if not media_target_ids and not hirc_target_ids:
         return
+    if hirc_target_ids and not hirc.complete:
+        raise ValueError("Refusing to resize media referenced by a truncated HIRC chunk")
 
     entry_lengths = {entry.source_id: entry.length for entry in entries}
     prefetch_sizes = {
@@ -3056,7 +3466,7 @@ def _rewrite_bnk_media(
         for source in sources
         if source.stream_type == 1 and source.source_id in hirc_target_ids
     }
-    if hirc.complete and hirc_target_ids:
+    if hirc_target_ids:
         for obj in hirc.objects:
             payload = bytearray(obj.payload)
             changed = False
