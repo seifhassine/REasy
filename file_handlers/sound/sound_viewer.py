@@ -78,7 +78,6 @@ from .bnk_parser import (
     export_non_streaming_pck,
     extract_embedded_wem,
     format_bnk_property_value,
-    parse_soundbank,
     parse_wem_metadata,
     patch_hirc_reference,
     set_action_fields,
@@ -1537,7 +1536,7 @@ class SoundViewer(QWidget):
     def _apply_replacement_plan(self, plan, wem_data):
         outputs, changes = plan.build_outputs(wem_data, report_changes=True)
         self.handler.apply_replacement_outputs(outputs)
-        self._apply_result(parse_soundbank(self.handler.raw_data))
+        self._apply_result(self.handler.parse_result())
         self.modified = True
         return len(outputs), changes
 
@@ -1564,8 +1563,7 @@ class SoundViewer(QWidget):
 
     def _refresh_tracks(self):
         try:
-            self.handler.raw_data = self.handler.rebuild()
-            result = parse_soundbank(self.handler.raw_data)
+            result = self.handler.preview_result()
         except Exception as exc:
             QMessageBox.warning(self, self.tr("Sound Edit Error"), str(exc))
             return False
@@ -1838,7 +1836,7 @@ class SoundViewer(QWidget):
                 (plans[str(source_id)] for source_id in authored), authored
             )
             self.handler.apply_replacement_outputs(outputs)
-            self._apply_result(parse_soundbank(self.handler.raw_data))
+            self._apply_result(self.handler.parse_result())
             self.modified = True
         self.status.setText(self.tr("Bulk replace: {done}/{total} succeeded.").format(done=replaced, total=len(files)))
         if failures:
@@ -1846,7 +1844,7 @@ class SoundViewer(QWidget):
 
     def _on_analyze(self):
         try:
-            result = parse_soundbank(self.handler.raw_data)
+            result = self.handler.parse_result()
         except Exception as exc:
             QMessageBox.warning(self, self.tr("Analyze Error"), str(exc))
             return

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from .bnk_parser import (
+    BnkEditModel,
     BnkParseResult,
     BnkTrack,
     export_non_streaming_pck,
@@ -45,6 +46,7 @@ class BankMedia:
     asset: SoundAsset
     stream_type: int
     prefetch_size: int | None = None
+    parsed: BnkParseResult | None = field(default=None, repr=False, compare=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +75,20 @@ class SoundReplacementPlan:
 
 def _track(result: BnkParseResult, source_id: int) -> BnkTrack | None:
     return next((item for item in result.tracks if item.source_id == source_id), None)
+
+
+def _parse_asset(handler, asset: SoundAsset) -> BnkParseResult:
+    parser = getattr(handler, "parse_sound_data", None)
+    return parser(asset.path, asset.data) if callable(parser) else parse_soundbank(asset.data)
+
+
+def _parsed_banks(handler, banks) -> tuple[BankMedia, ...]:
+    return tuple(
+        bank if bank.parsed is not None else replace(
+            bank, parsed=_parse_asset(handler, bank.asset)
+        )
+        for bank in banks
+    )
 
 
 def _read_asset(
@@ -165,18 +181,18 @@ def _resolve_package(handler, record: dict, source_id: int) -> PckPair | None:
     if index is not None and media is not None and index.path == media.path:
         index = None
     if media is None and index is not None:
-        index_result = parse_soundbank(index.data)
+        index_result = _parse_asset(handler, index)
         index_track = _track(index_result, source_id)
         if index_track and index_track.available and index_track.payload_complete:
             media, index = SoundAsset(index.path, index.data, "PCK media"), None
     if media is None:
         return None
-    media_result = parse_soundbank(media.data)
+    media_result = _parse_asset(handler, media)
     media_track = _track(media_result, source_id)
     if media_track is None or not media_track.available or not media_track.payload_complete:
         return None
     if index is not None:
-        index_track = _track(parse_soundbank(index.data), source_id)
+        index_track = _track(_parse_asset(handler, index), source_id)
         if index_track is None:
             raise SoundMediaResolutionError(
                 f"PCK index {index.path} does not contain Source ID {source_id}."
@@ -207,7 +223,7 @@ def _resolve_embedded_banks(handler, metadata, current: str, source_id: int):
         asset = _read_asset(handler, path, "embedded SBNK media")
         if asset is None:
             continue
-        track = _track(parse_soundbank(asset.data), source_id)
+        track = _track(_parse_asset(handler, asset), source_id)
         if track is not None and track.available and track.payload_complete:
             matches.append((asset, track))
     matches = list({asset.path: (asset, track) for asset, track in matches}.values())
@@ -228,7 +244,7 @@ def _resolve_prefetch_banks(handler, metadata, current: str, source_id: int):
         asset = _read_asset(handler, path, "split SBNK prefetch")
         if asset is None:
             continue
-        track = _track(parse_soundbank(asset.data), source_id)
+        track = _track(_parse_asset(handler, asset), source_id)
         if track is not None and track.available:
             matches.append(BankMedia(asset, 1, track.length))
     return tuple({item.asset.path: item for item in matches}.values())
@@ -259,6 +275,9 @@ def resolve_sound_replacement(
 ) -> SoundReplacementPlan:
     """Resolve every asset that must change for one profiled Source ID."""
 
+    materialize = getattr(handler, "materialize_sound_edits", None)
+    if callable(materialize):
+        materialize()
     source_id = int(track.source_id)
     current = resource_key(getattr(handler, "filepath", ""))
     metadata = profile.metadata(getattr(handler, "filepath", ""))
@@ -272,7 +291,7 @@ def resolve_sound_replacement(
                 asset = _read_asset(handler, path, "event SBNK")
                 if asset is None:
                     continue
-                event_track = _track(parse_soundbank(asset.data), source_id)
+                event_track = _track(_parse_asset(handler, asset), source_id)
                 if event_track is not None and event_track.stream_type == 1:
                     split_events.append((asset, event_track))
         if split_events:
@@ -305,12 +324,14 @@ def resolve_sound_replacement(
                     ))
                 original = extract_embedded_wem(linked[0][0].data, linked[0][1])
                 return SoundReplacementPlan(
-                    source_id, current, original, tuple(banks), ()
+                    source_id, current, original, _parsed_banks(handler, banks), ()
                 )
             asset = SoundAsset(current, bytes(handler.raw_data), "embedded BNK media")
             banks.append(BankMedia(asset, 0))
             original = extract_embedded_wem(asset.data, track) if track.available else b""
-            return SoundReplacementPlan(source_id, current, original, tuple(banks), ())
+            return SoundReplacementPlan(
+                source_id, current, original, _parsed_banks(handler, banks), ()
+            )
         else:
             records = _package_records(metadata, profile, current, source_id)
             packages.append(_resolve_one_package(handler, records, source_id))
@@ -344,7 +365,7 @@ def resolve_sound_replacement(
             bank = _read_asset(handler, bank_path, "BNK prefetch")
             if bank is None:
                 continue
-            bank_result = parse_soundbank(bank.data)
+            bank_result = _parse_asset(handler, bank)
             stream_types = {
                 source.stream_type
                 for obj in bank_result.objects
@@ -363,7 +384,7 @@ def resolve_sound_replacement(
                     replace(bank, role="BNK music timeline"), 2
                 ))
 
-    media_track = _track(parse_soundbank(packages[0].media.data), source_id)
+    media_track = _track(_parse_asset(handler, packages[0].media), source_id)
     original = extract_embedded_wem(packages[0].media.data, media_track)
     if not original:
         raise SoundMediaResolutionError(
@@ -372,7 +393,7 @@ def resolve_sound_replacement(
     for bank in banks:
         if bank.stream_type != 1:
             continue
-        bank_track = _track(parse_soundbank(bank.asset.data), source_id)
+        bank_track = _track(_parse_asset(handler, bank.asset), source_id)
         fragment = (
             extract_embedded_wem(bank.asset.data, bank_track)
             if bank_track is not None and bank_track.available else b""
@@ -386,7 +407,9 @@ def resolve_sound_replacement(
         source_id,
         current,
         original,
-        tuple({item.asset.path: item for item in banks}.values()),
+        _parsed_banks(
+            handler, {item.asset.path: item for item in banks}.values()
+        ),
         tuple({item.media.path: item for item in packages}.values()),
     )
 
@@ -451,11 +474,33 @@ def build_sound_replacement_outputs(
         }
         if durations:
             hirc_upserts, bank_changes = music_duration_upserts(
-                bank.asset.data, durations
+                bank.asset.data,
+                durations,
+                parsed=bank.parsed,
             )
             changes.extend(bank_changes)
+        hirc_payload = None
+        source_renames = None
+        rewrite_result = bank.parsed
+        if hirc_upserts:
+            model = BnkEditModel(bank.parsed or parse_soundbank(bank.asset.data)).clone()
+            model.upsert_objects(
+                (
+                    type_id,
+                    key[0] if isinstance(key, tuple) else key,
+                    payload,
+                )
+                for key, (type_id, payload) in hirc_upserts.items()
+            )
+            hirc_payload = model.hirc_payload()
+            source_renames = model.source_renames
+            rewrite_result = model.result
         rebuilt = rewrite_soundbank(
-            bank.asset.data, media, hirc_upserts=hirc_upserts
+            bank.asset.data,
+            media,
+            hirc_payload=hirc_payload,
+            hirc_source_renames=source_renames,
+            parsed_result=rewrite_result,
         )
         if rebuilt != bank.asset.data:
             outputs[path] = rebuilt

@@ -77,7 +77,7 @@ _WWISE_EXIT_CUE_ID = 1_539_036_744
 @dataclass(slots=True)
 class ChunkRecord:
     chunk_id: bytes
-    payload: bytes
+    payload: bytes | memoryview
 
 @dataclass(slots=True)
 class BnkEmbeddedAudio:
@@ -509,6 +509,8 @@ class BnkParseResult:
     embedded_banks: list[PckEmbeddedBank] = field(default_factory=list)
     bank_chunks: list[WwiseChunkLayout] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    hirc_trailing: bytes = field(default=b"", repr=False)
+    didx_entries: list[BnkEmbeddedAudio] = field(default_factory=list, repr=False)
 
 
 @dataclass(slots=True)
@@ -540,6 +542,9 @@ def rewrite_soundbank(
     renamed_hirc_ids: dict[int, int] | None = None,
     reference_targets: dict[tuple[int, int], int] | None = None,
     bank_chunk_payloads: dict[bytes | str, bytes] | None = None,
+    hirc_payload: bytes | None = None,
+    hirc_source_renames: dict[int, int] | None = None,
+    parsed_result: BnkParseResult | None = None,
 ) -> bytes:
     """Rewrite supported media/HIRC fields while preserving opaque structures."""
 
@@ -551,10 +556,15 @@ def rewrite_soundbank(
     renamed_hirc_ids = renamed_hirc_ids or {}
     reference_targets = reference_targets or {}
     bank_chunk_payloads = bank_chunk_payloads or {}
-    has_hirc_edits = any(
+    semantic_hirc_edits = any(
         (event_actions, action_targets, hirc_upserts, deleted_hirc_ids,
          renamed_hirc_ids, reference_targets)
     )
+    if hirc_payload is not None and semantic_hirc_edits:
+        raise ValueError("A final HIRC payload cannot be combined with semantic HIRC edits")
+    if hirc_source_renames is not None and hirc_payload is None:
+        raise ValueError("HIRC source renames require a final HIRC payload")
+    has_hirc_edits = semantic_hirc_edits or hirc_payload is not None
     if not replacements and not has_hirc_edits and not bank_chunk_payloads:
         return bytes(data)
     if data[:4] == _PCK_MAGIC:
@@ -571,6 +581,9 @@ def rewrite_soundbank(
         renamed_hirc_ids=renamed_hirc_ids,
         reference_targets=reference_targets,
         bank_chunk_payloads=bank_chunk_payloads,
+        hirc_payload=hirc_payload,
+        hirc_source_renames=hirc_source_renames,
+        parsed_result=parsed_result,
     )
 
 
@@ -579,7 +592,11 @@ def parse_soundbank(data: bytes) -> BnkParseResult:
 
 
 def parse_bnk(data: bytes) -> BnkParseResult:
-    chunks = _read_chunks(data)
+    chunk_records = _read_chunk_records(data)
+    chunks = {
+        record.chunk_id.decode("ascii"): record.payload
+        for record in chunk_records if record.chunk_id.isascii()
+    }
     warnings: list[str] = []
     version = _read_bank_version(chunks.get("BKHD"))
     bank_id, language_id, project_id = _read_bank_header(chunks.get("BKHD"), version)
@@ -658,7 +675,7 @@ def parse_bnk(data: bytes) -> BnkParseResult:
 
     bank_chunks = []
     if version in {132, 135, 140, 145, 150}:
-        for record in _read_chunk_records(data):
+        for record in chunk_records:
             decoded = parse_structured_chunk(record.chunk_id, record.payload, version)
             if decoded is None:
                 continue
@@ -681,6 +698,8 @@ def parse_bnk(data: bytes) -> BnkParseResult:
         actions=actions,
         bank_chunks=bank_chunks,
         warnings=warnings,
+        hirc_trailing=hirc.trailing,
+        didx_entries=media,
     )
 
 
@@ -857,8 +876,11 @@ def wwise_id_from_name(name: str) -> int:
     return value
 
 
-def _split_chunk_records(data: bytes) -> tuple[list[ChunkRecord], bytes]:
+def _split_chunk_records(
+    data: bytes, *, zero_copy_data: bool = False
+) -> tuple[list[ChunkRecord], bytes]:
     chunks: list[ChunkRecord] = []
+    view = memoryview(data) if zero_copy_data else None
     pos, size = 0, len(data)
     while pos + 8 <= size:
         chunk_id = data[pos:pos + 4]
@@ -867,7 +889,12 @@ def _split_chunk_records(data: bytes) -> tuple[list[ChunkRecord], bytes]:
         end = payload_pos + length
         if end > size:
             break
-        chunks.append(ChunkRecord(chunk_id=chunk_id, payload=data[payload_pos:end]))
+        payload = (
+            view[payload_pos:end]
+            if view is not None and chunk_id == b"DATA"
+            else data[payload_pos:end]
+        )
+        chunks.append(ChunkRecord(chunk_id=chunk_id, payload=payload))
         pos = end
     return chunks, data[pos:]
 
@@ -887,7 +914,8 @@ def _read_chunks(data: bytes) -> dict[str, bytes]:
 def _pack_chunk_records(chunks: list[ChunkRecord], trailing: bytes = b"") -> bytes:
     out = bytearray()
     for chunk in chunks:
-        out += chunk.chunk_id + struct.pack("<I", len(chunk.payload)) + chunk.payload
+        out += chunk.chunk_id + struct.pack("<I", len(chunk.payload))
+        out += chunk.payload
     out += trailing
     return bytes(out)
 
@@ -960,90 +988,79 @@ def _read_hirc_objects(
     return _HircReadResult(objects, chunk[pos:], complete and len(objects) == count)
 
 
-def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = None) -> None:
-    if bank_version not in STRUCTURED_BANK_VERSIONS:
-        return
-    _type_names, bus_types, fx_types, modulator_types = _hirc_layout(bank_version)
-    by_id = {obj.object_id: obj for obj in objects if obj.object_id}
+def _decode_hirc_payload(
+    obj: HircObject,
+    bank_version: int,
+    by_id: dict[int, HircObject],
+    layout,
+) -> None:
+    """Decode fields local to one HIRC object using the current ID context."""
+
+    _type_names, bus_types, fx_types, modulator_types = layout
     known_ids = set(by_id)
-    for obj in objects:
-        obj.bank_version = bank_version
-        obj.type_name = _hirc_type_name(obj.type_id, bank_version)
-        if bank_version in {132, 135, 140, 145, 150}:
-            obj.structure = parse_structured_object(
-                obj.type_id, obj.payload, bank_version
-            )
-        if obj.type_id == 0x04:
-            obj.event_action_ids = _parse_event_action_ids(obj.payload)
-        elif obj.type_id == 0x01:
-            obj.property_bundle = _parse_property_bundle(
-                obj.payload, 4, has_ranges=False, kind="state",
-                bank_version=bank_version, id_width=2 if bank_version >= 128 else 1,
-            )
-        elif obj.type_id == 0x03:
-            _decode_action(obj)
-        elif obj.type_id == 0x02:
-            source, _ = _read_bank_source(obj.payload, 4, obj.object_id, bank_version)
-            obj.sources = (source,) if source else ()
-        elif obj.type_id == 0x0B:
-            obj.sources = _read_music_track_sources(obj.payload, obj.object_id, bank_version)
-        elif obj.type_id in bus_types:
-            # CAkBus places its output-bus/device IDs directly before the same
-            # AkPropValue bundles used by hierarchy nodes.
-            structured_offset = (
-                obj.structure.anchor("property_bundle")
-                if obj.structure and obj.structure.complete else None
-            )
-            offset = structured_offset if structured_offset is not None else (
-                12 if bank_version >= 128 and len(obj.payload) >= 12
-                and not struct.unpack_from("<I", obj.payload, 4)[0] else 8
-            )
-            obj.property_bundle = _parse_property_bundle(
-                obj.payload, offset, has_ranges=False, bank_version=bank_version
-            )
-        elif obj.type_id == 0x0E:
-            obj.attenuation = _parse_attenuation(obj.payload, bank_version)
-        elif obj.type_id in modulator_types:
-            obj.property_bundle = _parse_property_bundle(
-                obj.payload, 4, kind="modulator", bank_version=bank_version
-            )
-        elif obj.type_id in fx_types:
-            obj.silence_source = _parse_silence_source(obj.payload)
-            if obj.silence_source is None:
-                obj.fx_plugin = _parse_fx_plugin(obj.payload)
+    obj.bank_version = bank_version
+    obj.type_name = _hirc_type_name(obj.type_id, bank_version)
+    if bank_version in {132, 135, 140, 145, 150}:
+        obj.structure = parse_structured_object(obj.type_id, obj.payload, bank_version)
+    if obj.type_id == 0x04:
+        obj.event_action_ids = _parse_event_action_ids(obj.payload)
+    elif obj.type_id == 0x01:
+        obj.property_bundle = _parse_property_bundle(
+            obj.payload, 4, has_ranges=False, kind="state",
+            bank_version=bank_version, id_width=2 if bank_version >= 128 else 1,
+        )
+    elif obj.type_id == 0x03:
+        _decode_action(obj)
+    elif obj.type_id == 0x02:
+        source, _ = _read_bank_source(obj.payload, 4, obj.object_id, bank_version)
+        obj.sources = (source,) if source else ()
+    elif obj.type_id == 0x0B:
+        obj.sources = _read_music_track_sources(obj.payload, obj.object_id, bank_version)
+    elif obj.type_id in bus_types:
+        structured_offset = (
+            obj.structure.anchor("property_bundle")
+            if obj.structure and obj.structure.complete else None
+        )
+        offset = structured_offset if structured_offset is not None else (
+            12 if bank_version >= 128 and len(obj.payload) >= 12
+            and not struct.unpack_from("<I", obj.payload, 4)[0] else 8
+        )
+        obj.property_bundle = _parse_property_bundle(
+            obj.payload, offset, has_ranges=False, bank_version=bank_version
+        )
+    elif obj.type_id == 0x0E:
+        obj.attenuation = _parse_attenuation(obj.payload, bank_version)
+    elif obj.type_id in modulator_types:
+        obj.property_bundle = _parse_property_bundle(
+            obj.payload, 4, kind="modulator", bank_version=bank_version
+        )
+    elif obj.type_id in fx_types:
+        obj.silence_source = _parse_silence_source(obj.payload)
+        if obj.silence_source is None:
+            obj.fx_plugin = _parse_fx_plugin(obj.payload)
 
-    for obj in objects:
-        if obj.type_id in _AUDIO_CONTAINER_TYPES:
-            if obj.structure and obj.structure.complete:
-                obj.child_list_offset = obj.structure.anchor("child_count")
-                obj.child_ids = tuple(
-                    int(field.value) for field in obj.structure.fields
-                    if field.reference_role == "child"
-                )
-            else:
-                obj.child_list_offset, obj.child_ids = _find_child_list(obj, by_id)
-            if obj.child_list_offset is not None:
-                if obj.type_id == 0x05:
-                    obj.random_sequence = _parse_random_sequence(obj)
-                elif obj.type_id == 0x06:
-                    obj.switch_container = _parse_switch_container(obj)
-                elif obj.type_id == 0x0A:
-                    obj.music_segment = _parse_music_segment(obj)
-        if obj.type_id == 0x0B:
-            obj.music_track = _parse_music_track(obj, bank_version)
-
-    for obj in objects:
-        _decode_node_base(obj, known_ids)
-
+    if obj.type_id in _AUDIO_CONTAINER_TYPES:
         if obj.structure and obj.structure.complete:
-            parent = next((
-                field for field in obj.structure.fields
-                if field.reference_role == "parent"
-            ), None)
-            if parent is not None:
-                obj.parent_id = int(parent.value)
-                obj.parent_reference_offset = parent.offset
+            obj.child_list_offset = obj.structure.anchor("child_count")
+            obj.child_ids = tuple(
+                int(field.value) for field in obj.structure.fields
+                if field.reference_role == "child"
+            )
+        else:
+            obj.child_list_offset, obj.child_ids = _find_child_list(obj, by_id)
+        if obj.child_list_offset is not None:
+            if obj.type_id == 0x05:
+                obj.random_sequence = _parse_random_sequence(obj)
+            elif obj.type_id == 0x06:
+                obj.switch_container = _parse_switch_container(obj)
+            elif obj.type_id == 0x0A:
+                obj.music_segment = _parse_music_segment(obj)
+    if obj.type_id == 0x0B:
+        obj.music_track = _parse_music_track(obj, bank_version)
+    _decode_node_base(obj, known_ids)
 
+
+def _infer_hirc_parents(objects: list[HircObject], by_id: dict[int, HircObject]) -> None:
     for parent in objects:
         for child_id in parent.child_ids:
             child = by_id.get(child_id)
@@ -1054,75 +1071,101 @@ def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = N
                 child.parent_id = parent.object_id
                 child.parent_reference_offset = offsets[0]
 
-    for obj in objects:
-        if obj.structure and obj.structure.complete:
-            fields = tuple(
-                HircReference(
-                    field.offset, int(field.value), field.reference_role,
-                    field.id_kind,
-                )
-                for field in obj.structure.fields
-                if field.reference_role
-                and int(field.value)
-                and int(field.value) != obj.object_id
-            )
-            obj.reference_fields = fields
-            obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
-            continue
-        if obj.type_id == 0x03:
-            fields: list[HircReference] = []
-            if obj.action_target_id:
-                role = (
-                    "event target"
-                    if obj.action_target_kind == "event"
-                    else "action target"
-                )
-                fields.append(HircReference(
-                    6,
-                    obj.action_target_id,
-                    role,
-                    "event" if obj.action_target_kind == "event" else "hirc",
-                ))
-            settings = obj.action_settings
-            if settings:
-                for exception_id, _is_bus in settings.exceptions:
-                    if exception_id in known_ids and exception_id != obj.object_id:
-                        offsets = _matching_u32_offsets(
-                            obj.payload, exception_id, settings.offset
-                        )
-                        if len(offsets) == 1:
-                            fields.append(
-                                HircReference(offsets[0], exception_id, "exception")
-                            )
-            obj.reference_fields = tuple(fields)
-            obj.references = tuple(
-                dict.fromkeys(field.target_id for field in fields)
-            )
-            continue
-        roles: dict[int, str] = {}
-        if obj.type_id == 0x04:
-            parsed = _read_varuint(obj.payload, 4)
-            if parsed:
-                count, pos = parsed
-                roles.update((pos + index * 4, "event action") for index in range(count))
-        if obj.child_list_offset is not None:
-            roles.update(
-                (obj.child_list_offset + 4 + index * 4, "child")
-                for index in range(len(obj.child_ids))
-            )
-        if obj.parent_reference_offset is not None:
-            output_bus_offset = obj.parent_reference_offset - 4
-            if output_bus_offset >= 4:
-                roles[output_bus_offset] = "output bus"
-            roles[obj.parent_reference_offset] = "parent"
 
-        fields = []
-        for pos in range(4, max(4, len(obj.payload) - 3)):
-            value = struct.unpack_from("<I", obj.payload, pos)[0]
-            if value in known_ids and value != obj.object_id:
-                fields.append(HircReference(pos, value, roles.get(pos, "reference")))
+def _decode_hirc_references(obj: HircObject, known_ids: set[int]) -> None:
+    if obj.structure and obj.structure.complete:
+        fields = tuple(
+            HircReference(
+                field.offset, int(field.value), field.reference_role, field.id_kind
+            )
+            for field in obj.structure.fields
+            if field.reference_role
+            and int(field.value)
+            and int(field.value) != obj.object_id
+        )
+        obj.reference_fields = fields
+        obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
+        return
+    if obj.type_id == 0x03:
+        fields: list[HircReference] = []
+        if obj.action_target_id:
+            role = (
+                "event target" if obj.action_target_kind == "event" else "action target"
+            )
+            fields.append(HircReference(
+                6, obj.action_target_id, role,
+                "event" if obj.action_target_kind == "event" else "hirc",
+            ))
+        settings = obj.action_settings
+        if settings:
+            for exception_id, _is_bus in settings.exceptions:
+                if exception_id in known_ids and exception_id != obj.object_id:
+                    offsets = _matching_u32_offsets(
+                        obj.payload, exception_id, settings.offset
+                    )
+                    if len(offsets) == 1:
+                        fields.append(
+                            HircReference(offsets[0], exception_id, "exception")
+                        )
         obj.reference_fields = tuple(fields)
         obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
+        return
+    roles: dict[int, str] = {}
+    if obj.type_id == 0x04:
+        parsed = _read_varuint(obj.payload, 4)
+        if parsed:
+            count, pos = parsed
+            roles.update((pos + index * 4, "event action") for index in range(count))
+    if obj.child_list_offset is not None:
+        roles.update(
+            (obj.child_list_offset + 4 + index * 4, "child")
+            for index in range(len(obj.child_ids))
+        )
+    if obj.parent_reference_offset is not None:
+        output_bus_offset = obj.parent_reference_offset - 4
+        if output_bus_offset >= 4:
+            roles[output_bus_offset] = "output bus"
+        roles[obj.parent_reference_offset] = "parent"
+    fields = []
+    for pos in range(4, max(4, len(obj.payload) - 3)):
+        value = struct.unpack_from("<I", obj.payload, pos)[0]
+        if value in known_ids and value != obj.object_id:
+            fields.append(HircReference(pos, value, roles.get(pos, "reference")))
+    obj.reference_fields = tuple(fields)
+    obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
+
+
+def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = None) -> None:
+    if bank_version not in STRUCTURED_BANK_VERSIONS:
+        return
+    by_id = {obj.object_id: obj for obj in objects if obj.object_id}
+    layout = _hirc_layout(bank_version)
+    for obj in objects:
+        _decode_hirc_payload(obj, bank_version, by_id, layout)
+    _infer_hirc_parents(objects, by_id)
+    known_ids = set(by_id)
+    for obj in objects:
+        _decode_hirc_references(obj, known_ids)
+
+
+def _decode_one_hirc_object(obj: HircObject, objects: list[HircObject]) -> None:
+    """Decode one new/replaced object against an already decoded bank graph."""
+
+    bank_version = obj.bank_version
+    if bank_version not in STRUCTURED_BANK_VERSIONS:
+        return
+    by_id = {item.object_id: item for item in objects if item.object_id}
+    _decode_hirc_payload(obj, bank_version, by_id, _hirc_layout(bank_version))
+    if obj.parent_id is None:
+        for parent in objects:
+            if obj.object_id not in parent.child_ids:
+                continue
+            offsets = _matching_u32_offsets(obj.payload, parent.object_id, 4)
+            if len(offsets) == 1:
+                obj.parent_id = parent.object_id
+                obj.parent_reference_offset = offsets[0]
+                break
+    _decode_hirc_references(obj, set(by_id))
 
 
 def _parse_event_action_ids(payload: bytes) -> tuple[int, ...]:
@@ -2796,6 +2839,8 @@ def _adapt_clip_automations(
 def music_duration_upserts(
     data: bytes,
     durations: dict[int, float],
+    *,
+    parsed: BnkParseResult | None = None,
 ) -> tuple[dict[int | tuple[int, int], tuple[int, bytes]], list[str]]:
     """Rebuild Music Track clips and owning Segment durations for replaced sources.
 
@@ -2818,7 +2863,7 @@ def music_duration_upserts(
     }
     if not durations:
         return {}, []
-    parsed = parse_bnk(data)
+    parsed = parsed or parse_bnk(data)
     objects = parsed.objects
     id_counts = Counter(obj.object_id for obj in objects)
     track_counts = Counter(
@@ -3284,9 +3329,15 @@ def _hirc_source_map(
 
     parsed = _read_hirc_objects(payload, bank_version=bank_version)
     _decode_hirc_objects(parsed.objects, bank_version)
+    return _decoded_hirc_source_map(parsed.objects)
+
+
+def _decoded_hirc_source_map(
+    objects: list[HircObject],
+) -> dict[tuple[int, int, int], tuple[BnkSource, ...]]:
     occurrences: Counter[tuple[int, int]] = Counter()
     result = {}
-    for obj in parsed.objects:
+    for obj in objects:
         identity = obj.object_id, obj.type_id
         occurrence = occurrences[identity]
         occurrences[identity] += 1
@@ -3326,6 +3377,399 @@ def _source_id_renames(
     }
 
 
+class BnkEditModel:
+    """Mutable logical BNK graph; serialization is deferred until save."""
+
+    def __init__(self, result: BnkParseResult):
+        if result.container_type != _BNK or result.bank_version not in STRUCTURED_BANK_VERSIONS:
+            raise ValueError("A structured BNK parse result is required")
+        self.result = result
+        self.hirc_dirty = False
+        self.source_renames: dict[int, int] = {}
+        self.chunk_payloads: dict[bytes, bytes] = {}
+        media_ids = {entry.source_id for entry in result.didx_entries}
+        self._base_media_tracks = {
+            track.source_id: track for track in result.tracks
+            if track.source_id in media_ids
+        }
+        self._base_media_entries = list(result.didx_entries)
+        self._refresh_media_entries()
+
+    def clone(self) -> BnkEditModel:
+        clone = object.__new__(type(self))
+        clone.result = replace(
+            self.result,
+            tracks=list(self.result.tracks),
+            objects=list(self.result.objects),
+            events=list(self.result.events),
+            actions=list(self.result.actions),
+            bank_chunks=list(self.result.bank_chunks),
+            warnings=list(self.result.warnings),
+            didx_entries=list(self.result.didx_entries),
+        )
+        clone.hirc_dirty = self.hirc_dirty
+        clone.source_renames = dict(self.source_renames)
+        clone.chunk_payloads = dict(self.chunk_payloads)
+        clone._base_media_tracks = dict(self._base_media_tracks)
+        clone._base_media_entries = list(self._base_media_entries)
+        clone._media_tracks = dict(self._media_tracks)
+        clone._media_order = list(self._media_order)
+        return clone
+
+    @property
+    def objects(self) -> list[HircObject]:
+        return self.result.objects
+
+    def _unique(self, object_id: int, operation: str) -> HircObject | None:
+        matches = [obj for obj in self.objects if obj.object_id == object_id]
+        if len(matches) > 1:
+            raise ValueError(
+                f"Cannot {operation} ShortID {object_id}: it identifies "
+                f"{len(matches)} HIRC objects"
+            )
+        return matches[0] if matches else None
+
+    @staticmethod
+    def _reference_signature(owner: HircObject, field: HircReference):
+        return (
+            field.role,
+            field.target_kind,
+            field.target_id,
+            tuple(sorted(compatible_hirc_reference_types(owner, field))),
+        )
+
+    def _refresh_media_entries(self) -> None:
+        rows = list(_rekey_didx_rows(self._base_media_entries, self.source_renames))
+        self.result.didx_entries = [
+            replace(entry, source_id=target) if target is not None else entry
+            for entry, target in rows
+        ]
+        self._media_tracks = {}
+        for entry, target in rows:
+            source_id = entry.source_id if target is None else target
+            track = self._base_media_tracks.get(entry.source_id)
+            if track is not None:
+                self._media_tracks[source_id] = replace(track, source_id=source_id)
+        self._media_order = [entry.source_id for entry in self.result.didx_entries]
+
+    def mark_serialized(self) -> None:
+        """Make the current logical state the baseline for later edits."""
+
+        self.hirc_dirty = False
+        self.source_renames.clear()
+        self.chunk_payloads.clear()
+        self._base_media_tracks = dict(self._media_tracks)
+        self._base_media_entries = list(self.result.didx_entries)
+
+    def _refresh_context(self) -> None:
+        # Context-dependent legacy decoding is only needed when the ID set changes.
+        objects = [replace(obj) for obj in self.objects]
+        by_id = {obj.object_id: obj for obj in objects if obj.object_id}
+        known_ids = set(by_id)
+        for obj in objects:
+            if obj.structure and obj.structure.complete:
+                continue
+            obj.parent_id = obj.parent_reference_offset = None
+            if obj.type_id in _AUDIO_CONTAINER_TYPES:
+                obj.child_list_offset, obj.child_ids = _find_child_list(obj, by_id)
+                obj.random_sequence = (
+                    _parse_random_sequence(obj) if obj.type_id == 0x05 else None
+                )
+                obj.switch_container = (
+                    _parse_switch_container(obj) if obj.type_id == 0x06 else None
+                )
+                obj.music_segment = (
+                    _parse_music_segment(obj) if obj.type_id == 0x0A else None
+                )
+            _decode_node_base(obj, known_ids)
+        _infer_hirc_parents(objects, by_id)
+        for obj in objects:
+            _decode_hirc_references(obj, known_ids)
+        self.result.objects = objects
+
+    def _refresh_derived(self, before_sources) -> None:
+        after_sources = _decoded_hirc_source_map(self.objects)
+        renames = _source_id_renames(before_sources, after_sources)
+        for old_id, new_id in renames.items():
+            origins = [
+                source_id for source_id, current_id in self.source_renames.items()
+                if current_id == old_id
+            ] or [old_id]
+            for source_id in origins:
+                if source_id == new_id:
+                    self.source_renames.pop(source_id, None)
+                else:
+                    self.source_renames[source_id] = new_id
+        if renames:
+            self._refresh_media_entries()
+
+        events = _resolve_events(self.objects)
+        actions = [
+            BnkAction(
+                object_id=obj.object_id,
+                action_type=obj.action_type or 0,
+                action_name=obj.action_name or "Unknown",
+                target_id=obj.action_target_id or 0,
+                target_is_bus=obj.action_target_is_bus,
+                target_kind=obj.action_target_kind,
+                raw_id=obj.action_raw_id or 0,
+                settings=obj.action_settings,
+            )
+            for obj in self.objects
+            if obj.type_id == 0x03 and obj.action_type is not None
+        ]
+        source_records: dict[int, list[BnkSource]] = {}
+        for obj in self.objects:
+            for source in obj.sources:
+                if source.source_id:
+                    source_records.setdefault(source.source_id, []).append(source)
+        event_ids_by_source: dict[int, list[int]] = {}
+        for event in events:
+            for source_id in event.source_ids:
+                event_ids_by_source.setdefault(source_id, []).append(event.object_id)
+        source_ids = list(source_records)
+        source_ids.extend(
+            source_id for source_id in self._media_order
+            if source_id not in source_records
+        )
+        tracks = []
+        for index, source_id in enumerate(source_ids, 1):
+            records = source_records.get(source_id, ())
+            source = records[0] if records else None
+            media = self._media_tracks.get(source_id)
+            stream_type = source.stream_type if source else None
+            tracks.append(
+                replace(
+                    media,
+                    index=index,
+                    stream_type=stream_type,
+                    plugin_id=source.plugin_id if source else None,
+                    payload_complete=media.available and stream_type != 1,
+                    storage=_source_storage(stream_type, embedded=True),
+                    object_ids=tuple(dict.fromkeys(item.object_id for item in records)),
+                    event_ids=tuple(dict.fromkeys(event_ids_by_source.get(source_id, ()))),
+                )
+                if media else BnkTrack(
+                    index=index,
+                    source_id=source_id,
+                    offset=0,
+                    length=0,
+                    available=False,
+                    payload_complete=False,
+                    storage=_source_storage(stream_type),
+                    stream_type=stream_type,
+                    plugin_id=source.plugin_id if source else None,
+                    object_ids=tuple(dict.fromkeys(item.object_id for item in records)),
+                    event_ids=tuple(dict.fromkeys(event_ids_by_source.get(source_id, ()))),
+                )
+            )
+        self.result.events = events
+        self.result.actions = actions
+        self.result.tracks = tracks
+        self.result.has_embedded_data = any(track.available for track in tracks)
+
+    def upsert_objects(self, entries) -> None:
+        entries = tuple(entries)
+        if not entries:
+            return
+        before_sources = _decoded_hirc_source_map(self.objects)
+        future = list(self.objects)
+        decoded = []
+        baselines = []
+        original_ids = {obj.object_id for obj in self.objects}
+        claimed = set()
+        for raw_type, raw_id, raw_payload in entries:
+            type_id, object_id = int(raw_type), _object_id(raw_id)
+            payload = bytes(raw_payload)
+            key = object_id, type_id
+            if key in claimed:
+                raise ValueError(f"HIRC object {object_id} type 0x{type_id:02X} is updated twice")
+            claimed.add(key)
+            if not 0 < type_id <= 0xFF:
+                raise ValueError(f"Invalid HIRC type: {type_id}")
+            if len(payload) < 4 or struct.unpack_from("<I", payload)[0] != object_id:
+                raise ValueError(f"HIRC payload {object_id} does not start with its ShortID")
+            matches = [
+                (index, obj) for index, obj in enumerate(future)
+                if obj.object_id == object_id and obj.type_id == type_id
+            ]
+            if len(matches) > 1:
+                raise ValueError(
+                    f"Cannot update type 0x{type_id:02X} ShortID {object_id}: "
+                    f"it identifies {len(matches)} objects"
+                )
+            existing = matches[0][1] if matches else None
+            if existing is None and any(obj.object_id == object_id for obj in future):
+                raise ValueError(f"Cannot insert ShortID {object_id}: that ID already exists")
+            baseline = existing or next((
+                obj for obj in future
+                if obj.type_id == type_id and obj.payload[4:] == payload[4:]
+            ), None)
+            index = matches[0][0] if matches else len(future)
+            obj = HircObject(
+                existing.index if existing else index + 1,
+                type_id,
+                _hirc_type_name(type_id, self.result.bank_version),
+                object_id,
+                payload,
+                0,
+                bank_version=self.result.bank_version,
+            )
+            if existing:
+                future[index] = obj
+            else:
+                future.append(obj)
+            decoded.append(obj)
+            baselines.append(baseline)
+
+        for obj in decoded:
+            _decode_one_hirc_object(obj, future)
+        for obj, baseline in zip(decoded, baselines):
+            preserved = Counter(
+                self._reference_signature(baseline, field)
+                for field in (baseline.reference_fields if baseline else ())
+            )
+            for reference in obj.reference_fields:
+                signature = self._reference_signature(obj, reference)
+                if preserved[signature]:
+                    preserved[signature] -= 1
+                elif reference.target_kind in {"hirc", "event"}:
+                    _validate_hirc_reference_target(obj, reference, reference.target_id, future)
+
+        self.result.objects = future
+        if {obj.object_id for obj in future} != original_ids:
+            self._refresh_context()
+        self._refresh_derived(before_sources)
+        self.hirc_dirty = True
+
+    def set_event_actions(self, event_id: int, action_ids) -> None:
+        event_id = _object_id(event_id)
+        actions = tuple(_object_id(value) for value in action_ids)
+        existing = self._unique(event_id, "edit Event")
+        if existing is not None and existing.type_id != 0x04:
+            raise ValueError(f"HIRC object {event_id} already exists and is not an Event")
+        invalid = [
+            action_id for action_id in actions
+            if len(matches := [obj for obj in self.objects if obj.object_id == action_id]) != 1
+            or matches[0].type_id != 0x03
+        ]
+        if invalid:
+            raise ValueError(
+                f"Event {event_id} references missing/non-Action objects: {invalid}"
+            )
+        self.upsert_objects(((0x04, event_id, _pack_event_payload(event_id, actions)),))
+
+    def delete_objects(self, object_ids) -> None:
+        object_ids = {_object_id(value) for value in object_ids}
+        if not object_ids:
+            return
+        for object_id in object_ids:
+            if self._unique(object_id, "delete") is None:
+                raise ValueError(f"Cannot delete missing HIRC object {object_id}")
+        before_sources = _decoded_hirc_source_map(self.objects)
+        self.result.objects = [
+            obj for obj in self.objects if obj.object_id not in object_ids
+        ]
+        self._refresh_context()
+        self._refresh_derived(before_sources)
+        self.hirc_dirty = True
+
+    def rename_object(self, old_id: int, new_id: int) -> None:
+        old_id, new_id = _object_id(old_id), _object_id(new_id)
+        if old_id == new_id:
+            return
+        if self._unique(old_id, "rename") is None:
+            raise ValueError(f"Cannot rename missing HIRC object {old_id}")
+        if any(obj.object_id == new_id for obj in self.objects):
+            raise ValueError(f"HIRC rename target {new_id} already exists")
+        before_sources = _decoded_hirc_source_map(self.objects)
+        future = list(self.objects)
+        changed = []
+        for index, original in enumerate(future):
+            offsets = {0, *(
+                field.offset for field in original.reference_fields
+                if field.target_id == old_id
+            )}
+            payload = bytearray(original.payload)
+            touched = False
+            for offset in offsets:
+                if offset + 4 <= len(payload) and struct.unpack_from("<I", payload, offset)[0] == old_id:
+                    struct.pack_into("<I", payload, offset, new_id)
+                    touched = True
+            if not touched:
+                continue
+            object_id = new_id if original.object_id == old_id else original.object_id
+            obj = HircObject(
+                original.index,
+                original.type_id,
+                original.type_name,
+                object_id,
+                bytes(payload),
+                0,
+                bank_version=self.result.bank_version,
+            )
+            future[index] = obj
+            changed.append(obj)
+        for obj in changed:
+            _decode_one_hirc_object(obj, future)
+        self.result.objects = future
+        self._refresh_context()
+        self._refresh_derived(before_sources)
+        self.hirc_dirty = True
+
+    def set_reference(self, object_id: int, offset: int, target_id: int) -> None:
+        object_id, target_id = _object_id(object_id), _object_id(target_id)
+        obj = self._unique(object_id, "edit reference in")
+        if obj is None:
+            raise ValueError(f"Cannot edit reference in missing HIRC object {object_id}")
+        fields = [field for field in obj.reference_fields if field.offset == int(offset)]
+        if len(fields) != 1:
+            raise ValueError(
+                f"Offset {offset} in HIRC object {object_id} is not one safely decoded reference"
+            )
+        _validate_hirc_reference_target(obj, fields[0], target_id, self.objects)
+        self.upsert_objects(((obj.type_id, object_id, patch_hirc_reference(obj, offset, target_id)),))
+
+    def set_chunk_payload(self, chunk_id: bytes | str, payload: bytes) -> None:
+        key = chunk_id.encode("ascii") if isinstance(chunk_id, str) else bytes(chunk_id)
+        if len(key) != 4 or key in {b"HIRC", b"DATA", b"DIDX"}:
+            raise ValueError(f"Bank chunk {key!r} is not a settings chunk")
+        name = key.decode("ascii", "replace")
+        matches = [
+            index for index, chunk in enumerate(self.result.bank_chunks)
+            if chunk.chunk_id == name
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"Expected exactly one {name} chunk; found {len(matches)}")
+        version = 132 if self.result.bank_version == 125 else self.result.bank_version
+        decoded = parse_structured_chunk(key, bytes(payload), version)
+        if decoded is None or not decoded.structure.complete:
+            reason = decoded.structure.error if decoded else "unsupported chunk"
+            raise ValueError(f"Refusing incomplete {name} settings: {reason}")
+        self.result.bank_chunks[matches[0]] = decoded
+        self.chunk_payloads[key] = bytes(payload)
+
+    def hirc_payload(self) -> bytes:
+        return _pack_hirc(self.objects, self.result.hirc_trailing)
+
+
+def _rekey_didx_rows(entries, renames):
+    # Preserve the original order and any pre-existing duplicate rows. A
+    # retargeted row is dropped only when its new ID is already represented by
+    # unchanged media or by an earlier retargeted row.
+    unchanged_ids = {
+        entry.source_id for entry in entries if entry.source_id not in renames
+    }
+    renamed_ids: set[int] = set()
+    for entry in entries:
+        target = renames.get(entry.source_id)
+        if target is not None:
+            if target in unchanged_ids or target in renamed_ids:
+                continue
+            renamed_ids.add(target)
+        yield entry, target
+
+
 def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
     """Re-point embedded-media entries whose source ID was retargeted."""
 
@@ -3339,20 +3783,8 @@ def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
     entries = _read_didx(chunks[index].payload)
     if not any(entry.source_id in renames for entry in entries):
         return
-    # Preserve the original order and any pre-existing duplicate rows. A
-    # retargeted row is dropped only when its new ID is already represented by
-    # unchanged media or by an earlier retargeted row.
-    unchanged_ids = {
-        entry.source_id for entry in entries if entry.source_id not in renames
-    }
-    renamed_ids: set[int] = set()
     payload = bytearray()
-    for entry in entries:
-        target = renames.get(entry.source_id)
-        if target is not None:
-            if target in unchanged_ids or target in renamed_ids:
-                continue
-            renamed_ids.add(target)
+    for entry, target in _rekey_didx_rows(entries, renames):
         payload += struct.pack(
             _DIDX_ENTRY_FMT,
             entry.source_id if target is None else target,
@@ -3373,8 +3805,11 @@ def _rewrite_bnk(
     renamed_hirc_ids: dict[int, int],
     reference_targets: dict[tuple[int, int], int],
     bank_chunk_payloads: dict[bytes | str, bytes],
+    hirc_payload: bytes | None,
+    hirc_source_renames: dict[int, int] | None,
+    parsed_result: BnkParseResult | None,
 ) -> bytes:
-    chunks, trailing = _split_chunk_records(data)
+    chunks, trailing = _split_chunk_records(data, zero_copy_data=True)
     header = next((chunk.payload for chunk in chunks if chunk.chunk_id == b"BKHD"), None)
     bank_version = _read_bank_version(header)
     if bank_version not in STRUCTURED_BANK_VERSIONS:
@@ -3403,29 +3838,43 @@ def _rewrite_bnk(
         index = matches[0]
         chunks[index] = ChunkRecord(chunk_id, bytes(payload))
 
-    if any((event_actions, action_targets, hirc_upserts, deleted_hirc_ids, renamed_hirc_ids, reference_targets)):
+    if hirc_payload is not None or any((
+        event_actions, action_targets, hirc_upserts, deleted_hirc_ids,
+        renamed_hirc_ids, reference_targets,
+    )):
         hirc_index = next((i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"HIRC"), None)
         if hirc_index is None:
             raise ValueError("BNK has no HIRC chunk")
-        sources_before = _hirc_source_map(chunks[hirc_index].payload, bank_version)
-        chunks[hirc_index] = ChunkRecord(
-            chunk_id=b"HIRC",
-            payload=_edit_hirc_chunk(
-                chunks[hirc_index].payload,
-                bank_version=bank_version,
-                event_actions=event_actions,
-                action_targets=action_targets,
-                hirc_upserts=hirc_upserts,
-                deleted_hirc_ids=deleted_hirc_ids,
-                renamed_hirc_ids=renamed_hirc_ids,
-                reference_targets=reference_targets,
-            ),
+        infer_source_renames = hirc_source_renames is None
+        sources_before = (
+            _hirc_source_map(chunks[hirc_index].payload, bank_version)
+            if infer_source_renames else None
         )
-        sources_after = _hirc_source_map(chunks[hirc_index].payload, bank_version)
-        _rekey_didx(chunks, _source_id_renames(sources_before, sources_after))
+        payload = bytes(hirc_payload) if hirc_payload is not None else _edit_hirc_chunk(
+            chunks[hirc_index].payload,
+            bank_version=bank_version,
+            event_actions=event_actions,
+            action_targets=action_targets,
+            hirc_upserts=hirc_upserts,
+            deleted_hirc_ids=deleted_hirc_ids,
+            renamed_hirc_ids=renamed_hirc_ids,
+            reference_targets=reference_targets,
+        )
+        parsed_hirc = _read_hirc_objects(payload, bank_version=bank_version)
+        if not parsed_hirc.complete:
+            raise ValueError("Refusing to write a truncated HIRC chunk")
+        chunks[hirc_index] = ChunkRecord(b"HIRC", payload)
+        renames = (
+            _source_id_renames(
+                sources_before,
+                _hirc_source_map(chunks[hirc_index].payload, bank_version),
+            )
+            if infer_source_renames else hirc_source_renames
+        )
+        _rekey_didx(chunks, renames)
 
     if replacements:
-        _rewrite_bnk_media(chunks, replacements, bank_version)
+        _rewrite_bnk_media(chunks, replacements, bank_version, parsed_result)
     return _pack_chunk_records(chunks, trailing)
 
 
@@ -3433,13 +3882,25 @@ def _rewrite_bnk_media(
     chunks: list[ChunkRecord],
     replacements: dict[int, bytes],
     bank_version: int,
+    parsed_result: BnkParseResult | None = None,
 ) -> None:
     hirc_index = next((i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"HIRC"), None)
-    hirc = (
-        _read_hirc_objects(chunks[hirc_index].payload, bank_version=bank_version)
-        if hirc_index is not None else _HircReadResult([], b"", False)
-    )
-    _decode_hirc_objects(hirc.objects, bank_version)
+    if (
+        parsed_result is not None
+        and parsed_result.container_type == _BNK
+        and parsed_result.bank_version == bank_version
+    ):
+        hirc = _HircReadResult(
+            [replace(obj) for obj in parsed_result.objects],
+            parsed_result.hirc_trailing,
+            True,
+        )
+    else:
+        hirc = (
+            _read_hirc_objects(chunks[hirc_index].payload, bank_version=bank_version)
+            if hirc_index is not None else _HircReadResult([], b"", False)
+        )
+        _decode_hirc_objects(hirc.objects, bank_version)
     sources = [source for obj in hirc.objects for source in obj.sources]
     embedded_ids = {source.source_id for source in sources if source.stream_type == 0}
     prefetch_ids = {source.source_id for source in sources if source.stream_type == 1}
