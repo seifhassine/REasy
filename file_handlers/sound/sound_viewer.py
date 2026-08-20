@@ -12,7 +12,7 @@ from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QEventLoop, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
@@ -198,8 +198,10 @@ class SoundViewer(QWidget):
         self._setup_ui()
         self._update_profile_text()
         self.waveform_ready.connect(self._on_waveform_ready)
-        self.destroyed.connect(lambda *_: self._finalize())
-        QTimer.singleShot(0, self._on_analyze)
+        self.destroyed.connect(
+            lambda *_args, path=self._temp_dir: shutil.rmtree(path, ignore_errors=True)
+        )
+        QTimer.singleShot(0, self, self._on_analyze)
 
     @property
     def modified(self):
@@ -249,6 +251,8 @@ class SoundViewer(QWidget):
         if self._cleanup_done:
             return
         self._cleanup_done = True
+        self.event_graph.cleanup()
+        self.bank_graph.cleanup()
         self._cleanup_audio()
         shutil.rmtree(self._temp_dir, ignore_errors=True)
 
@@ -687,12 +691,16 @@ class SoundViewer(QWidget):
         self.player.playbackStateChanged.connect(self._on_state)
 
     def _on_duration(self, milliseconds):
+        if self._cleanup_done:
+            return
         self._duration_ms = max(0, milliseconds)
         self.pos_slider.setRange(0, self._duration_ms)
         self.pos_slider.setEnabled(bool(self._duration_ms))
         self.pos_tot.setText(self._fmt_ms(self._duration_ms))
 
     def _on_position(self, milliseconds):
+        if self._cleanup_done:
+            return
         if not self._is_seeking:
             self.pos_slider.setValue(max(0, milliseconds))
             self.pos_cur.setText(self._fmt_ms(milliseconds))
@@ -722,6 +730,8 @@ class SoundViewer(QWidget):
             )
 
     def _on_state(self, state):
+        if self._cleanup_done:
+            return
         playing = state == QMediaPlayer.PlaybackState.PlayingState
         self.stop_btn.setEnabled(playing)
         if not playing and state == QMediaPlayer.PlaybackState.StoppedState:
@@ -986,6 +996,8 @@ class SoundViewer(QWidget):
         threading.Thread(target=analyze, daemon=True).start()
 
     def _on_waveform_ready(self, result):
+        if self._cleanup_done:
+            return
         job, wav_path, payload = result
         if job != self._waveform_job or wav_path != self._preview_audio_path:
             return
@@ -1214,6 +1226,8 @@ class SoundViewer(QWidget):
         compiled = mode in (modes[0], modes[2])
         editable = mode in (modes[1], modes[2])
         progress = QProgressDialog(self.tr("Exporting media…"), self.tr("Cancel"), 0, len(tracks), self)
+        progress.setMinimumDuration(0)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         failures = []
         for index, track in enumerate(tracks):
             progress.setValue(index)
@@ -1643,7 +1657,7 @@ class SoundViewer(QWidget):
                             rates=self._rate_plan_text(rate_plan),
                         )
                     )
-                    QApplication.processEvents()
+                    QApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
             try:
                 data, codec = self._read_replacement_media(
                     path, track, original=plan.original_wem,
@@ -1737,7 +1751,7 @@ class SoundViewer(QWidget):
                         rates=self._rate_plan_text(rate_plan),
                     )
                 )
-                QApplication.processEvents()
+                QApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
             data, _codec = self._read_replacement_audio(
                 path, sample_rate_policy=self._sample_rate_policy()
             )
@@ -1808,6 +1822,8 @@ class SoundViewer(QWidget):
             return
 
         progress = QProgressDialog(self.tr("Replacing media…"), self.tr("Cancel"), 0, len(files), self)
+        progress.setMinimumDuration(0)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         failures = []
         authored = {}
         rate_policy = self._sample_rate_policy()
@@ -1858,6 +1874,8 @@ class SoundViewer(QWidget):
             QMessageBox.warning(self, self.tr("Bulk Replace"), self.tr("Failed: {files}").format(files=", ".join(failures[:12])))
 
     def _on_analyze(self):
+        if self._cleanup_done:
+            return
         try:
             result = self.handler.parse_result()
         except Exception as exc:

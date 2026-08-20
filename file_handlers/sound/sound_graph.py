@@ -160,7 +160,12 @@ class EventFlowGraph(QGraphicsView):
         scene.setSceneRect(0, 0, width, content_height + 40)
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self._has_graph = True
-        QTimer.singleShot(0, self.fit_graph)
+        QTimer.singleShot(0, self, self.fit_graph)
+
+    def cleanup(self):
+        self._node_timer.stop()
+        self._pending_node = None
+        self._has_graph = False
 
     def select_node(self, kind, object_id):
         tag = (kind, int(object_id))

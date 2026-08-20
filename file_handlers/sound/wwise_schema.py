@@ -459,6 +459,7 @@ BNK_FX_ENUMS = {
         "1920 Hz", "1846 Hz", "1778 Hz", "1714 Hz", "1655 Hz", "1600 Hz",
         "1548 Hz", "1500 Hz", "1455 Hz",
     ),
+    "ml1_mode": ("Clean", "Soft", "Smart", "Dynamic", "Loud", "Crush"),
     "system_mix": {0: "Game-defined", 1: "Mix to main", 2: "Mix to passthrough"},
     "mastering_eq_filter": {
         1: "Low-pass resonant", 2: "High-pass resonant", 3: "Peak",
@@ -633,6 +634,11 @@ BNK_FX_SCHEMAS = {
         ("Threshold", "f32"), ("Ratio", "f32"), ("Look-ahead", "f32"),
         ("Release", "f32"), ("Output level", "f32"),
         ("Process LFE", "bool"), ("Channel link", "bool"),
+    )),
+    0x00671003: ("McDSP ML1 Mastering Limiter", (
+        ("Output ceiling", "f32"), ("Threshold", "f32"),
+        ("Knee", "f32"), ("Release", "f32"),
+        ("Mode", "u32", "ml1_mode"),
     )),
     0x006E1003: ("McDSP FutzBox", (
         ("Filters enabled", "bool"),
@@ -828,6 +834,10 @@ BNK_FX_PROPERTY_NAMES = {
         70: "Noise Enable", 71: "Noise Level", 72: "Noise Low-pass Frequency",
         73: "Noise High-pass Frequency", 74: "Noise Threshold",
         75: "Noise Range", 76: "Noise Recovery",
+    },
+    0x00671003: {
+        0: "Output Ceiling", 1: "Threshold", 2: "Knee",
+        3: "Release", 4: "Mode",
     },
     0x00880003: {
         0: "Input", 1: "Process LFE", 2: "Delay Dry Signal",

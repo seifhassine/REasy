@@ -250,6 +250,24 @@ def _resolve_prefetch_banks(handler, metadata, current: str, source_id: int):
     return tuple({item.asset.path: item for item in matches}.values())
 
 
+def _linked_embedded_plan(handler, metadata, current, result, source_id):
+    linked = _resolve_embedded_banks(handler, metadata, current, source_id)
+    if not linked:
+        return None
+    banks = [BankMedia(asset, 0) for asset, _track in linked]
+    if source_id in music_clip_source_ids(result):
+        banks.append(BankMedia(
+            SoundAsset(current, bytes(handler.raw_data), "BNK music timeline"), 2
+        ))
+    return SoundReplacementPlan(
+        source_id,
+        current,
+        extract_embedded_wem(linked[0][0].data, linked[0][1]),
+        _parsed_banks(handler, banks),
+        (),
+    )
+
+
 def _resolve_one_package(handler, records, source_id: int) -> PckPair:
     unique = {
         (record.get("index", ""), record.get("streaming", "")): record
@@ -307,25 +325,12 @@ def resolve_sound_replacement(
             ))
             banks.extend(BankMedia(asset, 1) for asset, _track in split_events)
         elif track.stream_type == 0 or (track.stream_type is None and track.available):
-            linked = (
-                _resolve_embedded_banks(handler, metadata, current, source_id)
-                if not track.available else None
-            )
-            if linked:
-                banks.extend(BankMedia(asset, 0) for asset, _track in linked)
-                if source_id in music_clip_source_ids(result):
-                    banks.append(BankMedia(
-                        SoundAsset(
-                            current,
-                            bytes(handler.raw_data),
-                            "BNK music timeline",
-                        ),
-                        2,
-                    ))
-                original = extract_embedded_wem(linked[0][0].data, linked[0][1])
-                return SoundReplacementPlan(
-                    source_id, current, original, _parsed_banks(handler, banks), ()
+            if not track.available:
+                linked = _linked_embedded_plan(
+                    handler, metadata, current, result, source_id
                 )
+                if linked:
+                    return linked
             asset = SoundAsset(current, bytes(handler.raw_data), "embedded BNK media")
             banks.append(BankMedia(asset, 0))
             original = extract_embedded_wem(asset.data, track) if track.available else b""
@@ -333,7 +338,14 @@ def resolve_sound_replacement(
                 source_id, current, original, _parsed_banks(handler, banks), ()
             )
         else:
-            records = _package_records(metadata, profile, current, source_id)
+            records = metadata.media_packages(source_id, current)
+            if not records:
+                linked = _linked_embedded_plan(
+                    handler, metadata, current, result, source_id
+                )
+                if linked:
+                    return linked
+            records = records or _package_records(metadata, profile, current, source_id)
             packages.append(_resolve_one_package(handler, records, source_id))
             if track.stream_type == 1:
                 banks.append(BankMedia(SoundAsset(
