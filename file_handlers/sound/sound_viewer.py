@@ -385,7 +385,8 @@ class SoundViewer(QWidget):
         self.flow_group = QGroupBox(self.tr("Event playback graph"))
         flow = QVBoxLayout(self.flow_group)
         graph_help = QLabel(self.tr(
-            "Double-click a node to edit it. Scroll to zoom; drag to move the graph."
+            "Hover a node to trace its links. Double-click to edit; scroll to zoom; "
+            "drag to move the graph."
         ))
         graph_help.setWordWrap(True)
         graph_help.setStyleSheet(_MUTED_TEXT_STYLE)
@@ -554,6 +555,13 @@ class SoundViewer(QWidget):
             advanced_layout.addWidget(button)
         advanced_layout.addStretch()
         editor_layout.addWidget(advanced)
+        graph_legend = QLabel(self.tr(
+            "Direct parents  →  <b>Selected object</b>  →  Direct children"
+            " &nbsp; · &nbsp; Hover a node to trace its links"
+        ))
+        graph_legend.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        graph_legend.setStyleSheet(_MUTED_TEXT_STYLE)
+        editor_layout.addWidget(graph_legend)
         self.bank_graph = EventFlowGraph()
         self.bank_graph.node_selected.connect(self._on_bank_graph_node_selected)
         self.bank_graph.node_activated.connect(self._on_bank_graph_node_activated)
@@ -1170,13 +1178,16 @@ class SoundViewer(QWidget):
             if verified.loops != edited.loops or verified.markers != edited.markers:
                 raise ValueError(self.tr("Wwise did not preserve the requested loop/cue metadata."))
             count, changes = self._apply_replacement_plan(plan, authored)
-            self.status.setText(
-                self.tr("Updated {loops} loop(s) and {markers} marker(s) in source {id} across {count} verified file(s).").format(
+            self._report_changes(
+                self.tr(
+                    "Updated {loops} loop(s) and {markers} marker(s) in source "
+                    "{id} across {count} verified file(s)."
+                ).format(
                     loops=len(edited.loops), markers=len(edited.markers),
                     id=track.source_id, count=count,
-                )
+                ),
+                changes,
             )
-            self.status.setText("\n".join((self.status.text(), *changes)))
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Loop / Markers"), str(exc))
         finally:
@@ -1540,6 +1551,10 @@ class SoundViewer(QWidget):
         self.modified = True
         return len(outputs), changes
 
+    def _report_changes(self, summary, changes):
+        self.status.setText(summary)
+        print("\n".join((f"[Sound] {summary}", *(f"  {line}" for line in changes))))
+
     def _confirm_replacement_scope(self, source_ids):
         selected = set(source_ids)
         prefetch = any(track.source_id in selected and track.available and not track.payload_complete for track in self._parsed_tracks)
@@ -1669,7 +1684,7 @@ class SoundViewer(QWidget):
                 encoding += self.tr(" (matched original)") if (
                     original_codec == authored_codec
                 ) else self.tr(" (profile default)")
-            self.status.setText(
+            self._report_changes(
                 self.tr("Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.").format(
                     id=track.source_id, count=count, file=Path(path).name,
                     encoding=encoding,
@@ -1677,9 +1692,9 @@ class SoundViewer(QWidget):
                         " · " + self._rate_plan_text(rate_plan)
                         if rate_plan else ""
                     ),
-                )
+                ),
+                changes,
             )
-            self.status.setText("\n".join((self.status.text(), *changes)))
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Replace Error"), str(exc))
 
@@ -2042,10 +2057,7 @@ class SoundViewer(QWidget):
                 self._action_summary(obj) if obj.type_id == 0x03 else
                 self._playback_summary(obj)
             )
-            source_line = ", ".join(
-                f"{source.source_id} (0x{source.source_id:08X})"
-                for source in obj.sources
-            )
+            source_line = ", ".join(str(source.source_id) for source in obj.sources)
             if source_line:
                 recovered = f"{recovered}\nSources: {source_line}"
             haystack = f"{obj.type_name} {obj.object_id} 0x{obj.object_id:08X} {edit_level} {recovered}".casefold()
@@ -2064,7 +2076,7 @@ class SoundViewer(QWidget):
             item.setData(Qt.UserRole, obj.object_id)
             item.setData(Qt.UserRole + 1, obj.index)
             item.setToolTip(self.tr(
-                "HIRC type 0x{type:02X} · {bytes} payload bytes\n{detail}"
+                "HIRC type {type} · {bytes} payload bytes\n{detail}"
             ).format(type=obj.type_id, bytes=len(obj.payload), detail=recovered))
             self.bank_object_list.addItem(item)
             if obj.index == selected_index:
@@ -2302,6 +2314,8 @@ class SoundViewer(QWidget):
             return key
 
         root = add(selected, 1, self.tr("Selected · ShortID {id}").format(id=selected.object_id))
+        nodes[root]["tone"] = "selected"
+        nodes[root]["selected"] = True
         for source in self._parse_result.objects:
             fields = [
                 field for field in source.reference_fields
@@ -2419,12 +2433,12 @@ class SoundViewer(QWidget):
         decoded = self._hirc_edit_level(obj)
         if typed_count > 1:
             decoded = self.tr(
-                "read-only because type 0x{type_id:02X} + ShortID identifies {count} objects"
+                "read-only because type {type_id} + ShortID identifies {count} objects"
             ).format(type_id=obj.type_id, count=typed_count)
         elif id_count > 1:
             decoded = self.tr("{level} (type-qualified; ShortID is shared)").format(level=decoded)
         detail = self.tr(
-            "{type} {id} · HIRC 0x{type_id:02X} · {size} bytes · "
+            "{type} {id} · HIRC type {type_id} · {size} bytes · "
             "{incoming} incoming / {outgoing} outgoing · Editing: {decoded}"
         ).format(
             type=obj.type_name, id=obj.object_id, type_id=obj.type_id,
@@ -2756,9 +2770,7 @@ class SoundViewer(QWidget):
             tooltip.extend(context)
             if event.source_ids:
                 tooltip.append(self.tr("Sources: {ids}").format(
-                    ids=", ".join(
-                        f"{sid} (0x{sid:08X})" for sid in event.source_ids
-                    )
+                    ids=", ".join(map(str, event.source_ids))
                 ))
             item.setToolTip("\n".join(tooltip))
             self.event_list.addItem(item)

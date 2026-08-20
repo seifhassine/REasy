@@ -68,6 +68,7 @@ from .wwise_schema import (
     BNK_CURVE_INTERPOLATION,
     BNK_CURVE_SCALING,
     BNK_FX_ENUMS,
+    BNK_PLUGIN_NAMES,
     attenuation_targets,
     property_names,
 )
@@ -78,6 +79,7 @@ _SOURCE_HEADER_FIELDS = (
     "Codec / source plug-in", "Storage type", "Source ID",
     "In-memory media bytes", "Source flags", "Plug-in parameter bytes",
 )
+_PLUGIN_IDS_BY_NAME = {name: plugin_id for plugin_id, name in BNK_PLUGIN_NAMES.items()}
 
 
 class ActionPickerDialog(QDialog):
@@ -236,6 +238,10 @@ def _number(text, label, *, bits=32, allow_zero=True):
     if parsed < 0 or parsed > limit or (not allow_zero and parsed == 0):
         raise ValueError(f"{label} must be between {0 if allow_zero else 1} and {limit}.")
     return parsed
+
+
+def _plugin_id(text):
+    return _PLUGIN_IDS_BY_NAME.get(str(text).strip()) or _number(text, "Plugin ID")
 
 
 def _id_list(text, label="Child IDs"):
@@ -447,7 +453,7 @@ class PropertyRowsEditor(QWidget):
             ids.append(property_id)
         for item_id in ids:
             combo.addItem(
-                f"0x{item_id:02X} — "
+                f"{item_id} — "
                 f"{bnk_property_name(item_id, self.property_kind, self.bank_version)}",
                 item_id,
             )
@@ -1185,7 +1191,10 @@ class HircPropertiesDialog(QDialog):
             self.form.addRow(self.tr("Media storage"), self.stream_type)
             self.form.addRow(self.tr("In-memory bytes"), self.memory_size)
             self.form.addRow(self.tr("Source flags"), self.source_flags)
-            self.form.addRow(self.tr("Codec plugin"), QLabel(f"0x{source.plugin_id:08X}"))
+            self.form.addRow(
+                self.tr("Codec"),
+                QLabel(BNK_PLUGIN_NAMES.get(source.plugin_id, str(source.plugin_id))),
+            )
             return
         if obj.random_sequence:
             self.kind, data = "random", obj.random_sequence
@@ -1286,8 +1295,8 @@ class HircPropertiesDialog(QDialog):
         if obj.music_track:
             self.kind, data = "track", obj.music_track
             self.source_rows = RowsEditor(
-                [self.tr("Plugin"), self.tr("Stream type"), self.tr("Source ID"), self.tr("In-memory bytes"), self.tr("Flags")],
-                ((f"0x{item.plugin_id:08X}", item.stream_type, item.source_id, item.in_memory_size, item.source_bits) for item in obj.sources),
+                [self.tr("Codec"), self.tr("Stream type"), self.tr("Source ID"), self.tr("In-memory bytes"), self.tr("Flags")],
+                ((BNK_PLUGIN_NAMES.get(item.plugin_id, str(item.plugin_id)), item.stream_type, item.source_id, item.in_memory_size, item.source_bits) for item in obj.sources),
                 fixed=True,
             )
             self.subtracks = self._spin(data.subtrack_count, 0x7FFFFFFF)
@@ -1480,7 +1489,7 @@ class HircPropertiesDialog(QDialog):
             sources = tuple(
                 replace(
                     source,
-                    plugin_id=_number(row[0], "Plugin ID"),
+                    plugin_id=_plugin_id(row[0]),
                     stream_type=_number(row[1], "Stream type", bits=8),
                     source_id=_number(row[2], "Source ID", allow_zero=False),
                     in_memory_size=_number(row[3], "In-memory bytes"),

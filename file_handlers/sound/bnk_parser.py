@@ -57,6 +57,14 @@ _WAVE_MAGIC = b"WAVE"
 _BNK = "bnk"
 _PCK = "pck"
 _DIDX_ENTRY_FMT = "<III"
+_WEM_CODEC_NAMES = {
+    0x0001: "Wwise PCM",
+    0x0002: "Wwise ADPCM",
+    0x3041: "WEM Opus",
+    0x8311: "Wwise Platinum ADPCM",
+    0xFFFE: "Wwise PCM",
+    0xFFFF: "Wwise Vorbis",
+}
 
 # Bus references that Wwise routinely keeps in a separate init/master-bus bank,
 # so a bank is allowed to reference them without resolving them locally.
@@ -859,7 +867,11 @@ def parse_wem_metadata(data: bytes, plugin_id: int | None = None) -> WemMetadata
     tag, channels, sample_rate, average_bps = struct.unpack_from("<HHII", fmt_chunk, 0)
     duration = (data_size / average_bps) if data_size and average_bps else None
     return WemMetadata(
-        codec=f"0x{tag:04X}",
+        codec=(
+            _WEM_CODEC_NAMES.get(tag)
+            or BNK_PLUGIN_NAMES.get(plugin_id)
+            or f"Unknown codec ({tag})"
+        ),
         channels=channels or None,
         sample_rate=sample_rate or None,
         duration_seconds=duration,

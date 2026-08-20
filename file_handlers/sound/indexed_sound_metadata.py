@@ -474,16 +474,12 @@ class IndexedSoundMetadata(SoundMetadata):
     def label(self, category: str, object_id: int, *, event: bool = False) -> str:
         object_id = int(object_id) & 0xFFFFFFFF
         names = self.event_names(object_id) if event else self.names(category, object_id)
-        return " / ".join(names) if names else f"0x{object_id:08X}"
+        return " / ".join(names) if names else str(object_id)
 
     def id_label(self, category: str, object_id: int, *, event: bool = False) -> str:
         object_id = int(object_id) & 0xFFFFFFFF
-        name = self.label(category, object_id, event=event)
-        return (
-            f"{name}  [{object_id} / 0x{object_id:08X}]"
-            if not name.startswith("0x")
-            else f"{object_id} / {name}"
-        )
+        names = self.event_names(object_id) if event else self.names(category, object_id)
+        return f"{' / '.join(names)} [{object_id}]" if names else str(object_id)
 
     def search_text(self, category: str, object_id: int, *, event: bool = False) -> str:
         names = self.event_names(object_id) if event else self.names(category, object_id)
