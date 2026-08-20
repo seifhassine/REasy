@@ -24,6 +24,7 @@ from .wwise_schema import (
     BNK_PLUGIN_NAMES,
     STRUCTURED_BANK_VERSIONS,
     attenuation_targets,
+    fx_property_names,
     integer_properties,
     property_names,
     _ACTION_EVENT_TARGETS,
@@ -1147,6 +1148,60 @@ def _decode_hirc_references(obj: HircObject, known_ids: set[int]) -> None:
     obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
 
 
+def _resolve_fx_state_property_names(objects: list[HircObject]) -> None:
+    """Resolve state-value property IDs in the context of their owning effect."""
+
+    owners: dict[int, list[dict[int, str]]] = {}
+    for owner in objects:
+        names = (
+            fx_property_names(owner.fx_plugin.plugin_id, owner.bank_version)
+            if owner.fx_plugin else None
+        )
+        if names:
+            for reference in owner.reference_fields:
+                if reference.role == "state object":
+                    owners.setdefault(reference.target_id, []).append(names)
+
+    for obj in objects:
+        layout = obj.structure
+        if obj.type_id != 0x01 or not layout or not layout.complete:
+            continue
+        generic = property_names("state", obj.bank_version)
+        properties = [
+            field for field in layout.fields
+            if field.path.startswith("State values/")
+            and field.label.endswith(" property")
+        ]
+        values = [
+            field for field in layout.fields
+            if field.path.startswith("State values/") and field.storage == "f32"
+        ]
+        updates = {}
+        for prop, value in zip(properties, values):
+            labels = {
+                names.get(int(prop.value)) for names in owners.get(obj.object_id, ())
+            }
+            label = (
+                next(iter(labels))
+                if len(labels) == 1 and None not in labels
+                else generic.get(int(prop.value))
+            )
+            enum = dict(generic)
+            if label:
+                enum[int(prop.value)] = label
+            updates[prop.offset] = replace(prop, enum=tuple(sorted(enum.items())))
+            value_label = f"{label or f'Property 0x{int(prop.value):04X}'} value"
+            updates[value.offset] = replace(
+                value, label=value_label,
+                path=f"{value.path.rpartition('/')[0]}/{value_label}",
+            )
+        if updates:
+            obj.structure = replace(
+                layout,
+                fields=tuple(updates.get(field.offset, field) for field in layout.fields),
+            )
+
+
 def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = None) -> None:
     if bank_version not in STRUCTURED_BANK_VERSIONS:
         return
@@ -1158,6 +1213,7 @@ def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = N
     known_ids = set(by_id)
     for obj in objects:
         _decode_hirc_references(obj, known_ids)
+    _resolve_fx_state_property_names(objects)
 
 
 def _decode_one_hirc_object(obj: HircObject, objects: list[HircObject]) -> None:
@@ -3497,6 +3553,7 @@ class BnkEditModel:
         _infer_hirc_parents(objects, by_id)
         for obj in objects:
             _decode_hirc_references(obj, known_ids)
+        _resolve_fx_state_property_names(objects)
         self.result.objects = objects
 
     def _refresh_derived(self, before_sources) -> None:
@@ -3636,6 +3693,7 @@ class BnkEditModel:
 
         for obj in decoded:
             _decode_one_hirc_object(obj, future)
+        _resolve_fx_state_property_names(future)
         for obj, baseline in zip(decoded, baselines):
             preserved = Counter(
                 self._reference_signature(baseline, field)

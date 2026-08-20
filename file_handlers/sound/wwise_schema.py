@@ -521,6 +521,9 @@ _MASTERING_COMPRESSOR = tuple(
 
 # Exact scalar parameter blocks observed in registered legacy Wwise schemas.
 BNK_FX_SCHEMAS = {
+    0x00000403: ("Capcom Wave Data Bridge", (
+        ("Wave data plug-in index", "u32"),
+    )),
     0x00BA0003: ("Mastering Suite", (
         ("Parametric EQ enabled", "bool"), ("Compressor enabled", "bool"),
         ("Master volume enabled", "bool"), ("Limiter enabled", "bool"),
@@ -757,6 +760,7 @@ BNK_FX_SCHEMAS = {
         ("Minimum system audio objects", "u16"),
     )),
     0x00AA1137: ("Microsoft Spatial Sound", ()),
+    0x00B40007: ("Vibration", ()),
     0x00B50007: ("No Output", ()),
     0x03840009: ("Wwise System Output Settings", (
         ("Mix behavior", "u32", "system_mix"),
