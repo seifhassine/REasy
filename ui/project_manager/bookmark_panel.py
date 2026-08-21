@@ -300,7 +300,7 @@ class BookmarksPanel(QWidget):
 
     def _scope_label(self, bookmark: Bookmark) -> str:
         if bookmark.scope == "pak":
-            return f"{self.tr('PAK')} · {bookmark.game}" if bookmark.game else self.tr("PAK")
+            return self.tr("PAK")
         return self.tr("Project") if bookmark.scope == "project" else self.tr("Unpacked")
 
     def _tooltip(self, bookmark: Bookmark) -> str:
