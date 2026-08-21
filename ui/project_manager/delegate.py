@@ -1,6 +1,6 @@
 from __future__ import annotations
 from PySide6.QtCore    import Qt, QEvent
-from PySide6.QtWidgets import QApplication, QStyledItemDelegate, QStyle, QStyleOptionViewItem
+from PySide6.QtWidgets import QApplication, QStyledItemDelegate, QStyle, QStyleOptionViewItem, QFileSystemModel
 
 from .constants import make_plus_pixmap
 
@@ -67,21 +67,31 @@ class _ActionsDelegate(_ActionIconsDelegate):
         style = QApplication.instance().style()
         self.close = style.standardIcon(QStyle.SP_MessageBoxCritical).pixmap(_ICON_WIDTH, _ICON_WIDTH)
 
+    @staticmethod
+    def _is_dir(model, index):
+        return isinstance(model, QFileSystemModel) and model.isDir(index)
+
+    @staticmethod
+    def _path(model, index):
+        if isinstance(model, QFileSystemModel):
+            return model.filePath(index)
+        return index.data(Qt.UserRole + 1) or index.data(Qt.DisplayRole)
+
     # ---------------- painting --------------------------------------
     def paint(self, painter, option, index):
-        is_dir = index.model().isDir(index)
+        is_dir = self._is_dir(index.model(), index)
         primary_icon = self.close if self.for_project else self.plus
         self._paint_actions(painter, option, index, primary_icon, not is_dir)
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
             return False
-        is_dir = model.isDir(index)
+        is_dir = self._is_dir(model, index)
         action = self._action_at(ev, option, not is_dir)
         if action is None:
             return False
 
-        path = model.filePath(index)
+        path = self._path(model, index)
 
         # First icon (add/remove)
         if action == "primary":

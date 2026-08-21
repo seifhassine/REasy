@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 from time import monotonic
 from urllib.parse import quote, unquote
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QModelIndex, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QUrl, QSize
 from PySide6.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QToolButton,
     QPushButton, QLabel, QFileDialog, QFileSystemModel, QMessageBox,
@@ -274,18 +274,20 @@ class ProjectManager(QDockWidget):
         toggles.addWidget(self.btn_pak_files)
         toggles.addStretch(1)
 
-        # PAK search bar (visible only on PAK tab)
+        # Search bars (visible only on their respective tabs)
         pak_search = QHBoxLayout()
         lay.addLayout(pak_search)
-        self.pak_filter_label = QLabel(self.tr("Filter:"))
+        self.pak_filter_label, self.pak_filter_edit, self._pak_filter_timer = \
+            self._build_search_bar(self._apply_pak_filter_now)
         pak_search.addWidget(self.pak_filter_label)
-        self.pak_filter_edit = QLineEdit(self)
-        self.pak_filter_edit.setPlaceholderText(self.tr("Search (regex) – shows flat list; clear for tree view"))
-        self._pak_filter_timer = QTimer(self)
-        self._pak_filter_timer.setSingleShot(True)
-        self._pak_filter_timer.timeout.connect(self._apply_pak_filter_now)
-        self.pak_filter_edit.textChanged.connect(self._on_pak_filter_text_changed)
         pak_search.addWidget(self.pak_filter_edit, 1)
+
+        proj_search = QHBoxLayout()
+        lay.addLayout(proj_search)
+        self.proj_filter_label, self.proj_filter_edit, self._proj_filter_timer = \
+            self._build_search_bar(self._apply_proj_filter_now)
+        proj_search.addWidget(self.proj_filter_label)
+        proj_search.addWidget(self.proj_filter_edit, 1)
 
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(False)
@@ -311,6 +313,7 @@ class ProjectManager(QDockWidget):
         self._pak_population_paths: list[str] = []
         self._pak_index_dirty = False
         self._pak_flat_model: QStringListModel | None = None
+        self._proj_flat_model: QStandardItemModel | None = None
         self._project_load_ticket = 0
         self._project_load_started_at = 0.0
         self._project_load_min_visible_ms = 300
@@ -408,7 +411,7 @@ class ProjectManager(QDockWidget):
         if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
             self._apply_unpacked_root(self.unpacked_dir)
         # Initialize PAK controls state and placeholders
-        self._update_pak_controls_state()
+        self._update_tab_controls_state()
         self._update_placeholders()
 
     def infer_project_game(self, project_path: Path | str) -> str | None:
@@ -602,7 +605,7 @@ class ProjectManager(QDockWidget):
         self.tree_sys.setVisible(tab == "sys")
         self.tree_proj.setVisible(tab == "proj")
         self.tree_pak.setVisible(tab == "pak")
-        self._update_pak_controls_state()
+        self._update_tab_controls_state()
         self._update_path_label()
         self._update_placeholders()
 
@@ -635,12 +638,26 @@ class ProjectManager(QDockWidget):
         else:
             self.pak_placeholder.setVisible(False)
 
-    def _update_pak_controls_state(self):
+    def _update_tab_controls_state(self):
         on_pak = (self._active_tab == "pak")
-        widgets_to_control = [self.pak_ignore_mods_cb, self.btn_scan_paks, self.btn_load_list, self.pak_list_edit, self.pak_filter_label, self.pak_filter_edit]
-        for w in widgets_to_control:
+        on_proj = (self._active_tab == "proj")
+        for w in (self.pak_ignore_mods_cb, self.btn_scan_paks, self.btn_load_list, self.pak_list_edit, self.pak_filter_label, self.pak_filter_edit):
             w.setVisible(on_pak)
             w.setEnabled(on_pak and self.tree_pak.isEnabled())
+        for w in (self.proj_filter_label, self.proj_filter_edit):
+            w.setVisible(on_proj)
+            w.setEnabled(on_proj and bool(self.project_dir))
+
+    def _build_search_bar(self, apply_now):
+        """Create a debounced regex search bar wired to *apply_now*."""
+        label = QLabel(self.tr("Filter:"))
+        edit = QLineEdit(self)
+        edit.setPlaceholderText(self.tr("Search (regex) – shows flat list; clear for tree view"))
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(apply_now)
+        edit.textChanged.connect(lambda _=None: timer.start(120))
+        return label, edit, timer
 
     def _new_pak_filter_proxy(self):
         proxy = QSortFilterProxyModel(self)
@@ -781,16 +798,17 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setEnabled(not proj_dir)
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
+        self.proj_filter_edit.clear()
         if proj_dir:
             self.project_label.setText(self.tr("<b>Project: {name}</b>").format(
                 name=os.path.basename(proj_dir)
             ))
             self.model_proj.setRootPath(proj_dir)
-            self.tree_proj .setRootIndex(self.model_proj.index(proj_dir))
+            self._show_proj_tree()
             if self._restore_project_state(proj_dir):
                 self.tree_pak.setEnabled(True)
                 self._prepare_pak_index()
-                self._update_pak_controls_state()
+                self._update_tab_controls_state()
                 self._update_placeholders()
                 if on_loaded:
                     on_loaded()
@@ -800,9 +818,9 @@ class ProjectManager(QDockWidget):
             QTimer.singleShot(120, self, lambda: self._finish_project_load(ticket, proj_dir, on_loaded))
         else:
             self.project_label.setText(self.tr("<i>No project open</i>"))
-            self.tree_proj .setRootIndex(QModelIndex())
+            self._show_proj_tree()
             self._set_loading_overlay(False)
-        self._update_pak_controls_state()
+        self._update_tab_controls_state()
         self._update_placeholders()
 
     def _set_loading_overlay(self, visible: bool, text: str | None = None):
@@ -857,7 +875,7 @@ class ProjectManager(QDockWidget):
             is_current = ticket == self._project_load_ticket and self.project_dir == proj_dir
             if is_current:
                 self.tree_pak.setEnabled(True)
-                self._update_pak_controls_state()
+                self._update_tab_controls_state()
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
             if is_current and on_loaded:
@@ -1104,9 +1122,6 @@ class ProjectManager(QDockWidget):
         self._pak_tree_model = model
 
 
-    def _on_pak_filter_text_changed(self, _=None):
-        self._pak_filter_timer.start(120)
-
     def _apply_pak_filter_now(self):
         """Apply regex/text filter to PAK paths and show flat results with actions."""
         if not hasattr(self, "pak_filter_edit"):
@@ -1311,15 +1326,23 @@ class ProjectManager(QDockWidget):
 
     def _proj_menu(self, pos):
         idx = self.tree_proj.indexAt(pos)
-        if not idx.isValid() or self.model_proj.isDir(idx):
+        if not idx.isValid():
             return
+
+        model = idx.model()
+        if isinstance(model, QFileSystemModel):
+            if model.isDir(idx):
+                return
+            path = model.filePath(idx)
+        else:
+            path = idx.data(Qt.UserRole + 1) or idx.data(Qt.DisplayRole)
 
         menu = QMenu(self)
         remove_act = menu.addAction(self.tr("Remove"))
 
         chosen = menu.exec(self.tree_proj.viewport().mapToGlobal(pos))
         if chosen is remove_act:
-            self._remove_from_project(self.model_proj.filePath(idx))
+            self._remove_from_project(path)
 
     def _copy_to_project(self, src):
         if not self.project_dir or not self._check_folder(self.unpacked_dir):
@@ -1366,26 +1389,69 @@ class ProjectManager(QDockWidget):
         if failure is not None:
             QMessageBox.critical(self, self.tr("Remove failed"), str(failure))
 
+    def _show_proj_tree(self):
+        """Attach the project filesystem model and restore the tree view."""
+        self.tree_proj.setModel(self.model_proj)
+        self.tree_proj.hideColumn(1)
+        self.tree_proj.hideColumn(2)
+        hdr = self.tree_proj.header()
+        hdr.setSectionResizeMode(0, QHeaderView.Stretch)
+        hdr.setSectionResizeMode(3, QHeaderView.Fixed)
+        hdr.resizeSection(3, 100)
+        hdr.setStretchLastSection(False)
+        hdr.setMinimumSectionSize(100)
+        self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir or ""))
+
+    def _project_search_paths(self):
+        """Return (relative, absolute) file paths under the active project."""
+        if not self.project_dir:
+            return []
+        root = self.project_dir
+        out = []
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if not d.startswith('.')]
+            for name in filenames:
+                if name.startswith('.'):
+                    continue
+                full = os.path.join(dirpath, name)
+                out.append((os.path.relpath(full, root).replace('\\', '/'), full))
+        out.sort(key=lambda item: item[0])
+        return out
+
+    def _apply_proj_filter_now(self):
+        """Filter project files into a flat result list; clearing restores the tree."""
+        text = self.proj_filter_edit.text().strip()
+        if not text:
+            self._show_proj_tree()
+            return
+        pat = QRegularExpression(text)
+        if not pat.isValid():
+            pat = QRegularExpression(QRegularExpression.escape(text))
+        pat.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
+        if self._proj_flat_model is None:
+            self._proj_flat_model = QStandardItemModel(self)
+        else:
+            self._proj_flat_model.clear()
+        self._proj_flat_model.setHorizontalHeaderLabels([self.tr("Name")])
+        for rel, full in self._project_search_paths():
+            if pat.match(rel).hasMatch():
+                item = QStandardItem(rel)
+                item.setEditable(False)
+                item.setData(full, Qt.UserRole + 1)
+                self._proj_flat_model.appendRow(item)
+        self.tree_proj.setModel(self._proj_flat_model)
+        self.tree_proj.header().setSectionResizeMode(0, QHeaderView.Stretch)
+
     def _refresh_proj(self):
         old_model = self.model_proj
         old_model.setOption(QFileSystemModel.DontWatchForChanges, True)
 
         self.model_proj = QFileSystemModel()
         self.model_proj.setRootPath(self.project_dir or "")
-        
-        self.tree_proj.setModel(self.model_proj)
-        self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
-        self.tree_proj.setIndentation(8)
-        self.tree_proj.hideColumn(1)
-        self.tree_proj.hideColumn(2)
-        self.tree_proj.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.tree_proj.header().setSectionResizeMode(3, QHeaderView.Fixed)
-        self.tree_proj.header().resizeSection(3, 100)
-        self.tree_proj.header().setStretchLastSection(False)
-        self.tree_proj.header().setMinimumSectionSize(100)
-        if self.project_dir:
-            self.tree_proj.setRootIndex(self.model_proj.index(self.project_dir))
+        self._show_proj_tree()
         old_model.deleteLater()
+        if self.proj_filter_edit.text().strip():
+            self._apply_proj_filter_now()
 
     def _open_in_editor(self, path, *, warn_project_copy: bool = False):
         actual_mesh_path = _actual_mesh_path(os.fspath(path))
@@ -1403,8 +1469,13 @@ class ProjectManager(QDockWidget):
                 QMessageBox.critical(self, self.tr("Open failed"), str(e))
 
     def _on_double(self, idx, in_project):
-        path = (self.model_proj if in_project else self.model_sys).filePath(idx)
-        if os.path.isfile(path):
+        model = idx.model()
+        if isinstance(model, QFileSystemModel):
+            path = model.filePath(idx)
+        else:
+            path = idx.data(Qt.UserRole + 1) or idx.data(Qt.DisplayRole)
+            in_project = True
+        if isinstance(path, str) and os.path.isfile(path):
             self._open_in_editor(path, warn_project_copy=not in_project)
 
     def _choose_game(self) -> str | None:
