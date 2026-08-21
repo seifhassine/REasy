@@ -12,7 +12,7 @@ from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QEventLoop, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QInputDialog,
     QLabel,
+    QLayout,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -177,6 +178,78 @@ def _get_vgmstream_downloader():
     return _vgmstream_downloader
 
 
+class FlowLayout(QLayout):
+    """Wrap child widgets onto new rows when horizontal space runs out."""
+
+    def __init__(self, parent=None, margin=0, h_spacing=-1, v_spacing=-1):
+        super().__init__(parent)
+        self._items = []
+        self._h_spacing = h_spacing
+        self._v_spacing = v_spacing
+        self.setContentsMargins(margin, margin, margin, margin)
+
+    def addItem(self, item):
+        self._items.append(item)
+
+    def count(self):
+        return len(self._items)
+
+    def itemAt(self, index):
+        return self._items[index] if 0 <= index < len(self._items) else None
+
+    def takeAt(self, index):
+        return self._items.pop(index) if 0 <= index < len(self._items) else None
+
+    def expandingDirections(self):
+        return Qt.Orientations()
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        return self._do_layout(QRect(0, 0, width, 0), True)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self._do_layout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+        for item in self._items:
+            size = size.expandedTo(item.minimumSize())
+        margins = self.contentsMargins()
+        return size + QSize(
+            margins.left() + margins.right(), margins.top() + margins.bottom()
+        )
+
+    def _do_layout(self, rect, test_only):
+        margins = self.contentsMargins()
+        effective = rect.adjusted(
+            margins.left(), margins.top(), -margins.right(), -margins.bottom()
+        )
+        x = effective.x()
+        y = effective.y()
+        line_height = 0
+        h_spacing = self._h_spacing if self._h_spacing >= 0 else self.spacing()
+        v_spacing = self._v_spacing if self._v_spacing >= 0 else self.spacing()
+
+        for item in self._items:
+            next_x = x + item.sizeHint().width() + h_spacing
+            if next_x - h_spacing > effective.right() and line_height > 0:
+                x = effective.x()
+                y += line_height + v_spacing
+                next_x = x + item.sizeHint().width() + h_spacing
+                line_height = 0
+            if not test_only:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
+        return y + line_height - rect.y() + margins.bottom()
+
+
 class SoundViewer(QWidget):
     modified_changed = Signal(bool)
     waveform_ready = Signal(object)
@@ -261,7 +334,7 @@ class SoundViewer(QWidget):
         self.codec_combo.blockSignals(True)
         self.codec_combo.clear()
         self.codec_combo.addItem(
-            self.tr("Match original WEM / game default (Recommended)"), None
+            self.tr("Match original WEM (Recommended)"), None
         )
         if self._sound_profile:
             for codec in self._sound_profile.wem_codecs:
@@ -308,6 +381,9 @@ class SoundViewer(QWidget):
         if not available:
             self.advanced_compression_group.setChecked(False)
         self.advanced_compression_group.blockSignals(False)
+        self.advanced_compression_host.setVisible(
+            available and self.advanced_compression_group.isChecked()
+        )
 
         if rebuild:
             selected = self.compression_mode_combo.currentData()
@@ -443,6 +519,7 @@ class SoundViewer(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
         header = QHBoxLayout()
+        header.setSpacing(12)
         heading = QVBoxLayout()
         title = QLabel(self.tr("Sound Modding"))
         title.setStyleSheet("font-weight: 600; font-size: 18px;")
@@ -451,10 +528,8 @@ class SoundViewer(QWidget):
         heading.addWidget(title)
         heading.addWidget(self.summary_label)
         header.addLayout(heading, 1)
-        self.analyze_btn = self._make_btn(self.tr("Refresh"), QStyle.SP_BrowserReload, self._on_analyze)
-        header.addWidget(self.analyze_btn)
+        header.addWidget(self._build_role_header())
         layout.addLayout(header)
-        layout.addWidget(self._build_role_banner())
 
         self.tabs = QTabWidget()
         self.sound_graph_page = self._build_mod_tab()
@@ -474,11 +549,14 @@ class SoundViewer(QWidget):
         layout.addWidget(self.status)
         self._setup_player()
 
-    def _build_role_banner(self):
-        frame = QFrame()
-        frame.setFrameShape(QFrame.Shape.StyledPanel)
-        layout = QHBoxLayout(frame)
+    def _build_role_header(self):
+        container = QWidget()
+        container.setMaximumWidth(520)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
         text = QVBoxLayout()
+        text.setSpacing(2)
         self.role_title = QLabel(self.tr("Sound container"))
         self.role_title.setStyleSheet("font-weight: 600;")
         self.role_help = QLabel("")
@@ -505,7 +583,7 @@ class SoundViewer(QWidget):
         self.companion_btn.hide()
         actions.addWidget(self.companion_btn)
         layout.addLayout(actions)
-        return frame
+        return container
 
     def _build_mod_tab(self):
         page = QWidget()
@@ -626,25 +704,12 @@ class SoundViewer(QWidget):
         card_layout.addWidget(self.source_usage)
         media_layout.addWidget(card)
 
-        actions = QGridLayout()
-        self.play_btn = self._make_btn(self.tr("Preview"), QStyle.SP_MediaPlay, self._on_play, enabled=False)
-        self.stop_btn = self._make_btn(self.tr("Stop"), QStyle.SP_MediaStop, self._on_stop, enabled=False)
-        self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
-        self.rep_wem.setToolTip(self.tr(
-            "WAV import uses the codec, quality, and sample-rate controls below. "
-            "The defaults match the original WEM. WAV metadata wins when provided; "
-            "otherwise REasy inherits the original loops, cue points, and marker "
-            "labels and verifies the authored WEM."
-        ))
-        self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), QStyle.SP_FileDialogDetailedView, self._on_edit_wem_metadata, enabled=False)
-        self.exp_wem = self._make_btn(self.tr("Export WEM…"), QStyle.SP_DialogSaveButton, self._on_export_wem, enabled=False)
-        self.exp_wav = self._make_btn(self.tr("Export WAV…"), QStyle.SP_DialogSaveButton, self._on_export_wav, enabled=False)
-        for index, button in enumerate((self.play_btn, self.stop_btn, self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav)):
-            actions.addWidget(button, index // 3, index % 3)
-        media_layout.addLayout(actions)
+        import_row = QHBoxLayout()
+        import_row.setSpacing(12)
 
-        rate = QHBoxLayout()
-        rate.addWidget(QLabel(self.tr("WAV import rate")))
+        rate_column = QVBoxLayout()
+        rate_column.setSpacing(2)
+        rate_column.addWidget(QLabel(self.tr("WAV import rate")))
         self.sample_rate_combo = QComboBox()
         self.sample_rate_combo.addItem(
             self.tr("Match original WEM (Recommended)"),
@@ -657,11 +722,13 @@ class SoundViewer(QWidget):
             "Matching the original keeps the game's storage and runtime profile. "
             "A codec-required rate, such as RE4 WEM Opus at 48 kHz, always wins."
         ))
-        rate.addWidget(self.sample_rate_combo, 1)
-        media_layout.addLayout(rate)
+        self.sample_rate_combo.setMinimumWidth(140)
+        rate_column.addWidget(self.sample_rate_combo)
+        import_row.addLayout(rate_column, 1)
 
-        encoding = QGridLayout()
-        encoding.addWidget(QLabel(self.tr("WAV Import Codec")), 0, 0)
+        codec_column = QVBoxLayout()
+        codec_column.setSpacing(2)
+        codec_column.addWidget(QLabel(self.tr("WAV Import Codec")))
         self.codec_combo = QComboBox()
         self.codec_combo.currentIndexChanged.connect(
             self._on_encoding_codec_changed
@@ -670,8 +737,13 @@ class SoundViewer(QWidget):
             "Match the original WEM for safest replacement, or explicitly choose "
             "another codec supported by this game's Wwise version."
         ))
-        encoding.addWidget(self.codec_combo, 0, 1)
-        encoding.addWidget(QLabel(self.tr("Encoding quality")), 1, 0)
+        self.codec_combo.setMinimumWidth(140)
+        codec_column.addWidget(self.codec_combo)
+        import_row.addLayout(codec_column, 1)
+
+        quality_column = QVBoxLayout()
+        quality_column.setSpacing(2)
+        quality_column.addWidget(QLabel(self.tr("Encoding quality")))
         self.quality_combo = QComboBox()
         for label, value in (
             (self.tr("Current default (Recommended)"), None),
@@ -684,9 +756,11 @@ class SoundViewer(QWidget):
             "10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no "
             "adjustable compression quality."
         ))
-        encoding.addWidget(self.quality_combo, 1, 1)
-        encoding.setColumnStretch(1, 1)
-        media_layout.addLayout(encoding)
+        self.quality_combo.setMinimumWidth(140)
+        quality_column.addWidget(self.quality_combo)
+        import_row.addLayout(quality_column, 1)
+
+        media_layout.addLayout(import_row)
 
         self.advanced_compression_group = QGroupBox(self.tr("Advanced compression"))
         self.advanced_compression_group.setCheckable(True)
@@ -695,7 +769,11 @@ class SoundViewer(QWidget):
             "Override the simple quality preset with exact codec parameters. "
             "An explicit WAV import codec must be selected."
         ))
-        advanced = QGridLayout(self.advanced_compression_group)
+        group_layout = QVBoxLayout(self.advanced_compression_group)
+        self.advanced_compression_host = QWidget()
+        self.advanced_compression_host.setVisible(False)
+        advanced = QGridLayout(self.advanced_compression_host)
+        advanced.setContentsMargins(0, 0, 0, 0)
         advanced.addWidget(QLabel(self.tr("Mode")), 0, 0)
         self.compression_mode_combo = QComboBox()
         self.compression_mode_combo.currentIndexChanged.connect(
@@ -747,15 +825,27 @@ class SoundViewer(QWidget):
         self.advanced_compression_note = QLabel("")
         self.advanced_compression_note.setWordWrap(True)
         self.advanced_compression_note.setStyleSheet(_MUTED_TEXT_STYLE)
-        advanced.addWidget(self.advanced_compression_note, 5, 0, 1, 2)
-        advanced.setColumnStretch(1, 1)
+        advanced.addWidget(self.advanced_compression_note, 5, 0, 1, 3)
+        advanced.setColumnStretch(2, 1)
+        group_layout.addWidget(self.advanced_compression_host)
         media_layout.addWidget(self.advanced_compression_group)
         self.advanced_compression_group.toggled.connect(
             self._sync_advanced_compression_controls
         )
         self._populate_encoding_controls()
 
-        batch = QHBoxLayout()
+        self.play_btn = self._make_btn(self.tr("Preview"), QStyle.SP_MediaPlay, self._on_play, enabled=False)
+        self.stop_btn = self._make_btn(self.tr("Stop"), QStyle.SP_MediaStop, self._on_stop, enabled=False)
+        self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
+        self.rep_wem.setToolTip(self.tr(
+            "WAV import uses the codec, quality, and sample-rate controls above. "
+            "The defaults match the original WEM. WAV metadata wins when provided; "
+            "otherwise REasy inherits the original loops, cue points, and marker "
+            "labels and verifies the authored WEM."
+        ))
+        self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), QStyle.SP_FileDialogDetailedView, self._on_edit_wem_metadata, enabled=False)
+        self.exp_wem = self._make_btn(self.tr("Export WEM…"), QStyle.SP_DialogSaveButton, self._on_export_wem, enabled=False)
+        self.exp_wav = self._make_btn(self.tr("Export WAV…"), QStyle.SP_DialogSaveButton, self._on_export_wav, enabled=False)
         self.rep_bulk = self._make_btn(self.tr("Bulk Replace…"), QStyle.SP_DirOpenIcon, self._on_bulk_replace)
         self.add_audio_source = self._make_btn(
             self.tr("Add Audio Source…"), QStyle.SP_FileDialogNewFolder,
@@ -763,10 +853,16 @@ class SoundViewer(QWidget):
         )
         self.add_pck_source = self.add_audio_source  # Legacy UI attribute.
         self.exp_all = self._make_btn(self.tr("Export All…"), QStyle.SP_DialogSaveButton, self._on_export_all)
-        self.exp_pck = self._make_btn(self.tr("Export Non-Streaming PCK…"), QStyle.SP_DialogSaveButton, self._on_export_pck)
-        for button in (self.rep_bulk, self.exp_all, self.add_audio_source, self.exp_pck):
-            batch.addWidget(button)
-        media_layout.addLayout(batch)
+
+        actions_flow = FlowLayout()
+        actions_flow.setSpacing(6)
+        for button in (
+            self.play_btn, self.stop_btn, self.rep_wem,
+            self.meta_wem, self.exp_wem, self.exp_wav,
+            self.rep_bulk, self.exp_all, self.add_audio_source,
+        ):
+            actions_flow.addWidget(button)
+        media_layout.addLayout(actions_flow)
         media_layout.addWidget(self._build_preview_controls())
         self.mod_content_splitter.addWidget(media_panel)
         self.mod_content_splitter.setStretchFactor(0, 3)
@@ -1480,11 +1576,6 @@ class SoundViewer(QWidget):
         finally:
             for value in temporary:
                 self._remove_file(value)
-
-    def _on_export_pck(self):
-        path = self._save_path(self, self.tr("Export Non-Streaming PCK"), "sound_non_streaming.pck", ".pck", "PCK Files (*.pck)")
-        if path:
-            self._write_export(path, export_non_streaming_pck(self.handler.raw_data), self.tr("Non-streaming PCK"))
 
     def _on_export_all(self):
         tracks = [track for track in self._parsed_tracks if track.available and track.payload_complete]
@@ -2349,7 +2440,6 @@ class SoundViewer(QWidget):
             first = next((page for page, shown in available if shown), None)
             if first is not None:
                 self.tabs.setCurrentWidget(first)
-        self.exp_pck.setVisible(is_pck)
         self.add_audio_source.setVisible(can_add_source)
         self.add_audio_source.setText(
             self.tr("Add PCK Source…") if is_pck
