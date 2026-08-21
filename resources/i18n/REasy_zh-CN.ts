@@ -2305,6 +2305,52 @@ Value: {value}</source>
     </message>
 </context>
 <context>
+    <name>BookmarkDialog</name>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="339"/>
+        <source>Path:</source>
+        <translation>路径：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="345"/>
+        <source>Tags:</source>
+        <translation>标签：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="348"/>
+        <source>Comma separated tags</source>
+        <translation>用逗号分隔的标签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="363"/>
+        <source>Toggle tag</source>
+        <translation>切换标签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="368"/>
+        <source>Quick tags:</source>
+        <translation>快速标签：</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="371"/>
+        <source>Note:</source>
+        <translation>备注：</translation>
+    </message>
+</context>
+<context>
+    <name>BookmarksStore</name>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="290"/>
+        <source>Could not read file: {error}</source>
+        <translation>无法读取文件：{error}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/bookmarks.py" line="292"/>
+        <source>Invalid bookmarks file.</source>
+        <translation>书签文件无效。</translation>
+    </message>
+</context>
+<context>
     <name>BoundsInput</name>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1001"/>
@@ -7159,6 +7205,234 @@ Open the settings dialog now?</source>
         <location filename="../../ui/project_manager/manager.py" line="1601"/>
         <source>PAK packer returned an error.</source>
         <translation>PAK 打包工具返回了一个错误。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="277"/>
+        <location filename="../../ui/project_manager/manager.py" line="590"/>
+        <source>Bookmarks</source>
+        <translation>书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="308"/>
+        <source>Search bookmarks</source>
+        <translation>搜索书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="313"/>
+        <source>Import…</source>
+        <translation>导入…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="314"/>
+        <source>Import bookmarks from a JSON file</source>
+        <translation>从 JSON 文件导入书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="317"/>
+        <source>Export…</source>
+        <translation>导出…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="318"/>
+        <source>Export bookmarks to a JSON file</source>
+        <translation>将书签导出到 JSON 文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="331"/>
+        <source>Path</source>
+        <translation>路径</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="331"/>
+        <source>Tags</source>
+        <translation>标签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="331"/>
+        <source>Scope</source>
+        <translation>来源</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="350"/>
+        <source>No bookmarks</source>
+        <translation>没有书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1294"/>
+        <location filename="../../ui/project_manager/manager.py" line="1410"/>
+        <location filename="../../ui/project_manager/manager.py" line="1434"/>
+        <source>Bookmark &amp; tag…</source>
+        <translation>添加书签并打标签…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1530"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1614"/>
+        <source>Bookmark &amp; tag</source>
+        <translation>添加书签并打标签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1628"/>
+        <source>PAK</source>
+        <translation>PAK</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1630"/>
+        <source>Project</source>
+        <translation>项目</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1631"/>
+        <source>Unpacked</source>
+        <translation>已解包</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1638"/>
+        <source>Tags: {tags}</source>
+        <translation>标签：{tags}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1649"/>
+        <source>All</source>
+        <translation>全部</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1696"/>
+        <source>No matching bookmarks</source>
+        <translation>没有匹配的书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1716"/>
+        <source>Edit tags…</source>
+        <translation>编辑标签…</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1717"/>
+        <source>Copy path</source>
+        <translation>复制路径</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1736"/>
+        <location filename="../../ui/project_manager/manager.py" line="1753"/>
+        <source>Bookmark</source>
+        <translation>书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1737"/>
+        <source>Load the PAK context for {game} first.</source>
+        <translation>请先加载 {game} 的 PAK 上下文。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1738"/>
+        <source>this game</source>
+        <translation>该游戏</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1754"/>
+        <source>Path not found:
+{path}</source>
+        <translation>未找到路径：
+{path}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1928"/>
+        <source>Folder not found in PAKs:
+{path}</source>
+        <translation>在 PAK 中找不到文件夹：
+{path}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1762"/>
+        <source>Edit bookmark</source>
+        <translation>编辑书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1776"/>
+        <source>Export bookmarks</source>
+        <translation>导出书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1776"/>
+        <location filename="../../ui/project_manager/manager.py" line="1791"/>
+        <source>JSON files (*.json)</source>
+        <translation>JSON 文件 (*.json)</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1783"/>
+        <source>Export failed</source>
+        <translation>导出失败</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1786"/>
+        <source>Export</source>
+        <translation>导出</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1786"/>
+        <source>Exported {count} bookmark(s).</source>
+        <translation>已导出 {count} 个书签。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1791"/>
+        <source>Import bookmarks</source>
+        <translation>导入书签</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1798"/>
+        <source>Import failed</source>
+        <translation>导入失败</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1801"/>
+        <source>Import</source>
+        <translation>导入</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1801"/>
+        <source>Imported {added} new bookmark(s).</source>
+        <translation>已导入 {added} 个新书签。</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="535"/>
+        <source>Minimize</source>
+        <translation>最小化</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="535"/>
+        <source>Restore</source>
+        <translation>还原</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1522"/>
+        <source>Delete project file</source>
+        <translation>删除项目文件</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="1523"/>
+        <source>Delete this file from the project?
+{path}</source>
+        <translation>从项目中删除此文件？
+{path}</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="157"/>
+        <location filename="../../ui/project_manager/manager.py" line="184"/>
+        <source>Files Browser</source>
+        <translation>文件浏览器</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="164"/>
+        <location filename="../../ui/project_manager/manager.py" line="197"/>
+        <source>Undock</source>
+        <translation>取消停靠</translation>
+    </message>
+    <message>
+        <location filename="../../ui/project_manager/manager.py" line="197"/>
+        <source>Dock</source>
+        <translation>停靠</translation>
     </message>
 </context>
 <context>
