@@ -3353,17 +3353,14 @@ class SoundViewer(QWidget):
         self.role_help.setToolTip("\n".join(sources))
         path = self.handler.filepath or getattr(self.handler, "filename", "")
         if is_pck:
-            has_companion = any(
-                self._sound_metadata.banks_for_package(path, track.source_id)
-                for track in result.tracks
-            )
+            has_companion = bool(result.tracks)
         elif is_media_bank:
-            has_companion = any(
-                self._sound_metadata.source_event_banks(track.source_id, path)
-                for track in result.tracks
-            )
+            has_companion = bool(result.tracks)
         else:
             has_embedded_media = any(
+                track.stream_type == 0 and not track.available
+                for track in result.tracks
+            ) or any(
                 self._sound_metadata.embedded_media_banks(track.source_id, path)
                 for track in result.tracks
             )
@@ -3437,6 +3434,7 @@ class SoundViewer(QWidget):
 
     def _on_open_companion(self):
         source = self.handler.filepath or getattr(self.handler, "filename", "")
+        self._sound_metadata.prepare_operational_index(wait=True)
         selected = self._selected()[1]
         tracks = (selected,) if selected else tuple(self._parsed_tracks)
         candidates = []

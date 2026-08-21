@@ -37,3 +37,7 @@ def resolve_cli_path(path: str | os.PathLike[str]) -> Path:
 
 def backups_directory() -> Path:
     return application_root() / "backups"
+
+
+def cache_directory() -> Path:
+    return application_root() / ".cache"

@@ -19,6 +19,7 @@ class Re9SoundProfile(ReEngineSbnkSoundProfile):
         "Resident Evil Requiem Biohazard Requiem",
     )
     bank_versions = frozenset({145})
+    split_sbnk_roles = True
     required_year = 2022
     required_major = 1
     recommended_version = "2022.1.19.8584"

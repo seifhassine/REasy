@@ -11,6 +11,7 @@ import re
 from utils.app_paths import resource_path
 from utils.resource_file_utils import resource_context_for_handler
 
+from .runtime_sound_index import request_runtime_sound_index
 from .sound_metadata import SoundMetadata
 from .sound_resources import resource_key
 from .wwise_schema import BNK_PLUGIN_NAMES, BNK_STANDARD_CUE_NAMES
@@ -86,13 +87,29 @@ class IndexedSoundMetadata(SoundMetadata):
         self._package_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
         self._prefetch_event_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
         self._source_groups: dict[int, tuple[dict, ...]] | None = None
+        self._runtime_handle = None
         self.live_wel_path = ""
 
     @classmethod
-    def for_handler(cls, handler) -> "IndexedSoundMetadata":
+    def for_handler(cls, handler, profile=None) -> "IndexedSoundMetadata":
         metadata = cls(getattr(handler, "filepath", "") or getattr(handler, "filename", ""))
+        metadata.attach_runtime_context(handler, profile)
         metadata._load_live_wel(handler)
         return metadata
+
+    def attach_runtime_context(self, handler, profile) -> None:
+        context = resource_context_for_handler(handler)
+        reader = getattr(context, "pak_cached_reader", None) if context else None
+        self._runtime_handle = (
+            request_runtime_sound_index(reader, profile)
+            if reader is not None and profile is not None else None
+        )
+
+    def prepare_operational_index(self, *, wait: bool = False) -> bool:
+        return bool(self._runtime_handle and self._runtime_handle.get(wait=wait))
+
+    def _runtime_index(self):
+        return self._runtime_handle.get() if self._runtime_handle else None
 
     def _name_table(self, category: str) -> dict:
         value = self.data.get("names", {}).get(category, {})
@@ -363,6 +380,8 @@ class IndexedSoundMetadata(SoundMetadata):
     def media_packages(self, source_id: int, bank_path: str | None = None) -> tuple[dict, ...]:
         bank = resource_key(bank_path or self.source_path)
         source_id = int(source_id) & 0xFFFFFFFF
+        if runtime := self._runtime_index():
+            return runtime.media_packages(source_id, bank)
         package_table = self.data.get("media_packages", {})
         if package_table:
             groups = self.data.get("media_links", {}).get(bank, {})
@@ -377,6 +396,8 @@ class IndexedSoundMetadata(SoundMetadata):
         return tuple(value for value in values if isinstance(value, dict))
 
     def banks_for_package(self, package_path: str, source_id: int) -> tuple[str, ...]:
+        if runtime := self._runtime_index():
+            return runtime.banks_for_package(package_path, source_id)
         key = (resource_key(package_path), int(source_id) & 0xFFFFFFFF)
         package_table = self.data.get("media_packages", {})
         if package_table:
@@ -414,11 +435,20 @@ class IndexedSoundMetadata(SoundMetadata):
     ) -> tuple[str, ...]:
         bank = resource_key(bank_path or self.source_path)
         source = str(int(source_id) & 0xFFFFFFFF)
-        values = (
+        specific = _strings(
             self.data.get("embedded_media_by_bank", {})
             .get(bank, {})
             .get(source, ())
         )
+        if runtime := self._runtime_index():
+            live = runtime.embedded_media_banks(source_id, bank)
+            if specific:
+                allowed = set(map(resource_key, specific))
+                narrowed = tuple(path for path in live if resource_key(path) in allowed)
+                if narrowed:
+                    return narrowed
+            return live
+        values = specific
         if not values:
             values = self.data.get("embedded_media", {}).get(source, ())
         if not values:
@@ -431,6 +461,8 @@ class IndexedSoundMetadata(SoundMetadata):
         self, source_id: int, bank_path: str | None = None
     ) -> tuple[str, ...]:
         bank = resource_key(bank_path or self.source_path)
+        if runtime := self._runtime_index():
+            return runtime.prefetch_media_banks(source_id, bank)
         values = (
             self.data.get("prefetch_media_by_bank", {})
             .get(bank, {})
@@ -441,6 +473,10 @@ class IndexedSoundMetadata(SoundMetadata):
     def prefetch_event_banks(
         self, source_id: int, media_path: str | None = None
     ) -> tuple[str, ...]:
+        if runtime := self._runtime_index():
+            return runtime.prefetch_event_banks(
+                source_id, resource_key(media_path or self.source_path)
+            )
         key = (resource_key(media_path or self.source_path), int(source_id) & 0xFFFFFFFF)
         if self._prefetch_event_banks is None:
             reverse: dict[tuple[str, int], list[str]] = {}
@@ -463,7 +499,14 @@ class IndexedSoundMetadata(SoundMetadata):
         for record in self._source_event_records(source_id, media_path):
             bank = str(record.get("bank", ""))
             paths.extend(self.data.get("banks", {}).get(bank, {}).get("paths", ()))
-        return _strings(paths)
+        exact = _strings(paths)
+        if exact:
+            return exact
+        if runtime := self._runtime_index():
+            return runtime.source_event_banks(
+                source_id, resource_key(media_path or self.source_path)
+            )
+        return ()
 
     def media_plugin_ids(self, source_id: int) -> tuple[int, ...]:
         values = self.data.get("media_plugins", {}).get(

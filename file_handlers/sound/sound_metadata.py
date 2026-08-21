@@ -8,6 +8,9 @@ class SoundMetadata:
 
     live_wel_path = ""
 
+    def prepare_operational_index(self, *, wait: bool = False) -> bool:
+        return False
+
     def names(self, category: str, object_id: int) -> tuple[str, ...]:
         return ()
 

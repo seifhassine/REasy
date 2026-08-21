@@ -16,6 +16,7 @@ class MhWildsSoundProfile(ReEngineSbnkSoundProfile):
     display_name = "Monster Hunter Wilds"
     aliases = ("MonsterHunterWilds", "MHWS", "MHWILDS")
     bank_versions = frozenset({145})
+    split_sbnk_roles = True
     required_year = 2022
     required_major = 1
     recommended_version = "2022.1.19.8584"

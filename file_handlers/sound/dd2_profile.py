@@ -16,6 +16,7 @@ class Dd2SoundProfile(ReEngineSbnkSoundProfile):
     display_name = "Dragon's Dogma 2"
     aliases = ("Dragons Dogma 2", "Dragon's Dogma II", "DragonsDogma2")
     bank_versions = frozenset({140})
+    split_sbnk_roles = True
     required_year = 2021
     required_major = 1
     recommended_version = "2021.1.14.8108"

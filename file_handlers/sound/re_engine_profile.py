@@ -48,6 +48,7 @@ class ReEngineSoundProfile(SoundGameProfile):
     sound_root = ""
     bank_resource = "bnk.2"
     package_resource = "pck.3"
+    split_sbnk_roles = False
 
     def metadata(self, source_path: str = "") -> SoundMetadata:
         provider = self.metadata_type
@@ -56,7 +57,7 @@ class ReEngineSoundProfile(SoundGameProfile):
     def metadata_for_handler(self, handler) -> SoundMetadata:
         provider = self.metadata_type
         return (
-            provider.for_handler(handler)
+            provider.for_handler(handler, self)
             if provider
             else super().metadata_for_handler(handler)
         )

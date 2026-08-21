@@ -15,6 +15,7 @@ class PragmataSoundProfile(ReEngineSbnkSoundProfile):
     game = "Pragmata"
     display_name = "PRAGMATA"
     bank_versions = frozenset({150})
+    split_sbnk_roles = True
     required_year = 2023
     required_major = 1
     recommended_version = "2023.1.16.8822"

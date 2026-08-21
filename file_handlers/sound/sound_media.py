@@ -91,6 +91,17 @@ def _parsed_banks(handler, banks) -> tuple[BankMedia, ...]:
     )
 
 
+def _embedded_plan(handler, current: str, track: BnkTrack) -> SoundReplacementPlan:
+    asset = SoundAsset(current, bytes(handler.raw_data), "embedded BNK media")
+    return SoundReplacementPlan(
+        int(track.source_id),
+        current,
+        extract_embedded_wem(asset.data, track) if track.available else b"",
+        _parsed_banks(handler, (BankMedia(asset, 0),)),
+        (),
+    )
+
+
 def _read_asset(
     handler,
     path: str,
@@ -298,7 +309,20 @@ def resolve_sound_replacement(
         materialize()
     source_id = int(track.source_id)
     current = resource_key(getattr(handler, "filepath", ""))
+    if (
+        result.container_type.casefold() == "bnk"
+        and track.stream_type == 0
+        and track.available
+    ):
+        return _embedded_plan(handler, current, track)
+
     metadata = profile.metadata(getattr(handler, "filepath", ""))
+    attach = getattr(metadata, "attach_runtime_context", None)
+    if callable(attach):
+        attach(handler, profile)
+    prepare = getattr(metadata, "prepare_operational_index", None)
+    if callable(prepare):
+        prepare(wait=True)
     banks: list[BankMedia] = []
     packages: list[PckPair] = []
 
@@ -331,12 +355,7 @@ def resolve_sound_replacement(
                 )
                 if linked:
                     return linked
-            asset = SoundAsset(current, bytes(handler.raw_data), "embedded BNK media")
-            banks.append(BankMedia(asset, 0))
-            original = extract_embedded_wem(asset.data, track) if track.available else b""
-            return SoundReplacementPlan(
-                source_id, current, original, _parsed_banks(handler, banks), ()
-            )
+            return _embedded_plan(handler, current, track)
         else:
             records = metadata.media_packages(source_id, current)
             if not records:

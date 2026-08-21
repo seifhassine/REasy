@@ -16,6 +16,7 @@ class Sf6SoundProfile(ReEngineSbnkSoundProfile):
     display_name = "Street Fighter 6"
     aliases = ("StreetFighter6", "Street Fighter VI")
     bank_versions = frozenset({135})
+    split_sbnk_roles = True
     required_year = 2019
     required_major = 2
     recommended_version = "2019.2.15.7667"
