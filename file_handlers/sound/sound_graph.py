@@ -166,6 +166,8 @@ class EventFlowGraph(QGraphicsView):
         self._node_timer.stop()
         self._pending_node = None
         self._has_graph = False
+        self._reset_items()
+        self.scene().clear()
 
     def select_node(self, kind, object_id):
         tag = (kind, int(object_id))
