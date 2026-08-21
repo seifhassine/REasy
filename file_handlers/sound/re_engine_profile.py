@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .sound_metadata import SoundMetadata
-from .sound_profile import SoundGameProfile, WemAuthoringCodec
+from .sound_profile import SoundGameProfile, WemAuthoringCodec, WemQualitySetting
 from .sound_resources import RelatedSoundPaths, resource_key
 
 
@@ -23,13 +23,35 @@ _ADPCM = WemAuthoringCodec(0x0002, "Wwise ADPCM", "ADPCM As Input")
 _PLATINUM_ADPCM = WemAuthoringCodec(
     0x8311, "Wwise Platinum ADPCM", "ADPCM As Input", frozenset({0x0002})
 )
-_VORBIS = WemAuthoringCodec(0xFFFF, "Wwise Vorbis", "Vorbis Quality High")
+_VORBIS = WemAuthoringCodec(
+    0xFFFF,
+    "Wwise Vorbis",
+    "Vorbis Quality High",
+    quality=WemQualitySetting(
+        "QualityFactor",
+        "Real32",
+        (("low", 0.0), ("medium", 2.0), ("high", 4.0), ("maximum", 10.0)),
+        minimum=-2.0,
+        maximum=10.0,
+        default=4.0,
+        step=0.1,
+    ),
+    supports_bitrate_mode=True,
+)
 _OPUS = WemAuthoringCodec(
     0x3041,
     "WEM Opus",
     "REasy WEM Opus",
     conversion_plugin=("WEM Opus", 20, (("Quality", "int32", 128),)),
     required_sample_rate=48_000,
+    quality=WemQualitySetting(
+        "Quality",
+        "int32",
+        (("low", 32), ("medium", 64), ("high", 128), ("maximum", 256)),
+        minimum=6,
+        maximum=256,
+        default=128,
+    ),
 )
 
 

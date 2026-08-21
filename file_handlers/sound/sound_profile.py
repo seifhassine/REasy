@@ -10,6 +10,24 @@ from .sound_resources import RelatedSoundPaths, resource_key
 
 
 @dataclass(frozen=True, slots=True)
+class WemQualitySetting:
+    """Codec-specific Wwise quality property and user-facing presets."""
+
+    property_name: str
+    property_type: str
+    presets: tuple[tuple[str, float | int], ...]
+    minimum: float | int
+    maximum: float | int
+    default: float | int
+    step: float | int = 1
+
+    def value(self, preset: str | None) -> float | int | None:
+        if preset is None:
+            return None
+        return dict(self.presets).get(str(preset).casefold())
+
+
+@dataclass(frozen=True, slots=True)
 class WemAuthoringCodec:
     """One codec that a game's required Wwise version can author."""
 
@@ -19,6 +37,8 @@ class WemAuthoringCodec:
     match_tags: frozenset[int] = frozenset()
     conversion_plugin: tuple[str, int, tuple[tuple[str, str, object], ...]] | None = None
     required_sample_rate: int | None = None
+    quality: WemQualitySetting | None = None
+    supports_bitrate_mode: bool = False
 
     def matches(self, tag: int | None) -> bool:
         return tag == self.tag or tag in self.match_tags
@@ -175,6 +195,7 @@ def sound_profile_for_handler(handler, bank_version=None) -> SoundGameProfile | 
 __all__ = [
     "SoundGameProfile",
     "WemAuthoringCodec",
+    "WemQualitySetting",
     "register_sound_profile",
     "sound_profile_for_bank_version",
     "sound_profile_for_game",

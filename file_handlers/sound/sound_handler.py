@@ -22,6 +22,7 @@ class SoundHandler(FileHandler):
         self.filename: str = ""
         self.extension: str = ""
         self._replacements: dict[int, bytes] = {}
+        self._added_source_ids: set[int] = set()
         self._pending_graph_edits: list[tuple[str, tuple]] = []
         self._parse_result: BnkParseResult | None = None
         self._edit_model: BnkEditModel | None = None
@@ -32,6 +33,7 @@ class SoundHandler(FileHandler):
 
     def _clear_edits(self):
         self._replacements.clear()
+        self._added_source_ids.clear()
         self._pending_graph_edits.clear()
 
     @classmethod
@@ -115,12 +117,14 @@ class SoundHandler(FileHandler):
         self.raw_data = rewrite_soundbank(
             self.raw_data,
             self._replacements,
+            added_source_ids=self._added_source_ids,
             bank_chunk_payloads=chunk_payloads,
             hirc_payload=hirc_payload,
             hirc_source_renames=model.source_renames if hirc_payload is not None else None,
             parsed_result=model.result if model is not None else self._parse_result,
         )
         self._replacements.clear()
+        self._added_source_ids.clear()
         if had_media_edits:
             self._parse_result = None
             self._edit_model = None
@@ -158,6 +162,26 @@ class SoundHandler(FileHandler):
 
     def replace_track_data(self, source_id: int, wem_data: bytes):
         self._replacements[int(source_id)] = bytes(wem_data)
+        self.modified = True
+
+    def add_media_source(self, source_id: int, media_data: bytes):
+        """Stage one explicitly new PCK entry or embedded BNK media source."""
+
+        source_id = int(source_id)
+        if not 0 < source_id <= 0xFFFFFFFF:
+            raise ValueError("Wwise Source ID must be between 1 and 4294967295")
+        media_data = bytes(media_data)
+        if not media_data:
+            raise ValueError("A new Wwise media source cannot be empty")
+        result = self.parse_result()
+        occupied = {track.source_id for track in result.tracks}
+        occupied.update(entry.entry_id for entry in result.pck_entries)
+        occupied.update(self._added_source_ids)
+        occupied.update(self._replacements)
+        if source_id in occupied:
+            raise ValueError(f"Wwise source {source_id} already exists")
+        self._replacements[source_id] = media_data
+        self._added_source_ids.add(source_id)
         self.modified = True
 
     def apply_replacement_outputs(self, outputs: dict[str, bytes]):

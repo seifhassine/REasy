@@ -543,6 +543,7 @@ def rewrite_soundbank(
     data: bytes,
     replacements: dict[int, bytes],
     *,
+    added_source_ids: set[int] | None = None,
     event_actions: dict[int, list[int] | tuple[int, ...]] | None = None,
     action_targets: dict[int, int] | None = None,
     deleted_event_ids: set[int] | None = None,
@@ -555,8 +556,15 @@ def rewrite_soundbank(
     hirc_source_renames: dict[int, int] | None = None,
     parsed_result: BnkParseResult | None = None,
 ) -> bytes:
-    """Rewrite supported media/HIRC fields while preserving opaque structures."""
+    """Rewrite supported fields; only explicit additions may create media entries."""
 
+    added_source_ids = {int(value) for value in (added_source_ids or ())}
+    if not added_source_ids.issubset(replacements):
+        raise ValueError("Every added Source ID must have a media payload")
+    if any(not 0 < value <= 0xFFFFFFFF for value in added_source_ids):
+        raise ValueError("Wwise Source IDs must be non-zero 32-bit integers")
+    if any(not replacements[value] for value in added_source_ids):
+        raise ValueError("A new Wwise media source cannot be empty")
     event_actions = event_actions or {}
     action_targets = action_targets or {}
     deleted_event_ids = deleted_event_ids or set()
@@ -593,6 +601,7 @@ def rewrite_soundbank(
         hirc_payload=hirc_payload,
         hirc_source_renames=hirc_source_renames,
         parsed_result=parsed_result,
+        added_source_ids=added_source_ids,
     )
 
 
@@ -712,6 +721,18 @@ def parse_bnk(data: bytes) -> BnkParseResult:
     )
 
 
+def _pck_entry_media_kind(data: bytes, entry: PckEntry) -> WwiseMediaKind:
+    if not entry.available:
+        return WwiseMediaKind.UNKNOWN
+    header = _safe_slice(data, entry.offset, min(entry.length, 12))
+    kind = detect_media_kind(header)
+    if kind in {WwiseMediaKind.AUDIO, WwiseMediaKind.CRANKCASE_REV_MODEL}:
+        return kind
+    if entry.length <= len(header):
+        return kind
+    return detect_media_kind(_safe_slice(data, entry.offset, entry.length))
+
+
 def parse_pck(data: bytes) -> BnkParseResult:
     layout = parse_pck_layout(data)
     if layout is None:
@@ -737,9 +758,7 @@ def parse_pck(data: bytes) -> BnkParseResult:
             storage="packaged" if entry.available else (
                 "external" if entry.table_kind == "externals" else "streamed placeholder"
             ),
-            media_kind=detect_media_kind(
-                _safe_slice(data, entry.offset, entry.length) if entry.available else b""
-            ),
+            media_kind=_pck_entry_media_kind(data, entry),
         )
         for index, entry in enumerate(media_entries, 1)
     ]
@@ -771,18 +790,53 @@ def get_data_chunk(data: bytes) -> bytes | None:
     return _read_chunks(data).get("DATA")
 
 
-def extract_embedded_wem(data: bytes, track: BnkTrack) -> bytes:
+def embedded_wem_view(data: bytes, track: BnkTrack) -> memoryview:
+    """Return one embedded payload without copying its containing BNK/PCK data."""
+
+    view = memoryview(data)
     if not track.available:
-        return b""
+        return view[:0]
     if track.absolute_offset:
-        return _safe_slice(data, track.offset, track.length)
-    chunk = get_data_chunk(data)
-    return _safe_slice(chunk, track.offset, track.length) if chunk else b""
+        start, end = track.offset, track.offset + track.length
+        return view[start:end] if 0 <= start <= end <= len(view) else view[:0]
+    pos = 0
+    while pos + 8 <= len(view):
+        chunk_id = data[pos:pos + 4]
+        chunk_size = struct.unpack_from("<I", data, pos + 4)[0]
+        payload_pos = pos + 8
+        end = payload_pos + chunk_size
+        if end > len(view):
+            break
+        if chunk_id == b"DATA":
+            start = payload_pos + track.offset
+            media_end = start + track.length
+            return (
+                view[start:media_end]
+                if payload_pos <= start <= media_end <= end else view[:0]
+            )
+        pos = end
+    return view[:0]
 
 
+def extract_embedded_wem(data: bytes, track: BnkTrack) -> bytes:
+    return bytes(embedded_wem_view(data, track))
 
-def parse_wem_metadata(data: bytes, plugin_id: int | None = None) -> WemMetadata:
-    kind = detect_media_kind(data, plugin_id)
+
+def parse_wem_metadata(
+    data: bytes | memoryview,
+    plugin_id: int | None = None,
+    media_kind: WwiseMediaKind | None = None,
+) -> WemMetadata:
+    kind = media_kind
+    if kind in {None, WwiseMediaKind.UNKNOWN}:
+        if len(data) >= 12 and data[:4] == _RIFF_MAGIC and data[8:12] == _WAVE_MAGIC:
+            kind = WwiseMediaKind.AUDIO
+        else:
+            if isinstance(data, memoryview):
+                data = bytes(data)
+            kind = detect_media_kind(data, plugin_id)
+    elif kind != WwiseMediaKind.AUDIO and isinstance(data, memoryview):
+        data = bytes(data)
     unknown = WemMetadata(
         codec="Unknown", channels=None, sample_rate=None, duration_seconds=None,
         media_kind=kind,
@@ -3878,6 +3932,7 @@ def _rewrite_bnk(
     hirc_payload: bytes | None,
     hirc_source_renames: dict[int, int] | None,
     parsed_result: BnkParseResult | None,
+    added_source_ids: set[int],
 ) -> bytes:
     chunks, trailing = _split_chunk_records(data, zero_copy_data=True)
     header = next((chunk.payload for chunk in chunks if chunk.chunk_id == b"BKHD"), None)
@@ -3944,7 +3999,9 @@ def _rewrite_bnk(
         _rekey_didx(chunks, renames)
 
     if replacements:
-        _rewrite_bnk_media(chunks, replacements, bank_version, parsed_result)
+        _rewrite_bnk_media(
+            chunks, replacements, bank_version, parsed_result, added_source_ids
+        )
     return _pack_chunk_records(chunks, trailing)
 
 
@@ -3953,7 +4010,9 @@ def _rewrite_bnk_media(
     replacements: dict[int, bytes],
     bank_version: int,
     parsed_result: BnkParseResult | None = None,
+    added_source_ids: set[int] | None = None,
 ) -> None:
+    added_source_ids = set(added_source_ids or ())
     hirc_index = next((i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"HIRC"), None)
     if (
         parsed_result is not None
@@ -3972,6 +4031,7 @@ def _rewrite_bnk_media(
         )
         _decode_hirc_objects(hirc.objects, bank_version)
     sources = [source for obj in hirc.objects for source in obj.sources]
+    source_ids = {source.source_id for source in sources}
     embedded_ids = {source.source_id for source in sources if source.stream_type == 0}
     prefetch_ids = {source.source_id for source in sources if source.stream_type == 1}
 
@@ -3981,7 +4041,12 @@ def _rewrite_bnk_media(
         raise ValueError("BNK has only one of DIDX/DATA; refusing to rebuild media")
     entries = _read_didx(chunks[didx_index].payload) if didx_index is not None else []
     existing_ids = {entry.source_id for entry in entries}
-    media_target_ids = set(replacements) & (existing_ids | embedded_ids | prefetch_ids)
+    duplicates = added_source_ids & (existing_ids | source_ids)
+    if duplicates:
+        raise ValueError(f"BNK source {min(duplicates)} already exists")
+    media_target_ids = (
+        set(replacements) & (existing_ids | embedded_ids | prefetch_ids)
+    ) | added_source_ids
     hirc_target_ids = set(replacements) & (embedded_ids | prefetch_ids)
     if not media_target_ids and not hirc_target_ids:
         return

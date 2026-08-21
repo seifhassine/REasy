@@ -16,8 +16,10 @@ from PySide6.QtCore import QEventLoop, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Sign
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
+    QDoubleSpinBox,
     QFileDialog,
     QFrame,
     QGridLayout,
@@ -43,10 +45,19 @@ from PySide6.QtWidgets import (
 )
 
 from tools.wem_converter import (
+    CHANNEL_AS_INPUT,
+    CHANNEL_MONO,
+    CHANNEL_STEREO,
+    COMPRESSION_MODE_BITRATE,
+    COMPRESSION_MODE_QUALITY,
     SAMPLE_RATE_KEEP_SOURCE,
     SAMPLE_RATE_MATCH_ORIGINAL,
+    WemCompressionSettings,
+    WemConversionRequest,
     convert_file_to_wwise_wem,
+    convert_files_to_wwise_wem,
     plan_wwise_sample_rate,
+    prepare_wwise_project,
     wem_codec_tag,
 )
 from tools.wwise_ir_converter import (
@@ -76,6 +87,7 @@ from .bnk_parser import (
     create_play_action_payload,
     create_stop_action_payload,
     export_non_streaming_pck,
+    embedded_wem_view,
     extract_embedded_wem,
     format_bnk_property_value,
     parse_wem_metadata,
@@ -197,6 +209,7 @@ class SoundViewer(QWidget):
         self._cleanup_done = False
         self._setup_ui()
         self._update_profile_text()
+        self._start_wwise_project_warmup()
         self.waveform_ready.connect(self._on_waveform_ready)
         self.destroyed.connect(
             lambda *_args, path=self._temp_dir: shutil.rmtree(path, ignore_errors=True)
@@ -239,6 +252,168 @@ class SoundViewer(QWidget):
                 "linked-file replacement is unavailable."
             ))
             self.profile_note.show()
+        self._populate_encoding_controls()
+
+    def _populate_encoding_controls(self):
+        if not hasattr(self, "codec_combo"):
+            return
+        selected = self.codec_combo.currentData()
+        self.codec_combo.blockSignals(True)
+        self.codec_combo.clear()
+        self.codec_combo.addItem(
+            self.tr("Match original WEM / game default (Recommended)"), None
+        )
+        if self._sound_profile:
+            for codec in self._sound_profile.wem_codecs:
+                self.codec_combo.addItem(
+                    f"{codec.name} (0x{codec.tag:04X})", codec.tag
+                )
+        index = self.codec_combo.findData(selected)
+        self.codec_combo.setCurrentIndex(max(0, index))
+        self.codec_combo.setEnabled(bool(self._sound_profile))
+        self.codec_combo.blockSignals(False)
+        self._on_encoding_codec_changed()
+
+    def _on_encoding_codec_changed(self, _index=None):
+        if not hasattr(self, "quality_combo"):
+            return
+        codec = self._selected_encoding_codec()
+        labels = (
+            ("low", self.tr("Low")),
+            ("medium", self.tr("Medium")),
+            ("high", self.tr("High")),
+            ("maximum", self.tr("Maximum")),
+        )
+        for index, (preset, label) in enumerate(labels, 1):
+            value = codec.quality.value(preset) if codec and codec.quality else None
+            self.quality_combo.setItemText(
+                index, f"{label} ({value:g})" if value is not None else label
+            )
+        self._sync_advanced_compression_controls(rebuild=True)
+
+    def _selected_encoding_codec(self):
+        codec_tag = self.codec_combo.currentData()
+        return (
+            self._sound_profile.wem_codec(codec_tag)
+            if self._sound_profile and codec_tag is not None else None
+        )
+
+    def _sync_advanced_compression_controls(self, _value=None, *, rebuild=False):
+        if not hasattr(self, "advanced_compression_group"):
+            return
+        codec = self._selected_encoding_codec()
+        available = codec is not None and codec.quality is not None
+        self.advanced_compression_group.blockSignals(True)
+        self.advanced_compression_group.setEnabled(available)
+        if not available:
+            self.advanced_compression_group.setChecked(False)
+        self.advanced_compression_group.blockSignals(False)
+
+        if rebuild:
+            selected = self.compression_mode_combo.currentData()
+            modes = [(self.tr("Unavailable"), None)]
+            if available:
+                modes = [(self.tr("Exact quality"), COMPRESSION_MODE_QUALITY)]
+                if codec.supports_bitrate_mode:
+                    modes.append(
+                        (self.tr("Target bitrate"), COMPRESSION_MODE_BITRATE)
+                    )
+            self.compression_mode_combo.blockSignals(True)
+            self.compression_mode_combo.clear()
+            for label, value in modes:
+                self.compression_mode_combo.addItem(label, value)
+            self.compression_mode_combo.setCurrentIndex(
+                max(0, self.compression_mode_combo.findData(selected))
+            )
+            self.compression_mode_combo.blockSignals(False)
+
+        mode = self.compression_mode_combo.currentData()
+        key = (getattr(codec, "tag", None), mode)
+        if available and getattr(
+            self, "_advanced_compression_value_key", None
+        ) != key:
+            self._advanced_compression_value_key = key
+            self.compression_value_spin.setSuffix("")
+            if mode == COMPRESSION_MODE_BITRATE:
+                config = (self.tr("Average bitrate"), 1, 512, 1, 1, 64)
+                suffix = self.tr(" kbps/ch")
+            else:
+                quality = codec.quality
+                config = (
+                    self.tr("Exact quality"), quality.minimum, quality.maximum,
+                    0 if quality.property_type.casefold() == "int32" else 1,
+                    quality.step, quality.default,
+                )
+                suffix = ""
+            label, minimum, maximum, decimals, step, default = config
+            self.compression_value_label.setText(label)
+            self.compression_value_spin.setDecimals(decimals)
+            self.compression_value_spin.setSingleStep(float(step))
+            self.compression_value_spin.setRange(float(minimum), float(maximum))
+            self.compression_value_spin.setValue(float(default))
+            self.compression_value_spin.setSuffix(suffix)
+
+        bitrate_mode = mode == COMPRESSION_MODE_BITRATE
+        bounds = (
+            (self.minimum_bitrate_check, self.minimum_bitrate_spin),
+            (self.maximum_bitrate_check, self.maximum_bitrate_spin),
+        )
+        for check, spin in bounds:
+            check.setVisible(bitrate_mode)
+            spin.setVisible(bitrate_mode)
+            check.setEnabled(bitrate_mode)
+            spin.setEnabled(bitrate_mode and check.isChecked())
+        if not available:
+            note = self.tr(
+                "Available after explicitly selecting Wwise Vorbis or WEM Opus."
+            )
+        elif bitrate_mode:
+            note = self.tr(
+                "Vorbis bitrate values are per channel. Optional bounds constrain "
+                "the encoder around the average target."
+            )
+        else:
+            note = self.tr(
+                "The exact value replaces the simple quality preset above."
+            )
+        self.advanced_compression_note.setText(note)
+        active = available and self.advanced_compression_group.isChecked()
+        # The checkable group handles child enablement; only the one-choice mode
+        # selector and bitrate-only controls need their own state.
+        self.compression_mode_combo.setEnabled(
+            self.compression_mode_combo.count() > 1
+        )
+        adjustable = codec is None or codec.quality is not None
+        self.quality_combo.setEnabled(
+            bool(self._sound_profile) and adjustable and not active
+        )
+        if not adjustable:
+            self.quality_combo.setCurrentIndex(0)
+
+    def _start_wwise_project_warmup(self):
+        """Hide one-time Wwise project setup behind normal source selection time."""
+
+        profile = wwise_profile_for_game(self._wwise_game())
+        app = getattr(self.handler, "app", None)
+        settings = getattr(app, "settings", None)
+        settings = settings if isinstance(settings, dict) else {}
+        configured = configured_wwise_path(settings, profile.game) if profile else ""
+        if not configured:
+            return
+
+        def warm():
+            try:
+                installation = validate_wwise_installation(configured, profile.game)
+                prepare_wwise_project(installation)
+            except (OSError, ValueError):
+                # The regular import flow reports configuration/conversion errors.
+                pass
+
+        threading.Thread(
+            target=warm,
+            name="wwise-project-warmup",
+            daemon=True,
+        ).start()
 
     def closeEvent(self, event):
         self._finalize()
@@ -456,9 +631,10 @@ class SoundViewer(QWidget):
         self.stop_btn = self._make_btn(self.tr("Stop"), QStyle.SP_MediaStop, self._on_stop, enabled=False)
         self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
         self.rep_wem.setToolTip(self.tr(
-            "WAV import matches the original WEM codec and, by default, its sample "
-            "rate. WAV metadata wins when provided; otherwise REasy inherits the "
-            "original loops, cue points, and marker labels and verifies the authored WEM."
+            "WAV import uses the codec, quality, and sample-rate controls below. "
+            "The defaults match the original WEM. WAV metadata wins when provided; "
+            "otherwise REasy inherits the original loops, cue points, and marker "
+            "labels and verifies the authored WEM."
         ))
         self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), QStyle.SP_FileDialogDetailedView, self._on_edit_wem_metadata, enabled=False)
         self.exp_wem = self._make_btn(self.tr("Export WEM…"), QStyle.SP_DialogSaveButton, self._on_export_wem, enabled=False)
@@ -484,12 +660,111 @@ class SoundViewer(QWidget):
         rate.addWidget(self.sample_rate_combo, 1)
         media_layout.addLayout(rate)
 
+        encoding = QGridLayout()
+        encoding.addWidget(QLabel(self.tr("WAV Import Codec")), 0, 0)
+        self.codec_combo = QComboBox()
+        self.codec_combo.currentIndexChanged.connect(
+            self._on_encoding_codec_changed
+        )
+        self.codec_combo.setToolTip(self.tr(
+            "Match the original WEM for safest replacement, or explicitly choose "
+            "another codec supported by this game's Wwise version."
+        ))
+        encoding.addWidget(self.codec_combo, 0, 1)
+        encoding.addWidget(QLabel(self.tr("Encoding quality")), 1, 0)
+        self.quality_combo = QComboBox()
+        for label, value in (
+            (self.tr("Current default (Recommended)"), None),
+            (self.tr("Low"), "low"), (self.tr("Medium"), "medium"),
+            (self.tr("High"), "high"), (self.tr("Maximum"), "maximum"),
+        ):
+            self.quality_combo.addItem(label, value)
+        self.quality_combo.setToolTip(self.tr(
+            "Quality is codec-aware: Vorbis uses quality factors 0, 2, 4, and "
+            "10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no "
+            "adjustable compression quality."
+        ))
+        encoding.addWidget(self.quality_combo, 1, 1)
+        encoding.setColumnStretch(1, 1)
+        media_layout.addLayout(encoding)
+
+        self.advanced_compression_group = QGroupBox(self.tr("Advanced compression"))
+        self.advanced_compression_group.setCheckable(True)
+        self.advanced_compression_group.setChecked(False)
+        self.advanced_compression_group.setToolTip(self.tr(
+            "Override the simple quality preset with exact codec parameters. "
+            "An explicit WAV import codec must be selected."
+        ))
+        advanced = QGridLayout(self.advanced_compression_group)
+        advanced.addWidget(QLabel(self.tr("Mode")), 0, 0)
+        self.compression_mode_combo = QComboBox()
+        self.compression_mode_combo.currentIndexChanged.connect(
+            self._sync_advanced_compression_controls
+        )
+        advanced.addWidget(self.compression_mode_combo, 0, 1)
+
+        self.compression_value_label = QLabel(self.tr("Value"))
+        advanced.addWidget(self.compression_value_label, 1, 0)
+        self.compression_value_spin = QDoubleSpinBox()
+        self.compression_value_spin.setKeyboardTracking(False)
+        advanced.addWidget(self.compression_value_spin, 1, 1)
+
+        def add_bitrate_bound(row, label, value):
+            check = QCheckBox(label)
+            spin = QDoubleSpinBox()
+            spin.setRange(1, 512)
+            spin.setDecimals(1)
+            spin.setValue(value)
+            spin.setSuffix(self.tr(" kbps/ch"))
+            spin.setKeyboardTracking(False)
+            spin.setEnabled(False)
+            check.toggled.connect(spin.setEnabled)
+            advanced.addWidget(check, row, 0)
+            advanced.addWidget(spin, row, 1)
+            return check, spin
+
+        self.minimum_bitrate_check, self.minimum_bitrate_spin = add_bitrate_bound(
+            2, self.tr("Minimum bitrate"), 32
+        )
+        self.maximum_bitrate_check, self.maximum_bitrate_spin = add_bitrate_bound(
+            3, self.tr("Maximum bitrate"), 128
+        )
+
+        advanced.addWidget(QLabel(self.tr("Channels")), 4, 0)
+        self.compression_channels_combo = QComboBox()
+        for label, value in (
+            (self.tr("As input (Recommended)"), CHANNEL_AS_INPUT),
+            (self.tr("Mono"), CHANNEL_MONO),
+            (self.tr("Stereo"), CHANNEL_STEREO),
+        ):
+            self.compression_channels_combo.addItem(label, value)
+        self.compression_channels_combo.setToolTip(self.tr(
+            "Mono and Stereo may reduce package size but intentionally change "
+            "the authored channel layout. Mono input is not upmixed to stereo."
+        ))
+        advanced.addWidget(self.compression_channels_combo, 4, 1)
+
+        self.advanced_compression_note = QLabel("")
+        self.advanced_compression_note.setWordWrap(True)
+        self.advanced_compression_note.setStyleSheet(_MUTED_TEXT_STYLE)
+        advanced.addWidget(self.advanced_compression_note, 5, 0, 1, 2)
+        advanced.setColumnStretch(1, 1)
+        media_layout.addWidget(self.advanced_compression_group)
+        self.advanced_compression_group.toggled.connect(
+            self._sync_advanced_compression_controls
+        )
+        self._populate_encoding_controls()
+
         batch = QHBoxLayout()
         self.rep_bulk = self._make_btn(self.tr("Bulk Replace…"), QStyle.SP_DirOpenIcon, self._on_bulk_replace)
-        self.add_pck_source = self._make_btn(self.tr("Add PCK Source…"), QStyle.SP_FileDialogNewFolder, self._on_add_pck_source)
+        self.add_audio_source = self._make_btn(
+            self.tr("Add Audio Source…"), QStyle.SP_FileDialogNewFolder,
+            self._on_add_audio_source,
+        )
+        self.add_pck_source = self.add_audio_source  # Legacy UI attribute.
         self.exp_all = self._make_btn(self.tr("Export All…"), QStyle.SP_DialogSaveButton, self._on_export_all)
         self.exp_pck = self._make_btn(self.tr("Export Non-Streaming PCK…"), QStyle.SP_DialogSaveButton, self._on_export_pck)
-        for button in (self.rep_bulk, self.exp_all, self.add_pck_source, self.exp_pck):
+        for button in (self.rep_bulk, self.exp_all, self.add_audio_source, self.exp_pck):
             batch.addWidget(button)
         media_layout.addLayout(batch)
         media_layout.addWidget(self._build_preview_controls())
@@ -1295,6 +1570,64 @@ class SoundViewer(QWidget):
     def _sample_rate_policy(self):
         return self.sample_rate_combo.currentData() or SAMPLE_RATE_MATCH_ORIGINAL
 
+    def _encoding_codec_tag(self):
+        value = self.codec_combo.currentData()
+        return int(value) if value is not None else None
+
+    def _encoding_quality_preset(self):
+        return self.quality_combo.currentData() if self.quality_combo.isEnabled() else None
+
+    def _advanced_compression_settings(self):
+        if not self.advanced_compression_group.isChecked():
+            return None
+        codec = self._selected_encoding_codec()
+        mode = self.compression_mode_combo.currentData()
+        value = self.compression_value_spin.value()
+        channel_mode = self.compression_channels_combo.currentData()
+        if mode == COMPRESSION_MODE_QUALITY:
+            if codec.quality.property_type.casefold() == "int32":
+                value = int(round(value))
+            return WemCompressionSettings(
+                mode=mode, quality=value, channel_mode=channel_mode
+            )
+
+        def bound(check, spin):
+            return spin.value() if check.isChecked() else None
+
+        return WemCompressionSettings(
+            mode=mode,
+            average_bitrate=value,
+            minimum_bitrate=bound(
+                self.minimum_bitrate_check, self.minimum_bitrate_spin
+            ),
+            maximum_bitrate=bound(
+                self.maximum_bitrate_check, self.maximum_bitrate_spin
+            ),
+            channel_mode=channel_mode,
+        )
+
+    def _advanced_compression_text(self):
+        settings = self._advanced_compression_settings()
+        if settings is None:
+            return ""
+        if settings.mode == COMPRESSION_MODE_QUALITY:
+            parts = [self.tr("exact quality {value}").format(
+                value=f"{settings.quality:g}"
+            )]
+        else:
+            parts = [self.tr("{value} kbps/channel").format(
+                value=f"{settings.average_bitrate:g}"
+            )]
+            for label, value in (
+                (self.tr("minimum"), settings.minimum_bitrate),
+                (self.tr("maximum"), settings.maximum_bitrate),
+            ):
+                if value is not None:
+                    parts.append(f"{label} {value:g}")
+        if settings.channel_mode != CHANNEL_AS_INPUT:
+            parts.append(settings.channel_mode.title())
+        return " · ".join(parts)
+
     @staticmethod
     def _rate_text(sample_rate):
         return (
@@ -1310,6 +1643,7 @@ class SoundViewer(QWidget):
             profile,
             original_wem or None,
             self._sample_rate_policy(),
+            codec_tag=self._encoding_codec_tag(),
         )
 
     def _rate_plan_text(self, plan):
@@ -1415,6 +1749,9 @@ class SoundViewer(QWidget):
             sample_rate_policy=(
                 sample_rate_policy or self._sample_rate_policy()
             ),
+            codec_tag=self._encoding_codec_tag(),
+            quality_preset=self._encoding_quality_preset(),
+            compression=self._advanced_compression_settings(),
         )
         return authored, wem_codec_tag(authored)
 
@@ -1695,9 +2032,28 @@ class SoundViewer(QWidget):
             }.get(kind, self.tr("WEM"))
             if authored_codec:
                 original_codec = authoring.wem_codec(wem_codec_tag(plan.original_wem))
-                encoding += self.tr(" (matched original)") if (
-                    original_codec == authored_codec
-                ) else self.tr(" (profile default)")
+                if (
+                    Path(path).suffix.casefold() == ".wav"
+                    and self._encoding_codec_tag() is not None
+                ):
+                    encoding += self.tr(" (selected codec)")
+                else:
+                    encoding += self.tr(" (matched original)") if (
+                        original_codec == authored_codec
+                    ) else self.tr(" (profile default)")
+                advanced_text = (
+                    self._advanced_compression_text()
+                    if Path(path).suffix.casefold() == ".wav" else ""
+                )
+                if advanced_text:
+                    encoding += " · " + advanced_text
+                elif (
+                    Path(path).suffix.casefold() == ".wav"
+                    and self._encoding_quality_preset()
+                ):
+                    encoding += self.tr(" · {quality} quality").format(
+                        quality=self._encoding_quality_preset().title()
+                    )
             self._report_changes(
                 self.tr("Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.").format(
                     id=track.source_id, count=count, file=Path(path).name,
@@ -1712,24 +2068,35 @@ class SoundViewer(QWidget):
         except (OSError, ValueError) as exc:
             QMessageBox.warning(self, self.tr("Replace Error"), str(exc))
 
-    def _on_add_pck_source(self):
-        if not self._parse_result or self._parse_result.container_type.lower() != "pck":
+    def _on_add_audio_source(self):
+        if not self._parse_result:
             return
-        if export_non_streaming_pck(self.handler.raw_data) == self.handler.raw_data:
+        is_pck = self._parse_result.container_type.lower() == "pck"
+        if not is_pck and not self._bank_edits_supported():
+            return
+        title = self.tr("Add PCK Audio Source") if is_pck else self.tr(
+            "Add Embedded BNK Audio Source"
+        )
+        if is_pck and export_non_streaming_pck(self.handler.raw_data) == self.handler.raw_data:
             QMessageBox.warning(
                 self,
-                self.tr("Add PCK Source"),
+                title,
                 self.tr(
                     "This is the index-only PCK. Open the full streaming PCK "
                     "before adding a source; REasy will keep its index in sync."
                 ),
             )
             return
-        source_id = self._prompt_new_hirc_id(self.tr("Add PCK Source"))
+        source_id = self._prompt_new_hirc_id(title)
         if source_id is None:
             return
-        if any(track.source_id == source_id for track in self._parsed_tracks):
-            QMessageBox.warning(self, self.tr("Add PCK Source"), self.tr("Source ID {id} already exists.").format(id=source_id))
+        occupied = {track.source_id for track in self._parsed_tracks}
+        occupied.update(entry.entry_id for entry in self._parse_result.pck_entries)
+        if source_id in occupied:
+            QMessageBox.warning(
+                self, title,
+                self.tr("Source ID {id} already exists.").format(id=source_id),
+            )
             return
         if not self._confirm_replacement_scope((source_id,)):
             return
@@ -1757,17 +2124,21 @@ class SoundViewer(QWidget):
             )
             if not data:
                 return
-            self.handler.replace_track_data(source_id, data)
+            self.handler.add_media_source(source_id, data)
             if self._refresh_tracks():
-                self._stage_pck_index()
+                if is_pck:
+                    self._stage_pck_index()
                 self._select_source_id(source_id)
+                location = self.tr("streamed PCK") if is_pck else self.tr(
+                    "embedded BNK"
+                )
                 self.status.setText(
-                    self.tr("Added streamed PCK source {id} from {file}.").format(
-                        id=source_id, file=Path(path).name
+                    self.tr("Added {location} source {id} from {file}.").format(
+                        location=location, id=source_id, file=Path(path).name
                     )
                 )
         except (OSError, ValueError) as exc:
-            QMessageBox.warning(self, self.tr("Add PCK Source"), str(exc))
+            QMessageBox.warning(self, title, str(exc))
 
     def _stage_pck_index(self):
         """Regenerate the header-only index PCK for the rewritten streaming PCK."""
@@ -1827,8 +2198,61 @@ class SoundViewer(QWidget):
         failures = []
         authored = {}
         rate_policy = self._sample_rate_policy()
-        for index, source in enumerate(sorted(files, key=int)):
+        codec_tag = self._encoding_codec_tag()
+        quality_preset = self._encoding_quality_preset()
+        compression = self._advanced_compression_settings()
+        ordered_sources = sorted(files, key=int)
+        audio_wavs = [
+            source for source in ordered_sources
+            if files[source].suffix.casefold() == ".wav"
+            and self._media_kind(
+                replaceable[source], plans[source].original_wem
+            ) == WwiseMediaKind.AUDIO
+        ]
+        batched = set()
+        if audio_wavs:
+            progress.setLabelText(
+                self.tr("Authoring {count} WAV file(s) in one Wwise batch…").format(
+                    count=len(audio_wavs)
+                )
+            )
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                return
+            requests = tuple(
+                WemConversionRequest(
+                    files[source],
+                    preserve_metadata_from=plans[source].original_wem,
+                    match_codec_from=plans[source].original_wem,
+                    sample_rate_policy=rate_policy,
+                    codec_tag=codec_tag,
+                    quality_preset=quality_preset,
+                    compression=compression,
+                )
+                for source in audio_wavs
+            )
+            try:
+                results = convert_files_to_wwise_wem(
+                    requests,
+                    game=installation.profile.game,
+                    installation=installation,
+                )
+            except (OSError, ValueError) as exc:
+                # Retrying one-by-one preserves the existing partial-success
+                # behavior and identifies only the malformed source as failed.
+                print(f"[Sound] Batched WAV authoring failed; retrying individually: {exc}")
+            else:
+                for source, data in zip(audio_wavs, results):
+                    authored[int(source)] = data
+                batched.update(audio_wavs)
+            QApplication.processEvents()
+            if progress.wasCanceled():
+                return
+
+        for index, source in enumerate(ordered_sources):
             progress.setValue(index)
+            if source in batched:
+                continue
             progress.setLabelText(self.tr("Replacing source {id}").format(id=source))
             QApplication.processEvents()
             if progress.wasCanceled():
@@ -1902,8 +2326,11 @@ class SoundViewer(QWidget):
         self._populate_bank_chunks(result)
         self._populate(result.tracks)
         is_pck = result.container_type.lower() == "pck"
+        can_add_source = (
+            bool(self._sound_profile) if is_pck else self._bank_edits_supported()
+        )
         available = (
-            (self.sound_graph_page, bool(result.tracks or result.events)),
+            (self.sound_graph_page, bool(result.tracks or result.events or can_add_source)),
             (self.all_objects_page, not is_pck and bool(result.objects)),
             (self.bank_settings_page, not is_pck and bool(result.bank_chunks)),
         )
@@ -1923,7 +2350,18 @@ class SoundViewer(QWidget):
             if first is not None:
                 self.tabs.setCurrentWidget(first)
         self.exp_pck.setVisible(is_pck)
-        self.add_pck_source.setVisible(bool(is_pck and self._sound_profile))
+        self.add_audio_source.setVisible(can_add_source)
+        self.add_audio_source.setText(
+            self.tr("Add PCK Source…") if is_pck
+            else self.tr("Add Embedded BNK Source…")
+        )
+        self.add_audio_source.setToolTip(
+            self.tr("Add a new media entry to this PCK and keep its index in sync.")
+            if is_pck else self.tr(
+                "Embed a new Source ID in this BNK's DIDX/DATA media table. "
+                "This adds media without inventing Event or Action graph links."
+            )
+        )
         self.quick_add_event_btn.setEnabled(self._bank_edits_supported())
         self.rep_bulk.setEnabled(any(self._can_replace_track(track) for track in result.tracks))
         self.exp_all.setEnabled(any(track.available and track.payload_complete for track in result.tracks))
@@ -3583,9 +4021,10 @@ class SoundViewer(QWidget):
             ))
         elif kind == WwiseMediaKind.AUDIO:
             self.rep_wem.setToolTip(self.tr(
-                "WAV import matches the original WEM codec and the sample-rate policy "
-                "shown below. WAV metadata wins when provided; otherwise REasy inherits "
-                "the original loops, cue points, and marker labels and verifies the authored WEM."
+                "WAV import uses the codec, quality, and sample-rate settings shown "
+                "below; the defaults match the original WEM. WAV metadata wins when "
+                "provided; otherwise REasy inherits the original loops, cue points, "
+                "and marker labels and verifies the authored WEM."
             ))
         elif kind == WwiseMediaKind.CRANKCASE_REV_MODEL:
             self.rep_wem.setToolTip(self.tr(
@@ -3669,10 +4108,13 @@ class SoundViewer(QWidget):
         for track in visible:
             split_prefetch = self._is_split_prefetch(track)
             wem = (
-                extract_embedded_wem(self.handler.raw_data, track)
+                embedded_wem_view(self.handler.raw_data, track)
                 if track.available and not split_prefetch else b""
             )
-            metadata = parse_wem_metadata(wem, track.plugin_id) if wem else None
+            metadata = (
+                parse_wem_metadata(wem, track.plugin_id, track.media_kind)
+                if wem else None
+            )
             location, guidance = self._track_status(track)
             duration = (
                 self.tr("Full media in PCK") if split_prefetch else
