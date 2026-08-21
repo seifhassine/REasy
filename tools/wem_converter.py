@@ -128,8 +128,15 @@ def _read_source_wav(source_path: Path) -> bytes:
 
     wav_data = source_path.read_bytes()
     chunks = _riff_chunks(wav_data)
-    if len(chunks.get(b"fmt ", b"")) < 16 or not chunks.get(b"data"):
+    fmt = chunks.get(b"fmt ", b"")
+    if len(fmt) < 16 or not chunks.get(b"data"):
         raise ValueError("WAV must contain valid, non-empty fmt and data chunks.")
+    bits_per_sample = struct.unpack_from("<H", fmt, 14)[0]
+    if bits_per_sample < 16:
+        raise ValueError(
+            f"Wwise silently encodes {bits_per_sample}-bit WAV as silence. "
+            "Re-export the file as 16-bit PCM and import it again."
+        )
     return wav_data
 
 
