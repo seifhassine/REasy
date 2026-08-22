@@ -396,6 +396,11 @@ class AiActionFeedback:
         )
         return True
 
+    @property
+    def editing_active(self) -> bool:
+        glow = self._editing_glow
+        return bool(glow._requested_active) if glow is not None else False
+
     def pulse_index(
         self,
         view,

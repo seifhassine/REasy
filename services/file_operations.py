@@ -29,9 +29,9 @@ class FileOperationError(ValueError):
 
 
 def _move_to_recycle_bin(target: Path) -> None:
-    qt_file = QFile(str(target))
-    if qt_file.moveToTrash():
+    if QFile.moveToTrash(str(target)):
         return
+    qt_file = QFile(str(target))
     detail = str(qt_file.errorString() or "").strip()
     if "0x80270027" in detail.casefold():
         detail = "The item is in use; close it in REasy and other programs, then retry."
@@ -375,7 +375,10 @@ class FolderFileOperations:
                 if operation == "rename":
                     if "new_name" not in raw:
                         raise FileOperationError(f"operations[{index}].new_name is required.")
-                    destination_directory = source.parent.relative_to(self.root).as_posix()
+                    parent_relative = source.parent.relative_to(self.root)
+                    destination_directory = (
+                        "" if parent_relative == Path() else parent_relative.as_posix()
+                    )
                 else:
                     if "destination_directory" not in raw:
                         raise FileOperationError(

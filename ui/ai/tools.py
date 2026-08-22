@@ -295,6 +295,7 @@ def assistant_system_prompt(capabilities: Iterable[str] = ()) -> str:
     return "\n\n".join(parts)
 
 
+AI_ASSISTANT_SYSTEM_PROMPT = assistant_system_prompt(_CAPABILITY_PROMPTS.keys())
 MAX_MIGRATION_JOB_PAYLOAD_BYTES = 256_000
 _VERSIONED_MDF_RE = re.compile(r"\.mdf2\.\d+$", re.IGNORECASE)
 _MDF_PROMPT_HINT_RE = re.compile(

@@ -27,7 +27,9 @@ class LazyRawValues:
     def __init__(self, count, materializer, raw_bytes=None, raw_copy_safe=True):
         self._count = count
         self._materializer = materializer
-        self._raw_bytes = raw_bytes
+        # Normalize memoryview slices to bytes so lazy raw values stay
+        # deepcopy-safe when the AI assistant backs up fields for an edit.
+        self._raw_bytes = bytes(raw_bytes) if raw_bytes is not None else None
         self._raw_copy_safe = raw_copy_safe
         self._values = None
 
@@ -368,7 +370,9 @@ class _GuidBytesData:
             raw_bytes = b'\0' * 16
 
         self.guid_str = guid_str
-        self.raw_bytes = raw_bytes  # Store original bytes
+        # Normalize memoryview slices to bytes so the parsed field tree stays
+        # deepcopy-safe (the AI assistant deep-copies fields for edit backups).
+        self.raw_bytes = bytes(raw_bytes)  # Store original bytes
         self.orig_type = orig_type
 
     @classmethod
@@ -655,7 +659,8 @@ class MaybeObject:
 class RawBytesData:
     """Stores raw bytes exactly as read from file"""
     def __init__(self, raw_bytes: bytes = bytes(0), field_size: int = 1, orig_type: str = ""):
-        self.raw_bytes = raw_bytes
+        # Normalize memoryview slices to bytes so parsed fields stay deepcopy-safe.
+        self.raw_bytes = bytes(raw_bytes)
         self.field_size = field_size
         self.orig_type = orig_type
 
