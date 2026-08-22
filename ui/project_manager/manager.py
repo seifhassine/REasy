@@ -243,6 +243,7 @@ class ProjectManager(QDockWidget):
         self._pak_list_path: str | None = None
 
         c = QWidget(self)
+        c.setObjectName("projectBrowserBody")
         self.setWidget(c)
         lay = QVBoxLayout(c)
         lay.setContentsMargins(2,2,2,2)
@@ -251,43 +252,57 @@ class ProjectManager(QDockWidget):
         path_bar = QHBoxLayout()
         lay.addLayout(path_bar)
         self.path_label = QLabel()
+        # Ignored: long paths must clip instead of forcing the dock wider
+        self.path_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         path_bar.addWidget(self.path_label, 1)
         self.path_label.setMinimumSize(20, 20)
-        path_bar.addWidget(QPushButton(self.tr("Browse…"), clicked=self._browse))
+        self.btn_browse = QPushButton(self.tr("…"), clicked=self._browse)
+        self.btn_browse.setProperty("compact", True)
+        path_bar.addWidget(self.btn_browse)
 
+        # PAK controls (visible on the PAK tab only)
         pak_bar = QHBoxLayout()
         lay.addLayout(pak_bar)
-        # PAK-specific controls
-        self.pak_ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"))
-        self.pak_ignore_mods_cb.setChecked(True)
-        self.btn_scan_paks = QPushButton(self.tr("Scan PAKs"), clicked=self._scan_paks)
-        pak_bar.addWidget(self.pak_ignore_mods_cb)
+        self.btn_scan_paks = QPushButton(self.tr("Scan"), clicked=self._scan_paks)
+        self.btn_scan_paks.setProperty("compact", True)
+        self.btn_scan_paks.setToolTip(self.tr("Scan game folder for .pak files"))
         pak_bar.addWidget(self.btn_scan_paks)
-        self.btn_load_list = QPushButton(self.tr("Load .list…"), clicked=self._choose_pak_list)
+        self.btn_load_list = QPushButton(self.tr("…"), clicked=self._choose_pak_list)
+        self.btn_load_list.setProperty("compact", True)
+        self.btn_load_list.setToolTip(self.tr("Load .list/.txt file listing PAK contents"))
         pak_bar.addWidget(self.btn_load_list)
-        self.pak_list_edit = QLineEdit(self)
-        self.pak_list_edit.setPlaceholderText(self.tr("List file (.list/.txt)"))
-        self.pak_list_edit.setReadOnly(True)
-        self.pak_list_edit.setMinimumWidth(120)
-        self.pak_list_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        pak_bar.addWidget(self.pak_list_edit, 1)
-        pak_bar.addStretch(1)
+        self.pak_list_label = QLabel()
+        self.pak_list_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.pak_list_label.setMinimumSize(10, 20)
+        pak_bar.addWidget(self.pak_list_label, 1)
+        self.pak_ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs"))
+        self.pak_ignore_mods_cb.setChecked(True)
+        self.pak_ignore_mods_cb.setToolTip(self.tr("Not 100% accurate"))
+        pak_bar.addWidget(self.pak_ignore_mods_cb)
         self._update_path_label()
 
-        # Project label
+        # Project header: name + export actions (always visible)
+        self.project_bar = QWidget(c)
+        project_lay = QHBoxLayout(self.project_bar)
+        project_lay.setContentsMargins(0, 0, 0, 0)
+        project_lay.setSpacing(4)
         self.project_label = QLabel(self.tr("<i>No project open</i>"))
-        lay.addWidget(self.project_label)
-
-        actions = QHBoxLayout()
-        lay.addLayout(actions)    
-
-        self.btn_conf = QPushButton(self.tr("Fluffy Settings…"), clicked=self._proj_settings)
-        self.btn_zip  = QPushButton(self.tr("Export Fluffy ZIP"), clicked=self._export_zip)
-        self.btn_pak  = QPushButton(self.tr("Export .PAK"),       clicked=self._export_mod)
-
-        actions.addWidget(self.btn_conf)
-        actions.addWidget(self.btn_zip)
-        actions.addWidget(self.btn_pak)
+        self.project_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        project_lay.addWidget(self.project_label, 1)
+        self.btn_conf = QToolButton(self.project_bar)
+        self.btn_conf.setText("⚙")
+        self.btn_conf.setToolTip(self.tr("Fluffy Mod Manager package settings (mod name, author, description, screenshot)"))
+        self.btn_conf.clicked.connect(self._proj_settings)
+        self.btn_zip = QPushButton(self.tr("Export Fluffy ZIP"), clicked=self._export_zip)
+        self.btn_zip.setProperty("compact", True)
+        self.btn_zip.setToolTip(self.tr("Build a mod package (ZIP with modinfo.ini) to install with Fluffy Mod Manager"))
+        self.btn_pak = QPushButton(self.tr("Export .PAK"), clicked=self._export_mod)
+        self.btn_pak.setProperty("compact", True)
+        self.btn_pak.setToolTip(self.tr("Build a native .pak mod to copy into the game's game folder (no mod manager)"))
+        project_lay.addWidget(self.btn_conf)
+        project_lay.addWidget(self.btn_zip)
+        project_lay.addWidget(self.btn_pak)
+        lay.addWidget(self.project_bar)
 
         toggles = QHBoxLayout()
         lay.addLayout(toggles)
@@ -309,16 +324,14 @@ class ProjectManager(QDockWidget):
         # Search bars (visible only on their respective tabs)
         pak_search = QHBoxLayout()
         lay.addLayout(pak_search)
-        self.pak_filter_label, self.pak_filter_edit, self._pak_filter_timer = \
+        self.pak_filter_edit, self._pak_filter_timer = \
             self._build_search_bar(self._apply_pak_filter_now)
-        pak_search.addWidget(self.pak_filter_label)
         pak_search.addWidget(self.pak_filter_edit, 1)
 
         proj_search = QHBoxLayout()
         lay.addLayout(proj_search)
-        self.proj_filter_label, self.proj_filter_edit, self._proj_filter_timer = \
+        self.proj_filter_edit, self._proj_filter_timer = \
             self._build_search_bar(self._apply_proj_filter_now)
-        proj_search.addWidget(self.proj_filter_label)
         proj_search.addWidget(self.proj_filter_edit, 1)
 
         self.bookmarks = BookmarksPanel(
@@ -416,9 +429,11 @@ class ProjectManager(QDockWidget):
         # Placeholders for missing configuration
         self.sys_placeholder = QLabel(self.tr("Please choose unpacked game directory using the Browse button above"))
         self.sys_placeholder.setAlignment(Qt.AlignCenter)
+        self.sys_placeholder.setWordWrap(True)
         self.sys_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pak_placeholder = QLabel("")
         self.pak_placeholder.setAlignment(Qt.AlignCenter)
+        self.pak_placeholder.setWordWrap(True)
         self.pak_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         lay.addWidget(self.sys_placeholder)
         lay.addWidget(self.pak_placeholder)
@@ -662,10 +677,13 @@ class ProjectManager(QDockWidget):
             self.path_label.setText(self.tr("Game folder (PAKs): {path}").format(
                 path=self.pak_dir or self.tr("<i>not set</i>")
             ))
+            self.btn_browse.setToolTip(self.tr("Select Game Directory (contains .pak)"))
         elif self._active_tab == "bm":
             self.path_label.setText(self.tr("Bookmarks"))
+            self.btn_browse.setToolTip(self.tr("Browse for game directory"))
         else:
             self.path_label.setText(self.tr("Unpacked Game folder: {}").format(self.unpacked_dir or self.tr('<i>not set</i>')))
+            self.btn_browse.setToolTip(self.tr("Select unpacked Game folder"))
 
     def _browse(self):
         if self._active_tab == "pak":
@@ -778,7 +796,7 @@ class ProjectManager(QDockWidget):
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             elif not self._pak_base_paths:
-                self.pak_placeholder.setText(self.tr("Please load a list using the Load .list… button above"))
+                self.pak_placeholder.setText(self.tr("Please load a list using the … button above"))
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             else:
@@ -790,23 +808,23 @@ class ProjectManager(QDockWidget):
     def _update_tab_controls_state(self):
         on_pak = (self._active_tab == "pak")
         on_proj = (self._active_tab == "proj")
-        for w in (self.pak_ignore_mods_cb, self.btn_scan_paks, self.btn_load_list, self.pak_list_edit, self.pak_filter_label, self.pak_filter_edit):
+        for w in (self.btn_scan_paks, self.btn_load_list, self.pak_list_label,
+                  self.pak_ignore_mods_cb, self.pak_filter_edit):
             w.setVisible(on_pak)
             w.setEnabled(on_pak and self.tree_pak.isEnabled())
-        for w in (self.proj_filter_label, self.proj_filter_edit):
-            w.setVisible(on_proj)
-            w.setEnabled(on_proj and bool(self.project_dir))
+        self.proj_filter_edit.setVisible(on_proj)
+        self.proj_filter_edit.setEnabled(on_proj and bool(self.project_dir))
 
     def _build_search_bar(self, apply_now, placeholder=None):
         """Create a debounced search bar wired to *apply_now*."""
-        label = QLabel(self.tr("Filter:"))
         edit = QLineEdit(self)
         edit.setPlaceholderText(placeholder or self.tr("Search (regex) – shows flat list; clear for tree view"))
+        edit.setClearButtonEnabled(True)
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(apply_now)
         edit.textChanged.connect(lambda _=None: timer.start(120))
-        return label, edit, timer
+        return edit, timer
 
     def _new_pak_filter_proxy(self):
         proxy = QSortFilterProxyModel(self)
@@ -822,7 +840,7 @@ class ProjectManager(QDockWidget):
         self._pak_filter_proxy = self._new_pak_filter_proxy()
         self._pak_index_dirty = False
         self.pak_dir = None
-        self.pak_list_edit.clear()
+        self._set_pak_list_display(None)
         self.tree_pak.setModel(None)
 
         self.unpacked_dir = None
@@ -901,7 +919,7 @@ class ProjectManager(QDockWidget):
             self._pak_flat_model = self._pak_filter_proxy.sourceModel()
             self.unpacked_dir = unpacked_dir
             self.pak_ignore_mods_cb.setChecked(state.get("ignore_mods", True))
-            self.pak_list_edit.setText(self._pak_list_path or "")
+            self._set_pak_list_display(self._pak_list_path)
             previous = self.pak_filter_edit.blockSignals(True)
             self.pak_filter_edit.setText(state.get("filter_text", ""))
             self.pak_filter_edit.blockSignals(previous)
@@ -1011,7 +1029,7 @@ class ProjectManager(QDockWidget):
                     pak_state_changed = True
                 if path and path.is_file():
                     self._pak_list_path = str(path)
-                    self.pak_list_edit.setText(str(path))
+                    self._set_pak_list_display(str(path))
                     self._set_loading_overlay(True, self.tr("Loading PAK list..."))
                     self._load_pak_list_file(str(path), rebuild=False)
                     pak_state_changed = True
@@ -1085,6 +1103,10 @@ class ProjectManager(QDockWidget):
         self._load_pak_list_file(path)
         self._update_placeholders()
 
+    def _set_pak_list_display(self, path: str | None):
+        self.pak_list_label.setText(os.path.basename(path) if path else "")
+        self.pak_list_label.setToolTip(path or "")
+
     def _load_pak_list_file(self, path: str, rebuild: bool = True):
         try:
             list_path = _safe_path(path)
@@ -1095,7 +1117,7 @@ class ProjectManager(QDockWidget):
             QMessageBox.critical(self, self.tr("Read failed"), str(e))
             return
         self._pak_base_paths = items
-        self.pak_list_edit.setText(path)
+        self._set_pak_list_display(path)
         self._pak_list_path = path
         self._update_project_cfg({"pak_list_path": path})
         self._pak_cached_reader = None

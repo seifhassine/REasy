@@ -40,6 +40,9 @@ def get_main_stylesheet(colors: dict) -> str:
             border: 1px solid {colors['border']}; padding: 5px; min-width: 80px;
         }}
         QPushButton:disabled {{ background-color: {colors['disabled_bg']}; }}
+        QPushButton[compact="true"] {{
+            padding: 3px 8px; min-width: 0px;
+        }}
         QLabel, QCheckBox {{ color: {colors['fg']}; }}
         QCheckBox::indicator {{
             width: 15px; height: 15px; background-color: {colors['input_bg']};
@@ -51,6 +54,19 @@ def get_main_stylesheet(colors: dict) -> str:
         QMenuBar, QMenu, QTabWidget::pane, QStatusBar, QProgressDialog, QListWidget {{
             background-color: {colors['bg']}; color: {colors['fg']};
             border: 1px solid {colors['border']};
+        }}
+        QWidget#projectBrowserTitleBar {{
+            background-color: #232427;
+            border: 1px solid {colors['border']};
+        }}
+        QWidget#projectBrowserTitleBar QLabel,
+        QWidget#projectBrowserTitleBar QToolButton {{
+            background: transparent;
+        }}
+        QWidget#projectBrowserBody {{
+            border-left: 1px solid {colors['border']};
+            border-right: 1px solid {colors['border']};
+            border-bottom: 1px solid {colors['border']};
         }}
         QMenuBar::item:selected, QMenu::item:selected, QTabBar::tab:selected, QListWidget::item:selected {{
             background-color: {colors['highlight']};

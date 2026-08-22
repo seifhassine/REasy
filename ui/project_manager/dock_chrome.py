@@ -29,6 +29,8 @@ class DockTitleBar(QWidget):
 
     def __init__(self, dock):
         super().__init__(dock)
+        self.setObjectName("projectBrowserTitleBar")
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.title_label = QLabel(dock.windowTitle(), self)
 
         self.redock_btn = QToolButton(self)
