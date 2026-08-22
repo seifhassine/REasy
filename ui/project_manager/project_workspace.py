@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
 from .project_sessions import ProjectSessionManager
 
@@ -146,6 +146,65 @@ class ProjectWorkspaceController:
             self.tr("Project: {name}").format(name=os.path.basename(path)), 3000
         )
         return session
+
+    def change_folder(self) -> bool:
+        session = self.sessions.get(self.sessions.active_key)
+        if not session or not session.path:
+            return False
+        if session.tabs:
+            QMessageBox.information(
+                self.host,
+                self.tr("Project has open tabs"),
+                self.tr("Close all tabs of this project before changing its folder."),
+            )
+            return False
+
+        old_path = Path(session.path)
+        chosen = QFileDialog.getExistingDirectory(
+            self.host,
+            self.tr('Select the new folder for project "{name}"').format(name=old_path.name),
+            str(old_path),
+            QFileDialog.ShowDirsOnly,
+        )
+        if not chosen:
+            return False
+        new_path = Path(chosen)
+        old_key = ProjectSessionManager.key_for(old_path)
+        new_key = ProjectSessionManager.key_for(new_path)
+        if new_key == old_key:
+            return False
+        try:
+            new_path.relative_to(old_path)
+        except ValueError:
+            pass
+        else:
+            QMessageBox.warning(
+                self.host,
+                self.tr("Invalid folder"),
+                self.tr("The new folder cannot be inside the current project folder."),
+            )
+            return False
+        try:
+            old_path.relative_to(new_path)
+        except ValueError:
+            pass
+        else:
+            QMessageBox.warning(
+                self.host,
+                self.tr("Invalid folder"),
+                self.tr("The new folder cannot contain the current project folder."),
+            )
+            return False
+
+        renamed = self.sessions.rename_project(old_key, new_path)
+        if renamed is None:
+            return False
+        self.activate(renamed.path, renamed.game)
+        self.host.proj_dock.discard_project_state(str(old_path))
+        self.host.status_bar.showMessage(
+            self.tr("Project folder changed to: {path}").format(path=renamed.path), 5000
+        )
+        return True
 
     def focus_open_tab(self, tab) -> bool:
 

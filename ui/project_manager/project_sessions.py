@@ -98,6 +98,16 @@ class ProjectSessionManager:
         self._sessions.pop(key, None)
         return next(iter(self._sessions.values()), None)
 
+    def rename_project(self, old_key: str, new_path: str | os.PathLike) -> ProjectSession | None:
+        session = self._sessions.pop(old_key, None)
+        if session is None:
+            return None
+        resolved = str(Path(new_path).resolve())
+        session.path = resolved
+        session.key = self.key_for(resolved)
+        self._sessions[session.key] = session
+        return session
+
     def _hide_session(self, session: ProjectSession) -> None:
         self._capture_session(session)
         for tab in session.tabs:

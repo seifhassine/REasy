@@ -687,6 +687,11 @@ class ProjectManager(QDockWidget):
                 path=self.pak_dir or self.tr("<i>not set</i>")
             ))
             self.btn_browse.setToolTip(self.tr("Select Game Directory (contains .pak)"))
+        elif self._active_tab == "proj":
+            self.path_label.setText(self.tr("Project Directory: {path}").format(
+                path=self.project_dir or self.tr("<i>No project open</i>")
+            ))
+            self.btn_browse.setToolTip(self.tr("Change the project folder"))
         elif self._active_tab == "bm":
             self.path_label.setText(self.tr("Bookmarks"))
             self.btn_browse.setToolTip(self.tr("Browse for game directory"))
@@ -695,6 +700,12 @@ class ProjectManager(QDockWidget):
             self.btn_browse.setToolTip(self.tr("Select unpacked Game folder"))
 
     def _browse(self):
+        if self._active_tab == "proj":
+            workspace = getattr(self.app_win, "project_workspace", None)
+            change_folder = getattr(workspace, "change_folder", None)
+            if callable(change_folder):
+                change_folder()
+            return
         if self._active_tab == "pak":
             d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory (contains .pak)"), self.pak_dir or "")
             if d:
@@ -709,6 +720,8 @@ class ProjectManager(QDockWidget):
         ok = self._check_folder(path)
         tick,color = ("✓","green") if ok else ("✗","red")
         self.path_label.setText(self.tr("Unpacked Game folder: <span style='color:{color}'>{tick}</span> {dir}").format(color=color, tick=tick, dir=self.unpacked_dir))
+        if self._active_tab == "proj":
+            self._update_path_label()
 
         if ok:
             self.model_sys.setRootPath(self.unpacked_dir)
