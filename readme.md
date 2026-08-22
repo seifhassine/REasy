@@ -177,6 +177,14 @@ For more information, see:
 
 REasy requests that it not be credited, attributed, or otherwise identified as a tool used to create sexually explicit, pornographic, or otherwise NSFW content.
 
+## Responsible Use
+
+REasy is intended for lawful modding, research, and preservation, primarily in offline and single-player environments. The project does not support cheating, unfair advantages in online games, interference with anti-cheat or online services, or unauthorized distribution of copyrighted material.
+
+Related issues, contributions, or content may be removed from REasy-controlled platforms. REasy is not affiliated with or endorsed by Capcom. Users are responsible for complying with applicable laws and game terms.
+
+This policy does not modify the rights granted under the MIT License.
+
 ## Sponsors
 <table>
  <tbody>
