@@ -7,7 +7,7 @@ from time import monotonic
 from urllib.parse import quote, unquote
 
 from PySide6.QtCore import (
-    QModelIndex, QRegularExpression, QSize, QSortFilterProxyModel,
+    QModelIndex, QRect, QRegularExpression, QSize, QSortFilterProxyModel,
     QStringListModel, QT_TRANSLATE_NOOP, QTimer, Qt, QUrl,
     qInstallMessageHandler,
 )
@@ -36,6 +36,7 @@ from .bookmark_panel import BookmarksPanel
 from .bookmarks import resolve_filesystem_target
 from .constants import EXPECTED_NATIVE, PROJECTS_ROOT, make_bookmark_pixmap
 from .delegate import _ActionsDelegate, _PakActionsDelegate
+from .dock_chrome import DockTitleBar, SideTab
 from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
 from .project_config import (
     CONFIG_NAME,
@@ -232,6 +233,7 @@ class ProjectManager(QDockWidget):
     
     def __init__(self, app_window, unpacked_root: str | None = None):
         super().__init__(self.tr("Project Browser"), app_window)
+        self.setObjectName("projectBrowserDock")
         self.app_win       = app_window
         self.current_game  = getattr(app_window, "current_game", None)
         self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
@@ -388,6 +390,20 @@ class ProjectManager(QDockWidget):
         except Exception:
             pass
 
+        # Title bar minimizes to a side tab instead of closing; DockTitleBar
+        # ignores mouse events so the dock keeps native drag/float/docking.
+        self.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+        self._minimized = False
+        self._last_area = Qt.LeftDockWidgetArea
+        self._docked_size = QSize(360, 600)
+        self._layout_state = None
+        self._title_bar = DockTitleBar(self)
+        self.setTitleBarWidget(self._title_bar)
+        self._side_tab = SideTab(self)
+        for signal in (self.visibilityChanged, self.topLevelChanged, self.dockLocationChanged):
+            signal.connect(lambda *_: self._sync_dock_chrome())
+        self._sync_dock_chrome()
+
         # double‑click open
         self.tree_sys.doubleClicked .connect(lambda idx: self._on_double(idx, False))
         self.tree_proj.doubleClicked.connect(lambda idx: self._on_double(idx, True))
@@ -455,6 +471,93 @@ class ProjectManager(QDockWidget):
         self.bookmarks.changed.connect(self._on_bookmarks_changed)
         self._update_tab_controls_state()
         self._update_placeholders()
+
+    def minimize_to_side_tab(self):
+        """Collapse into the edge tab; docks back first when floating."""
+        if self.isFloating():
+            self.redock()
+        self._minimized = True
+        super().hide()
+        self._sync_dock_chrome()
+
+    def redock(self):
+        """Dock back into the main window at its last docked position.
+
+        Qt's setFloating(False) can leave the dock at its floating position
+        (over the central widget) when the main window layout fails to
+        re-activate; if that happens, re-apply the last healthy layout state.
+        """
+        if self.isFloating():
+            self.setFloating(False)
+            if not self._layout_sane():
+                self._restore_docked_layout()
+        self._apply_docked_size()
+        self.show()
+        self.raise_()
+        QTimer.singleShot(150, self._verify_redock)
+
+    def _verify_redock(self):
+        """Re-check after docking animations settle; rescue or collapse."""
+        if self._minimized or self.isFloating() or self._layout_sane():
+            return
+        self._restore_docked_layout()
+        if not self._layout_sane():
+            # Never leave the browser unreachable: collapse to the side tab.
+            self.minimize_to_side_tab()
+
+    def _restore_docked_layout(self):
+        if self._layout_state is not None:
+            self.app_win.restoreState(self._layout_state)
+        self._apply_docked_size()
+        self.show()
+        self.raise_()
+
+    def _apply_docked_size(self):
+        vertical = self._dock_area() in (Qt.TopDockWidgetArea, Qt.BottomDockWidgetArea)
+        self.app_win.resizeDocks(
+            [self],
+            [self._docked_size.height() if vertical else self._docked_size.width()],
+            Qt.Vertical if vertical else Qt.Horizontal,
+        )
+
+    def _layout_sane(self) -> bool:
+        """A docked dock sits at a window edge and never covers the central widget."""
+        if self.isFloating() or not self.isVisible() or self.x() < 0 or self.y() < 0:
+            return False
+        win = self.app_win
+        if not QRect(0, 0, win.width(), win.height()).intersects(self.geometry()):
+            return False
+        central = win.centralWidget()
+        return central is None or not self.geometry().intersects(central.geometry())
+
+    def hide(self):
+        # Hides triggered from outside (session switches) must drop the side tab.
+        self._minimized = False
+        super().hide()
+        self._sync_dock_chrome()
+
+    def restore_from_side_tab(self):
+        self.show()
+        self.raise_()
+        if not self._layout_sane():
+            self._restore_docked_layout()
+
+    def _dock_area(self):
+        area = self.app_win.dockWidgetArea(self)
+        if area != Qt.NoDockWidgetArea:
+            self._last_area = area
+        return self._last_area
+
+    def _sync_dock_chrome(self):
+        self._title_bar.sync(self.isFloating(), self._dock_area())
+        if self._minimized and not self.isVisible():
+            self._side_tab.set_area(self._dock_area())
+            self._side_tab.show()
+        else:
+            self._minimized = False
+            self._side_tab.hide()
+        if self._layout_sane():
+            self._layout_state = self.app_win.saveState()
 
     def infer_project_game(self, project_path: Path | str) -> str | None:
         """Return the associated game for *project_path* if it can be inferred."""
@@ -941,6 +1044,10 @@ class ProjectManager(QDockWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        if not self.isFloating() and hasattr(self, "_docked_size"):
+            self._docked_size = self.size()
+            if self._layout_sane():
+                self._layout_state = self.app_win.saveState()
         if hasattr(self, "loading_overlay"):
             self.loading_overlay.setGeometry(self.widget().rect())
 
