@@ -18,9 +18,15 @@ _BOOKMARK_SCOPES = frozenset(("pak", "project", "unpacked"))
 _BookmarkKey = tuple[str, str, str]
 _TAG_MAX_LEN = 24
 
+BOOKMARKS_PROJECT_NAME = ".reasy_bookmarks.json"
+
 
 def bookmarks_path() -> Path:
     return application_root() / "bookmarks.json"
+
+
+def project_bookmarks_path(project_dir: str | os.PathLike) -> Path:
+    return Path(project_dir) / BOOKMARKS_PROJECT_NAME
 
 
 def normalize_tag(tag: object) -> str:
@@ -398,16 +404,48 @@ class BookmarksStore(QObject):
         self._commit(self._with_replacement(updated))
         return updated
 
+    def adopt_project_bookmarks(self, project_root: str, target: Path | str) -> int:
+        """Move this store's project-scope bookmarks for *project_root* to *target*.
+
+        Used when a project starts keeping its bookmarks in its own folder;
+        returns the number of bookmarks moved.
+        """
+        root = normalize_root(project_root)
+        target = Path(target)
+        moving = [
+            bookmark
+            for bookmark in self._bookmarks
+            if bookmark.scope == "project" and bookmark.root == root
+        ]
+        if not moving:
+            return 0
+        merged: list[Bookmark] = []
+        known: set[_BookmarkKey] = set()
+        if target.is_file():
+            existing = BookmarksStore(target)
+            merged = list(existing._bookmarks)
+            known = set(existing._by_key)
+        for bookmark in moving:
+            key = self._bookmark_key(bookmark)
+            if key in known:
+                continue
+            known.add(key)
+            merged.append(bookmark)
+        self._write_payload(target, merged)
+        self._commit([
+            bookmark
+            for bookmark in self._bookmarks
+            if bookmark.scope != "project" or bookmark.root != root
+        ])
+        return len(moving)
+
     # ---- queries ------------------------------------------------------
     def __len__(self) -> int:
         return len(self._bookmarks)
 
-    def all_tags(self) -> list[str]:
-        counts: dict[str, int] = {}
-        for bookmark in self._bookmarks:
-            for tag in bookmark.tags:
-                counts[tag] = counts.get(tag, 0) + 1
-        return [tag for tag, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+    def all_tags(self, game: str = "", project_root: str = "") -> list[str]:
+        """Tag frequency list, optionally restricted to a game / project root."""
+        return _context_tags(self._bookmarks, game, project_root)
 
     def matches(self, query: str, tag: str | None = None) -> list[Bookmark]:
         needle = (query or "").strip().lower()
@@ -456,6 +494,146 @@ class BookmarksStore(QObject):
         added = len(bookmarks) - len(self._bookmarks)
         if added:
             self._commit(bookmarks)
+        return added
+
+
+def _context_tags(bookmarks, game: str, project_root: str) -> list[str]:
+    """Frequency-sorted tags of *bookmarks* matching the given game / project."""
+    active_game = str(game or "").strip().upper()
+    active_root = normalize_root(project_root)
+    counts: dict[str, int] = {}
+    for bookmark in bookmarks:
+        if active_game or active_root:
+            if bookmark.scope == "project":
+                if active_root and bookmark.root != active_root:
+                    continue
+            elif active_game and bookmark.game.upper() != active_game:
+                continue
+        for tag in bookmark.tags:
+            counts[tag] = counts.get(tag, 0) + 1
+    return [tag for tag, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
+class ScopedBookmarksStore(QObject):
+    """A project's bookmarks bound to the shared game-keyed store.
+
+    Project-scope bookmarks persist in the project's own file (isolated tags);
+    PAK and unpacked bookmarks persist in the shared file so they follow the
+    game into every project. Exposes the BookmarksStore API used by the panel.
+    """
+
+    changed = Signal()
+
+    def __init__(
+        self,
+        project_store: BookmarksStore,
+        shared_store: BookmarksStore,
+        parent: QObject | None = None,
+    ):
+        super().__init__(parent)
+        self.project_store = project_store
+        self.shared_store = shared_store
+        self.load_warnings = [*project_store.load_warnings, *shared_store.load_warnings]
+        project_store.changed.connect(self.changed)
+        shared_store.changed.connect(self.changed)
+
+    def _store_for_scope(self, scope: str) -> BookmarksStore:
+        return self.project_store if normalize_scope(scope) == "project" else self.shared_store
+
+    def _store_for_id(self, bookmark_id: str) -> BookmarksStore | None:
+        if bookmark_id in self.project_store._by_id:
+            return self.project_store
+        if bookmark_id in self.shared_store._by_id:
+            return self.shared_store
+        return None
+
+    # ---- lookup / mutation ---------------------------------------------
+    def get(self, scope, path, root="", game="") -> Bookmark | None:
+        try:
+            return self._store_for_scope(scope).get(scope, path, root, game)
+        except ValueError:
+            return None
+
+    def is_bookmarked(self, scope, path, root="", game="") -> bool:
+        return self.get(scope, path, root, game) is not None
+
+    def get_by_id(self, bookmark_id: str) -> Bookmark | None:
+        store = self._store_for_id(bookmark_id)
+        return store.get_by_id(bookmark_id) if store else None
+
+    def upsert(self, *, scope, path, root="", game="", tags=(), note="") -> Bookmark:
+        return self._store_for_scope(scope).upsert(
+            scope=scope, path=path, root=root, game=game, tags=tags, note=note
+        )
+
+    def update(self, bookmark_id: str, *, tags=None, note=None) -> Bookmark | None:
+        store = self._store_for_id(bookmark_id)
+        return store.update(bookmark_id, tags=tags, note=note) if store else None
+
+    def remove(self, bookmark_id: str) -> bool:
+        store = self._store_for_id(bookmark_id)
+        return store.remove(bookmark_id) if store else False
+
+    def touch(self, bookmark_id: str) -> Bookmark | None:
+        store = self._store_for_id(bookmark_id)
+        return store.touch(bookmark_id) if store else None
+
+    # ---- queries ---------------------------------------------------------
+    def __len__(self) -> int:
+        return len(self.project_store) + len(self.shared_store)
+
+    def all_tags(self, game: str = "", project_root: str = "") -> list[str]:
+        return _context_tags(
+            [*self.project_store.matches(""), *self.shared_store.matches("")],
+            game,
+            project_root,
+        )
+
+    def matches(self, query: str, tag: str | None = None) -> list[Bookmark]:
+        return self.project_store.matches(query, tag) + self.shared_store.matches(query, tag)
+
+    def export_to(self, path: str | Path) -> int:
+        bookmarks = self.matches("")
+        BookmarksStore._write_payload(Path(path), bookmarks)
+        return len(bookmarks)
+
+    def import_from(self, path: str | Path) -> int:
+        """Merge valid bookmarks from *path*, routed by scope; return count added."""
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise ValueError(self.tr("Could not read file: {error}").format(error=exc)) from exc
+        entries = BookmarksStore._payload_entries(data)
+        incoming: list[Bookmark] = []
+        for index, entry in enumerate(entries, start=1):
+            try:
+                incoming.append(Bookmark.from_dict(entry))
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(
+                    self.tr("Invalid bookmark at position {index}: {error}").format(
+                        index=index,
+                        error=exc,
+                    )
+                ) from exc
+
+        added = 0
+        for store, wanted in (
+            (self.project_store, True),
+            (self.shared_store, False),
+        ):
+            known = set(store._by_key)
+            merged = list(store._bookmarks)
+            for bookmark in incoming:
+                if (bookmark.scope == "project") is not wanted:
+                    continue
+                key = store._bookmark_key(bookmark)
+                if key in known:
+                    continue
+                known.add(key)
+                merged.append(bookmark)
+            if len(merged) != len(store._bookmarks):
+                added += len(merged) - len(store._bookmarks)
+                store._commit(merged)
         return added
 
 

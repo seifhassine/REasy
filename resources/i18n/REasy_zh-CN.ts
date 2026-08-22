@@ -6838,8 +6838,8 @@ Are you sure you want to overwrite it?</source>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="267"/>
-        <source>System Files</source>
-        <translation>系统文件</translation>
+        <source>Unpacked Files</source>
+        <translation>解包文件</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="268"/>

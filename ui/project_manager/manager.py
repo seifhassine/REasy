@@ -33,7 +33,14 @@ from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_pac
 from utils.app_paths import application_root
 
 from .bookmark_panel import BookmarksPanel
-from .bookmarks import resolve_filesystem_target
+from .bookmarks import (
+    BOOKMARKS_PROJECT_NAME,
+    BookmarksStore,
+    ScopedBookmarksStore,
+    bookmarks_path,
+    project_bookmarks_path,
+    resolve_filesystem_target,
+)
 from .constants import EXPECTED_NATIVE, PROJECTS_ROOT, make_bookmark_pixmap
 from .delegate import _ActionsDelegate, _PakActionsDelegate
 from .dock_chrome import DockTitleBar, SideTab
@@ -107,13 +114,13 @@ class _LoadingSpinner(QWidget):
 
 
 class _ProjectFilesProxy(QSortFilterProxyModel):
-    """Hide the per-project config file from the Project Files tree."""
+    """Hide REasy's per-project files (config, bookmarks) from the Project Files tree."""
 
-    def filterAcceptsRow(self, source_row, source_parent):
+    def filterAcceptsRow(self, source_row: int, source_parent):
         model = self.sourceModel()
         if isinstance(model, QFileSystemModel):
             name = model.fileName(model.index(source_row, 0, source_parent))
-            if name == CONFIG_NAME:
+            if name in (CONFIG_NAME, BOOKMARKS_PROJECT_NAME):
                 return False
         return True
 
@@ -307,7 +314,7 @@ class ProjectManager(QDockWidget):
         toggles = QHBoxLayout()
         lay.addLayout(toggles)
 
-        self.btn_sys       = QToolButton(text=self.tr("System Files"),  checkable=True, checked=True)
+        self.btn_sys       = QToolButton(text=self.tr("Unpacked Files"), checkable=True, checked=True)
         self.btn_proj      = QToolButton(text=self.tr("Project Files"), checkable=True)
         self.btn_pak_files = QToolButton(text=self.tr("PAK Files"),     checkable=True)
         self.btn_bm        = QToolButton(checkable=True)
@@ -334,9 +341,11 @@ class ProjectManager(QDockWidget):
             self._build_search_bar(self._apply_proj_filter_now)
         proj_search.addWidget(self.proj_filter_edit, 1)
 
+        self._global_bookmarks_store = BookmarksStore(bookmarks_path(), parent=self)
         self.bookmarks = BookmarksPanel(
             lambda: (self.current_game, self.project_dir),
             c,
+            store=self._global_bookmarks_store,
         )
         self.bookmarks.open_requested.connect(self._open_bookmark)
         lay.addWidget(self.bookmarks)
@@ -962,6 +971,7 @@ class ProjectManager(QDockWidget):
         self._project_load_ticket += 1
         ticket = self._project_load_ticket
         self._reset_project_sources()
+        self._apply_bookmarks_store(proj_dir)
         self.tree_pak.setEnabled(not proj_dir)
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(bool(proj_dir))
@@ -1711,6 +1721,21 @@ class ProjectManager(QDockWidget):
             self._open_in_editor(path, warn_project_copy=not in_project)
 
     # ---- bookmarks ------------------------------------------------------
+    def _apply_bookmarks_store(self, proj_dir) -> None:
+        """Bind bookmarks to the project's file plus the shared game-keyed store.
+
+        The dock is only ever used with an active project, so there is no
+        no-project fallback: PAK/unpacked bookmarks live in the shared store
+        and follow the game into every project.
+        """
+        if not proj_dir:
+            return
+        path = project_bookmarks_path(proj_dir)
+        self._global_bookmarks_store.adopt_project_bookmarks(proj_dir, path)
+        self.bookmarks.set_store(
+            ScopedBookmarksStore(BookmarksStore(path), self._global_bookmarks_store)
+        )
+
     def _reveal_pak_folder(self, path: str) -> bool:
         """Switch to the PAK tree and reveal/select the folder prefix *path*."""
         if not self._pak_base_paths:

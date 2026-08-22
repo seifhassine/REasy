@@ -77,6 +77,20 @@ class BookmarksPanel(QWidget):
         if self._store.load_warnings:
             QTimer.singleShot(0, self._show_load_warnings)
 
+    def set_store(self, store: BookmarksStore) -> None:
+        """Swap the backing store (e.g. a project's own bookmarks file)."""
+        if store is self._store:
+            return
+        try:
+            self._store.changed.disconnect(self._on_store_changed)
+        except (RuntimeError, TypeError):
+            pass
+        self._store = store
+        store.changed.connect(self._on_store_changed)
+        if store.load_warnings:
+            QTimer.singleShot(0, self._show_load_warnings)
+        self.refresh()
+
     def _build_toolbar(self) -> QHBoxLayout:
         toolbar = QHBoxLayout()
         toolbar.addWidget(QLabel(self.tr("Filter:")))
@@ -148,13 +162,14 @@ class BookmarksPanel(QWidget):
         bookmark: Bookmark | None = None,
     ) -> None:
         existing = bookmark or self._store.get(scope, path, root, game)
+        context_game, context_root = self._context_provider()
         dialog = BookmarkDialog(
             self,
             title=self.tr("Edit bookmark") if existing else self.tr("Bookmark & tag"),
             path=existing.path if existing else path,
             tags=existing.tags if existing else (),
             note=existing.note if existing else "",
-            completer_tags=self._store.all_tags(),
+            completer_tags=self._store.all_tags(str(context_game or ""), str(context_root or "")),
         )
         if dialog.exec() != QDialog.Accepted:
             return
@@ -209,7 +224,8 @@ class BookmarksPanel(QWidget):
             )
 
     def _sync_tags(self) -> None:
-        tags = tuple(self._store.all_tags())
+        game, project_root = self._context_provider()
+        tags = tuple(self._store.all_tags(str(game or ""), str(project_root or "")))
         if self._active_tag not in tags:
             self._active_tag = None
         if tags != self._rendered_tags:

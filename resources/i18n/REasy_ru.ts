@@ -6794,8 +6794,8 @@ Are you sure you want to overwrite it?</source>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="267"/>
-        <source>System Files</source>
-        <translation>Системные файлы</translation>
+        <source>Unpacked Files</source>
+        <translation>Распакованные файлы</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="268"/>
