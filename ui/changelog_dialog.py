@@ -154,17 +154,52 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", self.tr("Full sound modding support for Pragmata, RE2/3 non-RT, RE4/8/9, SF6, MHWilds/Rise and DMC5.\n" \
-            "> Please make sure you install the correct Wwise version for each game. Using wrong versions might lead to unexpected issues.\n"
-            "> FFMPEG is no longer used and can be safely removed from the downloads folder.")),
+            # New
+            ("New", self.tr(
+                "Added full sound modding support for RE2 RT, RE3 RT, and RE7 RT."
+            )),
+            ("New", self.tr("MSG files now include a Sound Scan button. Sound preview is now available wherever applicable.")),
+            ("New", self.tr("New sound sources can now be added to BNK and PCK files.")),
+            ("New", self.tr("Sound banks can now be searched by source ID.")),
+            ("New", self.tr(
+                "Added quality, codec, and compression settings for sound replacements "
+                "and additions."
+            )),
+            ("New", self.tr(
+                "Users are now warned when saving a sound file while other affected "
+                "files are open."
+            )),
+            ("New", self.tr("Added support for WCP, WCST, WGS, and WSS files.")),
+            ("New", self.tr("Added Spanish and Russian translations.")),
 
-            ("Updated", self.tr("Updated MHWilds and SF6 enums.")),
+            # Improved
+            ("Improved", self.tr("Improved performance during sound editing.")),
+            ("Improved", self.tr(
+                "New sounds now automatically adjust their duration and fade curves."
+            )),
 
+            # Updated
+            ("Updated", self.tr(
+                "<b>General UI overhaul:</b> refined the workbench to feel more fluid "
+                "and VS Code-like."
+            )),
+            ("Updated", self.tr("Added a search bar to the Project Files tab.")),
+            ("Updated", self.tr("Added a bookmarks system.")),
+            ("Updated", self.tr("Project folders can now be changed.")),
+            ("Updated", self.tr(
+                "MOV files can now be opened through the operating system."
+            )),
 
-          #  ("Improved", self.tr(".")),
-
-            ("Fixed", self.tr("Fixed MPLY material ID decoding for modern meshes.")),
-            ("Fixed", self.tr("Fixed freeze issues during project file deletion.")),
+            # Fixed
+            ("Fixed", self.tr("Fixed sound replacement issues.")),
+            ("Fixed", self.tr(
+                "8-bit WAV files are now rejected instead of becoming silent tracks."
+            )),
+            ("Fixed", self.tr("Fixed RE9 RSZ dump issues.")),
+            ("Fixed", self.tr("Fixed AI Assistant failures while editing RSZ files.")),
+            ("Fixed", self.tr(
+                "Fixed resource links failing to resolve files stored in PAKs."
+            )),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -218,7 +253,7 @@ class ChangelogDialog(QDialog):
         desc.setWordWrap(True)
         desc.setOpenExternalLinks(True)
 
-        layout.addWidget(pill)
+        layout.addWidget(pill, 0, Qt.AlignTop)
         layout.addWidget(desc, 1)
         return container
 
