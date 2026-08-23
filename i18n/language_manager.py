@@ -24,6 +24,7 @@ class LanguageManager:
         "en": LanguageInfo(code="en", name="English", qt_locale="en"),
         "zh-CN": LanguageInfo(code="zh-CN", name="中文（简体）", qt_locale="zh_CN"),
         "ru": LanguageInfo(code="ru", name="Русский", qt_locale="ru"),
+        "es": LanguageInfo(code="es", name="Español", qt_locale="es"),
     }
 
     def __init__(self) -> None:
