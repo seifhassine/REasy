@@ -767,6 +767,7 @@ class REasyEditorApp(QMainWindow):
         if not self._confirm_tabs_close(list(self.tabs.values())):
             event.ignore()
             return
+        self._record_tabs_closed_on_shutdown()
         self._stop_ai_chat_visibility_tracking()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.shutdown()
@@ -1173,6 +1174,28 @@ class REasyEditorApp(QMainWindow):
         self._save_closed_file_history()
         self._refresh_homepage()
 
+    def _history_entry_for_tab(self, tab):
+        session = self.project_workspace.sessions.session_for_tab(tab)
+        return ProjectManager.encode_history_entry(
+            tab.pak_source_path or tab.filename,
+            session.path if session else None,
+            is_pak=bool(getattr(tab, "pak_source_path", None)),
+        )
+
+    def _record_tabs_closed_on_shutdown(self):
+        entries = [
+            self._history_entry_for_tab(tab)
+            for tab in list(self.tabs.values())
+            if getattr(tab, "filename", None)
+        ]
+        if not entries:
+            return
+        stale = set(entries)
+        self._closed_file_history = (
+            [f for f in self._closed_file_history if f not in stale] + entries
+        )
+        self._save_closed_file_history()
+
     def reopen_closed_file(self, filename=None, notify_if_empty=False):
         if filename is not None:
             candidates = [filename]
@@ -1267,12 +1290,7 @@ class REasyEditorApp(QMainWindow):
                 pass
 
         if record_history and tab.filename:
-            session = self.project_workspace.sessions.session_for_tab(tab)
-            self._record_closed_file(ProjectManager.encode_history_entry(
-                tab.pak_source_path or tab.filename,
-                session.path if session else None,
-                is_pak=bool(tab.pak_source_path),
-            ))
+            self._record_closed_file(self._history_entry_for_tab(tab))
 
         self.tabs.pop(widget, None)
         if (index := self.notebook.indexOf(widget)) != -1:
