@@ -86,7 +86,16 @@ def get_main_stylesheet(colors: dict) -> str:
         QWidget#meshViewer,
         QWidget#msgViewer,
         QWidget#cfilViewer,
+        QWidget#texViewer,
+        QWidget#uvsViewer,
+        QWidget#motbankViewer,
+        QWidget#mdfViewer,
         QWidget#rszViewer {{
+            background-color: {colors['window_bg']};
+        }}
+        QWidget#mdfViewer QTabWidget,
+        QWidget#mdfViewer QTabWidget::pane,
+        QWidget#mdfViewer QStackedWidget {{
             background-color: {colors['window_bg']};
         }}
         QWidget#rszSceneBar {{

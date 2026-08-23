@@ -25,6 +25,8 @@ class MdfViewer(QWidget):
 
 	def __init__(self, handler):
 		super().__init__()
+		self.setObjectName("mdfViewer")
+		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 		self.handler = handler
 		self._modified = False
 		self._current_index = -1  # Currently displayed material index

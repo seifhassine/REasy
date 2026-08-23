@@ -70,6 +70,8 @@ class TexViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("texViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._modified = False
         self.zoom_level = 1.0

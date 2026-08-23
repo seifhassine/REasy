@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from .motbank_file import MotlistItem
 
 
@@ -11,6 +11,8 @@ class MotbankViewer(QWidget):
 
 	def __init__(self, handler):
 		super().__init__()
+		self.setObjectName("motbankViewer")
+		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 		self.handler = handler
 		self._modified = False
 		self._setup_ui()

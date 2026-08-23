@@ -338,6 +338,8 @@ class UvsViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("uvsViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._modified = False
         self._loading = False
