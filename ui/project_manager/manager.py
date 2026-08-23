@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     qInstallMessageHandler,
 )
 from PySide6.QtGui import (
-    QColor, QDesktopServices, QIcon, QPainter, QPen, QStandardItem,
+    QColor, QDesktopServices, QPainter, QPen, QStandardItem,
     QStandardItemModel,
 )
 from PySide6.QtWidgets import (
@@ -41,7 +41,7 @@ from .bookmarks import (
     project_bookmarks_path,
     resolve_filesystem_target,
 )
-from .constants import EXPECTED_NATIVE, PROJECTS_ROOT, make_bookmark_pixmap
+from .constants import EXPECTED_NATIVE, PROJECTS_ROOT
 from .delegate import _ActionsDelegate, _PakActionsDelegate
 from .dock_chrome import DockTitleBar, SideTab
 from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
@@ -55,6 +55,7 @@ from .project_config import (
 from .project_settings_dialog import ProjectSettingsDialog
 from .rsz_jsons import resolve_rsz_json_path
 from .trees import _DndTree, _DropTree
+from .view_rail import ViewRail
 
 def _custom_message_handler(mode, ctx, msg):
     if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
@@ -246,13 +247,23 @@ class ProjectManager(QDockWidget):
         self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
         self.pak_dir = None
         self.project_dir   = None
-        self._active_tab   = "sys"
+        self._active_tab   = "proj"
         self._pak_list_path: str | None = None
 
         c = QWidget(self)
         c.setObjectName("projectBrowserBody")
         self.setWidget(c)
-        lay = QVBoxLayout(c)
+        body_lay = QVBoxLayout(c)
+        body_lay.setContentsMargins(0, 0, 0, 0)
+        body_lay.setSpacing(0)
+        self.view_rail = ViewRail(
+            c,
+            accent_provider=lambda: QColor(self.app_win.settings.get("tree_highlight_color", "#00aaff")),
+        )
+        body_lay.addWidget(self.view_rail)
+        page = QWidget(c)
+        body_lay.addWidget(page, 1)
+        lay = QVBoxLayout(page)
         lay.setContentsMargins(2,2,2,2)
 
         # Top: path display + browse (contextual for Unpacked vs PAK)
@@ -310,23 +321,6 @@ class ProjectManager(QDockWidget):
         project_lay.addWidget(self.btn_zip)
         project_lay.addWidget(self.btn_pak)
         lay.addWidget(self.project_bar)
-
-        toggles = QHBoxLayout()
-        lay.addLayout(toggles)
-
-        self.btn_sys       = QToolButton(text=self.tr("Unpacked Files"), checkable=True, checked=True)
-        self.btn_proj      = QToolButton(text=self.tr("Project Files"), checkable=True)
-        self.btn_pak_files = QToolButton(text=self.tr("PAK Files"),     checkable=True)
-        self.btn_bm        = QToolButton(checkable=True)
-        self.btn_bm.setIcon(QIcon(make_bookmark_pixmap()))
-        self.btn_bm.setIconSize(QSize(16, 16))
-        self.btn_bm.setToolTip(self.tr("Bookmarks"))
-
-        toggles.addWidget(self.btn_sys)
-        toggles.addWidget(self.btn_proj)
-        toggles.addWidget(self.btn_pak_files)
-        toggles.addWidget(self.btn_bm)
-        toggles.addStretch(1)
 
         # Search bars (visible only on their respective tabs)
         pak_search = QHBoxLayout()
@@ -477,11 +471,9 @@ class ProjectManager(QDockWidget):
         overlay_layout.addWidget(self.loading_card, alignment=Qt.AlignHCenter)
         overlay_layout.addStretch(1)
 
-        # Toggle buttons
-        self.btn_sys .clicked.connect(lambda: self._switch(True))
-        self.btn_proj.clicked.connect(lambda: self._switch(False))
-        self.btn_pak_files.clicked.connect(lambda: self._switch_tab("pak"))
-        self.btn_bm.clicked.connect(lambda: self._switch_tab("bm"))
+        # View rail (top horizontal switcher; default to Project)
+        self.view_rail.currentChanged.connect(self._switch_tab)
+        self._switch_tab("proj")
 
         # context menus
         self.tree_sys .customContextMenuRequested.connect(self._sys_menu)
@@ -780,15 +772,9 @@ class ProjectManager(QDockWidget):
         except Exception:
             return False
 
-    def _switch(self, to_system):
-        self._switch_tab("sys" if to_system else "proj")
-
     def _switch_tab(self, tab: str):
         self._active_tab = tab
-        self.btn_sys.setChecked(tab == "sys")
-        self.btn_proj.setChecked(tab == "proj")
-        self.btn_pak_files.setChecked(tab == "pak")
-        self.btn_bm.setChecked(tab == "bm")
+        self.view_rail.set_current(tab)
         self._prepare_pak_index()
         self.tree_sys.setVisible(tab == "sys")
         self.tree_proj.setVisible(tab == "proj")
