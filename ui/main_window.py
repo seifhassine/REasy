@@ -23,6 +23,7 @@ from ui.styles import get_color_scheme, get_main_stylesheet
 from utils.app_paths import resource_path
 
 from PySide6.QtCore import (
+    QByteArray,
     Qt,
     QTimer,
     QUrl,
@@ -54,11 +55,14 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QToolButton,
+    QDockWidget,
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
 from ui.ai.chat_dock import AiChatDock
+from ui.breadcrumbs import BreadcrumbBar
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
+from ui.editor_groups import EditorGroupHost
 from ui.directory_search import search_directory_for_type
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.homepage import HomePageStack, HomePageWidget
@@ -129,13 +133,23 @@ class REasyEditorApp(QMainWindow):
             on_reopen_last=self.reopen_last_closed_file,
             parent=self,
         )
+        self._set_app_icon_callback = set_app_icon
         self.notebook = CustomNotebook()
         self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.notebook.setMinimumSize(50, 50)
         self.notebook.app_instance = self
         self.notebook._set_icon_callback = set_app_icon
+        self.editor_groups = EditorGroupHost(self.notebook, self, central_widget)
+        self.breadcrumbs = BreadcrumbBar(self, central_widget)
+        editor_shell = QWidget(central_widget)
+        editor_shell.setObjectName("editorShell")
+        editor_layout = QVBoxLayout(editor_shell)
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setSpacing(0)
+        editor_layout.addWidget(self.breadcrumbs)
+        editor_layout.addWidget(self.editor_groups, 1)
         self.tabs = weakref.WeakValueDictionary()
-        self.home_stack = HomePageStack(self.notebook, self.home_widget)
+        self.home_stack = HomePageStack(editor_shell, self.home_widget)
         main_layout.addWidget(self.home_stack.widget)
 
         self._shared_find_dialog = None
@@ -158,35 +172,33 @@ class REasyEditorApp(QMainWindow):
 
         self._create_menus()
 
-        self.notebook.currentChanged.connect(self._update_highlight_menu_visibility)
-        self.notebook.currentChanged.connect(lambda _index: self.scenes.refresh_actions())
-        self.notebook.currentChanged.connect(lambda _index: self._refresh_homepage())
+        self.editor_groups.activePageChanged.connect(self._on_active_page_changed)
+        self.editor_groups.layoutChanged.connect(self._refresh_homepage)
         self.proj_dock.visibilityChanged.connect(lambda _visible: self._refresh_homepage())
 
         self.status_bar = QStatusBar()
         self.status_bar.setContentsMargins(0, 0, 0, 0)
         self.status_bar.setMaximumHeight(20)
-        self.status_bar.setStyleSheet("""
-            QStatusBar {
-                margin: 0;
-                padding: 0;
-                border-top: 1px solid #cccccc;
-            }
-            QStatusBar::item {
-                border: none;
-            }
-        """)
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage(self.tr("Ready"))
 
         self._apply_style(self._build_theme_colors())
 
         self.console_widget = ConsoleWidget()
-        self.console_widget.setMaximumHeight(100)
-        self.console_widget.setVisible(self.settings.get("show_debug_console", True))
-        main_layout.addWidget(self.console_widget)
+        self.output_dock = QDockWidget(self.tr("Output"), self)
+        self.output_dock.setObjectName("outputDock")
+        self.output_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
+        self.output_dock.setWidget(self.console_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.output_dock)
+        self.output_dock.setVisible(self.settings.get("show_debug_console", True))
+        self.output_dock.visibilityChanged.connect(self.output_action.setChecked)
+        self.output_dock.visibilityChanged.connect(
+            lambda visible: self.settings.__setitem__("show_debug_console", bool(visible))
+        )
 
-        self.project_workspace = ProjectWorkspaceController(self, self.notebook, self.tabs)
+        self.project_workspace = ProjectWorkspaceController(
+            self, self.notebook, self.tabs, self.editor_groups
+        )
         self.ai_chat_dock = AiChatDock(self)
         self.addDockWidget(Qt.RightDockWidgetArea, self.ai_chat_dock)
         self._ai_chat_visibility_tracking = False
@@ -249,6 +261,10 @@ class REasyEditorApp(QMainWindow):
 
         self.resize(1160, 920)
 
+        self._apply_style(self._build_theme_colors())
+        self._restore_window_layout()
+        QTimer.singleShot(120, self._restore_workbench_session)
+
         self.setAcceptDrops(True)
 
         last_seen = self.settings.get("last_seen_version", "")
@@ -257,7 +273,7 @@ class REasyEditorApp(QMainWindow):
         self._refresh_homepage()
 
     def _refresh_homepage(self):
-        show_notebook = self.notebook.count() > 0 or self.proj_dock.isVisible()
+        show_notebook = self.editor_groups.count() > 0 or self.proj_dock.isVisible()
         recent_label = self.tr("No recently closed files yet.")
         if self._closed_file_history:
             _, _, decoded_target = ProjectManager.decode_history_entry(self._closed_file_history[-1])
@@ -265,6 +281,81 @@ class REasyEditorApp(QMainWindow):
                 filename=os.path.basename(decoded_target)
             )
         self.home_stack.refresh(show_notebook, recent_label, bool(self._closed_file_history))
+
+    def _on_active_page_changed(self, page=None):
+        self._update_highlight_menu_visibility()
+        self.scenes.refresh_actions()
+        self.scenes.refresh_buttons()
+        self._refresh_homepage()
+        tab = self.tabs.get(page) if page is not None else self.get_active_tab()
+        self.breadcrumbs.bind_tab(tab)
+        self._on_tab_changed_for_find()
+
+    def _notebooks(self):
+        return self.editor_groups.notebooks()
+
+    def _floating_windows(self):
+        return self.editor_groups.all_floating_windows()
+
+    def document_title_for_tab(self, tab) -> str:
+        target = str(getattr(tab, "pak_source_path", "") or getattr(tab, "filename", "") or "")
+        base = os.path.basename(target.replace("\\", "/")) if target else self.tr("Untitled")
+        matches = []
+        for candidate in list(self.tabs.values()):
+            candidate_target = str(
+                getattr(candidate, "pak_source_path", "")
+                or getattr(candidate, "filename", "")
+                or ""
+            )
+            candidate_base = os.path.basename(candidate_target.replace("\\", "/")) if candidate_target else self.tr("Untitled")
+            if candidate_base.casefold() == base.casefold():
+                matches.append((candidate, candidate_target))
+        if len(matches) > 1 and target:
+            normalized = target.replace("\\", "/").rstrip("/")
+            parent_parts = [part for part in normalized.split("/")[:-1] if part]
+            if parent_parts:
+                suffix_length = 1
+                while suffix_length < len(parent_parts):
+                    suffix = "/".join(parent_parts[-suffix_length:]).casefold()
+                    collisions = 0
+                    for _candidate, other in matches:
+                        other_parts = [part for part in other.replace("\\", "/").rstrip("/").split("/")[:-1] if part]
+                        if "/".join(other_parts[-suffix_length:]).casefold() == suffix:
+                            collisions += 1
+                    if collisions == 1:
+                        break
+                    suffix_length += 1
+                base = self.tr("{name} — {parent}").format(
+                    name=base, parent="/".join(parent_parts[-suffix_length:])
+                )
+        return f"{base} *" if bool(getattr(tab, "modified", False)) else base
+
+    def _refresh_document_titles(self):
+        for tab in list(self.tabs.values()):
+            try:
+                tab.update_tab_title()
+            except RuntimeError:
+                pass
+
+    def reveal_tab_in_project(self, tab) -> bool:
+        if tab is None:
+            return False
+        if pak_path := getattr(tab, "pak_source_path", None):
+            folder = pak_path.rsplit("/", 1)[0] + "/" if "/" in pak_path else ""
+            return self.proj_dock._reveal_pak_folder(folder)
+        filename = getattr(tab, "filename", None)
+        if not filename:
+            return False
+        folder = os.path.dirname(os.path.abspath(filename))
+        project = getattr(self.project_workspace.sessions.session_for_tab(tab), "path", None)
+        try:
+            in_project = bool(
+                project and os.path.commonpath([folder, project]) == os.path.abspath(project)
+            )
+        except ValueError:
+            in_project = False
+        scope = "project" if in_project else "unpacked"
+        return self.proj_dock._reveal_filesystem_folder(folder, scope)
 
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
@@ -423,13 +514,28 @@ class REasyEditorApp(QMainWindow):
             view_menu, self.tr("Previous Tab"), self.goto_previous_tab, "view_prev_tab"
         )
         add_action(view_menu, self.tr("Next Tab"), self.goto_next_tab, "view_next_tab")
-        add_action(
+        self.output_action = add_action(
             view_menu,
-            self.tr("Toggle Debug Console"),
+            self.tr("Toggle Output"),
             lambda: self.toggle_debug_console(
                 not self.settings.get("show_debug_console", True)
             ),
             "view_debug_console",
+        )
+        self.output_action.setCheckable(True)
+        self.output_action.setChecked(bool(self.settings.get("show_debug_console", True)))
+        view_menu.addSeparator()
+        add_action(
+            view_menu,
+            self.tr("Split Editor Right"),
+            lambda: self.split_active_editor(Qt.Horizontal),
+            "editor_split_right",
+        )
+        add_action(
+            view_menu,
+            self.tr("Split Editor Down"),
+            lambda: self.split_active_editor(Qt.Vertical),
+            "editor_split_down",
         )
 
         self.scene_menu = menubar.addMenu(self.tr("Scene"))
@@ -658,6 +764,8 @@ class REasyEditorApp(QMainWindow):
         self._apply_ai_menu_button_style()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.apply_theme()
+        if hasattr(self, "project_workspace"):
+            self.project_workspace.apply_style()
 
     def _apply_ai_menu_button_style(self):
         if not hasattr(self, "ai_chat_button"):
@@ -731,7 +839,12 @@ class REasyEditorApp(QMainWindow):
 
     def toggle_debug_console(self, show: bool):
         if hasattr(self, "console_widget"):
-            self.console_widget.setVisible(show)
+            if hasattr(self, "output_dock"):
+                self.output_dock.setVisible(show)
+                if show:
+                    self.output_dock.raise_()
+            else:
+                self.console_widget.setVisible(show)
 
             if show:
                 if isinstance(sys.stdout, ConsoleRedirector):
@@ -748,8 +861,218 @@ class REasyEditorApp(QMainWindow):
             self.settings["show_debug_console"] = show
             self.save_settings()
 
+    def split_active_editor(self, orientation=Qt.Horizontal):
+        page = self.editor_groups.active_page()
+        if page is not None:
+            self.editor_groups.split_page(page, orientation)
+
     def save_settings(self):
         save_settings(self.settings)
+
+    @staticmethod
+    def _encode_window_bytes(value: QByteArray) -> str:
+        return bytes(value.toBase64()).decode("ascii")
+
+    @staticmethod
+    def _decode_window_bytes(value) -> QByteArray:
+        if not isinstance(value, str) or not value:
+            return QByteArray()
+        try:
+            return QByteArray.fromBase64(value.encode("ascii"))
+        except (TypeError, ValueError):
+            return QByteArray()
+
+    def _save_workbench_state(self) -> None:
+        workbench = self.settings.setdefault("workbench", {})
+        workbench.update({
+            "state_version": 1,
+            "window_geometry": self._encode_window_bytes(self.saveGeometry()),
+            "window_state": self._encode_window_bytes(self.saveState(1)),
+            "project_browser": self.proj_dock.capture_view_state(),
+            "session": self._capture_workbench_session(),
+        })
+        self.settings["show_debug_console"] = bool(self.output_dock.isVisible())
+        self.settings["show_ai_chat"] = bool(self.ai_chat_dock.isVisible())
+        self.save_settings()
+
+    def _capture_workbench_session(self) -> dict:
+        projects = [
+            {"path": session.path, "game": session.game}
+            for session in self.project_workspace.sessions.project_sessions()
+            if session.path
+        ]
+        active_tab = self.get_active_tab()
+        entries = []
+        for session in [
+            self.project_workspace.sessions.get(None),
+            *self.project_workspace.sessions.project_sessions(),
+        ]:
+            if session is None:
+                continue
+            for order, tab in enumerate(session.tabs):
+                if not isinstance(tab, FileTab):
+                    continue
+                target = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None)
+                if not target:
+                    continue
+                notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+                if notebook is not None:
+                    group = self.editor_groups.notebooks().index(notebook)
+                    tab_order = notebook.indexOf(tab.notebook_widget)
+                else:
+                    parent_notebook = getattr(tab, "parent_notebook", None)
+                    group = (
+                        self.editor_groups.notebooks().index(parent_notebook)
+                        if parent_notebook in self.editor_groups.notebooks() else 0
+                    )
+                    tab_order = order
+                window = next(
+                    (candidate for candidate in self._floating_windows() if candidate.file_tab is tab),
+                    None,
+                )
+                entries.append({
+                    "target": self._history_entry_for_tab(tab),
+                    "project": session.path,
+                    "group": group,
+                    "order": tab_order,
+                    "active": tab is active_tab,
+                    "detached": window is not None,
+                    "window_geometry": (
+                        self._encode_window_bytes(window.saveGeometry()) if window is not None else ""
+                    ),
+                })
+        return {
+            "projects": projects,
+            "active_project": self.current_project,
+            "tabs": entries,
+            "editor_groups": self.editor_groups.snapshot(),
+        }
+
+    def _restore_window_layout(self) -> None:
+        workbench = self.settings.get("workbench", {})
+        if not isinstance(workbench, dict):
+            return
+        geometry = self._decode_window_bytes(workbench.get("window_geometry"))
+        state = self._decode_window_bytes(workbench.get("window_state"))
+        if not geometry.isEmpty():
+            self.restoreGeometry(geometry)
+        if not state.isEmpty():
+            self.restoreState(state, 1)
+
+    def _restore_workbench_session(self) -> None:
+        if getattr(self, "_workbench_session_restored", False):
+            return
+        self._workbench_session_restored = True
+        workbench = self.settings.get("workbench", {})
+        if not isinstance(workbench, dict) or not workbench.get("restore_session", True):
+            return
+        snapshot = workbench.get("session", {})
+        if not isinstance(snapshot, dict):
+            return
+        entries = [entry for entry in snapshot.get("tabs", []) if isinstance(entry, dict)]
+        projects = [
+            item for item in snapshot.get("projects", [])
+            if isinstance(item, dict) and os.path.isdir(str(item.get("path", "")))
+        ]
+        orientation = (
+            Qt.Vertical
+            if snapshot.get("editor_groups", {}).get("orientation") == "vertical"
+            else Qt.Horizontal
+        )
+
+        def restore_entries(project_path):
+            matching = sorted(
+                (entry for entry in entries if entry.get("project") == project_path),
+                key=lambda entry: (int(entry.get("group", 0)), int(entry.get("order", 0))),
+            )
+            for entry in matching:
+                tab = self._restore_workbench_entry(entry)
+                if tab is None:
+                    continue
+                self.editor_groups.move_page_to_group(
+                    tab.notebook_widget,
+                    max(0, int(entry.get("group", 0))),
+                    orientation,
+                )
+                if entry.get("detached"):
+                    notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+                    window = notebook.detach_widget(tab.notebook_widget) if notebook is not None else None
+                    geometry = self._decode_window_bytes(entry.get("window_geometry"))
+                    if window is not None and not geometry.isEmpty():
+                        window.restoreGeometry(geometry)
+
+        queue = list(projects)
+
+        def restore_next_project():
+            if not queue:
+                self._finish_workbench_restore(snapshot, workbench)
+                return
+            project = queue.pop(0)
+            path = str(project["path"])
+            self.project_workspace.activate(
+                path,
+                project.get("game"),
+                on_loaded=lambda path=path: (restore_entries(path), restore_next_project()),
+            )
+
+        scratch_entries = [entry for entry in entries if not entry.get("project")]
+        if scratch_entries:
+            self.project_workspace.sessions.activate(None)
+            restore_entries(None)
+        restore_next_project()
+
+    def _restore_workbench_entry(self, entry):
+        encoded = str(entry.get("target", ""))
+        if not encoded:
+            return None
+        _project, is_pak, target = ProjectManager.decode_history_entry(encoded)
+        before = {id(tab) for tab in self.tabs.values()}
+        success = self.proj_dock.reopen_pak_history_entry(target) if is_pak else self._open_path(target)
+        if not success:
+            QMessageBox.warning(
+                self,
+                self.tr("Restore Tab"),
+                self.tr("Could not restore {path}.").format(path=target),
+            )
+            return None
+        new_tab = next((tab for tab in self.tabs.values() if id(tab) not in before), None)
+        if new_tab is not None:
+            return new_tab
+        active = self.get_active_tab()
+        return active if isinstance(active, FileTab) and self._history_entry_for_tab(active) == encoded else None
+
+    def _finish_workbench_restore(self, snapshot: dict, workbench: dict) -> None:
+        active_project = snapshot.get("active_project")
+
+        def finish():
+            self.editor_groups.restore_layout(snapshot.get("editor_groups", {}))
+            active_entry = next((entry for entry in snapshot.get("tabs", []) if entry.get("active")), None)
+            if active_entry:
+                encoded = str(active_entry.get("target", ""))
+                for tab in self.project_workspace.sessions.active_tabs():
+                    if isinstance(tab, FileTab) and self._history_entry_for_tab(tab) == encoded:
+                        self.project_workspace.focus_open_tab(tab)
+                        break
+            self.proj_dock.restore_view_state(workbench.get("project_browser", {}))
+            self._refresh_document_titles()
+            self._refresh_homepage()
+
+        if active_project and os.path.isdir(str(active_project)):
+            session = self.project_workspace.sessions.get(
+                self.project_workspace.sessions.key_for(active_project)
+            )
+            self.project_workspace.activate(
+                active_project,
+                getattr(session, "game", None),
+                on_loaded=finish,
+            )
+        else:
+            self.project_workspace.sessions.activate(None)
+            self.current_project = self.current_game = None
+            self.proj_dock.set_project(None)
+            self.proj_dock.hide()
+            self.project_workspace._sync_tabs()
+            finish()
 
     def set_rsz_json_path(self, json_path: str, *, save: bool = True) -> None:
         if json_path != self.settings.get("rcol_json_path", ""):
@@ -767,7 +1090,9 @@ class REasyEditorApp(QMainWindow):
         if not self._confirm_tabs_close(list(self.tabs.values())):
             event.ignore()
             return
-        self._record_tabs_closed_on_shutdown()
+        self._save_workbench_state()
+        if not self.settings.get("workbench", {}).get("restore_session", True):
+            self._record_tabs_closed_on_shutdown()
         self._stop_ai_chat_visibility_tracking()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.shutdown()
@@ -886,13 +1211,12 @@ class REasyEditorApp(QMainWindow):
             QMessageBox.information(self, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
             return
 
-        for window in self.notebook._floating_windows:
+        for window in self._floating_windows():
             if window.page == active.notebook_widget:
                 active.open_find_dialog()
                 return
         if not self._shared_find_dialog or not isinstance(self._shared_find_dialog, BetterFindDialog):
             self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=self, shared_mode=True)
-            self.notebook.currentChanged.connect(self._on_tab_changed_for_find)
         else:
             self._shared_find_dialog.set_file_tab(active)
 
@@ -908,7 +1232,7 @@ class REasyEditorApp(QMainWindow):
             active = self.get_active_tab()
             if active:
                 is_detached = False
-                for window in self.notebook._floating_windows:
+                for window in self._floating_windows():
                     if window.page == active.notebook_widget:
                         is_detached = True
                         break
@@ -918,18 +1242,7 @@ class REasyEditorApp(QMainWindow):
 
     def _check_and_close_shared_find_dialog(self):
         """Close the shared find dialog if no tabs are left in the main window"""
-        has_main_tabs = False
-        for i in range(self.notebook.count()):
-            widget = self.notebook.widget(i)
-            if widget:
-                is_detached = False
-                for window in self.notebook._floating_windows:
-                    if window.page == widget:
-                        is_detached = True
-                        break
-                if not is_detached:
-                    has_main_tabs = True
-                    break
+        has_main_tabs = any(notebook.count() for notebook in self._notebooks())
 
         if not has_main_tabs and hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
             try:
@@ -962,9 +1275,11 @@ class REasyEditorApp(QMainWindow):
                         else:
                             tab.modified = False
                             tab.update_tab_title()
-                    index = self.notebook.indexOf(tab.notebook_widget)
+                    notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+                    index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
                     if index != -1:
-                        self.notebook.setCurrentIndex(index)
+                        notebook.setCurrentIndex(index)
+                        self.editor_groups.activate_page(tab.notebook_widget)
                     else:
                         for window in self.project_workspace.sessions.windows_for([tab]):
                             window.show()
@@ -1004,18 +1319,21 @@ class REasyEditorApp(QMainWindow):
                 return None
             if is_handler_type(getattr(tab, "handler", None), "RszHandler"):
                 RszEnumPromptController.maybe_prompt_for_loaded_rsz(self)
-            tab.parent_notebook = self.notebook
+            notebook = self.editor_groups.active_notebook()
+            tab.parent_notebook = notebook
             tab_label = os.path.basename(filename) if filename else self.tr("Untitled")
             tab.notebook_widget._reasy_tab_tooltip = filename or tab_label
-            index = self.notebook.addTab(tab.notebook_widget, tab_label)
-            self.notebook.setTabToolTip(index, filename or tab_label)
+            index = notebook.addTab(tab.notebook_widget, tab_label)
+            notebook.setTabToolTip(index, filename or tab_label)
             self.tabs[tab.notebook_widget] = tab
             self.project_workspace.sessions.add_tab(tab)
-            self.notebook.setCurrentWidget(tab.notebook_widget)
+            notebook.setCurrentWidget(tab.notebook_widget)
+            self._refresh_document_titles()
             self._update_highlight_menu_visibility()
             self.scenes.refresh_actions()
             self.scenes.refresh_buttons()
             self._refresh_homepage()
+            self._on_active_page_changed(tab.notebook_widget)
             return tab
 
         except Exception as e:
@@ -1050,6 +1368,13 @@ class REasyEditorApp(QMainWindow):
             project_dir,
             source_path,
         )
+        tab.notebook_widget._reasy_tab_tooltip = pak_path
+        notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+        if notebook is not None:
+            notebook.setTabToolTip(notebook.indexOf(tab.notebook_widget), pak_path)
+        self._refresh_document_titles()
+        if tab is self.get_active_tab():
+            self.breadcrumbs.bind_tab(tab)
         self.scenes.attach_tab_document(tab)
         self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
@@ -1057,7 +1382,7 @@ class REasyEditorApp(QMainWindow):
     def get_active_tab(self):
         active_tabs = self.project_workspace.sessions.active_tabs()
         aw = QApplication.activeWindow()
-        widgets = [self.notebook.currentWidget(), QApplication.focusWidget()]
+        widgets = [self.editor_groups.active_page(), QApplication.focusWidget()]
         if isinstance(aw, FloatingTabWindow):
             widgets.insert(0, aw.centralWidget())
         for widget in widgets:
@@ -1132,14 +1457,16 @@ class REasyEditorApp(QMainWindow):
         tab = self.get_active_tab()
         if not tab:
             return
-        index = self.notebook.indexOf(tab.notebook_widget)
+        notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+        index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
         if index == -1:
             windows = self.project_workspace.sessions.windows_for([tab])
             if windows:
                 windows[0].close()
-                index = self.notebook.indexOf(tab.notebook_widget)
+                notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
+                index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
         if index != -1:
-            self.close_tab(index)
+            self.close_tab(index, notebook=notebook)
 
     def _resolve_tab_from_widget(self, widget):
         w = widget
@@ -1293,17 +1620,19 @@ class REasyEditorApp(QMainWindow):
             self._record_closed_file(self._history_entry_for_tab(tab))
 
         self.tabs.pop(widget, None)
-        if (index := self.notebook.indexOf(widget)) != -1:
-            self.notebook.removeTab(index)
+        self.editor_groups.remove_page(widget)
+        self.editor_groups.prune_empty_groups()
         self.project_workspace.sessions.remove_tab(tab)
         tab.cleanup()
+        self._refresh_document_titles()
         self._check_and_close_shared_find_dialog()
         self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
         self._refresh_homepage()
 
-    def close_tab(self, index):
-        widget = self.notebook.widget(index)
+    def close_tab(self, index, notebook=None):
+        notebook = notebook or self.editor_groups.active_notebook()
+        widget = notebook.widget(index)
         tab = self.tabs.get(widget)
         if tab and self._confirm_tabs_close([tab]):
             self._close_tab_object(tab)
@@ -1402,11 +1731,13 @@ class REasyEditorApp(QMainWindow):
                     QMessageBox.information(self, self.tr("Success"), self.tr("Backup restored successfully"))
 
     def goto_previous_tab(self):
-        current_index = self.notebook.currentIndex()
+        notebook = self.editor_groups.active_notebook()
+        current_index = notebook.currentIndex()
         if current_index > 0:
-            self.notebook.setCurrentIndex(current_index - 1)
+            notebook.setCurrentIndex(current_index - 1)
 
     def goto_next_tab(self):
-        current_index = self.notebook.currentIndex()
-        if current_index < self.notebook.count() - 1:
-            self.notebook.setCurrentIndex(current_index + 1)
+        notebook = self.editor_groups.active_notebook()
+        current_index = notebook.currentIndex()
+        if current_index < notebook.count() - 1:
+            notebook.setCurrentIndex(current_index + 1)

@@ -140,7 +140,7 @@ class FloatingTabWindow(QMainWindow):
         self._drag_moved = False
         self._drag_origin = QPoint()
         self._drag_hotspot = QPoint()
-        self._drop_index = None
+        self._drop_target = None
         self._filter_installed = False
         self._drag_poll = QTimer(self)
         self._drag_poll.setInterval(24)
@@ -212,7 +212,7 @@ class FloatingTabWindow(QMainWindow):
         self._dragging = True
         self._drag_moved = moved
         self._drag_origin = QPoint(self.pos() if origin is None else origin)
-        self._drop_index = None
+        self._drop_target = None
         self.notebook.clear_floating_drop_target()
 
     def begin_tab_drag(self, global_position: QPoint, hotspot: QPoint):
@@ -248,20 +248,24 @@ class FloatingTabWindow(QMainWindow):
         self._drag_moved |= (
             self.pos() - self._drag_origin
         ).manhattanLength() >= QApplication.startDragDistance()
-        self._drop_index = self.notebook.update_floating_drop_target(
+        self._drop_target = self.notebook.update_floating_drop_target(
             global_position
         ) if self._drag_moved else None
-        if self._drop_index is None:
+        if self._drop_target is None:
             self.notebook.clear_floating_drop_target()
 
     def _finish_drag(self, global_position: QPoint, *, cancel=False):
         if not self._dragging:
             return
         self._update_drag(global_position)
-        drop_index = self.return_index if cancel else self._drop_index
+        drop_target = (
+            (self.notebook, self.return_index)
+            if cancel
+            else self._drop_target
+        )
         self._clear_drag()
-        if drop_index is not None:
-            self._dock(drop_index)
+        if drop_target is not None:
+            self._dock(*drop_target)
         else:
             self.raise_()
             self.activateWindow()
@@ -274,17 +278,17 @@ class FloatingTabWindow(QMainWindow):
         self._drag_poll.stop()
         self._dragging = False
         self._drag_moved = False
-        self._drop_index = None
+        self._drop_target = None
         self.unsetCursor()
         self.notebook.clear_floating_drop_target()
 
-    def _dock(self, index: int):
+    def _dock(self, target: "CustomNotebook", index: int):
         page = self.takeCentralWidget()
         if page is None:
             return
         self._reattach_on_close = False
         self.hide()
-        self.notebook._reattach_window(self, page, index=index)
+        self.notebook._reattach_window(self, page, index=index, target=target)
         self.close()
 
     def eventFilter(self, watched, event):
@@ -419,7 +423,9 @@ class DetachTabBar(QTabBar):
         self.setElideMode(Qt.ElideMiddle)
         self.setUsesScrollButtons(True)
         self.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
-        self.setToolTip(self.tr("Drag to reorder. Drag a tab away to detach it."))
+        self.setToolTip(
+            self.tr("Drag to reorder or move between editor groups. Drag away to detach.")
+        )
 
     def _reset_drag(self):
         self._page = None
@@ -447,6 +453,18 @@ class DetachTabBar(QTabBar):
         if not dragging:
             return super().mouseMoveEvent(event)
         self.setCursor(Qt.ClosedHandCursor)
+        global_position = event.globalPosition().toPoint()
+        if self.notebook._locate_group_drop_target(
+            global_position, exclude=self.notebook
+        ) is not None:
+            page, hotspot = self._page, self._hotspot_x
+            self._reset_drag()
+            size = self.notebook._detached_window_size(page)
+            hotspot = QPoint(min(max(hotspot, 24), max(24, size.width() - 24)), 18)
+            self.notebook.detach_widget(
+                page, global_position, drag_hotspot=hotspot
+            )
+            return
         super().mouseMoveEvent(event)
         if self._outside(position):
             page, hotspot = self._page, self._hotspot_x
@@ -454,7 +472,7 @@ class DetachTabBar(QTabBar):
             size = self.notebook._detached_window_size(page)
             hotspot = QPoint(min(max(hotspot, 24), max(24, size.width() - 24)), 18)
             self.notebook.detach_widget(
-                page, event.globalPosition().toPoint(), drag_hotspot=hotspot
+                page, global_position, drag_hotspot=hotspot
             )
 
     def mouseReleaseEvent(self, event):
@@ -503,6 +521,8 @@ class CustomNotebook(QTabWidget):
         return self._finish_insert(super().insertTab(index, widget, *args), widget)
 
     def _finish_insert(self, index: int, page: QWidget):
+        if file_tab := getattr(page, "parent_tab", None):
+            file_tab.parent_notebook = self
         self.tabBar().setTabButton(index, QTabBar.RightSide, _TabCloseButton(self, page))
         if tooltip := getattr(page, "_reasy_tab_tooltip", ""):
             self.setTabToolTip(index, tooltip)
@@ -516,7 +536,7 @@ class CustomNotebook(QTabWidget):
 
     def on_tab_close_requested(self, index):
         if self.app_instance:
-            self.app_instance.close_tab(index)
+            self.app_instance.close_tab(index, notebook=self)
         else:
             self.removeTab(index)
 
@@ -526,13 +546,60 @@ class CustomNotebook(QTabWidget):
             return
         self.setCurrentIndex(index)
         menu = QMenu(self)
-        detach = menu.addAction(self.tr("Detach Tab"))
+        page = self.widget(index)
+        host = getattr(self, "_editor_group_host", None)
+        split_right = menu.addAction(self.tr("Split Right"))
+        split_down = menu.addAction(self.tr("Split Down"))
+        split_right.setEnabled(host is not None)
+        split_down.setEnabled(host is not None)
+        detach = menu.addAction(self.tr("Move into New Window"))
+        menu.addSeparator()
         close = menu.addAction(self.tr("Close Tab"))
+        close_others = menu.addAction(self.tr("Close Other Tabs"))
+        close_right = menu.addAction(self.tr("Close Tabs to the Right"))
+        close_right.setEnabled(index < self.count() - 1)
+        close_saved = menu.addAction(self.tr("Close Saved Tabs"))
+        menu.addSeparator()
+        copy_path = menu.addAction(self.tr("Copy Path"))
+        reveal = menu.addAction(self.tr("Reveal in Project Browser"))
+        tab = getattr(page, "parent_tab", None)
+        path = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None)
+        copy_path.setEnabled(bool(path))
+        reveal.setEnabled(bool(path and self.app_instance))
         chosen = menu.exec(self.tabBar().mapToGlobal(position))
-        if chosen is detach:
+        if chosen is split_right:
+            host.split_page(page, Qt.Horizontal)
+        elif chosen is split_down:
+            host.split_page(page, Qt.Vertical)
+        elif chosen is detach:
             self.detach_tab(index)
         elif chosen is close:
             self.on_tab_close_requested(index)
+        elif chosen is close_others:
+            self._close_pages([self.widget(i) for i in range(self.count()) if i != index])
+        elif chosen is close_right:
+            self._close_pages([self.widget(i) for i in range(index + 1, self.count())])
+        elif chosen is close_saved:
+            self._close_pages([
+                self.widget(i) for i in range(self.count())
+                if not bool(getattr(getattr(self.widget(i), "parent_tab", None), "modified", False))
+            ])
+        elif chosen is copy_path:
+            QGuiApplication.clipboard().setText(str(path))
+        elif chosen is reveal:
+            self.app_instance.reveal_tab_in_project(tab)
+
+    def _close_pages(self, pages):
+        if not self.app_instance:
+            for page in pages:
+                if (index := self.indexOf(page)) >= 0:
+                    self.removeTab(index)
+            return
+        tabs = [self.app_instance.tabs.get(page) for page in pages]
+        tabs = [tab for tab in tabs if tab is not None]
+        if tabs and self.app_instance._confirm_tabs_close(tabs):
+            for tab in tabs:
+                self.app_instance._close_tab_object(tab)
 
     def _capture_state(self, index: int):
         bar = self.tabBar()
@@ -589,17 +656,31 @@ class CustomNotebook(QTabWidget):
                 return index, origin + rect.left(), False
         return bar.count(), origin + bar.tabRect(visible[-1]).right() + 1, False
 
+    def _group_notebooks(self):
+        host = getattr(self, "_editor_group_host", None)
+        return host.notebooks() if host is not None else (self,)
+
+    def _locate_group_drop_target(self, global_position: QPoint, *, exclude=None):
+        for notebook in self._group_notebooks():
+            if notebook is exclude:
+                continue
+            if (target := notebook._drop_position(global_position)) is not None:
+                index, marker, empty = target
+                return notebook, index, marker, empty
+        return None
+
     def update_floating_drop_target(self, global_position: QPoint):
-        target = self._drop_position(global_position)
+        target = self._locate_group_drop_target(global_position)
+        self.clear_floating_drop_target()
         if target is None:
-            self.clear_floating_drop_target()
             return None
-        index, marker, empty = target
-        self._drop_indicator.show_target(self._drop_geometry(), marker, empty)
-        return index
+        notebook, index, marker, empty = target
+        notebook._drop_indicator.show_target(notebook._drop_geometry(), marker, empty)
+        return notebook, index
 
     def clear_floating_drop_target(self):
-        self._drop_indicator.hide()
+        for notebook in self._group_notebooks():
+            notebook._drop_indicator.hide()
 
     @staticmethod
     def _detached_window_size(page: QWidget):
@@ -640,15 +721,18 @@ class CustomNotebook(QTabWidget):
             window.activateWindow()
         return window
 
-    def _reattach_window(self, window, page, *, index=None):
+    def _reattach_window(self, window, page, *, index=None, target=None):
+        destination = target or self
         index = window.return_index if index is None else index
-        index = min(max(index, 0), self.count())
-        index = self.insertTab(index, page, window.tab_state.icon, window.tab_state.title)
-        self._restore_state(index, window.tab_state)
-        self.setCurrentIndex(index)
+        index = min(max(index, 0), destination.count())
+        index = destination.insertTab(
+            index, page, window.tab_state.icon, window.tab_state.title
+        )
+        destination._restore_state(index, window.tab_state)
+        destination.setCurrentIndex(index)
         page.show()
         self._forget_floating_window(window)
-        self.tabReattached.emit(page)
+        destination.tabReattached.emit(page)
         return index
 
     def _forget_floating_window(self, window):

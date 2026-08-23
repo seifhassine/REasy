@@ -105,6 +105,8 @@ class MeshViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("meshViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._material_panel_visible = False
         self._material_table_populated = False

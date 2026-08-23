@@ -1279,6 +1279,9 @@ class ScnSceneController:
         index = self.app.notebook.indexOf(tab.notebook_widget)
         if index != -1:
             self.app.notebook.setCurrentIndex(index)
+            editor_groups = getattr(self.app, "editor_groups", None)
+            if editor_groups is not None:
+                editor_groups.activate_page(tab.notebook_widget)
             if scene_tab:
                 tab.preview.ensure_loaded()
             workspace._sync_tabs()

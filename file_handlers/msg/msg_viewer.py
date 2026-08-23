@@ -29,6 +29,8 @@ class MsgViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("msgViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self.current_language = 0
         self.modified = False

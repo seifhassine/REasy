@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QRectF, QSize, Qt
+from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
-    QApplication,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
+    QToolTip,
 )
 
 from .bookmarks import normalize_tag
 from .constants import make_close_pixmap, make_plus_pixmap, make_star_pixmap
 
-_ICON_WIDTH, _ICON_PADDING, _ICON_LEFT = 14, 0, 2
-_ICON_TOP, _MIN_TEXT_WIDTH, _HIDDEN_TEXT_OFFSET = 4, 60, 4
+_ACTION_HIT_SIZE, _ACTION_SPACING = 26, 1
+_ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60
 _Action = tuple[QPixmap, str]
 _TAG_PALETTE = (
     "#4caf50", "#2196f3", "#ff9800", "#9c27b0", "#e91e63",
@@ -45,11 +45,11 @@ class _ActionIconsDelegate(QStyledItemDelegate):
     def __init__(self, parent):
         super().__init__(parent)
         self.column_width = 200
-        style = QApplication.instance().style()
         self.plus = make_plus_pixmap()
-        self.open = style.standardIcon(QStyle.SP_ArrowRight).pixmap(_ICON_WIDTH, _ICON_WIDTH)
         self.star_on = make_star_pixmap(True)
         self.star_off = make_star_pixmap(False)
+        parent.setMouseTracking(True)
+        parent.viewport().setMouseTracking(True)
 
     def set_column_width(self, width: int):
         """Update current column width for icon visibility calculations."""
@@ -59,41 +59,82 @@ class _ActionIconsDelegate(QStyledItemDelegate):
         raise NotImplementedError
 
     def _action_layout(self, option, count: int) -> tuple[bool, int]:
-        icon_space = _ICON_LEFT + count * _ICON_WIDTH + max(0, count - 1) * _ICON_PADDING
-        visible = min(option.rect.width(), self.column_width) >= icon_space + _MIN_TEXT_WIDTH
-        return visible, icon_space + _ICON_PADDING if visible else _HIDDEN_TEXT_OFFSET
+        action_space = count * _ACTION_HIT_SIZE + max(0, count - 1) * _ACTION_SPACING
+        visible = min(option.rect.width(), self.column_width) >= action_space + _MIN_TEXT_WIDTH
+        return visible, action_space + _ACTION_RIGHT if visible else 0
+
+    def _action_rects(self, option, count: int) -> list[QRect]:
+        visible, _reserved = self._action_layout(option, count)
+        if not visible:
+            return []
+        y = option.rect.top() + max(0, (option.rect.height() - _ACTION_HIT_SIZE) // 2)
+        right = option.rect.right() - _ACTION_RIGHT + 1
+        rects = []
+        for index in reversed(range(count)):
+            left = right - _ACTION_HIT_SIZE
+            rects.append((index, QRect(left, y, _ACTION_HIT_SIZE, _ACTION_HIT_SIZE)))
+            right = left - _ACTION_SPACING
+        return [rect for _index, rect in sorted(rects)]
+
+    @staticmethod
+    def _actions_revealed(option) -> bool:
+        reveal_states = QStyle.State_MouseOver | QStyle.State_Selected | QStyle.State_HasFocus
+        return bool(option.state & reveal_states)
+
+    def _action_tooltip(self, action_id: str, index) -> str:
+        return action_id.replace("_", " ").title()
 
     def paint(self, painter, option, index):
         actions = self._row_actions(index)
-        visible, text_offset = self._action_layout(option, len(actions))
-        if visible:
-            x = option.rect.left() + _ICON_LEFT
-            y = option.rect.top() + _ICON_TOP
-            for icon, _action_id in actions:
+        visible, reserved = self._action_layout(option, len(actions))
+        rects = self._action_rects(option, len(actions))
+        if visible and self._actions_revealed(option):
+            painter.save()
+            for rect, (icon, _action_id) in zip(rects, actions):
+                if option.state & QStyle.State_MouseOver:
+                    painter.fillRect(rect.adjusted(2, 2, -2, -2), QColor(255, 255, 255, 18))
+                x = rect.left() + (rect.width() - icon.width()) // 2
+                y = rect.top() + (rect.height() - icon.height()) // 2
                 painter.drawPixmap(x, y, icon)
-                x += _ICON_WIDTH + _ICON_PADDING
+            painter.restore()
 
         text_option = QStyleOptionViewItem(option)
-        text_option.rect = option.rect.adjusted(text_offset, 0, 0, 0)
+        text_option.rect = option.rect.adjusted(0, 0, -reserved, 0)
         if text_option.rect.width() > 0:
             super().paint(painter, text_option, index)
 
     def _action_at(self, event, option, count: int) -> int | None:
-        visible, _text_offset = self._action_layout(option, count)
-        if not visible:
+        if not self._actions_revealed(option):
             return None
-
-        relative_x = event.pos().x() - option.rect.left()
-        for i in range(count):
-            left = _ICON_LEFT + i * (_ICON_WIDTH + _ICON_PADDING)
-            if left <= relative_x <= left + _ICON_WIDTH:
-                return i
+        for action_index, rect in enumerate(self._action_rects(option, count)):
+            if rect.contains(event.pos()):
+                return action_index
         return None
+
+    def helpEvent(self, event, view, option, index):
+        if event.type() != QEvent.ToolTip:
+            return super().helpEvent(event, view, option, index)
+        actions = self._row_actions(index)
+        action_index = self._action_at(event, option, len(actions))
+        if action_index is None:
+            return super().helpEvent(event, view, option, index)
+        QToolTip.showText(
+            event.globalPos(),
+            self._action_tooltip(actions[action_index][1], index),
+            view,
+            option.rect,
+        )
+        return True
+
+    def sizeHint(self, option, index):
+        hint = super().sizeHint(option, index)
+        hint.setHeight(max(_ACTION_HIT_SIZE, hint.height()))
+        return hint
 
 
 # ---------------------------------------------------------------------------
 class _ActionsDelegate(_ActionIconsDelegate):
-    """System/Project files: bookmark, add/remove, and open actions."""
+    """System/Project files: bookmark and add/remove actions."""
 
     def __init__(self, mgr, for_project: bool):
         parent = mgr.tree_proj if for_project else mgr.tree_sys
@@ -104,7 +145,6 @@ class _ActionsDelegate(_ActionIconsDelegate):
 
     def _row_state(self, index):
         path = self.mgr._index_path(index)
-        is_dir = self.mgr._index_is_dir(index)
         bookmark_info = self.mgr._bookmark_info_for_path(path, self.for_project)
         bookmarked = self.mgr.bookmarks.is_bookmarked(*bookmark_info)
         actions = []
@@ -114,17 +154,22 @@ class _ActionsDelegate(_ActionIconsDelegate):
         else:
             actions.append((self.star_on if bookmarked else self.star_off, "bookmark"))
             actions.append((self.plus, "primary"))
-            if not is_dir:
-                actions.append((self.open, "open"))
-        return actions, path, is_dir, bookmark_info
+        return actions, path, bookmark_info
 
     def _row_actions(self, index):
         return self._row_state(index)[0]
 
+    def _action_tooltip(self, action_id: str, index) -> str:
+        if action_id == "bookmark":
+            return self.tr("Add or remove bookmark")
+        if action_id == "primary":
+            return self.tr("Remove from project") if self.for_project else self.tr("Extract to project")
+        return super()._action_tooltip(action_id, index)
+
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
             return False
-        actions, path, is_dir, bookmark_info = self._row_state(index)
+        actions, path, bookmark_info = self._row_state(index)
         pos = self._action_at(ev, option, len(actions))
         if pos is None:
             return False
@@ -141,16 +186,12 @@ class _ActionsDelegate(_ActionIconsDelegate):
                 self.mgr._remove_from_project(path)
             return True
 
-        if action_id == "open" and not is_dir:
-            self.mgr._open_in_editor(path, warn_project_copy=not self.for_project)
-            return True
-
         return False
 
 
 # ---------------------------------------------------------------------------
 class _PakActionsDelegate(_ActionIconsDelegate):
-    """PAK files/folders: bookmark, add-to-project, and open actions."""
+    """PAK files/folders: bookmark and add-to-project actions."""
 
     def __init__(self, mgr):
         super().__init__(mgr.tree_pak)
@@ -177,12 +218,16 @@ class _PakActionsDelegate(_ActionIconsDelegate):
             bookmarked = self.mgr.bookmarks.is_bookmarked(*bookmark_info)
             actions.append((self.star_on if bookmarked else self.star_off, "bookmark"))
         actions.append((self.plus, "primary"))
-        if not folder:
-            actions.append((self.open, "open"))
-        return actions, path, bool(folder), bookmark_info
+        return actions, path, bookmark_info
 
     def _row_actions(self, index):
         return self._row_state(index)[0]
+
+    def _action_tooltip(self, action_id: str, index) -> str:
+        return {
+            "bookmark": self.tr("Add or remove bookmark"),
+            "primary": self.tr("Extract to project"),
+        }.get(action_id, super()._action_tooltip(action_id, index))
 
     def _extract_path(self, path) -> bool:
         if not isinstance(path, str) or not path:
@@ -196,7 +241,7 @@ class _PakActionsDelegate(_ActionIconsDelegate):
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
             return False
-        actions, path, is_folder, bookmark_info = self._row_state(index)
+        actions, path, bookmark_info = self._row_state(index)
         pos = self._action_at(ev, option, len(actions))
         if pos is None:
             return False
@@ -207,25 +252,24 @@ class _PakActionsDelegate(_ActionIconsDelegate):
             return True
         if action_id == "primary":
             return self._extract_path(path)
-        if action_id == "open" and not is_folder and path:
-            self.mgr._open_pak_path_in_editor(path)
-            return True
         return False
 
 
 # ---------------------------------------------------------------------------
 class _BookmarksDelegate(_ActionIconsDelegate):
-    """Bookmarks list: open and unbookmark actions on the Path column."""
+    """Bookmarks list: unbookmark action on the Path column."""
 
-    def __init__(self, tree, open_bookmark, remove_bookmark):
+    def __init__(self, tree, remove_bookmark):
         super().__init__(tree)
-        self._open_bookmark = open_bookmark
         self._remove_bookmark = remove_bookmark
 
     def _row_actions(self, index):
         if index.column() != 0:
             return []
-        return [(self.open, "open"), (self.star_on, "remove")]
+        return [(self.star_on, "remove")]
+
+    def _action_tooltip(self, action_id: str, index) -> str:
+        return self.tr("Remove bookmark")
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
@@ -239,9 +283,6 @@ class _BookmarksDelegate(_ActionIconsDelegate):
         if not isinstance(bookmark_id, str) or not bookmark_id:
             return False
         action_id = actions[pos][1]
-        if action_id == "open":
-            self._open_bookmark(bookmark_id)
-            return True
         if action_id == "remove":
             self._remove_bookmark(bookmark_id)
             return True

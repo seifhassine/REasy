@@ -386,6 +386,8 @@ class ProjectManager(QDockWidget):
             tree.setModel(model)
             tree.setContextMenuPolicy(Qt.CustomContextMenu)
             tree.setIndentation(8)
+            tree.setUniformRowHeights(True)
+            tree.setAllColumnsShowFocus(True)
             tree.hideColumn(1)
             tree.hideColumn(2)
             
@@ -1883,6 +1885,129 @@ class ProjectManager(QDockWidget):
                     delegate.set_column_width(max(new_size, min_width))
                 tree.viewport().update() 
                 break
+
+    def capture_view_state(self) -> dict:
+        """Return the persistent, JSON-safe state of the project browser."""
+        return {
+            "active_view": self._active_tab,
+            "minimized": bool(self._minimized),
+            "docked_size": [self._docked_size.width(), self._docked_size.height()],
+            "pak_filter": self.pak_filter_edit.text(),
+            "project_filter": self.proj_filter_edit.text(),
+            "column_widths": {
+                name: tree.header().sectionSize(0)
+                for name, tree in (
+                    ("unpacked", self.tree_sys),
+                    ("project", self.tree_proj),
+                    ("pak", self.tree_pak),
+                )
+            },
+            "expanded": {
+                "unpacked": self._expanded_keys(self.tree_sys),
+                "project": self._expanded_keys(self.tree_proj),
+                "pak": self._expanded_keys(self.tree_pak),
+            },
+            "scroll": {
+                "unpacked": self.tree_sys.verticalScrollBar().value(),
+                "project": self.tree_proj.verticalScrollBar().value(),
+                "pak": self.tree_pak.verticalScrollBar().value(),
+            },
+        }
+
+    def restore_view_state(self, state: dict) -> None:
+        """Restore a state produced by :meth:`capture_view_state`."""
+        if not isinstance(state, dict):
+            return
+        docked_size = state.get("docked_size")
+        if isinstance(docked_size, list) and len(docked_size) == 2:
+            try:
+                self._docked_size = QSize(max(240, int(docked_size[0])), max(180, int(docked_size[1])))
+            except (TypeError, ValueError):
+                pass
+        widths = state.get("column_widths", {})
+        for name, tree in (
+            ("unpacked", self.tree_sys),
+            ("project", self.tree_proj),
+            ("pak", self.tree_pak),
+        ):
+            try:
+                tree.header().resizeSection(0, max(160, int(widths.get(name, 160))))
+            except (TypeError, ValueError):
+                pass
+        self.pak_filter_edit.setText(str(state.get("pak_filter", "")))
+        self.proj_filter_edit.setText(str(state.get("project_filter", "")))
+        self._switch_tab(str(state.get("active_view", "proj")))
+        expanded = state.get("expanded", {})
+        self._restore_expanded_keys(self.tree_sys, expanded.get("unpacked", []))
+        self._restore_expanded_keys(self.tree_proj, expanded.get("project", []))
+        self._restore_expanded_keys(self.tree_pak, expanded.get("pak", []))
+        scroll = state.get("scroll", {})
+        for name, tree in (
+            ("unpacked", self.tree_sys),
+            ("project", self.tree_proj),
+            ("pak", self.tree_pak),
+        ):
+            try:
+                tree.verticalScrollBar().setValue(int(scroll.get(name, 0)))
+            except (TypeError, ValueError):
+                pass
+        if state.get("minimized"):
+            QTimer.singleShot(0, self.minimize_to_side_tab)
+
+    def _state_key_for_index(self, tree, index) -> str:
+        if not index.isValid():
+            return ""
+        if tree is self.tree_pak:
+            return str(index.data(Qt.UserRole + 2) or index.data(Qt.UserRole + 1) or "")
+        return str(self._index_path(index) or "")
+
+    def _expanded_keys(self, tree, limit: int = 500) -> list[str]:
+        model = tree.model()
+        if model is None:
+            return []
+        result = []
+
+        def visit(parent):
+            if len(result) >= limit:
+                return
+            for row in range(model.rowCount(parent)):
+                index = model.index(row, 0, parent)
+                if not index.isValid() or not tree.isExpanded(index):
+                    continue
+                if key := self._state_key_for_index(tree, index):
+                    result.append(key)
+                visit(index)
+
+        visit(tree.rootIndex())
+        return result
+
+    def _restore_expanded_keys(self, tree, keys) -> None:
+        if not isinstance(keys, list):
+            return
+        for key in keys[:500]:
+            index = self._index_for_state_key(tree, str(key))
+            if index.isValid():
+                tree.expand(index)
+
+    def _index_for_state_key(self, tree, key: str):
+        if tree is self.tree_sys:
+            return self.model_sys.index(key)
+        if tree is self.tree_proj:
+            source = self.model_proj.index(key)
+            return self._proj_proxy.mapFromSource(source) if source.isValid() else QModelIndex()
+        model = tree.model()
+        parent = QModelIndex()
+        for part in (part for part in key.rstrip("/").replace("\\", "/").split("/") if part):
+            child = QModelIndex()
+            for row in range(model.rowCount(parent) if model is not None else 0):
+                candidate = model.index(row, 0, parent)
+                if str(candidate.data(Qt.DisplayRole)) == part:
+                    child = candidate
+                    break
+            if not child.isValid():
+                return QModelIndex()
+            parent = child
+        return parent
 
     def _proj_settings(self):
         if not self.project_dir:

@@ -33,9 +33,14 @@ def create_shortcuts_tab():
         "find_search_guid": QCoreApplication.translate("KeyboardShortcuts", "Search for GUID"),
         "find_search_text": QCoreApplication.translate("KeyboardShortcuts", "Search for Text"),
         "find_search_number": QCoreApplication.translate("KeyboardShortcuts", "Search for Number"),
+        "find_search_hex": QCoreApplication.translate("KeyboardShortcuts", "Search for Hex"),
+        "find_rsz_field_value": QCoreApplication.translate("KeyboardShortcuts", "Find/Replace RSZ Field Value"),
         "view_prev_tab": QCoreApplication.translate("KeyboardShortcuts", "Previous Tab"),
         "view_next_tab": QCoreApplication.translate("KeyboardShortcuts", "Next Tab"),
-        "view_debug_console": QCoreApplication.translate("KeyboardShortcuts", "Toggle Debug Console"),
+        "view_debug_console": QCoreApplication.translate("KeyboardShortcuts", "Toggle Output"),
+        "view_ai_chat": QCoreApplication.translate("KeyboardShortcuts", "Toggle AI Assistant"),
+        "editor_split_right": QCoreApplication.translate("KeyboardShortcuts", "Split Editor Right"),
+        "editor_split_down": QCoreApplication.translate("KeyboardShortcuts", "Split Editor Down"),
     }
     
     shortcuts_tab.shortcut_names = shortcut_names

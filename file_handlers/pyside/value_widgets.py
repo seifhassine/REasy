@@ -1399,13 +1399,50 @@ class StringInput(BaseValueWidget):
         if self.add_open_button:
             self.add_open_button.setToolTip(self.tr("Add resource file to project"))
 
-    def _get_app_window(self):
+    def _get_handler(self):
         widget = self
         while widget:
-            if hasattr(widget, 'handler') and hasattr(widget.handler, 'app'):
-                return widget.handler.app
+            handler = getattr(widget, "handler", None)
+            if handler is not None and hasattr(handler, "app"):
+                return handler
             widget = widget.parent()
         return None
+
+    def _get_app_window(self):
+        return getattr(self._get_handler(), "app", None)
+
+    def _get_resource_context(self, app_window):
+        from utils.resource_file_utils import (
+            resource_context_for_app,
+            resource_context_for_handler,
+        )
+
+        handler = self._get_handler()
+        context = resource_context_for_handler(handler) if handler is not None else None
+        project_dir = str(getattr(context, "project_dir", "") or "")
+        game = str(
+            getattr(context, "game", "")
+            or getattr(handler, "game_version", "")
+            or ""
+        )
+
+        # Refresh through the owning project, not whichever Project Browser tab
+        # happens to be active. This also picks up a reader rebuilt since the
+        # document was opened.
+        refreshed = resource_context_for_app(
+            app_window,
+            project_dir=project_dir or None,
+            game=game,
+        )
+        if refreshed is not None and (
+            context is None
+            or refreshed.pak_cached_reader is not None
+            or context.pak_cached_reader is None
+        ):
+            context = refreshed
+            if handler is not None:
+                handler.resource_context = refreshed
+        return context
 
     def _on_open_clicked(self):
         if not isinstance(self._data, ResourceData):
@@ -1421,12 +1458,18 @@ class StringInput(BaseValueWidget):
             QMessageBox.warning(self, self.tr(OPEN_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
-        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
+        context = self._get_resource_context(app_window)
+        if context is None or not context.project_dir:
             QMessageBox.information(self, self.tr(OPEN_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
-        self._open_resource_file(app_window, resource_path, add_to_project=False)
+        self._open_resource_file(
+            app_window,
+            resource_path,
+            context,
+            add_to_project=False,
+        )
     
     def _on_add_clicked(self):
         if not isinstance(self._data, ResourceData):
@@ -1442,55 +1485,59 @@ class StringInput(BaseValueWidget):
             QMessageBox.warning(self, self.tr(ADD_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
-        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
+        context = self._get_resource_context(app_window)
+        if context is None or not context.project_dir:
             QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
-        self._open_resource_file(app_window, resource_path, add_to_project=True)
-
-    def _open_resource_file(self, app_window, resource_path, add_to_project=False):
-        from utils.resource_file_utils import (
-            resolve_resource_data,
-            get_path_prefix_for_game,
-            copy_resource_to_project
+        self._open_resource_file(
+            app_window,
+            resource_path,
+            context,
+            add_to_project=True,
         )
+
+    def _open_resource_file(
+        self,
+        app_window,
+        resource_path,
+        context,
+        add_to_project=False,
+    ):
+        from utils.resource_file_utils import copy_resource_to_project
         
         proj_dock = app_window.proj_dock
         if add_to_project:
-            if not proj_dock.project_dir:
+            if not context.project_dir:
                 QMessageBox.information(
                     self,
                     self.tr(ADD_RESOURCE_TITLE),
                     self.tr("No project is currently open."),
                 )
                 return
-            path_prefix = get_path_prefix_for_game(app_window.current_game)
             self._add_resource_to_project(
                 proj_dock,
                 resource_path,
-                path_prefix,
+                context,
                 copy_resource_to_project,
             )
             return
 
-        path_prefix = get_path_prefix_for_game(app_window.current_game)
         self._open_resolved_resource(
             app_window,
-            proj_dock,
             resource_path,
-            path_prefix,
-            resolve_resource_data,
+            context,
         )
 
     def _add_resource_to_project(
         self,
         proj_dock,
         resource_path,
-        path_prefix,
+        context,
         copy_resource_to_project,
     ):
-        project_dir = proj_dock.project_dir
+        project_dir = context.project_dir
         overwrite_state = {"asked": False, "accepted": False}
 
         def _confirm_overwrite(dest_path: str) -> bool:
@@ -1506,14 +1553,19 @@ class StringInput(BaseValueWidget):
         dest_path = copy_resource_to_project(
             resource_path,
             project_dir,
-            proj_dock.unpacked_dir,
-            path_prefix,
-            proj_dock._pak_cached_reader,
+            context.unpacked_dir,
+            context.path_prefix,
+            context.pak_cached_reader,
             should_overwrite=_confirm_overwrite,
             selection_parent=self,
         )
         if dest_path:
-            if hasattr(proj_dock, '_refresh_proj'):
+            same_active_project = (
+                bool(proj_dock.project_dir)
+                and os.path.normcase(os.path.abspath(proj_dock.project_dir))
+                == os.path.normcase(os.path.abspath(project_dir))
+            )
+            if same_active_project and hasattr(proj_dock, '_refresh_proj'):
                 proj_dock._refresh_proj()
             QMessageBox.information(
                 self,
@@ -1535,17 +1587,11 @@ class StringInput(BaseValueWidget):
     def _open_resolved_resource(
         self,
         app_window,
-        proj_dock,
         resource_path,
-        path_prefix,
-        resolve_resource_data,
+        context,
     ):
-        resolved = resolve_resource_data(
+        resolved = context.resolve(
             resource_path,
-            proj_dock.project_dir,
-            proj_dock.unpacked_dir,
-            path_prefix,
-            proj_dock._pak_cached_reader,
             self,
         )
         if resolved:
@@ -1556,11 +1602,12 @@ class StringInput(BaseValueWidget):
                 pak_source_path=(
                     file_path if not os.path.isabs(file_path) else None
                 ),
-                pak_project_dir=proj_dock.project_dir,
+                pak_project_dir=context.project_dir,
+                resource_context=context,
             )
             if tab and not os.path.isabs(file_path):
                 app_window.attach_pak_source_tab(
-                    tab, file_path, proj_dock.project_dir
+                    tab, file_path, context.project_dir
                 )
             return
         QMessageBox.critical(
@@ -1766,6 +1813,7 @@ class BoolInput(BaseValueWidget):
         self.checkbox.setFixedWidth(20)
         self.checkbox.setStyleSheet("""
             QCheckBox {
+                background-color: transparent;
                 padding: 2px;
             }
             QCheckBox::indicator {

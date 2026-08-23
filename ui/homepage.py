@@ -116,11 +116,11 @@ class HomePageWidget(QWidget):
         accent_text = "#111111" if accent.lightness() > 155 else "#ffffff"
         accent_hover = accent.lighter(112).name()
         accent_pressed = accent.darker(116).name()
-        muted = "#a8b0b8"
-        subtle = "#7f8992"
-        surface = "#34383c"
-        hover = "#3d4247"
-        border = "#464c52"
+        muted = colors["text_muted"]
+        subtle = colors["text_subtle"]
+        surface = colors["surface_alt"]
+        hover = colors["surface_hover"]
+        border = colors["border"]
 
         self.setStyleSheet(f"""
             QWidget#homePage {{ background: {colors['bg']}; }}

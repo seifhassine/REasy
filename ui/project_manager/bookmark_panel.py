@@ -130,7 +130,7 @@ class BookmarksPanel(QWidget):
         tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         tree.setItemDelegateForColumn(
             0,
-            _BookmarksDelegate(tree, self.request_open, self.remove_bookmark),
+            _BookmarksDelegate(tree, self.remove_bookmark),
         )
         tree.setItemDelegateForColumn(1, _TagChipsDelegate(tree))
         tree.setItemDelegateForColumn(2, _ScopeBadgeDelegate(tree))

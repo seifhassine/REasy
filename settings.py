@@ -13,6 +13,16 @@ from services.ai.chat_service import (
 
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
 AI_FILE_ACTION_MODES = frozenset({"review", "request", "scoped_autopilot"})
+SHORTCUT_SCHEME_VERSION = 2
+LEGACY_SHORTCUT_DEFAULTS = {
+    "find_search_guid": "Ctrl+G",
+    "find_search_text": "Ctrl+T",
+    "find_search_number": "Ctrl+N",
+    "view_prev_tab": "PgDown",
+    "view_next_tab": "PgUp",
+    "view_debug_console": "Ctrl+Shift+D",
+    "view_ai_chat": "Ctrl+Shift+A",
+}
 DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
     "show_debug_console": True,
@@ -44,13 +54,26 @@ DEFAULT_SETTINGS = {
         "file_close_tab": "Ctrl+W",
         "file_reopen_closed": "Ctrl+Shift+T",
         "find_search": "Ctrl+F",
-        "find_search_guid": "Ctrl+G",
-        "find_search_text": "Ctrl+T",
-        "find_search_number": "Ctrl+N",
-        "view_prev_tab": "PgDown",
-        "view_next_tab": "PgUp",
-        "view_debug_console": "Ctrl+Shift+D",
-        "view_ai_chat": "Ctrl+Shift+A"
+        "find_search_guid": "Ctrl+Alt+G",
+        "find_search_text": "Ctrl+Alt+T",
+        "find_search_number": "Ctrl+Alt+N",
+        "find_search_hex": "Ctrl+Alt+H",
+        "find_rsz_field_value": "Ctrl+Alt+R",
+        "view_prev_tab": "Ctrl+PgUp",
+        "view_next_tab": "Ctrl+PgDown",
+        "view_debug_console": "Ctrl+Shift+U",
+        "view_ai_chat": "Ctrl+Alt+A",
+        "editor_split_right": "Ctrl+\\",
+        "editor_split_down": "Ctrl+Alt+\\"
+    },
+    "shortcut_scheme_version": SHORTCUT_SCHEME_VERSION,
+    "workbench": {
+        "restore_session": True,
+        "state_version": 1,
+        "window_geometry": "",
+        "window_state": "",
+        "project_browser": {},
+        "session": {},
     },
     "confirmation_prompt": True,
     "verify_rsz_crc_on_open": True,
@@ -92,13 +115,26 @@ def normalize_settings(settings=None):
             )
             continue
         if key == "keyboard_shortcuts" and isinstance(value, dict):
-            normalized[key].update(
-                (name, shortcut)
-                for name, shortcut in value.items()
-                if name != "view_dark_mode"
-            )
+            try:
+                shortcut_scheme = int(settings.get("shortcut_scheme_version", 1) or 1)
+            except (TypeError, ValueError):
+                shortcut_scheme = 1
+            legacy_scheme = shortcut_scheme < SHORTCUT_SCHEME_VERSION
+            for name, shortcut in value.items():
+                if name == "view_dark_mode":
+                    continue
+                if legacy_scheme and LEGACY_SHORTCUT_DEFAULTS.get(name) == shortcut:
+                    shortcut = DEFAULT_SETTINGS["keyboard_shortcuts"].get(name, shortcut)
+                normalized[key][name] = shortcut
+        elif key == "workbench":
+            if isinstance(value, dict):
+                normalized[key].update(value)
+        elif key == "keyboard_shortcuts":
+            continue
         else:
             normalized[key] = value
+
+    normalized["shortcut_scheme_version"] = SHORTCUT_SCHEME_VERSION
 
     normalized["ai_provider"] = get_ai_provider_config(
         normalized["ai_provider"]

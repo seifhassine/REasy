@@ -18,6 +18,18 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 
+
+class _TreeIndexWidget(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAutoFillBackground(False)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+
+    def paintEvent(self, event):
+        event.accept()
+
 class TreeWidgetFactory:
     """Factory class for creating tree node widgets"""
     
@@ -73,6 +85,10 @@ class TreeWidgetFactory:
     @staticmethod
     def tr(text):
         return QCoreApplication.translate("TreeWidgetFactory", text)
+
+    @staticmethod
+    def create_container(parent=None):
+        return _TreeIndexWidget(parent)
 
     @staticmethod
     def _add_collection_summary(
@@ -201,7 +217,7 @@ class TreeWidgetFactory:
     @staticmethod
     def create_widget(node_type, data_obj, name_text, widget_parent, on_modified=None):
         """Create appropriate widget based on node type"""
-        widget = QWidget(widget_parent)
+        widget = TreeWidgetFactory.create_container(widget_parent)
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(4)

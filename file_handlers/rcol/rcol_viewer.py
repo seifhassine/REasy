@@ -280,7 +280,6 @@ class RcolViewer(QWidget):
             QFrame#rcolLeftPanel, QFrame#rcolRightPanel { border: 1px solid rgba(127,127,127,0.22); border-radius: 8px; }
             QLabel#rcolDetailTitle { font-size: 15px; font-weight: 650; }
             QLabel#rcolHeadlessTitle { font-size: 13px; font-weight: 600; }
-            QLabel#rcolPath { color: palette(mid); }
             """
         )
         self._ensure_preview_dock()

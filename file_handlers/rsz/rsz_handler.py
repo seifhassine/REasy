@@ -7,7 +7,7 @@ This file contains:
 """
 
 import functools
-from PySide6.QtCore import Signal, QModelIndex
+from PySide6.QtCore import Signal, QModelIndex, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -285,6 +285,8 @@ class RszViewer(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("rszViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._modified = False
         self.scn = RszFile()
         self.handler = None
@@ -392,6 +394,7 @@ class RszViewer(QWidget):
         if self.scene_button is not None:
             return
         scene_bar = QWidget(self)
+        scene_bar.setObjectName("rszSceneBar")
         row = QHBoxLayout(scene_bar)
         row.setContentsMargins(4, 4, 4, 0)
         row.addStretch(1)

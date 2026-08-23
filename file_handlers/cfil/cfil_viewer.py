@@ -10,11 +10,25 @@ TEXT_FILE_FILTER = "Text Files (*.txt);;All Files (*)"
 IMPORT_IDS_TITLE = QT_TRANSLATE_NOOP("CfilViewer", "Import IDs")
 
 
+class _TreeCellWidget(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAutoFillBackground(False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+
+    def paintEvent(self, event):
+        event.accept()
+
+
 class CfilViewer(QWidget):
     modified_changed = Signal(bool)
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("cfilViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self.mask_tree = None
         self.mat_attr_tree = None
@@ -229,7 +243,7 @@ class CfilViewer(QWidget):
                 self.mat_attr_tree.setItemWidget(it, 1, widget)
 
     def _create_guid_widget(self, guid: uuid.UUID, index: int, attr_name: str):
-        row_widget = QWidget()
+        row_widget = _TreeCellWidget()
         row_layout = QHBoxLayout(row_widget)
         row_layout.setContentsMargins(0, 2, 0, 2)
         row_layout.setSpacing(4)

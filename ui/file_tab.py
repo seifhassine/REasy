@@ -114,15 +114,12 @@ class FileTab:
                 pass
 
     def update_tab_title(self):
-        if not self.filename:
-            base_title = "Untitled"
+        title_provider = getattr(self.app, "document_title_for_tab", None)
+        if callable(title_provider):
+            title = title_provider(self)
         else:
-            base_title = os.path.basename(self.filename)
-
-        if self.modified:
-            title = f"{base_title} *"
-        else:
-            title = base_title
+            base_title = os.path.basename(self.filename) if self.filename else "Untitled"
+            title = f"{base_title} *" if self.modified else base_title
 
         if callable(set_page_title := getattr(
             self.parent_notebook, "set_page_title", None

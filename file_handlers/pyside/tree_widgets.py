@@ -2,8 +2,9 @@ import traceback
 from weakref import WeakSet
 from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
-                               QLineEdit, QInputDialog, QApplication, QDialog, QPushButton)
-from PySide6.QtGui import QCursor, QPalette
+                               QLineEdit, QInputDialog, QApplication, QDialog, QPushButton,
+                               QStyle, QStyleOptionViewItem)
+from PySide6.QtGui import QCursor, QIcon, QPalette
 from PySide6.QtCore import (
     QT_TRANSLATE_NOOP,
     Qt,
@@ -62,9 +63,23 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
             if highlight_manager:
                 item_id = model_index_row_path(index)
                 should_highlight = highlight_manager.is_item_highlighted(item_id)
+
+        if tree_view and tree_view.indexWidget(index) is not None:
+            row_option = QStyleOptionViewItem(option)
+            self.initStyleOption(row_option, index)
+            row_option.text = ""
+            row_option.icon = QIcon()
+            if should_highlight:
+                color = tree_view.highlight_manager.highlight_color
+                row_option.palette.setColor(QPalette.Text, color)
+                row_option.palette.setColor(QPalette.HighlightedText, color)
+            widget = row_option.widget
+            style = widget.style() if widget is not None else QApplication.style()
+            style.drawControl(QStyle.CE_ItemViewItem, row_option, painter, widget)
+            return
         
         if should_highlight:
-            modified_option = option
+            modified_option = QStyleOptionViewItem(option)
             modified_option.palette.setColor(QPalette.Text, tree_view.highlight_manager.highlight_color)
             modified_option.palette.setColor(QPalette.HighlightedText, tree_view.highlight_manager.highlight_color)
             super().paint(painter, modified_option, index)
@@ -389,7 +404,7 @@ class AdvancedTreeView(QTreeView):
         if not idx.isValid():
             return
         self.setIndexWidget(idx, None)
-        container = QWidget(self)
+        container = TreeWidgetFactory.create_container(self)
         layout = QHBoxLayout(container)
         layout.setContentsMargins(2, 0, 2, 0)
         layout.setSpacing(5)

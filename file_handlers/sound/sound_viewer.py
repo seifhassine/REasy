@@ -144,6 +144,11 @@ _REV_FILTER = "Crankcase REV Model (*.model *.adm);;REV Model Files (*.model *.a
 _vgmstream_downloader = None
 
 
+def _sound_surface(widget: QWidget) -> QWidget:
+    widget.setProperty("reasySoundSurface", True)
+    return widget
+
+
 def _asset_preferences(system: str, machine: str) -> list[str]:
     if system == "windows" or os.name == "nt":
         return ["win64" if "64" in machine else "win32"]
@@ -256,6 +261,8 @@ class SoundViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("soundViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._sound_profile = sound_profile_for_handler(handler)
         self._sound_metadata = (
@@ -532,6 +539,7 @@ class SoundViewer(QWidget):
         layout.addLayout(header)
 
         self.tabs = QTabWidget()
+        self.tabs.setObjectName("soundEditorTabs")
         self.sound_graph_page = self._build_mod_tab()
         self.all_objects_page = self._build_bank_graph_tab()
         self.bank_settings_page = self._build_bank_settings_tab()
@@ -540,6 +548,7 @@ class SoundViewer(QWidget):
             (self.all_objects_page, self.tr("All Objects")),
             (self.bank_settings_page, self.tr("Bank Settings")),
         ):
+            _sound_surface(page)
             index = self.tabs.addTab(page, title)
             self.tabs.setTabVisible(index, False)
         layout.addWidget(self.tabs, 1)
@@ -550,7 +559,7 @@ class SoundViewer(QWidget):
         self._setup_player()
 
     def _build_role_header(self):
-        container = QWidget()
+        container = _sound_surface(QWidget())
         container.setMaximumWidth(520)
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -683,7 +692,7 @@ class SoundViewer(QWidget):
         flow.addLayout(context_actions)
         self.mod_content_splitter.addWidget(self.flow_group)
 
-        media_panel = QWidget()
+        media_panel = _sound_surface(QWidget())
         media_layout = QVBoxLayout(media_panel)
         media_layout.setContentsMargins(0, 0, 0, 0)
         media_layout.setSpacing(6)
@@ -770,7 +779,7 @@ class SoundViewer(QWidget):
             "An explicit WAV import codec must be selected."
         ))
         group_layout = QVBoxLayout(self.advanced_compression_group)
-        self.advanced_compression_host = QWidget()
+        self.advanced_compression_host = _sound_surface(QWidget())
         self.advanced_compression_host.setVisible(False)
         advanced = QGridLayout(self.advanced_compression_host)
         advanced.setContentsMargins(0, 0, 0, 0)
@@ -886,7 +895,7 @@ class SoundViewer(QWidget):
         splitter = QSplitter(Qt.Horizontal)
         splitter.setChildrenCollapsible(False)
         splitter.setHandleWidth(6)
-        browser = QWidget()
+        browser = _sound_surface(QWidget())
         browser.setMinimumWidth(230)
         browser.setMaximumWidth(340)
         browser_layout = QVBoxLayout(browser)
@@ -903,7 +912,7 @@ class SoundViewer(QWidget):
         browser_layout.addWidget(self.bank_object_list)
         splitter.addWidget(browser)
 
-        editor = QWidget()
+        editor = _sound_surface(QWidget())
         editor_layout = QVBoxLayout(editor)
         editor_layout.setContentsMargins(0, 0, 0, 0)
         self.hirc_duplicate_btn = self._make_btn(self.tr("Duplicate…"), QStyle.SP_FileDialogNewFolder, self._on_duplicate_hirc, enabled=False)
@@ -976,7 +985,7 @@ class SoundViewer(QWidget):
         self.bank_chunk_note.setWordWrap(True)
         self.bank_chunk_note.setStyleSheet(_MUTED_TEXT_STYLE)
         layout.addWidget(self.bank_chunk_note)
-        self.bank_chunk_host = QWidget()
+        self.bank_chunk_host = _sound_surface(QWidget())
         self.bank_chunk_layout = QVBoxLayout(self.bank_chunk_host)
         self.bank_chunk_layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.bank_chunk_host, 1)

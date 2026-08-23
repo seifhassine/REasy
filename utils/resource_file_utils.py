@@ -4,7 +4,7 @@ from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
 
-_PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, str]]" = WeakKeyDictionary()
+_PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, list[str]]]" = WeakKeyDictionary()
 _DIR_ENTRIES_CACHE: dict[str, tuple[str, ...]] = {}
 ResourceDataLoader = Callable[[str], Optional[Tuple[str, bytes]]]
 
@@ -130,6 +130,56 @@ def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool =
         return paths[0]
 
 
+def _build_pak_path_lookup(pak_cached_reader) -> dict[str, list[str]]:
+    paths = list(pak_cached_reader.cached_paths(include_unknown=False))
+
+    # Lightweight readers also retain the loaded file-list names. Include any
+    # whose hashes are present so a named path remains discoverable even when
+    # the entry-name cache was populated or refreshed after our first lookup.
+    path_hashes = getattr(pak_cached_reader, "_path_to_hashes", None)
+    cache_keys = getattr(pak_cached_reader, "_cache_keys_set", None)
+    if isinstance(path_hashes, dict):
+        seen = set(paths)
+        for path, hashes in path_hashes.items():
+            if path in seen:
+                continue
+            if cache_keys is not None and not any(value in cache_keys for value in hashes):
+                continue
+            paths.append(path)
+            seen.add(path)
+
+    lookup: dict[str, list[str]] = {}
+    for original_path in paths:
+        normalized_path = _normalize_lookup_path(original_path)
+        for lookup_key in _iter_lookup_keys(normalized_path):
+            lookup.setdefault(lookup_key, []).append(original_path)
+    return lookup
+
+
+def _match_pak_lookup(
+    lookup: dict[str, list[str]],
+    patterns: Iterable[str],
+    parent=None,
+    *,
+    allow_selection_dialog: bool = True,
+) -> tuple[bool, Optional[str]]:
+    for pattern in patterns:
+        needle = _normalize_lookup_path(pattern)
+        if not needle:
+            continue
+        matches = lookup.get(needle)
+        if matches:
+            return (
+                True,
+                _select_matching_path(
+                    matches,
+                    parent,
+                    allow_dialog=allow_selection_dialog,
+                ),
+            )
+    return False, None
+
+
 def find_matching_pak_path(
     pak_cached_reader,
     patterns: Iterable[str],
@@ -142,25 +192,30 @@ def find_matching_pak_path(
 
     cached_norm = _PAK_PATH_LOOKUP_CACHE.get(pak_cached_reader)
     if cached_norm is None:
-        cached_norm = {}
-        for original_path in pak_cached_reader.cached_paths(include_unknown=False):
-            normalized_path = _normalize_lookup_path(original_path)
-            for lookup_key in _iter_lookup_keys(normalized_path):
-                cached_norm.setdefault(lookup_key, []).append(original_path)
+        cached_norm = _build_pak_path_lookup(pak_cached_reader)
         _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = cached_norm
 
-    for pattern in patterns:
-        needle = _normalize_lookup_path(pattern)
-        if not needle:
-            continue
-        matches = cached_norm.get(needle)
-        if matches:
-            return _select_matching_path(
-                matches,
-                parent,
-                allow_dialog=allow_selection_dialog,
-            )
-    return None
+    pattern_list = list(patterns)
+    found, match = _match_pak_lookup(
+        cached_norm,
+        pattern_list,
+        parent,
+        allow_selection_dialog=allow_selection_dialog,
+    )
+    if found:
+        return match
+
+    # CachedPakReader is mutable (for example, assign_paths can name entries
+    # after the first query). Rebuild once on a miss rather than letting an old
+    # negative lookup survive for the reader's lifetime.
+    cached_norm = _build_pak_path_lookup(pak_cached_reader)
+    _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = cached_norm
+    return _match_pak_lookup(
+        cached_norm,
+        pattern_list,
+        parent,
+        allow_selection_dialog=allow_selection_dialog,
+    )[1]
 
 
 def _get_dir_entries(dir_path: str) -> tuple[str, ...]:
