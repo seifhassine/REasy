@@ -29,6 +29,7 @@ class DockTitleBar(QWidget):
 
     def __init__(self, dock):
         super().__init__(dock)
+        self._dock = dock
         self.setObjectName("projectBrowserTitleBar")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.title_label = QLabel(dock.windowTitle(), self)
@@ -54,6 +55,24 @@ class DockTitleBar(QWidget):
     def sync(self, floating: bool, area):
         self.redock_btn.setVisible(floating)
         self.min_btn.setText(_MINIMIZE_ARROW.get(area, "‹"))
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            child = self.childAt(event.pos())
+            if child is self.redock_btn or child is self.min_btn:
+                super().mouseDoubleClickEvent(event)
+                return
+            try:
+                dock = self._dock
+                if dock.isFloating():
+                    dock.redock()
+                else:
+                    dock.setFloating(True)
+                event.accept()
+                return
+            except Exception:
+                pass
+        super().mouseDoubleClickEvent(event)
 
 
 class SideTab(QWidget):
