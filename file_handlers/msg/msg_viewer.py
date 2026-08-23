@@ -2,15 +2,26 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QComboBox,
     QLabel, QPushButton, QLineEdit, QMessageBox, QSplitter,
     QTextEdit, QGroupBox, QFrame, QCheckBox, QFileDialog,
-    QSpinBox, QFormLayout, QHeaderView, QScrollArea
+    QSpinBox, QFormLayout, QHeaderView, QMenu, QScrollArea, QStyle
 )
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QFont, QPalette, QKeySequence, QShortcut
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QSignalBlocker, Qt, Signal
+from PySide6.QtGui import (
+    QFont, QKeySequence, QPalette, QShortcut, QStandardItem,
+    QStandardItemModel,
+)
 
 from utils.number_format import format_full_float
+from file_handlers.sound.sound_waveform import WaveformWidget
 
 
 CHAR_COUNT_TEXT = QT_TRANSLATE_NOOP("MsgViewer", "{count} chars")
+
+_AUDIO_LOCALE_PREFERENCES = {
+    0: ("ja",), 1: ("en",), 2: ("fr",), 3: ("it",), 4: ("de",),
+    5: ("es", "es419"), 6: ("ru",), 7: ("pl",), 8: ("nl",),
+    9: ("pt", "ptbr"), 10: ("ptbr", "pt"), 11: ("ko",),
+    12: ("zhtw", "zhcn"), 13: ("zhcn", "zhtw"), 32: ("es419", "es"),
+}
 
 
 class MsgViewer(QWidget):
@@ -23,7 +34,12 @@ class MsgViewer(QWidget):
         self.modified = False
         self.tree = None
         self.original_entries = []
-        
+        self._sound_session = None
+        self._sound_catalog = {}
+        self._sound_references = {}
+        self._sound_scanned = False
+        self._sound_scan_pending = False
+
         self._setup_ui()
         self._populate_tree()
         self._connect_signals()
@@ -116,6 +132,13 @@ class MsgViewer(QWidget):
         stats_group.addWidget(self.lang_count_label)
         controls_row.addLayout(stats_group)
 
+        controls_row.addWidget(self._create_separator())
+
+        self.scan_sounds_btn = QPushButton(self.tr("🔍 Scan Sounds"))
+        self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
+        self.scan_sounds_btn.clicked.connect(self._on_scan_sounds)
+        controls_row.addWidget(self.scan_sounds_btn)
+
         controls_row.addStretch()
         header_layout.addLayout(controls_row)
         layout.addWidget(header_frame, 0)
@@ -169,6 +192,7 @@ class MsgViewer(QWidget):
         self.tree.setSelectionBehavior(QTreeView.SelectRows)
         self.tree.setRootIsDecorated(False)
         self.tree.setSortingEnabled(True)
+        self.tree.clicked.connect(self._on_tree_clicked)
         tree_layout.addWidget(self.tree)
         
         splitter.addWidget(tree_widget)
@@ -200,6 +224,9 @@ class MsgViewer(QWidget):
 
         self.soundid_edit = QLineEdit()
         self.soundid_edit.setPlaceholderText("0")
+        self.soundid_edit.setToolTip(self.tr(
+            "Resolved through Wwise trigger and event metadata during sound scans"
+        ))
         self.soundid_edit.textChanged.connect(self._on_soundid_changed)
         info_layout.addRow("🔊 SoundID:", self.soundid_edit)
 
@@ -207,6 +234,12 @@ class MsgViewer(QWidget):
         info_layout.addRow("🔢 Index/Hash:", self.index_label)
 
         details_layout.addWidget(info_group)
+
+        self.msg_waveform = WaveformWidget()
+        self.msg_waveform.setFixedHeight(40)
+        self.msg_waveform.seek_requested.connect(self._on_sound_seek)
+        self.msg_waveform.hide()
+        details_layout.addWidget(self.msg_waveform)
 
         content_group = QGroupBox(self.tr("💬 Content"))
         content_layout = QVBoxLayout(content_group)
@@ -281,41 +314,58 @@ class MsgViewer(QWidget):
         shift_delete_shortcut = QShortcut(QKeySequence("Shift+Delete"), self)
         shift_delete_shortcut.activated.connect(self._on_delete_entry)
 
-    def _populate_tree(self):
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Preview"), "UUID"])
-        
-        self.original_entries = list(enumerate(self.handler.entries))
-        
-        for i, e in enumerate(self.handler.entries):
-            name_item = QStandardItem(e.get("name", f"Entry_{i}"))
-            
-            preview_text = e.get("content", [""])[self.current_language]
-            if len(preview_text) > 50:
-                preview_text = preview_text[:47] + "..."
-            preview_item = QStandardItem(preview_text)
-            
-            uuid_item = QStandardItem(e.get("uuid", ""))
-            
-            name_item.setData({"entry_index": i, "field_type": "name"}, Qt.UserRole)
-            preview_item.setData({"entry_index": i, "field_type": "content", "lang_index": self.current_language}, Qt.UserRole)
-            uuid_item.setData({"entry_index": i, "field_type": "uuid"}, Qt.UserRole)
-            
-            if not e.get("name"):
-                name_item.setText(self.tr("(Unnamed)"))
-                name_item.setForeground(QPalette().color(QPalette.Disabled, QPalette.Text))
-            
-            model.appendRow([name_item, preview_item, uuid_item])
-        
+    def _tree_row(self, entry_index, entry):
+        name_item = QStandardItem(entry.get("name") or self.tr("(Unnamed)"))
+        content = entry.get("content", ())
+        preview = content[self.current_language] if self.current_language < len(content) else ""
+        preview_item = QStandardItem(
+            preview if len(preview) <= 50 else preview[:47] + "..."
+        )
+        uuid_item = QStandardItem(entry.get("uuid", ""))
+        sound_item = self._make_sound_item(entry)
+
+        name_item.setData(
+            {"entry_index": entry_index, "field_type": "name"}, Qt.UserRole
+        )
+        preview_item.setData({
+            "entry_index": entry_index,
+            "field_type": "content",
+            "lang_index": self.current_language,
+        }, Qt.UserRole)
+        uuid_item.setData(
+            {"entry_index": entry_index, "field_type": "uuid"}, Qt.UserRole
+        )
+        sound_item.setData(
+            {"entry_index": entry_index, "field_type": "sound"}, Qt.UserRole
+        )
+        if not entry.get("name"):
+            name_item.setForeground(QPalette().color(QPalette.Disabled, QPalette.Text))
+        return [name_item, preview_item, uuid_item, sound_item]
+
+    def _install_tree_model(self, model):
+        previous = self.tree.model()
         self.tree.setModel(model)
-        
+        if previous is not None and previous is not model:
+            previous.deleteLater()
         header = self.tree.header()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        
+        header.setSectionResizeMode(3, QHeaderView.Fixed)
+        header.resizeSection(3, 40)
         self._connect_signals()
         model.dataChanged.connect(self._on_tree_data_changed)
+
+    def _populate_tree(self):
+        model = QStandardItemModel(self.tree)
+        model.setHorizontalHeaderLabels([
+            self.tr("Name"), self.tr("Preview"), "UUID", self.tr("Sound")
+        ])
+
+        self.original_entries = list(enumerate(self.handler.entries))
+        for entry_index, entry in self.original_entries:
+            model.appendRow(self._tree_row(entry_index, entry))
+        self._install_tree_model(model)
         self._update_search_results()
 
     def _on_search_text_changed(self, text):
@@ -324,46 +374,35 @@ class MsgViewer(QWidget):
     def _perform_search(self):
         search_text = self.search_edit.text().strip()
         case_sensitive = self.case_sensitive_cb.isChecked()
-        
+
         if not search_text:
             self._show_all_entries()
             return
-        
+
         if not case_sensitive:
             search_text = search_text.lower()
-        
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Preview"), "UUID"])
-        
+
+        model = QStandardItemModel(self.tree)
+        model.setHorizontalHeaderLabels([
+            self.tr("Name"), self.tr("Preview"), "UUID", self.tr("Sound")
+        ])
+
         matches = 0
         for original_index, entry in self.original_entries:
             name = entry.get("name", "")
-            content = entry.get("content", [""])[self.current_language]
+            values = entry.get("content", ())
+            content = values[self.current_language] if self.current_language < len(values) else ""
             uuid_str = entry.get("uuid", "")
-            
+
             search_fields = [name, content, uuid_str]
             if not case_sensitive:
                 search_fields = [field.lower() for field in search_fields]
-            
+
             if any(search_text in field for field in search_fields):
-                name_item = QStandardItem(name or f"Entry_{original_index}")
-                preview_text = content
-                if len(preview_text) > 50:
-                    preview_text = preview_text[:47] + "..."
-                preview_item = QStandardItem(preview_text)
-                uuid_item = QStandardItem(uuid_str)
-                
-                name_item.setData({"entry_index": original_index, "field_type": "name"}, Qt.UserRole)
-                preview_item.setData({"entry_index": original_index, "field_type": "content", "lang_index": self.current_language}, Qt.UserRole)
-                uuid_item.setData({"entry_index": original_index, "field_type": "uuid"}, Qt.UserRole)
-                
-                model.appendRow([name_item, preview_item, uuid_item])
+                model.appendRow(self._tree_row(original_index, entry))
                 matches += 1
-        
-        self.tree.setModel(model)
-        
-        self._connect_signals()
-        model.dataChanged.connect(self._on_tree_data_changed)
+
+        self._install_tree_model(model)
         self._update_search_results(matches)
 
     def _show_all_entries(self):
@@ -431,6 +470,7 @@ class MsgViewer(QWidget):
             QMessageBox.critical(self, self.tr("Import JSON Failed"), str(exc))
 
     def _refresh_after_import(self):
+        self._invalidate_sound_scan()
         self.language_combo.blockSignals(True)
         self.language_combo.clear()
         for i, lang_code in enumerate(self.handler.useLanguages):
@@ -621,6 +661,7 @@ class MsgViewer(QWidget):
             new_entry["index"] = len(self.handler.entries)
         
         self.handler.entries.append(new_entry)
+        self._invalidate_sound_scan()
         self._populate_tree()
         self._set_modified(True)
         self._update_stats()
@@ -647,10 +688,10 @@ class MsgViewer(QWidget):
             self.modified = m
             self.modified_changed.emit(m)
             
-            if m:
-                self.status_label.setText(self.tr("● Modified"))
-            else:
-                self.status_label.setText(self.tr("● Ready"))
+            if not (
+                self._sound_session and self._sound_session.active_message_id
+            ):
+                self.status_label.setText(self._idle_status_text())
 
     def _on_uuid_changed(self, text):
         sel = self.tree.selectionModel()
@@ -672,6 +713,7 @@ class MsgViewer(QWidget):
         
         if self.handler.validate_edit({"entry_index": entry_idx, "field_type": "uuid"}, text):
             self.handler.handle_edit({"entry_index": entry_idx, "field_type": "uuid"}, text, "", None, self.tree)
+            self._invalidate_sound_scan()
             self._set_modified(True)
             uuid_item = self.tree.model().item(idx_model.row(), 2)
             if uuid_item:
@@ -747,10 +789,12 @@ class MsgViewer(QWidget):
 
         item = self.tree.model().item(top_left.row(), top_left.column())
         meta = item.data(Qt.UserRole)
-        if meta:
+        if isinstance(meta, dict) and meta.get("field_type") != "sound":
             new_value = item.text()
             if self.handler.validate_edit(meta, new_value):
                 self.handler.handle_edit(meta, new_value, "", item, self.tree)
+                if meta.get("field_type") == "uuid":
+                    self._invalidate_sound_scan()
                 self._set_modified(True)
                 self._update_details_panel()
             else:
@@ -769,6 +813,7 @@ class MsgViewer(QWidget):
     def _on_add_entry(self):
         
         self.handler.add_entry()
+        self._invalidate_sound_scan()
         self._populate_tree()
         self._set_modified(True)
         self._update_stats()
@@ -812,8 +857,9 @@ class MsgViewer(QWidget):
             return
         
         next_row = min(idx_model.row(), len(self.handler.entries) - 2)
-        
+
         self.handler.remove_entry(entry_idx)
+        self._invalidate_sound_scan()
         self._populate_tree()
         self._set_modified(True)
         self._update_stats()
@@ -846,6 +892,7 @@ class MsgViewer(QWidget):
         
         if self.handler.validate_edit({"entry_index": entry_idx, "field_type": "SoundID"}, text):
             self.handler.handle_edit({"entry_index": entry_idx, "field_type": "SoundID"}, text, "", None, self.tree)
+            self._invalidate_sound_scan()
             self._set_modified(True)
         else:
             QMessageBox.warning(
@@ -933,6 +980,347 @@ class MsgViewer(QWidget):
         if ok and attr_name:
             idx = self.handler.userParamNames.index(attr_name)
             self._on_delete_single_attribute(idx, attr_name)
+
+    # ── Sound playback ─────────────────────────────────────────────────
+
+    @staticmethod
+    def _message_key(entry) -> str:
+        return str(entry.get("uuid", "")).strip().strip("{}").casefold()
+
+    def _sound_scan_tooltip(self) -> str:
+        return self.tr(
+            "Find exact message, timeline, and Wwise references and inspect only "
+            "their BNK/PCK files"
+        )
+
+    def _ensure_sound_session(self) -> bool:
+        if self._sound_session is not None:
+            return True
+        from file_handlers.sound import sound_profile_for_handler
+        from file_handlers.msg.msg_sound_player import MsgSoundPreviewSession
+
+        profile = sound_profile_for_handler(self.handler)
+        if profile is None:
+            QMessageBox.information(
+                self,
+                self.tr("Scan Sounds"),
+                self.tr("No sound profile matches the current project game."),
+            )
+            return False
+        try:
+            self._sound_session = MsgSoundPreviewSession(self.handler, profile, self)
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            QMessageBox.warning(self, self.tr("Scan Sounds"), str(exc))
+            return False
+        self._sound_session.scan_finished.connect(self._on_sound_scan_finished)
+        self._sound_session.scan_failed.connect(self._on_sound_scan_failed)
+        self._sound_session.preparing.connect(self._on_sound_preparing)
+        self._sound_session.playback_started.connect(self._on_sound_started)
+        self._sound_session.playback_stopped.connect(self._on_sound_stopped)
+        self._sound_session.playback_failed.connect(self._on_sound_failed)
+        self._sound_session.waveform_ready.connect(self._on_sound_waveform_ready)
+        self._sound_session.position_changed.connect(self.msg_waveform.set_position)
+        return True
+
+    def _cleanup_sound(self) -> None:
+        if self._sound_session is not None:
+            self._sound_session.cleanup()
+            self._sound_session = None
+        self._sound_catalog.clear()
+        self._sound_references.clear()
+
+    def _make_sound_item(self, entry: dict) -> QStandardItem:
+        item = QStandardItem()
+        item.setTextAlignment(Qt.AlignCenter)
+        item.setEditable(False)
+        self._update_sound_item(item, entry)
+        return item
+
+    def _update_sound_item(self, item: QStandardItem, entry: dict) -> None:
+        message_id = self._message_key(entry)
+        candidates = self._sound_catalog.get(message_id, ())
+        references = self._sound_references.get(message_id, ())
+        active = bool(
+            self._sound_session
+            and self._sound_session.active_message_id == message_id
+        )
+        icon = (
+            QStyle.StandardPixmap.SP_MediaStop
+            if active else QStyle.StandardPixmap.SP_MediaPlay
+        )
+        item.setIcon(self.style().standardIcon(icon))
+        item.setText("")
+        if active:
+            item.setEnabled(True)
+            item.setToolTip(self.tr("Stop playback"))
+        elif candidates:
+            item.setEnabled(True)
+            item.setToolTip(self.tr(
+                "Play {available} available preview(s) from {referenced} referenced "
+                "source(s); the selected container stays cached until this MSG closes"
+            ).format(
+                available=len(candidates),
+                referenced=len(references),
+            ))
+        elif references:
+            item.setEnabled(False)
+            item.setToolTip(self.tr(
+                "This message references {count} sound(s), but their media is unavailable"
+            ).format(count=len(references)))
+        elif self._sound_scanned:
+            item.setEnabled(False)
+            item.setToolTip(self.tr("This message has no exact sound reference"))
+        else:
+            item.setEnabled(False)
+            item.setToolTip(self.tr("Scan sounds to check exact message references"))
+
+    # ── scan ────────────────────────────────────────────────────────────
+
+    def _on_scan_sounds(self) -> None:
+        if self._sound_scan_pending or not self._ensure_sound_session():
+            return
+        self._sound_session.stop()
+        self._sound_scan_pending = True
+        self.scan_sounds_btn.setEnabled(False)
+        self.scan_sounds_btn.setText(self.tr("🔍 Scanning Sounds…"))
+        self.status_label.setText(self.tr("Scanning exact sound references…"))
+        self._sound_session.scan(
+            (entry.get("uuid", ""), entry.get("SoundID", 0))
+            for entry in self.handler.entries
+        )
+
+    def _on_sound_scan_finished(self, result) -> None:
+        self._sound_scan_pending = False
+        self._sound_scanned = True
+        self._sound_catalog = result.catalog
+        self._sound_references = result.references
+        self.scan_sounds_btn.setEnabled(True)
+        self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+        self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
+        self._refresh_sound_column()
+
+        playable = sum(bool(value) for value in result.catalog.values())
+        referenced = len(result.references)
+        self.status_label.setText(self.tr(
+            "Sounds: {playable}/{referenced} referenced messages, {files} container(s) checked"
+        ).format(
+            playable=playable,
+            referenced=referenced,
+            files=result.inspected_file_count,
+        ))
+        if not referenced:
+            QMessageBox.information(
+                self,
+                self.tr("Scan Sounds"),
+                self.tr(
+                    "No exact UUID, timeline, or SoundID-to-trigger references were "
+                    "found for this MSG. SoundID is never guessed to be a Wwise media ID."
+                ),
+            )
+        elif result.unavailable_source_count:
+            self.scan_sounds_btn.setToolTip(self.tr(
+                "{count} referenced source(s) were not available in this installation"
+            ).format(count=result.unavailable_source_count))
+
+    def _on_sound_scan_failed(self, message: str) -> None:
+        self._sound_scan_pending = False
+        self.scan_sounds_btn.setEnabled(True)
+        self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+        self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
+        self.status_label.setText(self._idle_status_text())
+        QMessageBox.warning(self, self.tr("Sound Scan Error"), message)
+
+    def _invalidate_sound_scan(self) -> None:
+        if self._sound_session is not None:
+            self._sound_session.cancel_scan()
+            self._sound_session.stop()
+        self._sound_catalog.clear()
+        self._sound_references.clear()
+        self._sound_scanned = False
+        self._sound_scan_pending = False
+        if hasattr(self, "scan_sounds_btn"):
+            self.scan_sounds_btn.setEnabled(True)
+            self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+            self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
+        self._refresh_sound_column()
+
+    def _refresh_sound_column(self) -> None:
+        model = self.tree.model()
+        if model is None:
+            return
+        blocker = QSignalBlocker(model)
+        for row in range(model.rowCount()):
+            item = model.item(row, 3)
+            if item is None:
+                continue
+            meta = item.data(Qt.UserRole)
+            entry_idx = meta.get("entry_index") if isinstance(meta, dict) else None
+            if entry_idx is None or entry_idx >= len(self.handler.entries):
+                continue
+            self._update_sound_item(item, self.handler.entries[entry_idx])
+        del blocker
+
+    # ── play / stop ─────────────────────────────────────────────────────
+
+    def _on_tree_clicked(self, index) -> None:
+        if index.column() != 3:
+            return
+        meta = self.tree.model().item(index.row(), 0).data(Qt.UserRole)
+        if not isinstance(meta, dict):
+            return
+        entry_idx = meta["entry_index"]
+        entry = self.handler.entries[entry_idx]
+        message_id = self._message_key(entry)
+        session = self._sound_session
+        if session is None:
+            return
+        if session.active_message_id == message_id:
+            session.stop()
+            return
+        candidates = self._ordered_sound_candidates(
+            self._sound_catalog.get(message_id, ())
+        )
+        if not candidates:
+            return
+        if len(candidates) == 1:
+            self._play_sound(message_id, candidates[0])
+            return
+
+        menu = QMenu(self)
+        play_icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        for candidate in candidates:
+            action = menu.addAction(play_icon, self._sound_candidate_label(candidate))
+            action.triggered.connect(
+                lambda _checked=False, value=candidate: self._play_sound(
+                    message_id, value
+                )
+            )
+        rect = self.tree.visualRect(index)
+        menu.exec(self.tree.viewport().mapToGlobal(rect.bottomLeft()))
+
+    def _ordered_sound_candidates(self, candidates):
+        candidates = tuple(candidates)
+        language_code = (
+            self.handler.useLanguages[self.current_language]
+            if self.current_language < len(self.handler.useLanguages) else -1
+        )
+        preferences = _AUDIO_LOCALE_PREFERENCES.get(language_code, ())
+        locales = {
+            self._sound_candidate_locale(candidate) for candidate in candidates
+        }
+        preferred = next(
+            (locale for locale in preferences if locale in locales), ""
+        )
+        ordered = sorted(
+            candidates,
+            key=lambda candidate: (
+                self._sound_candidate_locale(candidate) != preferred,
+                candidate.source_id,
+                candidate.path,
+            ),
+        )
+        localized = tuple(
+            candidate for candidate in ordered
+            if self._sound_candidate_locale(candidate) == preferred
+        ) if preferred else ()
+        return localized or tuple(ordered)
+
+    @staticmethod
+    def _sound_candidate_locale(candidate) -> str:
+        parts = candidate.path.rsplit("/", 1)[-1].casefold().split(".")
+        return parts[-1] if len(parts) > 1 and parts[-2] in {"stm", "x64"} else ""
+
+    def _sound_candidate_label(self, candidate) -> str:
+        locale = self._sound_candidate_locale(candidate).upper()
+        filename = candidate.path.rsplit("/", 1)[-1]
+        interval = (
+            self.tr(" · {start:.2f}–{end:.2f} s").format(
+                start=candidate.start_ms / 1000,
+                end=candidate.end_ms / 1000,
+            )
+            if candidate.is_segment else ""
+        )
+        copies = (
+            self.tr(" (+{count} identical copies)").format(
+                count=len(candidate.paths) - 1
+            )
+            if len(candidate.paths) > 1 else ""
+        )
+        prefix = f"{locale} — " if locale else ""
+        return (
+            f"{prefix}{self.tr('Source')} {candidate.source_id} — "
+            f"{filename}{interval}{copies}"
+        )
+
+    def _play_sound(self, message_id, candidate) -> None:
+        from file_handlers.msg.msg_sound_player import configured_vgmstream
+
+        if self._sound_session is None:
+            return
+        executable = configured_vgmstream(self.handler)
+        if not executable:
+            QMessageBox.information(
+                self,
+                self.tr("VGMStream Required"),
+                self.tr(
+                    "Configure the VGMStream CLI path in Settings before previewing sounds."
+                ),
+            )
+            return
+        self._sound_session.play(
+            message_id, candidate, executable, self.msg_waveform.width()
+        )
+
+    def _on_sound_preparing(self, candidate) -> None:
+        self.msg_waveform.clear()
+        self.msg_waveform.show()
+        self.status_label.setText(
+            self.tr("Loading source {id} from {file}…").format(
+                id=candidate.source_id,
+                file=candidate.path.rsplit("/", 1)[-1],
+            )
+        )
+        self._refresh_sound_column()
+
+    def _on_sound_started(self, candidate) -> None:
+        self.status_label.setText(
+            self.tr("Playing source {id} from {file}").format(
+                id=candidate.source_id,
+                file=candidate.path.rsplit("/", 1)[-1],
+            )
+        )
+        self._refresh_sound_column()
+
+    def _on_sound_stopped(self) -> None:
+        self.msg_waveform.clear()
+        self.msg_waveform.hide()
+        self.status_label.setText(self._idle_status_text())
+        self._refresh_sound_column()
+
+    def _on_sound_waveform_ready(self, payload) -> None:
+        if payload is not None:
+            self.msg_waveform.set_data(payload["peaks"], payload["ranges"])
+
+    def _on_sound_failed(self, message: str) -> None:
+        self.msg_waveform.clear()
+        self.msg_waveform.hide()
+        self.status_label.setText(self._idle_status_text())
+        self._refresh_sound_column()
+        QMessageBox.warning(self, self.tr("Sound Decode Error"), message)
+
+    def _on_sound_seek(self, per_mille: int) -> None:
+        if self._sound_session is not None:
+            self._sound_session.seek(per_mille)
+
+    def _idle_status_text(self) -> str:
+        return self.tr("● Modified") if self.modified else self.tr("● Ready")
+
+    def cleanup(self) -> None:
+        self._cleanup_sound()
+
+    def closeEvent(self, event) -> None:
+        self.cleanup()
+        super().closeEvent(event)
 
     def rebuild(self) -> bytes:
         return self.handler.rebuild()

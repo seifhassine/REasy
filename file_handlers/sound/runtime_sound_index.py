@@ -204,6 +204,20 @@ class RuntimeSoundIndex:
     packages_by_source: dict[int, tuple[str, ...]]
     package_records: dict[str, dict[str, str]]
 
+    def preview_media_paths(self, source_id: int) -> tuple[str, ...]:
+        """Return every container that can hold complete media for a source."""
+
+        source_id = int(source_id) & 0xFFFFFFFF
+        paths = list(self.embedded_by_source.get(source_id, ()))
+        for key in self.packages_by_source.get(source_id, ()):
+            record = self.package_records.get(key, {})
+            # Prefer the full streaming package, but keep the index as a valid
+            # fallback for games whose ordinary PCK already contains media.
+            paths.extend(filter(None, (
+                record.get("streaming", ""), record.get("index", ""),
+            )))
+        return tuple(dict.fromkeys(paths))
+
     def media_packages(self, source_id: int, bank_path: str) -> tuple[dict, ...]:
         keys = _matching_package_keys(
             resource_key(bank_path),
@@ -534,11 +548,25 @@ def _load_or_build(reader, profile, paths, signature, root) -> RuntimeSoundIndex
     return index
 
 
+def snapshot_pak_reader(reader):
+    """Copy mutable lookup state before a worker reads from a shared PAK reader."""
+
+    snapshot = copy.copy(reader)
+    cache = getattr(reader, "_cache", None)
+    snapshot._cache = dict(cache) if cache is not None else None
+    keys = getattr(reader, "_cache_keys_set", None)
+    snapshot._cache_keys_set = set(keys) if keys is not None else None
+    snapshot._searched_paths = dict(getattr(reader, "_searched_paths", {}))
+    snapshot._path_to_hashes = {
+        path: list(hashes)
+        for path, hashes in getattr(reader, "_path_to_hashes", {}).items()
+    }
+    snapshot.pak_file_priority = tuple(getattr(reader, "pak_file_priority", ()))
+    return snapshot
+
+
 def _prepare_runtime_sound_index(reader, profile, root) -> RuntimeSoundIndex | None:
-    reader = copy.copy(reader)
-    reader._cache = dict(reader._cache)
-    reader._searched_paths = dict(getattr(reader, "_searched_paths", {}))
-    reader.pak_file_priority = tuple(getattr(reader, "pak_file_priority", ()))
+    reader = snapshot_pak_reader(reader)
     paths = _known_sound_paths(reader, profile)
     if not paths:
         return None
@@ -602,4 +630,5 @@ __all__ = [
     "build_runtime_sound_index",
     "clear_runtime_sound_index_handles",
     "request_runtime_sound_index",
+    "snapshot_pak_reader",
 ]

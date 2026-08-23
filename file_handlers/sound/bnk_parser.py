@@ -345,6 +345,7 @@ class HircObject:
 _PLAYBACK_TARGET_TYPES = frozenset({
     0x02, 0x05, 0x06, 0x07, 0x09, 0x0A, 0x0C, 0x0D,
 })
+_PLAYBACK_ACTION_TYPES = frozenset({0x0400, 0x0500, 0x2100, 0x2300})
 _ACTOR_CHILD_TYPES = frozenset({0x02, 0x05, 0x06, 0x07, 0x09})
 _ACTOR_PARENT_TYPES = frozenset({0x05, 0x06, 0x07, 0x09})
 _MUSIC_HIERARCHY_TYPES = frozenset({0x0A, 0x0C, 0x0D})
@@ -2040,7 +2041,15 @@ def _resolve_events(objects: list[HircObject]) -> list[BnkEvent]:
                     walk(action_id)
                 return
             if obj.type_id == 0x03:
-                if obj.action_target_id:
+                # Control Actions (Stop, Pause, Set Switch, and so on) may
+                # target an entire shared hierarchy. They do not produce
+                # media, so following them makes unrelated events appear to
+                # own every source below that hierarchy.
+                if (
+                    obj.action_target_id
+                    and obj.action_type is not None
+                    and obj.action_type & 0xFF00 in _PLAYBACK_ACTION_TYPES
+                ):
                     walk(obj.action_target_id)
                 return
             sources.extend(source.source_id for source in obj.sources if source.source_id)

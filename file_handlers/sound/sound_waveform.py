@@ -91,6 +91,39 @@ def write_wave_channel(source_path, output_path, channel_index):
         output.writeframes(samples[channel_index::channels].tobytes())
 
 
+def write_wave_segment(source_path, output_path, start_ms, end_ms):
+    """Copy one time interval from a decoded PCM WAV without reencoding it."""
+
+    with wave.open(str(source_path), "rb") as source:
+        channels, sample_width, rate, frames = (
+            source.getnchannels(),
+            source.getsampwidth(),
+            source.getframerate(),
+            source.getnframes(),
+        )
+        start = max(0, min(frames, round(int(start_ms) * rate / 1000)))
+        end = max(start, min(frames, round(int(end_ms) * rate / 1000)))
+        if end <= start:
+            raise ValueError(
+                "The referenced message interval is outside the decoded audio."
+            )
+        source.setpos(start)
+        payload = source.readframes(end - start)
+        compression = source.getcomptype(), source.getcompname()
+    with wave.open(str(output_path), "wb") as output:
+        output.setparams(
+            (
+                channels,
+                sample_width,
+                rate,
+                end - start,
+                compression[0],
+                compression[1],
+            )
+        )
+        output.writeframes(payload)
+
+
 class WaveformWidget(QWidget):
     seek_requested = Signal(int)
 

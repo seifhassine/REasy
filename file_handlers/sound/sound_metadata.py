@@ -2,11 +2,84 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class MessageSoundReference:
+    """One exact Wwise source, optionally clipped to a message interval."""
+
+    source_id: int
+    start_ms: int = 0
+    end_ms: int = 0
+    banks: tuple[str, ...] = ()
+
+    @property
+    def is_segment(self) -> bool:
+        return self.end_ms > self.start_ms >= 0
+
 
 class SoundMetadata:
     """Empty metadata provider for games without a registered sound profile."""
 
     live_wel_path = ""
+
+    def attach_runtime_handle(self, handle) -> None:
+        """Attach an optional installed-game index used by exact lookups."""
+
+    def message_source_ids(self, message_id: object) -> tuple[int, ...]:
+        return ()
+
+    def message_sound_references(
+        self, message_id: object
+    ) -> tuple[MessageSoundReference, ...]:
+        return tuple(
+            MessageSoundReference(int(source_id) & 0xFFFFFFFF)
+            for source_id in self.message_source_ids(message_id)
+        )
+
+    def sources_for_triggers(
+        self, trigger_ids
+    ) -> dict[int, tuple[int, ...]]:
+        return {}
+
+    def sound_references_for_triggers(
+        self, trigger_ids
+    ) -> dict[int, tuple[MessageSoundReference, ...]]:
+        return {
+            trigger_id: tuple(
+                MessageSoundReference(source_id) for source_id in source_ids
+            )
+            for trigger_id, source_ids in self.sources_for_triggers(
+                trigger_ids
+            ).items()
+        }
+
+    def preview_media_paths(self, source_id: int) -> tuple[str, ...]:
+        return ()
+
+    def preview_media_paths_for_sources(
+        self, source_ids
+    ) -> dict[int, tuple[str, ...]]:
+        result = {}
+        for value in source_ids:
+            source_id = int(value) & 0xFFFFFFFF
+            if paths := self.preview_media_paths(source_id):
+                result[source_id] = paths
+        return result
+
+    def preview_media_paths_for_references(
+        self, references
+    ) -> dict[MessageSoundReference, tuple[str, ...]]:
+        references = tuple(dict.fromkeys(references))
+        paths = self.preview_media_paths_for_sources(
+            reference.source_id for reference in references
+        )
+        return {
+            reference: paths[reference.source_id]
+            for reference in references
+            if paths.get(reference.source_id)
+        }
 
     def prepare_operational_index(self, *, wait: bool = False) -> bool:
         return False
@@ -124,4 +197,4 @@ class SoundMetadata:
         return ()
 
 
-__all__ = ["SoundMetadata"]
+__all__ = ["MessageSoundReference", "SoundMetadata"]

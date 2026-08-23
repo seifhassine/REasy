@@ -12,7 +12,7 @@ from utils.app_paths import resource_path
 from utils.resource_file_utils import resource_context_for_handler
 
 from .runtime_sound_index import request_runtime_sound_index
-from .sound_metadata import SoundMetadata
+from .sound_metadata import MessageSoundReference, SoundMetadata
 from .sound_resources import resource_key
 from .wwise_schema import BNK_PLUGIN_NAMES, BNK_STANDARD_CUE_NAMES
 
@@ -87,6 +87,17 @@ class IndexedSoundMetadata(SoundMetadata):
         self._package_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
         self._prefetch_event_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
         self._source_groups: dict[int, tuple[dict, ...]] | None = None
+        self._message_sources: dict[str, tuple[int, ...]] = {}
+        self._message_references: dict[
+            str, tuple[MessageSoundReference, ...]
+        ] = {}
+        self._message_source_kinds: set[bool] = set()
+        self._message_segments: dict[
+            str, tuple[MessageSoundReference, ...]
+        ] | None = None
+        self._trigger_references: dict[
+            int, tuple[MessageSoundReference, ...]
+        ] = {}
         self._runtime_handle = None
         self.live_wel_path = ""
 
@@ -104,6 +115,9 @@ class IndexedSoundMetadata(SoundMetadata):
             request_runtime_sound_index(reader, profile)
             if reader is not None and profile is not None else None
         )
+
+    def attach_runtime_handle(self, handle) -> None:
+        self._runtime_handle = handle
 
     def prepare_operational_index(self, *, wait: bool = False) -> bool:
         return bool(self._runtime_handle and self._runtime_handle.get(wait=wait))
@@ -219,6 +233,297 @@ class IndexedSoundMetadata(SoundMetadata):
                 value: tuple(groups) for value, groups in reverse.items()
             }
         return self._source_groups.get(int(source_id) & 0xFFFFFFFF, ())
+
+    def message_source_ids(self, message_id: object) -> tuple[int, ...]:
+        """Return all media explicitly linked to one game message identifier."""
+
+        key = str(message_id or "").strip().strip("{}").casefold()
+        guid_like = "-" in key
+        if not key or (not guid_like and not key.isdecimal()):
+            return ()
+        if guid_like not in self._message_source_kinds:
+            reverse: dict[str, list[MessageSoundReference]] = {}
+            for group in self.data.get("media_groups", ()):
+                if not isinstance(group, dict):
+                    continue
+                group_key = (
+                    str(group.get("message_id", ""))
+                    .strip()
+                    .strip("{}")
+                    .casefold()
+                )
+                if not group_key or ("-" in group_key) != guid_like:
+                    continue
+                banks = tuple(bank_key(value) for value in _strings(
+                    group.get("bank_families", ())
+                ))
+                reverse.setdefault(group_key, []).extend(
+                    MessageSoundReference(
+                        int(value) & 0xFFFFFFFF, banks=banks
+                    )
+                    for value in group.get("source_ids", ())
+                    if isinstance(value, int) and value
+                )
+            self._message_references.update({
+                group_key: tuple(dict.fromkeys(references))
+                for group_key, references in reverse.items()
+            })
+            self._message_sources.update({
+                group_key: tuple(dict.fromkeys(
+                    reference.source_id for reference in references
+                ))
+                for group_key, references in self._message_references.items()
+                if ("-" in group_key) == guid_like
+            })
+            self._message_source_kinds.add(guid_like)
+        return self._message_sources.get(key, ())
+
+    def message_sound_references(
+        self, message_id: object
+    ) -> tuple[MessageSoundReference, ...]:
+        """Return exact standalone media and timeline-clipped stream references."""
+
+        key = str(message_id or "").strip().strip("{}").casefold()
+        if not key:
+            return ()
+        if self._message_segments is None:
+            reverse: dict[str, list[MessageSoundReference]] = {}
+            for group in self.data.get("message_segments", ()):
+                if not isinstance(group, dict):
+                    continue
+                group_key = (
+                    str(group.get("message_id", ""))
+                    .strip()
+                    .strip("{}")
+                    .casefold()
+                )
+                start_ms = int(group.get("start_ms", 0))
+                end_ms = int(group.get("end_ms", 0))
+                full_source = start_ms == end_ms == 0
+                if not group_key or (
+                    not full_source and (start_ms < 0 or end_ms <= start_ms)
+                ):
+                    continue
+                reverse.setdefault(group_key, []).extend(
+                    MessageSoundReference(
+                        int(source_id) & 0xFFFFFFFF,
+                        start_ms,
+                        end_ms,
+                        tuple(bank_key(value) for value in _strings(
+                            group.get("banks", ())
+                        )),
+                    )
+                    for source_id in group.get("source_ids", ())
+                    if isinstance(source_id, int) and source_id
+                )
+            self._message_segments = {
+                group_key: tuple(dict.fromkeys(references))
+                for group_key, references in reverse.items()
+            }
+
+        segments = self._message_segments.get(key, ())
+        segmented_sources = {value.source_id for value in segments}
+        self.message_source_ids(message_id)
+        standalone = tuple(
+            reference
+            for reference in self._message_references.get(key, ())
+            if reference.source_id not in segmented_sources
+        )
+        return tuple(dict.fromkeys((*segments, *standalone)))
+
+    def sources_for_triggers(
+        self, trigger_ids
+    ) -> dict[int, tuple[int, ...]]:
+        return {
+            trigger_id: tuple(dict.fromkeys(
+                reference.source_id for reference in references
+            ))
+            for trigger_id, references in self.sound_references_for_triggers(
+                trigger_ids
+            ).items()
+        }
+
+    def sound_references_for_triggers(
+        self, trigger_ids
+    ) -> dict[int, tuple[MessageSoundReference, ...]]:
+        """Resolve trigger media while retaining its exact event-bank family."""
+
+        requested = {
+            int(value) & 0xFFFFFFFF for value in trigger_ids
+            if isinstance(value, int) and value
+        }
+        missing = requested - self._trigger_references.keys()
+        if missing:
+            pair_triggers: dict[tuple[str, int], set[int]] = {}
+            for bank, events in self.data.get("bank_events", {}).items():
+                if not isinstance(events, dict):
+                    continue
+                for raw_event, record in events.items():
+                    if (
+                        not str(raw_event).isdecimal()
+                        or not isinstance(record, dict)
+                    ):
+                        continue
+                    matches = missing.intersection(record.get("trigger_ids", ()))
+                    if matches:
+                        pair_triggers[(bank, int(raw_event))] = matches
+
+            resolved = {trigger_id: set() for trigger_id in missing}
+            records = self.data.get("source_event_records", ())
+            if pair_triggers:
+                for raw_source, values in self.data.get(
+                    "source_events", {}
+                ).items():
+                    source_id = int(raw_source) & 0xFFFFFFFF
+                    for value in values:
+                        if isinstance(value, int) and records:
+                            if not 0 <= value < len(records):
+                                continue
+                            record = records[value]
+                            if not isinstance(record, list) or len(record) < 2:
+                                continue
+                            pair = str(record[0]), int(record[1])
+                        elif isinstance(value, dict):
+                            pair = (
+                                str(value.get("bank", "")),
+                                int(value.get("event", 0)),
+                            )
+                        else:
+                            continue
+                        for trigger_id in pair_triggers.get(pair, ()):
+                            resolved[trigger_id].add(
+                                MessageSoundReference(
+                                    source_id, banks=(bank_key(pair[0]),)
+                                )
+                            )
+            self._trigger_references.update({
+                trigger_id: tuple(sorted(
+                    references,
+                    key=lambda reference: (
+                        reference.source_id, reference.banks
+                    ),
+                ))
+                for trigger_id, references in resolved.items()
+            })
+        return {
+            trigger_id: self._trigger_references[trigger_id]
+            for trigger_id in requested
+            if self._trigger_references.get(trigger_id)
+        }
+
+    def preview_media_paths(self, source_id: int) -> tuple[str, ...]:
+        """Return exact installed or shipped container candidates for preview."""
+
+        source_id = int(source_id) & 0xFFFFFFFF
+        return self.preview_media_paths_for_sources((source_id,)).get(source_id, ())
+
+    def preview_media_paths_for_sources(
+        self, source_ids
+    ) -> dict[int, tuple[str, ...]]:
+        """Resolve many Source IDs with one pass over compact package links."""
+
+        wanted = {int(value) & 0xFFFFFFFF for value in source_ids}
+        runtime = self._runtime_index()
+        paths = {
+            source_id: [
+                *(runtime.preview_media_paths(source_id) if runtime else ()),
+                *_strings(
+                    self.data.get("embedded_media", {}).get(str(source_id), ())
+                ),
+                *self._indexed_source_bank_paths(source_id),
+            ]
+            for source_id in wanted
+        }
+
+        package_table = self.data.get("media_packages", {})
+        for groups in self.data.get("media_links", {}).values():
+            if not isinstance(groups, dict):
+                continue
+            if package_table:
+                for package_key, source_ids in groups.items():
+                    record = package_table.get(package_key, {})
+                    if isinstance(record, dict):
+                        candidates = tuple(filter(None, (
+                            record.get("streaming", ""),
+                            record.get("index", ""),
+                        )))
+                        for source_id in wanted.intersection(source_ids):
+                            paths[source_id].extend(candidates)
+            else:
+                for raw_source, records in groups.items():
+                    try:
+                        source_id = int(raw_source) & 0xFFFFFFFF
+                    except (TypeError, ValueError):
+                        continue
+                    if source_id not in wanted:
+                        continue
+                    for record in records:
+                        if isinstance(record, dict):
+                            paths[source_id].extend(filter(None, record.values()))
+        return {
+            source_id: normalized
+            for source_id, values in paths.items()
+            if (normalized := _strings(values))
+        }
+
+    def preview_media_paths_for_references(
+        self, references
+    ) -> dict[MessageSoundReference, tuple[str, ...]]:
+        """Narrow timeline references to their exact Wwise bank families."""
+
+        references = tuple(dict.fromkeys(references))
+        resolved = {}
+        fallback = []
+        bank_records = self.data.get("banks", {})
+        embedded = self.data.get("embedded_media", {})
+        for reference in references:
+            wanted_banks = set(reference.banks)
+            if not wanted_banks:
+                fallback.append(reference)
+                continue
+
+            source_id = reference.source_id
+            source_paths = self._indexed_source_bank_paths(source_id)
+            declarations = tuple(
+                path for path in source_paths if bank_key(path) in wanted_banks
+            )
+            anchors = list(declarations)
+            for bank in wanted_banks:
+                record = bank_records.get(bank, {})
+                if isinstance(record, dict):
+                    anchors.extend(_strings(record.get("paths", ())))
+
+            # The event bank itself is an exact candidate. Compact indexes do
+            # not retain every ordinary in-bank Source declaration, and a
+            # source can be embedded directly in this bank (not a PCK/media
+            # sibling). Extraction still verifies the requested Source ID.
+            candidates = list(anchors)
+            candidates.extend(
+                path
+                for path in _strings(embedded.get(str(source_id), ()))
+                if bank_key(path) in wanted_banks
+            )
+            for path in _strings(anchors):
+                candidates.extend(self.embedded_media_banks(source_id, path))
+                candidates.extend(self.prefetch_media_banks(source_id, path))
+                for package in self.media_packages(source_id, path):
+                    if isinstance(package, dict):
+                        candidates.extend(filter(None, (
+                            package.get("streaming", ""),
+                            package.get("index", ""),
+                        )))
+            if paths := _strings(candidates):
+                resolved[reference] = paths
+
+        general = self.preview_media_paths_for_sources(
+            reference.source_id for reference in fallback
+        )
+        resolved.update({
+            reference: general[reference.source_id]
+            for reference in fallback
+            if general.get(reference.source_id)
+        })
+        return resolved
 
     def source_context_lines(
         self, source_id: int, media_path: str | None = None
