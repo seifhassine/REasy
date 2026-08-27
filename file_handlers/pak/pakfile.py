@@ -4,7 +4,10 @@ import struct
 import threading
 from dataclasses import dataclass
 import zstandard as zstd
-from typing import Optional, BinaryIO, List, Sequence
+from typing import TYPE_CHECKING, Optional, BinaryIO, List, Sequence
+
+if TYPE_CHECKING:
+    from .resolution import PakReaderInfo
 
 
 MAGIC = 0x414B504B
@@ -12,6 +15,7 @@ PAK_FLAG_HEADER_PADDING = 0x04
 PAK_FLAG_ENTRY_TABLE_KEY = 0x08
 PAK_FLAG_HEADER_MARKER = 0x10
 PAK_FLAG_CHUNK_TABLE = 0x20
+PAK_FLAG_HASH_REMAP = 0x40
 PAK_SUPPORTED_FLAGS = (
     PAK_FLAG_HEADER_PADDING
     | PAK_FLAG_ENTRY_TABLE_KEY
@@ -25,6 +29,7 @@ _HEADER_SKIP_BY_FLAG = (
 CHUNK_SIZE_SHIFT = 10
 CHUNK_UNCOMPRESSED_SIZE = 512 * 1024
 CHUNKED_ATTRIBS = {0x1000000, 0x1000400}
+EMBEDDED_CHILD_MAGIC = 0x555DE17A
 _ZSTD_THREAD_STATE = threading.local()
 
 
@@ -40,6 +45,22 @@ def _skip_optional_header_sections(f: BinaryIO, features: int) -> None:
     for flag, skip_len in _HEADER_SKIP_BY_FLAG:
         if (features & flag) != 0:
             f.seek(skip_len, io.SEEK_CUR)
+
+
+def _has_embedded_child_footer(f: BinaryIO) -> bool:
+    position = f.tell()
+    try:
+        f.seek(0, io.SEEK_END)
+        if f.tell() < 32:
+            return False
+        f.seek(-32, io.SEEK_END)
+        footer = f.read(8)
+        return len(footer) == 8 and struct.unpack("<II", footer) == (
+            EMBEDDED_CHILD_MAGIC,
+            1,
+        )
+    finally:
+        f.seek(position)
 
 
 @dataclass(frozen=True)
@@ -85,28 +106,40 @@ class PakFile:
     def __init__(self) -> None:
         self.header: Optional[PakHeader] = None
         self.entries: List[PakEntry] = []
+        self.availability_entries: List[PakEntry] = []
+        self.has_attr_bit20: bool = False
         self.filepath: str = ""
         self._fs: Optional[BinaryIO] = None
         self.chunk_table: tuple[PakChunkEntry, ...] = ()
+        self.resolution_info: Optional["PakReaderInfo"] = None
 
 
     def read_contents(self, f: BinaryIO, expected_paths: Optional[dict[int, str]] = None) -> None:
         data = f.read(4 + 1 + 1 + 2 + 4 + 4)
         if len(data) != 16:
             raise IOError("Invalid PAK header size")
-        magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBhII", data)
+        magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBHII", data)
         if magic != MAGIC:
             raise IOError("File is not a valid PAK file")
 
         if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
             raise IOError(f"Unsupported PAK version {maj}.{minr}")
 
-        unknown_flags = features & ~PAK_SUPPORTED_FLAGS
+        if (features & PAK_FLAG_HASH_REMAP) != 0:
+            raise IOError(
+                f"PAK hash-remap feature 0x40 is not yet supported: {self.filepath}"
+            )
+        unknown_flags = features & ~(PAK_SUPPORTED_FLAGS | PAK_FLAG_HASH_REMAP)
         if unknown_flags:
             raise IOError(f"Unsupported PAK flags {features} for file {self.filepath}")
+        if _has_embedded_child_footer(f):
+            raise IOError(f"Embedded child PAK readers are not yet supported: {self.filepath}")
 
         self.header = PakHeader(magic, maj, minr, features, file_count, fingerprint)
         self.entries.clear()
+        self.availability_entries.clear()
+        self.has_attr_bit20 = False
+        self.chunk_table = ()
         if file_count == 0:
             return
 
@@ -148,12 +181,15 @@ class PakFile:
                     compression=compression,
                     encryption=encryption,
                 )
+                self.has_attr_bit20 = self.has_attr_bit20 or (attrib & 0x20) != 0
                 if expected_paths is not None:
                     p = expected_paths.get(e.combined_hash)
                     if p is None:
                         continue
                     e.path = p
                 self.entries.append(e)
+                if (attrib & 0x70) != 0:
+                    self.availability_entries.append(e)
         else:
             for _ in range(file_count):
                 offset, csize, hash_upper, hash_lower = struct.unpack_from("<qqII", buf, off)

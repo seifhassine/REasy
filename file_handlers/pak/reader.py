@@ -2,28 +2,30 @@ from __future__ import annotations
 import io
 import os
 import re
-import struct
 import threading
 import zstandard as zstd
 import zlib
 import traceback
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from .utils import filepath_hash, guess_extension_from_header
+from .utils import filepath_hash, guess_extension_from_header, normalize_pak_path
 from utils.native_build import ensure_fast_pakresolve
 from .pakfile import (
     PakFile,
     PakEntry,
     _read_entry_raw,
     _decrypt_resource,
-    _decrypt_pak_entry_data,
-    _read_chunk_table,
-    PAK_FLAG_ENTRY_TABLE_KEY,
-    PAK_FLAG_CHUNK_TABLE,
     _is_chunked_entry,
-    _skip_optional_header_sections,
+)
+from .resolution import (
+    PakReaderInfo,
+    PakResolutionProfile,
+    classify_reader,
+    entry_is_gated,
+    order_readers,
+    select_profile,
 )
 
 _ZSTD_MAGIC = b"\x28\xb5\x2f\xfd"
@@ -45,26 +47,19 @@ def _decompress_with_alternate_codec(e: PakEntry, data: bytes, zstd_decompressor
     return data
 
 
-def _normalize_for_hash(path: str) -> str:
-    s = path.strip().replace("\\", "/").lower()
-    while "//" in s:
-        s = s.replace("//", "/")
-    return s
-
-
 class PakReader:
-    def __init__(self) -> None:
+    def __init__(self, game: str | None = None) -> None:
+        self.game = game
         self.pak_file_priority: List[str] = []
         self.max_threads: int = 32
         self.filter: Optional[re.Pattern[str]] = None
         self.enable_console_logging: bool = False
         self._searched_paths: Dict[int, str] = {}
-
-        self._path_to_hashes: Dict[str, List[int]] = {}
+        self._registered_hashes: Dict[str, int] = {}
 
     def reset_file_list(self) -> None:
         self._searched_paths.clear()
-        self._path_to_hashes.clear()
+        self._registered_hashes.clear()
 
     def add_files(self, *files: str) -> None:
         for p in files:
@@ -72,34 +67,164 @@ class PakReader:
                 continue
             h = filepath_hash(p)
             self._searched_paths[h] = p
-            self._path_to_hashes.setdefault(p, []).append(h)
+            self._registered_hashes[p] = h
 
 
 
 
 class CachedPakReader(PakReader):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, game: str | None = None) -> None:
+        super().__init__(game=game)
         self._cache: Optional[Dict[int, tuple[PakFile, PakEntry]]] = None
-        self._cache_keys_set: Optional[set[int]] = None
         self._cache_complete: bool = True
+        self.resolution_profile: PakResolutionProfile | None = None
+        self.resolution_profile_source: str = ""
+        self.resolved_game: str | None = None
+        self.ordered_pak_paths: tuple[str, ...] = ()
+        self.resolution_stats: dict[str, int] = {}
+
+    @classmethod
+    def from_paks(
+        cls,
+        pak_paths: Iterable[str],
+        *,
+        game: str | None = None,
+    ) -> "CachedPakReader":
+        """Create a reader with an explicit PAK set and game identity."""
+        reader = cls(game=game)
+        reader.pak_file_priority = list(pak_paths)
+        return reader
+
+    def matches_source(
+        self,
+        pak_paths: Sequence[str],
+        *,
+        game: str | None,
+    ) -> bool:
+        return self.game == game and self.pak_file_priority == list(pak_paths)
+
+    @property
+    def cache_ready(self) -> bool:
+        return self._cache is not None
+
+    @property
+    def cache_complete(self) -> bool:
+        return self._cache is not None and self._cache_complete
+
+    @property
+    def registered_paths(self) -> tuple[str, ...]:
+        return tuple(self._searched_paths.values())
+
+    def fork(self) -> "CachedPakReader":
+        """Create a cache-free reader with the same source settings."""
+        reader = type(self).from_paks(self.pak_file_priority, game=self.game)
+        reader.max_threads = self.max_threads
+        reader.filter = self.filter
+        reader.enable_console_logging = self.enable_console_logging
+        return reader
+
+    def snapshot(self) -> "CachedPakReader":
+        """Copy mutable lookup state for a worker without sharing dictionaries."""
+        reader = self.fork()
+        reader._cache = dict(self._cache) if self._cache is not None else None
+        reader._cache_complete = self._cache_complete
+        reader._searched_paths = dict(self._searched_paths)
+        reader._registered_hashes = dict(self._registered_hashes)
+        reader.resolution_profile = self.resolution_profile
+        reader.resolution_profile_source = self.resolution_profile_source
+        reader.resolved_game = self.resolved_game
+        reader.ordered_pak_paths = self.ordered_pak_paths
+        reader.resolution_stats = dict(self.resolution_stats)
+        return reader
+
+    def prepare(
+        self,
+        paths: Iterable[str] = (),
+        *,
+        full: bool = False,
+    ) -> "CachedPakReader":
+        """Prepare either a targeted or complete winner index.
+
+        Targeted indexes keep bulk list validation cheap. A later full request
+        upgrades the same reader while retaining every registered path name.
+        """
+        requested = (
+            normalize_pak_path(path, lowercase=True)
+            for path in paths
+            if path and path.strip()
+        )
+        known = tuple(dict.fromkeys((*self.registered_paths, *requested)))
+
+        if full:
+            if known:
+                self.add_files(*known)
+            if not self.cache_complete:
+                self.cache_entries(assign_paths=False)
+            elif known:
+                self.assign_paths(known)
+            return self
+
+        if self._cache is None:
+            if known:
+                self.cache_entries_for_paths(known)
+            else:
+                self.cache_entries(assign_paths=False)
+            return self
+
+        if self._cache_complete:
+            if known:
+                self.assign_paths(known)
+            return self
+
+        missing = [path for path in known if filepath_hash(path) not in self._searched_paths]
+        if missing:
+            all_paths = (*self.registered_paths, *missing)
+            self._cache = None
+            self.reset_file_list()
+            self.cache_entries_for_paths(all_paths)
+        return self
+
+    def contains_cached(self, path_or_hash: str | int) -> bool:
+        """Return whether the current index contains a winner, without expanding it."""
+        if self._cache is None:
+            return False
+        if not isinstance(path_or_hash, str):
+            return path_or_hash in self._cache
+        registered = self._registered_hashes.get(path_or_hash)
+        if registered is not None:
+            return registered in self._cache
+        return filepath_hash(path_or_hash) in self._cache
+
+    def cached_path_for_hash(self, value: int) -> str | None:
+        if self._cache is None:
+            return None
+        hit = self._cache.get(value)
+        return hit[1].path if hit else None
+
+    def cached_known_paths(self) -> List[str]:
+        """Return named winners, including registered names for a targeted index."""
+        paths = self.cached_paths(include_unknown=False)
+        seen = set(paths)
+        for path in self.registered_paths:
+            if path not in seen and self.contains_cached(path):
+                paths.append(path)
+                seen.add(path)
+        return paths
+
+    def cached_unknown_paths(self) -> List[str]:
+        """Return unknown names only when the current index is already complete."""
+        if not self.cache_complete or self._cache is None:
+            return []
+        return [
+            f"__Unknown/{value:016X}"
+            for value, (_pak, entry) in self._cache.items()
+            if entry.path is None
+        ]
 
     def cache_entries(self, assign_paths: bool = False) -> None:
         if self._cache is not None and self._cache_complete:
             return
-        self._cache = {}
-
-        for pak in self._enumerate_paks(assign_paths=assign_paths):
-            for e in pak.entries:
-                if e.path is None and self._searched_paths:
-                    name = self._searched_paths.get(e.combined_hash)
-                    if name:
-                        e.path = name
-                h = e.combined_hash
-                if h not in self._cache:
-                    self._cache[h] = (pak, e)
-
-        self._cache_keys_set = set(self._cache.keys())
+        self._cache = self._build_cache(assign_paths=assign_paths)
         self._cache_complete = True
 
     def cache_entries_for_paths(self, paths: Iterable[str]) -> None:
@@ -109,15 +234,7 @@ class CachedPakReader(PakReader):
 
         self.reset_file_list()
         self.add_files(*paths)
-        self._cache = {}
-
-        for pak in self._enumerate_paks(assign_paths=True):
-            for e in pak.entries:
-                h = e.combined_hash
-                if h not in self._cache:
-                    self._cache[h] = (pak, e)
-
-        self._cache_keys_set = set(self._cache.keys())
+        self._cache = self._build_cache(assign_paths=True)
         self._cache_complete = False
 
     def assign_paths(self, paths: Iterable[str], replace_existing: bool = False) -> int:
@@ -125,11 +242,11 @@ class CachedPakReader(PakReader):
 
         Returns number of entries newly named.
         """
-        norm_paths = list({_normalize_for_hash(p) for p in paths})
+        norm_paths = list({normalize_pak_path(p, lowercase=True) for p in paths})
         if replace_existing:
             self.reset_file_list()
-            if norm_paths:
-                self.add_files(*norm_paths)
+        if norm_paths:
+            self.add_files(*norm_paths)
 
         if self._cache is None:
             self.cache_entries(assign_paths=False)
@@ -150,20 +267,111 @@ class CachedPakReader(PakReader):
         return int(updated)
 
 
-    def _enumerate_paks(self, assign_paths: bool) -> Iterable[PakFile]:
-        for i in range(len(self.pak_file_priority) - 1, -1, -1):
-            pakfile = self.pak_file_priority[i]
+    @staticmethod
+    def _path_key(path: str) -> str:
+        return os.path.normcase(os.path.abspath(path))
+
+    def _load_resolved_paks(self, assign_paths: bool) -> list[tuple[PakReaderInfo, PakFile]]:
+        parsed: dict[str, PakFile] = {}
+        infos: list[PakReaderInfo] = []
+        expected_paths = self._searched_paths if assign_paths else None
+
+        for pakfile in self.pak_file_priority:
+            path_key = self._path_key(pakfile)
+            if path_key in parsed:
+                continue
             try:
-                if os.path.getsize(pakfile) <= 16:
+                if os.path.getsize(pakfile) < 16:
                     continue
-            except FileNotFoundError:
+            except OSError:
                 continue
             pak = PakFile()
             pak.filepath = pakfile
             with open(pakfile, "rb") as f:
-                pak.read_contents(f, self._searched_paths if assign_paths else None)
-            if pak.entries:
-                yield pak
+                pak.read_contents(f, expected_paths)
+            if pak.header is None:
+                continue
+            info = classify_reader(
+                pakfile,
+                pak.header.feature_flags,
+                (pak.header.major, pak.header.minor),
+            )
+            parsed[path_key] = pak
+            infos.append(info)
+
+        profile, resolved_game, source = select_profile(self.game)
+        ordered_infos = order_readers(infos, profile)
+        ordered: list[tuple[PakReaderInfo, PakFile]] = []
+        for info in ordered_infos:
+            pak = parsed[self._path_key(info.path)]
+            pak.resolution_info = info
+            ordered.append((info, pak))
+
+        self.resolution_profile = profile
+        self.resolution_profile_source = source
+        self.resolved_game = resolved_game
+        self.ordered_pak_paths = tuple(info.path for info in ordered_infos)
+        return ordered
+
+    def _build_cache(self, assign_paths: bool) -> Dict[int, tuple[PakFile, PakEntry]]:
+        ordered = self._load_resolved_paks(assign_paths)
+        profile = self.resolution_profile
+        if profile is None:
+            return {}
+
+        gated_hashes: set[int] = set()
+        for _info, pak in ordered:
+            for entry in pak.availability_entries:
+                if entry_is_gated(entry.attributes, profile.gate, pak.has_attr_bit20):
+                    gated_hashes.add(entry.combined_hash)
+
+        authorized: set[int] = set()
+        if gated_hashes:
+            for witness_type in profile.witness_types:
+                for info, pak in ordered:
+                    if info.reader_type != witness_type:
+                        continue
+                    for entry in pak.entries:
+                        entry_hash = entry.combined_hash
+                        if (
+                            entry_hash in gated_hashes
+                            and entry_hash not in authorized
+                            and not entry_is_gated(
+                                entry.attributes, profile.gate, pak.has_attr_bit20
+                            )
+                        ):
+                            authorized.add(entry_hash)
+                    if len(authorized) == len(gated_hashes):
+                        break
+                if len(authorized) == len(gated_hashes):
+                    break
+
+        cache: Dict[int, tuple[PakFile, PakEntry]] = {}
+        rejected = 0
+        for _info, pak in ordered:
+            for entry in pak.entries:
+                entry_hash = entry.combined_hash
+                if entry_hash in cache:
+                    continue
+                if (
+                    (entry.attributes & 0x70) != 0
+                    and entry_is_gated(entry.attributes, profile.gate, pak.has_attr_bit20)
+                    and entry_hash not in authorized
+                ):
+                    rejected += 1
+                    continue
+                if entry.path is None and self._searched_paths:
+                    entry.path = self._searched_paths.get(entry_hash)
+                cache[entry_hash] = (pak, entry)
+
+        self.resolution_stats = {
+            "readers": len(ordered),
+            "gated_hashes": len(gated_hashes),
+            "authorized_hashes": len(authorized),
+            "rejected_entries": rejected,
+            "winners": len(cache),
+        }
+        return cache
 
     def get_file(self, path_or_hash: str | int) -> Optional[io.BytesIO]:
         if isinstance(path_or_hash, str):
@@ -210,118 +418,31 @@ class CachedPakReader(PakReader):
 
     @staticmethod
     def read_manifest(pak_files: List[str]) -> List[str]:
-        
         manifest_path = "__MANIFEST/MANIFEST.TXT"
         manifest_hash = filepath_hash(manifest_path)
-        
+
         for pak_path in pak_files:
             try:
-                if not os.path.exists(pak_path) or os.path.getsize(pak_path) <= 16:
+                if os.path.getsize(pak_path) < 16:
                     continue
-                
+
+                pak = PakFile()
+                pak.filepath = pak_path
                 with open(pak_path, "rb") as f:
-
-                    header_data = f.read(16)
-                    if len(header_data) != 16:
+                    pak.read_contents(f, {manifest_hash: manifest_path})
+                    if not pak.entries:
                         continue
-                    
-                    magic, maj, minr, features, file_count, _ = struct.unpack("<IBBhII", header_data)
-                    if magic != 0x414B504B:
-                        continue
-                    
-
-                    if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
-                        continue
-                    
-
-                    entry_table_size = file_count * (48 if maj == 4 else 24)
-                    entry_table = bytearray(f.read(entry_table_size))
-                    
-                    _skip_optional_header_sections(f, features)
-
-                    if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
-                        key = bytearray(f.read(128))
-                        _decrypt_pak_entry_data(entry_table, key)
-
-                    chunk_table = _read_chunk_table(f) if (features & PAK_FLAG_CHUNK_TABLE) != 0 else ()
-
-                    off = 0
-                    for _ in range(file_count):
-                        if maj == 4:
-                            hash_lower, hash_upper = struct.unpack_from("<II", entry_table, off)
-                            combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
-                            
-                            if combined == manifest_hash:
-
-                                hash_lower, hash_upper, offset, csize, dsize, attrib, checksum = struct.unpack_from(
-                                    "<IIqqqqq", entry_table, off
-                                )
-                                compression = attrib & 0xF
-                                encryption = (attrib & 0x00FF0000) >> 16
-                                
-
-                                f.seek(offset)
-                                e = PakEntry(
-                                    hash_lower=hash_lower,
-                                    hash_upper=hash_upper,
-                                    offset=offset,
-                                    compressed_size=csize,
-                                    decompressed_size=dsize,
-                                    compression=compression,
-                                    encryption=encryption,
-                                    checksum=checksum,
-                                    attributes=attrib,
-                                    path=manifest_path
-                                )
-                                
-                                stream = io.BytesIO()
-                                _read_entry_raw(e, f, stream, chunk_table=chunk_table)
-                                stream.seek(0)
-                                content = stream.read().decode('utf-8')
-                                
-                                paths = []
-                                for line in content.splitlines():
-                                    line = line.strip()
-                                    if line and not line.startswith('#'):
-                                        paths.append(line.replace('\\', '/'))
-                                
-                                return paths
-                            
-                            off += 48
-                        else:
-                            offset, csize, hash_upper, hash_lower = struct.unpack_from("<qqII", entry_table, off)
-                            combined = ((hash_upper & 0xFFFFFFFF) << 32) | (hash_lower & 0xFFFFFFFF)
-                            
-                            if combined == manifest_hash:
-
-                                e = PakEntry(
-                                    hash_lower=hash_lower,
-                                    hash_upper=hash_upper,
-                                    offset=offset,
-                                    compressed_size=csize,
-                                    decompressed_size=csize,
-                                    path=manifest_path
-                                )
-                                
-                                stream = io.BytesIO()
-                                _read_entry_raw(e, f, stream, chunk_table=chunk_table)
-                                stream.seek(0)
-                                content = stream.read().decode('utf-8')
-                                
-                                paths = []
-                                for line in content.splitlines():
-                                    line = line.strip()
-                                    if line and not line.startswith('#'):
-                                        paths.append(line.replace('\\', '/'))
-                                
-                                return paths
-                            
-                            off += 24
-                        
-            except (IOError, OSError, struct.error):
-
+                    stream = io.BytesIO()
+                    _read_entry_raw(pak.entries[0], f, stream, chunk_table=pak.chunk_table)
+                content = stream.getvalue().decode("utf-8")
+                return [
+                    line.replace("\\", "/")
+                    for raw_line in content.splitlines()
+                    if (line := raw_line.strip()) and not line.startswith("#")
+                ]
+            except (IOError, OSError, UnicodeDecodeError):
                 continue
-        
+
         return []
 
     def extract_files_to(self, output_directory: str, paths: Iterable[str], missing_files: Optional[List[str]] = None, progress_dialog=None) -> int:

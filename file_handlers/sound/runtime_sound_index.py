@@ -153,8 +153,8 @@ def _bank_sources(
 
 
 def _known_sound_paths(reader, profile) -> tuple[str, ...]:
-    searched = getattr(reader, "_searched_paths", {})
-    values = searched.values() if searched else reader.cached_paths(include_unknown=False)
+    registered = getattr(reader, "registered_paths", ())
+    values = registered or reader.cached_paths(include_unknown=False)
     return tuple(sorted({
         resource_key(path)
         for path in values
@@ -550,19 +550,8 @@ def _load_or_build(reader, profile, paths, signature, root) -> RuntimeSoundIndex
 
 def snapshot_pak_reader(reader):
     """Copy mutable lookup state before a worker reads from a shared PAK reader."""
-
-    snapshot = copy.copy(reader)
-    cache = getattr(reader, "_cache", None)
-    snapshot._cache = dict(cache) if cache is not None else None
-    keys = getattr(reader, "_cache_keys_set", None)
-    snapshot._cache_keys_set = set(keys) if keys is not None else None
-    snapshot._searched_paths = dict(getattr(reader, "_searched_paths", {}))
-    snapshot._path_to_hashes = {
-        path: list(hashes)
-        for path, hashes in getattr(reader, "_path_to_hashes", {}).items()
-    }
-    snapshot.pak_file_priority = tuple(getattr(reader, "pak_file_priority", ()))
-    return snapshot
+    snapshot = getattr(reader, "snapshot", None)
+    return snapshot() if callable(snapshot) else copy.copy(reader)
 
 
 def _prepare_runtime_sound_index(reader, profile, root) -> RuntimeSoundIndex | None:

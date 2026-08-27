@@ -178,7 +178,7 @@ class _ThumbnailTask(QRunnable):
 	def run(self):
 		result = QImage()
 		try:
-			if getattr(self.reader, "_cache", None) is None:
+			if not self.reader.cache_ready:
 				self.reader.cache_entries(assign_paths=True)
 			stream = self.reader.get_file(self.path)
 			data = stream.read() if stream else b""
@@ -268,9 +268,8 @@ class PakThumbnailProvider(QObject):
 		signature = digest.hexdigest()
 		if reader is self._source_reader and signature == self._signature:
 			return
-		thumbnail_reader = type(reader)() if reader is not None else None
+		thumbnail_reader = reader.fork() if reader is not None else None
 		if thumbnail_reader is not None:
-			thumbnail_reader.pak_file_priority = list(pak_paths)
 			thumbnail_reader.add_files(*known_paths)
 		resource_context = resource_context or ResourceResolutionContext()
 		self._resource_context = resource_context.with_pak_reader(thumbnail_reader)

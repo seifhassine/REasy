@@ -11,18 +11,20 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
-	QFileDialog, QLineEdit, QCheckBox, QInputDialog,
+	QFileDialog, QLineEdit, QCheckBox, QComboBox, QInputDialog,
 	QMessageBox, QTreeView, QListView, QAbstractItemView, QMenu, QApplication,
 	QSlider, QStackedWidget, QStyle, QToolButton
 )
 
 from settings import DEFAULT_SETTINGS, load_settings
+from app_config import GAMES
 
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from ui.project_manager.constants import BASE_DIR
 from ui.project_manager.pak_file_lists import (
-	choose_pak_list_file, find_suggested_pak_list_paths_for_directory, read_pak_list_file,
+	choose_pak_list_file, find_suggested_pak_list_paths_for_directory,
+	game_for_pak_list_path, read_pak_list_file,
 )
 from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
 from utils.resource_file_utils import resource_context_for_app
@@ -56,6 +58,17 @@ class PakBrowserDialog(QDialog):
 		self.dir_edit.setPlaceholderText(self.tr("Game directory (optional, for scan)"))
 		top.addWidget(self.dir_edit, 1)
 		top.addWidget(QPushButton(self.tr("Browse…"), clicked=self._choose_dir))
+		top.addWidget(QLabel(self.tr("Game:")))
+		self.game_combo = QComboBox(self)
+		self.game_combo.addItems(GAMES)
+		initial_game = str(
+			getattr(parent, "current_game", "")
+			or settings.get("game_version", "")
+			or GAMES[0]
+		)
+		if initial_game in GAMES:
+			self.game_combo.setCurrentText(initial_game)
+		top.addWidget(self.game_combo)
 		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"), self)
 		self.ignore_mods_cb.setChecked(True)
 		self.ignore_mods_cb.toggled.connect(self._on_ignore_mods_toggled)
@@ -64,7 +77,7 @@ class PakBrowserDialog(QDialog):
 
 		row2 = QHBoxLayout()
 		lay.addLayout(row2)
-		row2.addWidget(QLabel(self.tr("PAK files (ordered):")))
+		row2.addWidget(QLabel(self.tr("PAK files:")))
 		row2.addStretch(1)
 		row2.addWidget(QPushButton(self.tr("Load .list…"), clicked=self._load_list_file))
 		row2.addWidget(QPushButton(self.tr("Add PAK…"),   clicked=self._add_paks))
@@ -175,6 +188,7 @@ class PakBrowserDialog(QDialog):
 		self._cached_show_valid = False
 		self._cached_show_unknown = False
 		self._cache_outdated = False
+		self.game_combo.currentTextChanged.connect(self._on_resolution_game_changed)
 		self._scanned_root = ""
 		self._loading_depth = 0
 		self.loading_label = QLabel(self)
@@ -247,6 +261,15 @@ class PakBrowserDialog(QDialog):
 			self._scan_dir()
 			return
 		self._refresh_index()
+
+	def _on_resolution_game_changed(self, _game: str):
+		self._thumbnail_provider.cancel_pending()
+		self._cached_reader = None
+		self._valid_paths = set()
+		self._cache_outdated = True
+		if self._selected_paks():
+			with self._loading(self.tr("Applying game PAK rules...")):
+				self._refresh_index()
 
 	def _add_paks(self):
 		files, _ = QFileDialog.getOpenFileNames(self, self.tr("Add PAK files"), filter=self.tr("PAK files (*.pak)"))
@@ -581,10 +604,10 @@ class PakBrowserDialog(QDialog):
 			self._cache_outdated = False
 			return None
 
+		game = self.game_combo.currentText().strip()
 		r = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
-		if r is None or r.pak_file_priority != paks or self._cache_outdated:
-			r = CachedPakReader()
-			r.pak_file_priority = paks
+		if r is None or not r.matches_source(paks, game=game) or self._cache_outdated:
+			r = CachedPakReader.from_paks(paks, game=game)
 			if self._base_paths:
 				r.add_files(*self._base_paths)
 			self._cached_reader = r
@@ -612,21 +635,11 @@ class PakBrowserDialog(QDialog):
 
 	@staticmethod
 	def _ensure_full_cache(reader, known):
-		if reader._cache is None:
-			reader.reset_file_list()
-			if known:
-				reader.add_files(*known)
-		if reader._cache is None or not getattr(reader, "_cache_complete", True):
-			reader.cache_entries(assign_paths=False)
-		if known:
-			reader.assign_paths(known)
+		reader.prepare(known, full=True)
 
 	@staticmethod
 	def _ensure_validation_cache(reader, known):
-		if reader._cache is None:
-			reader.cache_entries_for_paths(known)
-		elif getattr(reader, "_cache_complete", True):
-			reader.assign_paths(known)
+		reader.prepare(known, full=False)
 
 	def _refresh_index(self):
 		paks = self._selected_paks()
@@ -688,6 +701,14 @@ class PakBrowserDialog(QDialog):
 			except Exception as e:
 				QMessageBox.critical(self, self.tr("Read failed"), str(e))
 				return
+
+		list_game = game_for_pak_list_path(path)
+		if list_game and list_game != self.game_combo.currentText():
+			was_blocked = self.game_combo.blockSignals(True)
+			try:
+				self.game_combo.setCurrentText(list_game)
+			finally:
+				self.game_combo.blockSignals(was_blocked)
 
 		with self._loading(self.tr("Resolving list entries...")):
 			manifest_paths = self._auto_merge_manifest()

@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 )
 
 from file_handlers.msg.msg_handler import MsgHandler
+from app_config import GAMES
 from utils.binary_search import create_binary_matcher, create_search_patterns
 
 PAK_SEARCH_TITLE = QT_TRANSLATE_NOOP("DirectorySearch", "PAK Search")
@@ -223,6 +224,24 @@ def ask_ignore_mod_paks(parent):
     return selected == choices[1]
 
 
+def ask_pak_game(parent):
+    settings = getattr(parent, "settings", {})
+    initial = str(
+        getattr(parent, "current_game", "")
+        or (settings.get("game_version", "") if isinstance(settings, dict) else "")
+        or GAMES[0]
+    )
+    selected, ok = QInputDialog.getItem(
+        parent,
+        QCoreApplication.translate("DirectorySearch", "PAK Search Options"),
+        QCoreApplication.translate("DirectorySearch", "Game:"),
+        list(GAMES),
+        GAMES.index(initial) if initial in GAMES else 0,
+        False,
+    )
+    return selected if ok else None
+
+
 def search_items_with_progress(
     parent,
     items,
@@ -369,7 +388,15 @@ def search_directory_common(parent, dpath, matcher, ptitle, rtext, max_bytes):
     )
 
 
-def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks=False):
+def search_pak_common(
+    parent,
+    directory,
+    matcher,
+    ptitle,
+    rtext,
+    ignore_mod_paks=False,
+    game=None,
+):
     """Search files contained in all detected PAKs in a directory."""
     from file_handlers.pak import scan_pak_files
     from file_handlers.pak.reader import CachedPakReader
@@ -383,8 +410,7 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         )
         return
 
-    reader = CachedPakReader()
-    reader.pak_file_priority = list(paks)
+    reader = CachedPakReader.from_paks(paks, game=game)
     reader.cache_entries(assign_paths=False)
     entry_paths = sorted(reader.cached_paths(include_unknown=True))
 
@@ -413,10 +439,10 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         if entry_data['kind'] == 'path':
             return entry_data['value']
         h = int(entry_data['value'], 16)
-        hit = reader._cache.get(h) if reader._cache else None
-        if hit and hit[1].path:
+        path = reader.cached_path_for_hash(h)
+        if path:
             entry_data['kind'] = 'path'
-            entry_data['value'] = hit[1].path
+            entry_data['value'] = path
             return entry_data['value']
         return f"__Unknown/{entry_data['value']}"
 
@@ -437,8 +463,9 @@ def search_pak_common(parent, directory, matcher, ptitle, rtext, ignore_mod_paks
         if not list_path:
             return
         try:
-            with open(list_path, 'r', encoding='utf-8', errors='ignore') as f:
-                paths = [ln.strip().replace('\\', '/') for ln in f if ln.strip()]
+            from ui.project_manager.pak_file_lists import read_pak_list_file
+
+            paths = read_pak_list_file(list_path)
             updated = reader.assign_paths(paths)
             for i in range(result_list.count()):
                 item = result_list.item(i)
@@ -540,6 +567,9 @@ def search_directory_for_type(parent, search_type, source_mode=None):
             ignore_mod_paks = ask_ignore_mod_paks(parent)
             if ignore_mod_paks is None:
                 return
+            game = ask_pak_game(parent)
+            if game is None:
+                return
             search_pak_common(
                 parent,
                 directory,
@@ -547,6 +577,7 @@ def search_directory_for_type(parent, search_type, source_mode=None):
                 progress_title,
                 rtext,
                 ignore_mod_paks=ignore_mod_paks,
+                game=game,
             )
         else:
             progress_title = QCoreApplication.translate(

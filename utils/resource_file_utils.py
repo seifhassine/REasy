@@ -3,6 +3,8 @@ from dataclasses import dataclass, replace
 from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
+from app_config import GAME_NATIVE_PATHS
+
 
 _PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, dict[str, list[str]]]" = WeakKeyDictionary()
 _DIR_ENTRIES_CACHE: dict[str, tuple[str, ...]] = {}
@@ -131,22 +133,12 @@ def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool =
 
 
 def _build_pak_path_lookup(pak_cached_reader) -> dict[str, list[str]]:
-    paths = list(pak_cached_reader.cached_paths(include_unknown=False))
-
-    # Lightweight readers also retain the loaded file-list names. Include any
-    # whose hashes are present so a named path remains discoverable even when
-    # the entry-name cache was populated or refreshed after our first lookup.
-    path_hashes = getattr(pak_cached_reader, "_path_to_hashes", None)
-    cache_keys = getattr(pak_cached_reader, "_cache_keys_set", None)
-    if isinstance(path_hashes, dict):
-        seen = set(paths)
-        for path, hashes in path_hashes.items():
-            if path in seen:
-                continue
-            if cache_keys is not None and not any(value in cache_keys for value in hashes):
-                continue
-            paths.append(path)
-            seen.add(path)
+    cached_known_paths = getattr(pak_cached_reader, "cached_known_paths", None)
+    paths = list(
+        cached_known_paths()
+        if callable(cached_known_paths)
+        else pak_cached_reader.cached_paths(include_unknown=False)
+    )
 
     lookup: dict[str, list[str]] = {}
     for original_path in paths:
@@ -290,15 +282,7 @@ def _read_pak_path(path: str, pak_cached_reader) -> Optional[Tuple[str, bytes]]:
 
 
 def get_path_prefix_for_game(game: str) -> str:
-    try:
-        from ui.project_manager.constants import EXPECTED_NATIVE
-        
-        if game and game in EXPECTED_NATIVE:
-            return "/".join(EXPECTED_NATIVE[game])
-    except Exception:
-        pass
-    
-    return "natives/stm"
+    return "/".join(GAME_NATIVE_PATHS.get(game, ("natives", "stm")))
 
 
 def resolve_resource_data(

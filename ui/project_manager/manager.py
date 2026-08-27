@@ -23,10 +23,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from app_config import GAMES
+from app_config import GAMES, GAME_NATIVE_PATHS
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
-from file_handlers.pak.utils import filepath_hash, guess_extension_from_header
+from file_handlers.pak.utils import guess_extension_from_header
 from services.file_operations import FileOperationError, FolderFileOperations
 from tools.fluffy_exporter import create_fluffy_zip
 from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
@@ -41,7 +41,7 @@ from .bookmarks import (
     project_bookmarks_path,
     resolve_filesystem_target,
 )
-from .constants import EXPECTED_NATIVE, PROJECTS_ROOT
+from .constants import PROJECTS_ROOT
 from .delegate import _ActionsDelegate, _PakActionsDelegate
 from .dock_chrome import DockTitleBar, SideTab
 from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
@@ -121,7 +121,7 @@ class _ProjectFilesProxy(QSortFilterProxyModel):
         model = self.sourceModel()
         if isinstance(model, QFileSystemModel):
             name = model.fileName(model.index(source_row, 0, source_parent))
-            if name in (CONFIG_NAME, BOOKMARKS_PROJECT_NAME):
+            if name in (CONFIG_NAME, BOOKMARKS_PROJECT_NAME, ".reasy"):
                 return False
         return True
 
@@ -237,7 +237,7 @@ class ProjectManager(QDockWidget):
         return self._open_pak_path_in_editor(pak_path)
 
     def _expected_native(self):        
-        return EXPECTED_NATIVE.get(self.current_game or "", ())
+        return GAME_NATIVE_PATHS.get(self.current_game or "", ())
     
     def __init__(self, app_window, unpacked_root: str | None = None):
         super().__init__(self.tr("Project Browser"), app_window)
@@ -762,7 +762,7 @@ class ProjectManager(QDockWidget):
 
 
     def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
-        return EXPECTED_NATIVE.get(game or (self.current_game or ""), ())
+        return GAME_NATIVE_PATHS.get(game or (self.current_game or ""), ())
 
     def has_valid_paks(self, path: str | None, ignore_mod_paks: bool | None = None) -> bool:
         if not path:
@@ -1165,32 +1165,13 @@ class ProjectManager(QDockWidget):
 
             r = self._ensure_project_pak_reader(full_cache=False)
 
-            cache_keys = r._cache_keys_set or set()
-            path_hashes = r._path_to_hashes
-
-            def path_is_cached(path: str) -> bool:
-                hashes = path_hashes.get(path)
-                if hashes is None:
-                    return filepath_hash(path) in cache_keys
-                return any(h in cache_keys for h in hashes)
-
             display = sorted(
                 p for p in self._pak_base_paths
-                if path_is_cached(p)
+                if r.contains_cached(p)
             )
             self._pak_all_paths = display
             pop = set(display)
-            try:
-                if (
-                    self._pak_cached_reader
-                    and self._pak_cached_reader._cache
-                    and getattr(self._pak_cached_reader, "_cache_complete", True)
-                ):
-                    for h, (_pak, e) in self._pak_cached_reader._cache.items():
-                        if e.path is None:
-                            pop.add(f"__Unknown/{h:016X}")
-            except Exception:
-                pass
+            pop.update(r.cached_unknown_paths())
             self._pak_population_paths = sorted(pop)
             self._build_pak_tree_model(display)
             self._apply_pak_filter_now()
@@ -1205,25 +1186,11 @@ class ProjectManager(QDockWidget):
     def _ensure_project_pak_reader(self, *, full_cache: bool = False) -> CachedPakReader:
         r = self._pak_cached_reader if isinstance(self._pak_cached_reader, CachedPakReader) else None
         selected = list(self._pak_selected_paks)
-        if not r:
-            r = CachedPakReader()
-        if r.pak_file_priority != selected:
-            r = CachedPakReader()
-        r.pak_file_priority = selected
+        if r is None or not r.matches_source(selected, game=self.current_game):
+            r = CachedPakReader.from_paks(selected, game=self.current_game)
         base_paths = list(self._pak_base_paths or [])
-        if full_cache:
-            if r._cache is None:
-                r.reset_file_list()
-                if base_paths:
-                    r.add_files(*base_paths)
-            if r._cache is None or not getattr(r, "_cache_complete", True):
-                r.cache_entries(assign_paths=False)
-        elif r._cache is None:
-            r.reset_file_list()
-            if base_paths:
-                r.cache_entries_for_paths(base_paths)
-            else:
-                r.cache_entries(assign_paths=False)
+        if not r.cache_ready or (full_cache and not r.cache_complete):
+            r.prepare(base_paths, full=full_cache)
         self._pak_cached_reader = r
         return r
 
@@ -1241,7 +1208,7 @@ class ProjectManager(QDockWidget):
                 self._pak_cached_reader = state["reader"]
             return self.unpacked_dir or "", self._pak_cached_reader
         state = self._project_pak_states.get(key)
-        if not getattr((state or {}).get("reader"), "_cache", None):
+        if not getattr((state or {}).get("reader"), "cache_ready", False):
             state = self._load_project_pak_state(project_dir)
         return (state or {}).get("unpacked_dir", ""), (state or {}).get("reader")
 
@@ -1252,13 +1219,13 @@ class ProjectManager(QDockWidget):
         unpacked_dir = str(_safe_path(cfg.get("unpacked_dir")) or "")
         if not pak_dir or not list_path:
             return {}
-        with open(list_path, "r", encoding="utf-8") as f:
-            base_paths = sorted({line.strip().replace("\\", "/").lower() for line in f if line.strip()})
+        base_paths = read_pak_list_file(list_path)
         ignore_mods = self.pak_ignore_mods_cb.isChecked() if self._path_key(project_dir) == self._path_key(self.project_dir) else True
-        reader = CachedPakReader()
         paks = scan_pak_files(pak_dir, ignore_mod_paks=ignore_mods)
-        reader.pak_file_priority = paks
-        reader.cache_entries_for_paths(base_paths)
+        reader = CachedPakReader.from_paks(
+            paks,
+            game=cfg.get("game") or self.current_game,
+        ).prepare(base_paths)
         state = {
             "pak_dir": pak_dir,
             "list_path": list_path,
@@ -1857,7 +1824,7 @@ class ProjectManager(QDockWidget):
 
         def _upd(idx: int):
             g = combo.itemText(idx)
-            hint = "/".join(EXPECTED_NATIVE.get(g, ()))
+            hint = "/".join(GAME_NATIVE_PATHS.get(g, ()))
             info_lbl.setText(self.tr(
                 "Expected sub‑folder for <b>{game}</b>: <code>{folder}</code>"
                 "<br>Note: Make sure your directory contains that folder."
