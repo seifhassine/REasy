@@ -56,7 +56,7 @@ def get_handler_for_data(data: bytes, filename: str = ""):
     if re.search(r"\.mov\.\d+(?:\.[^.]+)*$", fn):
         from file_handlers.mov.mov_handler import MovHandler
         return MovHandler()
-    if re.search(r"\.(?:wcc|wcp|wcst|wgs|wss)(?:\.\d+)?(?:\.[^.]+)*$", fn):
+    if re.search(r"\.(?:wcc|wcp|wcst|wgs|wss|wcsw|wcss|wcsa|wcsf)(?:\.\d+)?(?:\.[^.]+)*$", fn):
         from file_handlers.wcc.wcc_handler import WccHandler
         return WccHandler()
     for handler_class in _handler_classes():

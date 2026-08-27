@@ -45,7 +45,7 @@ REasy GUI is currently available in English and Chinese.
 | MDF       | ✅       |    Most titles   |
 | BNK/PCK       | ✅       |Main titles moddable, rest are read-only|
 | WEL       | ✅       |    Most titles|
-| WCC/WCP/WCST/WGS/WSS       | ✅       |    Most titles |
+| WCC/WCP/WCST/WGS/WSS/WCSW/WCSS/WCSA/WCSF       | ✅       |    Most titles |
 | UVS       | ✅       |    Most titles   |
 | CLIP/TML/UCURVE       | ✅       |    Most titles (up to Pragmata)  |
 | MOTLIST       | DMC5 Previewing Only       |    DMC5  |
