@@ -364,6 +364,14 @@ class CachedPakReader(PakReader):
                     entry.path = self._searched_paths.get(entry_hash)
                 cache[entry_hash] = (pak, entry)
 
+            if pak.remap_pairs:
+                for stored_hash, public_hash in pak.remap_pairs:
+                    holder = cache.get(stored_hash) or cache.get(public_hash)
+                    if holder is None:
+                        continue
+                    cache.setdefault(public_hash, holder)
+                    cache.setdefault(stored_hash, holder)
+
         self.resolution_stats = {
             "readers": len(ordered),
             "gated_hashes": len(gated_hashes),

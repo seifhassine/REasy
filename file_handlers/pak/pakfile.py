@@ -21,6 +21,7 @@ PAK_SUPPORTED_FLAGS = (
     | PAK_FLAG_ENTRY_TABLE_KEY
     | PAK_FLAG_HEADER_MARKER
     | PAK_FLAG_CHUNK_TABLE
+    | PAK_FLAG_HASH_REMAP
 )
 _HEADER_SKIP_BY_FLAG = (
     (PAK_FLAG_HEADER_MARKER, 4),
@@ -112,6 +113,8 @@ class PakFile:
         self._fs: Optional[BinaryIO] = None
         self.chunk_table: tuple[PakChunkEntry, ...] = ()
         self.resolution_info: Optional["PakReaderInfo"] = None
+        self.remap_pairs: List[tuple[int, int]] = []
+        self.remap_stored_to_public: dict[int, int] = {}
 
 
     def read_contents(self, f: BinaryIO, expected_paths: Optional[dict[int, str]] = None) -> None:
@@ -125,11 +128,7 @@ class PakFile:
         if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
             raise IOError(f"Unsupported PAK version {maj}.{minr}")
 
-        if (features & PAK_FLAG_HASH_REMAP) != 0:
-            raise IOError(
-                f"PAK hash-remap feature 0x40 is not yet supported: {self.filepath}"
-            )
-        unknown_flags = features & ~(PAK_SUPPORTED_FLAGS | PAK_FLAG_HASH_REMAP)
+        unknown_flags = features & ~PAK_SUPPORTED_FLAGS
         if unknown_flags:
             raise IOError(f"Unsupported PAK flags {features} for file {self.filepath}")
         if _has_embedded_child_footer(f):
@@ -140,6 +139,8 @@ class PakFile:
         self.availability_entries.clear()
         self.has_attr_bit20 = False
         self.chunk_table = ()
+        self.remap_pairs.clear()
+        self.remap_stored_to_public.clear()
         if file_count == 0:
             return
 
@@ -150,6 +151,21 @@ class PakFile:
 
 
         _skip_optional_header_sections(f, features)
+
+        if (features & PAK_FLAG_HASH_REMAP) != 0:
+            remap_header = f.read(8)
+            if len(remap_header) != 8:
+                raise IOError("Unexpected EOF reading PAK remap header")
+            remap_count = struct.unpack("<Q", remap_header)[0]
+            remap_raw = f.read(remap_count * 16)
+            if len(remap_raw) != remap_count * 16:
+                raise IOError("Unexpected EOF reading PAK remap pairs")
+            for i in range(remap_count):
+                stored_hash, public_hash = struct.unpack_from(
+                    "<QQ", remap_raw, i * 16
+                )
+                self.remap_pairs.append((stored_hash, public_hash))
+                self.remap_stored_to_public.setdefault(stored_hash, public_hash)
 
         if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
             key = f.read(128)
@@ -183,7 +199,7 @@ class PakFile:
                 )
                 self.has_attr_bit20 = self.has_attr_bit20 or (attrib & 0x20) != 0
                 if expected_paths is not None:
-                    p = expected_paths.get(e.combined_hash)
+                    p = self._resolve_expected_path(expected_paths, e.combined_hash)
                     if p is None:
                         continue
                     e.path = p
@@ -202,12 +218,25 @@ class PakFile:
                     decompressed_size=csize,
                 )
                 if expected_paths is not None:
-                    p = expected_paths.get(e.combined_hash)
+                    p = self._resolve_expected_path(expected_paths, e.combined_hash)
                     if p is None:
                         continue
                     e.path = p
                 self.entries.append(e)
 
+
+
+    def _resolve_expected_path(
+        self, expected_paths: dict[int, str], combined_hash: int
+    ) -> Optional[str]:
+        path = expected_paths.get(combined_hash)
+        if path is not None:
+            return path
+        if self.remap_stored_to_public:
+            public_hash = self.remap_stored_to_public.get(combined_hash)
+            if public_hash is not None:
+                path = expected_paths.get(public_hash)
+        return path
 
 
 def _read_chunk_table(f: BinaryIO) -> tuple[PakChunkEntry, ...]:
@@ -224,14 +253,11 @@ def _read_chunk_table(f: BinaryIO) -> tuple[PakChunkEntry, ...]:
         raise IOError("Unexpected EOF reading PAK chunk table")
 
     chunks: List[PakChunkEntry] = []
-    high = 0
-    prev_offset = 0
     for i in range(chunk_count):
-        offset32, size = struct.unpack_from("<II", table_raw, i * 8)
-        if i > 0 and offset32 < prev_offset:
-            high += 1 << 32
-        chunks.append(PakChunkEntry(offset=high | offset32, size=size >> CHUNK_SIZE_SHIFT))
-        prev_offset = offset32
+        offset32, size_word = struct.unpack_from("<II", table_raw, i * 8)
+        offset = offset32 | ((size_word & 0x3FF) << 32)
+        size = size_word >> CHUNK_SIZE_SHIFT
+        chunks.append(PakChunkEntry(offset=offset, size=size))
     return tuple(chunks)
 
 def _is_chunked_entry(entry: PakEntry, chunk_table: Sequence[PakChunkEntry]) -> bool:
@@ -365,10 +391,19 @@ def _read_entry_raw(
             else:
                 if zstd_dctx is None:
                     raise RuntimeError("zstandard module is required for chunked resource decompression")
-                out_stream.write(zstd_dctx.decompress(payload))
+                out_stream.write(
+                    zstd_dctx.decompress(
+                        payload, max_output_size=CHUNK_UNCOMPRESSED_SIZE * 2
+                    )
+                )
             remaining -= chunk.size
             chunk_id += 1
 
+        if out_stream.tell() < int(entry.decompressed_size):
+            raise IOError(
+                "Chunked entry uses an unsupported tail codec: "
+                f"hash {entry.combined_hash:016X}"
+            )
         out_stream.truncate(int(entry.decompressed_size))
         out_stream.seek(0, io.SEEK_END)
         return
