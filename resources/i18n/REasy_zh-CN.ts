@@ -11787,6 +11787,11 @@ Do you want to continue parsing this file?</source>
         <translation>保存时创建备份</translation>
     </message>
     <message>
+        <location filename="../../ui/settings_dialog.py" line="158"/>
+        <source>Remember workspace between sessions</source>
+        <translation>记住上次的工作区</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings_dialog.py" line="151"/>
         <source>Show confirmation prompts for RSZ actions</source>
         <translation>RSZ 操作前显示确认提示</translation>

@@ -155,6 +155,12 @@ class SettingsDialog(QDialog):
         self.backup_box.setChecked(self.settings.get("backup_on_save", True))
         general_layout.addWidget(self.backup_box)
 
+        self.save_workspace_box = QCheckBox(self.tr("Remember workspace between sessions"))
+        self.save_workspace_box.setChecked(
+            self.settings.get("save_workspace_on_close", True)
+        )
+        general_layout.addWidget(self.save_workspace_box)
+
         self.confirmation_prompt_box = QCheckBox(
             self.tr("Show confirmation prompts for RSZ actions")
         )
@@ -384,6 +390,7 @@ class SettingsDialog(QDialog):
         self.settings["show_debug_console"] = self.debug_box.isChecked()
         self.settings["show_rsz_advanced"] = self.rsz_advanced_box.isChecked()
         self.settings["backup_on_save"] = self.backup_box.isChecked()
+        self.settings["save_workspace_on_close"] = self.save_workspace_box.isChecked()
         self.settings["confirmation_prompt"] = self.confirmation_prompt_box.isChecked()
         self.settings["verify_rsz_crc_on_open"] = self.verify_rsz_crc_on_open_box.isChecked()
         self.settings["keyboard_shortcuts"] = self.shortcuts

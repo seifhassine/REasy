@@ -11737,6 +11737,11 @@ Do you want to continue parsing this file?</source>
         <translation>Создавать резервную копию при сохранении</translation>
     </message>
     <message>
+        <location filename="../../ui/settings_dialog.py" line="158"/>
+        <source>Remember workspace between sessions</source>
+        <translation>Запоминать рабочее пространство между запусками</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings_dialog.py" line="151"/>
         <source>Show confirmation prompts for RSZ actions</source>
         <translation>Показывать запросы подтверждения для действий RSZ</translation>

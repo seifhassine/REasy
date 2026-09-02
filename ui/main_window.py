@@ -950,7 +950,9 @@ class REasyEditorApp(QMainWindow):
 
     def _restore_window_layout(self) -> None:
         workbench = self.settings.get("workbench", {})
-        if not isinstance(workbench, dict):
+        if not isinstance(workbench, dict) or not self.settings.get(
+            "save_workspace_on_close", True
+        ):
             return
         geometry = self._decode_window_bytes(workbench.get("window_geometry"))
         state = self._decode_window_bytes(workbench.get("window_state"))
@@ -964,7 +966,11 @@ class REasyEditorApp(QMainWindow):
             return
         self._workbench_session_restored = True
         workbench = self.settings.get("workbench", {})
-        if not isinstance(workbench, dict) or not workbench.get("restore_session", True):
+        if (
+            not isinstance(workbench, dict)
+            or not workbench.get("restore_session", True)
+            or not self.settings.get("save_workspace_on_close", True)
+        ):
             return
         snapshot = workbench.get("session", {})
         if not isinstance(snapshot, dict):
@@ -1090,8 +1096,11 @@ class REasyEditorApp(QMainWindow):
         if not self._confirm_tabs_close(list(self.tabs.values())):
             event.ignore()
             return
-        self._save_workbench_state()
-        if not self.settings.get("workbench", {}).get("restore_session", True):
+        if self.settings.get("save_workspace_on_close", True):
+            self._save_workbench_state()
+            if not self.settings.get("workbench", {}).get("restore_session", True):
+                self._record_tabs_closed_on_shutdown()
+        else:
             self._record_tabs_closed_on_shutdown()
         self._stop_ai_chat_visibility_tracking()
         if hasattr(self, "ai_chat_dock"):

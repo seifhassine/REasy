@@ -11791,6 +11791,11 @@ Do you want to continue parsing this file?</source>
         <translation>Crear una copia de seguridad al guardar</translation>
     </message>
     <message>
+        <location filename="../../ui/settings_dialog.py" line="158" />
+        <source>Remember workspace between sessions</source>
+        <translation>Recordar el espacio de trabajo entre sesiones</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings_dialog.py" line="151" />
         <source>Show confirmation prompts for RSZ actions</source>
         <translation>Mostrar mensajes de confirmación para acciones RSZ</translation>
