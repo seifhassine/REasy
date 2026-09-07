@@ -76,6 +76,7 @@ class MdfClipboard:
             "mmtr_path": header.mmtr_path,
             "shader_type": int(header.shader_type),
             "material_flags": int(header.material_flags),
+            "params_size": int(mat.parameter_layout_size or header.params_size),
         }
         if file_version == 6:
             header_data["ukn_re7"] = int(header.ukn_re7)
@@ -84,6 +85,7 @@ class MdfClipboard:
             header_data["shaderLODNum"] = int(header.shaderLODNum)
         if file_version >= 51:
             header_data["ukn"] = int(header.ukn)
+            header_data["parameter_value_count"] = int(header.parameter_value_count)
 
         textures = [
             {
@@ -138,12 +140,14 @@ class MdfClipboard:
         header.mmtr_path = str(header_info.get("mmtr_path", ""))
         header.shader_type = int(header_info.get("shader_type", 0))
         header.material_flags = int(header_info.get("material_flags", 0))
+        header.params_size = int(header_info.get("params_size", 0))
         if target_version == 6:
             header.ukn_re7 = int(header_info.get("ukn_re7", 0))
         if target_version >= 31:
             header.BakeTextureArraySize = int(header_info.get("BakeTextureArraySize", 0))
             header.shaderLODNum = int(header_info.get("shaderLODNum", 0))
         if target_version >= 51:
+            header.parameter_value_count = int(header_info.get("parameter_value_count", 0))
             header.ukn = int(header_info.get("ukn", header_info.get("pre_property_headers_offset_51", header_info.get("ukn_unsigned_long_51", 0))))
 
         textures: List[TexHeader] = []
@@ -169,6 +173,7 @@ class MdfClipboard:
             while len(values) < 4:
                 values.append(0.0)
             param.parameter = tuple(float(v) for v in values[:4])
+            param._layout_locked = True
             parameters.append(param)
 
         gpu_buffers = []
@@ -202,5 +207,6 @@ class MdfClipboard:
         mat.parameters = parameters
         mat.gpu_buffers = gpu_buffers if target_version >= 19 else []
         mat.shader_lod_redirects = shader_lod_redirects if target_version >= 31 else []
+        mat.parameter_layout_size = int(header.params_size)
         return mat
 

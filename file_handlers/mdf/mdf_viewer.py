@@ -517,7 +517,7 @@ class MdfViewer(QWidget):
 	def _on_ukn_changed(self, text: str):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
-		if not m or not rows:
+		if not m or not rows or m.layout == "onimusha_wots":
 			return
 		i = rows[0].row()
 		text = (text or "").strip()
@@ -882,9 +882,13 @@ class MdfViewer(QWidget):
 			self.bake_texture_spin.setVisible(False)
 			self.bake_texture_spin.blockSignals(False)
 
+		onimusha_layout = m.layout == "onimusha_wots"
+		self.ukn_edit.setReadOnly(onimusha_layout)
 		if version == 6 or version >= 51:
-			self.ukn_edit.blockSignals(True)
-			if version == 6:
+			if onimusha_layout:
+				self.ukn_edit.setText(str(md.header.parameter_value_count))
+				self.ukn_label.setText(self.tr("Parameter float slots"))
+			elif version == 6:
 				self.ukn_edit.setText(str(md.header.ukn_re7))
 				self.ukn_label.setText(self.tr("Unknown RE7 64"))
 			else:

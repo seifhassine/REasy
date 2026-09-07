@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import struct
 from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
@@ -48,6 +49,7 @@ class MatHeader:
     ukn: int = 0  # >= 51
     params_size: int = 0
     param_count: int = 0
+    parameter_value_count: int = 0  # Onimusha WotS v51: unaligned float-buffer length
     tex_count: int = 0
     gpbf_name_count: int = 0  # >= 19
     gpbf_data_count: int = 0  # >= 19
@@ -66,7 +68,7 @@ class MatHeader:
     _orig_param_count: int = field(default=0, init=False, repr=False)
     _orig_params_size: int = field(default=0, init=False, repr=False)
 
-    def read(self, h: BinaryHandler, version: int):
+    def read(self, h: BinaryHandler, version: int, layout: str = "standard"):
         self._pos = h.tell
         name_off = h.read_int64()
         self.mat_name_hash = h.read_uint32()
@@ -74,6 +76,8 @@ class MatHeader:
             self.ukn_re7 = h.read_uint64()
         self.params_size = h.read_int32()
         self.param_count = h.read_int32()
+        if layout == "onimusha_wots":
+            self.parameter_value_count = h.read_uint32()
         self.tex_count = h.read_int32()
         self._orig_param_count = self.param_count
         self._orig_params_size = self.params_size
@@ -86,7 +90,7 @@ class MatHeader:
         self.shader_type = h.read_int32()
         if version >= 31:
             self.material_flags = h.read_uint64()
-            if version >= 51:
+            if version >= 51 and layout != "onimusha_wots":
                 self.ukn = h.read_uint64()
             self.shaderLODNum = h.read_uint32()
         else:
@@ -109,7 +113,7 @@ class MatHeader:
             with h.seek_jump_back(mmtr_off):
                 self.mmtr_path = h.read_wstring()
 
-    def write(self, h: BinaryHandler, version: int):
+    def write(self, h: BinaryHandler, version: int, layout: str = "standard"):
         self._pos = h.tell
         h.write_offset_wstring(self.mat_name or "")
         self.mat_name_hash = murmur3_hash_utf16le(self.mat_name or "")
@@ -118,6 +122,8 @@ class MatHeader:
             h.write_uint64(self.ukn_re7)
         h.write_int32(self.params_size)
         h.write_int32(self.param_count)
+        if layout == "onimusha_wots":
+            h.write_uint32(self.parameter_value_count)
         h.write_int32(self.tex_count)
         if version >= 19:
             h.write_int32(self.gpbf_name_count)
@@ -127,7 +133,7 @@ class MatHeader:
         h.write_int32(self.shader_type)
         if version >= 31:
             h.write_uint64(self.material_flags)
-            if version >= 51:
+            if version >= 51 and layout != "onimusha_wots":
                 h.write_uint64(self.ukn)
             h.write_uint32(self.shaderLODNum)
         else:
@@ -141,7 +147,7 @@ class MatHeader:
         if version >= 31:
             h.write_int64(self.shaderLODRedirects_offset)
 
-    def rewrite(self, h: BinaryHandler, version: int):
+    def rewrite(self, h: BinaryHandler, version: int, layout: str = "standard"):
         cur = self._pos
         cur += 8  # name off
         cur += 4  # name hash
@@ -152,6 +158,9 @@ class MatHeader:
         cur += 4
         h.write_at(cur, '<i', self.param_count)
         cur += 4
+        if layout == "onimusha_wots":
+            h.write_at(cur, '<I', self.parameter_value_count)
+            cur += 4
         h.write_at(cur, '<i', self.tex_count)
         cur += 4
         # gpbf counts (>=19)
@@ -170,7 +179,7 @@ class MatHeader:
         if version >= 31:
             cur += 12
             # v51 unknown long
-            if version >= 51:
+            if version >= 51 and layout != "onimusha_wots":
                 cur += 8
         else:
             cur += 4
@@ -251,6 +260,7 @@ class ParamHeader:
     _pos: int = field(default=0, init=False, repr=False)
     _orig_rel_offset: int = field(default=0, init=False, repr=False)
     _orig_component_count: int = field(default=0, init=False, repr=False)
+    _layout_locked: bool = field(default=False, init=False, repr=False)
 
     def read(self, h: BinaryHandler, version: int):
         self._pos = h.tell
@@ -341,6 +351,7 @@ class MatData:
     parameters: List[ParamHeader] = field(default_factory=list)
     gpu_buffers: List[Tuple[GpbfHeader, GpbfHeader]] = field(default_factory=list)
     shader_lod_redirects: List[Tuple[List[int], List[int]]] = field(default_factory=list)
+    parameter_layout_size: int = field(default=0, repr=False)
 
 
 class MdfFile:
@@ -350,6 +361,7 @@ class MdfFile:
         self.header = MdfHeader()
         self.materials: List[MatData] = []
         self.file_version: int = 13
+        self.layout: str = "standard"
 
     @staticmethod
     def can_handle(data: bytes) -> bool:
@@ -366,6 +378,8 @@ class MdfFile:
         self.header.read(h)
         if self.header.magic != MDF_MAGIC:
             raise ValueError("Not an MDF file")
+        if self.header.material_count < 0:
+            raise ValueError("Negative MDF material count")
 
         version = resource_version_from_path(file_path, self.EXTENSION)
         if version is None:
@@ -377,11 +391,42 @@ class MdfFile:
 
         version = self.file_version
 
+        if version == 51 and self.header.material_count:
+            # The extension is shared by two incompatible ABIs. Validate the
+            # complete material-header array, independent of game/path names.
+            candidates = []
+            for layout, stride, pointer_start, texture_count in (
+                ("standard", 108, 60, 20),
+                ("onimusha_wots", 104, 56, 24),
+            ):
+                end = 16 + stride * self.header.material_count
+                if end > len(data):
+                    continue
+                for base in range(16, end, stride):
+                    name = struct.unpack_from('<Q', data, base)[0]
+                    count = struct.unpack_from('<I', data, base + texture_count)[0]
+                    param_size, param_count = struct.unpack_from('<2I', data, base + 12)
+                    params, textures, buffers, values, mmtr, lod = struct.unpack_from(
+                        '<6Q', data, base + pointer_start)
+                    spans = ((name, 2), (mmtr, 2), (params, param_count * 24),
+                             (textures, count * 32), (values, param_size),
+                             (buffers, 0), (lod, 0))
+                    if any(not (end <= offset <= offset + size <= len(data)
+                                or offset == size == 0) for offset, size in spans):
+                        break
+                else:
+                    candidates.append(layout)
+            if len(candidates) != 1:
+                raise ValueError(f"Invalid or ambiguous MDF v51 material layout: {candidates}")
+            self.layout = candidates[0]
+        else:
+            self.layout = "standard"
+
         h.align(16)
         self.materials = []
         for _ in range(self.header.material_count):
             mh = MatHeader()
-            mh.read(h, version)
+            mh.read(h, version, self.layout)
             self.materials.append(MatData(header=mh))
 
         for mat in self.materials:
@@ -415,13 +460,25 @@ class MdfFile:
                         else:
                             prev = mat.parameters[i - 1]
                             ph.gap_size = int(ph.param_abs_offset - (prev.param_abs_offset + prev.component_count * 4))
-                        if ph.component_count == 4:
-                            x, y, z, w = h.read_at(ph.param_abs_offset, '<ffff')
-                            ph.parameter = (x, y, z, w)
-                        else:
-                            x = h.read_at(ph.param_abs_offset, '<f')
-                            ph.parameter = (x, 0.0, 0.0, 0.0)
+                        stored_component_count = (
+                            ph.component_count
+                            if 1 <= ph.component_count <= 4
+                            else 1
+                        )
+                        values = h.read_at(
+                            ph.param_abs_offset,
+                            '<' + ('f' * stored_component_count),
+                        )
+                        if stored_component_count == 1:
+                            values = (values,)
+                        ph.parameter = tuple(values) + (0.0,) * (4 - stored_component_count)
+                        # Parsed relative offsets are authoritative.  Structural
+                        # material synchronization also sets this flag so the
+                        # legacy LayerColor convenience heuristic cannot move
+                        # an already verified ABI field during serialization.
+                        ph._layout_locked = True
                         mat.parameters.append(ph)
+            mat.parameter_layout_size = int(mat.header.params_size)
 
             mat.gpu_buffers = []
             if version >= 19 and mat.header.gpbf_offset:
@@ -460,6 +517,10 @@ class MdfFile:
     def write(self) -> bytes:
         h = BinaryHandler(bytearray())
         version = self.file_version
+        if self.layout not in {"standard", "onimusha_wots"}:
+            raise ValueError(f"Unsupported MDF layout: {self.layout}")
+        if self.layout == "onimusha_wots" and version != 51:
+            raise ValueError("The Onimusha WotS layout requires MDF v51")
         self.header.material_count = len(self.materials)
 
         self.header.write(h)
@@ -471,7 +532,7 @@ class MdfFile:
             mat.header.gpbf_name_count = mat.header.gpbf_data_count = len(mat.gpu_buffers)
             if version >= 31 and mat.header.shaderLODNum <= 0:
                 mat.header.shaderLODRedirects_offset = 0
-            mat.header.write(h, version)
+            mat.header.write(h, version, self.layout)
 
         for mat in self.materials:
             mat.header.tex_header_offset = h.tell
@@ -494,15 +555,18 @@ class MdfFile:
 
         for mat in self.materials:
             mat.header.params_offset = h.tell
-            size_accum = 0
             prev_color_index = None
-            for idx, ph in enumerate(mat.parameters):
+            for ph in mat.parameters:
+                if not 1 <= int(ph.component_count) <= 4:
+                    raise ValueError(
+                        f"MDF parameter {ph.name!r} has unsupported component count "
+                        f"{ph.component_count}"
+                    )
                 gap = ph.gap_size if ph.gap_size > 0 else 0
                 if gap:
                     h.write_bytes(b"\x00" * gap)
-                    size_accum += gap
                     prev_color_index = None
-                else:
+                elif not ph._layout_locked:
                     name_l = (ph.name or "").lower()
                     color_idx = None
                     if name_l.startswith("layercolor_"):
@@ -517,27 +581,36 @@ class MdfFile:
                         if missing > 0:
                             inferred = missing * 4
                             h.write_bytes(b"\x00" * inferred)
-                            size_accum += inferred
                     prev_color_index = color_idx if color_idx is not None else None
 
                 ph.param_rel_offset = h.tell - mat.header.params_offset
-                if ph.component_count == 4:
-                    x, y, z, w = ph.parameter
-                    h.write_vec4(x, y, z, w)
-                else:
-                    h.write_float(ph.parameter[0])
+                values = tuple(float(value) for value in ph.parameter)
+                h.write_bytes(struct.pack(
+                    '<' + ('f' * ph.component_count),
+                    *values[:ph.component_count],
+                ))
                 ph.rewrite_rel_offset(h, version)
-                size_accum += max(0, ph.component_count) * 4
-            if version == 6: # Dunno what kind of unholy optimization Capcom was doing here
-                pad_end = 4 if (size_accum % 16) != 0 else 0
-                if pad_end:
-                    h.write_bytes(b"\x00" * pad_end)
+            actual_size = h.tell - mat.header.params_offset
+            requested_size = max(0, int(mat.parameter_layout_size or 0))
+            if self.layout == "onimusha_wots":
+                # Keep reserved float slots, but grow the unaligned buffer
+                # length when parameters are added or widened.
+                mat.header.parameter_value_count = max(
+                    mat.header.parameter_value_count, (actual_size + 3) // 4)
+                requested_size = max(requested_size,
+                                     ((mat.header.parameter_value_count * 4 + 15) // 16) * 16)
+            if requested_size >= actual_size:
+                pad_end = requested_size - actual_size
             else:
-                pad_end = (16 - (size_accum % 16)) % 16
-                if pad_end:
-                    h.write_bytes(b"\x00" * pad_end)
-            mat.header.params_size = size_accum + pad_end
-            mat.header.rewrite(h, version)
+                if version == 6: # Dunno what kind of unholy optimization Capcom was doing here
+                    pad_end = 4 if (actual_size % 16) != 0 else 0
+                else:
+                    pad_end = (16 - (actual_size % 16)) % 16
+            if pad_end:
+                h.write_bytes(b"\x00" * pad_end)
+            mat.header.params_size = actual_size + pad_end
+            mat.parameter_layout_size = mat.header.params_size
+            mat.header.rewrite(h, version, self.layout)
 
         if version >= 31:
             for mat in self.materials:
@@ -566,10 +639,10 @@ class MdfFile:
                     for j, ofs in enumerate(offsets):
                         h.write_at(table_pos + j * 8, '<q', ofs)
                     # Persist shaderLODRedirects_offset in header
-                    mat.header.rewrite(h, version)
+                    mat.header.rewrite(h, version, self.layout)
                 else:
                     # No shaderLODRedirects_offset: ensure header field is zeroed
                     mat.header.shaderLODRedirects_offset = 0
-                    mat.header.rewrite(h, version)
+                    mat.header.rewrite(h, version, self.layout)
 
         return h.get_all_bytes()
