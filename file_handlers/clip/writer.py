@@ -244,7 +244,7 @@ class ClipWriter:
                 p += 16
             if h.version >= 53:
                 bits = (n.node_type & 0xFF) | ((n.unique_id & 0xFFFF) << 8)
-                if h.version >= 86:
+                if h.version >= 85:
                     bits |= (n.extra_property_pass_mask & 0xF) << 24
             else:
                 bits = n.node_type & 0xFF

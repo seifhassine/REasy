@@ -468,7 +468,7 @@ class ClipParser:
             n.node_type = bits & 0xFF
             if h.version >= 53:
                 n.unique_id = (bits >> 8) & 0xFFFF
-                if h.version >= 86:
+                if h.version >= 85:
                     n.extra_property_pass_mask = (bits >> 24) & 0xF
                     self._assert(bits >> 28 == 0, "Unexpected nonzero node route/reserved bits")
                 else:
