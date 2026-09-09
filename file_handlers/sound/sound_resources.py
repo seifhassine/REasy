@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,6 +23,12 @@ def resource_key(path: str) -> str:
     value = str(path or "").replace("\\", "/").strip().lstrip("@").casefold()
     marker = value.find("natives/")
     return value[marker:] if marker >= 0 else value.lstrip("/")
+
+
+def sound_media_key(path: str) -> str:
+    """Identify a BNK/PCK basename without dropping its language suffix."""
+    name = resource_key(path).rsplit("/", 1)[-1]
+    return re.sub(r"\.(?:s?bnk\.\d+|s?pck\.\d+)\.(?:x64|stm)(?=\.|$)", "", name)
 
 
 def matching_sound_companion_path(path: str, profile=None) -> str | None:
@@ -140,4 +147,5 @@ __all__ = [
     "open_sound_resource",
     "read_sound_resource",
     "resource_key",
+    "sound_media_key",
 ]

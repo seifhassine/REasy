@@ -2,7 +2,7 @@
 
 The original public API is retained for Wwise v132 compatibility. The same
 compact reader covers RE8's v135, MHRise/RE4's v140, MHWilds/RE9's v145,
-and Pragmata's v150 structures.
+and Pragmata/Onimusha: Way of the Sword's v150 structures.
 """
 
 from __future__ import annotations

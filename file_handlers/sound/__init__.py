@@ -14,6 +14,7 @@ from .dd2_profile import DD2_SOUND_PROFILE
 from .dmc5_profile import DMC5_SOUND_PROFILE
 from .mhrise_profile import MHRISE_SOUND_PROFILE
 from .mhwilds_profile import MHWILDS_SOUND_PROFILE
+from .onimusha_wots_profile import ONIMUSHA_WOTS_SOUND_PROFILE
 from .pragmata_profile import PRAGMATA_SOUND_PROFILE
 from .re2_profile import RE2_SOUND_PROFILE, RE2RT_SOUND_PROFILE
 from .re3_profile import RE3_SOUND_PROFILE, RE3RT_SOUND_PROFILE
@@ -29,6 +30,7 @@ __all__ = [
     "DMC5_SOUND_PROFILE",
     "MHRISE_SOUND_PROFILE",
     "MHWILDS_SOUND_PROFILE",
+    "ONIMUSHA_WOTS_SOUND_PROFILE",
     "PRAGMATA_SOUND_PROFILE",
     "RE2_SOUND_PROFILE",
     "RE2RT_SOUND_PROFILE",

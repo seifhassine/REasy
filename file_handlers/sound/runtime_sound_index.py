@@ -30,41 +30,29 @@ from .bnk_parser import (
     _read_music_track_sources,
 )
 from .pck_codec import parse_pck_layout
-from .sound_resources import resource_key
+from .sound_resources import resource_key, sound_media_key as _media_key
+from .sound_profile import sound_bank_family_for_game as _split_bank_family
 
 
 _CACHE_SCHEMA = 1
 _SOUND_PATH = re.compile(r"\.(?:s?bnk|s?pck)\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
 _BANK_PATH = re.compile(r"\.s?bnk\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
 _PACKAGE_PATH = re.compile(r"\.s?pck\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
-_MEDIA_SUFFIX = re.compile(
-    r"\.(?:s?bnk\.\d+|s?pck\.\d+)\.(?:x64|stm)(?=\.|$)", re.I
-)
-_ROLE_SUFFIX = re.compile(r"_(?:es|ev|m(?:_[a-z0-9]+)?)(?=(?:\.[^/.]+)?$)")
 _STRUCTURAL_CHUNKS = frozenset({b"BKHD", b"DIDX", b"HIRC"})
 _EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sound-index")
 _HANDLES: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 _HANDLES_LOCK = threading.Lock()
 
 
-def _media_key(path: str) -> str:
-    name = resource_key(path).rsplit("/", 1)[-1]
-    return _MEDIA_SUFFIX.sub("", name)
-
-
-def _split_bank_family(path: str) -> str:
-    return _ROLE_SUFFIX.sub("", _media_key(path))
-
-
 def _matching_package_keys(
-    bank_path: str, candidates, *, split_roles: bool
+    bank_path: str, candidates, *, split_roles: bool = False, game: str = ""
 ) -> set[str]:
     candidates = set(candidates)
     exact = {_media_key(bank_path)} & candidates
     if exact or not split_roles:
         return exact or (candidates if len(candidates) == 1 else set())
-    family = _split_bank_family(bank_path)
-    matches = {key for key in candidates if _split_bank_family(key) == family}
+    family = _split_bank_family(bank_path, game)
+    matches = {key for key in candidates if _split_bank_family(key, game) == family}
     return matches or (candidates if len(candidates) == 1 else set())
 
 
@@ -223,6 +211,7 @@ class RuntimeSoundIndex:
             resource_key(bank_path),
             self.packages_by_source.get(int(source_id) & 0xFFFFFFFF, ()),
             split_roles=self.split_roles,
+            game=self.game,
         )
         return tuple(self.package_records[key] for key in sorted(keys))
 
@@ -237,7 +226,7 @@ class RuntimeSoundIndex:
             for bank, stream_type in self.banks_by_source.get(source_id, ())
             if stream_type in {1, 2}
             and package in _matching_package_keys(
-                bank, packages, split_roles=self.split_roles
+                bank, packages, split_roles=self.split_roles, game=self.game
             )
         ))
 
@@ -270,24 +259,24 @@ class RuntimeSoundIndex:
             for bank, stream_type in self.banks_by_source.get(source_id, ())
         ):
             return ()
-        family = _split_bank_family(current)
+        family = _split_bank_family(current, self.game)
         return tuple(
             path for path in self.embedded_by_source.get(source_id, ())
-            if path != current and _split_bank_family(path) == family
+            if path != current and _split_bank_family(path, self.game) == family
         )
 
     def prefetch_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
         if not self.split_roles:
             return ()
         current = resource_key(media_path)
-        family = _split_bank_family(current)
+        family = _split_bank_family(current, self.game)
         return tuple(dict.fromkeys(
             bank
             for bank, stream_type in self.banks_by_source.get(
                 int(source_id) & 0xFFFFFFFF, ()
             )
             if stream_type == 1 and bank != current
-            and _split_bank_family(bank) == family
+            and _split_bank_family(bank, self.game) == family
         ))
 
     def source_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
@@ -296,7 +285,7 @@ class RuntimeSoundIndex:
         embedded = set(self.embedded_by_source.get(source_id, ()))
         package = _media_key(current) if _PACKAGE_PATH.search(current) else ""
         packages = self.packages_by_source.get(source_id, ())
-        family = _split_bank_family(current)
+        family = _split_bank_family(current, self.game)
         return tuple(dict.fromkeys(
             bank
             for bank, stream_type in self.banks_by_source.get(source_id, ())
@@ -305,12 +294,12 @@ class RuntimeSoundIndex:
                 not package
                 or stream_type in {1, 2}
                 and package in _matching_package_keys(
-                    bank, packages, split_roles=self.split_roles
+                    bank, packages, split_roles=self.split_roles, game=self.game
                 )
             )
             and (
                 package or not self.split_roles
-                or _split_bank_family(bank) == family
+                or _split_bank_family(bank, self.game) == family
             )
         ))
 

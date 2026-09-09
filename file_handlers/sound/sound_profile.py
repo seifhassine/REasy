@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 
 from .sound_metadata import SoundMetadata
-from .sound_resources import RelatedSoundPaths, resource_key
+from .sound_resources import RelatedSoundPaths, resource_key, sound_media_key
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +104,12 @@ class SoundGameProfile:
     def related_paths(self, path: str) -> RelatedSoundPaths | None:
         return None
 
+    def split_bank_family(self, path: str) -> str:
+        """Identify event/media siblings while retaining the language suffix."""
+        return re.sub(
+            r"_(?:es|ev|m(?:_[a-z0-9]+)?)(?=(?:\.[^/.]+)?$)", "", sound_media_key(path)
+        )
+
     def metadata(self, source_path: str = "") -> SoundMetadata:
         return SoundMetadata()
 
@@ -149,11 +156,18 @@ def register_sound_profile(profile: SoundGameProfile) -> SoundGameProfile:
     _PROFILES[key] = profile
     for alias in (profile.game, profile.display_name, *profile.aliases):
         _ALIASES[_game_key(alias)] = key
+    sound_bank_family_for_game.cache_clear()
     return profile
 
 
 def sound_profile_for_game(game) -> SoundGameProfile | None:
     return _PROFILES.get(_ALIASES.get(_game_key(game), _game_key(game)))
+
+
+@lru_cache(maxsize=16384)
+def sound_bank_family_for_game(path: str, game: str = "") -> str:
+    profile = sound_profile_for_game(game) or SoundGameProfile()
+    return profile.split_bank_family(path)
 
 
 def sound_profiles() -> tuple[SoundGameProfile, ...]:
@@ -199,6 +213,7 @@ __all__ = [
     "register_sound_profile",
     "sound_profile_for_bank_version",
     "sound_profile_for_game",
+    "sound_bank_family_for_game",
     "sound_profile_for_handler",
     "sound_profile_for_path",
     "sound_profiles",
