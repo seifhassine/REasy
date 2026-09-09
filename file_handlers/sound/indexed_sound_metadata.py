@@ -505,7 +505,6 @@ class IndexedSoundMetadata(SoundMetadata):
             )
             for path in _strings(anchors):
                 candidates.extend(self.embedded_media_banks(source_id, path))
-                candidates.extend(self.prefetch_media_banks(source_id, path))
                 for package in self.media_packages(source_id, path):
                     if isinstance(package, dict):
                         candidates.extend(filter(None, (
@@ -685,20 +684,27 @@ class IndexedSoundMetadata(SoundMetadata):
     def media_packages(self, source_id: int, bank_path: str | None = None) -> tuple[dict, ...]:
         bank = resource_key(bank_path or self.source_path)
         source_id = int(source_id) & 0xFFFFFFFF
-        if runtime := self._runtime_index():
-            return runtime.media_packages(source_id, bank)
         package_table = self.data.get("media_packages", {})
         if package_table:
             groups = self.data.get("media_links", {}).get(bank, {})
-            return tuple(
+            stored = tuple(
                 package_table[key]
                 for key, source_ids in groups.items()
                 if key in package_table and _contains_sorted(source_ids, source_id)
             )
-        values = self.data.get("media_links", {}).get(bank, {}).get(
-            str(source_id), ()
-        )
-        return tuple(value for value in values if isinstance(value, dict))
+        else:
+            values = self.data.get("media_links", {}).get(bank, {}).get(str(source_id), ())
+            stored = tuple(value for value in values if isinstance(value, dict))
+        if not (runtime := self._runtime_index()):
+            return stored
+        live = list(runtime.media_packages(source_id, bank))
+        # Explicit cross-bank Play links can cross the runtime family filter.
+        allowed = {resource_key(path) for record in stored for path in record.values() if path}
+        for key in runtime.packages_by_source.get(source_id, ()):
+            record = runtime.package_records[key]
+            if allowed.intersection(resource_key(p) for p in record.values() if p) and record not in live:
+                live.append(record)
+        return tuple(live)
 
     def banks_for_package(self, package_path: str, source_id: int) -> tuple[str, ...]:
         if runtime := self._runtime_index():
