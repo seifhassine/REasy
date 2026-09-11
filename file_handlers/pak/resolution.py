@@ -108,7 +108,7 @@ _GAME_PROFILES = {
     "mhrise": _PROFILES["pdlc_old"],
     "re4": _PROFILES["pdlc_re4"],
     "sf6": _PROFILES["numbered"],
-    "dd2": _PROFILES["numbered"],
+    "dd2": _PROFILES["modern"],
     "kunitsugami": _PROFILES["numbered"],
     "mhwilds": _PROFILES["modern"],
     "pragmata": _PROFILES["modern"],
