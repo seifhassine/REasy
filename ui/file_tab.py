@@ -503,6 +503,9 @@ class FileTab:
             mark_saved = getattr(self.handler, "mark_related_outputs_saved", None)
             if callable(mark_saved):
                 mark_saved()
+            mark_saved = getattr(self.handler, "mark_saved", None)
+            if callable(mark_saved):
+                mark_saved()
 
             self.filename = file_path
             self.pak_source_path = None

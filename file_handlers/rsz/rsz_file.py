@@ -618,6 +618,7 @@ class RszFile:
         self._prepared_field_defs = set()
         self._type_info_cache = {}
         self._registry_validation_enabled = False
+        self.field_observer = None
 
 
     def _initialize_read_context(self, data: bytes):
@@ -2336,6 +2337,8 @@ class RszFile:
             for field in fields_def:
                 cache_entry = field["_parse_cache"]
                 field_name, rsz_type, fsize, field_align, is_array, original_type, parser_func, default_element_class = cache_entry
+                if self.field_observer is not None:
+                    field_start = _align(pos, 4 if is_array else field_align)
 
                 if is_array:
                     pos = _align(pos, 4)
@@ -2473,6 +2476,10 @@ class RszFile:
                     pos = non_array_parser.pos
 
                 set_parsed(field_name, data_obj)
+                if self.field_observer is not None:
+                    # Spans are relative to the instance-data buffer and exclude
+                    # leading alignment. Observers never control the parser cursor.
+                    self.field_observer(current_instance_index, field, data_obj, field_start, pos)
         finally:
             parser_pool.append(non_array_parser)
 

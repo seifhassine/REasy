@@ -2,13 +2,8 @@
 MOTFSM file handler for REasy.
 Handles parsing and display of RE Engine FSM (Finite State Machine) files.
 """
-import logging
-from typing import Optional
-
 from file_handlers.base_handler import BaseFileHandler
-from file_handlers.motfsm.motfsm_file import MotfsmFile, MOTFSM_MAGIC
-
-logger = logging.getLogger(__name__)
+from file_handlers.motfsm.motfsm_file import MotfsmFile
 
 
 class MotfsmHandler(BaseFileHandler):
@@ -29,6 +24,7 @@ class MotfsmHandler(BaseFileHandler):
 
     def read(self, data: bytes):
         """Parse MOTFSM file data"""
+        self.motfsm = MotfsmFile()
         # Set RSZ type info path from app settings if available
         if hasattr(self, 'app') and self.app and hasattr(self.app, 'settings'):
             rsz_json_path = self.app.settings.get('rcol_json_path', '')
@@ -36,6 +32,7 @@ class MotfsmHandler(BaseFileHandler):
                 self.motfsm.set_rsz_type_info_path(rsz_json_path)
 
         self.motfsm.read(data)
+        self.modified = False
 
     def rebuild(self) -> bytes:
         """Rebuild MOTFSM file with modifications"""
@@ -43,9 +40,13 @@ class MotfsmHandler(BaseFileHandler):
 
     def create_viewer(self):
         """Create and return a viewer for MOTFSM files"""
-        try:
-            from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
-            return MotfsmViewer(self)
-        except Exception as exc:
-            logger.error("Failed to create MOTFSM viewer: %s", exc)
-            return None
+        from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
+        return MotfsmViewer(self)
+
+    def edit_field(self, binding, text):
+        self.motfsm.edit_field(binding, binding.parse(text))
+        self.modified = self.motfsm.bindings.modified
+
+    def mark_saved(self):
+        self.motfsm.accept_changes()
+        self.modified = False
