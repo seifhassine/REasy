@@ -43,6 +43,7 @@ Thumbs.db
 !/tests/test_motbank_roundtrip.py
 !/tests/test_motfsm_integration.py
 !/tests/test_motfsm_corpus.py
+!/tests/test_motfsm_rebuild.py
 !/tests/test_scn_scene_editing.py
 resources/i18n/REasy_zh-CN.qm
 secrets

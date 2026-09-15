@@ -2,7 +2,7 @@
 from PySide6.QtCore import Qt, Signal, QTimer, QSignalBlocker
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QHeaderView,
-    QMenu, QStyledItemDelegate, QComboBox, QLineEdit, QMessageBox,
+    QMenu, QStyledItemDelegate, QComboBox, QLineEdit, QMessageBox, QInputDialog,
 )
 
 from .rsz_adapter import BLOCK_NAMES
@@ -18,6 +18,8 @@ class _Item(QTreeWidgetItem):
         self.reference_kind = None
         self.target = None
         self.summary = None
+        self.action_node_index = None
+        self.action_index = None
 
     def update_summary(self):
         if self.summary is not None:
@@ -79,6 +81,10 @@ class MotfsmViewer(QWidget):
         self.tree.itemChanged.connect(self._item_changed)
         layout.addWidget(self.tree)
         self.handler.modified_changed.connect(self.modified_changed.emit)
+        self.handler.document_changed.connect(self._reload_tree)
+        self._build_tree()
+
+    def _build_tree(self):
         with QSignalBlocker(self.tree):
             root = _Item(self.tree, ["BHVT", "", "Structure"])
             self._lazy(root, f"Nodes ({self.motfsm.node_count})", self._load_nodes)
@@ -87,6 +93,52 @@ class MotfsmViewer(QWidget):
                 label = ''.join(word.title() for word in name.split('_'))
                 self._lazy(blocks, label, lambda item, name=name: self._load_block(item, name))
             root.setExpanded(True)
+
+    def _reload_tree(self):
+        expanded = []
+        selected = self.tree.currentItem()
+        selected_path = []
+        while selected is not None:
+            parent = selected.parent() or self.tree.invisibleRootItem()
+            selected_path.append(parent.indexOfChild(selected))
+            selected = selected.parent()
+        horizontal = self.tree.horizontalScrollBar().value()
+        vertical = self.tree.verticalScrollBar().value()
+        def remember(parent, path):
+            for i in range(parent.childCount()):
+                item = parent.child(i)
+                child_path = (*path, i)
+                if item.isExpanded():
+                    expanded.append(child_path)
+                remember(item, child_path)
+        remember(self.tree.invisibleRootItem(), ())
+        self._refresh_timer.stop()
+        self._editing_item = None
+        self.motfsm = self.handler.motfsm
+        with QSignalBlocker(self.tree):
+            self.tree.clear()
+            self._build_tree()
+            for path in expanded:
+                item = self.tree.invisibleRootItem()
+                for i in path:
+                    if isinstance(item, _Item):
+                        self._expand(item)
+                    if i >= item.childCount():
+                        break
+                    item = item.child(i)
+                else:
+                    self._expand(item)
+                    item.setExpanded(True)
+            if selected_path:
+                item = self.tree.invisibleRootItem()
+                for i in reversed(selected_path):
+                    if i >= item.childCount():
+                        break
+                    item = item.child(i)
+                if isinstance(item, _Item):
+                    self.tree.setCurrentItem(item)
+        self.tree.horizontalScrollBar().setValue(horizontal)
+        self.tree.verticalScrollBar().setValue(vertical)
 
     @property
     def modified(self):
@@ -199,15 +251,17 @@ class MotfsmViewer(QWidget):
                 self._fields(item, child, ("id_hash", "ex_id", "condition_id"))
                 self._node_link(item, child, "id_hash", "ex_id")
                 self._object_link(item, "conditions", lambda child=child: child.condition_id)
-        if node.actions:
-            actions = _Item(parent, [f"Actions ({len(node.actions)})", "", ""])
-            for i, action in enumerate(node.actions):
-                item = _Item(actions, [f"[{i}]", "", "Action"])
-                item.summary = lambda action=action, i=i: (f"[{i}] {self._action_name(action)}", "")
-                item.update_summary()
-                self._fields(item, action, ("id_hash", "ex_id"))
-                self._link(item, "RSZ Instance Details", lambda action=action:
-                    self.motfsm.references.action(action.id_hash, action.ex_id), "rsz")
+        actions = _Item(parent, [f"Actions ({len(node.actions)})", "", ""])
+        actions.action_node_index = index
+        for i, action in enumerate(node.actions):
+            item = _Item(actions, [f"[{i}]", "", "Action"])
+            item.action_node_index = index
+            item.action_index = i
+            item.summary = lambda action=action, i=i: (f"[{i}] {self._action_name(action)}", "")
+            item.update_summary()
+            self._fields(item, action, ("id_hash", "ex_id"))
+            self._link(item, "RSZ Instance Details", lambda action=action:
+                self.motfsm.references.action(action.id_hash, action.ex_id), "rsz")
         selector = _Item(parent, ["Selector", "", ""])
         self._fields(selector, node, ("selector_id", "selector_caller_condition_id"))
         self._object_link(selector, "selectors", lambda: node.selector_id)
@@ -291,8 +345,36 @@ class MotfsmViewer(QWidget):
             action.triggered.connect(lambda: item.setExpanded(not item.isExpanded()))
         if item.binding is not None:
             menu.addAction("编辑").triggered.connect(lambda: self._start_edit(item))
+        if item.action_node_index is not None:
+            node_index, action_index = item.action_node_index, item.action_index
+            menu.addAction("添加已有 Action 引用").triggered.connect(lambda: self._add_action(node_index))
+            if action_index is not None:
+                menu.addAction("删除 Action 引用").triggered.connect(
+                    lambda: self._remove_action(node_index, action_index))
         if not menu.isEmpty():
             menu.exec(self.tree.viewport().mapToGlobal(position))
+
+    def _add_action(self, node_index):
+        try:
+            choices = {}
+            for (id_hash, ex_id), (block_name, instance_index) in self.motfsm.references.action_identities().items():
+                block = self.motfsm.rsz_blocks.get_block(block_name)
+                label = f'{block.get_class_name(instance_index)} | 0x{id_hash:08X}, ex={ex_id} | {block_name}[{instance_index}]'
+                choices[label] = (id_hash, ex_id)
+            text, accepted = QInputDialog.getItem(self, '添加已有 Action 引用', 'Action',
+                                                sorted(choices), 0, True)
+            if accepted:
+                if text not in choices:
+                    raise ValueError('Select an existing Action from the list')
+                self.handler.add_action_reference(node_index, *choices[text])
+        except (ValueError, IndexError, KeyError) as exc:
+            QMessageBox.warning(self, 'Action reference', str(exc))
+
+    def _remove_action(self, node_index, action_index):
+        try:
+            self.handler.remove_action_reference(node_index, action_index)
+        except (ValueError, IndexError, KeyError) as exc:
+            QMessageBox.warning(self, 'Action reference', str(exc))
 
     def _start_edit(self, item):
         if self._editing_item is not None:

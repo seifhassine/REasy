@@ -56,6 +56,12 @@ class References:
     def action(self, id_hash, ex_id):
         if id_hash in (0, 0xFFFFFFFF):
             return None
+        target = self.action_identities().get((id_hash, ex_id))
+        if target is None:
+            raise IndexError(f"Unknown action identity: 0x{id_hash:08X}, ex={ex_id}")
+        return self.document.rsz_blocks.get_block(target[0]).get_instance(target[1])
+
+    def action_identities(self):
         if self._actions is None:
             identities = {}
             for block_name, extensions in (
@@ -72,7 +78,4 @@ class References:
                         raise ValueError(f"Duplicate action identity: {key}")
                     identities[key] = (block_name, instance_index)
             self._actions = identities
-        target = self._actions.get((id_hash, ex_id))
-        if target is None:
-            raise IndexError(f"Unknown action identity: 0x{id_hash:08X}, ex={ex_id}")
-        return self.document.rsz_blocks.get_block(target[0]).get_instance(target[1])
+        return self._actions

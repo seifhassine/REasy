@@ -64,6 +64,7 @@ class AllState:
 
 @dataclass
 class BHVTNode:
+    _action_span: tuple = field(default=(), init=False, repr=False, compare=False)
     id_hash: int = 0
     ex_id: int = 0
     name_index: int = 0
@@ -104,6 +105,7 @@ class BHVT:
     nodes: list = field(default_factory=list)
     action_ex_ids: list = field(default_factory=list)
     static_action_ex_ids: list = field(default_factory=list)
+    node_data_end: int = field(default=0, repr=False, compare=False)
 
 
 class _Reader:
@@ -211,6 +213,7 @@ class MotfsmFile:
         if offset_count >= 18:
             names += ("reference_prefab_game_objects",)
         names += tuple(f"section_{i}" for i in range(18, offset_count))
+        self._offset_names = names
         relative_offsets = {name: reader.read("Q") for name in names}
         offsets = {name: self.tree_data_offset + offset for name, offset in relative_offsets.items() if offset}
         if any(name not in offsets for name in ("nodes", "strings") + BLOCK_NAMES):
@@ -274,8 +277,10 @@ class MotfsmFile:
             reader.scalar(node, "selector_id", "s32")
             node.selector_callers = reader.list("s32")
             reader.scalar(node, "selector_caller_condition_id", "s32")
+            action_start = reader.pos
             node.actions = [Action() for _ in range(reader.count(8))]
             reader.columns(node.actions, (("id_hash", "u32"), ("ex_id", "u32")))
+            node._action_span = (action_start, reader.pos)
             reader.scalar(node, "priority", "s32")
             reader.scalar(node, "node_attribute", "u16", layout_mask=0x24)
             reader.scalar(node, "work_flags", "u16")
@@ -313,6 +318,7 @@ class MotfsmFile:
                 raise ValueError(f"{name} extension table count does not match RSZ object table")
         if reader.end - reader.pos >= 16:
             raise ValueError(f"Unconsumed BHVT node data at 0x{reader.pos:X}")
+        self.bhvt.node_data_end = reader.pos
 
     @property
     def node_count(self):
@@ -332,8 +338,13 @@ class MotfsmFile:
     def rebuild(self):
         if not self.source:
             raise ValueError("No MOTFSM data loaded")
-        return self.bindings.rebuild()
+        from .rebuild import rebuild_actions
+        return rebuild_actions(self)
 
     def accept_changes(self):
-        self.source = self.rebuild()
-        self.bindings.accept_changes(self.source)
+        output = self.rebuild()
+        if output != self.bindings.rebuild():
+            self.read(output)
+        else:
+            self.source = output
+            self.bindings.accept_changes(self.source)
